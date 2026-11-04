@@ -4,16 +4,23 @@ import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth, useIntrinsicEntries } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
-import { ArrowUp, ArrowDown, Sparkle as Sparkles, WarningCircle, Info } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { REGISTRY } from '../../config/exerciseRegistry';
 import { DOMAIN_BY_TYPE } from '../../config/appstructure';
 import { buildCatalog } from '../../config/exerciseCatalog';
-import { regenerateBlock, GENERATION_FAILED } from '../../services/generateDispatch';
+import { regenerateBlock } from '../../services/generateDispatch';
+import GenerationNote from './GenerationNote';
 import { suggestionsFor } from '../../config/instructionPresets';
 import { BODY_FONT_PX } from '../../config/printPalette';
 import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
+import FontStyleFields from './FontStyleFields';
+import InspectorAccordion from './InspectorAccordion';
+import FontFamilyPicker from './FontFamilyPicker';
+import { TEXT_FONT_OPTIONS, MATH_FONT_OPTIONS } from '../../config/fontOptions';
+import type { RegionStyle } from '../../store/useWorksheetStore';
 import Switch from '../ui/Switch';
 import { F } from './plugins/shared/fieldStyles';
 import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
@@ -105,7 +112,15 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             ))}
                         </div>
 
-                        {(docSettings.titlePosition === 'left' || docSettings.titlePosition === 'right') && (
+                        {(docSettings.titlePosition ?? 'center') === 'center' ? (
+                            <>
+                                <label style={{ ...S.label, marginTop: '12px' }}>Ruimte titel–velden: {docSettings.titleFieldsVerticalGap ?? 8}px</label>
+                                <input type="range" min="0" max="40" step="2"
+                                    value={docSettings.titleFieldsVerticalGap ?? 8}
+                                    onChange={(e) => updateDocSettings({ titleFieldsVerticalGap: Number(e.target.value) })}
+                                    style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+                            </>
+                        ) : (
                             <>
                                 <label style={{ ...S.label, marginTop: '12px' }}>Marge titel–velden: {docSettings.titleFieldsGap ?? 16}px</label>
                                 <input type="range" min="4" max="64" step="2"
@@ -190,16 +205,40 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         })()}
 
                         <div style={{ ...S.switchRow, marginTop: '12px' }}>
-                            <span style={S.switchText}>Koptekst op elke pagina herhalen</span>
-                            <Switch checked={!!headerData.repeatHeader} onChange={(v) => updateHeader({ repeatHeader: v })} aria-label="Koptekst op elke pagina herhalen" />
+                            <span style={S.switchText}>Naamvelden op elke pagina herhalen</span>
+                            <Switch checked={!!headerData.repeatHeader} onChange={(v) => updateHeader({ repeatHeader: v })} aria-label="Naamvelden op elke pagina herhalen" />
                         </div>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 0' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
+                        <div style={S.switchRow}>
+                            <span style={S.switchText}>Titel op elke pagina herhalen</span>
+                            <Switch checked={!!headerData.repeatTitle} onChange={(v) => updateHeader({ repeatTitle: v })} aria-label="Titel op elke pagina herhalen" />
+                        </div>
                     </div>
                 </div>
 
                 <div style={S.card}>
                     <h4 style={S.cardTitle}>Vormgeving koptekst</h4>
                     <RegionStyleFields region="header" />
+                </div>
+
+                {/* Naam/Klas/Nr/Datum labels: their own face and style, so the title above
+                    (Vormgeving koptekst) can change without the labels following along. */}
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Vormgeving veldlabels</h4>
+                    {(() => {
+                        const cur: RegionStyle = docSettings.headerVeldenCustom ?? {};
+                        const patch = (p: Partial<RegionStyle>) => updateDocSettings({ headerVeldenCustom: { ...cur, ...p } });
+                        return (
+                            <FontStyleFields
+                                fontFamily={{ label: 'Lettertype', value: docSettings.fontFamilyHeaderVelden, options: TEXT_FONT_OPTIONS, onChange: (v) => updateDocSettings({ fontFamilyHeaderVelden: v }) }}
+                                fontSize={{ label: 'Tekengrootte', value: cur.fontSize ?? 13, min: 8, max: 20, onChange: (v) => patch({ fontSize: v }) }}
+                                color={cur.color} onColorChange={(v) => patch({ color: v })}
+                                background={cur.background} onBackgroundChange={(v) => patch({ background: v })}
+                                bold={cur.bold ?? true} onBoldChange={(v) => patch({ bold: v })}
+                                italic={cur.italic} onItalicChange={(v) => patch({ italic: v })}
+                                underline={cur.underline} onUnderlineChange={(v) => patch({ underline: v })}
+                            />
+                        );
+                    })()}
                 </div>
         </>),
         opdrachten: (<>
@@ -222,6 +261,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <div style={S.switchRow}><span style={S.switchText}>Geen dubbele oefeningen</span><Switch checked={docSettings.uniqueExercises ?? true} onChange={(v) => updateDocSettings({ uniqueExercises: v })} aria-label="Geen dubbele oefeningen" /></div>
                         <p style={S.hintText}>Elke oefening komt hoogstens één keer voor in een blok; bij kleine reeksen (bv. klok op het uur) blijven herhalingen toegestaan.</p>
                         <div style={S.switchRow}><span style={S.switchText}>Opdrachten nummeren</span><Switch checked={docSettings.numberBlocks} onChange={(v) => updateDocSettings({ numberBlocks: v })} aria-label="Opdrachten nummeren" /></div>
+                        <div style={S.switchRow}><span style={S.switchText}>Opdrachtkleur per domein</span><Switch checked={!!docSettings.domainColors} onChange={(v) => updateDocSettings({ domainColors: v })} aria-label="Opdrachtkleur per domein" /></div>
+                        <p style={S.hintText}>Elke opdracht-titel krijgt de kleur van zijn domein (getallenkennis, bewerkingen, meten, …), zoals in de meeste methodes.</p>
 
                         <label style={{ ...S.label, marginTop: '10px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>
                         <input type="range" min="4" max="48" step="2"
@@ -260,25 +301,31 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     </div>
                 </div>
 
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Vormgeving opdracht-titel</h4>
+                <InspectorAccordion title="Vormgeving opdracht-titel" card={S.card} cardTitle={S.cardTitle}
+                    forceOpen={hasStyle(docSettings.titelCustom) || !!docSettings.fontFamilyTitel}>
                     <RegionStyleFields region="titel" />
-                </div>
+                </InspectorAccordion>
 
                 <div style={S.card}>
-                    <h4 style={S.cardTitle}>Lettergrootte</h4>
-                    {/* Sheet-wide base sizes (pt), fed onto .print-area-shell as CSS tokens
-                        --sheet-size-math / --sheet-size-text (theme.css). Distinct from the
-                        zoom slider below: these are the BASE every viewer px scales from,
-                        bodyFontScale is a multiplier on top of the result. */}
+                    <h4 style={S.cardTitle}>Oefeningen</h4>
+                    {/* Sheet-wide base faces and sizes (pt), fed onto .print-area-shell as CSS
+                        tokens --font-sheet-math/-text and --sheet-size-math/-text (theme.css).
+                        Distinct from the zoom slider below: these are the BASE every viewer px
+                        scales from, bodyFontScale is a multiplier on top of the result. */}
                     <div style={S.col}>
-                        <label style={S.label}>Cijfers: {docSettings.fontSizeMath ?? 13}pt</label>
+                        <label style={S.label}>Lettertype cijfers</label>
+                        <FontFamilyPicker value={docSettings.fontFamilyMath} options={MATH_FONT_OPTIONS}
+                            onChange={(v) => updateDocSettings({ fontFamilyMath: v })} ariaLabel="Lettertype cijfers" />
+                        <label style={{ ...S.label, marginTop: '10px' }}>Cijfers: {docSettings.fontSizeMath ?? 13}pt</label>
                         <input type="range" min={11} max={16} step={1}
                             value={docSettings.fontSizeMath ?? 13}
                             onChange={(e) => updateDocSettings({ fontSizeMath: Number(e.target.value) })}
                             style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
                         <p style={S.hintText}>Alle getallen en rekenwerk.</p>
 
+                        <label style={{ ...S.label, marginTop: '10px' }}>Lettertype tekst</label>
+                        <FontFamilyPicker value={docSettings.fontFamilyText} options={TEXT_FONT_OPTIONS}
+                            onChange={(v) => updateDocSettings({ fontFamilyText: v })} ariaLabel="Lettertype tekst" />
                         <label style={{ ...S.label, marginTop: '10px' }}>Opdrachttekst: {docSettings.fontSizeText ?? 15}pt</label>
                         <input type="range" min={12} max={18} step={1}
                             value={docSettings.fontSizeText ?? 15}
@@ -286,13 +333,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
                         <p style={S.hintText}>Opdrachten en woorden.</p>
                     </div>
-                </div>
 
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Tekstgrootte oefeningen</h4>
                     {/* Sheet-wide, not per region: scales every block's exercise body and its
                         opdracht-titel together. Shown in px against the base; stored as a zoom
                         factor. From 16px up, wide blocks start getting auto-shrunk to fit. */}
+                    <div style={{ marginTop: 'var(--sp-3)' }}>
                     {(() => {
                         const px = Math.round((docSettings.bodyFontScale ?? 1) * BODY_FONT_PX.base);
                         const bigText = px >= 16;
@@ -310,11 +355,34 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 {bigText && (
                                     <p style={S.hintText}>Grote tekst kan brede oefeningen automatisch verkleinen om op de pagina te passen.</p>
                                 )}
-                                <div style={{ marginTop: 'var(--sp-4)' }}><ResetAllStylesButton /></div>
                             </>
                         );
                     })()}
+
+                    </div>
+
+                    {/* docSettings.oefeningenCustom, on every block's ScaledBlock wrapper. */}
+                    <InspectorAccordion title="Vormgeving oefeningen" card={{ marginTop: 'var(--sp-3)' }} cardTitle={{ ...S.label, marginBottom: 0 }}
+                        forceOpen={hasStyle(docSettings.oefeningenCustom)}>
+                    {(() => {
+                        const cur: RegionStyle = docSettings.oefeningenCustom ?? {};
+                        const patch = (p: Partial<RegionStyle>) => updateDocSettings({ oefeningenCustom: { ...cur, ...p } });
+                        return (
+                            <FontStyleFields
+                                color={cur.color} onColorChange={(v) => patch({ color: v })}
+                                background={cur.background} onBackgroundChange={(v) => patch({ background: v })}
+                                bold={cur.bold} onBoldChange={(v) => patch({ bold: v })}
+                                italic={cur.italic} onItalicChange={(v) => patch({ italic: v })}
+                                underline={cur.underline} onUnderlineChange={(v) => patch({ underline: v })}
+                            />
+                        );
+                    })()}
+                    <p style={S.hintText}>Geldt voor alle oefeningen. Een opdracht-titel zonder eigen kleur kleurt mee.</p>
+                        <p style={S.hintText}>Geldt voor alle oefeningen. Een opdracht-titel zonder eigen kleur kleurt mee.</p>
+                    </InspectorAccordion>
                 </div>
+
+                <div style={S.card}><ResetAllStylesButton /></div>
         </>),
         voettekst: (<>
                 {/* ── Voettekst — everything printed at the bottom of the page ── */}
@@ -424,6 +492,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     // The family owns its own Opmaak sections; the registry says which ones this block gets.
     const ui = activeBlock ? EXERCISE_UI[activeBlock.typeId] : undefined;
     const StyleConfig = ui?.StyleConfig;
+    const AppearanceConfig = ui?.AppearanceConfig;
     const AdvancedConfig = ui?.AdvancedConfig;
     const advancedApplies = ui?.advancedApplies;
 
@@ -440,7 +509,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
             {/* ── 1. Opdrachtblok ── */}
             {(() => {
                 // Sheet furniture has no exercises, so instruction/score/aantal do not apply.
-                const isFurniture = activeBlock.typeId.startsWith('layout-');
+                const isFurniture = !!REGISTRY[activeBlock.typeId]?.isFurniture;
                 const aantal = activeBlock.numberOfExercises || 10;
                 const scoreMax = Math.max(1, aantal * 2);   // Score caps at 2 points per exercise
                 const sliderStyle = (on: boolean): React.CSSProperties => ({ width: '100%', accentColor: 'var(--accent-purple)', cursor: on ? 'pointer' : 'not-allowed', opacity: on ? 1 : 0.5 });
@@ -491,6 +560,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 }}
                                 style={sliderStyle(true)}
                             />
+                            {!locked && AppearanceConfig && <AppearanceConfig block={activeBlock} />}
                             </>}
 
                             {/* Breedte op de pagina — the page grid is 4 units wide, so a block
@@ -646,7 +716,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                             {/* The title row is presentation: hiding it leaves the block in the
                                                 opdracht numbering, so the numbers after it never shift.
                                                 layout-* furniture has no title row to begin with. */}
-                                            {!activeBlock.typeId.startsWith('layout-') && (<>
+                                            {!REGISTRY[activeBlock.typeId]?.isFurniture && (<>
                                             <div style={{ ...S.switchRow, marginTop: '12px' }}>
                                                 <span style={S.switchText}>Opdrachttekst tonen</span>
                                                 <Switch
@@ -720,33 +790,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         De instellingen zijn gewijzigd. Klik Genereer om de oefeningen bij te werken.
                     </p>
                 )}
-                {/* What the last generate had to do with these settings: which constraints
-                    it relaxed, how many were possible, or that the generator failed outright
-                    (that last one is a fault, so it reads as one). */}
-                {activeBlock.generationNote && (() => {
-                    const note = activeBlock.generationNote;
-                    const failed = note.startsWith(GENERATION_FAILED);
-                    // Bold only the lead sentence ("Instellingen versoepeld: ...") so the
-                    // reason that follows the ':' or '—' still reads as plain explanation.
-                    const sepIdx = (() => {
-                        const candidates = [note.indexOf(':'), note.indexOf('—')].filter(i => i >= 0);
-                        return candidates.length ? Math.min(...candidates) : -1;
-                    })();
-                    const lead = sepIdx >= 0 ? note.slice(0, sepIdx) : note;
-                    const rest = sepIdx >= 0 ? note.slice(sepIdx) : '';
-                    const NoteIcon = failed ? WarningCircle : Info;
-                    return (
-                        <div style={{
-                            display: 'flex', gap: 'var(--sp-2)', alignItems: 'flex-start',
-                            padding: '8px', border: `1px solid ${failed ? 'var(--danger)' : 'var(--accent)'}`,
-                            borderRadius: 'var(--radius-sm)', background: failed ? 'var(--danger-soft)' : 'var(--accent-soft)',
-                            color: 'var(--text-main)', fontSize: 'var(--text-xs)', margin: '0 0 var(--sp-2)',
-                        }}>
-                            <NoteIcon size={16} weight="fill" style={{ flexShrink: 0, marginTop: '1px', color: failed ? 'var(--danger)' : 'var(--accent)' }} />
-                            <span><strong>{lead}</strong>{rest}</span>
-                        </div>
-                    );
-                })()}
+                <GenerationNote note={activeBlock.generationNote} />
                 <div style={S.engineBody}>
                     {locked ? (
                         <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>
@@ -831,7 +875,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
 
     return (
-        <aside data-tour="inspector" style={rootStyle}>
+        <aside data-tour="inspector" className={embedded ? undefined : 'app-panel-right'} style={rootStyle}>
             {/* Say what is selected before showing controls — otherwise the panel is a
                 pile of settings with no stated subject (UI-GUIDE rule 1). */}
             {(() => {
@@ -870,6 +914,9 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
         </aside>
     );
 }
+
+// True when a region style carries any explicit value (i.e. differs from the default look)
+const hasStyle = (r?: RegionStyle) => !!r && Object.values(r).some((v) => v !== undefined && v !== false && v !== '');
 
 const S = {
     // Embedded in the left panel's Instellingen tab: no own width or edge, just fill the tab.

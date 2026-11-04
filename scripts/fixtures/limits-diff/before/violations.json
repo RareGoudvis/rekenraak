@@ -1,0 +1,4 @@
+[
+  { "bugId": "L12", "typeId": "omtrek", "leafId": "omtrek", "comboKey": "default", "seed": 1, "rule": "max-exceeded", "observed": 140, "limit": 100, "example": "omtrek 140" },
+  { "bugId": "L12", "typeId": "omtrek", "leafId": "omtrek", "comboKey": "default", "seed": 2, "rule": "max-exceeded", "observed": 120, "limit": 100, "example": "omtrek 120" }
+]

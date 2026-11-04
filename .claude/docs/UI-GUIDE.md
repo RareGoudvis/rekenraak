@@ -68,7 +68,7 @@ Defined once. **Snap every size to these** instead of inventing pixel values.
 | Spacing (8pt grid) | `--sp-1`=4 · `--sp-2`=8 · `--sp-3`=12 · `--sp-4`=16 · `--sp-5`=20 · `--sp-6`=24 · `--sp-8`=32 · `--sp-10`=40 | padding/gap/margin |
 | Radius | `--radius-xs`=6 · `--radius-sm`=8 · `--radius-md`=12 · `--radius-lg`=16 · `--radius-xl`=20 · `--radius-pill`=999px | xs inputs, sm buttons, md cards, lg panels, pill toggles |
 | Type | `--text-xs`=11 · `--text-sm`=13 · `--text-base`=14 · `--text-md`=15 · `--text-lg`=17 · `--text-xl`=20 · `--text-2xl`=24 | hierarchy via **weight+size**, never UPPERCASE |
-| Font | `--font-ui` (system stack; Roboto is no longer shipped) · `--font-sheet-text` (Ubuntu, words on paper) · `--font-sheet-math` (Azeret Mono, digits) | UI chrome vs worksheet ink |
+| Font | `--font-ui` (system stack; Roboto is no longer shipped) · `--font-sheet-text` (Ubuntu, words on paper) · `--font-sheet-math` (Azeret Mono, digits) · `--font-sheet-header` / `-titel` / `-velden` / `-footer` (default Ubuntu; each overridable per sheet from `docSettings.fontFamily*`, lists in `config/fontOptions.ts`) | UI chrome vs worksheet ink; the maths list stays monospace-only |
 | Sheet size | `--sheet-size-math`=13pt · `--sheet-size-text`=15pt · `--sheet-size-small`=0.82×math | Set per sheet (Blad › Opdrachten › Lettergrootte → `docSettings.fontSizeMath/Text`). **Every viewer size is `calc(var(--sheet-size-*) * f)`**, never a px literal — the factor keeps deliberate size differences when the base moves. See `src/components/viewer/README.md` |
 | Motion | `--dur-fast`=120ms · `--dur`=180ms · `--dur-slow`=260ms · `--ease-out` · `--ease-spring` | ease-out for fades, spring for toggle knobs |
 
@@ -156,7 +156,7 @@ Reference: `addition/NaturalSettings.tsx`, `SplitsenConfig.tsx`. Mask data and h
 [mathEngine.ts](../../src/services/math/mathEngine.ts).
 
 ### THE selected-state rule (one look, everywhere)
-Every toggle — segmented `radioBtn`, `maskBtn`, `bridgeBtn`, `pill`, the Inspector segments,
+Every toggle carries `aria-pressed={selected}` beside its style (the style helpers are plain style functions, so the attribute is the button's own; `configPills.ariaPressed.test.tsx` fails a selected-styled button without it). Every toggle — segmented `radioBtn`, `maskBtn`, `bridgeBtn`, `pill`, the Inspector segments,
 bespoke list-rows — shows the **same** selected treatment: **`--accent-soft` fill +
 `--accent` text + a 1px `--accent` ring.** Never a solid accent fill, never `white`/`#fff`
 text, never a domain hue (rule 6). The 1px ring is load-bearing — it is what keeps the
@@ -204,6 +204,8 @@ needs React hover state. Phosphor has no `strokeWidth`; use `weight`.
 
 These render on the printed A4 and are not chrome, so they are **not** tokens — with one
 exception: solution red is `--ink-solution`, because every viewer needs it and it must stay
+
+Coloured keys (filled parts, marked cells) use the same red at low opacity: `SOL_FILL` in solutionStyle.ts (`color-mix(var(--ink-solution) 35%, transparent)`), never a second colour.
 one hue. Reuse these exact values — don't pick new ones:
 
 | Color | Hex | Use |

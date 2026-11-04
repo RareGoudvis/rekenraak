@@ -6,6 +6,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import ExercisePreview from '../../shared/ExercisePreview';
 import type { MabConstraints } from '../../../services/math/constraintTypes';
 
@@ -13,7 +15,6 @@ interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS: Array<10 | 20 | 100 | 1000> = [10, 20, 100, 1000];
 const STYLE_OPTIONS: Array<{ val: 'symbolic' | 'mab-bw' | 'mab-color'; label: string }> = [
     { val: 'symbolic',  label: 'Symbolisch' },
     { val: 'mab-bw',    label: 'MAB (zwart/wit)' },
@@ -29,6 +30,7 @@ const placeKeysFor = (maxNumber: number): string[] => {
 };
 
 export default function MabConfig({ block }: Props) {
+    const range = useMaxPresets(block);
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const setExercises = useWorksheetStore((state) => state.setExercises);
     const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
@@ -99,12 +101,12 @@ export default function MabConfig({ block }: Props) {
             )}
 
             {/* MAX NUMBER */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxNumber}
-                    options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => {
                         // Drop mask keys that no longer apply to the new range so the
                         // generator doesn't try to satisfy an impossible constraint.
@@ -115,14 +117,14 @@ export default function MabConfig({ block }: Props) {
                     }}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* SPECIFIC NUMBER GENERATOR — mask */}
             <div style={styles.section}>
                 <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer (1 tot 9) krijgen; de andere posities worden 0. Niets aangeduid = vrij." />
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {keys.map(k => (
-                        <button key={k} onClick={() => toggleMask(k)} style={styles.maskBtn(!!operand1Mask?.[k])}>
+                        <button key={k} onClick={() => toggleMask(k)} aria-pressed={!!operand1Mask?.[k]} style={styles.maskBtn(!!operand1Mask?.[k])}>
                             {k}
                         </button>
                     ))}
@@ -157,21 +159,33 @@ export function MabStyleConfig({ block }: Props) {
     );
 }
 
+// ── Weergave (under Aantal oefeningen): how many exercises share a row. A short list, not a
+// slider buried in Geavanceerd: teachers set it as often as the count. Mounted by Inspector
+// through EXERCISE_UI[typeId].AppearanceConfig.
+const PER_ROW_OPTIONS = [1, 2, 3, 4].map(value => ({ value, label: `${value} ${value === 1 ? 'oefening' : 'oefeningen'}` }));
+export function MabAppearanceConfig({ block }: Props) {
+    const [c, patch] = useConstraints<MabConstraints>(block);
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '14px' }}>Oefeningen per rij</label>
+            <PopupSelect
+                value={c.exercisesPerRow ?? 3}
+                options={PER_ROW_OPTIONS}
+                onChange={value => patch({ exercisesPerRow: value })}
+                ariaLabel="Oefeningen per rij"
+            />
+        </>
+    );
+}
+
 // ── Geavanceerd: the printed geometry of one MAB exercise.
 export function MabAdvancedConfig({ block }: Props) {
     const [c, patch] = useConstraints<MabConstraints>(block);
-    const perRow       = c.exercisesPerRow ?? 3;
     const boxHeight    = c.boxHeight       ?? 70;
     const answerHeight = c.answerHeight    ?? 36;
     return (
         <>
-            <label style={F.label}>Oefeningen per rij ({perRow})</label>
-            <input
-                type="range" min={1} max={4} value={perRow}
-                onChange={e => patch({ exercisesPerRow: Number(e.target.value) })}
-                style={F.range}
-            />
-            <label style={{ ...F.label, marginTop: '10px' }}>Tekenvak hoogte ({boxHeight}px)</label>
+            <label style={F.label}>Tekenvak hoogte ({boxHeight}px)</label>
             <input
                 type="range" min={40} max={200} step={5} value={boxHeight}
                 onChange={e => patch({ boxHeight: Number(e.target.value) })}

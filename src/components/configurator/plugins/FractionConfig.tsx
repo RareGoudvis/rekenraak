@@ -5,6 +5,9 @@ import { F } from './shared/fieldStyles';
 import type { MathBlock, FractionSubType } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
+import { breukenFigureCeiling } from '../../../config/numberRanges';
+import { constraintsForVariant } from './shared/fractionVariant';
 import type { FractionConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -14,20 +17,6 @@ const HOEVEELHEID_VARIANTS: { value: FractionSubType; label: string; description
     { value: 'hoeveelheid-rechthoek',label: 'Schematisch', description: 'Lege rechthoek om in te delen' },
     { value: 'hoeveelheid-abstract', label: 'Abstract',    description: 'Rekenregel zonder model' },
 ];
-
-function defaultsFor(subType: FractionSubType): Record<string, unknown> {
-    switch (subType) {
-        case 'kleuren':               return { shapes: ['rectangle'], minDenominator: 2, maxDenominator: 8 };
-        case 'herkennen':             return { shapes: ['rectangle'], minDenominator: 2, maxDenominator: 8, answerFormat: 'fraction-questions' };
-        case 'hoeveelheid':           return { objectShape: 'circle', minDenominator: 2, maxDenominator: 5, maxTotal: 20, answerFormat: 'met-hulp' };
-        case 'hoeveelheid-rechthoek': return { minDenominator: 2, maxDenominator: 5, maxTotal: 20, answerFormat: 'met-berekening' };
-        case 'hoeveelheid-abstract':  return { minDenominator: 2, maxDenominator: 9, level: 1, answerMode: 'berekeningslijnen', maxAbstractN3: 1000 };
-        // maxLineLength 12 -> 8 (C1 step 11): past 8cm the to-scale line eats more than
-        // half of even a full-width column, so the default now stays inside that budget.
-        case 'lijnstuk':              return { minDenominator: 2, maxDenominator: 6, minLineLength: 4, maxLineLength: 8, answerMode: 'berekeningslijnen' };
-        case 'veelhoek':              return { minDenominator: 2, maxDenominator: 9, maxWidth: 6, maxHeight: 6 };
-    }
-}
 
 export default function FractionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
@@ -40,6 +29,8 @@ export default function FractionConfig({ block }: Props) {
 
     const updateConstraint = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const updateMany = (updates: Partial<FractionConstraints>) =>
+        updateBlockSettings(block.id, { constraints: { ...c, ...updates } });
 
     // kleuren/herkennen shapes: ≥1 included; back-compat reads the legacy single `shape`.
     const selectedShapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : [c.shape ?? 'rectangle'];
@@ -52,7 +43,7 @@ export default function FractionConfig({ block }: Props) {
     const handleSubTypeChange = (newSubType: FractionSubType) => {
         const isHoeveelheidType = newSubType === 'hoeveelheid' || newSubType === 'hoeveelheid-rechthoek' || newSubType === 'hoeveelheid-abstract';
         const updates: Partial<MathBlock> = {
-            constraints: { subType: newSubType, ...defaultsFor(newSubType) },
+            constraints: constraintsForVariant(c as Record<string, unknown>, newSubType),
             ...(isHoeveelheidType ? { numberOfExercises: 1 } : {}),
         };
         updateBlockSettings(block.id, updates);
@@ -71,7 +62,7 @@ export default function FractionConfig({ block }: Props) {
 
     const minDen = c.minDenominator ?? 2;
     const maxDen = c.maxDenominator ?? 8;
-    const absMaxDen = isLijnstuk ? 8 : (isHoeveelheidGroep || isVeelhoek) ? 10 : 16;
+    const ceiling = breukenFigureCeiling(subType);
 
     const minLen = c.minLineLength ?? 4;
     const maxLen = c.maxLineLength ?? 12;
@@ -89,6 +80,7 @@ export default function FractionConfig({ block }: Props) {
                             <button
                                 key={label}
                                 onClick={() => handleSubTypeChange(value)}
+                                aria-pressed={isActive}
                                 style={{
                                     ...styles.radioBtn(isActive),
                                     display: 'flex', flexDirection: 'column', width: '100%',
@@ -104,6 +96,15 @@ export default function FractionConfig({ block }: Props) {
                 </div>
             )}
 
+            <BreukenSettings
+                noemer={{ shape: 'range', min: minDen, max: maxDen, ceiling, onChange: (min, max) => updateMany({ minDenominator: min, maxDenominator: max }) }}
+                // An improper teller is drawn over two wholes side by side (kleuren / herkennen only).
+                kinds={isShape ? [
+                    { kind: 'echt', on: true, locked: true },
+                    { kind: 'onecht', on: !!c.allowImproper, onToggle: (v) => updateConstraint('allowImproper', v) },
+                ] : undefined}
+            />
+
             {/* ── SHAPE (kleuren / herkennen) — multi-select toggles, mixed per exercise ── */}
             {isShape && (
                 <>
@@ -115,7 +116,7 @@ export default function FractionConfig({ block }: Props) {
                                 { val: 'square',    label: 'Vierkant' },
                                 { val: 'circle',    label: 'Cirkel' },
                             ] as const).map(({ val, label }) => (
-                                <button key={val} onClick={() => toggleShape(val)} style={styles.radioBtn(selectedShapes.includes(val))}>
+                                <button key={val} onClick={() => toggleShape(val)} aria-pressed={selectedShapes.includes(val)} style={styles.radioBtn(selectedShapes.includes(val))}>
                                     {label}
                                 </button>
                             ))}
@@ -127,8 +128,8 @@ export default function FractionConfig({ block }: Props) {
                         <div style={styles.section}>
                             <div style={styles.onOffRow}>
                                 <span style={styles.onOffLabel}>Vaste grootte</span>
-                                <button onClick={() => updateConstraint('staticSize', !c.staticSize)} style={styles.onOffBtn(!!c.staticSize)}>
-                                    {c.staticSize ? 'AAN' : 'UIT'}
+                                <button onClick={() => updateConstraint('staticSize', !c.staticSize)} aria-pressed={!!c.staticSize} style={styles.onOffBtn(!!c.staticSize)}>
+                                    {c.staticSize ? 'Aan' : 'Uit'}
                                 </button>
                             </div>
                             <p style={styles.hint}>
@@ -144,40 +145,11 @@ export default function FractionConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Objectvorm:" info="De vorm van de te verdelen objecten." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => updateConstraint('objectShape', 'circle')} style={styles.radioBtn(c.objectShape === 'circle')}>Cirkels</button>
-                        <button onClick={() => updateConstraint('objectShape', 'square')} style={styles.radioBtn(c.objectShape === 'square')}>Vierkanten</button>
+                        <button onClick={() => updateConstraint('objectShape', 'circle')} aria-pressed={c.objectShape === 'circle'} style={styles.radioBtn(c.objectShape === 'circle')}>Cirkels</button>
+                        <button onClick={() => updateConstraint('objectShape', 'square')} aria-pressed={c.objectShape === 'square'} style={styles.radioBtn(c.objectShape === 'square')}>Vierkanten</button>
                     </div>
                 </div>
             )}
-
-            {/* ── DENOMINATOR RANGE (sliders) ── */}
-            <div style={styles.section}>
-                <SettingLabel text={`Noemer bereik: ${minDen} – ${maxDen}`} info="Bereik van de noemer van de breuken." />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
-                    <div>
-                        <label style={{ ...styles.label, marginBottom: '3px' }}>Min: {minDen}</label>
-                        <input type="range" min="2" max={absMaxDen} step="1"
-                            value={minDen}
-                            onChange={(e) => {
-                                const v = Math.max(2, Number(e.target.value));
-                                updateConstraint('minDenominator', v);
-                                if (v > maxDen) updateConstraint('maxDenominator', v);
-                            }}
-                            style={sliderStyle} />
-                    </div>
-                    <div>
-                        <label style={{ ...styles.label, marginBottom: '3px' }}>Max: {maxDen}</label>
-                        <input type="range" min="2" max={absMaxDen} step="1"
-                            value={maxDen}
-                            onChange={(e) => {
-                                const v = Math.min(absMaxDen, Number(e.target.value));
-                                updateConstraint('maxDenominator', v);
-                                if (v < minDen) updateConstraint('minDenominator', v);
-                            }}
-                            style={sliderStyle} />
-                    </div>
-                </div>
-            </div>
 
             {/* ── MAX TOTAL (hoeveelheid concreet / rechthoek) ── */}
             {(isHoeveelheid || isRechthoek) && (
@@ -241,8 +213,8 @@ export default function FractionConfig({ block }: Props) {
                     {/* Achtergrondrooster aan/uit — uit = enkel omtrek + gekleurd gebied, vakjes van 1 cm */}
                     <div style={{ ...styles.onOffRow, marginTop: '12px' }}>
                         <span style={styles.onOffLabel}>Achtergrondrooster</span>
-                        <button onClick={() => updateConstraint('showGrid', c.showGrid === false)} style={styles.onOffBtn(c.showGrid !== false)}>
-                            {c.showGrid !== false ? 'AAN' : 'UIT'}
+                        <button onClick={() => updateConstraint('showGrid', c.showGrid === false)} aria-pressed={c.showGrid !== false} style={styles.onOffBtn(c.showGrid !== false)}>
+                            {c.showGrid !== false ? 'Aan' : 'Uit'}
                         </button>
                     </div>
                 </div>
@@ -291,7 +263,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             const isActive = (c.level ?? 1) === n;
                             return (
                                 <button key={n} onClick={() => patch({ level: n })}
-                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: 'bold' }}>N{n}</span>
                                     <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
                                 </button>
@@ -324,7 +296,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             { val: 'blank-line',         label: 'Blanco lijn' },
                         ] as const).map(({ val, label }) => (
                             <button key={val} onClick={() => patch({ answerFormat: val })}
-                                style={{ ...F.radioBtn((c.answerFormat ?? 'fraction-questions') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                aria-pressed={(c.answerFormat ?? 'fraction-questions') === val} style={{ ...F.radioBtn((c.answerFormat ?? 'fraction-questions') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
                                 {label}
                             </button>
                         ))}
@@ -343,7 +315,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             { val: 'zonder-hulp',     label: 'Zonder hulp' },
                         ] as const).map(({ val, label }) => (
                             <button key={val} onClick={() => patch({ answerFormat: val })}
-                                style={{ ...F.radioBtn((c.answerFormat ?? 'met-hulp') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                aria-pressed={(c.answerFormat ?? 'met-hulp') === val} style={{ ...F.radioBtn((c.answerFormat ?? 'met-hulp') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
                                 {label}
                             </button>
                         ))}
@@ -360,7 +332,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             const isActive = (c.groupingMode ?? 'standaard') === val;
                             return (
                                 <button key={val} onClick={() => patch({ groupingMode: val })}
-                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
                                     <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
                                 </button>
@@ -395,9 +367,9 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             const isActive = (c.answerMode ?? 'berekeningslijnen') === val;
                             return (
                                 <button key={val} onClick={() => patch({ answerMode: val })}
-                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
-                                    <span style={{ fontSize: '10px', opacity: 0.8, fontFamily: 'Azeret Mono, monospace' }}>{hint}</span>
+                                    <span style={{ fontSize: '10px', opacity: 0.8, fontFamily: 'var(--font-sheet-math)' }}>{hint}</span>
                                 </button>
                             );
                         })}

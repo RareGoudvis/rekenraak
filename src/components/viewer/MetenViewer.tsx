@@ -1,7 +1,8 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import type { MetenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -13,17 +14,18 @@ interface Props {
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const CM = 37.8;            // 1 cm at 96dpi — keeps the drawing genuinely to scale
 const OFFSET = 22;          // how far side labels sit outside the figure
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
 
 interface Geom { w: number; h: number; pts: MeetPoint[]; isCircle: boolean; rpx: number; }
 function geomOf(ex: MeetExercise): Geom {
+    const px = CM;
     if (ex.kind === 'cirkel') {
-        const rpx = (ex.radius ?? 1) * CM;
+        const rpx = (ex.radius ?? 1) * px;
         return { w: 2 * rpx, h: 2 * rpx, pts: [], isCircle: true, rpx };
     }
-    const raw = (ex.points ?? []).map(p => ({ x: p.x * CM, y: p.y * CM }));
+    const raw = (ex.points ?? []).map(p => ({ x: p.x * px, y: p.y * px }));
     const minX = Math.min(...raw.map(p => p.x)), minY = Math.min(...raw.map(p => p.y));
     const maxX = Math.max(...raw.map(p => p.x)), maxY = Math.max(...raw.map(p => p.y));
     return { w: maxX - minX, h: maxY - minY, pts: raw.map(p => ({ x: p.x - minX, y: p.y - minY })), isCircle: false, rpx: 0 };
@@ -46,6 +48,7 @@ const anchor = (nx: number, ny: number): string => {
 
 export default function MetenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
     const exercises: MeetExercise[] = block.meetExercises || [];
     const gap = block.verticalSpacing || 14;
     const c = block.constraints as MetenConstraints;
@@ -77,10 +80,20 @@ export default function MetenViewer({ block, showSolutions }: Props) {
         </span>
     );
 
-    const geoms = exercises.map(geomOf);
     // Wider padding when scaffold blanks sit beside the figure, so they don't bleed out.
-    const pad = sideScaffold ? 64 : 42;
+    // A side label sits OFFSET out from its side and grows away from it, so the box keeps that
+    // plus the widest label ("10,5 cm", or the 38 px scaffold blank + "cm") at its 0.7 font;
+    // a fixed 42/64 let a left-hand label hang 12-15 px out of the cell (sweep pw002/008/018).
+    const LABEL_FONT = 0.7;
+    const labelPx = labeled
+        ? monoTextPx(Math.max(1, ...exercises.flatMap(ex => (ex.sides ?? []).map(sd => `${fmt(sd)} cm`.length)), ...exercises.map(ex => `d = ${fmt((ex.radius ?? 0) * 2)} cm`.length / 2)), LABEL_FONT, mathPx)
+        : sideScaffold ? 38 + 3 + monoTextPx(2, LABEL_FONT, mathPx) : 0;
+    const pad = Math.max(sideScaffold ? 64 : 42, Math.ceil(OFFSET + labelPx + 4));
+    // Side labels need the room above and below too; a bare figure only needs its stroke.
+    const padY = labeled || sideScaffold ? (sideScaffold ? 64 : 42) : 12;
     const bottomExtra = sideScaffold ? 18 : 0;
+    // Always true size: the generator caps every figure to its column (owner decision 2A, trueSize.ts).
+    const geoms = exercises.map(geomOf);
     const maxW = Math.max(...geoms.map(g => g.w)) + 2 * pad;
     const columnGap = gap + 10;
     // Two columns only when two items (plus the gap) actually fit the printable width.
@@ -96,8 +109,8 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                 const right = cols === 2 && idx % 2 === 1;   // mirror the second column
                 // Own height per figure (SYNC: OppervlakteViewer): a block-wide maximum left
                 // a blank the size of the tallest shape under every smaller one.
-                const figH = g.h + 2 * pad + bottomExtra;
-                const yOff = pad;
+                const figH = g.h + 2 * padY + bottomExtra;
+                const yOff = padY;
                 const W = g.w + 2 * pad;
                 const sides = ex.sides ?? [];
 
@@ -165,13 +178,13 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                             <svg width={W} height={figH} style={{ display: 'block', overflow: 'visible' }}>
                                 {g.isCircle ? (
                                     <>
-                                        <circle cx={centroid.x} cy={centroid.y} r={g.rpx} fill="none" stroke="#000" strokeWidth={2} />
-                                        <circle cx={centroid.x} cy={centroid.y} r={2.5} fill="#000" />
+                                        <circle cx={centroid.x} cy={centroid.y} r={g.rpx} fill="none" stroke="currentColor" strokeWidth={2} />
+                                        <circle cx={centroid.x} cy={centroid.y} r={2.5} fill="currentColor" />
                                     </>
                                 ) : (
                                     closed
-                                        ? <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
-                                        : <polyline points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
+                                        ? <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
+                                        : <polyline points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
                                 )}
                             </svg>
                             {labels}

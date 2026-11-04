@@ -3,9 +3,10 @@ import Switch from '../../ui/Switch';
 import { F } from './shared/fieldStyles';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
-import { ladderFor } from '../../../services/herleidingen/herleidingenGenerator';
+import { ladderFor, vraagOf } from '../../../services/herleidingen/herleidingenGenerator';
 import type { MathBlock } from '../../../services/math/types';
 import type { HerleidingenConstraints } from '../../../services/math/constraintTypes';
+import { RANGES, HERLEIDINGEN_ENKEL } from '../../../config/numberRanges';
 
 const FORMATS = [
     { key: 'enkel-getal', label: 'Getal invullen' },          // 1 kg = ___ g
@@ -18,7 +19,8 @@ const OPP_FORMATS = [
     { key: 'vierkant-are', label: 'Vierkant → are (ha/a/ca)' },
     { key: 'are-vierkant', label: 'Are → vierkant' },
 ];
-const SAM_STOPS = [10, 100, 1000, 10000, 100000, 1000000];
+const SAM_STOPS = RANGES.herleidingenSamengesteld;
+const VRAAG = [['getal', 'Getal'], ['eenheid', 'Eenheid'], ['afwisselend', 'Afwisselend']] as const;
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<HerleidingenConstraints>(block);
@@ -30,6 +32,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const maxSam: number = c.maxSamengesteld ?? 1000;
     const compoundMode: string = c.compoundMode ?? '2';
     const areMode: string = c.areMode ?? 'samengesteld';
+    const vraag = vraagOf(c);
     const hasAre = formats.some(f => f === 'vierkant-are' || f === 'are-vierkant');
     const allFormats = measure === 'oppervlakte' ? [...FORMATS, ...OPP_FORMATS] : FORMATS;
 
@@ -42,7 +45,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const toggleFormat = (k: string) => { const next = formats.includes(k) ? formats.filter(x => x !== k) : [...formats, k]; if (next.length) set('formats', next); };
 
     // Breakpoint slider — snaps to power-of-10 stops.
-    const stopSlider = (key: string, val: number, stops: number[], label: string) => {
+    const stopSlider = (key: string, val: number, stops: readonly number[], label: string) => {
         const idx = Math.max(0, stops.indexOf(val));
         return (
             <div style={styles.section}>
@@ -60,7 +63,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 <SettingLabel text="Maateenheden:" info="Tussen welke eenheden er omgerekend wordt." />
                 <div style={styles.buttonGroup}>
                     {ladder.map(u => (
-                        <button key={u.key} onClick={() => toggleUnit(u.key)} style={styles.pill(units.includes(u.key))}>{u.key}</button>
+                        <button key={u.key} onClick={() => toggleUnit(u.key)} aria-pressed={units.includes(u.key)} style={styles.pill(units.includes(u.key))}>{u.key}</button>
                     ))}
                 </div>
                 <p style={styles.hint}>Kies minstens twee eenheden.</p>
@@ -70,7 +73,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 <SettingLabel text="Soorten oefeningen" info="Welke vraagvormen er gebruikt worden (getal/eenheid invullen, samengesteld)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {allFormats.map(f => (
-                        <button key={f.key} onClick={() => toggleFormat(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
+                        <button key={f.key} onClick={() => toggleFormat(f.key)} aria-pressed={formats.includes(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
                     ))}
                 </div>
             </div>
@@ -78,7 +81,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
             {hasEnkel && (
                 <div style={styles.section}>
                     <SettingLabel text={`Maximum getal (enkelvoudig): ${maxEnkel.toLocaleString('nl-BE')}`} info="De bovengrens voor enkelvoudige omzettingen." />
-                    <input type="range" min={10} max={1000} step={10} value={Math.min(1000, Math.max(10, maxEnkel))}
+                    <input type="range" min={HERLEIDINGEN_ENKEL.min} max={HERLEIDINGEN_ENKEL.max} step={HERLEIDINGEN_ENKEL.step} value={Math.min(HERLEIDINGEN_ENKEL.max, Math.max(HERLEIDINGEN_ENKEL.min, maxEnkel))}
                         onChange={e => set('maxEnkel', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
                 </div>
@@ -105,9 +108,13 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 </div>
             )}
 
-            <div style={styles.onOffRow}>
-                <span style={styles.onOffLabel}>Leerling schrijft de eenheden zelf</span>
-                <button onClick={() => set('writeUnits', !c.writeUnits)} style={styles.onOffBtn(!!c.writeUnits)}>{c.writeUnits ? 'Aan' : 'Uit'}</button>
+            <div style={styles.section}>
+                <SettingLabel text="Vraag:" info="Bij een antwoord in één eenheid. Getal: de eenheid staat er, de leerling vult het getal in (235 cm = ___ m). Eenheid: het getal staat er, de leerling vult de eenheid in (235 cm = 2,35 ___). Samengestelde antwoorden zijn altijd getallen; 'Eenheid invullen' vraagt altijd de eenheid." />
+                <div className="seg-group">
+                    {VRAAG.map(([v, lbl]) => (
+                        <button key={v} className="seg-btn" aria-pressed={vraag === v} onClick={() => set('vraag', v)}>{lbl}</button>
+                    ))}
+                </div>
             </div>
         </div>
     );

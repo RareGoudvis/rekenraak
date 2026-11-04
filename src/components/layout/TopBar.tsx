@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, FloppyDisk, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
-import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
+import { encodeShareLink, clearAutosave, parseWorksheetFile, hasFilePickers, isPickerAbort, openWorksheetFromPicker, saveWorksheetToFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
+import PageDesignsModal from './PageDesignsModal';
+import { saveCurrentToLibrary } from '../library/saveToLibrary';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
 import { useShedStages } from '../../hooks/useShedStages';
+import { TOPBAR_STAGE_COUNT, topBarStageFlags } from './topBarStages';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
@@ -18,13 +21,17 @@ interface Props {
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
 // (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
-// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu. Each stage strictly
-// sheds width relative to the last, which is what lets useShedStages' hysteresis work.
-const STAGE_COUNT = 4;
+// least-used button (Toevoegen) folds into the Menu; 4 = "Genereer alles" folds too; 5 = undo/redo;
+// 6 = the "?" and Bewaren buttons fold into the Menu (at ~820 px the four icons overlapped).
+// Each stage strictly sheds width relative to the last, which is what lets useShedStages' hysteresis work.
+// Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
+// Table + flags: topBarStages.ts.
 
-// Autosave refused the write (browser storage full): the only way out is an explicit
-// file export, so the tooltip says that instead of a generic failure.
-const SAVE_FAILED_TEXT = 'Kon niet bewaren (opslag vol?) — bewaar als bestand.';
+// The autosave is a recovery copy in this browser, not the teacher's file or a Mijn bladen
+// entry: calling it "bewaard" made teachers think their sheet was saved somewhere. When the
+// write is refused (storage full) the only way out is a file, so the tooltip says that.
+const SAVE_FAILED_TEXT = 'Herstelkopie in deze browser mislukt (opslag vol?). Bewaar het blad als bestand.';
+const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
 
 // Shared between the centre-track (stage 0-1) and the under-bar line (stage 2-3) so the
 // save-status colour/tooltip logic isn't duplicated.
@@ -33,10 +40,10 @@ function SaveIndicator({ saveState, lastSavedAt, showText }: { saveState: SaveSt
         <div
             style={S.saveChip}
             title={saveState === 'error' ? SAVE_FAILED_TEXT
-                : lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
+                : lastSavedAt ? `Herstelkopie in deze browser om ${timeOf(lastSavedAt)}` : 'Er wordt automatisch een herstelkopie in deze browser bewaard'}
         >
             <span style={{ ...S.saveDot, background: saveState === 'error' ? 'var(--danger)' : saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-            {showText && <span>{saveState === 'error' ? 'Niet bewaard' : saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>}
+            {showText && <span>{saveState === 'error' ? 'Geen herstelkopie' : saveState === 'saving' ? 'Herstelkopie maken…' : 'Herstelkopie in browser'}</span>}
         </div>
     );
 }
@@ -96,13 +103,37 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const sidebarPreview = useWorksheetStore((s) => s.sidebarPreview);
     const setSidebarPreview = useWorksheetStore((s) => s.setSidebarPreview);
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
+    const savedPresetId = useWorksheetStore((s) => s.savedPresetId);
+    const setSavedPresetId = useWorksheetStore((s) => s.setSavedPresetId);
+    const fileHandle = useWorksheetStore((s) => s.fileHandle);
+    const setFileHandle = useWorksheetStore((s) => s.setFileHandle);
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
+    const [pageDesignsOpen, setPageDesignsOpen] = useState(false);
 
-    const handleExport = () => {
+    // saveAs = always ask where (the picker), even when a file is already open.
+    const handleSaveFile = async (saveAs: boolean) => {
         const st = useWorksheetStore.getState();
-        exportWorksheet({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings, selectedGrade: st.selectedGrade });
+        try {
+            const result = await saveWorksheetToFile(st, saveAs ? null : st.fileHandle);
+            if (result.handle) setFileHandle(result.handle);
+            showFlash(result.downloaded ? 'Bestand gedownload' : `Bewaard in ${result.handle?.name ?? 'bestand'}`);
+        } catch (err) {
+            if (!isPickerAbort(err)) window.alert(`Bestand bewaren mislukt: ${(err as Error).message}`);
+        }
+    };
+    const handleOpenFile = async () => {
+        if (!hasFilePickers()) { menuFileRef.current?.click(); return; }
+        try {
+            const opened = await openWorksheetFromPicker();
+            if (!opened) return;
+            if (useWorksheetStore.getState().blocks.length > 0 && !window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) return;
+            loadWorksheet(opened.file);
+            setFileHandle(opened.handle);
+        } catch (err) {
+            if (!isPickerAbort(err)) window.alert(`Openen mislukt: ${(err as Error).message}`);
+        }
     };
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -113,7 +144,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             try {
                 const parsed = parseWorksheetFile(String(reader.result));
                 if (window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) loadWorksheet(parsed);
-            } catch (err) { window.alert(`Importeren mislukt: ${(err as Error).message}`); }
+            } catch (err) { window.alert(`Openen mislukt: ${(err as Error).message}`); }
         };
         reader.readAsText(file);
     };
@@ -142,22 +173,30 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const handleNewSheet = () => {
         if (!hasBlocks || window.confirm('Nieuw blad starten? De huidige werkbundel wordt gewist.')) {
             clearBlocks();
+            setSavedPresetId(null);
+            setFileHandle(null);
             clearAutosave();
         }
     };
 
     const [massAddOpen, setMassAddOpen] = useState(false);
-    const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu'>(null);
-    const [shareFlash, setShareFlash] = useState<'full' | 'template' | null>(null);
+    const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu' | 'save'>(null);
+    // One confirmation line beside the bar's actions: link copied, sheet saved, file written.
+    const [flash, setFlash] = useState<string | null>(null);
+    const showFlash = (text: string) => { setFlash(text); window.setTimeout(() => setFlash(null), 2000); };
+
+    const handleSaveToLibrary = () => {
+        const outcome = saveCurrentToLibrary();
+        if (outcome === 'updated' || outcome === 'saved') showFlash('Bewaard in Mijn bladen');
+    };
     const barRef = useRef<HTMLDivElement>(null);
     // The row that actually holds the shedable content — separate from barRef because the
     // bar itself grows a second (fixed 28px) line at stage 2+, which must NOT count toward
     // the overflow measurement.
     const contentRef = useRef<HTMLDivElement>(null);
-    const stage = useShedStages(barRef, contentRef, STAGE_COUNT);
-    const iconOnly = stage >= 1;
-    const nameInRow = stage < 2;
-    const foldedIntoMenu = stage >= 3;
+    // Keyed on the committed name, not the edit box: a shed mid-edit would unmount the input.
+    const stage = useShedStages(barRef, contentRef, TOPBAR_STAGE_COUNT, headerTitle);
+    const { iconOnly, nameInRow, quickFolded: foldedIntoMenu, generateFolded, historyFolded, helpSaveFolded } = topBarStageFlags(stage);
 
     // Close any open dropdown on outside click / Escape. A fixed backdrop can't be used here:
     // the `.mac-vibrant` bar has backdrop-filter, which traps position:fixed to the bar instead
@@ -176,6 +215,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+            // The board overlay keeps this TopBar mounted; sheet undo there would be invisible.
+            if (useWorksheetStore.getState().view === 'whiteboard') return;
             const t = e.target as HTMLElement | null;
             if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
             const key = e.key.toLowerCase();
@@ -193,17 +234,42 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         const st = useWorksheetStore.getState();
         const link = encodeShareLink({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings }, { template: mode === 'template' });
         if (!link) {
-            window.alert('Werkbundel te groot voor een deelbare link. Gebruik Exporteer i.p.v.');
+            window.alert('Werkbundel te groot voor een deelbare link. Bewaar het als bestand (Bewaren → Bewaar bestand).');
             return;
         }
         try {
             await navigator.clipboard.writeText(link);
-            setShareFlash(mode);
-            setTimeout(() => setShareFlash(null), 2000);
+            showFlash('Link gekopieerd');
         } catch {
             window.prompt('Kopieer deze link:', link);
         }
     };
+
+    // Shared by the Bewaren dropdown and, at stage 6, the Menu (where the button itself has folded).
+    const saveRows = (
+        <>
+            <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
+                <FloppyDisk size={15} /> {savedPresetId ? 'Bijwerken in Mijn bladen' : 'Bewaar in Mijn bladen…'}
+            </button>
+            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('mijn-bladen'); }}>
+                <FolderOpen size={15} /> Mijn bladen
+            </button>
+
+            <div style={S.menuDivider} />
+            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleOpenFile(); }}>
+                <UploadSimple size={15} /> Open bestand…
+            </button>
+            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(false); }}>
+                <DownloadSimple size={15} />
+                {fileHandle ? <span>Bewaar bestand<br /><span style={S.menuHint}>{fileHandle.name}</span></span> : 'Bewaar bestand'}
+            </button>
+            {hasFilePickers() && (
+                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(true); }}>
+                    <DownloadSimple size={15} /> Bewaar als bestand…
+                </button>
+            )}
+        </>
+    );
 
     return (
         <div ref={barRef} className="mac-vibrant topbar" style={S.bar} data-stage={stage}>
@@ -212,14 +278,13 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 physically above the thing it changes. The panel tab strips live here rather
                 than inside their panels: visually they belong to the bar, functionally to
                 the column below (state in the store). */}
-            {/* One row: app chrome left, wordmark dead centre, sheet actions right. The
-                logo is a grid track of its own so it stays centred whatever the two
-                groups weigh. The panel tabs are NOT here — they live in the panel
+            {/* One row: app chrome left, sheet name centred in the room between, sheet
+                actions right. The panel tabs are NOT here — they live in the panel
                 headers, which run to the top of the window alongside this bar. */}
             <div ref={contentRef} style={S.zones}>
               <div style={S.groupLeft}>
                 {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it.
-                    Folds into the Meer menu at stage 3 — see the menu body below. */}
+                    Folds into the Menu at stage 3 — see the menu body below. */}
                 {!foldedIntoMenu && (
                     <IconButton
                         icon={LayoutGrid}
@@ -230,15 +295,15 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     />
                 )}
 
-                {/* One "Meer" menu instead of a ≡ and a ⚙ side by side: two unlabelled
+                {/* One "Menu" instead of a ≡ and a ⚙ side by side: two unlabelled
                     icons that both opened a list of app-level things was a guess the
                     teacher had to make. Everything app-level now lives behind one word.
                     Never folds itself — it's the fold target for stage 3. */}
                 <div style={S.menuWrap}>
                     <IconButton
                         icon={List}
-                        label="Meer: werkbladen, bestand, delen, instellingen"
-                        visibleLabel={iconOnly ? undefined : 'Meer'}
+                        label="Menu: werkbladen, delen, instellingen"
+                        visibleLabel={iconOnly ? undefined : 'Menu'}
                         onClick={() => setMenu(menu === 'menu' ? null : 'menu')}
                         dataTour="menu"
                     />
@@ -251,27 +316,42 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setMassAddOpen(true); }}>
                                             <LayoutGrid size={15} /> Oefeningen toevoegen
                                         </button>
-                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
-                                            <HelpIcon size={15} /> Uitleg
-                                        </button>
+                                        {helpSaveFolded && (
+                                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
+                                                <HelpIcon size={15} /> Uitleg en rondleiding
+                                            </button>
+                                        )}
+                                        {generateFolded && (
+                                            <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); if (hasBlocks) generateAllBlocks(); }}>
+                                                <Sparkles size={15} /> Genereer alles
+                                            </button>
+                                        )}
+                                        {historyFolded && (
+                                            <>
+                                                <button className="ui-hover" style={S.menuItem} disabled={!canUndo} onClick={() => { setMenu(null); doUndo(); }}>
+                                                    <Undo2 size={15} /> Ongedaan maken
+                                                </button>
+                                                <button className="ui-hover" style={S.menuItem} disabled={!canRedo} onClick={() => { setMenu(null); doRedo(); }}>
+                                                    <Redo2 size={15} /> Opnieuw
+                                                </button>
+                                            </>
+                                        )}
+                                        <div style={S.menuDivider} />
+                                    </>
+                                )}
+                                {helpSaveFolded && (
+                                    <>
+                                        <div style={S.sectionLabel}>Bewaren</div>
+                                        {saveRows}
                                         <div style={S.menuDivider} />
                                     </>
                                 )}
                                 <div style={S.sectionLabel}>Werkbladen</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('mijn-bladen'); }}>
-                                    <FolderOpen size={15} /> Mijn bladen
-                                </button>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('bibliotheek'); }}>
                                     <BookOpen size={15} /> Kant-en-klare bladen
                                 </button>
-
-                                <div style={S.menuDivider} />
-                                <div style={S.sectionLabel}>Bestand</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); menuFileRef.current?.click(); }}>
-                                    <UploadSimple size={15} /> Importeren…
-                                </button>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); handleExport(); }}>
-                                    <DownloadSimple size={15} /> Exporteren…
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setPageDesignsOpen(true); }}>
+                                    <LayoutTemplate size={15} /> Pagina-ontwerp sjablonen
                                 </button>
 
                                 <div style={S.menuDivider} />
@@ -326,9 +406,24 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     )}
                 </div>
 
-                {!foldedIntoMenu && (
-                    <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel={iconOnly ? undefined : 'Uitleg'} onClick={() => onOpenHelp?.()} />
-                )}
+                {/* Icon-only at every stage: a "?" needs no word, and it never folds. */}
+                {!helpSaveFolded && <IconButton icon={HelpIcon} label="Uitleg en rondleiding" onClick={() => onOpenHelp?.()} />}
+
+                {/* Everything about keeping the sheet (Mijn bladen, files) in one place, next to the "?". */}
+                {!helpSaveFolded && <div style={S.menuWrap}>
+                    <IconButton
+                        icon={FloppyDisk}
+                        label="Bewaren"
+                        visibleLabel={iconOnly ? undefined : 'Bewaren'}
+                        onClick={() => setMenu(menu === 'save' ? null : 'save')}
+                        dataTour="save"
+                    />
+                    {menu === 'save' && (
+                        <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '230px' }} role="menu" aria-label="Bewaren en bestanden">
+                            {saveRows}
+                        </div>
+                    )}
+                </div>}
 
               </div>
 
@@ -353,21 +448,25 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 {/* Undo/redo were already icon-only before this — nothing to shed here at
                     any stage, so no data-stage gate is needed on this group. */}
-                <div style={S.group}>
-                    <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={doUndo} disabled={!canUndo} />
-                    <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={doRedo} disabled={!canRedo} />
-                </div>
+                {!historyFolded && (
+                    <div style={S.group}>
+                        <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={doUndo} disabled={!canUndo} />
+                        <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={doRedo} disabled={!canRedo} />
+                    </div>
+                )}
 
-                <IconButton
-                    icon={Sparkles}
-                    label="Alle niet-vergrendelde blokken opnieuw genereren"
-                    visibleLabel={iconOnly ? undefined : 'Genereer alles'}
-                    onClick={() => hasBlocks && generateAllBlocks()}
-                    disabled={!hasBlocks}
-                    variant="secondary"
-                />
+                {!generateFolded && (
+                    <IconButton
+                        icon={Sparkles}
+                        label="Alle niet-vergrendelde blokken opnieuw genereren"
+                        visibleLabel={iconOnly ? undefined : 'Genereer alles'}
+                        onClick={() => hasBlocks && generateAllBlocks()}
+                        disabled={!hasBlocks}
+                        variant="secondary"
+                    />
+                )}
 
-                {shareFlash && <span style={S.shareFlash}><Check size={14} /> Link gekopieerd</span>}
+                {flash && <span style={S.flashLine} role="status"><Check size={14} /> {flash}</span>}
 
                 {/* Labelled: an eye alone doesn't say whether it shows or hides answers. */}
                 <IconButton
@@ -428,6 +527,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
+            {pageDesignsOpen && <PageDesignsModal onClose={() => setPageDesignsOpen(false)} />}
         </div>
     );
 }
@@ -440,7 +540,8 @@ const S = {
         // the button row, which the fixed three-column headers elsewhere don't grow with —
         // an accepted trade-off at the narrow widths where that stage fires.
         minHeight: 'var(--bar-h)',
-        padding: '0 var(--sp-5)',
+        // 12 px a side, not 20: at 20 the full labels fell 16 px short of a 1920 px window.
+        padding: '0 var(--sp-3)',
         /* Full-width header: background from .mac-vibrant (frosted), separated by a bottom hairline.
            position+zIndex so the dropdown menus paint ABOVE the panel body below (which is a
            later, opaque sibling — without this the menus open hidden behind it). */
@@ -450,20 +551,19 @@ const S = {
     } as React.CSSProperties,
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 6px', marginRight: 'var(--sp-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' } as React.CSSProperties,
-    // SYNC: the outer column widths must match Sidebar's aside (286px) and Inspector's (338px).
-    // 1fr | auto | 1fr keeps the wordmark optically centred no matter how the two action
-    // groups grow, which a plain flex row with space-between does not.
-    // The centre track is minmax(0, auto), NOT auto: an `auto` track refuses to shrink
-    // below its content, so a long sheet name used to push the two action groups into
-    // each other instead of truncating itself. With a 0 floor the title's own maxWidth +
-    // ellipsis absorbs the squeeze. (No overflow:hidden on the groups — it would clip the
-    // dropdown menus, which are absolutely positioned inside them.)
+    // auto | 1fr | auto: the name centres in the room the two groups leave, not dead centre
+    // of the bar. Dead centre made the wider right group need its width on both sides, which
+    // pushed the name onto a second line at 1280 px; now the plain sum is all the row needs.
+    // The middle's 0 floor lets the title's own maxWidth + ellipsis absorb a long name.
+    // (No overflow:hidden on the groups — it would clip the dropdown menus inside them.)
     // flexShrink: 0 keeps the button row at its natural (--bar-h-driven) height even
     // when the second line (stage 2+) shares the now-auto-height bar with it.
-    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)', minHeight: 'var(--bar-h)', flexShrink: 0 } as React.CSSProperties,
+    zones: { display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 'var(--sp-3)', minHeight: 'var(--bar-h)', flexShrink: 0 } as React.CSSProperties,
     groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start', paddingRight: 'var(--sp-5)' } as React.CSSProperties,
     groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end', paddingLeft: 'var(--sp-5)' } as React.CSSProperties,
-    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap', minWidth: 0, justifyContent: 'center' } as React.CSSProperties,
+    // justifySelf, not a stretched track: the box must hug its content, or its scrollWidth
+    // would report the whole 1fr track and useShedStages would never see it fit.
+    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap', minWidth: 0, justifySelf: 'center' } as React.CSSProperties,
     group: { display: 'flex', gap: 'var(--sp-1)', marginRight: 'var(--sp-2)', flexShrink: 0 } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,
@@ -502,7 +602,7 @@ const S = {
     } as React.CSSProperties,
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
-    shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
+    flashLine: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
     betaChip: {
         padding: '2px 8px', borderRadius: 'var(--radius-pill)', flexShrink: 0,
         border: '1px solid var(--separator)', color: 'var(--text-muted)',

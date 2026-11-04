@@ -1,0 +1,108 @@
+import { describe, test, expect } from 'vitest';
+import type { OefenSessie, OefenType } from '../services/oefenen/types';
+import type { BlockConstraints } from '../services/math/constraintTypes';
+import type { BreukBewerkExercise, FractionExercise } from '../services/math/types';
+import { seedConstraints } from '../config/baseSettings';
+import { resolveInstruction } from '../config/instructionPresets';
+import { kioskCapableLeaves, kioskInstructionOf } from '../services/oefenen/kiosk';
+import { nextExercise } from '../services/oefenen/scheduler';
+import { gradeBase, mulberry32 } from './helpers/limitHarness';
+
+// Pen verbs: the pupil taps or types, so the card must not tell them to draw on it, nor to
+// answer "in woorden" (the kiosk only takes typed digits). Word boundaries keep descriptive
+// "onderstreepte cijfer" / "gekleurd" legal.
+const PEN_VERB = /\b(omcirkel|kleur|teken|onderstreep|zet een kruisje|kruis aan|in woorden)\b/i;
+// Owner call 2: the pupil types on a keypad or keyboard, so the card says "Typ …", never "Schrijf …".
+const WRITE_VERB = /\bschrijf\b/i;
+// Owner call (O22): breuken kleuren says "Kleur 3/6 in.": a tapped part does turn coloured on the card.
+const KLEUR_BREUK = /^Kleur \d+\/\d+ in\.$/;
+
+type Shown = { leafId: string; grade: number | null; exercise: unknown; shown: string };
+
+// The card header of 8 seeded draws per kiosk-capable leaf at L-, L3, L6.
+function headers(): Shown[] {
+    const out: Shown[] = [];
+    for (const leaf of kioskCapableLeaves()) {
+        for (const grade of [null, 3, 6] as const) {
+            const constraints = seedConstraints({ typeId: leaf.typeId, base: gradeBase(grade), override: { ...leaf.defaultConstraints }, grade, leafId: leaf.id });
+            const type: OefenType = { typeId: leaf.typeId, leafId: leaf.id, label: leaf.label, constraints, weight: 1 };
+            const sessie: OefenSessie = { v: 1, id: 't', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: true, testMode: false, statsLocked: false };
+            for (let seed = 1; seed <= 8; seed++) {
+                const got = nextExercise(sessie, type, new Set(), mulberry32(seed * 31 + 7))!;
+                const paper = resolveInstruction(leaf.instruction, leaf.typeId, leaf.label, got.constraints as BlockConstraints);
+                out.push({ leafId: leaf.id, grade, exercise: got.exercise, shown: kioskInstructionOf(leaf.typeId, got.exercise, got.constraints, paper) });
+            }
+        }
+    }
+    return out;
+}
+const ALL = headers();
+
+describe('kiosk instruction wording', () => {
+    test('no kiosk-capable leaf shows a pen verb in the card header (bar the owner\'s "Kleur 3/6 in.")', () => {
+        for (const h of ALL) if (!KLEUR_BREUK.test(h.shown)) expect(h.shown, `${h.leafId} L${h.grade}`).not.toMatch(PEN_VERB);
+    });
+
+    test('no kiosk-capable leaf says "schrijf" in the card header (call 2: "Typ …")', () => {
+        const bad = [...new Set(ALL.filter(h => WRITE_VERB.test(h.shown)).map(h => `${h.leafId}: ${h.shown}`))];
+        expect(bad).toEqual([]);
+        expect(ALL.find(h => h.leafId === 'romeinse-schrijven')?.shown).toBe('Typ in Romeinse cijfers.');
+        // A setting-dependent paper wording (maateenheid schrijven) follows the same rule.
+        expect(kioskInstructionOf('maateenheid', {}, { answerMode: 'schrijven' }, 'Schrijf de passende maateenheid.')).toBe('Typ de passende maateenheid.');
+    });
+
+    // Pupil-play pass 2026-10-10: a right result without the needed onthoud- / leencijfer is Fout (owner
+    // rule), so the header says so: one text on every cijferen card, whatever the exercise needs.
+    test('cijferen header is one text per operator (never tells whether this exercise has a carry)', () => {
+        const cijfer = ALL.filter(h => h.leafId.startsWith('cijferen-'));
+        expect(new Set(cijfer.map(h => h.leafId)).size).toBe(8);
+        const WANT: Record<string, string> = {
+            '+': 'Cijfer uit. Typ ook je onthoudcijfers.', 'x': 'Cijfer uit. Typ ook je onthoudcijfers.',
+            '-': 'Cijfer uit. Typ ook je leencijfers.', ':': 'Cijfer uit.',
+        };
+        for (const h of cijfer) expect(h.shown, `${h.leafId} L${h.grade}`).toBe(WANT[(h.exercise as { operator: string }).operator]);
+    });
+
+    test('klok analoog lezen asks for a typed time, the only answer the card takes', () => {
+        const lezen = ALL.filter(h => h.leafId === 'klok-analoog-lezen');
+        expect(lezen.length).toBeGreaterThan(0);
+        for (const h of lezen) expect(h.shown, `L${h.grade}`).toBe('Lees de klok en typ de tijd (uu:mm).');
+    });
+
+    test('klok analoog lezen in woorden (a new row, owner 2026-10-13): no pen verb, no uu:mm', () => {
+        const lezen = ALL.filter(h => h.leafId === 'klok-analoog-lezen');
+        for (const h of lezen) {
+            const shown = kioskInstructionOf('klok-kloklezen', h.exercise, { clockType: 'analoog', exerciseMode: 'lezen', klokAnswer: 'woorden' }, 'Hoe laat is het?');
+            expect(shown).toBe('Lees de klok en zeg hoe laat het is.');
+            expect(shown).not.toMatch(PEN_VERB);
+            expect(shown).not.toMatch(WRITE_VERB);
+        }
+    });
+
+    // 'beide' mixes both ways in one block: the paper says "gemengd getal of als breuk", each card names its own way.
+    test('gemengd getal ↔ breuk under beide: the header follows the exercise on the card', () => {
+        const leaf = kioskCapableLeaves().find(l => l.id === 'breuken-gemengd')!;
+        const type: OefenType = { typeId: leaf.typeId, leafId: leaf.id, label: leaf.label, constraints: { ...leaf.defaultConstraints, direction: 'beide' }, weight: 1 };
+        const sessie: OefenSessie = { v: 1, id: 't', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: true, testMode: false, statsLocked: false };
+        const ways = new Set<string>();
+        for (let seed = 1; seed <= 8; seed++) {
+            const got = nextExercise(sessie, type, new Set(), mulberry32(seed))!;
+            const ex = got.exercise as BreukBewerkExercise;
+            const paper = resolveInstruction(leaf.instruction, leaf.typeId, leaf.label, got.constraints as BlockConstraints);
+            expect(paper).toBe('Schrijf als gemengd getal of als breuk.');
+            expect(kioskInstructionOf(leaf.typeId, ex, got.constraints, paper), `seed ${seed}`)
+                .toBe(ex.direction === 'naar-breuk' ? 'Typ als breuk.' : 'Typ als gemengd getal.');
+            ways.add(ex.direction!);
+        }
+        expect([...ways].sort()).toEqual(['naar-breuk', 'naar-gemengd']);
+    });
+
+    test('breuken kleuren names only the fraction, never how many parts to tap (O22)', () => {
+        const kleuren = ALL.filter(h => h.leafId === 'breuken-kleuren');
+        expect(kleuren.length).toBeGreaterThan(0);
+        for (const h of kleuren) {
+            const ex = h.exercise as FractionExercise;
+            expect(h.shown).toBe(`Kleur ${ex.numerator}/${ex.denominator} in.`);
+        }
+    });
+});

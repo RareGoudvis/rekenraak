@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { IconContext } from '@phosphor-icons/react';
 import App from './App.tsx';
 import { useWorksheetStore, type AddBlockOpts } from './store/useWorksheetStore';
+import type { DocSettings } from './store/types';
 import { REGISTRY } from './config/exerciseRegistry';
 import { flattenLeaves } from './config/appstructure';
 import { measuredSnapshot } from './hooks/useMeasuredHeights';
@@ -48,6 +49,8 @@ if (import.meta.env.DEV) {
       useWorksheetStore.getState().addBlockFromType(typeId, label ?? typeId, overrideConstraints, opts),
     updateBlockSettings: (id: string, updates: Record<string, unknown>) =>
       useWorksheetStore.getState().updateBlockSettings(id, updates),
+    // Sheet-wide settings (fonts, answer space) for the font / height harnesses' --doc runs.
+    updateDocSettings: (patch: Partial<DocSettings>) => useWorksheetStore.getState().updateDocSettings(patch),
     setIgnoreMinWidth: (on: boolean) => useWorksheetStore.getState().setIgnoreMinWidth(on),
     clearBlocks: () => useWorksheetStore.getState().clearBlocks(),
     getState: () => useWorksheetStore.getState(),
@@ -55,6 +58,12 @@ if (import.meta.env.DEV) {
     // them against the rendered rects, which is the only way to see the packer and the
     // paper disagree.
     measured: () => measuredSnapshot(),
+    // The max-number list a type's config shows for these settings (merged over the
+    // registry defaults).
+    maxPresetsFor: (typeId: string, constraints?: Record<string, unknown>) => {
+      const def = REGISTRY[typeId];
+      return def?.maxPresets?.({ ...def.defaultConstraints(typeId), ...(constraints ?? {}) }) ?? null;
+    },
     // DEV only, never shipped: replaces Math.random in place. seed(undefined) restores
     // the native RNG.
     seed: (n?: number) => { Math.random = n === undefined ? nativeRandom : mulberry32(n); },

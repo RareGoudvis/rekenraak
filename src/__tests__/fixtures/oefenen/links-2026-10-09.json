@@ -1,0 +1,558 @@
+[
+ {
+  "name": "one default row",
+  "link": "https://www.rekenraak.be/oefenen.html#oefen=RM3NIUKKVMYMQNWKWUWFJURRWK2DBNJUGAZ5AMOQRGHDNDMNRUCQA",
+  "decoded": {
+   "v": 1,
+   "id": "fx0k2m9q",
+   "createdAt": 1791543600000,
+   "mode": "afwisselen",
+   "allowRepeatType": false,
+   "testMode": false,
+   "statsLocked": false,
+   "types": [
+    {
+     "typeId": "hr-std-optellen",
+     "leafId": "hr-std-optellen-nat",
+     "label": "Optellen · natuurlijk",
+     "constraints": {
+      "numberType": "natural",
+      "decimalPlaces": 2,
+      "maxGetal": 1000,
+      "bridges": {
+       "E": "FREE",
+       "T": "FREE"
+      },
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "fractionDifficulty": "same",
+      "mixedNumber1": false,
+      "mixedNumber2": false,
+      "maxNumerator1": 10,
+      "maxDenominator1": 10,
+      "maxNumerator2": 10,
+      "maxDenominator2": 10,
+      "linkFractions": true
+     },
+     "weight": 100,
+     "instruction": "Reken uit."
+    }
+   ]
+  }
+ },
+ {
+  "name": "changed constraints + custom label",
+  "link": "https://www.rekenraak.be/oefenen.html#oefen=BWGL2CQCGEIIIXZFNQ6UKEVZ2NMBXUCKHSYAUKJMKY63FRV7RCBNZO67CZJ4Y7GDS4OOR7DTYXP4FE7AYOVAXNVXOBEKTA2CM62QJ7BJ2KNIM6BY52DLRIJJMOU4ZA7WR7DCEXCNXM32GZ6KJAF2WAIV4GY34G7L4RB45IBNX6XCOGPLYV6JTC7JJHW2QHYR7A6AG",
+  "decoded": {
+   "v": 1,
+   "id": "fx1k2m9q",
+   "createdAt": 1791543600000,
+   "mode": "willekeurig",
+   "allowRepeatType": false,
+   "testMode": false,
+   "statsLocked": false,
+   "types": [
+    {
+     "typeId": "hr-std-optellen",
+     "leafId": "hr-std-optellen-nat",
+     "label": "Optellen tot 100",
+     "constraints": {
+      "numberType": "natural",
+      "decimalPlaces": 2,
+      "maxGetal": 100,
+      "bridges": {
+       "E": "REQUIRED"
+      },
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "fractionDifficulty": "same",
+      "mixedNumber1": false,
+      "mixedNumber2": false,
+      "maxNumerator1": 10,
+      "maxDenominator1": 10,
+      "maxNumerator2": 10,
+      "maxDenominator2": 10,
+      "linkFractions": true
+     },
+     "weight": 71,
+     "instruction": "Reken uit.",
+     "limit": 12
+    },
+    {
+     "typeId": "vergelijken",
+     "leafId": "vergelijken-kiezen",
+     "label": "Vergelijken · grootste / kleinste",
+     "constraints": {
+      "subType": "kiezen",
+      "maxGetal": 1000,
+      "numberMask": {},
+      "chooseTarget": "kleinste",
+      "setSize": 3,
+      "decimalPlaces": 0,
+      "leftRep": "breuk",
+      "rightRep": "kommagetal",
+      "leftMask": {},
+      "rightMask": {},
+      "leftFracN": 4,
+      "leftFracD": 8,
+      "rightFracN": 4,
+      "rightFracD": 8
+     },
+     "weight": 29,
+     "instruction": "Omcirkel het kleinste getal."
+    }
+   ],
+   "title": "Herhaling week 6",
+   "timerMin": 10,
+   "attempts": 2
+  }
+ },
+ {
+  "name": "20 types, QR size",
+  "link": "https://www.rekenraak.be/oefenen.html#oefen=NWILWDWCGAGEK7YFMX3JAB2JTKOZSANRIUOYECFIUJG2BNFIT6H52VFIEALCPVVVR6X62BNQZMSG7MTTB4DNEVO2OHBUCSHQLYM7BLAL2N7OYTVRM4QLRKBBRVWQXOQGF64MJSHRQMBCVGAYKPSE7DIVETFVTLBMAVC4QJXNMLFPRBBBENL23KGEOTNQFHO3TROSNLEKCRIVF44KMGSG5YUSEGWNJXZQ6TV6LMWFEGSGXJBFBJL2QH5PSX7GXDJM4BWK7C5J6UC3IRMVDVZRZHU3PPWJW7EODOEUPZHVDM",
+  "decoded": {
+   "v": 1,
+   "id": "fx2k2m9q",
+   "createdAt": 1791543600000,
+   "mode": "afwisselen",
+   "allowRepeatType": false,
+   "testMode": true,
+   "statsLocked": true,
+   "types": [
+    {
+     "typeId": "mab-herkennen",
+     "leafId": "mab-herkennen",
+     "label": "MAB · getallen herkennen",
+     "constraints": {
+      "mabStyle": "symbolic",
+      "maxNumber": 101,
+      "operand1Mask": {},
+      "scaffolding": "positietabel",
+      "exercisesPerRow": 3,
+      "boxHeight": 70,
+      "answerHeight": 36
+     },
+     "weight": 5,
+     "instruction": "Welk getal is dit?",
+     "limit": 5
+    },
+    {
+     "typeId": "plaatswaarde",
+     "leafId": "plaatswaarde-tabel",
+     "label": "Plaatswaarde benoemen · tabel invullen",
+     "constraints": {
+      "subType": "tabel",
+      "maxGetal": 1000,
+      "numberMask": {},
+      "decimalPlaces": 0
+     },
+     "weight": 5,
+     "instruction": "Vul de plaatswaardetabel in."
+    },
+    {
+     "typeId": "vergelijken",
+     "leafId": "vergelijken-getallen",
+     "label": "Vergelijken · twee getallen",
+     "constraints": {
+      "subType": "getallen",
+      "maxGetal": 1001,
+      "numberMask": {},
+      "chooseTarget": "grootste",
+      "setSize": 3,
+      "decimalPlaces": 0,
+      "leftRep": "breuk",
+      "rightRep": "kommagetal",
+      "leftMask": {},
+      "rightMask": {},
+      "leftFracN": 4,
+      "leftFracD": 8,
+      "rightFracN": 4,
+      "rightFracD": 8
+     },
+     "weight": 5,
+     "instruction": "Vul in: <, > of =."
+    },
+    {
+     "typeId": "ordenen",
+     "leafId": "getalbegrip-ordenen-rat",
+     "label": "Ordenen · breuken",
+     "constraints": {
+      "numberType": "rational",
+      "count": 3,
+      "operatorMode": "oplopend",
+      "maxGetal": 100,
+      "decimalPlaces": 2,
+      "unitFractionsOnly": false,
+      "allowMixed": false,
+      "answerStyle": "lijn"
+     },
+     "weight": 5,
+     "instruction": "Zet in volgorde van klein naar groot.",
+     "limit": 5
+    },
+    {
+     "typeId": "getallenas",
+     "leafId": "getalbegrip-getallenassen-geh",
+     "label": "Getallenassen · geheel",
+     "constraints": {
+      "numberType": "geheel",
+      "maxGetal": 21,
+      "step": 5,
+      "direction": "right",
+      "hardMode": false,
+      "ticks": 6
+     },
+     "weight": 5,
+     "instruction": "Vul de getallenas aan."
+    },
+    {
+     "typeId": "verbanden",
+     "leafId": "verbanden-tabel",
+     "label": "Verbanden · tabel invullen",
+     "constraints": {
+      "subType": "tabel",
+      "reps": [
+       "breuk",
+       "decimaal",
+       "procent"
+      ],
+      "denominators": [
+       2,
+       4,
+       5,
+       10,
+       100
+      ],
+      "given": "random"
+     },
+     "weight": 5,
+     "instruction": "Vul de tabel aan: breuk, kommagetal en procent."
+    },
+    {
+     "typeId": "breuken",
+     "leafId": "breuken-hoeveelheid",
+     "label": "Breuk van een hoeveelheid",
+     "constraints": {
+      "subType": "hoeveelheid",
+      "shape": "rectangle",
+      "shapes": [
+       "rectangle"
+      ],
+      "minDenominator": 3,
+      "maxDenominator": 5,
+      "answerFormat": "met-hulp",
+      "objectShape": "circle",
+      "maxTotal": 20,
+      "minLineLength": 4,
+      "maxLineLength": 12,
+      "level": 1,
+      "answerMode": "berekeningslijnen",
+      "maxAbstractN3": 1000,
+      "staticSize": false,
+      "staticW": 4,
+      "staticH": 3,
+      "staticSide": 4,
+      "staticDiam": 4,
+      "groupingMode": "standaard",
+      "drawBoxH": 3,
+      "showGrid": true
+     },
+     "weight": 5,
+     "instruction": "Bereken de breuk van de hoeveelheid.",
+     "limit": 5
+    },
+    {
+     "typeId": "afronden",
+     "leafId": "afronden-dec-simpel",
+     "label": "Afronden · decimaal · eenvoudig",
+     "constraints": {
+      "subType": "simpel",
+      "numberType": "decimal",
+      "maxGetal": 100,
+      "numberMask": {},
+      "roundTargets": [
+       "E",
+       "t"
+      ],
+      "roosterSize": 6,
+      "decimalPlaces": 2
+     },
+     "weight": 5,
+     "instruction": "Rond af op E en t."
+    },
+    {
+     "typeId": "even-oneven",
+     "leafId": "even-oneven-rooster",
+     "label": "Rooster kleuren",
+     "constraints": {
+      "subType": "rooster",
+      "maxGetal": 101,
+      "target": "even",
+      "perRow": 10
+     },
+     "weight": 5,
+     "instruction": "Kleur de even getallen."
+    },
+    {
+     "typeId": "deelbaarheid-kleuren",
+     "leafId": "deelbaarheid-omcirkelen",
+     "label": "Deelbaarheid · omcirkelen",
+     "constraints": {
+      "viewMode": "markeren",
+      "divisors": [
+       2,
+       5,
+       10
+      ],
+      "maxGetal": 100,
+      "perRow": 10,
+      "rasterCount": 100,
+      "rasterCols": 10,
+      "showRest": false
+     },
+     "weight": 5,
+     "instruction": "Omcirkel de veelvouden van 2, 5 en 10.",
+     "limit": 5
+    },
+    {
+     "typeId": "romeinse-cijfers",
+     "leafId": "romeinse-herkennen",
+     "label": "Romeinse cijfers lezen",
+     "constraints": {
+      "subType": "herkennen",
+      "niveau": 3
+     },
+     "weight": 5,
+     "instruction": "Welk getal is dit?"
+    },
+    {
+     "typeId": "hr-std-aftrekken",
+     "leafId": "hr-std-aftrekken-dec",
+     "label": "Aftrekken · decimaal",
+     "constraints": {
+      "numberType": "decimal",
+      "decimalPlaces": 2,
+      "maxGetal": 1000,
+      "bridges": {
+       "E": "FREE",
+       "T": "FREE"
+      },
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "fractionDifficulty": "same",
+      "mixedNumber1": false,
+      "mixedNumber2": false,
+      "maxNumerator1": 10,
+      "maxDenominator1": 10,
+      "maxNumerator2": 10,
+      "maxDenominator2": 10,
+      "linkFractions": true
+     },
+     "weight": 5,
+     "instruction": "Reken uit."
+    },
+    {
+     "typeId": "hr-std-gemengd",
+     "leafId": "hr-std-gemengd-nat",
+     "label": "Gemengd · natuurlijk",
+     "constraints": {
+      "numberType": "natural",
+      "decimalPlaces": 3,
+      "maxGetal": 1000,
+      "bridges": {
+       "E": "FREE",
+       "T": "FREE"
+      },
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "fractionDifficulty": "same",
+      "mixedNumber1": false,
+      "mixedNumber2": false,
+      "maxNumerator1": 10,
+      "maxDenominator1": 10,
+      "maxNumerator2": 10,
+      "maxDenominator2": 10,
+      "linkFractions": true,
+      "variants": [
+       "+",
+       "-",
+       "x",
+       ":"
+      ],
+      "mix": "random"
+     },
+     "weight": 5,
+     "instruction": "Reken uit.",
+     "limit": 5
+    },
+    {
+     "typeId": "cijferen-aftrekken-nat",
+     "leafId": "cijferen-aftrekken-nat",
+     "label": "Cijferen aftrekken · natuurlijk",
+     "constraints": {
+      "operator": "-",
+      "numberType": "natural",
+      "maxRange": 1000,
+      "decimalPlaces": 2,
+      "withEstimation": false,
+      "scaffolding": 3,
+      "withRemainder": false,
+      "numberOfTerms": 2,
+      "gridCellSize": 25,
+      "operand0Mask": {},
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "operand3Mask": {},
+      "bridges": {},
+      "extraCols": 0,
+      "extraRows": 0
+     },
+     "weight": 5,
+     "instruction": "Cijfer uit."
+    },
+    {
+     "typeId": "cijferen-delen-dec",
+     "leafId": "cijferen-delen-dec",
+     "label": "Cijferen delen · decimaal",
+     "constraints": {
+      "operator": ":",
+      "numberType": "decimal",
+      "maxRange": 1001,
+      "decimalPlaces": 2,
+      "withEstimation": false,
+      "scaffolding": 3,
+      "withRemainder": false,
+      "numberOfTerms": 2,
+      "gridCellSize": 25,
+      "operand0Mask": {},
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "operand3Mask": {},
+      "bridges": {},
+      "extraCols": 0,
+      "extraRows": 0
+     },
+     "weight": 5,
+     "instruction": "Cijfer uit."
+    },
+    {
+     "typeId": "hr-std-optellen",
+     "leafId": "hr-std-optellen-rat",
+     "label": "Optellen · breuken",
+     "constraints": {
+      "numberType": "rational",
+      "decimalPlaces": 2,
+      "maxGetal": 1000,
+      "bridges": {
+       "E": "FREE",
+       "T": "FREE"
+      },
+      "operand1Mask": {},
+      "operand2Mask": {},
+      "fractionDifficulty": "same",
+      "mixedNumber1": false,
+      "mixedNumber2": false,
+      "maxNumerator1": 10,
+      "maxDenominator1": 10,
+      "maxNumerator2": 10,
+      "maxDenominator2": 10,
+      "linkFractions": true
+     },
+     "weight": 5,
+     "instruction": "Reken uit.",
+     "limit": 5
+    },
+    {
+     "typeId": "breuken-bewerken",
+     "leafId": "breuken-gelijknamig",
+     "label": "Gelijknamig maken",
+     "constraints": {
+      "subType": "gelijknamig",
+      "direction": "naar-gemengd",
+      "minDenominator": 3,
+      "maxDenominator": 10,
+      "maxNumerator": 10,
+      "tablesOnly": true,
+      "allowIrreducible": false,
+      "targetDen": ""
+     },
+     "weight": 5,
+     "instruction": "Maak gelijknamig."
+    },
+    {
+     "typeId": "klok-kloklezen",
+     "leafId": "klok-analoog-lezen",
+     "label": "Analoge klok · lezen",
+     "constraints": {
+      "clockType": "analoog",
+      "exerciseMode": "lezen",
+      "is24hour": false,
+      "timeTypes": [
+       "uren",
+       "halve_uren",
+       "kwartier_over",
+       "kwartier_voor"
+      ],
+      "minuteDirection": "beide",
+      "handChoice": "beide"
+     },
+     "weight": 5,
+     "instruction": "Hoe laat is het?"
+    },
+    {
+     "typeId": "geld-herkennen",
+     "leafId": "geld-herkennen",
+     "label": "Geld herkennen",
+     "constraints": {
+      "maxGetal": 11,
+      "format": "euros",
+      "scaffolding": "invullen",
+      "geldLayout": "samen",
+      "showVoorbeelden": false,
+      "voorbeeldTypes": [],
+      "exercisesPerRow": null,
+      "allowedDenominations": [
+       50000,
+       20000,
+       10000,
+       5000,
+       2000,
+       1000,
+       500,
+       200,
+       100,
+       50,
+       20,
+       10,
+       5
+      ],
+      "boxHeight": 80
+     },
+     "weight": 5,
+     "instruction": "Hoeveel geld is dit?",
+     "limit": 5
+    },
+    {
+     "typeId": "geld-rekenen",
+     "leafId": "geld-rekenen-intrest",
+     "label": "Intrest berekenen",
+     "constraints": {
+      "subType": "intrest",
+      "percents": [
+       1,
+       2,
+       5
+      ],
+      "maxEuro": 10000,
+      "wholeEuros": true,
+      "halfYear": false
+     },
+     "weight": 5,
+     "instruction": "Bereken de intrest."
+    }
+   ],
+   "title": "Toets periode 2",
+   "timerMin": 20
+  }
+ }
+]

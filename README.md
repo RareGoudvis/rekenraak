@@ -141,6 +141,8 @@ Bug of suggestie? Via het [feedbackformulier](https://forms.gle/jc1LcMXaRG3V3M55
 
 De code valt onder [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.txt).
 
+Met dank aan [Geert Van de Velde](https://github.com/geert-KLA-BE/rekenraak), wiens fork de basis leverde voor bestanden bewaren, lettertypes, pagina-sjablonen, plaatswaardekolommen en MAB tot 9 999 (overgenomen in 1.1.0).
+
 ---
 
 Gemaakt door Ruben V.H. — gratis beschikbaar voor leerkrachten.

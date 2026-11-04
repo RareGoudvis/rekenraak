@@ -1,4 +1,4 @@
-import { digitAtPlace } from '../math/mathEngine';
+import { digitAtPlace, PLACE_VALUES } from '../math/mathEngine';
 import { formatMathNumber } from '../math/formatters';
 
 // Representation of a value when comparing breuken & kommagetallen:
@@ -15,15 +15,18 @@ export const REP_OPTIONS: Array<{ key: RepKind; label: string }> = [
     { key: 'woorden', label: 'Woorden (5 tienden)' },
 ];
 
-// High→low places used to decompose a value for the letter/word forms.
-const REP_PLACES = [
-    { key: 'D', w: 1000, sg: 'duizendtal', pl: 'duizendtallen' },
-    { key: 'H', w: 100, sg: 'honderdtal', pl: 'honderdtallen' },
-    { key: 'T', w: 10, sg: 'tiental', pl: 'tientallen' },
-    { key: 'E', w: 1, sg: 'eenheid', pl: 'eenheden' },
-    { key: 't', w: 0.1, sg: 'tiende', pl: 'tienden' },
-    { key: 'h', w: 0.01, sg: 'honderdste', pl: 'honderdsten' },
-];
+// Singular place names ("1 tiental"); the plural is PLACE_VALUES' own label ("3 tientallen").
+const SINGULAR: Record<string, string> = {
+    Mrd: 'miljard', HM: 'honderdmiljoen', TM: 'tienmiljoen', M: 'miljoen',
+    HD: 'honderdduizendtal', TD: 'tienduizendtal', D: 'duizendtal', H: 'honderdtal',
+    T: 'tiental', E: 'eenheid', t: 'tiende', h: 'honderdste',
+};
+
+// High→low places used to decompose a value for the letter/word forms: every natural place up
+// to Mrd (the old D…E list dropped a TD+ digit) and the two decimals the representaties draw.
+const REP_PLACES = PLACE_VALUES
+    .filter(p => SINGULAR[p.key])
+    .map(p => ({ key: p.key, w: p.weight, sg: SINGULAR[p.key], pl: p.label.toLowerCase() }));
 
 // n/d over 10 or 100 (kept unreduced — keeps 6/10, 23/10 as on the worksheet).
 export function asFraction(value: number): { n: number; d: number } {

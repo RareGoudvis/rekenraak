@@ -72,7 +72,7 @@ export default function LayoutConfig({ block }: { block: MathBlock }) {
             <SettingLabel text={label} info={info} />
             <div style={styles.buttonGroup}>
                 {opts.map(o => (
-                    <button key={o.v} style={styles.radioBtn(((c[key] as string) ?? fallback) === o.v)} onClick={() => set(key, o.v)}>{o.l}</button>
+                    <button key={o.v} aria-pressed={((c[key] as string) ?? fallback) === o.v} style={styles.radioBtn(((c[key] as string) ?? fallback) === o.v)} onClick={() => set(key, o.v)}>{o.l}</button>
                 ))}
             </div>
         </div>
@@ -118,11 +118,11 @@ export default function LayoutConfig({ block }: { block: MathBlock }) {
                 <div style={styles.section}>
                     <SettingLabel text="Tekst:" info="De inhoud van het onthoudkader. Enters blijven behouden. Gebruik de knoppen hieronder voor vet, cursief, onderstreept en lijsten." />
                     <div style={{ ...styles.buttonGroup, marginBottom: '6px' }}>
-                        <button type="button" style={styles.pill(false)} title="Vet" onClick={() => wrapSelection('**', '**')}><strong>B</strong></button>
-                        <button type="button" style={styles.pill(false)} title="Cursief" onClick={() => wrapSelection('*', '*')}><em>I</em></button>
-                        <button type="button" style={styles.pill(false)} title="Onderstreept" onClick={() => wrapSelection('__', '__')}><u>U</u></button>
-                        <button type="button" style={styles.pill(false)} title="Genummerde lijst" onClick={() => prefixLines(i => `${i + 1}. `)}>1.</button>
-                        <button type="button" style={styles.pill(false)} title="Opsomming" onClick={() => prefixLines(() => '- ')}>•</button>
+                        <button type="button" aria-pressed={!!false} style={styles.pill(false)} title="Vet" onClick={() => wrapSelection('**', '**')}><strong>B</strong></button>
+                        <button type="button" aria-pressed={!!false} style={styles.pill(false)} title="Cursief" onClick={() => wrapSelection('*', '*')}><em>I</em></button>
+                        <button type="button" aria-pressed={!!false} style={styles.pill(false)} title="Onderstreept" onClick={() => wrapSelection('__', '__')}><u>U</u></button>
+                        <button type="button" aria-pressed={!!false} style={styles.pill(false)} title="Genummerde lijst" onClick={() => prefixLines(i => `${i + 1}. `)}>1.</button>
+                        <button type="button" aria-pressed={!!false} style={styles.pill(false)} title="Opsomming" onClick={() => prefixLines(() => '- ')}>•</button>
                     </div>
                     <textarea
                         ref={bodyRef}

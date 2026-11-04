@@ -1,6 +1,7 @@
 import type { MathBlock } from '../math/types';
 import type { ClockExercise, TimeCategory, MinuteDirection, ClockType, ExerciseMode, HandChoice } from './clockTypes';
 import { formatTimeText, formatDigitalTime } from './clockTypes';
+import { directionAllows } from './minuteDirection';
 import type { ClockConstraints } from '../math/constraintTypes';
 
 export function generateClockExercises(block: MathBlock): ClockExercise[] {
@@ -26,8 +27,7 @@ export function generateClockExercises(block: MathBlock): ClockExercise[] {
 
     if (timeTypes.includes('nauwkeurig_5')) {
         for (const m of [5, 10, 20, 25, 35, 40, 50, 55]) {
-            if (minuteDirection === 'over' && m >= 30) continue;
-            if (minuteDirection === 'voor' && m < 30) continue;
+            if (!directionAllows(minuteDirection, m)) continue;
             validMinutes.add(m);
         }
     }
@@ -35,8 +35,7 @@ export function generateClockExercises(block: MathBlock): ClockExercise[] {
     if (timeTypes.includes('nauwkeurig_1')) {
         for (let m = 1; m <= 59; m++) {
             if (m % 5 === 0) continue; // covered by other categories
-            if (minuteDirection === 'over' && m >= 30) continue;
-            if (minuteDirection === 'voor' && m < 30) continue;
+            if (!directionAllows(minuteDirection, m)) continue;
             validMinutes.add(m);
         }
     }

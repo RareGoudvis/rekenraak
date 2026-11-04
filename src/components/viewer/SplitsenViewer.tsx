@@ -4,6 +4,15 @@ import { useBlockWidth, fitCols, ANSWER_LINE_H, useSheetSizePx } from './BlockWi
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
+import KioskCell from './KioskCell';
+import { useViewerInteraction } from './ViewerInteractionContext';
+
+// Oefenmodus: a blank box's cell fills the box (kiosk.css is-box); flex + width 0 keep the
+// input from widening the box to its own default width.
+const BOX_CELL: React.CSSProperties = { flex: 1, width: 0, alignSelf: 'stretch' };
+// The basic box's row height on the kiosk card (40px cells after the card's ~1.3× scale).
+const KIOSK_ROW_PX = 36;
 
 // Every printed digit/mono size below is a factor of --sheet-size-math (the empty-state
 // placeholder is screen-only chrome and stays a fixed px).
@@ -25,11 +34,13 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     // Column counts follow the cell width (¼ stacks 1-up), never a fixed 2/4/5-up grid.
     const availableWidth = useBlockWidth();
     const mathPx = useSheetSizePx('math');
-    const rowHeight: number = c.rowHeight || 28;
+    // Oefenmodus: a fill-in row is a thumb's target; a wide box's 28px rows would scale too flat.
+    const cells = useViewerInteraction()?.kind === 'fill-cells';
+    const rowHeight: number = cells ? Math.max(KIOSK_ROW_PX, c.rowHeight || 28) : c.rowHeight || 28;
 
     if (exercises.length === 0) {
         return (
-            <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>
+            <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px' }}>
                 (Nog geen oefeningen — klik Genereer)
             </div>
         );
@@ -65,12 +76,11 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         // lines up; sized to the WIDEST value anywhere in it rather than a flat 46px, which
         // clipped once numbers grew past two digits.
         const chars = Math.max(2, ...exercises.flatMap(ex => [ex.total, ex.pairs[0]?.given ?? 0, ex.pairs[0]?.answer ?? 0]).map(v => fmt(v).length));
-        const boxWidthEm = chars * 0.62 + 0.8;
-        const boxMinWidth = `max(46px, calc(${boxWidthEm.toFixed(2)} * var(--sheet-size-math)))`;
+        // The value at 1.04 inside 6px padding + a 1.5px border either side. SYNC: SplitsboomItem's box.
+        const { px: boxMinWidthPx, css: boxMinWidth } = grownColumn(46, chars, 1.04, mathPx, 15);
         // fitCols needs the tree's REAL rendered width (two boxes + the 18px inner gap), not
         // a flat guess — otherwise a block with big numbers keeps too many trees per row and
         // the sheet shows the "Verklein om te passen" overflow banner instead of wrapping.
-        const boxMinWidthPx = Math.max(46, boxWidthEm * mathPx);
         const itemMinPx = boxMinWidthPx * 2 + 18;
         const cols = fitCols(availableWidth, itemMinPx, Math.min(exercises.length, 4), gap + 10);
         return (
@@ -126,6 +136,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
                     <HeartItem
                         key={item.uid}
                         pairId={item.uid}
+                        cellKey={`p${item.uid.slice(item.uid.lastIndexOf('-') + 1)}`}
                         total={item.total}
                         given={item.given}
                         answer={item.answer}
@@ -142,16 +153,19 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         // itemMinPx fed to fitCols has to track that or a wide item gets squeezed 2-up.
         const maxGetal = c.maxGetal ?? 1000;
         const [itemMinPx, preferred] = maxGetal <= 100 ? [120, 4] : maxGetal <= 1000 ? [170, 2] : [330, 2];
+        // Past a million the legs' real width (from each exercise's own labels) outgrows the table above.
+        const geoms = exercises.map(ex => benenGeometry(ex, mathPx, availableWidth));
+        const widest = Math.max(itemMinPx, ...geoms.map(g => g.W));
         return (
-            <FragmentableGrid cols={fitCols(availableWidth, itemMinPx, preferred, gap)} columnGap={gap} rowGap={gap + 10}
-                items={exercises.map(ex => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+            <FragmentableGrid cols={fitCols(availableWidth, widest, preferred, gap)} columnGap={gap} rowGap={gap + 10}
+                items={exercises.map((ex, i) => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} geom={geoms[i]} />)} />
         );
     }
 
     if (layout === 'positie-tabel') {
         return (
             <FragmentableGrid cols={1} rowGap={gap + 6}
-                items={exercises.map(ex => <PositieTabelItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+                items={exercises.map(ex => <PositieTabelItem key={ex.id} ex={ex} showSolutions={showSolutions} availableWidth={availableWidth} mathPx={mathPx} />)} />
         );
     }
 
@@ -169,7 +183,16 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
             return places.map(p => letters ? `${p.digit}${p.key}` : placeValueStr(p.digit, p.weight)).join(' + ');
         };
         const chars = Math.max(1, ...exercises.map(ex => leftText(ex).length));
-        const leftColWidth = `calc(${(chars * 0.62 + 0.4).toFixed(2)} * var(--sheet-size-math))`;
+        // The widest left side at the row's 1.04 × math size, so a million-sized number never
+        // overhangs its right-aligned column on the left.
+        const colEm = chars * MONO_ADVANCE_EM * 1.04;
+        const estimate = `calc(${colEm.toFixed(3)} * var(--sheet-size-math))`;
+        // A compose chain of nine million-sized terms is wider than the page: cap the column so
+        // the chain wraps inside it and leaves the result (or, in 'beide', the other side's
+        // chain) room. 32px is the "=" slot plus its two 6px gaps.
+        const resultPx = Math.max(60, ...exercises.map(ex => monoTextPx(fmt(ex.total).length, 1.04, mathPx)));
+        const capPx = Math.floor(Math.min(availableWidth - 32 - resultPx, availableWidth * 0.6));
+        const leftColWidth = colEm * mathPx > capPx ? `min(${estimate}, ${capPx}px)` : estimate;
         return (
             <FragmentableGrid cols={1} columnGap={gap + 20} rowGap={gap + 4}
                 items={exercises.map(ex => <PositieMathRow key={ex.id} ex={ex} showSolutions={showSolutions} leftColWidth={leftColWidth} />)} />
@@ -185,61 +208,125 @@ const blankLine = (w = 44) => <span style={{ borderBottom: '1.5px solid #000', d
 
 // ── Place-value: splitsbenen (legs) ───────────────────────────────────────────
 
-function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+type BenenGeometry = { W: number; slot: number | null; stagger: boolean; rowPx: number; pad: number };
+
+// The width a splitsbenen item needs from its own labels. Up to a thousand every label fits the
+// 56px slot and the old spaced-around row stands (slot null); a wider label gets a fixed slot per
+// leg so each leg still ends at its label, and when even that is wider than the cell the labels
+// alternate between two rows so neighbours only need half a slot each.
+function benenGeometry(ex: SplitsenExercise, mathPx: number, availableWidth: number): BenenGeometry {
+    const places = ex.placeBreakdown || [];
+    const n = Math.max(1, places.length);
+    const ch = monoTextPx(1, 1.04, mathPx);
+    const asValue = ex.notation === 'value';
+    // Widest label, blank or filled: value text vs its 40px line, or digit/24px line + 2px + key.
+    const labelPx = Math.max(0, ...places.map(p => asValue
+        ? Math.max(40, placeValueStr(p.digit, p.weight).length * ch)
+        : Math.max(24, ch) + 2 + p.key.length * ch));
+    const rowPx = Math.round(mathPx * 1.5);
+    if (labelPx + 8 <= 56) return { W: Math.max(120, places.length * 56), slot: null, stagger: false, rowPx, pad: 0 };
+    // A glyph of air either side: the thousands spaces inside "700 000" must not read as the gap between labels.
+    const need = Math.ceil(labelPx + 2 * ch);
+    const single = Math.max(120, n * need);
+    if (single <= availableWidth || n < 3) return { W: single, slot: need, stagger: false, rowPx, pad: 0 };
+    // Same-row neighbours sit two slots apart (8px of air keeps nine 100-million labels on a full
+    // row); the end labels overhang their half slot, so the item is padded by that overhang.
+    const half = Math.max(56, Math.ceil(labelPx / 2 + 4));
+    const pad = Math.max(0, Math.ceil((labelPx - half) / 2));
+    return { W: n * half + 2 * pad, slot: half, stagger: true, rowPx, pad };
+}
+
+function PositieBenenItem({ ex, showSolutions, geom }: { ex: SplitsenExercise; showSolutions: boolean; geom: BenenGeometry }) {
     const places = ex.placeBreakdown || [];
     const topBlank = ex.blankSide === 'top';
-    const W = Math.max(120, places.length * 56);
-    const xs = places.map((_, i) => ((i + 0.5) / places.length) * W);
+    const { W, stagger, rowPx, pad } = geom;
+    const xs = places.map((_, i) => pad + ((i + 0.5) / places.length) * (W - 2 * pad));
+    const asValue = ex.notation === 'value';
+    const label = (p: { digit: number; key: string; weight: number }) => {
+        const shown = asValue ? placeValueStr(p.digit, p.weight) : String(p.digit);
+        return (
+            <>
+                {topBlank
+                    ? <span style={{ fontWeight: 'normal' }}>{shown}</span>
+                    : (showSolutions ? <span style={solutionText}>{shown}</span> : blankLine(asValue ? 40 : 24))}
+                {!asValue && <span style={{ fontWeight: 'normal' }}>{p.key}</span>}
+            </>
+        );
+    };
+    // Odd legs of a staggered item drop straight down one label row further, in the gap between
+    // two even labels, so no leg crosses a label on its way.
+    const legEnd = (i: number) => 24 + (stagger && i % 2 === 1 ? rowPx : 0);
+    const svgH = stagger ? 26 + rowPx : 26;
 
     return (
-        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
             {/* top number */}
             <div style={{ height: '26px', display: 'flex', alignItems: 'center' }}>
                 {topBlank
                     ? (showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60))
                     : <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span>}
             </div>
-            {/* legs */}
-            <svg width={W} height="26" style={{ display: 'block' }}>
-                {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="#000" strokeWidth="1.5" />)}
-            </svg>
-            {/* place boxes — 'value' shows the whole value (30); 'letters' shows digit + key (3T) */}
-            <div style={{ display: 'flex', justifyContent: 'space-around', width: W }}>
-                {places.map((p, i) => {
-                    const asValue = ex.notation === 'value';
-                    const shown = asValue ? placeValueStr(p.digit, p.weight) : String(p.digit);
-                    return (
-                        <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                            {topBlank
-                                ? <span style={{ fontWeight: 'normal' }}>{shown}</span>
-                                : (showSolutions ? <span style={solutionText}>{shown}</span> : blankLine(asValue ? 40 : 24))}
-                            {!asValue && <span style={{ fontWeight: 'normal' }}>{p.key}</span>}
+            {stagger ? (
+                <div style={{ position: 'relative', width: W, height: svgH + rowPx }}>
+                    <svg width={W} height={svgH} style={{ display: 'block' }}>
+                        {xs.map((x, i) => <polyline key={i} points={`${W / 2},2 ${x},24 ${x},${legEnd(i)}`} fill="none" stroke="currentColor" strokeWidth="1.5" />)}
+                    </svg>
+                    {places.map((p, i) => (
+                        <div key={i} style={{ position: 'absolute', left: xs[i], top: legEnd(i) + 2, transform: 'translateX(-50%)', display: 'flex', alignItems: 'baseline', gap: '2px', whiteSpace: 'nowrap' }}>
+                            {label(p)}
                         </div>
-                    );
-                })}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    {/* legs */}
+                    <svg width={W} height="26" style={{ display: 'block' }}>
+                        {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="currentColor" strokeWidth="1.5" />)}
+                    </svg>
+                    {/* place boxes — 'value' shows the whole value (30); 'letters' shows digit + key (3T) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-around', width: W }}>
+                        {places.map((p, i) => (
+                            <div key={i} style={geom.slot === null
+                                ? { display: 'flex', alignItems: 'baseline', gap: '2px' }
+                                : { display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px', width: geom.slot, whiteSpace: 'nowrap' }}>
+                                {label(p)}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
 
 // ── Place-value: positietabel (word → digit grid) ─────────────────────────────
 
-function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+// Break opportunities after each number-word morpheme: Dutch writes 999 999 as one 60-letter word.
+const WORD_BREAKS = /(honderd|duizend|miljoen|miljard)/;
+
+function PositieTabelItem({ ex, showSolutions, availableWidth, mathPx }: { ex: SplitsenExercise; showSolutions: boolean; availableWidth: number; mathPx: number }) {
     const cols = ex.placeBreakdown || [];
+    // Only a word that cannot sit beside the table unbroken gets break points (and, past those,
+    // any-letter breaks), so the width probe sees a column that can narrow instead of overflow.
+    const longestWord = Math.max(0, ...(ex.words ?? '').split(' ').map(w => w.length));
+    const breakWords = monoTextPx(longestWord, 0.92, mathPx) + 20 + cols.length * 42 > availableWidth;
+    const words = breakWords
+        ? (ex.words ?? '').split(new RegExp(WORD_BREAKS.source, 'g')).filter(Boolean).map((part, i) => <span key={i}>{part}{WORD_BREAKS.test(part) && <wbr />}</span>)
+        : ex.words;
     const cell: React.CSSProperties = {
         border: '1px solid #000', width: '42px', height: '36px', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)', boxSizing: 'border-box',
+        alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.92)', boxSizing: 'border-box',
     };
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', width: '100%' }}>
             {/* Word fills the left; tables pin to the far right so all line up with room to spare. */}
-            <div style={{ flex: 1, minWidth: 0, fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{ex.words}</div>
+            <div style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.92)', ...(breakWords && { overflowWrap: 'anywhere' }) }}>{words}</div>
             <div style={{ flexShrink: 0 }}>
                 <div style={{ display: 'flex' }}>
                     {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
                 </div>
                 <div style={{ display: 'flex' }}>
-                    {cols.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
+                    {cols.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}><KioskCell cellKey={p.key} variant="is-box" style={BOX_CELL}>{showSolutions ? p.digit : ''}</KioskCell></div>)}
                 </div>
             </div>
         </div>
@@ -263,23 +350,24 @@ function PositieMathRow({ ex, showSolutions, leftColWidth }: { ex: SplitsenExerc
             ? <span style={solutionText}>{letters ? `${(places.find(x => x.key === p.key)?.digit)}${p.key}` : placeValueStr(places.find(x => x.key === p.key)?.digit ?? 0, places.find(x => x.key === p.key)?.weight ?? 1)}</span>
             : <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '1px' }}>{blankLine(letters ? 24 : 40)}{letters && <span>{p.key}</span>}</span>;
 
-    const result = () => showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60);
+    // Thousands spaces are ordinary spaces (formatMathNumber), so every number and term holds itself together.
+    const result = () => showSolutions ? <span style={{ ...solutionText, whiteSpace: 'nowrap' }}>{fmt(ex.total)}</span> : blankLine(60);
 
     // Left/right of "=" swap with direction, but both sit in fixed-width grid columns (sized
     // to the block's widest left-side content) so the "=" itself lands at the same x on
     // every row, whichever term order (gehusseld or not) the terms come in.
     return (
-        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
             <span style={{ display: 'inline-flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '6px', minWidth: leftColWidth }}>
                 {compose
-                    ? places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)
-                    : <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span>}
+                    ? places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', whiteSpace: 'nowrap' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)
+                    : <span style={{ fontWeight: 'normal', whiteSpace: 'nowrap' }}>{fmt(ex.total)}</span>}
             </span>
             <span style={{ width: '20px', textAlign: 'center', flexShrink: 0 }}>=</span>
             <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
                 {compose
                     ? result()
-                    : places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
+                    : places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', whiteSpace: 'nowrap' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
             </span>
         </div>
     );
@@ -291,7 +379,7 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
     const cellBase: React.CSSProperties = {
         border: '1px solid #000',
         fontSize: 'calc(var(--sheet-size-math) * 0.81)',
-        fontFamily: "'Azeret Mono', monospace",
+        fontFamily: 'var(--font-sheet-math)',
         textAlign: 'center',
         height: `${rowHeight}px`,
         display: 'flex',
@@ -311,7 +399,7 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
                 <div key={i} style={{ display: 'flex', borderTop: i > 0 ? '1px solid #000' : undefined, width: '100%' }}>
                     <div style={{ ...cellBase, flex: 1, borderRight: '1px solid #000' }}>{fmt(pair.given)}</div>
                     <div style={{ ...cellBase, flex: 1, ...(showSolutions ? solutionText : { color: 'transparent' }) }}>
-                        {fmt(pair.answer)}
+                        <KioskCell cellKey={`p${i}`} variant="is-box" style={BOX_CELL}>{fmt(pair.answer)}</KioskCell>
                     </div>
                 </div>
             ))}
@@ -326,13 +414,17 @@ function SplitsboomItem({ ex, showSolutions, boxMinWidth }: { ex: SplitsenExerci
     const right = ex.pairs[0]?.answer ?? 0;
     const blank: 'top' | 'left' | 'right' = ex.blankPos ?? 'right';
 
+    // SYNC: the splitsboom grownColumn(…, 15) sizing — 1.04 font, 6px padding, 1.5px border.
     const box = (value: number, isBlank: boolean) => (
         <div style={{
             border: '1.5px solid #000', borderRadius: '4px', minWidth: boxMinWidth, height: '38px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)', boxSizing: 'border-box', padding: '0 6px',
+            fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 1.04)', boxSizing: 'border-box', padding: '0 6px',
         }}>
-            {isBlank ? (showSolutions ? <span style={solutionText}>{fmt(value)}</span> : '') : fmt(value)}
+            {isBlank
+                // The cell covers the box's 6px padding too, so the whole box is the target (and is measured whole).
+                ? <KioskCell cellKey="b" variant="is-box" style={{ ...BOX_CELL, margin: '0 -6px' }}>{showSolutions ? <span style={solutionText}>{fmt(value)}</span> : ''}</KioskCell>
+                : fmt(value)}
         </div>
     );
 
@@ -340,8 +432,8 @@ function SplitsboomItem({ ex, showSolutions, boxMinWidth }: { ex: SplitsenExerci
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
             {box(ex.total, blank === 'top')}
             <svg width="92" height="26" style={{ display: 'block' }}>
-                <line x1="46" y1="2" x2="16" y2="24" stroke="#000" strokeWidth="1.5" />
-                <line x1="46" y1="2" x2="76" y2="24" stroke="#000" strokeWidth="1.5" />
+                <line x1="46" y1="2" x2="16" y2="24" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="46" y1="2" x2="76" y2="24" stroke="currentColor" strokeWidth="1.5" />
             </svg>
             <div style={{ display: 'flex', gap: '18px' }}>
                 {box(left, blank === 'left')}
@@ -357,7 +449,7 @@ function MathematicRow({ total, given, answer, showSolutions }: {
     total: number; given: number; answer: number; showSolutions: boolean;
 }) {
     return (
-        <div className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: "'Azeret Mono', monospace" }}>
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'var(--font-sheet-math)' }}>
             <div style={{ width: '64px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <span style={{ fontWeight: 'normal' }}>{fmt(total)}</span>
             </div>
@@ -380,8 +472,8 @@ function MathematicRow({ total, given, answer, showSolutions }: {
 
 const HEART_PATH = 'M50 80 C8 55 5 15 27 15 A23 23 0 0 1 50 36 A23 23 0 0 1 73 15 C95 15 92 55 50 80Z';
 
-function HeartItem({ pairId, total, given, answer, showSolutions }: {
-    pairId: string; total: number; given: number; answer: number; showSolutions: boolean;
+function HeartItem({ pairId, cellKey, total, given, answer, showSolutions }: {
+    pairId: string; cellKey: string; total: number; given: number; answer: number; showSolutions: boolean;
 }) {
     const leftId = `hl-${pairId}`;
     const rightId = `hr-${pairId}`;
@@ -389,7 +481,7 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px' }}>
-            <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: "'Azeret Mono', monospace", fontWeight: 'normal', marginBottom: '-16px', zIndex: 1, position: 'relative' }}>{fmt(total)}</span>
+            <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'var(--font-sheet-math)', fontWeight: 'normal', marginBottom: '-16px', zIndex: 1, position: 'relative' }}>{fmt(total)}</span>
             {/* position:relative wrapper so number divs stack on top of SVG */}
             <div style={{ position: 'relative', width: W, height: H }}>
                 <svg viewBox="0 0 100 95" width={W} height={H} style={{ display: 'block' }}>
@@ -403,8 +495,8 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                     </defs>
                     <path d={HEART_PATH} fill="#bfdbfe" clipPath={`url(#${leftId})`} />
                     <path d={HEART_PATH} fill={showSolutions ? '#fecaca' : 'white'} clipPath={`url(#${rightId})`} />
-                    <path d={HEART_PATH} fill="none" stroke="#000" strokeWidth="1.5" />
-                    <line x1="50" y1="36" x2="50" y2="78" stroke="#000" strokeWidth="1.5" />
+                    <path d={HEART_PATH} fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <line x1="50" y1="36" x2="50" y2="78" stroke="currentColor" strokeWidth="1.5" />
                 </svg>
                 {/* Left half number — positioned at heart visual centroid (~43% from top) */}
                 <div style={{
@@ -414,8 +506,10 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                     display: 'flex', justifyContent: 'center',
                     pointerEvents: 'none',
                 }}>
-                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontWeight: 'normal', fontFamily: "'Azeret Mono', monospace" }}>{fmt(given)}</span>
+                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontWeight: 'normal', fontFamily: 'var(--font-sheet-math)' }}>{fmt(given)}</span>
                 </div>
+                {/* Oefenmodus: the empty right half is the cell. */}
+                {!showSolutions && <KioskCell cellKey={cellKey} style={{ position: 'absolute', top: '43%', right: '14px', width: '36%', height: '30px', transform: 'translateY(-50%)' }} />}
                 {/* Right half number */}
                 {showSolutions && (
                     <div style={{
@@ -425,7 +519,7 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                         display: 'flex', justifyContent: 'center',
                         pointerEvents: 'none',
                     }}>
-                        <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontFamily: "'Azeret Mono', monospace", ...solutionText }}>{fmt(answer)}</span>
+                        <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontFamily: 'var(--font-sheet-math)', ...solutionText }}>{fmt(answer)}</span>
                     </div>
                 )}
             </div>

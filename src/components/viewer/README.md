@@ -1,4 +1,4 @@
-# Viewers — the six rules
+# Viewers — the seven rules
 
 A viewer renders one block's exercises on the sheet: `({ block, showSolutions }) => JSX`.
 It is registered in `src/config/exerciseUI.tsx` and never branches on `typeId` beyond its
@@ -38,6 +38,12 @@ broke it clipped, overflowed or measured wrong on paper.
    the generator wrote (`ex.field ?? c.field` for sheets saved before the field existed).
    Between a settings change and Genereer the old exercises are drawn under new settings —
    that must never throw or draw a wrong picture (`viewers.stale.test.tsx` sweeps it).
+7. **Ink and font are the sheet's.** Text takes `color: 'inherit'` (inputs explicitly), SVG
+   figures draw `fill` / `stroke` as `currentColor`, digits use `var(--font-sheet-math)` — never a
+   literal face or a literal black. SVG `<text>` sets its family through `style`, never a
+   presentation attribute (CSS variables don't resolve there). Only semantic colours are literal:
+   solution red, placeholder / unit greys, grid lines, MAB place colours, coin art, white knockouts.
+   `fontTokens.test.ts` and `viewers.ink.test.tsx` fail the gate otherwise.
 
 Checks: `npm run check` (viewer smoke renders every type at 688/338/163px with solutions on
 and off), `npm run matrix` for tiers, `npm run font:baseline` + `font:compare` when sizes

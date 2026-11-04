@@ -1,4 +1,7 @@
 import type { MathBlock } from '../math/types';
+import type { MixedVariantId } from '../math/constraintTypes';
+import { mixedVariant } from '../math/constraintTypes';
+import { REGISTRY } from '../../config/exerciseRegistry';
 import { cellWidthPx, ANSWER_SPACE_DEFAULT_PX, ANSWER_REGEL } from '../../components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../../components/viewer/scaledBlockFit';
 
@@ -97,6 +100,9 @@ interface LayoutFacts {
     // single exercise there is nothing to sit beside, so they can go narrower — MAB is the
     // clear case: one place-value drawing fits a half, four do not.
     minWidthSingle?: WidthUnits;
+    // The ordenen row prints stacked fractions (numerator over denominator), so its widest
+    // value is the widest denominator rather than a formatted number (ordenenMaxChars).
+    stackedFractions?: true;
 }
 
 const LAYOUT: Record<string, LayoutFacts> = {
@@ -119,7 +125,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C3 (2026-09-13 seeded rerun, grid alignment): rowUnits 5.04 → 3.79, minWidth 1 → 2 —
     // a quarter now measures overflow 1.20 (SETTINGS_FLOOR floors it to 2 or 4 anyway,
     // since the viewer never wraps a row onto a second line).
-    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2 },
+    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2, stackedFractions: true },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
     // perRowFull 3 since 2026-09-13: CijferViewer measures the grid of the exercises it was
@@ -139,7 +145,8 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
     // C1 step 7: the rooster's perRow now clamps to the column, so it never overflows —
     // SETTINGS_FLOOR (2) is what actually keeps it off a quarter, not this table.
-    "even-oneven": { rowUnits: 1.9, perRowFull: 1, minWidth: 2 },
+    // S5 (2026-10-10): rooster cells back at the intended 46 x 34 px, so a row grew 1.9 → 2.17.
+    "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 2 },
     "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
     "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 2 },
     "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },
@@ -163,14 +170,17 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },
     "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 2 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
-    "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
+    // S5 (2026-10-10): a bare figure keeps 12 px above/below instead of 42 (5.67 → 3.17).
+    "lengte-meten": { rowUnits: 3.17, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
     "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
     // A single drawn place-value figure has no glyph table to read, so it can go to ¼ —
     // unlike mab-herkennen, whose numeral/glyph pairing needs the ½ floor (SETTINGS_FLOOR).
-    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
-    "omtrek": { rowUnits: 21.42, perRowFull: 1, minWidth: 4 },
-    "oppervlakte": { rowUnits: 18.07, perRowFull: 1, minWidth: 4 },
+    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
+    // S5 (2026-10-10): default count 6 → 2 and the 12 px figure padding (21.42 → 8.54).
+    "omtrek": { rowUnits: 8.54, perRowFull: 1, minWidth: 4 },
+    // S5 (2026-10-10): measured off the rooster leaf at its 2 exercises (18.07 → 11.83).
+    "oppervlakte": { rowUnits: 11.83, perRowFull: 1, minWidth: 4 },
     // C3 (2026-09-13 seeded rerun): rowUnits unchanged; minWidth 1 → 2 — a quarter now
     // measures overflow 1.03 (SETTINGS_FLOOR floors it to 2 or 4 anyway, see below).
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 2 },
@@ -269,48 +279,121 @@ type FloorRule = (block: MathBlock) => WidthUnits;
 // Both the floor rule below and OrdenenViewer's own 2-up decision (`ordCols`) must agree
 // on how wide ONE exercise's number/blank row prints, so this is the single function both
 // read — SYNC: OrdenenViewer.tsx imports it rather than re-deriving the estimate by hand.
-// 0.62em/char at the sheet's default math size (13pt = 17.33px) is the same mono-advance
-// estimate GetallenrijenViewer/GetallenasViewer use; `+8` is per-number breathing room
-// (the underline's own padding), `SEP_PX` is the comma/operator glyph plus its flex gap.
-const ORDENEN_CHAR_EM = 0.62;
+// Numbers print in Azeret Mono at 1 × the math token, estimated at the sheet default (13pt =
+// 17.33px). Between two numbers the viewer prints one ","/";" glyph inside the number's cell and
+// then a 22px grid track (OrdenenViewer gridTemplateColumns), so a gap costs 22px + one glyph.
 const ORDENEN_DEFAULT_MATH_PX = 17.33;
-const ORDENEN_SEP_PX = 20;
+const ORDENEN_SEP_TRACK_PX = 22; // SYNC: OrdenenViewer gridTemplateColumns separator track
 
 /** Widest printed value's character count, estimated from SETTINGS rather than exercises
  *  (this runs before any exercise exists — first paint / the Inspector). */
 export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): number {
-    if (typeId === 'breuken-rangschikken') {
+    if (layoutFacts(typeId).stackedFractions) {
         // Rendered as a stacked fraction — the wider of numerator/denominator is the denominator.
         const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
         return String(maxDenominator).length;
     }
     if (c.numberType === 'rational') {
         const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
-        return String(maxDenominator).length + (c.allowMixed ? 2 : 0); // + whole number and its gap
+        // SYNC: ordenenMixedMode (ordenenGenerator.ts): any gemengd getal in the set widens it.
+        const mixed = (c.mixedMode ?? (c.allowMixed ? 'all' : 'none')) !== 'none';
+        return String(maxDenominator).length + (mixed ? 2 : 0); // + whole number and its gap
     }
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 100;
     const decimalPlaces = c.numberType === 'decimal' ? (typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 1) : 0;
-    // 'geheel' allows negatives unless the teacher raised the lower bound to 0.
-    const negative = c.numberType === 'geheel' && (typeof c.minGetal !== 'number' || c.minGetal < 0);
-    return String(Math.floor(maxGetal)).length + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (negative ? 1 : 0);
+    // SYNC: ordenenGenerator genValue. The draw stays under the max, so the widest value is one
+    // step below it: "999,99" at max 1 000, never "1 000,00".
+    const top = Math.max(0, Math.round(maxGetal * Math.pow(10, decimalPlaces)) - 1);
+    const charsOf = (scaled: number, sign: boolean) => {
+        const intDigits = String(Math.floor(scaled / Math.pow(10, decimalPlaces))).length;
+        return intDigits + Math.floor((intDigits - 1) / 3) + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (sign ? 1 : 0);
+    };
+    // 'geheel' mirrors the max below zero unless the teacher set the lower bound (inclusive) herself.
+    const lowest = c.numberType !== 'geheel' ? 0 : typeof c.minGetal === 'number' ? c.minGetal : -top;
+    return Math.max(charsOf(top, false), lowest < 0 ? charsOf(-lowest, true) : 0);
 }
 
 /** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */
 export function ordenenRowPx(typeId: string, c: Record<string, unknown>, count: number): number {
     const maxChars = ordenenMaxChars(typeId, c);
-    return count * (maxChars * ORDENEN_CHAR_EM * ORDENEN_DEFAULT_MATH_PX + 8) + Math.max(0, count - 1) * ORDENEN_SEP_PX;
+    const gap = ORDENEN_SEP_TRACK_PX + monoTextPx(1, 1, ORDENEN_DEFAULT_MATH_PX);
+    return count * monoTextPx(maxChars, 1, ORDENEN_DEFAULT_MATH_PX) + Math.max(0, count - 1) * gap;
 }
 
 // A row that does not fit a half cell (330px, minus one column-gap reserved for a possible
 // neighbour) needs the full page; it never drops to a quarter (owner rule: ordenen/
 // rangschikken/breuken-rangschikken never wrap, so a row too wide for its column has no
 // fallback but a wider column).
+const mabFloor: FloorRule = (block) => (Number((block.constraints ?? {}).maxNumber ?? 100) > 1000 ? 4 : 2);
+
 const ordenenFloor: FloorRule = (block) => {
     const c = (block.constraints ?? {}) as Record<string, unknown>;
     const count = typeof c.count === 'number' ? c.count : 3;
     const rowPx = ordenenRowPx(block.typeId, c, count);
     return rowPx <= 330 - 28 ? 2 : 4;
 };
+
+// ── Mono text widths (getalbegrip viewers) ──────────────────────────────────
+// Azeret Mono advances every glyph by 650/1000 em — digits, letters, the thousands space,
+// regular and bold alike (measured in Chromium, 2026-09-27). Every mono width estimate reads
+// it: a 0.62 guess under-measured by ~5%, invisible at 3 digits and a whole glyph at 13.
+export const MONO_ADVANCE_EM = 0.65;
+
+/** Rendered px of `chars` Azeret Mono glyphs set at `fontFactor` × the math token (`mathPx`). */
+export function monoTextPx(chars: number, fontFactor: number, mathPx: number): number {
+    return chars * MONO_ADVANCE_EM * fontFactor * mathPx;
+}
+
+/** Font factor (<= 1, never below `floor`) at which `chars` mono glyphs still fit `budgetPx`. */
+export function fitMonoFactor(chars: number, fontFactor: number, mathPx: number, budgetPx: number, floor = 0.7): number {
+    const need = monoTextPx(chars, fontFactor, mathPx);
+    return need <= budgetPx ? 1 : Math.max(floor, budgetPx / need);
+}
+
+// ── Getallenrijen pill fit ──────────────────────────────────────────────────
+export interface RijFit { fontPx: number; padX: number; gapPx: number; cellMin: number }
+
+/** Width of one framed/unframed number row at `fit` (px, with `scale` = math token / 13pt default). */
+export function getallenrijWidth(fit: RijFit, count: number, maxChars: number, scale: number, framed: boolean): number {
+    const cell = Math.max(fit.cellMin, monoTextPx(maxChars, 1, fit.fontPx * scale) + 4);
+    return count * cell + Math.max(0, count - 1) * fit.gapPx + (framed ? 2 * fit.padX + 3 : 0);
+}
+
+/** First step that fits: the font ladder 18 to 12 px at the roomy padding, then a tight pill (padding, gaps,
+ *  cell floor shrink) with the font down to 8 px, so neither the first nor the last number crosses the oval. */
+export function getallenrijFit(count: number, maxChars: number, availableWidth: number, scale: number, framed: boolean): RijFit {
+    const steps: Array<{ pad: number; gap: number; min: number; floor: number }> = [
+        { pad: 22, gap: 14, min: 44, floor: 12 },
+        { pad: 10, gap: 8, min: 0, floor: 8 },
+    ];
+    let fit: RijFit = { fontPx: 12, padX: 22, gapPx: 14, cellMin: 44 };
+    for (const s of steps) {
+        for (let fontPx = 18; fontPx >= s.floor; fontPx--) {
+            fit = { fontPx, padX: s.pad, gapPx: s.gap, cellMin: s.min };
+            if (getallenrijWidth(fit, count, maxChars, scale, framed) <= availableWidth) return fit;
+        }
+    }
+    return fit;
+}
+
+/** A fixed-px column that grows only when its widest text (+ `padPx`) no longer fits it.
+ *  `css` is the untouched `${defaultPx}px` while the text fits, so tuned sheets print as
+ *  before; a grown column follows the Cijfers slider like the text inside it. */
+export function grownColumn(defaultPx: number, chars: number, fontFactor: number, mathPx: number, padPx: number): { px: number; css: string } {
+    const need = monoTextPx(chars, fontFactor, mathPx) + padPx;
+    if (need <= defaultPx) return { px: defaultPx, css: `${defaultPx}px` };
+    return { px: need, css: `calc(var(--sheet-size-math) * ${(chars * MONO_ADVANCE_EM * fontFactor).toFixed(3)} + ${padPx}px)` };
+}
+
+/** Split `count` columns into the fewest equal-ish groups whose tables fit `availablePx`,
+ *  each table repeating a `fixedPx` lead column. One group when everything fits. */
+export function splitColumns(count: number, fixedPx: number, colPx: number, availablePx: number): number[] {
+    if (count <= 0) return [];
+    const perTable = Math.max(1, Math.min(count, Math.floor((availablePx - fixedPx) / colPx)));
+    const tables = Math.ceil(count / perTable);
+    const base = Math.floor(count / tables), extra = count % tables;
+    return Array.from({ length: tables }, (_, i) => base + (i < extra ? 1 : 0));
+}
 
 const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // Axis / sequence / function-table labels collide well before anything overflows —
@@ -342,9 +425,10 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     },
     // MAB is sized by its glyphs rather than by its share of the block: mab-herkennen
     // pairs a numeral with a glyph table, which stops reading at a quarter; mab-tekenen
-    // draws ONE place-value figure, which has no such pairing and can go to a quarter.
-    'mab-herkennen': () => 2,
-    'mab-tekenen': () => 1,
+    // needs room to draw in the D/H/T/E table (~75 px at a quarter leaves none), so both floor at a half.
+    // Above 1000 a D column holds up to nine cubes (a ~750 px table): a half would shrink it to ~40 %.
+    'mab-herkennen': mabFloor,
+    'mab-tekenen': mabFloor,
     // Relation sentences ("rechte a staat ___ op rechte b") never fit a quarter.
     'vormleer-punt-lijn': (block) => {
         const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;
@@ -477,6 +561,18 @@ export function pickerMinWidthUnits(block: MathBlock, measured?: WidthMeasure | 
 // Pre-measurement tiers: the hand-measured per-type table plus the settings that were
 // known to outgrow it. Kept only for the frames (and the unit tests) where nothing has
 // been rendered yet — a measurement supersedes all of it.
+// Gemengd keeps its presets per variant (a chip or a perVariant override), never in the top-level
+// `preset`; PRESET_BASE in mixedGenerator gives a compenseren variant the tussenstap by default.
+function mixedHasTussenstap(c: Record<string, unknown>): boolean {
+    const variants = Array.isArray(c.variants) ? (c.variants as MixedVariantId[]) : [];
+    const per = (c.perVariant ?? {}) as Record<string, { preset?: string; compenserenScaffold?: string } | undefined>;
+    return variants.some(id => {
+        const o = per[id];
+        const preset = o?.preset ?? mixedVariant(id).preset;
+        return preset === 'compenseren' && (o?.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    });
+}
+
 function fallbackMinWidth(block: MathBlock): WidthUnits {
     const facts = layoutFacts(block.typeId);
     // A single exercise has no neighbours to fit beside it, so a type that only needs the
@@ -497,12 +593,14 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
     if (block.typeId.startsWith('hr-std-')) {
         if (c.numberType === 'decimal') return Math.max(base, 2) as WidthUnits;
         if (c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap') return Math.max(base, 2) as WidthUnits;
+        if (mixedHasTussenstap(c)) return Math.max(base, 2) as WidthUnits;
         // 'Delen met rest' carries a second answer ("= ___ r ___") next to the first, which
         // is ~30px more than a quarter has left after the division itself.
         if (c.multiplicationMode === 'met_rest') return Math.max(base, 2) as WidthUnits;
     }
 
-    const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
+    // Cijferen keeps its ceiling under `maxRange`; every other type under `maxGetal`.
+    const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : typeof c.maxRange === 'number' ? c.maxRange : 0;
 
     // Tafels and deeltafels are bounded by the TABLE, not by maxGetal: "7 x 8 = ___" fits a
     // quarter however high the block's maxGetal slider happens to sit from another mode
@@ -529,7 +627,7 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
 // Budgeted height of a block at a given width, in row units. Pure function of settings.
 // Sheet furniture is sized by its own settings rather than by an exercise count.
 function layoutBlockHeight(block: MathBlock): number | null {
-    if (!block.typeId.startsWith('layout-')) return null;
+    if (!REGISTRY[block.typeId]?.isFurniture) return null;
     const c = (block.constraints ?? {}) as Record<string, unknown>;
     const CM_PER_MM = 3.78;   // 1mm at 96dpi
     switch (block.typeId) {

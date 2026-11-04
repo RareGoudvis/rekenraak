@@ -2,6 +2,8 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { KettingConstraints, OpSetting } from '../../../services/math/constraintTypes';
 
@@ -13,10 +15,12 @@ const OPS = [
 
 export default function KettingConfig({ block }: Props) {
     const [c, patch] = useConstraints<KettingConstraints>(block);
+    const range = useMaxPresets(block);
     const ops: string[] = c.ops ?? ['+', '-'];
     const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
     const chainLength: number = c.chainLength ?? 4;
     const maxGetal = c.maxGetal ?? 100;
+    const showIntermediates: boolean = c.showIntermediates ?? false;
     const blankMiddle: boolean = c.blankMiddle ?? false;
 
     const set = (key: keyof KettingConstraints, value: unknown) => patch({ [key]: value } as Partial<KettingConstraints>);
@@ -33,7 +37,7 @@ export default function KettingConfig({ block }: Props) {
                 <SettingLabel text="Bewerkingen:" info="Welke stappen in de ketting voorkomen; opeenvolgende stappen verschillen altijd." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(op => (
-                        <button key={op.key} onClick={() => toggleOp(op.key)} style={styles.pill(ops.includes(op.key))}>{op.label}</button>
+                        <button key={op.key} onClick={() => toggleOp(op.key)} aria-pressed={ops.includes(op.key)} style={styles.pill(ops.includes(op.key))}>{op.label}</button>
                     ))}
                 </div>
             </div>
@@ -54,26 +58,31 @@ export default function KettingConfig({ block }: Props) {
                 <SettingLabel text="Lengte van de ketting:" info="Aantal stappen tussen start en einde." />
                 <div style={styles.buttonGroup}>
                     {[3, 4, 5].map(n => (
-                        <button key={n} onClick={() => set('chainLength', n)} style={styles.radioBtn(chainLength === n)}>{n} stappen</button>
+                        <button key={n} onClick={() => set('chainLength', n)} aria-pressed={chainLength === n} style={styles.radioBtn(chainLength === n)}>{n} stappen</button>
                     ))}
                 </div>
             </div>
 
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Tussenresultaten blijven onder dit getal." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={[20, 100, 1000].map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.onOffRow}>
-                <SettingLabel text="Ook tussenstap blanco" info="Naast het eindresultaat wordt ook één tussenwaarde opengelaten." />
-                <button onClick={() => set('blankMiddle', !blankMiddle)} style={styles.onOffBtn(blankMiddle)}>{blankMiddle ? 'Aan' : 'Uit'}</button>
+                <SettingLabel text="Tussenresultaten tonen" info="Uit: de leerling rekent elke stap zelf uit. Aan: de tussenresultaten staan er al, alleen het eindresultaat is open." />
+                <button onClick={() => set('showIntermediates', !showIntermediates)} aria-pressed={!!showIntermediates} style={styles.onOffBtn(showIntermediates)}>{showIntermediates ? 'Aan' : 'Uit'}</button>
             </div>
+
+            {showIntermediates && <div style={styles.onOffRow}>
+                <SettingLabel text="Ook tussenstap blanco" info="Naast het eindresultaat wordt ook één tussenwaarde opengelaten." />
+                <button onClick={() => set('blankMiddle', !blankMiddle)} aria-pressed={!!blankMiddle} style={styles.onOffBtn(blankMiddle)}>{blankMiddle ? 'Aan' : 'Uit'}</button>
+            </div>}
         </div>
     );
 }

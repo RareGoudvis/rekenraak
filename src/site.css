@@ -34,6 +34,13 @@ p { margin: 0 0 16px; }
   font-weight: 600; font-size: var(--text-sm);
 }
 .site-btn-primary:hover { background: var(--accent-strong); }
+.site-btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  height: 32px; padding: 0 16px; margin-right: var(--sp-2); border-radius: var(--radius-sm);
+  border: 1px solid var(--separator); color: var(--text-main); text-decoration: none;
+  font-weight: 600; font-size: var(--text-sm);
+}
+.site-btn-secondary:hover { background: var(--bg-hover); }
 
 /* ── Shell: top bar full width, then sidebar + main, no third (inspector) column ── */
 .site-shell { display: grid; grid-template-columns: 286px minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }

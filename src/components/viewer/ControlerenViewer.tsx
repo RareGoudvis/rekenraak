@@ -6,14 +6,15 @@ import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
 import type { ControlerenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
-import { ANSWER_LINE_H } from './BlockWidthContext';
+import { ANSWER_LINE_H, useShowScaffold } from './BlockWidthContext';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
 // reproduces its old pixels at the default slider and grows with the text from there.
 const PX_PER_EM_AT_DEFAULT = 17.33;
@@ -40,8 +41,8 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
             height={`${size / PX_PER_EM_AT_DEFAULT}em`}
             style={{ flexShrink: 0, fontSize: 'var(--sheet-size-math)' }}
         >
-            <line x1={8} y1={8} x2={size - 8} y2={size - 8} stroke="#000" strokeWidth={1.5} />
-            <line x1={size - 8} y1={8} x2={8} y2={size - 8} stroke="#000" strokeWidth={1.5} />
+            <line x1={8} y1={8} x2={size - 8} y2={size - 8} stroke="currentColor" strokeWidth={1.5} />
+            <line x1={size - 8} y1={8} x2={8} y2={size - 8} stroke="currentColor" strokeWidth={1.5} />
             {num(size / 2, 12, rA)}
             {num(size / 2, size - 12, rB)}
             {num(12, size / 2, rProduct)}
@@ -51,6 +52,10 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
 }
 
 export default function ControlerenViewer({ block, showSolutions }: Props) {
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the juist / fout pill.
+    const ix = useViewerInteraction();
+    // Oefenmodus card: no cells for the kruis or the controle line, the pupil only taps juist / fout.
+    const scaffold = useShowScaffold();
     const exercises: ControleExercise[] = block.controleExercises || [];
     const c = block.constraints as ControlerenConstraints;
     const subType: string = c.subType ?? 'negenproef';
@@ -63,14 +68,16 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
 
     const juistFout = (ex: ControleExercise) => {
         const correct = ex.shownAnswer === ex.correctAnswer;
-        const mark = (label: string, hit: boolean) => (
-            <span style={{
-                padding: '1px 10px', borderRadius: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.65)',
+        // Keys: 0 = juist, 1 = fout (SYNC: CONTROLEREN_KIOSK).
+        const mark = (label: string, hit: boolean, key: string) => (
+            <span {...interactionProps(ix, key)} style={{
+                // Kiosk: a taller pill so it scales to a ≥ 44 px tap target on a phone.
+                padding: ix ? '9px 14px' : '1px 10px', borderRadius: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.65)',
                 border: showSolutions && hit ? `2px solid ${SOL}` : '1px solid #999',
                 color: showSolutions && hit ? SOL : undefined,
             }}>{label}</span>
         );
-        return <span style={{ display: 'inline-flex', gap: '8px' }}>{mark('juist', correct)}{mark('fout', !correct)}</span>;
+        return <span style={{ display: 'inline-flex', gap: '8px' }}>{mark('juist', correct, '0')}{mark('fout', !correct, '1')}</span>;
     };
 
     // ── NEGENPROEF: worked × + kruis + juist/fout ──────────────────────────────
@@ -97,7 +104,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                             <span>{sumOf(ex)}</span>
                             {juistFout(ex)}
                         </div>
-                        {showKruis && <NegenproefKruis ex={ex} showSolutions={showSolutions} />}
+                        {showKruis && scaffold && <NegenproefKruis ex={ex} showSolutions={showSolutions} />}
                     </div>
                 ))}
             />
@@ -134,6 +141,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                             <span>{formatMathNumber(ex.a)} {GLYPH[ex.operator]} {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}</span>
                             {juistFout(ex)}
                         </div>
+                        {scaffold && <>
                         {/* 1.4em of line, not 15px: the pupil writes the check BY HAND on
                             this line, so it has to grow with the Lettergrootte slider like
                             the sum above it. */}
@@ -156,6 +164,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                                         </>
                                         : <span style={{ ...writeLine, minWidth: undefined }} />}
                         </div>
+                        </>}
                     </div>
                 );
             })}

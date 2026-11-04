@@ -1,3 +1,5 @@
+import { REGISTRY } from '../../config/exerciseRegistry';
+
 // The printed opdracht number of every block, keyed by block id.
 //
 // One function, three call sites (the sheet in App.tsx, the Inspector's subject chip and
@@ -18,7 +20,7 @@ export function numberBlocks(blocks: readonly NumberableBlock[]): Record<string,
         // skipNumbering only means something while the title row is hidden — belt and
         // braces against it surviving a re-enable of showInstruction (see Inspector.tsx).
         const skip = b.skipNumbering === true && b.showInstruction === false;
-        const counted = !b.typeId.startsWith('layout-') && !skip;
+        const counted = !REGISTRY[b.typeId]?.isFurniture && !skip;
         if (counted) n += 1;
         numbers[b.id] = counted ? n : null;
     }

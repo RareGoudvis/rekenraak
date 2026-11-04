@@ -1,0 +1,3 @@
+[
+  { "bugId": null, "typeId": "omtrek", "leafId": "omtrek", "comboKey": "default", "seed": 2, "rule": "min-undershot", "observed": 2, "limit": 4, "example": "omtrek 2" }
+]

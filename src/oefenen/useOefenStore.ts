@@ -1,0 +1,611 @@
+import { create } from 'zustand';
+import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
+import { decodeSessie, sessieContentHash } from '../services/oefenen/session';
+import { isDone, madePerSlot, nextExercise, nextType, plannedTotal, unsupportedSlots } from '../services/oefenen/scheduler';
+import { clearRunsFor, emptyStats, loadRuns, loadRunsFor, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
+import { checkAnswer } from '../services/oefenen/check';
+import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
+import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
+import { KWART, TIME_WORDS } from '../services/clock/timeWords';
+
+// The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
+// thing it writes is this session's runs, through saveRun (localStorage per session id).
+
+// start = confirm screen · exercise = answering · feedback = juist/fout flashes, then the next
+// exercise follows by itself · retry = "fout, probeer nog eens" flashes (2 kansen), then the same
+// exercise again · stats = Stats opened mid-run · locked = the run ended (timer, done or Stoppen).
+export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'retry' | 'stats' | 'locked';
+
+// How long each flash stays before the kiosk moves on by itself (Enter or a tap skips it):
+// juist is a glance, fout and the retry get time to sink in.
+export const FLASH_MS = { juist: 700, fout: 1200, retry: 1000 } as const;
+
+// The exercise on screen plus the constraints it was generated with: answerOf / display /
+// checkAnswer must get exactly those, and a reload must too, so they travel in the run.
+export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown> };
+
+// An old link whose every type this device can no longer check: re-sharing it would not help, a new one does.
+export const UNSUPPORTED_ONLY = 'Deze oefeningen kunnen niet op het toestel. Vraag je leerkracht om een nieuwe link.';
+
+// A number field holds 12 characters: the longest typed number at the pickers' tops (1e9 sums,
+// 3 decimals) fits, and a longer string would overflow the answer field on a phone.
+const MAX_CHARS = 12;
+// A breuk ('20000/20000000000', '3 999/1000') and a word ('hoeveelheidsgetal', 17) need more room.
+const MAX_LONG_CHARS = 24;
+
+/** The most characters a field may hold, from its kind and the keypad's keys (never the exercise: that would hint at the answer). */
+export function capOf(kind: KioskInput, keys: readonly string[]): number {
+    if (kind === 'time' || kind === 'time-words') return 2;
+    return kind === 'text' || keys.includes('/') ? MAX_LONG_CHARS : MAX_CHARS;
+}
+
+interface OefenState {
+    sessie: OefenSessie | null;
+    error: string | null;
+    phase: OefenPhase;
+    run: OefenRun | null;
+    // The exercise on the card. The run's `current` is cleared once answered (a reload must not
+    // count it twice), but the card keeps showing it under the feedback.
+    shown: KioskCurrent | null;
+    // One entry per answer field: [answer] or [quotiënt, rest]; a choice sits in [0].
+    input: string[];
+    field: number;
+    lastCorrect: boolean | null;
+    // Where closeStats returns to; a flash interrupted by Stats resumes as if it had ended.
+    statsFrom: 'exercise' | 'feedback' | 'retry';
+    // Phase C: what the pupil did ON the card (taps, filled cells, order) for an 'interactive'
+    // exercise, and the cell the keypad types into. Reset with every new exercise.
+    interaction: InteractionState;
+    activeCell: string | null;
+    // The last save of the run was refused (quota, private mode): a reload would lose it, so the kiosk says so.
+    storageFailed: boolean;
+
+    load(hash: string): void;
+    start(): void;
+    // The next exercise (or the end screen): what a feedback flash does when it ends.
+    next(): void;
+    // Ends the flash on screen now (Enter, a tap): feedback → next, retry → the second try.
+    skipFlash(): void;
+    press(key: string): void;
+    setField(i: number, raw: string): void;
+    focusField(i: number): void;
+    choose(choice: string): void;
+    answer(): void;
+    openStats(): void;
+    closeStats(): void;
+    restart(): void;
+    clear(): void;
+    // Endless run only (no timer, no limit): the pupil ends it, the card on screen uncounted.
+    stop(): void;
+    tick(now?: number): void;
+    setInteraction(next: InteractionState): void;
+    focusCell(key: string | null): void;
+    // fill-cells: a physical keyboard typed into a cell; Tab / Shift+Tab; Enter (next cell, or Controleer on the last).
+    typeCell(key: string, raw: string): void;
+    // false = the active cell is the first / last one: Tab may leave the grid.
+    moveCell(step: 1 | -1): boolean;
+    enterCell(): void;
+    // build: lay one more of a tray piece (1) or take one back (-1); clearBuild empties the tray's work (Wissen).
+    lay(key: string, delta: 1 | -1): void;
+    clearBuild(): void;
+    // fill-cells: a descriptor action key (keypad or hotkey) on the active cell, e.g. Lenen.
+    pressExtra(id: string): void;
+}
+
+// A test shows nothing about juist/fout until the end, so it hides the results like statsLocked does.
+export const resultsHidden = (s: OefenSessie, run: OefenRun) => (s.statsLocked || s.testMode) && !run.done;
+
+// Without a timer or a limit nothing else ends the run; a timed or counted run (a toets) cannot be cut short.
+export const canStop = (s: OefenSessie, run: OefenRun | null): boolean => !!run && !run.done && !s.timerMin && plannedTotal(s) === null;
+
+const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
+
+export interface CurrentInput {
+    kind: KioskInput;
+    keys: string[];
+    choices: string[];
+    // One placeholder per answer field (its count is the field count).
+    labels: string[];
+    // multi-number: the sign between the fields (ordenen's < or >), from the descriptor.
+    separator?: string;
+    // interactive: how the pupil answers on the card (tap, tap-multi, fill-cells, order, build).
+    interact?: InteractionKind;
+    // build: the tray's pieces.
+    pieces?: KioskPiece[];
+    // The descriptor's action keys for this exercise (Lenen), beside the character keys.
+    extraKeys: KioskExtraKey[];
+    // multi-number: Controleer works with some fields empty (descriptor blankFields).
+    blankFieldsOk: boolean;
+}
+
+// time-words [uur, minuten, woord]: voor / over carry minutes (a number or kwart), uur / half none.
+const wordTakesMinutes = (word: string | undefined) => word === 'voor' || word === 'over';
+
+/** Whether Controleer may take these typed fields: all filled, or one when the fields may stay empty; time-words: a word, the hour, and the minutes where the word has them. */
+export const typedReady = (input: readonly string[], blankFieldsOk: boolean, kind?: KioskInput): boolean => {
+    if (kind === 'time-words') return (input[2] ?? '') !== '' && (input[0] ?? '').trim() !== '' && (!wordTakesMinutes(input[2]) || (input[1] ?? '').trim() !== '');
+    // fraction: noemer and teller (the last two fields); a geheel field in front may stay empty (7/4 typed as is).
+    if (kind === 'fraction') return input.length >= 2 && input.slice(-2).every(v => v.trim() !== '');
+    return blankFieldsOk ? input.some(v => v.trim() !== '') : input.every(v => v.trim() !== '');
+};
+
+/** time-words: the field Enter (or the keypad's Verder) moves to before checking — the hour after the minutes, the minutes after the hour — or null to check. */
+export function timeWordsNext(input: readonly string[], field: number): number | null {
+    const [hour = '', minute = '', word = ''] = input;
+    if (field === 1 && minute !== '' && hour === '') return 0;
+    if (field === 0 && hour !== '' && wordTakesMinutes(word) && minute === '') return 1;
+    return null;
+}
+
+/** fraction: the field Enter (or the keypad's Verder) moves to — the next empty noemer / teller, else back to an empty one once this one is typed — or null to check. */
+export function fractionNext(input: readonly string[], field: number): number | null {
+    const noemer = input.length - 2;
+    const empty = (i: number) => (input[i] ?? '').trim() === '';
+    const required = [noemer, noemer + 1];
+    const ahead = required.find(i => i > field && empty(i));
+    if (ahead !== undefined) return ahead;
+    const behind = required.find(i => i !== field && empty(i));
+    return behind !== undefined && !empty(field) ? behind : null;
+}
+
+const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
+    'number+rest': ['quotiënt', 'rest'], time: ['uur', 'min'], 'missing-operand': ['Wat ontbreekt?'], text: ['Antwoord'],
+    // fraction: field 0 is the noemer, typed first (the pupil counts the parts before the coloured ones).
+    fraction: ['noemer', 'teller'],
+    // time-words: the keypad's two fields first (a new exercise starts in the hour), the chip's word last.
+    'time-words': ['uur', 'minuten', 'woord'],
+};
+
+/** The input kind, extra keypad keys, choices and field labels for the exercise on the card. */
+export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): CurrentInput | null {
+    if (!s || !cur) return null;
+    const d = kioskFor(s.types[cur.slot]?.typeId ?? '');
+    if (!d) return null;
+    const kind = kioskInputOf(d, cur.exercise, cur.constraints);
+    // time-words: the four chips are the input kind's own, the same on every exercise.
+    const choices = kind === 'time-words' ? [...TIME_WORDS] : d.choicesOf?.(cur.exercise, cur.constraints) ?? d.choices ?? [];
+    let labels = FIXED_LABELS[kind] ?? ['Antwoord'];
+    if (kind === 'fraction') labels = d.labels?.(cur.exercise, cur.constraints) ?? labels;
+    if (kind === 'multi-number') {
+        // Only the field COUNT is read from the answer, never a value.
+        const n = d.answerOf(cur.exercise, cur.constraints).length;
+        const named = d.labels?.(cur.exercise, cur.constraints) ?? [];
+        labels = Array.from({ length: n }, (_, i) => named[i] ?? `${i + 1}`);
+    }
+    const ia = kind === 'interactive' ? kioskInteractOf(d, cur.constraints) : undefined;
+    return {
+        kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints),
+        extraKeys: d.extraKeys?.(cur.exercise, cur.constraints) ?? [],
+        blankFieldsOk: kind === 'multi-number' && !!d.blankFields?.(cur.exercise, cur.constraints),
+        ...(ia && { interact: ia.kind }),
+        ...(ia?.kind === 'build' && { pieces: ia.pieces?.(cur.exercise, cur.constraints) ?? [] }),
+    };
+}
+
+/** The interactive answer built from the card state, and whether Controleer may take it. */
+export function interactionAnswer(s: OefenSessie | null, cur: KioskCurrent | null, state: InteractionState): { given: string; ready: boolean } | null {
+    const d = s && cur ? kioskFor(s.types[cur.slot]?.typeId ?? '') : null;
+    const ia = d && cur ? kioskInteractOf(d, cur.constraints) : undefined;
+    if (!d || !ia || !cur || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
+    const given = ia.fromState(state, cur.exercise, cur.constraints);
+    // An empty set can be the right answer to "tap every even number" (a row of odd ones).
+    return { given, ready: ia.kind === 'tap-multi' || given.trim() !== '' };
+}
+
+export interface CellPlan {
+    // Every cell in the descriptor's key order (Tab walks it).
+    keys: string[];
+    // The cells Enter and a full cell move through: the keys minus the scratch cells (carries).
+    flow: string[];
+    length: Record<string, number | undefined>;
+}
+
+/** The fill-cells navigation for the exercise on the card, from the descriptor's keys and cellOf (never its answer). */
+export function cellPlanOf(s: OefenSessie | null, cur: KioskCurrent | null): CellPlan | null {
+    const d = s && cur ? kioskFor(s.types[cur.slot]?.typeId ?? '') : null;
+    const ia = d && cur ? kioskInteractOf(d, cur.constraints) : undefined;
+    if (!d || !ia || !cur || ia.kind !== 'fill-cells' || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
+    const keys = ia.keys?.(cur.exercise, cur.constraints) ?? [];
+    const spec = (k: string) => ia.cellOf?.(k, cur.exercise, cur.constraints) ?? {};
+    return { keys, flow: keys.filter(k => !spec(k).scratch), length: Object.fromEntries(keys.map(k => [k, spec(k).length])) };
+}
+
+// The first flow cell after `key` in key order (a carry hands on to the digit below it).
+const flowAfter = (plan: CellPlan, key: string | null): string | null => {
+    const at = key === null ? -1 : plan.keys.indexOf(key);
+    return plan.keys.slice(at + 1).find(k => plan.flow.includes(k)) ?? null;
+};
+
+const fieldsFor = (info: CurrentInput | null) => (info?.kind === 'choice' ? [''] : (info?.labels ?? ['']).map(() => ''));
+
+// The characters the field takes, uncapped: digits plus this type's extra keys; '.' types as ','.
+// A text field takes letters, digits, spaces and ° (°C, m²); a time field digits only.
+function filterAnswer(raw: string, keys: readonly string[], kind: KioskInput): string {
+    if (kind === 'text') return raw.replace(/[^\p{L}\p{N}\s°]/gu, '');
+    let out = '';
+    for (const ch0 of raw) {
+        const ch = ch0 === '.' && keys.includes(',') ? ',' : ch0;
+        if ((ch >= '0' && ch <= '9') || (kind !== 'time' && kind !== 'time-words' && keys.includes(ch))) out += ch;
+    }
+    return out;
+}
+
+/** Keeps what the field may hold: the characters it takes, up to `capOf` (a paste is clamped); a time-words minute field also holds "kwart". */
+export function sanitizeAnswer(raw: string, keys: readonly string[], kind: KioskInput = 'number'): string {
+    if (kind === 'time-words' && raw.trim().toLowerCase() === KWART) return KWART;
+    return filterAnswer(raw, keys, kind).slice(0, capOf(kind, keys));
+}
+
+export const useOefenStore = create<OefenState>()((set, get) => {
+    // The pending end of a flash; one at a time, cleared by every move that leaves the flash.
+    let flashTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearFlash = () => {
+        if (flashTimer !== null) clearTimeout(flashTimer);
+        flashTimer = null;
+    };
+    const scheduleFlash = (ms: number) => {
+        clearFlash();
+        const shownThen = get().shown;
+        // Only the flash it was set for: a reload, restart or test reset since then has moved on.
+        flashTimer = setTimeout(() => {
+            flashTimer = null;
+            if (get().shown === shownThen) get().skipFlash();
+        }, ms);
+    };
+
+    // 2 kansen: the second try at the same exercise, fields, taps and cells cleared, back in the first cell.
+    const secondTry = () => {
+        const { sessie: s, shown } = get();
+        set({
+            phase: 'exercise', input: fieldsFor(currentInput(s, shown)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION,
+            activeCell: s && shown ? firstCell(s, shown) : null,
+        });
+    };
+
+    const persist = (run: OefenRun) => {
+        const s = get().sessie;
+        if (s) set({ storageFailed: !saveRun(s.id, run) });
+    };
+
+    // Ends the run: the timer ran out, every exercise is made or the pupil stopped. The end screen is the stats.
+    const finish = (run: OefenRun, now = Date.now()) => {
+        clearFlash();
+        const done: OefenRun = { ...run, done: true, current: undefined, stats: { ...run.stats, finishedAt: run.stats.finishedAt ?? now } };
+        persist(done);
+        set({ run: done, shown: null, phase: 'locked', input: [''], field: 0, lastCorrect: null });
+    };
+
+    // fill-cells: `raw` becomes the cell's text. A cell of fixed length takes the newest
+    // characters (typing over a ruitje replaces its digit) and, once full, hands the keypad on.
+    const writeCell = (cell: string, raw: string, grew: boolean) => {
+        const { interaction, sessie, shown } = get();
+        const plan = cellPlanOf(sessie, shown);
+        const info = currentInput(sessie, shown);
+        if (!plan || !info || !plan.keys.includes(cell)) return;
+        const len = plan.length[cell];
+        let value = sanitizeAnswer(raw, info.keys);
+        if (len !== undefined && value.length > len) value = value.slice(-len);
+        const full = grew && len !== undefined && value.length >= len;
+        const next = full ? flowAfter(plan, cell) : null;
+        set({ interaction: { ...interaction, cells: { ...interaction.cells, [cell]: value } }, ...(next && { activeCell: next }) });
+    };
+
+    // fill-cells: a keypad key types into the active cell of the card (the cell owns the value).
+    const pressCell = (key: string) => {
+        const { interaction, activeCell } = get();
+        if (!activeCell) return;
+        const value = interaction.cells[activeCell] ?? '';
+        if (key === 'back') writeCell(activeCell, value.slice(0, -1), false);
+        else writeCell(activeCell, value + key, true);
+    };
+
+    // time-words: digits into the hour (0) or minute (1) field, kwart into the minutes of voor / over.
+    // Two minute digits or kwart hand the keypad on to an empty hour; nothing else moves on by
+    // itself, so a wrong "35 over 3" can still be typed (and judged).
+    const pressTimeWords = (key: string) => {
+        const { input, field } = get();
+        const [hour = '', minute = '', word = ''] = input;
+        const write = (h: string, m: string, to: number) => set({ input: [h, m, word], field: to });
+        if (key === KWART) {
+            if (wordTakesMinutes(word)) write(hour, KWART, hour === '' ? 0 : field);
+            return;
+        }
+        if (field === 1 && wordTakesMinutes(word)) {
+            const digits = minute === KWART ? '' : minute;
+            if (key === 'back') { write(hour, digits.slice(0, -1), 1); return; }
+            if (!/^\d$/.test(key) || digits.length >= 2) return;
+            const next = digits + key;
+            write(hour, next, next.length === 2 && hour === '' ? 0 : 1);
+            return;
+        }
+        if (key === 'back') { write(hour.slice(0, -1), minute, 0); return; }
+        if (/^\d$/.test(key) && hour.length < 2) write(hour + key, minute, 0);
+    };
+
+    // The cell the keypad starts in: the first one on the Enter path.
+    const firstCell = (s: OefenSessie, cur: KioskCurrent) => {
+        const plan = cellPlanOf(s, cur);
+        return plan ? (plan.flow[0] ?? plan.keys[0] ?? null) : null;
+    };
+
+    const timeUp = (run: OefenRun, now: number) => run.timerEndsAt !== undefined && now >= run.timerEndsAt;
+
+    const newRun = (s: OefenSessie, now: number): OefenRun => {
+        return {
+            index: nextRunIndex(loadRuns(s.id)), done: false, hash: sessieContentHash(s),
+            stats: emptyStats(s, now),
+            ...(s.timerMin ? { timerEndsAt: now + s.timerMin * 60_000 } : {}),
+        };
+    };
+
+    return {
+        sessie: null,
+        error: null,
+        phase: 'start',
+        run: null,
+        shown: null,
+        input: [''],
+        field: 0,
+        lastCorrect: null,
+        statsFrom: 'exercise',
+        interaction: EMPTY_INTERACTION,
+        activeCell: null,
+        storageFailed: false,
+
+        load(hash) {
+            // No payload at all is not an error message, just the "open the link" screen.
+            if (!/^#?oefen=/.test(hash)) { set({ sessie: null, run: null, shown: null, error: null }); return; }
+            let s: OefenSessie;
+            try {
+                s = decodeSessie(hash);
+            } catch (e) {
+                set({ sessie: null, run: null, error: e instanceof Error ? e.message : 'Deze oefenlink is ongeldig.' });
+                return;
+            }
+            clearFlash();
+            const unsupported = unsupportedSlots(s);
+            // Nothing left to serve: the stored runs stay as they are, only the screen changes.
+            if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
+            // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
+            const runs = loadRunsFor(s);
+            const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
+            if (!last) return;
+            // A finished run reopens on its end screen: reloading must not hide the stats.
+            if (last.done) { set({ run: last, phase: 'locked' }); return; }
+            const now = Date.now();
+            if (timeUp(last, now)) { set({ run: last }); finish(last, now); return; }
+            set({ run: last });
+            // A run saved on a card of a now unsupported type: drop that card (its stats stay) and draw from the rest.
+            const saved = currentOf(last);
+            const cur = saved && !unsupported.has(saved.slot) ? saved : null;
+            // A reload mid-retry comes back on the second try (cur.wrongFirst is kept).
+            if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0, activeCell: firstCell(s, cur) });
+            else get().next();
+        },
+
+        start() {
+            const s = get().sessie;
+            if (!s) return;
+            const run = newRun(s, Date.now());
+            persist(run);
+            set({ run });
+            get().next();
+        },
+
+        next() {
+            clearFlash();
+            const { sessie: s, run } = get();
+            if (!s || !run) return;
+            const now = Date.now();
+            if (run.done) { set({ phase: 'locked' }); return; }
+            if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
+            const seen = new Set(run.stats.history.map(h => h.exerciseKey));
+            // Per slot: a descriptor's prepare may take turns by it (gemengd "om de beurt").
+            const madeBy = madePerSlot(s, run.stats.history);
+            let pick = nextType(s, run.stats.history);
+            let made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
+            // A type that yields nothing is retired by the scheduler: draw again from the rest (bounded by the slot count).
+            for (let tries = 0; pick && !made && tries < s.types.length; tries++) {
+                pick = nextType(s, run.stats.history);
+                made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
+            }
+            if (!pick || !made) { finish(run, now); return; }
+            const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
+            const updated: OefenRun = { ...run, current };
+            persist(updated);
+            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: firstCell(s, current) });
+        },
+
+        press(key) {
+            const { phase, input, field, sessie, shown } = get();
+            if (phase !== 'exercise') return;
+            const info = currentInput(sessie, shown);
+            if (!info || info.kind === 'choice') return;
+            // build: Backspace takes back the newest kind of piece laid; digits do nothing.
+            if (info.interact === 'build') {
+                const last = get().interaction.build.at(-1);
+                if (key === 'back' && last) get().lay(last.key, -1);
+                return;
+            }
+            if (info.kind === 'interactive') { pressCell(key); return; }
+            if (info.kind === 'time-words') { pressTimeWords(key); return; }
+            const value = input[field] ?? '';
+            // A full field refuses the key instead of cutting the answer short.
+            if (key !== 'back' && filterAnswer(value + key, info.keys, info.kind).length > capOf(info.kind, info.keys)) return;
+            const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
+            // Two digits of uur typed: the keypad moves on to the minutes, like a digital clock.
+            const advance = info.kind === 'time' && key !== 'back' && field === 0 && nextValue.length === 2;
+            set({ input: input.map((v, i) => (i === field ? nextValue : v)), ...(advance && { field: 1 }) });
+        },
+
+        setField(i, raw) {
+            const { phase, input, sessie, shown } = get();
+            if (phase !== 'exercise') return;
+            const info = currentInput(sessie, shown);
+            if (!info) return;
+            // time-words: the hour field takes digits only, the word field only a chip (choose).
+            if (info.kind === 'time-words' && i === 2) return;
+            const kind = info.kind === 'time-words' && i === 0 ? 'time' : info.kind;
+            set({ input: input.map((v, j) => (j === i ? sanitizeAnswer(raw, info.keys, kind) : v)), field: i });
+        },
+
+        focusField(i) {
+            if (i >= 0 && i < get().input.length) set({ field: i });
+        },
+
+        choose(choice) {
+            const { phase, sessie, shown } = get();
+            if (phase !== 'exercise') return;
+            const info = currentInput(sessie, shown);
+            if (!info?.choices.includes(choice)) return;
+            if (info.kind === 'choice') set({ input: [choice] });
+            if (info.kind === 'time-words') {
+                const { input, field } = get();
+                const [hour = '', minute = ''] = input;
+                // uur / half carry no minutes: those go, the keypad stays on the hour. voor / over want them first.
+                if (!wordTakesMinutes(choice)) set({ input: [hour, '', choice], field: 0 });
+                else set({ input: [hour, minute, choice], field: minute === '' ? 1 : field });
+            }
+        },
+
+        skipFlash() {
+            const { phase } = get();
+            if (phase === 'feedback') get().next();
+            else if (phase === 'retry') { clearFlash(); secondTry(); }
+        },
+
+        answer() {
+            const { phase, sessie: s, run, input, shown: cur } = get();
+            // Not while a flash is on screen: a double tap on Controleer must not answer twice.
+            if (phase !== 'exercise' || !s || !run || !cur) return;
+            const now = Date.now();
+            // The clock ticks once a second: an answer in the gap after the deadline ends the run uncounted.
+            if (timeUp(run, now)) { finish(run, now); return; }
+            const interactive = interactionAnswer(s, cur, get().interaction);
+            const typedInfo = interactive ? null : currentInput(s, cur);
+            if (interactive ? !interactive.ready : !typedReady(input, typedInfo?.blankFieldsOk ?? false, typedInfo?.kind)) return;
+            const type = s.types[cur.slot];
+            const d = type && kioskFor(type.typeId);
+            if (!d) return;
+            const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
+            const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
+            // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.
+            if (!correct && attemptsOf(s) === 2 && cur.wrongFirst === undefined) {
+                const retry: KioskCurrent = { ...cur, wrongFirst: given };
+                const updated: OefenRun = { ...run, current: retry };
+                persist(updated);
+                set({ run: updated, shown: retry, lastCorrect: false, phase: 'retry' });
+                scheduleFlash(FLASH_MS.retry);
+                return;
+            }
+            const stats = recordAnswer(run.stats, cur.slot, type.typeId, cur.exercise, given, correct, Math.max(0, now - cur.shownAt), cur.constraints, now, cur.wrongFirst);
+            const updated: OefenRun = { ...run, stats, current: undefined };
+            persist(updated);
+            set({ run: updated, lastCorrect: correct });
+            // Testmodus: no juist/fout per exercise, straight on to the next one.
+            if (s.testMode) { get().next(); return; }
+            set({ phase: 'feedback' });
+            scheduleFlash(correct ? FLASH_MS.juist : FLASH_MS.fout);
+        },
+
+        openStats() {
+            const { phase, sessie: s, run } = get();
+            if (!s || !run || (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry')) return;
+            if (resultsHidden(s, run)) return;
+            // The flash waits behind the stats; closing them ends it.
+            clearFlash();
+            set({ phase: 'stats', statsFrom: phase });
+        },
+
+        closeStats() {
+            const { phase, statsFrom } = get();
+            if (phase !== 'stats') return;
+            set({ phase: statsFrom });
+            if (statsFrom !== 'exercise') get().skipFlash();
+        },
+
+        // Owner call 15: only the end screen starts over or wipes; mid-run (the Resultaten peek
+        // included) a pupil must not escape a timed test or lose the run.
+        restart() {
+            if (get().phase !== 'locked') return;
+            get().start();
+        },
+
+        clear() {
+            const s = get().sessie;
+            if (!s || get().phase !== 'locked') return;
+            clearFlash();
+            clearRunsFor(s);
+            set({ run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null });
+        },
+
+        stop() {
+            const { phase, sessie: s, run } = get();
+            if (!s || !run || !canStop(s, run)) return;
+            if (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry' && phase !== 'stats') return;
+            finish(run);
+        },
+
+        tick(now = Date.now()) {
+            const { run } = get();
+            if (run && !run.done && timeUp(run, now)) finish(run, now);
+        },
+
+        setInteraction(next) {
+            if (get().phase === 'exercise') set({ interaction: next });
+        },
+
+        focusCell(key) {
+            set({ activeCell: key });
+        },
+
+        typeCell(key, raw) {
+            if (get().phase !== 'exercise') return;
+            const before = get().interaction.cells[key] ?? '';
+            set({ activeCell: key });
+            writeCell(key, raw, raw.length > before.length);
+        },
+
+        moveCell(step) {
+            const plan = cellPlanOf(get().sessie, get().shown);
+            if (!plan?.keys.length) return false;
+            const at = plan.keys.indexOf(get().activeCell ?? '');
+            const to = at < 0 ? (step > 0 ? 0 : plan.keys.length - 1) : at + step;
+            if (to < 0 || to >= plan.keys.length) return false;
+            set({ activeCell: plan.keys[to] });
+            return true;
+        },
+
+        lay(key, delta) {
+            const { phase, sessie, shown, interaction } = get();
+            if (phase !== 'exercise') return;
+            const piece = currentInput(sessie, shown)?.pieces?.find(p => p.key === key);
+            if (piece) set({ interaction: built(interaction, key, delta, piece.max) });
+        },
+
+        clearBuild() {
+            if (get().phase === 'exercise') set({ interaction: { ...get().interaction, build: [] } });
+        },
+
+        enterCell() {
+            const { sessie: s, shown: cur, activeCell, phase } = get();
+            const plan = cellPlanOf(s, cur);
+            if (!plan || phase !== 'exercise') return;
+            const next = flowAfter(plan, activeCell);
+            if (next) { set({ activeCell: next }); return; }
+            // Past the last cell: check, or (nothing to check yet) back to the first cell.
+            if (interactionAnswer(s, cur, get().interaction)?.ready) get().answer();
+            else set({ activeCell: plan.flow[0] ?? plan.keys[0] ?? null });
+        },
+
+        pressExtra(id) {
+            const { phase, sessie: s, shown: cur, interaction, activeCell } = get();
+            if (phase !== 'exercise' || !cur) return;
+            const key = currentInput(s, cur)?.extraKeys.find(k => k.id === id);
+            const next = key?.apply(interaction, activeCell, cur.exercise, cur.constraints);
+            // The active cell stays: the pupil types this column's digit next.
+            if (next) set({ interaction: next });
+        },
+    };
+});

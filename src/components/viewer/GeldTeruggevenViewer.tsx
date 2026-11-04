@@ -1,8 +1,9 @@
 import type { MathBlock, GeldTeruggevenExercise } from '../../services/math/types';
-import { Bill, EuroCoin } from './GeldViewer';
+import { Bill, EuroCoin, LaidMoney } from './GeldViewer';
+import { useViewerInteraction, type BuildEntry } from './ViewerInteractionContext';
 import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
-import { useBlockWidth } from './BlockWidthContext';
+import { useShowScaffold, useBlockWidth } from './BlockWidthContext';
 
 // ── Amount formatting ─────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ const blank = (w = 28): React.CSSProperties => ({
 const FS = 'calc(var(--sheet-size-math) * 0.75)';
 const FS_TEXT = 'calc(var(--sheet-size-text) * 0.65)';
 const FS_LABEL = 'calc(var(--sheet-size-text) * 0.55)';
-const FONT = "'Azeret Mono', monospace";
+const FONT = 'var(--font-sheet-math)';
 
 // SYNC: same divisor as GeldViewer.tsx (it cannot export it next to its components).
 // 13pt = 17.33px, so em over it is today's px on a default sheet.
@@ -99,7 +100,8 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
     const showRight  = sol || scaffolding === 'ingevuld' || scaffolding === 'basis';
     const showLabel1 = sol || scaffolding === 'ingevuld';
     const showLabel2 = !single && (sol || scaffolding === 'ingevuld');
-    const col = sol ? SOL : '#000';
+    // Only the pupil's answers (waypoint, step labels) turn red; the given price and paid amount stay black.
+    const col = sol ? SOL : 'currentColor';
 
     const label1Sol = `+ ${ex.step1Cents} cent`;
     const label2Sol = `+ €${ex.step2Cents / 100}`;
@@ -110,27 +112,27 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
         <svg viewBox={single ? '15 60 210 54' : '0 0 440 114'} style={{ fontSize: 'var(--sheet-size-math)', width: '100%', maxWidth: em(single ? 191 : 400), overflow: 'visible' }}>
             <defs>
                 <marker id="tg-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                    <path d="M 0,0 L 6,3 L 0,6 z" fill="#000" />
+                    <path d="M 0,0 L 6,3 L 0,6 z" fill="currentColor" />
                 </marker>
             </defs>
 
             {/* Arc 1: small, below baseline — short cent-step */}
             <path d="M 87,75 C 95,103 130,103 141,75"
-                fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
+                fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
 
             {/* Arc 2: large, above baseline — long euro-step, middle node is at x≈150-198 */}
             {!single && <path d="M 205,75 C 250,28 345,28 376,75"
-                fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />}
+                fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />}
 
-            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.priceCents)}</text>}
-            {showRight && <text x={single ? 173 : 415} y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.payWithCents)}</text>}
+            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="currentColor">{fmtCents(ex.priceCents)}</text>}
+            {showRight && <text x={single ? 173 : 415} y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="currentColor">{fmtCents(ex.payWithCents)}</text>}
 
             {/* Middle node: solution shows amount; otherwise € + blank line for student */}
             {showMiddle && (sol
                 ? <text x="173" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.waypointCents)}</text>
                 : <g>
-                    <text x="150" y="80" fontSize={DIAG_FS} fontFamily={FONT} fill="#000" textAnchor="start">€</text>
-                    <line x1="164" y1="81" x2="198" y2="81" stroke="#000" strokeWidth="1" />
+                    <text x="150" y="80" fontSize={DIAG_FS} fontFamily={FONT} fill="currentColor" textAnchor="start">€</text>
+                    <line x1="164" y1="81" x2="198" y2="81" stroke="currentColor" strokeWidth="1" />
                   </g>
             )}
 
@@ -173,15 +175,18 @@ function ScaffoldingArea({ ex, scaffolding, showSolutions, boxHeight }: {
 
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
-function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExercise; block: MathBlock; showSolutions: boolean }) {
+// laid = the change a pupil laid from the kiosk tray (Oefenmodus build); null on the sheet.
+function TeruggevenCell({ ex, block, showSolutions, laid }: { ex: GeldTeruggevenExercise; block: MathBlock; showSolutions: boolean; laid: readonly BuildEntry[] | null }) {
     const c = block.constraints as GeldTeruggevenConstraints;
     const scaffolding: string        = c.scaffolding      ?? 'ingevuld';
     const antwoordType: string       = c.antwoordType     ?? 'schrijven';
     const antwoordFormat: string     = c.antwoordFormat   ?? 'euro-cent';
     const betalenMetTekening: boolean = c.betalenMetTekening ?? false;
     const boxHeight: number          = c.boxHeight        ?? 120;
+    // Oefenmodus card: the answer goes in the kiosk panel or tray, so the sprong and the write-on line are not asked.
+    const scaffold = useShowScaffold();
     // The scaffold (arrow diagram or the lege-ruimte box) goes beside the text, in the same right-hand slot.
-    const diagramBeside = scaffolding !== 'leeg';
+    const diagramBeside = scaffold && scaffolding !== 'leeg';
 
     const tekenen = antwoordType === 'tekenen-schrijven';
     const blockWidth = useBlockWidth();
@@ -203,12 +208,16 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
             )}
         </div>
     );
-    const drawBox = tekenen && (
+    const drawBox = tekenen && (laid ? (
+        <div style={{ width: '100%', minHeight: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px', display: 'flex', alignItems: 'center' }}>
+            <LaidMoney build={laid} />
+        </div>
+    ) : (
         <div style={{ width: '100%', height: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px' }}>
             <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
         </div>
-    );
-    const answer = <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />;
+    ));
+    const answer = scaffold && <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />;
     const diagram = diagramBeside && <ScaffoldingArea ex={ex} scaffolding={scaffolding} showSolutions={showSolutions} boxHeight={boxHeight} />;
 
     if (gridLayout) {
@@ -264,15 +273,17 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 export default function GeldTeruggevenViewer({ block, showSolutions }: Props) {
     const exercises: GeldTeruggevenExercise[] = block.geldTeruggevenExercises || [];
     const gap: number = block.verticalSpacing || 14;
+    const ia = useViewerInteraction();
+    const laid = ia?.kind === 'build' ? ia.state.build : null;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '13px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '13px' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: `${gap}px` }}>
             {exercises.map(ex => (
-                <TeruggevenCell key={ex.id} ex={ex} block={block} showSolutions={showSolutions} />
+                <TeruggevenCell key={ex.id} ex={ex} block={block} showSolutions={showSolutions} laid={laid} />
             ))}
         </div>
     );

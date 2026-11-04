@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowClockwise as RotateCw, Check, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
-import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply } from '../../config/baseSettings';
+import { seedConstraints } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
 
@@ -17,6 +16,7 @@ export default function MassAddModal({ onClose }: Props) {
     const catalog = useMemo(() => buildCatalog(), []);
     const domains = useMemo(() => catalogDomains(catalog), [catalog]);
     const base = useWorksheetStore((s) => s.baseSettings);
+    const grade = useWorksheetStore((s) => s.selectedGrade);
     const addBlockFromType = useWorksheetStore((s) => s.addBlockFromType);
     const generateAllBlocks = useWorksheetStore((s) => s.generateAllBlocks);
 
@@ -32,11 +32,8 @@ export default function MassAddModal({ onClose }: Props) {
     };
 
     // Resolve the same way addBlockFromType does, so the preview matches a real add.
-    const resolvedConstraints = (item: CatalogItem, variantConstraints: Record<string, unknown>) => {
-        const def = REGISTRY[item.typeId];
-        const defaults = def.defaultConstraints(item.typeId);
-        return { ...defaults, ...baseApply(base, defaults), ...variantConstraints };
-    };
+    const resolvedConstraints = (item: CatalogItem, variant: CatalogItem['variants'][number]) =>
+        seedConstraints({ typeId: item.typeId, base, override: variant.constraints, grade, leafId: variant.key });
 
     const toggleSelected = (typeId: string) => setSelected(s => ({ ...s, [typeId]: !s[typeId] }));
     const reroll = (typeId: string) => setNonceByType(n => ({ ...n, [typeId]: (n[typeId] ?? 0) + 1 }));
@@ -141,7 +138,7 @@ export default function MassAddModal({ onClose }: Props) {
                                 <div style={S.previewWrap}>
                                     <ExercisePreview
                                         typeId={item.typeId}
-                                        constraints={resolvedConstraints(item, variant.constraints)}
+                                        constraints={resolvedConstraints(item, variant)}
                                         nonce={nonceByType[item.typeId] ?? 0}
                                         height={PREVIEW_H}
                                     />

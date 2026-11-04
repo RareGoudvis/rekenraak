@@ -10,7 +10,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 
 // Week starts on maandag (Belgian calendars); JS getDay() is zondag-based.

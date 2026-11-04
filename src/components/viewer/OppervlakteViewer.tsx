@@ -1,9 +1,10 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
 import type { OppervlakteConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -12,7 +13,7 @@ interface Props {
 
 // SYNC: keep CM/label geometry aligned with MetenViewer (same to-scale convention).
 const CM = 37.8;
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
@@ -30,7 +31,9 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
     const exercises: MeetExercise[] = block.meetExercises || [];
     const c = block.constraints as OppervlakteConstraints;
     const subType: string = c.subType ?? 'berekenen';
-    const scaffoldFormule: boolean = c.scaffoldFormule ?? true;
+    // Oefenmodus card: only the area is asked, so the l × b formula row gives way to "opp = __".
+    const scaffold = useShowScaffold();
+    const scaffoldFormule: boolean = (c.scaffoldFormule ?? true) && scaffold;
     const askOmtrek: boolean = c.askOmtrek ?? false;
     const gap = block.verticalSpacing || 14;
     const isRooster = subType === 'rooster';
@@ -41,7 +44,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
 
     const blank = (sol: string | null, width = 56) => sol !== null
         ? <span style={{ ...solutionText }}>{sol}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: ANSWER_LINE_H }} />;
+        : <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: ANSWER_LINE_H }} /></KioskAnswerSlot>;
 
     const pad = 40;
     const geoms = exercises.map(ex => {
@@ -105,7 +108,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
                                         <g clipPath={`url(#${clipId})`}>{gridLines}</g>
                                     </>
                                 )}
-                                <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
+                                <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
                             </svg>
                             {labels}
                         </div>

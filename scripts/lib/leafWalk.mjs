@@ -11,26 +11,49 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
+ * overrideFor(leaf, page) → null/undefined walks the leaf as a sidebar click adds it (the
+ * visual gate never passes it); an array walks one cell set per `{ tag, constraints }`,
+ * merged over the leaf's defaultConstraints, and `[]` skips the leaf. probe(page, { key }) runs
+ * after the cell settled, before its screenshot, and its fields are spread onto the row.
+ * deselect clears the selection right after the add (the catalogue's plain-sheet state).
+ * Opt-ins full-sweep.mjs uses (the other harnesses pass none of them): a variant with
+ * `replace: true` gets exactly its constraints, not merged over the leaf's; skip(key) → true
+ * leaves a cell out (resume); sidebarOpts passes the leaf's { leafId, instruction } like
+ * sidebar.tsx does (not for replace variants: they are type-level, not the leaf); viewport
+ * overrides the 1600×1100 window. Opt-ins trigger-shots.mjs uses: keyFor(leaf, variant, width,
+ * solutions) renames the cell key (and so the PNG); docSettings patches the sheet settings once
+ * before the walk (font:baseline --doc, to run every leaf under another sheet font); prepare(page, variant) runs before each cell
+ * (e.g. to set the leerjaar); solutionsList narrows the solutions {0,1} axis; onBrowser(browser) hands out the browser so a caller can kill a hung walk.
  * @param {{url:string,out:string,widths:number[],seed:number,only?:string[],
- *          screenshots?:boolean,log?:(s:string)=>void,onRow?:(r:object)=>void}} opts
+ *          screenshots?:boolean,log?:(s:string)=>void,onRow?:(r:object)=>void,
+ *          overrideFor?:(leaf:object,page:import('playwright').Page)=>Promise<Array<{tag:string,constraints:object,replace?:boolean}>|null|undefined>|Array<{tag:string,constraints:object,replace?:boolean}>|null|undefined,
+ *          probe?:(page:import('playwright').Page,cell:{key:string})=>Promise<object>,deselect?:boolean,
+ *          skip?:(key:string)=>boolean,sidebarOpts?:boolean,
+ *          keyFor?:(leaf:object,variant:object|null,width:number,solutions:number)=>string,
+ *          prepare?:(page:import('playwright').Page,variant:object|null)=>Promise<void>,
+ *          onBrowser?:(b:import('playwright').Browser)=>void,viewport?:{width:number,height:number}}} opts
  */
 export async function walkLeaves(opts) {
     const {
         url, out, widths, seed, only = [],
         screenshots = true, log = console.log, onRow,
+        overrideFor, probe, deselect = false,
+        skip, sidebarOpts = false, keyFor, prepare, onBrowser, solutionsList = [0, 1], viewport = { width: 1600, height: 1100 },
+        docSettings,
     } = opts;
 
     mkdirSync(out, { recursive: true });
 
     const browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1100 } });
+    onBrowser?.(browser);
+    const page = await browser.newPage({ viewport });
 
     // Console errors are collected per cell: a viewer that logs but does not throw still
     // renders something, and that is exactly the regression the gate wants to see.
     let cellErrors = [];
     // The measurer's breaker tripping means the cell's numbers are whatever got frozen, so
-    // the gate must see it as a finding, not a pass. (The softer "N repacks in 1s" warn is
-    // the walk's own cadence — several cells per second — and stays out.)
+    // the gate must see it as a finding, not a pass. (The softer "N repacks in a row" warn
+    // stays out; since the breaker counts feedback only, the walk's cadence cannot trip it.)
     page.on('console', (m) => {
         if (m.type() === 'error') cellErrors.push(m.text());
         else if (m.type() === 'warning' && m.text().includes('repack loop broken')) cellErrors.push(m.text());
@@ -45,123 +68,147 @@ export async function walkLeaves(opts) {
         await page.evaluate(() => { try { localStorage.setItem('rekenraak_tour_seen_v1', '1'); } catch { /* ignore */ } });
         await page.reload();
         await page.waitForFunction(() => !!window.__rekenraak);
+        if (docSettings) {
+            await page.evaluate((patch) => window.__rekenraak.updateDocSettings(patch), docSettings);
+            // A self-hosted face loads on first use; measuring before it lands would record the fallback.
+            await page.evaluate(async () => { await new Promise((res) => setTimeout(res, 300)); await document.fonts.ready; });
+        }
 
         let leaves = await page.evaluate(() => window.__rekenraak.leaves);
         if (only.length) leaves = leaves.filter(l => only.includes(l.id) || only.includes(l.typeId));
 
         const rows = [];
-        for (const leaf of leaves) {
-            for (const width of widths) {
-                for (const solutions of [0, 1]) {
-                    const key = `${leaf.id}-w${width}-s${solutions}`;
-                    const base = { leafId: leaf.id, path: leaf.path, typeId: leaf.typeId, width, solutions };
-                    cellErrors = [];
-                    try {
-                        // The measurer's breaker (12 repacks/s) can trip on the walk's own cadence
-                        // and then freezes measurements for 1.5 s; a cell caught in that window is
-                        // re-done once after the cooldown instead of being recorded frozen.
-                        let measured;
-                        for (let attempt = 0; attempt < 2; attempt++) {
-                        if (attempt) { await page.waitForTimeout(1700); cellErrors = []; }
-                        measured = await page.evaluate(async ({ leaf, width, solutions, seed }) => {
-                            const r = window.__rekenraak;
-                            const frame = () => new Promise((res) => requestAnimationFrame(res));
-                            const emptyNow = () => {
-                                const m = r.measured?.();
-                                return !document.querySelector('[data-block-id]')
-                                    && (!m || (Object.keys(m.cells).length === 0 && Object.keys(m.intrinsic).length === 0));
-                            };
-                            r.clearBlocks();
-                            // Wait for the empty sheet to land before adding: the seed below gives
-                            // every cell of a leaf the SAME block id, and the measurer prunes a
-                            // gone block in a passive effect. Adding in the same tick let the w4
-                            // and w2 intrinsic entries survive into the w1 cell (or not, depending
-                            // on effect timing), which clamped its width and flaked its height.
-                            const t0c = performance.now();
-                            while (!emptyNow() && performance.now() - t0c < 3000) await frame();
-                            r.seed(seed);
-                            // Exactly what sidebar.tsx's addLeaf does on a real click: registry
-                            // defaults + base snapshot (inside the store) + this leaf's override.
-                            r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints);
-                            const block = r.getState().blocks[0];
-                            if (!block) return { error: 'no block produced' };
-                            // Settled = the applied zoom on every ScaledBlock and the measurer's
-                            // snapshot are unchanged across two consecutive frames. Two fixed
-                            // frames were not enough: the fit loop lowers the zoom one layout
-                            // pass at a time and the measure -> repack chain runs behind it, so
-                            // the gate used to record whatever height it caught mid-flight.
-                            const snap = () => JSON.stringify({
-                                z: [...document.querySelectorAll('[data-scaled-inner]')].map((el) => el.style.zoom),
-                                m: r.measured?.(),
-                            });
-                            const settle = async () => {
-                                let prev = snap(), stable = 0;
-                                const t0 = performance.now();
-                                while (stable < 2 && performance.now() - t0 < 3000) {
-                                    await frame();
-                                    const cur = snap();
-                                    stable = cur === prev ? stable + 1 : 0;
-                                    prev = cur;
+        for (const sourceLeaf of leaves) {
+            const variants = (await overrideFor?.(sourceLeaf, page)) ?? [null];
+            for (const variant of variants) {
+                // A variant only swaps the constraints the add receives; everything else is the leaf.
+                const leaf = variant
+                    ? { ...sourceLeaf, defaultConstraints: variant.replace ? { ...variant.constraints } : { ...(sourceLeaf.defaultConstraints ?? {}), ...variant.constraints } }
+                    : sourceLeaf;
+                const asLeaf = sidebarOpts && !variant?.replace;
+                const tag = variant ? `~${variant.tag}` : '';
+                for (const width of widths) {
+                    for (const solutions of solutionsList) {
+                        const key = keyFor ? keyFor(leaf, variant ?? null, width, solutions) : `${leaf.id}${tag}-w${width}-s${solutions}`;
+                        if (skip?.(key)) continue;
+                        const base = { leafId: leaf.id, path: leaf.path, typeId: leaf.typeId, width, solutions, ...(variant ? { variant: variant.tag, constraints: leaf.defaultConstraints } : {}) };
+                        cellErrors = [];
+                        try {
+                            await prepare?.(page, variant ?? null);
+                            // Belt and braces: the breaker (12 feedback repacks in a row) no longer trips
+                            // on the walk's own cadence (WP G), but a cell caught in a cooldown is still
+                            // re-done once instead of being recorded frozen.
+                            let measured;
+                            for (let attempt = 0; attempt < 2; attempt++) {
+                            if (attempt) { await page.waitForTimeout(1700); cellErrors = []; }
+                            measured = await page.evaluate(async ({ leaf, width, solutions, seed, deselect, asLeaf }) => {
+                                const r = window.__rekenraak;
+                                const frame = () => new Promise((res) => requestAnimationFrame(res));
+                                const emptyNow = () => {
+                                    const m = r.measured?.();
+                                    return !document.querySelector('[data-block-id]')
+                                        && (!m || (Object.keys(m.cells).length === 0 && Object.keys(m.intrinsic).length === 0));
+                                };
+                                r.clearBlocks();
+                                // Wait for the empty sheet to land before adding: the seed below gives
+                                // every cell of a leaf the SAME block id, and the measurer prunes a
+                                // gone block in a passive effect. Adding in the same tick let the w4
+                                // and w2 intrinsic entries survive into the w1 cell (or not, depending
+                                // on effect timing), which clamped its width and flaked its height.
+                                const t0c = performance.now();
+                                while (!emptyNow() && performance.now() - t0c < 3000) await frame();
+                                r.seed(seed);
+                                // Exactly what sidebar.tsx's addLeaf does on a real click: registry
+                                // defaults + base snapshot (inside the store) + this leaf's override.
+                                // asLeaf: the in-page leaf's instruction may be a function, which cannot cross evaluate().
+                                const own = asLeaf ? r.leaves.find((l) => l.id === leaf.id) : null;
+                                r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints, own ? { leafId: own.id, instruction: own.instruction } : { leafId: leaf.id });   // leafId always: a leaf can carry its own defaultCount
+                                // Same tick, so the Inspector never mounts: its max picker would floor a
+                                // value outside the list shown before the block is measured.
+                                if (deselect) r.getState().setActiveSelection(null);
+                                const block = r.getState().blocks[0];
+                                if (!block) return { error: 'no block produced' };
+                                // Settled = the applied zoom on every ScaledBlock and the measurer's
+                                // snapshot are unchanged across two consecutive frames. Two fixed
+                                // frames were not enough: the fit loop lowers the zoom one layout
+                                // pass at a time and the measure -> repack chain runs behind it, so
+                                // the gate used to record whatever height it caught mid-flight.
+                                const snap = () => JSON.stringify({
+                                    z: [...document.querySelectorAll('[data-scaled-inner]')].map((el) => el.style.zoom),
+                                    m: r.measured?.(),
+                                });
+                                const settle = async () => {
+                                    let prev = snap(), stable = 0;
+                                    const t0 = performance.now();
+                                    while (stable < 2 && performance.now() - t0 < 3000) {
+                                        await frame();
+                                        const cur = snap();
+                                        stable = cur === prev ? stable + 1 : 0;
+                                        prev = cur;
+                                    }
+                                };
+                                r.updateBlockSettings(block.id, { widthUnits: width });
+                                r.getState().setShowSolutions(!!solutions);
+                                await settle();
+
+                                const cell = document.querySelector(`[data-block-id="${block.id}"]`);
+                                if (!cell) return { error: 'cell not found after render' };
+
+                                // Same probe PageSheet.tsx runs internally (probeIntrinsicWidth) —
+                                // replicated here because that measurement lives in React state, not
+                                // on window, and swapping the inline width is cheap and non-destructive.
+                                const inner = cell.querySelector('[data-scaled-inner]');
+                                let intrinsicPx;
+                                if (inner) {
+                                    const prev = inner.style.width;
+                                    inner.style.width = 'min-content';
+                                    const local = inner.scrollWidth;
+                                    inner.style.width = prev;
+                                    const scale = Number(inner.dataset.scale) || 1;
+                                    intrinsicPx = local > 0 ? local * scale : undefined;
                                 }
-                            };
-                            r.updateBlockSettings(block.id, { widthUnits: width });
-                            r.getState().setShowSolutions(!!solutions);
-                            await settle();
 
-                            const cell = document.querySelector(`[data-block-id="${block.id}"]`);
-                            if (!cell) return { error: 'cell not found after render' };
-
-                            // Same probe PageSheet.tsx runs internally (probeIntrinsicWidth) —
-                            // replicated here because that measurement lives in React state, not
-                            // on window, and swapping the inline width is cheap and non-destructive.
-                            const inner = cell.querySelector('[data-scaled-inner]');
-                            let intrinsicPx;
-                            if (inner) {
-                                const prev = inner.style.width;
-                                inner.style.width = 'min-content';
-                                const local = inner.scrollWidth;
-                                inner.style.width = prev;
-                                const scale = Number(inner.dataset.scale) || 1;
-                                intrinsicPx = local > 0 ? local * scale : undefined;
+                                return {
+                                    cellHeightPx: cell.offsetHeight,
+                                    intrinsicPx: intrinsicPx ?? null,
+                                    text: cell.innerText,
+                                };
+                            }, { leaf, width, solutions, seed, deselect, asLeaf });
+                            if (!cellErrors.some((e) => e.includes('repack loop broken'))) break;
                             }
 
-                            return {
-                                cellHeightPx: cell.offsetHeight,
-                                intrinsicPx: intrinsicPx ?? null,
-                                text: cell.innerText,
+                            if (measured.error) {
+                                const row = { ...base, error: measured.error, consoleErrors: [...cellErrors] };
+                                rows.push(row); onRow?.(row);
+                                log(`! ${key}: ${measured.error}`);
+                                continue;
+                            }
+
+                            const probed = probe ? await probe(page, { key }) : {};
+
+                            let shot;
+                            if (screenshots) {
+                                shot = `${key}.png`;
+                                try {
+                                    await page.locator('[data-block-id]').first().screenshot({ path: join(out, shot) });
+                                } catch { shot = undefined; /* off-screen, still record the numbers */ }
+                            }
+
+                            const row = {
+                                ...base,
+                                cellHeightPx: measured.cellHeightPx,
+                                intrinsicPx: measured.intrinsicPx,
+                                text: measured.text,
+                                screenshot: shot,
+                                consoleErrors: [...cellErrors],
+                                ...probed,
                             };
-                        }, { leaf, width, solutions, seed });
-                        if (!cellErrors.some((e) => e.includes('repack loop broken'))) break;
-                        }
-
-                        if (measured.error) {
-                            const row = { ...base, error: measured.error, consoleErrors: [...cellErrors] };
                             rows.push(row); onRow?.(row);
-                            log(`! ${key}: ${measured.error}`);
-                            continue;
+                        } catch (err) {
+                            const row = { ...base, error: String(err), consoleErrors: [...cellErrors] };
+                            rows.push(row); onRow?.(row);
+                            log(`! ${key} threw: ${err}`);
                         }
-
-                        let shot;
-                        if (screenshots) {
-                            shot = `${key}.png`;
-                            try {
-                                await page.locator('[data-block-id]').first().screenshot({ path: join(out, shot) });
-                            } catch { shot = undefined; /* off-screen, still record the numbers */ }
-                        }
-
-                        const row = {
-                            ...base,
-                            cellHeightPx: measured.cellHeightPx,
-                            intrinsicPx: measured.intrinsicPx,
-                            text: measured.text,
-                            screenshot: shot,
-                            consoleErrors: [...cellErrors],
-                        };
-                        rows.push(row); onRow?.(row);
-                    } catch (err) {
-                        const row = { ...base, error: String(err), consoleErrors: [...cellErrors] };
-                        rows.push(row); onRow?.(row);
-                        log(`! ${key} threw: ${err}`);
                     }
                 }
             }

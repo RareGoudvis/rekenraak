@@ -34,10 +34,25 @@ export function generateControleExercises(block: MathBlock): ControleExercise[] 
         attempts++;
         const operator = pick(operators);
         let a: number, b: number;
+        // The RESULT of the bewerking stays ≤ maxGetal (the picker's promise), so operands are drawn under what is left.
         if (operator === 'x') {
-            // Cijferen-style: 3-digit × 2-digit scaled to maxGetal.
-            a = randInt(Math.floor(maxGetal / 10), maxGetal);
-            b = randInt(12, 99);
+            // Cijferen-style: multi-digit × two-digit; for a tiny max it degrades to a single-digit factor.
+            let bLo = 12, bHi = Math.min(99, Math.floor(maxGetal / 10));
+            if (bHi < bLo) { bLo = 2; bHi = Math.min(9, Math.floor(maxGetal / 2)); }
+            if (bHi < bLo) continue;
+            b = randInt(bLo, bHi);
+            const aMax = Math.floor(maxGetal / b);
+            const aMin = Math.min(aMax, Math.max(bLo === 12 ? 10 : 2, Math.floor(aMax / 4)));
+            a = randInt(aMin, aMax);
+            // A round first factor (10 × 97) teaches nothing for the proef; redraw while the range has room.
+            if (bLo === 12) {
+                for (let r = 0; r < 20 && a % 10 === 0; r++) a = randInt(aMin, aMax);
+                if (a % 10 === 0) continue;
+            }
+        } else if (operator === '+') {
+            if (maxGetal < 8) continue;
+            a = randInt(Math.floor(maxGetal / 4), Math.floor((maxGetal * 3) / 4));
+            b = randInt(2, maxGetal - a);
         } else {
             a = randInt(Math.floor(maxGetal / 4), maxGetal);
             b = randInt(2, a - 1);
@@ -50,7 +65,7 @@ export function generateControleExercises(block: MathBlock): ControleExercise[] 
             for (let t = 0; t < 50; t++) {
                 const delta = pick([10, -10, 100, -100, 1, -1, 20, -20]);
                 if (delta % 9 === 0) continue;
-                if (correctAnswer + delta > 0) { shownAnswer = correctAnswer + delta; break; }
+                if (correctAnswer + delta > 0 && correctAnswer + delta <= maxGetal) { shownAnswer = correctAnswer + delta; break; }
             }
             if (shownAnswer === correctAnswer) continue;
         }

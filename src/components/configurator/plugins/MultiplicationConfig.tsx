@@ -28,10 +28,10 @@ export default function MultiplicationConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Type oefening:" info="Gewone som (a x b = …) of puntoefening (a x … = c)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => updateConstraint('equationType', 'normal')} style={styles.radioBtn(equationType === 'normal' || !equationType)}>
+                    <button onClick={() => updateConstraint('equationType', 'normal')} aria-pressed={equationType === 'normal' || !equationType} style={styles.radioBtn(equationType === 'normal' || !equationType)}>
                         Gewone (a x b = ...)
                     </button>
-                    <button onClick={() => updateConstraint('equationType', 'puntoefening')} style={styles.radioBtn(equationType === 'puntoefening')}>
+                    <button onClick={() => updateConstraint('equationType', 'puntoefening')} aria-pressed={equationType === 'puntoefening'} style={styles.radioBtn(equationType === 'puntoefening')}>
                         Punt (a x . = c)
                     </button>
                 </div>
@@ -49,7 +49,7 @@ export default function MultiplicationConfig({ block }: Props) {
             <div style={styles.section}>
                 <div style={styles.onOffRow}>
                     <span style={styles.onOffLabel}>Zonder ×1 (makkelijkste weglaten)</span>
-                    <button onClick={() => updateConstraint('excludeOne', !excludeOne)} style={styles.onOffBtn(excludeOne)}>
+                    <button onClick={() => updateConstraint('excludeOne', !excludeOne)} aria-pressed={!!excludeOne} style={styles.onOffBtn(excludeOne)}>
                         {excludeOne ? 'AAN' : 'UIT'}
                     </button>
                 </div>

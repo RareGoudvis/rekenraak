@@ -2,14 +2,15 @@ import type { MathBlock, GetalFunctieExercise, GetalFunctie } from '../../servic
 import FragmentableGrid from './FragmentableGrid';
 import type { GetalFunctieConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
-import { ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { ANSWER_LINE_H, ANSWER_ROW_H, useShowScaffold } from './BlockWidthContext';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
@@ -24,7 +25,11 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
     const exercises: GetalFunctieExercise[] = block.getalFunctieExercises || [];
     const c = block.constraints as GetalFunctieConstraints;
     const functies: GetalFunctie[] = c.functies ?? ['hoeveelheid', 'rang', 'maat', 'code'];
-    const answerMode: string = c.answerMode ?? 'aankruisen';
+    // Oefenmodus: null on the sheet; in the kiosk the pupil ticks a column of the table (Phase C).
+    const ix = useViewerInteraction();
+    const scaffold = useShowScaffold();
+    // A card without the tap context types the word, so the sentence alone reads larger there.
+    const answerMode: string = ix ? 'aankruisen' : scaffold ? (c.answerMode ?? 'aankruisen') : 'schrijven';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -59,7 +64,9 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
 
     // ── AANKRUISEN: one table, sentence column + a tick column per functie ─────
     const cols = functies.length ? functies : (['hoeveelheid', 'rang', 'maat', 'code'] as GetalFunctie[]);
-    const grid = `minmax(230px, 1fr) ${cols.map(() => '86px').join(' ')}`;
+    // Kiosk: the sentence sits above the tick columns, so the card scales a 340 px table up to
+    // a readable sentence and thumb-sized cells instead of shrinking a 570 px one.
+    const grid = ix ? cols.map(() => '78px').join(' ') : `minmax(230px, 1fr) ${cols.map(() => '86px').join(' ')}`;
     const cell: React.CSSProperties = {
         border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: 'calc(var(--sheet-size-text) * 0.65)', boxSizing: 'border-box', padding: '3px 8px',
@@ -70,16 +77,18 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
             columnGap={0}
             rowGap={0}
             items={[
+                ...(ix ? exercises.map(ex => <div key={`zin-${ex.id}`} style={{ fontSize: 'calc(var(--sheet-size-text) * 0.75)', marginBottom: '8px' }}>{ex.sentence}</div>) : []),
                 <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid }}>
-                    <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', justifyContent: 'flex-start' }}>zin</div>
-                    {cols.map(f => <div key={f} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.55)' }}>{FUNCTIE_LABEL[f]}</div>)}
+                    {!ix && <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', justifyContent: 'flex-start' }}>zin</div>}
+                    {cols.map(f => <div key={f} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.55)', ...(ix && { padding: '3px 2px' }) }}>{FUNCTIE_LABEL[f]}</div>)}
                 </div>,
                 ...exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid }}>
-                        <div style={{ ...cell, justifyContent: 'flex-start', textAlign: 'left' }}>{ex.sentence}</div>
-                        {cols.map(f => (
-                            <div key={f} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold' }}>
-                                {showSolutions && f === ex.functie ? '✕' : ''}
+                        {!ix && <div style={{ ...cell, justifyContent: 'flex-start', textAlign: 'left' }}>{ex.sentence}</div>}
+                        {cols.map((f, i) => (
+                            // Kiosk: a tick cell is a tap target (≥ 44 px on a phone) and shows the pupil's cross.
+                            <div key={f} {...interactionProps(ix, String(i))} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', ...(ix && { minHeight: '44px' }) }}>
+                                {(showSolutions && f === ex.functie) || ix?.state.selected.includes(String(i)) ? '✕' : ''}
                             </div>
                         ))}
                     </div>

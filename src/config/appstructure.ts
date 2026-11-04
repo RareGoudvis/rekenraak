@@ -1,4 +1,6 @@
-import type { BlockConstraints } from '../services/math/constraintTypes';
+import type { BlockConstraints, AfrondenConstraints } from '../services/math/constraintTypes';
+import { PLACE_VALUES } from '../services/math/mathEngine';
+import { targetHeading, columnTargets } from '../services/afronden/afrondenGenerator';
 
 // A leaf's default opdracht-titel: a fixed line, or a function of its merged constraints
 // for families whose wording depends on a setting (e.g. ordenen's klein→groot / groot→klein).
@@ -12,6 +14,14 @@ export interface LeafExercise {
     placeholder?: boolean;
     minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // explicit grade gate; else inferred (gradePresets)
     instruction?: string | InstructionFn;
+    // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
+    // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
+    gradeSetsMax?: true;
+    // Exercises per new block when this leaf wants another count than its type's registry
+    // default (rooster figures are tall: 2 fill a page). Read via LEAF_BY_ID.
+    defaultCount?: number;
+    // Oefenmodus name when kioskLabel()'s derived one ("Optellen · natuurlijk") does not fit.
+    shortLabel?: string;
 }
 
 export interface ExerciseType {
@@ -25,6 +35,13 @@ export interface ExerciseType {
     placeholder?: boolean;
     minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // leaf-type grade gate (see gradePresets)
     instruction?: string | InstructionFn;
+    // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
+    // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
+    gradeSetsMax?: true;
+    // Oefenmodus name when kioskLabel()'s derived one ("Optellen · natuurlijk") does not fit.
+    shortLabel?: string;
+    // Same as LeafExercise.defaultCount, for a type that is itself the leaf.
+    defaultCount?: number;
 }
 
 export interface Subdomain {
@@ -50,10 +67,9 @@ function joinNL(items: (string | number)[]): string {
 }
 
 // splitsen-benen: which place-value letters the legs actually show for this maxGetal ("tot 1000" never rolls 1000 itself, so D stays out)
-// (SYNC: mirrors splitsenGenerator.ts's INT_PLACES key/weight for D/H/T/E).
+// (SYNC: splitsenGenerator.ts's INT_PLACES is the same PLACE_VALUES slice).
 function placeLetters(maxGetal: number): string {
-    const PLACES = [{ key: 'D', weight: 1000 }, { key: 'H', weight: 100 }, { key: 'T', weight: 10 }, { key: 'E', weight: 1 }];
-    const inPlay = PLACES.filter(p => p.weight < Math.max(2, maxGetal)).map(p => p.key);
+    const inPlay = PLACE_VALUES.filter(p => p.weight >= 1 && p.weight < Math.max(2, maxGetal)).map(p => p.key);
     return joinNL(inPlay.length ? inPlay : ['E']);
 }
 
@@ -68,15 +84,20 @@ function orderDirectionInstruction(subject: string): InstructionFn {
 const ordenenInstruction = orderDirectionInstruction('');
 const breukenRangschikkenInstruction = orderDirectionInstruction('de breuken ');
 
-// afronden: the review table asks for the raw place-value letters ("Rond af op T en H."),
-// same shorthand the rooster/simpel viewers already print on the sheet.
+// afronden: the review table asks for the place-value shorthand ("Rond af op T en H."), exactly
+// the column header the rooster/simpel viewers print — so millions read '1M', not 'M'.
+// Only targets that get a column at this block's settings are named (2 decimals have no h column).
 const roundTargetsInstruction: InstructionFn = (c) =>
-    `Rond af op ${joinNL((c.roundTargets as string[] | undefined) ?? ['T', 'H'])}.`;
+    `Rond af op ${joinNL(columnTargets(c as AfrondenConstraints).map(targetHeading))}.`;
 
 const schattendInstruction: InstructionFn = (c) => c.scaffolding === 'tussenstappen' ? 'Rond af en schat.' : 'Schat het antwoord.';
 
 // ── placeholder helper (only the hidden vraagstukken domain still uses it) ───
 const ph = (id: string, label: string): ExerciseType => ({ id, label, placeholder: true });
+
+// Decimal hoofdrekenen starts hoofdrekenbaar (owner 2026-10-10: "432,36 : 0,6" is not): up to 100, one decimal.
+// The max picker still offers more; 100 is its middle stop.
+const DEC_HR_DEFAULTS = { numberType: 'decimal', maxGetal: 100, decimalPlaces: 1 };
 
 export const APP_STRUCTURE: Domain[] = [
     {
@@ -103,8 +124,9 @@ export const APP_STRUCTURE: Domain[] = [
                             // viewer marks the digit with an underline (never bold), so the title should
                             // name what the pupil actually sees.
                             { id: 'plaatswaarde-waarde', label: 'Waarde van cijfer', typeId: 'plaatswaarde', defaultConstraints: { subType: 'waarde' }, instruction: 'Wat is de waarde van het onderstreepte cijfer?' },
-                            { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' }, instruction: 'Op welke plaats staat het onderstreepte cijfer?' },
-                            { id: 'plaatswaarde-omcirkelen', label: 'Plaats omcirkelen', typeId: 'plaatswaarde', defaultConstraints: { subType: 'omcirkelen' }, instruction: 'Omcirkel de plaats van het onderstreepte cijfer.' },
+                            // Antwoord 'waarde' (plaatsAnswer) turns these two into a waarde exercise: the title follows.
+                            { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' }, instruction: (c) => (c.plaatsAnswer === 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : 'Op welke plaats staat het onderstreepte cijfer?') },
+                            { id: 'plaatswaarde-omcirkelen', label: 'Plaats omcirkelen', typeId: 'plaatswaarde', defaultConstraints: { subType: 'omcirkelen' }, instruction: (c) => (c.plaatsAnswer === 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : 'Omcirkel de plaats van het onderstreepte cijfer.') },
                             { id: 'plaatswaarde-tabel',  label: 'Tabel invullen',     typeId: 'plaatswaarde', defaultConstraints: { subType: 'tabel' }, instruction: 'Vul de plaatswaardetabel in.' },
                         ],
                     },
@@ -115,9 +137,9 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'splitsen-basis', label: 'Rooster', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'basic', rowsPerBox: 4 }, instruction: 'Splits het getal.' },
                             { id: 'splitsen-boom', label: 'Splitsboom', typeId: 'splitsen', defaultConstraints: { maxGetal: 100, layout: 'splitsboom', blankPositions: ['right'] }, instruction: 'Vul de splitsboom aan.' },
                             { id: 'splitsen-harten', label: 'Verliefde harten', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'verliefde-harten' }, instruction: 'Vul de verliefde harten aan.' },
-                            { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' }, instruction: 'Vul de positietabel in.' },
-                            { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', benenVariants: ['legs-letters'] }, instruction: (c) => `Splits in ${placeLetters(Number(c.maxGetal ?? 1000))}.` },
-                            { id: 'splitsen-plaatswaarden', label: 'Plaatswaarden', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-math', mathForms: ['letters'], mathDirection: 'decompose' }, instruction: (c) => c.mathDirection === 'compose' ? 'Schrijf het getal.' : c.mathDirection === 'beide' ? 'Splits of schrijf het getal volgens plaatswaarde.' : 'Splits volgens plaatswaarde.' },
+                            { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' }, gradeSetsMax: true, instruction: 'Vul de positietabel in.' },
+                            { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', benenVariants: ['legs-letters'] }, gradeSetsMax: true, instruction: (c) => `Splits in ${placeLetters(Number(c.maxGetal ?? 1000))}.` },
+                            { id: 'splitsen-plaatswaarden', label: 'Plaatswaarden', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-math', mathForms: ['letters'], mathDirection: 'decompose' }, gradeSetsMax: true, instruction: (c) => c.mathDirection === 'compose' ? 'Schrijf het getal.' : c.mathDirection === 'beide' ? 'Splits of schrijf het getal volgens plaatswaarde.' : 'Splits volgens plaatswaarde.' },
                         ],
                     },
                     {
@@ -144,7 +166,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'getalbegrip-getallenassen-nat', label: 'Natuurlijke getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'natural' }, instruction: 'Vul de getallenas aan.' },
                             { id: 'getalbegrip-getallenassen-dec', label: 'Decimale getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'decimal', step: 0.5, maxGetal: 20 }, instruction: 'Vul de getallenas aan.' },
-                            { id: 'getalbegrip-getallenassen-rat', label: 'Rationale getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'rational', fractionStep: 4, ticks: 6 }, instruction: 'Vul de getallenas aan.' },
+                            { id: 'getalbegrip-getallenassen-rat', label: 'Rationale getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'rational', ticks: 6 }, instruction: 'Vul de getallenas aan.' },
                             { id: 'getalbegrip-getallenassen-geh', label: 'Gehele getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 }, instruction: 'Vul de getallenas aan.' },
                         ],
                     },
@@ -154,7 +176,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'getalbegrip-getallenrijen-nat', label: 'Natuurlijke getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'natural' }, instruction: 'Vul de getallenrij aan.' },
                             { id: 'getalbegrip-getallenrijen-dec', label: 'Decimale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'decimal', step: 0.1, maxGetal: 10 }, instruction: 'Vul de getallenrij aan.' },
-                            { id: 'getalbegrip-getallenrijen-rat', label: 'Rationale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'rational', fractionStep: 4, ticks: 6 }, instruction: 'Vul de getallenrij aan.' },
+                            { id: 'getalbegrip-getallenrijen-rat', label: 'Rationale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'rational', ticks: 6 }, instruction: 'Vul de getallenrij aan.' },
                             { id: 'getalbegrip-getallenrijen-geh', label: 'Gehele getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 }, instruction: 'Vul de getallenrij aan.' },
                         ],
                     },
@@ -184,10 +206,11 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'breuken-kleuren', label: 'Breuken kleuren', typeId: 'breuken', defaultConstraints: { subType: 'kleuren' }, instruction: 'Kleur de breuk.' },
                     { id: 'breuken-herkennen', label: 'Breuken herkennen', typeId: 'breuken', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk deel is gekleurd? Schrijf de breuk.' },
                     // answerFormat must be set here: the registry default ('fraction-questions') is a
-                    // herkennen value, and defaultsFor() only runs on a variant switch, not on block add.
+                    // herkennen value, and variantDefaults() only runs on a variant switch, not on block add.
                     { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 }, instruction: 'Bereken de breuk van de hoeveelheid.' },
-                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' }, instruction: 'Duid de breuk aan op het lijnstuk.' },
-                    { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' }, instruction: 'Kleur de breuk van de veelhoek.' },
+                    // Four, not the row's six: one true-size segment per row, six ran past one A4 page.
+                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk', maxDenominator: 6, maxLineLength: 8 }, defaultCount: 4, instruction: 'Duid de breuk aan op het lijnstuk.' },
+                    { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek', maxDenominator: 9 }, instruction: 'Kleur de breuk van de veelhoek.' },
                     { id: 'breuken-rangschikken', label: 'Breuken rangschikken', typeId: 'breuken-rangschikken', instruction: breukenRangschikkenInstruction },
                 ],
             },
@@ -198,8 +221,8 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'afronden-nat', label: 'Natuurlijke getallen',
                         children: [
-                            { id: 'afronden-nat-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, instruction: roundTargetsInstruction },
-                            { id: 'afronden-nat-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, instruction: roundTargetsInstruction },
+                            { id: 'afronden-nat-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, gradeSetsMax: true, instruction: roundTargetsInstruction },
+                            { id: 'afronden-nat-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, gradeSetsMax: true, instruction: roundTargetsInstruction },
                         ],
                     },
                     {
@@ -226,7 +249,7 @@ export const APP_STRUCTURE: Domain[] = [
                 label: 'Even en oneven',
                 types: [
                     { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' }, instruction: (c) => c.target === 'oneven' ? 'Kleur de oneven getallen.' : 'Kleur de even getallen.' },
-                    { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' }, instruction: 'Maak groepjes van twee. Even of oneven?' },
+                    { id: 'even-oneven-cirkels', shortLabel: 'Even of oneven', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' }, instruction: 'Maak groepjes van twee. Even of oneven?' },
                 ],
             },
             {
@@ -260,8 +283,8 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'romeinse-cijfers',
                 label: 'Romeinse cijfers',
                 types: [
-                    { id: 'romeinse-herkennen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk getal is dit?' },
-                    { id: 'romeinse-schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' }, instruction: 'Schrijf in Romeinse cijfers.' },
+                    { id: 'romeinse-herkennen', shortLabel: 'Romeinse cijfers lezen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk getal is dit?' },
+                    { id: 'romeinse-schrijven', shortLabel: 'Romeinse cijfers schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' }, instruction: 'Schrijf in Romeinse cijfers.' },
                 ],
             },
         ],
@@ -280,7 +303,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Optellen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-optellen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-optellen-dec', label: 'Decimale getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-optellen-dec', label: 'Decimale getallen', typeId: 'hr-std-optellen', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     {
@@ -288,7 +311,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Aftrekken (standaardprocedure)',
                         children: [
                             { id: 'hr-std-aftrekken-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-aftrekken-dec', label: 'Decimale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-aftrekken-dec', label: 'Decimale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     {
@@ -296,7 +319,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Vermenigvuldigen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-vermenigvuldigen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-vermenigvuldigen-dec', label: 'Decimale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-vermenigvuldigen-dec', label: 'Decimale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     {
@@ -304,7 +327,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Delen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-delen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     // Last of the family on purpose: one block that mixes the four operations
@@ -314,7 +337,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Gemengd',
                         children: [
                             { id: 'hr-std-gemengd-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-gemengd', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-gemengd-dec', label: 'Decimale getallen', typeId: 'hr-std-gemengd', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-gemengd-dec', label: 'Decimale getallen', typeId: 'hr-std-gemengd', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                 ],
@@ -336,32 +359,32 @@ export const APP_STRUCTURE: Domain[] = [
                         id: 'cijferen-optellen',
                         label: 'Optellen',
                         children: [
-                            { id: 'cijferen-optellen-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-optellen-nat', defaultConstraints: { operator: '+', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-optellen-dec', label: 'Kommagetallen', typeId: 'cijferen-optellen-dec', defaultConstraints: { operator: '+', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-optellen-nat', shortLabel: 'Cijferen optellen · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-optellen-nat', defaultConstraints: { operator: '+', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-optellen-dec', shortLabel: 'Cijferen optellen · decimaal', label: 'Kommagetallen', typeId: 'cijferen-optellen-dec', defaultConstraints: { operator: '+', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     {
                         id: 'cijferen-aftrekken',
                         label: 'Aftrekken',
                         children: [
-                            { id: 'cijferen-aftrekken-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-aftrekken-nat', defaultConstraints: { operator: '-', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-aftrekken-dec', label: 'Kommagetallen', typeId: 'cijferen-aftrekken-dec', defaultConstraints: { operator: '-', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-aftrekken-nat', shortLabel: 'Cijferen aftrekken · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-aftrekken-nat', defaultConstraints: { operator: '-', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-aftrekken-dec', shortLabel: 'Cijferen aftrekken · decimaal', label: 'Kommagetallen', typeId: 'cijferen-aftrekken-dec', defaultConstraints: { operator: '-', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     {
                         id: 'cijferen-vermenigvuldigen',
                         label: 'Vermenigvuldigen',
                         children: [
-                            { id: 'cijferen-vermenigvuldigen-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-vermenigvuldigen-nat', defaultConstraints: { operator: 'x', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-vermenigvuldigen-dec', label: 'Kommagetallen', typeId: 'cijferen-vermenigvuldigen-dec', defaultConstraints: { operator: 'x', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-vermenigvuldigen-nat', shortLabel: 'Cijferen vermenigvuldigen · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-vermenigvuldigen-nat', defaultConstraints: { operator: 'x', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-vermenigvuldigen-dec', shortLabel: 'Cijferen vermenigvuldigen · decimaal', label: 'Kommagetallen', typeId: 'cijferen-vermenigvuldigen-dec', defaultConstraints: { operator: 'x', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     {
                         id: 'cijferen-delen',
                         label: 'Delen',
                         children: [
-                            { id: 'cijferen-delen-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-delen-nat', defaultConstraints: { operator: ':', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-delen-dec', label: 'Kommagetallen', typeId: 'cijferen-delen-dec', defaultConstraints: { operator: ':', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-delen-nat', shortLabel: 'Cijferen delen · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-delen-nat', defaultConstraints: { operator: ':', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-delen-dec', shortLabel: 'Cijferen delen · decimaal', label: 'Kommagetallen', typeId: 'cijferen-delen-dec', defaultConstraints: { operator: ':', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     // Negenproef checks a worked cijfer-multiplication — it belongs with cijferen.
@@ -387,12 +410,12 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'bewerkingen-breuken',
                 label: 'Bewerkingen met breuken',
                 types: [
-                    // Fraction arithmetic (+ − × :) — leerplan "Bewerkingen met breuken", introduced L4.
+                    // Fraction arithmetic — leerplan "Bewerkingen met breuken": + and − from L4, × and : from L5 (owner 2026-10-11).
                     { id: 'hr-std-optellen-rat', label: 'Optellen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
                     { id: 'hr-std-aftrekken-rat', label: 'Aftrekken', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
-                    { id: 'hr-std-vermenigvuldigen-rat', label: 'Vermenigvuldigen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
-                    { id: 'hr-std-delen-rat', label: 'Delen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
-                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' }, instruction: (c) => c.direction === 'naar-breuk' ? 'Schrijf als breuk.' : 'Schrijf als gemengd getal.' },
+                    { id: 'hr-std-vermenigvuldigen-rat', label: 'Vermenigvuldigen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 5, instruction: 'Reken uit.' },
+                    { id: 'hr-std-delen-rat', label: 'Delen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 5, instruction: 'Reken uit.' },
+                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' }, instruction: (c) => c.direction === 'naar-breuk' ? 'Schrijf als breuk.' : c.direction === 'beide' ? 'Schrijf als gemengd getal of als breuk.' : 'Schrijf als gemengd getal.' },
                     { id: 'breuken-gelijknamig', label: 'Gelijknamig maken', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gelijknamig' }, instruction: 'Maak gelijknamig.' },
                     { id: 'breuken-vereenvoudigen', label: 'Vereenvoudigen', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'vereenvoudigen' }, instruction: 'Vereenvoudig.' },
                 ],
@@ -465,8 +488,8 @@ export const APP_STRUCTURE: Domain[] = [
                         id: 'kalender-datum', label: 'Kalender / datum lezen',
                         children: [
                             { id: 'kalender-maandrooster', label: 'Maandrooster lezen', typeId: 'kalender', defaultConstraints: { subType: 'maandrooster' }, minLeerjaar: 2, instruction: 'Bekijk de kalender en vul in.' },
-                            { id: 'kalender-datum-rekenen', label: 'Rekenen met dagen', typeId: 'kalender', defaultConstraints: { subType: 'datum-rekenen' }, minLeerjaar: 3, instruction: 'Reken met dagen.' },
-                            { id: 'kalender-notatie', label: 'Datumnotatie', typeId: 'kalender', defaultConstraints: { subType: 'notatie' }, minLeerjaar: 3, instruction: 'Schrijf de datum anders.' },
+                            { id: 'kalender-datum-rekenen', label: 'Rekenen met dagen', typeId: 'kalender', defaultConstraints: { subType: 'datum-rekenen' }, defaultCount: 4, minLeerjaar: 3, instruction: 'Reken met dagen.' },
+                            { id: 'kalender-notatie', label: 'Datumnotatie', typeId: 'kalender', defaultConstraints: { subType: 'notatie' }, defaultCount: 4, minLeerjaar: 3, instruction: 'Schrijf de datum anders.' },
                         ],
                     },
                 ],
@@ -475,12 +498,12 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'geld',
                 label: 'Geld',
                 types: [
-                    { id: 'geld-herkennen',   label: 'Herkennen',      typeId: 'geld-herkennen', instruction: 'Hoeveel geld is dit?' },
+                    { id: 'geld-herkennen',   shortLabel: 'Geld herkennen', label: 'Herkennen',      typeId: 'geld-herkennen', instruction: 'Hoeveel geld is dit?' },
                     { id: 'geld-tekenen',     label: 'Bedrag tekenen', typeId: 'geld-tekenen', instruction: 'Teken het bedrag.' },
-                    { id: 'geld-wissel',      label: 'Wissel',         typeId: 'geld-wissel', instruction: 'Wissel het bedrag.' },
-                    { id: 'geld-teruggeven',  label: 'Teruggeven',     typeId: 'geld-teruggeven', instruction: 'Hoeveel krijg je terug?' },
-                    { id: 'geld-rekenen-korting', label: 'Korting', typeId: 'geld-rekenen', defaultConstraints: { subType: 'korting', percents: [10, 25, 50] }, minLeerjaar: 5, instruction: 'Bereken de korting en de nieuwe prijs.' },
-                    { id: 'geld-rekenen-intrest', label: 'Intrest', typeId: 'geld-rekenen', defaultConstraints: { subType: 'intrest', percents: [1, 2, 5], maxEuro: 10000 }, minLeerjaar: 6, instruction: 'Bereken de intrest.' },
+                    { id: 'geld-wissel',      label: 'Wissel',         typeId: 'geld-wissel', defaultCount: 4, instruction: 'Wissel het bedrag.' },
+                    { id: 'geld-teruggeven',  shortLabel: 'Geld teruggeven', label: 'Teruggeven',     typeId: 'geld-teruggeven', instruction: 'Hoeveel krijg je terug?' },
+                    { id: 'geld-rekenen-korting', shortLabel: 'Korting berekenen', label: 'Korting', typeId: 'geld-rekenen', defaultConstraints: { subType: 'korting', percents: [10, 25, 50] }, minLeerjaar: 5, instruction: 'Bereken de korting en de nieuwe prijs.' },
+                    { id: 'geld-rekenen-intrest', shortLabel: 'Intrest berekenen', label: 'Intrest', typeId: 'geld-rekenen', defaultConstraints: { subType: 'intrest', percents: [1, 2, 5], maxEuro: 10000 }, minLeerjaar: 6, instruction: 'Bereken de intrest.' },
                     { id: 'geld-rekenen-winst', label: 'Winst / Verlies', typeId: 'geld-rekenen', defaultConstraints: { subType: 'winst' }, minLeerjaar: 5, instruction: 'Bereken de winst of het verlies.' },
                 ],
             },
@@ -489,8 +512,8 @@ export const APP_STRUCTURE: Domain[] = [
                 label: 'Temperatuur',
                 types: [
                     { id: 'temperatuur-kleuren', label: 'Meter kleuren', typeId: 'temperatuur', defaultConstraints: { variant: 'kleuren' }, instruction: 'Kleur de thermometer.' },
-                    { id: 'temperatuur-aflezen', label: 'Meter aflezen', typeId: 'temperatuur', defaultConstraints: { variant: 'aflezen' }, instruction: 'Lees de temperatuur af.' },
-                    { id: 'temperatuur-verschil', label: 'Verschil', typeId: 'temperatuur', defaultConstraints: { variant: 'verschil', mode1: 'gekleurd', mode2: 'getal' }, instruction: 'Bereken het verschil in temperatuur.' },
+                    { id: 'temperatuur-aflezen', shortLabel: 'Temperatuur aflezen', label: 'Meter aflezen', typeId: 'temperatuur', defaultConstraints: { variant: 'aflezen' }, instruction: 'Lees de temperatuur af.' },
+                    { id: 'temperatuur-verschil', shortLabel: 'Temperatuurverschil', label: 'Verschil', typeId: 'temperatuur', defaultConstraints: { variant: 'verschil', mode1: 'gekleurd', mode2: 'getal' }, instruction: 'Bereken het verschil in temperatuur.' },
                 ],
             },
             {
@@ -502,7 +525,7 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'oppervlakte', label: 'Oppervlakte',
                         children: [
-                            { id: 'oppervlakte-rooster', label: 'Rooster tellen', typeId: 'oppervlakte', defaultConstraints: { subType: 'rooster', shapes: ['rechthoek', 'l-figuur'] }, minLeerjaar: 3, instruction: 'Tel de vierkantjes. Wat is de oppervlakte?' },
+                            { id: 'oppervlakte-rooster', label: 'Rooster tellen', typeId: 'oppervlakte', defaultConstraints: { subType: 'rooster', shapes: ['rechthoek', 'l-figuur'] }, defaultCount: 2, minLeerjaar: 3, instruction: 'Tel de vierkantjes. Wat is de oppervlakte?' },
                             { id: 'oppervlakte-berekenen', label: 'Berekenen', typeId: 'oppervlakte', defaultConstraints: { subType: 'berekenen' }, minLeerjaar: 5, instruction: 'Bereken de oppervlakte.' },
                         ],
                     },
@@ -527,10 +550,10 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'herleidingen',
                 label: 'Herleidingen',
                 types: [
-                    { id: 'herleidingen-lengte', label: 'Lengte', typeId: 'herleidingen', defaultConstraints: { measure: 'lengte', units: ['m', 'dm', 'cm', 'mm'] }, instruction: 'Zet om.' },
-                    { id: 'herleidingen-inhoud', label: 'Inhoud', typeId: 'herleidingen', defaultConstraints: { measure: 'inhoud', units: ['l', 'dl', 'cl', 'ml'] }, instruction: 'Zet om.' },
-                    { id: 'herleidingen-massa', label: 'Massa', typeId: 'herleidingen', defaultConstraints: { measure: 'massa', units: ['kg', 'dag', 'g', 'dg'] }, instruction: 'Zet om.' },
-                    { id: 'herleidingen-oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'] }, instruction: 'Zet om.' },
+                    { id: 'herleidingen-lengte', shortLabel: 'Herleiden · lengte', label: 'Lengte', typeId: 'herleidingen', defaultConstraints: { measure: 'lengte', units: ['m', 'dm', 'cm', 'mm'] }, instruction: 'Zet om.' },
+                    { id: 'herleidingen-inhoud', shortLabel: 'Herleiden · inhoud', label: 'Inhoud', typeId: 'herleidingen', defaultConstraints: { measure: 'inhoud', units: ['l', 'dl', 'cl', 'ml'] }, instruction: 'Zet om.' },
+                    { id: 'herleidingen-massa', shortLabel: 'Herleiden · massa', label: 'Massa', typeId: 'herleidingen', defaultConstraints: { measure: 'massa', units: ['kg', 'dag', 'g', 'dg'] }, instruction: 'Zet om.' },
+                    { id: 'herleidingen-oppervlakte', shortLabel: 'Herleiden · oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'], maxWaarde: 999_999 }, minLeerjaar: 5, instruction: 'Zet om.' },
                 ],
             },
         ],
@@ -628,6 +651,9 @@ export interface AppLeaf {
     label: string;
     defaultConstraints?: Record<string, unknown>;
     instruction?: string | InstructionFn;
+    gradeSetsMax?: true;
+    defaultCount?: number;
+    shortLabel?: string;
 }
 
 export function flattenLeaves(): AppLeaf[] {
@@ -646,6 +672,9 @@ export function flattenLeaves(): AppLeaf[] {
                         label: type.label,
                         defaultConstraints: type.defaultConstraints,
                         instruction: type.instruction,
+                        gradeSetsMax: type.gradeSetsMax,
+                        defaultCount: type.defaultCount,
+                        shortLabel: type.shortLabel,
                     });
                 } else {
                     for (const leaf of type.children ?? []) {
@@ -657,6 +686,9 @@ export function flattenLeaves(): AppLeaf[] {
                             label: leaf.label,
                             defaultConstraints: leaf.defaultConstraints,
                             instruction: leaf.instruction,
+                            gradeSetsMax: leaf.gradeSetsMax,
+                            defaultCount: leaf.defaultCount,
+                            shortLabel: leaf.shortLabel,
                         });
                     }
                 }
@@ -670,5 +702,5 @@ export function flattenLeaves(): AppLeaf[] {
 // only has a leafId (a persisted curriculum lock, a MathBlock.leafId) resolve the same
 // opdracht-titel a sidebar click would have produced, without holding onto the leaf's
 // own object reference (which a share link can't serialise — it may be a function).
-export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn }> =
-    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction }]));
+export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn; gradeSetsMax?: true; defaultCount?: number }> =
+    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction, gradeSetsMax: l.gradeSetsMax, defaultCount: l.defaultCount }]));

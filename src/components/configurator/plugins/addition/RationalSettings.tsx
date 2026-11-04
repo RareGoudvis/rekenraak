@@ -1,91 +1,72 @@
 import { useConstraints } from '../../useConstraints';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
+import SettingLabel from '../SettingLabel';
+import Switch from '../../../ui/Switch';
+import { F } from '../shared/fieldStyles';
+import BreukenSettings, { type MixedMode } from '../shared/BreukenSettings';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
+// 'one_step' = ongelijknamig with one noemer a multiple of the other; 'multi_step' = free noemers.
+const DIFFICULTY = [
+    { val: 'same',       label: 'Gelijknamig' },
+    { val: 'one_step',   label: 'Ongelijknamig (eenvoudig)' },
+    { val: 'multi_step', label: 'Ongelijknamig (moeilijk)' },
+] as const;
+
+// + − with breuken: the shared Breuken block per breuk. A gemengd operand is a separate draw in the
+// generator (a whole 1..3 plus a proper part), so each breuk offers geen / alleen, not "ook".
 export default function RationalSettings({ block }: Props) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
     const {
         mixedNumber1 = false, mixedNumber2 = false,
         maxNumerator1 = 10, maxDenominator1 = 10,
         maxNumerator2 = 10, maxDenominator2 = 10,
-        linkFractions = true
+        linkFractions = true,
+        fractionDifficulty = 'same',
     } = c;
 
-    // Helper om constraints te updaten
-    const updateConstraint = (updates: Record<string, unknown>) => {
-        patch({ ...updates });
-    };
+    const mixedRow = (i: 1 | 2, on: boolean) => ({
+        label: `Breuk ${i} als gemengd getal`,
+        value: (on ? 'all' : 'none') as MixedMode,
+        options: ['none', 'all'] as const,
+        onChange: (m: MixedMode) => patch(i === 1 ? { mixedNumber1: m === 'all' } : { mixedNumber2: m === 'all' }),
+    });
 
-    // Handler voor de teller/noemer velden. Kijkt of de 'link' aan staat.
-    const handleFractionChange = (field: 'N' | 'D', index: 1 | 2, value: number) => {
-        const numValue = Math.max(1, value); // Nooit kleiner dan 1
-        if (linkFractions) {
-            if (field === 'N') updateConstraint({ maxNumerator1: numValue, maxNumerator2: numValue });
-            if (field === 'D') updateConstraint({ maxDenominator1: Math.max(2, numValue), maxDenominator2: Math.max(2, numValue) }); // Noemer minstens 2
-        } else {
-            if (field === 'N' && index === 1) updateConstraint({ maxNumerator1: numValue });
-            if (field === 'D' && index === 1) updateConstraint({ maxDenominator1: Math.max(2, numValue) });
-            if (field === 'N' && index === 2) updateConstraint({ maxNumerator2: numValue });
-            if (field === 'D' && index === 2) updateConstraint({ maxDenominator2: Math.max(2, numValue) });
-        }
+    const caps = (i: 1 | 2) => {
+        const n = i === 1 ? maxNumerator1 : maxNumerator2;
+        const d = i === 1 ? maxDenominator1 : maxDenominator2;
+        // Linked: one pair of caps writes both breuken.
+        const setN = (v: number) => patch(linkFractions ? { maxNumerator1: v, maxNumerator2: v } : i === 1 ? { maxNumerator1: v } : { maxNumerator2: v });
+        const setD = (v: number) => patch(linkFractions ? { maxDenominator1: v, maxDenominator2: v } : i === 1 ? { maxDenominator1: v } : { maxDenominator2: v });
+        return { noemer: { shape: 'max' as const, value: d, onChange: setD }, teller: { value: n, onChange: setN } };
     };
 
     return (
-        <div>
-            {/* 1. GEMENGDE GETALLEN PER BREUK */}
-            <div style={{ ...styles.section, display: 'flex', gap: '16px' }}>
-                <label style={checkboxStyle}>
-                    <input type="checkbox" checked={mixedNumber1} onChange={(e) => updateConstraint({ mixedNumber1: e.target.checked })} style={checkboxInputStyle} />
-                    Gemengd (Breuk 1)
-                </label>
-                <label style={checkboxStyle}>
-                    <input type="checkbox" checked={mixedNumber2} onChange={(e) => updateConstraint({ mixedNumber2: e.target.checked })} style={checkboxInputStyle} />
-                    Gemengd (Breuk 2)
-                </label>
+        <div style={styles.section}>
+            {linkFractions ? (
+                <BreukenSettings {...caps(1)} mixed={[mixedRow(1, mixedNumber1), mixedRow(2, mixedNumber2)]} />
+            ) : (
+                <>
+                    <BreukenSettings {...caps(1)} title="Breuk 1" mixed={mixedRow(1, mixedNumber1)} />
+                    <BreukenSettings {...caps(2)} title="Breuk 2" mixed={mixedRow(2, mixedNumber2)} />
+                </>
+            )}
+            <div style={{ ...F.switchRow, marginBottom: 'var(--sp-4)' }}>
+                <span style={F.switchText}>Zelfde grenzen voor beide breuken</span>
+                <Switch checked={linkFractions} onChange={(v) => patch(v ? { linkFractions: true, maxNumerator2: maxNumerator1, maxDenominator2: maxDenominator1 } : { linkFractions: false })} aria-label="Zelfde grenzen voor beide breuken" />
             </div>
-
-            {/* 3. VISUELE BREUK INSTELLINGEN (Max Teller / Max Noemer) */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
-
-                    {/* BREUK 1 */}
-                    <div style={fractionColStyle}>
-                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Breuk 1</label>
-                        <input type="number" min="1" value={maxNumerator1} onChange={(e) => handleFractionChange('N', 1, Number(e.target.value))} style={numInputStyle} title="Max. Teller" />
-                        <hr style={fractionLineStyle} />
-                        <input type="number" min="2" value={maxDenominator1} onChange={(e) => handleFractionChange('D', 1, Number(e.target.value))} style={numInputStyle} title="Max. Noemer" />
-                    </div>
-
-                    {/* KOPPEL KNOP */}
-                    <button
-                        onClick={() => updateConstraint({ linkFractions: !linkFractions })}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', opacity: linkFractions ? 1 : 0.4, transition: 'opacity 0.2s' }}
-                        title={linkFractions ? "Ontkoppel breuken" : "Koppel breuken gelijkaardig"}
-                    >
-                        <span style={{ fontSize: '20px', color: linkFractions ? 'var(--accent-purple)' : 'var(--text-muted)' }}>
-                            {linkFractions ? '🔗' : '⛓️‍💥'}
-                        </span>
+            <SettingLabel text="Noemers" info="Gelijknamige breuken, of ongelijknamige: eenvoudig (de ene noemer is een veelvoud van de andere) of moeilijk." />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {DIFFICULTY.map(({ val, label }) => (
+                    <button key={val} type="button" onClick={() => patch({ fractionDifficulty: val })} aria-pressed={fractionDifficulty === val}
+                        style={{ ...styles.radioBtn(fractionDifficulty === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                        {label}
                     </button>
-
-                    {/* BREUK 2 */}
-                    <div style={{ ...fractionColStyle, opacity: linkFractions ? 0.6 : 1 }}>
-                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Breuk 2</label>
-                        <input type="number" min="1" value={maxNumerator2} onChange={(e) => handleFractionChange('N', 2, Number(e.target.value))} disabled={linkFractions} style={numInputStyle} title="Max. Teller" />
-                        <hr style={fractionLineStyle} />
-                        <input type="number" min="2" value={maxDenominator2} onChange={(e) => handleFractionChange('D', 2, Number(e.target.value))} disabled={linkFractions} style={numInputStyle} title="Max. Noemer" />
-                    </div>
-
+                ))}
             </div>
         </div>
     );
 }
-
-// Lokale stijlen voor deze specifieke UI component
-const checkboxStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-main)' };
-const checkboxInputStyle: React.CSSProperties = { accentColor: 'var(--accent-purple)', width: '16px', height: '16px' };
-
-const fractionColStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '70px' };
-const numInputStyle: React.CSSProperties = { width: '100%', padding: '8px 0', textAlign: 'center', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', outline: 'none', fontSize: '14px', fontWeight: 'bold' };
-const fractionLineStyle: React.CSSProperties = { width: '100%', border: 'none', borderBottom: '2px solid var(--text-muted)', margin: '8px 0' };

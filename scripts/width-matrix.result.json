@@ -4,6 +4,7 @@
   "rule": "overflow <= 1.005 && zoom === 1",
   "summary": {
     "hr-std-optellen": {
+      "leafId": "hr-std-optellen-nat",
       "minWidth": 1,
       "rows": 5,
       "perRowFull": 2,
@@ -13,6 +14,7 @@
       "hSingle": 114
     },
     "hr-std-aftrekken": {
+      "leafId": "hr-std-aftrekken-nat",
       "minWidth": 1,
       "rows": 5,
       "perRowFull": 2,
@@ -22,6 +24,7 @@
       "hSingle": 114
     },
     "hr-std-vermenigvuldigen": {
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "minWidth": 1,
       "rows": 5,
       "perRowFull": 2,
@@ -31,6 +34,7 @@
       "hSingle": 114
     },
     "hr-std-delen": {
+      "leafId": "hr-std-delen-nat",
       "minWidth": 1,
       "rows": 5,
       "perRowFull": 2,
@@ -40,6 +44,7 @@
       "hSingle": 114
     },
     "hr-std-gemengd": {
+      "leafId": "hr-std-gemengd-nat",
       "minWidth": 1,
       "rows": 5,
       "perRowFull": 2,
@@ -49,6 +54,7 @@
       "hSingle": 114
     },
     "cijferen-optellen-nat": {
+      "leafId": "cijferen-optellen-nat",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -58,6 +64,7 @@
       "hSingle": 240
     },
     "cijferen-optellen-dec": {
+      "leafId": "cijferen-optellen-dec",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -67,60 +74,67 @@
       "hSingle": 240
     },
     "cijferen-aftrekken-nat": {
+      "leafId": "cijferen-aftrekken-nat",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
       "count": 4,
-      "hDefault": 240,
-      "hSingle": 240
+      "hDefault": 265,
+      "hSingle": 265
     },
     "cijferen-aftrekken-dec": {
+      "leafId": "cijferen-aftrekken-dec",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
       "count": 4,
-      "hDefault": 240,
-      "hSingle": 240
+      "hDefault": 265,
+      "hSingle": 265
     },
     "cijferen-vermenigvuldigen-nat": {
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
       "count": 4,
-      "hDefault": 240,
-      "hSingle": 240
+      "hDefault": 290,
+      "hSingle": 290
     },
     "cijferen-vermenigvuldigen-dec": {
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
       "count": 4,
-      "hDefault": 240,
-      "hSingle": 240
+      "hDefault": 290,
+      "hSingle": 290
     },
     "cijferen-delen-nat": {
+      "leafId": "cijferen-delen-nat",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
       "count": 4,
-      "hDefault": 240,
-      "hSingle": 240
+      "hDefault": 384,
+      "hSingle": 384
     },
     "cijferen-delen-dec": {
-      "minWidth": 1,
+      "leafId": "cijferen-delen-dec",
+      "minWidth": 2,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 4,
-      "hDefault": 240,
-      "hSingle": 240
+      "count": 2,
+      "hDefault": 549,
+      "hSingle": 549
     },
     "klok-kloklezen": {
+      "leafId": "klok-analoog-lezen",
       "minWidth": 1,
       "rows": 4,
       "perRowFull": 2.5,
@@ -130,6 +144,7 @@
       "hSingle": 234
     },
     "breuken": {
+      "leafId": "breuken-kleuren",
       "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
@@ -139,6 +154,7 @@
       "hSingle": 214
     },
     "splitsen": {
+      "leafId": "splitsen-basis",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 2.5,
@@ -148,15 +164,17 @@
       "hSingle": 227
     },
     "geld-herkennen": {
+      "leafId": "geld-herkennen",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
-      "rowUnits": 10.08,
+      "rowUnits": 9.83,
       "count": 6,
-      "hDefault": 430,
-      "hSingle": 188
+      "hDefault": 392,
+      "hSingle": 156
     },
     "geld-tekenen": {
+      "leafId": "geld-tekenen",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
@@ -166,6 +184,7 @@
       "hSingle": 204
     },
     "geld-wissel": {
+      "leafId": "geld-wissel",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 2,
@@ -175,6 +194,7 @@
       "hSingle": 198
     },
     "geld-teruggeven": {
+      "leafId": "geld-teruggeven",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -184,6 +204,7 @@
       "hSingle": 266
     },
     "mab-herkennen": {
+      "leafId": "mab-herkennen",
       "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
@@ -193,6 +214,7 @@
       "hSingle": 223
     },
     "mab-tekenen": {
+      "leafId": "mab-tekenen",
       "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
@@ -202,6 +224,7 @@
       "hSingle": 223
     },
     "ordenen": {
+      "leafId": "getalbegrip-ordenen-nat",
       "minWidth": 2,
       "rows": 3,
       "perRowFull": 2,
@@ -211,6 +234,7 @@
       "hSingle": 132
     },
     "breuken-bewerken": {
+      "leafId": "breuken-gemengd",
       "minWidth": 1,
       "rows": 4,
       "perRowFull": 2,
@@ -220,6 +244,7 @@
       "hSingle": 118
     },
     "breuken-rangschikken": {
+      "leafId": "breuken-rangschikken",
       "minWidth": 2,
       "rows": 3,
       "perRowFull": 2,
@@ -229,15 +254,17 @@
       "hSingle": 149
     },
     "deelbaarheid": {
-      "minWidth": 1,
+      "leafId": "deelbaarheid-veelvouden",
+      "minWidth": 2,
       "rows": 6,
       "perRowFull": 1,
-      "rowUnits": 1.33,
+      "rowUnits": 2.83,
       "count": 6,
-      "hDefault": 306,
-      "hSingle": 146
+      "hDefault": 468,
+      "hSingle": 128
     },
     "getalpatronen": {
+      "leafId": "patronen-nat",
       "minWidth": 2,
       "rows": 6,
       "perRowFull": 1,
@@ -247,6 +274,7 @@
       "hSingle": 104
     },
     "deelbaarheid-kleuren": {
+      "leafId": "deelbaarheid-rooster",
       "minWidth": 1,
       "rows": 3,
       "perRowFull": 1,
@@ -256,6 +284,7 @@
       "hSingle": 132
     },
     "getallenas": {
+      "leafId": "getalbegrip-getallenassen-nat",
       "minWidth": 1,
       "rows": 5,
       "perRowFull": 1,
@@ -265,6 +294,7 @@
       "hSingle": 152
     },
     "getallenrijen": {
+      "leafId": "getalbegrip-getallenrijen-nat",
       "minWidth": 2,
       "rows": 5,
       "perRowFull": 1,
@@ -274,24 +304,27 @@
       "hSingle": 125
     },
     "lengte-meten": {
-      "minWidth": 4,
+      "leafId": "lengte-meten",
+      "minWidth": 1,
       "rows": 6,
       "perRowFull": 1,
-      "rowUnits": 5.67,
+      "rowUnits": 3.17,
       "count": 6,
-      "hDefault": 872,
-      "hSingle": 192
+      "hDefault": 512,
+      "hSingle": 132
     },
     "omtrek": {
-      "minWidth": 4,
-      "rows": 6,
+      "leafId": "omtrek",
+      "minWidth": 1,
+      "rows": 2,
       "perRowFull": 1,
-      "rowUnits": 12.69,
-      "count": 6,
-      "hDefault": 2093,
-      "hSingle": 570
+      "rowUnits": 8.54,
+      "count": 2,
+      "hDefault": 715,
+      "hSingle": 510
     },
     "temperatuur": {
+      "leafId": "temperatuur-kleuren",
       "minWidth": 1,
       "rows": 1,
       "perRowFull": 4,
@@ -301,6 +334,7 @@
       "hSingle": 259
     },
     "plaatswaarde": {
+      "leafId": "plaatswaarde-waarde",
       "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
@@ -310,15 +344,17 @@
       "hSingle": 103
     },
     "even-oneven": {
+      "leafId": "even-oneven-rooster",
       "minWidth": 1,
       "rows": 3,
       "perRowFull": 1,
-      "rowUnits": 1.9,
+      "rowUnits": 2.17,
       "count": 3,
-      "hDefault": 201,
-      "hSingle": 110
+      "hDefault": 220,
+      "hSingle": 116
     },
     "vergelijken": {
+      "leafId": "vergelijken-getallen",
       "minWidth": 2,
       "rows": 3,
       "perRowFull": 2,
@@ -328,6 +364,7 @@
       "hSingle": 116
     },
     "afronden": {
+      "leafId": "afronden-nat-rooster",
       "minWidth": 2,
       "rows": 3,
       "perRowFull": 2,
@@ -337,7 +374,8 @@
       "hSingle": 306
     },
     "romeinse-cijfers": {
-      "minWidth": 2,
+      "leafId": "romeinse-herkennen",
+      "minWidth": 1,
       "rows": 4,
       "perRowFull": 2,
       "rowUnits": 1.75,
@@ -346,8 +384,8 @@
       "hSingle": 104
     },
     "herleidingen": {
-      "minWidth": 4,
-      "minWidthSingle": 2,
+      "leafId": "herleidingen-lengte",
+      "minWidth": 2,
       "rows": 4,
       "perRowFull": 2,
       "rowUnits": 2.14,
@@ -356,6 +394,7 @@
       "hSingle": 104
     },
     "schattend": {
+      "leafId": "schattend-nat",
       "minWidth": 4,
       "rows": 8,
       "perRowFull": 1,
@@ -365,6 +404,7 @@
       "hSingle": 106
     },
     "verbanden": {
+      "leafId": "verbanden-tabel",
       "minWidth": 2,
       "rows": null,
       "perRowFull": null,
@@ -374,6 +414,7 @@
       "hSingle": 146
     },
     "procenten": {
+      "leafId": "procenten-nemen",
       "minWidth": 1,
       "rows": 4,
       "perRowFull": 2,
@@ -383,6 +424,7 @@
       "hSingle": 104
     },
     "maateenheid": {
+      "leafId": "maateenheid-kiezen",
       "minWidth": 1,
       "rows": 8,
       "perRowFull": 1,
@@ -392,6 +434,7 @@
       "hSingle": 128
     },
     "geld-rekenen": {
+      "leafId": "geld-rekenen-korting",
       "minWidth": 2,
       "rows": 5,
       "perRowFull": 1,
@@ -401,6 +444,7 @@
       "hSingle": 152
     },
     "rekenvolgorde": {
+      "leafId": "handig-rekenvolgorde",
       "minWidth": 2,
       "rows": 5,
       "perRowFull": 2,
@@ -410,6 +454,7 @@
       "hSingle": 104
     },
     "layout-sectie": {
+      "leafId": "layout-sectie",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -419,6 +464,7 @@
       "hSingle": 48
     },
     "layout-schrijflijnen": {
+      "leafId": "layout-schrijflijnen",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -428,6 +474,7 @@
       "hSingle": 269
     },
     "layout-raster": {
+      "leafId": "layout-raster",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -437,6 +484,7 @@
       "hSingle": 344
     },
     "layout-kader": {
+      "leafId": "layout-kader",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -446,6 +494,7 @@
       "hSingle": 90
     },
     "layout-lege-pagina": {
+      "leafId": "layout-lege-pagina",
       "minWidth": 1,
       "rows": null,
       "perRowFull": null,
@@ -455,6 +504,7 @@
       "hSingle": 42
     },
     "kettingsommen": {
+      "leafId": "patronen-kettingsommen",
       "minWidth": 2,
       "rows": 6,
       "perRowFull": 1,
@@ -464,6 +514,7 @@
       "hSingle": 113
     },
     "getalfunctie": {
+      "leafId": "getalbegrip-functie",
       "minWidth": 4,
       "rows": 6,
       "perRowFull": 1,
@@ -473,6 +524,7 @@
       "hSingle": 146
     },
     "tijdsduur": {
+      "leafId": "tijdsduur-berekenen",
       "minWidth": 2,
       "rows": 6,
       "perRowFull": 1,
@@ -482,6 +534,7 @@
       "hSingle": 150
     },
     "kalender": {
+      "leafId": "kalender-maandrooster",
       "minWidth": 2,
       "rows": 1,
       "perRowFull": 1,
@@ -491,6 +544,7 @@
       "hSingle": 430
     },
     "controleren": {
+      "leafId": "controleren-negenproef",
       "minWidth": 4,
       "minWidthSingle": 2,
       "rows": 2,
@@ -501,15 +555,17 @@
       "hSingle": 168
     },
     "oppervlakte": {
+      "leafId": "oppervlakte-rooster",
       "minWidth": 4,
-      "rows": 4,
+      "rows": 2,
       "perRowFull": 1,
-      "rowUnits": 12.38,
-      "count": 4,
-      "hDefault": 1382,
-      "hSingle": 491
+      "rowUnits": 11.83,
+      "count": 2,
+      "hDefault": 700,
+      "hSingle": 416
     },
     "weegschaal": {
+      "leafId": "massa-weegschaal-aflezen",
       "minWidth": 2,
       "rows": 2,
       "perRowFull": 2,
@@ -519,15 +575,17 @@
       "hSingle": 281
     },
     "vormleer-punt-lijn": {
+      "leafId": "vormleer-punt-lijn-herkennen",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
-      "rowUnits": 6.5,
+      "rowUnits": 6.96,
       "count": 6,
-      "hDefault": 391,
-      "hSingle": 235
+      "hDefault": 413,
+      "hSingle": 246
     },
     "vormleer-hoeken": {
+      "leafId": "vormleer-hoeken-herkennen",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
@@ -537,18 +595,20 @@
       "hSingle": 235
     },
     "vormleer-figuren": {
+      "leafId": "vormleer-driehoeken",
       "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
       "rowUnits": 6.5,
       "count": 6,
-      "hDefault": 391,
-      "hSingle": 235
+      "hDefault": 408,
+      "hSingle": 252
     }
   },
   "rows": [
     {
       "typeId": "hr-std-optellen",
+      "leafId": "hr-std-optellen-nat",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -561,6 +621,7 @@
     },
     {
       "typeId": "hr-std-optellen",
+      "leafId": "hr-std-optellen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -573,6 +634,7 @@
     },
     {
       "typeId": "hr-std-optellen",
+      "leafId": "hr-std-optellen-nat",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -585,6 +647,7 @@
     },
     {
       "typeId": "hr-std-optellen",
+      "leafId": "hr-std-optellen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -597,6 +660,7 @@
     },
     {
       "typeId": "hr-std-optellen",
+      "leafId": "hr-std-optellen-nat",
       "width": 1,
       "mode": "default",
       "count": 10,
@@ -609,6 +673,7 @@
     },
     {
       "typeId": "hr-std-optellen",
+      "leafId": "hr-std-optellen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -621,6 +686,7 @@
     },
     {
       "typeId": "hr-std-aftrekken",
+      "leafId": "hr-std-aftrekken-nat",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -633,6 +699,7 @@
     },
     {
       "typeId": "hr-std-aftrekken",
+      "leafId": "hr-std-aftrekken-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -645,6 +712,7 @@
     },
     {
       "typeId": "hr-std-aftrekken",
+      "leafId": "hr-std-aftrekken-nat",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -657,6 +725,7 @@
     },
     {
       "typeId": "hr-std-aftrekken",
+      "leafId": "hr-std-aftrekken-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -669,6 +738,7 @@
     },
     {
       "typeId": "hr-std-aftrekken",
+      "leafId": "hr-std-aftrekken-nat",
       "width": 1,
       "mode": "default",
       "count": 10,
@@ -681,6 +751,7 @@
     },
     {
       "typeId": "hr-std-aftrekken",
+      "leafId": "hr-std-aftrekken-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -693,6 +764,7 @@
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -705,6 +777,7 @@
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -717,6 +790,7 @@
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -729,6 +803,7 @@
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -741,6 +816,7 @@
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "width": 1,
       "mode": "default",
       "count": 10,
@@ -753,6 +829,7 @@
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
+      "leafId": "hr-std-vermenigvuldigen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -765,6 +842,7 @@
     },
     {
       "typeId": "hr-std-delen",
+      "leafId": "hr-std-delen-nat",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -777,6 +855,7 @@
     },
     {
       "typeId": "hr-std-delen",
+      "leafId": "hr-std-delen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -789,6 +868,7 @@
     },
     {
       "typeId": "hr-std-delen",
+      "leafId": "hr-std-delen-nat",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -801,6 +881,7 @@
     },
     {
       "typeId": "hr-std-delen",
+      "leafId": "hr-std-delen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -813,6 +894,7 @@
     },
     {
       "typeId": "hr-std-delen",
+      "leafId": "hr-std-delen-nat",
       "width": 1,
       "mode": "default",
       "count": 10,
@@ -825,6 +907,7 @@
     },
     {
       "typeId": "hr-std-delen",
+      "leafId": "hr-std-delen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -837,6 +920,7 @@
     },
     {
       "typeId": "hr-std-gemengd",
+      "leafId": "hr-std-gemengd-nat",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -849,6 +933,7 @@
     },
     {
       "typeId": "hr-std-gemengd",
+      "leafId": "hr-std-gemengd-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -861,6 +946,7 @@
     },
     {
       "typeId": "hr-std-gemengd",
+      "leafId": "hr-std-gemengd-nat",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -873,6 +959,7 @@
     },
     {
       "typeId": "hr-std-gemengd",
+      "leafId": "hr-std-gemengd-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -885,6 +972,7 @@
     },
     {
       "typeId": "hr-std-gemengd",
+      "leafId": "hr-std-gemengd-nat",
       "width": 1,
       "mode": "default",
       "count": 10,
@@ -897,6 +985,7 @@
     },
     {
       "typeId": "hr-std-gemengd",
+      "leafId": "hr-std-gemengd-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -909,6 +998,7 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
+      "leafId": "cijferen-optellen-nat",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -921,6 +1011,7 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
+      "leafId": "cijferen-optellen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -933,6 +1024,7 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
+      "leafId": "cijferen-optellen-nat",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -945,6 +1037,7 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
+      "leafId": "cijferen-optellen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -957,6 +1050,7 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
+      "leafId": "cijferen-optellen-nat",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -969,6 +1063,7 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
+      "leafId": "cijferen-optellen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -981,6 +1076,7 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
+      "leafId": "cijferen-optellen-dec",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -993,6 +1089,7 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
+      "leafId": "cijferen-optellen-dec",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1005,6 +1102,7 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
+      "leafId": "cijferen-optellen-dec",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1017,6 +1115,7 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
+      "leafId": "cijferen-optellen-dec",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1029,6 +1128,7 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
+      "leafId": "cijferen-optellen-dec",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1041,6 +1141,7 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
+      "leafId": "cijferen-optellen-dec",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1053,6 +1154,7 @@
     },
     {
       "typeId": "cijferen-aftrekken-nat",
+      "leafId": "cijferen-aftrekken-nat",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1060,11 +1162,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
+      "leafId": "cijferen-aftrekken-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1072,11 +1175,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
+      "leafId": "cijferen-aftrekken-nat",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1084,11 +1188,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 410,
+      "cellHeight": 460,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
+      "leafId": "cijferen-aftrekken-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1096,11 +1201,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
+      "leafId": "cijferen-aftrekken-nat",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1108,11 +1214,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 750,
+      "cellHeight": 850,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
+      "leafId": "cijferen-aftrekken-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1120,11 +1227,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
+      "leafId": "cijferen-aftrekken-dec",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1132,11 +1240,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
+      "leafId": "cijferen-aftrekken-dec",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1144,11 +1253,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
+      "leafId": "cijferen-aftrekken-dec",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1156,11 +1266,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 410,
+      "cellHeight": 460,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
+      "leafId": "cijferen-aftrekken-dec",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1168,11 +1279,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
+      "leafId": "cijferen-aftrekken-dec",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1180,11 +1292,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 750,
+      "cellHeight": 850,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
+      "leafId": "cijferen-aftrekken-dec",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1192,11 +1305,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 240,
+      "cellHeight": 265,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1204,11 +1318,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1216,11 +1331,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1228,11 +1344,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 410,
+      "cellHeight": 485,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1240,11 +1357,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1252,11 +1370,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 750,
+      "cellHeight": 875,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "leafId": "cijferen-vermenigvuldigen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1264,11 +1383,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1276,11 +1396,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1288,11 +1409,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1300,11 +1422,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 410,
+      "cellHeight": 510,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1312,11 +1435,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1324,11 +1448,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 750,
+      "cellHeight": 950,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "leafId": "cijferen-vermenigvuldigen-dec",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1336,11 +1461,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 240,
+      "cellHeight": 290,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "leafId": "cijferen-delen-nat",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1348,11 +1474,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 384,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "leafId": "cijferen-delen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1360,11 +1487,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 384,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "leafId": "cijferen-delen-nat",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1372,11 +1500,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 410,
+      "cellHeight": 698,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "leafId": "cijferen-delen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1384,11 +1513,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
+      "cellHeight": 384,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "leafId": "cijferen-delen-nat",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1396,11 +1526,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 750,
+      "cellHeight": 1326,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "leafId": "cijferen-delen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1408,23 +1539,25 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 240,
+      "cellHeight": 384,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
+      "leafId": "cijferen-delen-dec",
       "width": 4,
       "mode": "default",
-      "count": 4,
+      "count": 2,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 549,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
+      "leafId": "cijferen-delen-dec",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1432,23 +1565,25 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 240,
+      "cellHeight": 549,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
+      "leafId": "cijferen-delen-dec",
       "width": 2,
       "mode": "default",
-      "count": 4,
+      "count": 2,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 410,
+      "cellHeight": 1028,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
+      "leafId": "cijferen-delen-dec",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1456,35 +1591,38 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
+      "cellHeight": 549,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
+      "leafId": "cijferen-delen-dec",
       "width": 1,
       "mode": "default",
-      "count": 4,
-      "overflow": 1,
+      "count": 2,
+      "overflow": 1.6933,
       "zoom": 1,
-      "scrollWidth": 163,
+      "scrollWidth": 276,
       "clientWidth": 163,
-      "cellHeight": 750,
+      "cellHeight": 1028,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
+      "leafId": "cijferen-delen-dec",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1,
+      "overflow": 1.6933,
       "zoom": 1,
-      "scrollWidth": 163,
+      "scrollWidth": 276,
       "clientWidth": 163,
-      "cellHeight": 240,
+      "cellHeight": 549,
       "rowCount": 0
     },
     {
       "typeId": "klok-kloklezen",
+      "leafId": "klok-analoog-lezen",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -1497,6 +1635,7 @@
     },
     {
       "typeId": "klok-kloklezen",
+      "leafId": "klok-analoog-lezen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1509,6 +1648,7 @@
     },
     {
       "typeId": "klok-kloklezen",
+      "leafId": "klok-analoog-lezen",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -1521,6 +1661,7 @@
     },
     {
       "typeId": "klok-kloklezen",
+      "leafId": "klok-analoog-lezen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1533,6 +1674,7 @@
     },
     {
       "typeId": "klok-kloklezen",
+      "leafId": "klok-analoog-lezen",
       "width": 1,
       "mode": "default",
       "count": 10,
@@ -1545,6 +1687,7 @@
     },
     {
       "typeId": "klok-kloklezen",
+      "leafId": "klok-analoog-lezen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1557,6 +1700,7 @@
     },
     {
       "typeId": "breuken",
+      "leafId": "breuken-kleuren",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -1569,6 +1713,7 @@
     },
     {
       "typeId": "breuken",
+      "leafId": "breuken-kleuren",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1581,6 +1726,7 @@
     },
     {
       "typeId": "breuken",
+      "leafId": "breuken-kleuren",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -1593,6 +1739,7 @@
     },
     {
       "typeId": "breuken",
+      "leafId": "breuken-kleuren",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1605,6 +1752,7 @@
     },
     {
       "typeId": "breuken",
+      "leafId": "breuken-kleuren",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -1617,6 +1765,7 @@
     },
     {
       "typeId": "breuken",
+      "leafId": "breuken-kleuren",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1629,6 +1778,7 @@
     },
     {
       "typeId": "splitsen",
+      "leafId": "splitsen-basis",
       "width": 4,
       "mode": "default",
       "count": 5,
@@ -1641,6 +1791,7 @@
     },
     {
       "typeId": "splitsen",
+      "leafId": "splitsen-basis",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1653,6 +1804,7 @@
     },
     {
       "typeId": "splitsen",
+      "leafId": "splitsen-basis",
       "width": 2,
       "mode": "default",
       "count": 5,
@@ -1660,11 +1812,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 879,
-      "rowCount": 5
+      "cellHeight": 553,
+      "rowCount": 3
     },
     {
       "typeId": "splitsen",
+      "leafId": "splitsen-basis",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1677,6 +1830,7 @@
     },
     {
       "typeId": "splitsen",
+      "leafId": "splitsen-basis",
       "width": 1,
       "mode": "default",
       "count": 5,
@@ -1689,6 +1843,7 @@
     },
     {
       "typeId": "splitsen",
+      "leafId": "splitsen-basis",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1701,6 +1856,7 @@
     },
     {
       "typeId": "geld-herkennen",
+      "leafId": "geld-herkennen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -1708,11 +1864,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 430,
+      "cellHeight": 392,
       "rowCount": 2
     },
     {
       "typeId": "geld-herkennen",
+      "leafId": "geld-herkennen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1720,11 +1877,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 188,
+      "cellHeight": 156,
       "rowCount": 1
     },
     {
       "typeId": "geld-herkennen",
+      "leafId": "geld-herkennen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -1732,11 +1890,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 634,
+      "cellHeight": 560,
       "rowCount": 3
     },
     {
       "typeId": "geld-herkennen",
+      "leafId": "geld-herkennen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1744,11 +1903,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 188,
+      "cellHeight": 156,
       "rowCount": 1
     },
     {
       "typeId": "geld-herkennen",
+      "leafId": "geld-herkennen",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -1756,11 +1916,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1014,
+      "cellHeight": 950,
       "rowCount": 6
     },
     {
       "typeId": "geld-herkennen",
+      "leafId": "geld-herkennen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1768,11 +1929,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 188,
+      "cellHeight": 156,
       "rowCount": 1
     },
     {
       "typeId": "geld-tekenen",
+      "leafId": "geld-tekenen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -1785,6 +1947,7 @@
     },
     {
       "typeId": "geld-tekenen",
+      "leafId": "geld-tekenen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1797,6 +1960,7 @@
     },
     {
       "typeId": "geld-tekenen",
+      "leafId": "geld-tekenen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -1809,6 +1973,7 @@
     },
     {
       "typeId": "geld-tekenen",
+      "leafId": "geld-tekenen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1821,6 +1986,7 @@
     },
     {
       "typeId": "geld-tekenen",
+      "leafId": "geld-tekenen",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -1833,6 +1999,7 @@
     },
     {
       "typeId": "geld-tekenen",
+      "leafId": "geld-tekenen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1845,6 +2012,7 @@
     },
     {
       "typeId": "geld-wissel",
+      "leafId": "geld-wissel",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1857,6 +2025,7 @@
     },
     {
       "typeId": "geld-wissel",
+      "leafId": "geld-wissel",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1869,6 +2038,7 @@
     },
     {
       "typeId": "geld-wissel",
+      "leafId": "geld-wissel",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1881,6 +2051,7 @@
     },
     {
       "typeId": "geld-wissel",
+      "leafId": "geld-wissel",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1893,6 +2064,7 @@
     },
     {
       "typeId": "geld-wissel",
+      "leafId": "geld-wissel",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1905,6 +2077,7 @@
     },
     {
       "typeId": "geld-wissel",
+      "leafId": "geld-wissel",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1917,6 +2090,7 @@
     },
     {
       "typeId": "geld-teruggeven",
+      "leafId": "geld-teruggeven",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -1929,6 +2103,7 @@
     },
     {
       "typeId": "geld-teruggeven",
+      "leafId": "geld-teruggeven",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -1941,6 +2116,7 @@
     },
     {
       "typeId": "geld-teruggeven",
+      "leafId": "geld-teruggeven",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -1953,6 +2129,7 @@
     },
     {
       "typeId": "geld-teruggeven",
+      "leafId": "geld-teruggeven",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -1965,6 +2142,7 @@
     },
     {
       "typeId": "geld-teruggeven",
+      "leafId": "geld-teruggeven",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -1977,6 +2155,7 @@
     },
     {
       "typeId": "geld-teruggeven",
+      "leafId": "geld-teruggeven",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1989,6 +2168,7 @@
     },
     {
       "typeId": "mab-herkennen",
+      "leafId": "mab-herkennen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2001,6 +2181,7 @@
     },
     {
       "typeId": "mab-herkennen",
+      "leafId": "mab-herkennen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2013,6 +2194,7 @@
     },
     {
       "typeId": "mab-herkennen",
+      "leafId": "mab-herkennen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -2025,6 +2207,7 @@
     },
     {
       "typeId": "mab-herkennen",
+      "leafId": "mab-herkennen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2037,6 +2220,7 @@
     },
     {
       "typeId": "mab-herkennen",
+      "leafId": "mab-herkennen",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -2049,6 +2233,7 @@
     },
     {
       "typeId": "mab-herkennen",
+      "leafId": "mab-herkennen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2061,6 +2246,7 @@
     },
     {
       "typeId": "mab-tekenen",
+      "leafId": "mab-tekenen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2073,6 +2259,7 @@
     },
     {
       "typeId": "mab-tekenen",
+      "leafId": "mab-tekenen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2085,6 +2272,7 @@
     },
     {
       "typeId": "mab-tekenen",
+      "leafId": "mab-tekenen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -2097,6 +2285,7 @@
     },
     {
       "typeId": "mab-tekenen",
+      "leafId": "mab-tekenen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2109,6 +2298,7 @@
     },
     {
       "typeId": "mab-tekenen",
+      "leafId": "mab-tekenen",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -2121,6 +2311,7 @@
     },
     {
       "typeId": "mab-tekenen",
+      "leafId": "mab-tekenen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2133,6 +2324,7 @@
     },
     {
       "typeId": "ordenen",
+      "leafId": "getalbegrip-ordenen-nat",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2145,6 +2337,7 @@
     },
     {
       "typeId": "ordenen",
+      "leafId": "getalbegrip-ordenen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2157,6 +2350,7 @@
     },
     {
       "typeId": "ordenen",
+      "leafId": "getalbegrip-ordenen-nat",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -2169,6 +2363,7 @@
     },
     {
       "typeId": "ordenen",
+      "leafId": "getalbegrip-ordenen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2181,6 +2376,7 @@
     },
     {
       "typeId": "ordenen",
+      "leafId": "getalbegrip-ordenen-nat",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -2193,6 +2389,7 @@
     },
     {
       "typeId": "ordenen",
+      "leafId": "getalbegrip-ordenen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2205,6 +2402,7 @@
     },
     {
       "typeId": "breuken-bewerken",
+      "leafId": "breuken-gemengd",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -2217,6 +2415,7 @@
     },
     {
       "typeId": "breuken-bewerken",
+      "leafId": "breuken-gemengd",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2229,6 +2428,7 @@
     },
     {
       "typeId": "breuken-bewerken",
+      "leafId": "breuken-gemengd",
       "width": 2,
       "mode": "default",
       "count": 8,
@@ -2241,6 +2441,7 @@
     },
     {
       "typeId": "breuken-bewerken",
+      "leafId": "breuken-gemengd",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2253,6 +2454,7 @@
     },
     {
       "typeId": "breuken-bewerken",
+      "leafId": "breuken-gemengd",
       "width": 1,
       "mode": "default",
       "count": 8,
@@ -2265,6 +2467,7 @@
     },
     {
       "typeId": "breuken-bewerken",
+      "leafId": "breuken-gemengd",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2277,6 +2480,7 @@
     },
     {
       "typeId": "breuken-rangschikken",
+      "leafId": "breuken-rangschikken",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2289,6 +2493,7 @@
     },
     {
       "typeId": "breuken-rangschikken",
+      "leafId": "breuken-rangschikken",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2301,6 +2506,7 @@
     },
     {
       "typeId": "breuken-rangschikken",
+      "leafId": "breuken-rangschikken",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -2313,6 +2519,7 @@
     },
     {
       "typeId": "breuken-rangschikken",
+      "leafId": "breuken-rangschikken",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2325,6 +2532,7 @@
     },
     {
       "typeId": "breuken-rangschikken",
+      "leafId": "breuken-rangschikken",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -2337,6 +2545,7 @@
     },
     {
       "typeId": "breuken-rangschikken",
+      "leafId": "breuken-rangschikken",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2349,6 +2558,7 @@
     },
     {
       "typeId": "deelbaarheid",
+      "leafId": "deelbaarheid-veelvouden",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2356,11 +2566,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 306,
-      "rowCount": 7
+      "cellHeight": 468,
+      "rowCount": 6
     },
     {
       "typeId": "deelbaarheid",
+      "leafId": "deelbaarheid-veelvouden",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2368,131 +2579,142 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 146,
-      "rowCount": 2
-    },
-    {
-      "typeId": "deelbaarheid",
-      "width": 2,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 306,
-      "rowCount": 7
-    },
-    {
-      "typeId": "deelbaarheid",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 146,
-      "rowCount": 2
-    },
-    {
-      "typeId": "deelbaarheid",
-      "width": 1,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 666,
-      "rowCount": 6
-    },
-    {
-      "typeId": "deelbaarheid",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 161,
-      "rowCount": 1
-    },
-    {
-      "typeId": "getalpatronen",
-      "width": 4,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 334,
-      "rowCount": 6
-    },
-    {
-      "typeId": "getalpatronen",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 104,
-      "rowCount": 1
-    },
-    {
-      "typeId": "getalpatronen",
-      "width": 2,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 334,
-      "rowCount": 6
-    },
-    {
-      "typeId": "getalpatronen",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 104,
-      "rowCount": 1
-    },
-    {
-      "typeId": "getalpatronen",
-      "width": 1,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1.9325,
-      "zoom": 1,
-      "scrollWidth": 315,
-      "clientWidth": 163,
-      "cellHeight": 358,
-      "rowCount": 6
-    },
-    {
-      "typeId": "getalpatronen",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1.8589,
-      "zoom": 1,
-      "scrollWidth": 303,
-      "clientWidth": 163,
       "cellHeight": 128,
       "rowCount": 1
     },
     {
+      "typeId": "deelbaarheid",
+      "leafId": "deelbaarheid-veelvouden",
+      "width": 2,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 468,
+      "rowCount": 6
+    },
+    {
+      "typeId": "deelbaarheid",
+      "leafId": "deelbaarheid-veelvouden",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 128,
+      "rowCount": 1
+    },
+    {
+      "typeId": "deelbaarheid",
+      "leafId": "deelbaarheid-veelvouden",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1.1902,
+      "zoom": 1,
+      "scrollWidth": 194,
+      "clientWidth": 163,
+      "cellHeight": 696,
+      "rowCount": 6
+    },
+    {
+      "typeId": "deelbaarheid",
+      "leafId": "deelbaarheid-veelvouden",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1.1902,
+      "zoom": 1,
+      "scrollWidth": 194,
+      "clientWidth": 163,
+      "cellHeight": 166,
+      "rowCount": 1
+    },
+    {
+      "typeId": "getalpatronen",
+      "leafId": "patronen-nat",
+      "width": 4,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 334,
+      "rowCount": 6
+    },
+    {
+      "typeId": "getalpatronen",
+      "leafId": "patronen-nat",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 104,
+      "rowCount": 1
+    },
+    {
+      "typeId": "getalpatronen",
+      "leafId": "patronen-nat",
+      "width": 2,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 334,
+      "rowCount": 6
+    },
+    {
+      "typeId": "getalpatronen",
+      "leafId": "patronen-nat",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 104,
+      "rowCount": 1
+    },
+    {
+      "typeId": "getalpatronen",
+      "leafId": "patronen-nat",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1.5337,
+      "zoom": 1,
+      "scrollWidth": 250,
+      "clientWidth": 163,
+      "cellHeight": 352,
+      "rowCount": 6
+    },
+    {
+      "typeId": "getalpatronen",
+      "leafId": "patronen-nat",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1.3926,
+      "zoom": 1,
+      "scrollWidth": 227,
+      "clientWidth": 163,
+      "cellHeight": 127,
+      "rowCount": 1
+    },
+    {
       "typeId": "deelbaarheid-kleuren",
+      "leafId": "deelbaarheid-rooster",
       "width": 4,
       "mode": "default",
       "count": 3,
@@ -2505,6 +2727,7 @@
     },
     {
       "typeId": "deelbaarheid-kleuren",
+      "leafId": "deelbaarheid-rooster",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2517,6 +2740,7 @@
     },
     {
       "typeId": "deelbaarheid-kleuren",
+      "leafId": "deelbaarheid-rooster",
       "width": 2,
       "mode": "default",
       "count": 3,
@@ -2529,6 +2753,7 @@
     },
     {
       "typeId": "deelbaarheid-kleuren",
+      "leafId": "deelbaarheid-rooster",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2541,6 +2766,7 @@
     },
     {
       "typeId": "deelbaarheid-kleuren",
+      "leafId": "deelbaarheid-rooster",
       "width": 1,
       "mode": "default",
       "count": 3,
@@ -2553,6 +2779,7 @@
     },
     {
       "typeId": "deelbaarheid-kleuren",
+      "leafId": "deelbaarheid-rooster",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2565,6 +2792,7 @@
     },
     {
       "typeId": "getallenas",
+      "leafId": "getalbegrip-getallenassen-nat",
       "width": 4,
       "mode": "default",
       "count": 5,
@@ -2577,6 +2805,7 @@
     },
     {
       "typeId": "getallenas",
+      "leafId": "getalbegrip-getallenassen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2589,6 +2818,7 @@
     },
     {
       "typeId": "getallenas",
+      "leafId": "getalbegrip-getallenassen-nat",
       "width": 2,
       "mode": "default",
       "count": 5,
@@ -2601,6 +2831,7 @@
     },
     {
       "typeId": "getallenas",
+      "leafId": "getalbegrip-getallenassen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2613,6 +2844,7 @@
     },
     {
       "typeId": "getallenas",
+      "leafId": "getalbegrip-getallenassen-nat",
       "width": 1,
       "mode": "default",
       "count": 5,
@@ -2625,6 +2857,7 @@
     },
     {
       "typeId": "getallenas",
+      "leafId": "getalbegrip-getallenassen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2637,6 +2870,7 @@
     },
     {
       "typeId": "getallenrijen",
+      "leafId": "getalbegrip-getallenrijen-nat",
       "width": 4,
       "mode": "default",
       "count": 5,
@@ -2649,6 +2883,7 @@
     },
     {
       "typeId": "getallenrijen",
+      "leafId": "getalbegrip-getallenrijen-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2661,6 +2896,7 @@
     },
     {
       "typeId": "getallenrijen",
+      "leafId": "getalbegrip-getallenrijen-nat",
       "width": 2,
       "mode": "default",
       "count": 5,
@@ -2673,6 +2909,7 @@
     },
     {
       "typeId": "getallenrijen",
+      "leafId": "getalbegrip-getallenrijen-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2685,6 +2922,7 @@
     },
     {
       "typeId": "getallenrijen",
+      "leafId": "getalbegrip-getallenrijen-nat",
       "width": 1,
       "mode": "default",
       "count": 5,
@@ -2697,6 +2935,7 @@
     },
     {
       "typeId": "getallenrijen",
+      "leafId": "getalbegrip-getallenrijen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2709,6 +2948,7 @@
     },
     {
       "typeId": "lengte-meten",
+      "leafId": "lengte-meten",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2716,11 +2956,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 872,
+      "cellHeight": 512,
       "rowCount": 6
     },
     {
       "typeId": "lengte-meten",
+      "leafId": "lengte-meten",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2728,71 +2969,77 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 192,
+      "cellHeight": 132,
       "rowCount": 1
     },
     {
       "typeId": "lengte-meten",
+      "leafId": "lengte-meten",
       "width": 2,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1.3669,
-      "zoom": 1,
-      "scrollWidth": 462,
-      "clientWidth": 338,
-      "cellHeight": 872,
-      "rowCount": 6
-    },
-    {
-      "typeId": "lengte-meten",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1.3669,
-      "zoom": 1,
-      "scrollWidth": 462,
-      "clientWidth": 338,
-      "cellHeight": 192,
-      "rowCount": 1
-    },
-    {
-      "typeId": "lengte-meten",
-      "width": 1,
-      "mode": "default",
-      "count": 6,
-      "overflow": 2.8344,
-      "zoom": 1,
-      "scrollWidth": 462,
-      "clientWidth": 163,
-      "cellHeight": 872,
-      "rowCount": 6
-    },
-    {
-      "typeId": "lengte-meten",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 2.8344,
-      "zoom": 1,
-      "scrollWidth": 462,
-      "clientWidth": 163,
-      "cellHeight": 192,
-      "rowCount": 1
-    },
-    {
-      "typeId": "omtrek",
-      "width": 4,
       "mode": "default",
       "count": 6,
       "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 2093,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 556,
       "rowCount": 6
     },
     {
+      "typeId": "lengte-meten",
+      "leafId": "lengte-meten",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 154,
+      "rowCount": 1
+    },
+    {
+      "typeId": "lengte-meten",
+      "leafId": "lengte-meten",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 644,
+      "rowCount": 6
+    },
+    {
+      "typeId": "lengte-meten",
+      "leafId": "lengte-meten",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 154,
+      "rowCount": 1
+    },
+    {
       "typeId": "omtrek",
+      "leafId": "omtrek",
+      "width": 4,
+      "mode": "default",
+      "count": 2,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 715,
+      "rowCount": 2
+    },
+    {
+      "typeId": "omtrek",
+      "leafId": "omtrek",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2800,59 +3047,64 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 570,
+      "cellHeight": 510,
       "rowCount": 1
     },
     {
       "typeId": "omtrek",
+      "leafId": "omtrek",
       "width": 2,
       "mode": "default",
-      "count": 6,
-      "overflow": 1.3669,
+      "count": 2,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 2093,
-      "rowCount": 6
+      "cellHeight": 629,
+      "rowCount": 2
     },
     {
       "typeId": "omtrek",
+      "leafId": "omtrek",
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.3669,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 570,
+      "cellHeight": 408,
       "rowCount": 1
     },
     {
       "typeId": "omtrek",
+      "leafId": "omtrek",
       "width": 1,
       "mode": "default",
-      "count": 6,
-      "overflow": 2.8344,
+      "count": 2,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 2117,
-      "rowCount": 6
+      "cellHeight": 393,
+      "rowCount": 2
     },
     {
       "typeId": "omtrek",
+      "leafId": "omtrek",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 2.8344,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 594,
+      "cellHeight": 257,
       "rowCount": 1
     },
     {
       "typeId": "temperatuur",
+      "leafId": "temperatuur-kleuren",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -2865,6 +3117,7 @@
     },
     {
       "typeId": "temperatuur",
+      "leafId": "temperatuur-kleuren",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2877,6 +3130,7 @@
     },
     {
       "typeId": "temperatuur",
+      "leafId": "temperatuur-kleuren",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -2889,6 +3143,7 @@
     },
     {
       "typeId": "temperatuur",
+      "leafId": "temperatuur-kleuren",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2901,6 +3156,7 @@
     },
     {
       "typeId": "temperatuur",
+      "leafId": "temperatuur-kleuren",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -2913,6 +3169,7 @@
     },
     {
       "typeId": "temperatuur",
+      "leafId": "temperatuur-kleuren",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2925,6 +3182,7 @@
     },
     {
       "typeId": "plaatswaarde",
+      "leafId": "plaatswaarde-waarde",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -2937,6 +3195,7 @@
     },
     {
       "typeId": "plaatswaarde",
+      "leafId": "plaatswaarde-waarde",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -2949,6 +3208,7 @@
     },
     {
       "typeId": "plaatswaarde",
+      "leafId": "plaatswaarde-waarde",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -2961,6 +3221,7 @@
     },
     {
       "typeId": "plaatswaarde",
+      "leafId": "plaatswaarde-waarde",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -2973,6 +3234,7 @@
     },
     {
       "typeId": "plaatswaarde",
+      "leafId": "plaatswaarde-waarde",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -2985,6 +3247,7 @@
     },
     {
       "typeId": "plaatswaarde",
+      "leafId": "plaatswaarde-waarde",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -2997,6 +3260,7 @@
     },
     {
       "typeId": "even-oneven",
+      "leafId": "even-oneven-rooster",
       "width": 4,
       "mode": "default",
       "count": 3,
@@ -3004,11 +3268,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 201,
+      "cellHeight": 220,
       "rowCount": 3
     },
     {
       "typeId": "even-oneven",
+      "leafId": "even-oneven-rooster",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3016,11 +3281,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 110,
+      "cellHeight": 116,
       "rowCount": 1
     },
     {
       "typeId": "even-oneven",
+      "leafId": "even-oneven-rooster",
       "width": 2,
       "mode": "default",
       "count": 3,
@@ -3028,11 +3294,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 280,
+      "cellHeight": 319,
       "rowCount": 3
     },
     {
       "typeId": "even-oneven",
+      "leafId": "even-oneven-rooster",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3040,11 +3307,12 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 136,
+      "cellHeight": 149,
       "rowCount": 1
     },
     {
       "typeId": "even-oneven",
+      "leafId": "even-oneven-rooster",
       "width": 1,
       "mode": "default",
       "count": 3,
@@ -3052,11 +3320,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 439,
+      "cellHeight": 517,
       "rowCount": 3
     },
     {
       "typeId": "even-oneven",
+      "leafId": "even-oneven-rooster",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -3064,11 +3333,12 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 189,
+      "cellHeight": 215,
       "rowCount": 1
     },
     {
       "typeId": "vergelijken",
+      "leafId": "vergelijken-getallen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -3081,6 +3351,7 @@
     },
     {
       "typeId": "vergelijken",
+      "leafId": "vergelijken-getallen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3093,6 +3364,7 @@
     },
     {
       "typeId": "vergelijken",
+      "leafId": "vergelijken-getallen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -3105,6 +3377,7 @@
     },
     {
       "typeId": "vergelijken",
+      "leafId": "vergelijken-getallen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3117,30 +3390,33 @@
     },
     {
       "typeId": "vergelijken",
+      "leafId": "vergelijken-getallen",
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.2209,
+      "overflow": 1.2147,
       "zoom": 1,
-      "scrollWidth": 199,
+      "scrollWidth": 198,
       "clientWidth": 163,
       "cellHeight": 400,
       "rowCount": 6
     },
     {
       "typeId": "vergelijken",
+      "leafId": "vergelijken-getallen",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.2209,
+      "overflow": 1.2147,
       "zoom": 1,
-      "scrollWidth": 199,
+      "scrollWidth": 198,
       "clientWidth": 163,
       "cellHeight": 140,
       "rowCount": 1
     },
     {
       "typeId": "afronden",
+      "leafId": "afronden-nat-rooster",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -3153,6 +3429,7 @@
     },
     {
       "typeId": "afronden",
+      "leafId": "afronden-nat-rooster",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3165,6 +3442,7 @@
     },
     {
       "typeId": "afronden",
+      "leafId": "afronden-nat-rooster",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -3177,6 +3455,7 @@
     },
     {
       "typeId": "afronden",
+      "leafId": "afronden-nat-rooster",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3189,30 +3468,33 @@
     },
     {
       "typeId": "afronden",
+      "leafId": "afronden-nat-rooster",
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.816,
+      "overflow": 1.227,
       "zoom": 1,
-      "scrollWidth": 296,
+      "scrollWidth": 200,
       "clientWidth": 163,
-      "cellHeight": 1546,
+      "cellHeight": 2926,
       "rowCount": 6
     },
     {
       "typeId": "afronden",
+      "leafId": "afronden-nat-rooster",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.816,
+      "overflow": 1.227,
       "zoom": 1,
-      "scrollWidth": 296,
+      "scrollWidth": 200,
       "clientWidth": 163,
-      "cellHeight": 306,
+      "cellHeight": 536,
       "rowCount": 1
     },
     {
       "typeId": "romeinse-cijfers",
+      "leafId": "romeinse-herkennen",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -3225,6 +3507,7 @@
     },
     {
       "typeId": "romeinse-cijfers",
+      "leafId": "romeinse-herkennen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3237,6 +3520,7 @@
     },
     {
       "typeId": "romeinse-cijfers",
+      "leafId": "romeinse-herkennen",
       "width": 2,
       "mode": "default",
       "count": 8,
@@ -3249,6 +3533,7 @@
     },
     {
       "typeId": "romeinse-cijfers",
+      "leafId": "romeinse-herkennen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3261,30 +3546,33 @@
     },
     {
       "typeId": "romeinse-cijfers",
+      "leafId": "romeinse-herkennen",
       "width": 1,
       "mode": "default",
       "count": 8,
-      "overflow": 1.681,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 274,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 422,
       "rowCount": 8
     },
     {
       "typeId": "romeinse-cijfers",
+      "leafId": "romeinse-herkennen",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.6074,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 262,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 128,
       "rowCount": 1
     },
     {
       "typeId": "herleidingen",
+      "leafId": "herleidingen-lengte",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -3297,6 +3585,7 @@
     },
     {
       "typeId": "herleidingen",
+      "leafId": "herleidingen-lengte",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3309,18 +3598,20 @@
     },
     {
       "typeId": "herleidingen",
+      "leafId": "herleidingen-lengte",
       "width": 2,
       "mode": "default",
       "count": 8,
-      "overflow": 1.6331,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 552,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 258,
-      "rowCount": 4
+      "cellHeight": 426,
+      "rowCount": 8
     },
     {
       "typeId": "herleidingen",
+      "leafId": "herleidingen-lengte",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3333,30 +3624,33 @@
     },
     {
       "typeId": "herleidingen",
+      "leafId": "herleidingen-lengte",
       "width": 1,
       "mode": "default",
       "count": 8,
-      "overflow": 3.3865,
+      "overflow": 1.5644,
       "zoom": 1,
-      "scrollWidth": 552,
+      "scrollWidth": 255,
       "clientWidth": 163,
-      "cellHeight": 258,
-      "rowCount": 4
+      "cellHeight": 417,
+      "rowCount": 8
     },
     {
       "typeId": "herleidingen",
+      "leafId": "herleidingen-lengte",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.6074,
+      "overflow": 1.5644,
       "zoom": 1,
-      "scrollWidth": 262,
+      "scrollWidth": 255,
       "clientWidth": 163,
-      "cellHeight": 104,
+      "cellHeight": 103,
       "rowCount": 1
     },
     {
       "typeId": "schattend",
+      "leafId": "schattend-nat",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -3369,6 +3663,7 @@
     },
     {
       "typeId": "schattend",
+      "leafId": "schattend-nat",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3381,6 +3676,7 @@
     },
     {
       "typeId": "schattend",
+      "leafId": "schattend-nat",
       "width": 2,
       "mode": "default",
       "count": 8,
@@ -3393,6 +3689,7 @@
     },
     {
       "typeId": "schattend",
+      "leafId": "schattend-nat",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3405,6 +3702,7 @@
     },
     {
       "typeId": "schattend",
+      "leafId": "schattend-nat",
       "width": 1,
       "mode": "default",
       "count": 8,
@@ -3417,6 +3715,7 @@
     },
     {
       "typeId": "schattend",
+      "leafId": "schattend-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -3429,6 +3728,7 @@
     },
     {
       "typeId": "verbanden",
+      "leafId": "verbanden-tabel",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -3441,6 +3741,7 @@
     },
     {
       "typeId": "verbanden",
+      "leafId": "verbanden-tabel",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3453,6 +3754,7 @@
     },
     {
       "typeId": "verbanden",
+      "leafId": "verbanden-tabel",
       "width": 2,
       "mode": "default",
       "count": 8,
@@ -3465,6 +3767,7 @@
     },
     {
       "typeId": "verbanden",
+      "leafId": "verbanden-tabel",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3477,6 +3780,7 @@
     },
     {
       "typeId": "verbanden",
+      "leafId": "verbanden-tabel",
       "width": 1,
       "mode": "default",
       "count": 8,
@@ -3489,6 +3793,7 @@
     },
     {
       "typeId": "verbanden",
+      "leafId": "verbanden-tabel",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -3501,6 +3806,7 @@
     },
     {
       "typeId": "procenten",
+      "leafId": "procenten-nemen",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -3513,6 +3819,7 @@
     },
     {
       "typeId": "procenten",
+      "leafId": "procenten-nemen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3525,6 +3832,7 @@
     },
     {
       "typeId": "procenten",
+      "leafId": "procenten-nemen",
       "width": 2,
       "mode": "default",
       "count": 8,
@@ -3537,6 +3845,7 @@
     },
     {
       "typeId": "procenten",
+      "leafId": "procenten-nemen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3549,6 +3858,7 @@
     },
     {
       "typeId": "procenten",
+      "leafId": "procenten-nemen",
       "width": 1,
       "mode": "default",
       "count": 8,
@@ -3561,6 +3871,7 @@
     },
     {
       "typeId": "procenten",
+      "leafId": "procenten-nemen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -3573,6 +3884,7 @@
     },
     {
       "typeId": "maateenheid",
+      "leafId": "maateenheid-kiezen",
       "width": 4,
       "mode": "default",
       "count": 8,
@@ -3585,6 +3897,7 @@
     },
     {
       "typeId": "maateenheid",
+      "leafId": "maateenheid-kiezen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3597,6 +3910,7 @@
     },
     {
       "typeId": "maateenheid",
+      "leafId": "maateenheid-kiezen",
       "width": 2,
       "mode": "default",
       "count": 8,
@@ -3609,6 +3923,7 @@
     },
     {
       "typeId": "maateenheid",
+      "leafId": "maateenheid-kiezen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3621,6 +3936,7 @@
     },
     {
       "typeId": "maateenheid",
+      "leafId": "maateenheid-kiezen",
       "width": 1,
       "mode": "default",
       "count": 8,
@@ -3633,6 +3949,7 @@
     },
     {
       "typeId": "maateenheid",
+      "leafId": "maateenheid-kiezen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -3645,6 +3962,7 @@
     },
     {
       "typeId": "geld-rekenen",
+      "leafId": "geld-rekenen-korting",
       "width": 4,
       "mode": "default",
       "count": 5,
@@ -3657,6 +3975,7 @@
     },
     {
       "typeId": "geld-rekenen",
+      "leafId": "geld-rekenen-korting",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3669,6 +3988,7 @@
     },
     {
       "typeId": "geld-rekenen",
+      "leafId": "geld-rekenen-korting",
       "width": 2,
       "mode": "default",
       "count": 5,
@@ -3681,6 +4001,7 @@
     },
     {
       "typeId": "geld-rekenen",
+      "leafId": "geld-rekenen-korting",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3693,6 +4014,7 @@
     },
     {
       "typeId": "geld-rekenen",
+      "leafId": "geld-rekenen-korting",
       "width": 1,
       "mode": "default",
       "count": 5,
@@ -3705,6 +4027,7 @@
     },
     {
       "typeId": "geld-rekenen",
+      "leafId": "geld-rekenen-korting",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -3717,6 +4040,7 @@
     },
     {
       "typeId": "rekenvolgorde",
+      "leafId": "handig-rekenvolgorde",
       "width": 4,
       "mode": "default",
       "count": 10,
@@ -3729,6 +4053,7 @@
     },
     {
       "typeId": "rekenvolgorde",
+      "leafId": "handig-rekenvolgorde",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -3741,6 +4066,7 @@
     },
     {
       "typeId": "rekenvolgorde",
+      "leafId": "handig-rekenvolgorde",
       "width": 2,
       "mode": "default",
       "count": 10,
@@ -3753,6 +4079,7 @@
     },
     {
       "typeId": "rekenvolgorde",
+      "leafId": "handig-rekenvolgorde",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -3765,462 +4092,501 @@
     },
     {
       "typeId": "rekenvolgorde",
+      "leafId": "handig-rekenvolgorde",
       "width": 1,
       "mode": "default",
       "count": 10,
-      "overflow": 1.3313,
-      "zoom": 1,
-      "scrollWidth": 217,
-      "clientWidth": 163,
-      "cellHeight": 464,
-      "rowCount": 10
-    },
-    {
-      "typeId": "rekenvolgorde",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1.1902,
-      "zoom": 1,
-      "scrollWidth": 194,
-      "clientWidth": 163,
-      "cellHeight": 104,
-      "rowCount": 1
-    },
-    {
-      "typeId": "layout-sectie",
-      "width": 4,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 48,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-sectie",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 48,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-sectie",
-      "width": 2,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 48,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-sectie",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 48,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-sectie",
-      "width": 1,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 48,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-sectie",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 48,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-schrijflijnen",
-      "width": 4,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 269,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-schrijflijnen",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 269,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-schrijflijnen",
-      "width": 2,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 269,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-schrijflijnen",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 269,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-schrijflijnen",
-      "width": 1,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 269,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-schrijflijnen",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 269,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-raster",
-      "width": 4,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 344,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-raster",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 344,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-raster",
-      "width": 2,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 344,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-raster",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 344,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-raster",
-      "width": 1,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 344,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-raster",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 344,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-kader",
-      "width": 4,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 90,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-kader",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 90,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-kader",
-      "width": 2,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 90,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-kader",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 90,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-kader",
-      "width": 1,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 90,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-kader",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 90,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-lege-pagina",
-      "width": 4,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 42,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-lege-pagina",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 42,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-lege-pagina",
-      "width": 2,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 42,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-lege-pagina",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 42,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-lege-pagina",
-      "width": 1,
-      "mode": "default",
-      "count": 0,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 42,
-      "rowCount": 0
-    },
-    {
-      "typeId": "layout-lege-pagina",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 42,
-      "rowCount": 0
-    },
-    {
-      "typeId": "kettingsommen",
-      "width": 4,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 388,
-      "rowCount": 6
-    },
-    {
-      "typeId": "kettingsommen",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 113,
-      "rowCount": 1
-    },
-    {
-      "typeId": "kettingsommen",
-      "width": 2,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 388,
-      "rowCount": 6
-    },
-    {
-      "typeId": "kettingsommen",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 113,
-      "rowCount": 1
-    },
-    {
-      "typeId": "kettingsommen",
-      "width": 1,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1.4417,
-      "zoom": 1,
-      "scrollWidth": 235,
-      "clientWidth": 163,
-      "cellHeight": 388,
-      "rowCount": 6
-    },
-    {
-      "typeId": "kettingsommen",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
       "overflow": 1.3436,
       "zoom": 1,
       "scrollWidth": 219,
       "clientWidth": 163,
+      "cellHeight": 464,
+      "rowCount": 10
+    },
+    {
+      "typeId": "rekenvolgorde",
+      "leafId": "handig-rekenvolgorde",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1.2025,
+      "zoom": 1,
+      "scrollWidth": 196,
+      "clientWidth": 163,
+      "cellHeight": 104,
+      "rowCount": 1
+    },
+    {
+      "typeId": "layout-sectie",
+      "leafId": "layout-sectie",
+      "width": 4,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 48,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-sectie",
+      "leafId": "layout-sectie",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 48,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-sectie",
+      "leafId": "layout-sectie",
+      "width": 2,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 48,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-sectie",
+      "leafId": "layout-sectie",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 48,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-sectie",
+      "leafId": "layout-sectie",
+      "width": 1,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 48,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-sectie",
+      "leafId": "layout-sectie",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 48,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-schrijflijnen",
+      "leafId": "layout-schrijflijnen",
+      "width": 4,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 269,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-schrijflijnen",
+      "leafId": "layout-schrijflijnen",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 269,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-schrijflijnen",
+      "leafId": "layout-schrijflijnen",
+      "width": 2,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 269,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-schrijflijnen",
+      "leafId": "layout-schrijflijnen",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 269,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-schrijflijnen",
+      "leafId": "layout-schrijflijnen",
+      "width": 1,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 269,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-schrijflijnen",
+      "leafId": "layout-schrijflijnen",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 269,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-raster",
+      "leafId": "layout-raster",
+      "width": 4,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 344,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-raster",
+      "leafId": "layout-raster",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 344,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-raster",
+      "leafId": "layout-raster",
+      "width": 2,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 344,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-raster",
+      "leafId": "layout-raster",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 344,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-raster",
+      "leafId": "layout-raster",
+      "width": 1,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 344,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-raster",
+      "leafId": "layout-raster",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 344,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-kader",
+      "leafId": "layout-kader",
+      "width": 4,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 90,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-kader",
+      "leafId": "layout-kader",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 90,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-kader",
+      "leafId": "layout-kader",
+      "width": 2,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 90,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-kader",
+      "leafId": "layout-kader",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 90,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-kader",
+      "leafId": "layout-kader",
+      "width": 1,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 90,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-kader",
+      "leafId": "layout-kader",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 90,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-lege-pagina",
+      "leafId": "layout-lege-pagina",
+      "width": 4,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 42,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-lege-pagina",
+      "leafId": "layout-lege-pagina",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 42,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-lege-pagina",
+      "leafId": "layout-lege-pagina",
+      "width": 2,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 42,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-lege-pagina",
+      "leafId": "layout-lege-pagina",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 42,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-lege-pagina",
+      "leafId": "layout-lege-pagina",
+      "width": 1,
+      "mode": "default",
+      "count": 0,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 42,
+      "rowCount": 0
+    },
+    {
+      "typeId": "layout-lege-pagina",
+      "leafId": "layout-lege-pagina",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 42,
+      "rowCount": 0
+    },
+    {
+      "typeId": "kettingsommen",
+      "leafId": "patronen-kettingsommen",
+      "width": 4,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 388,
+      "rowCount": 6
+    },
+    {
+      "typeId": "kettingsommen",
+      "leafId": "patronen-kettingsommen",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
       "cellHeight": 113,
       "rowCount": 1
     },
     {
+      "typeId": "kettingsommen",
+      "leafId": "patronen-kettingsommen",
+      "width": 2,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 388,
+      "rowCount": 6
+    },
+    {
+      "typeId": "kettingsommen",
+      "leafId": "patronen-kettingsommen",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 113,
+      "rowCount": 1
+    },
+    {
+      "typeId": "kettingsommen",
+      "leafId": "patronen-kettingsommen",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1.3988,
+      "zoom": 1,
+      "scrollWidth": 228,
+      "clientWidth": 163,
+      "cellHeight": 356,
+      "rowCount": 6
+    },
+    {
+      "typeId": "kettingsommen",
+      "leafId": "patronen-kettingsommen",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1.3988,
+      "zoom": 1,
+      "scrollWidth": 228,
+      "clientWidth": 163,
+      "cellHeight": 108,
+      "rowCount": 1
+    },
+    {
       "typeId": "getalfunctie",
+      "leafId": "getalbegrip-functie",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -4233,6 +4599,7 @@
     },
     {
       "typeId": "getalfunctie",
+      "leafId": "getalbegrip-functie",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4245,6 +4612,7 @@
     },
     {
       "typeId": "getalfunctie",
+      "leafId": "getalbegrip-functie",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -4257,6 +4625,7 @@
     },
     {
       "typeId": "getalfunctie",
+      "leafId": "getalbegrip-functie",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4269,6 +4638,7 @@
     },
     {
       "typeId": "getalfunctie",
+      "leafId": "getalbegrip-functie",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -4281,6 +4651,7 @@
     },
     {
       "typeId": "getalfunctie",
+      "leafId": "getalbegrip-functie",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -4293,6 +4664,7 @@
     },
     {
       "typeId": "tijdsduur",
+      "leafId": "tijdsduur-berekenen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -4305,6 +4677,7 @@
     },
     {
       "typeId": "tijdsduur",
+      "leafId": "tijdsduur-berekenen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4317,6 +4690,7 @@
     },
     {
       "typeId": "tijdsduur",
+      "leafId": "tijdsduur-berekenen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -4329,6 +4703,7 @@
     },
     {
       "typeId": "tijdsduur",
+      "leafId": "tijdsduur-berekenen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4341,6 +4716,7 @@
     },
     {
       "typeId": "tijdsduur",
+      "leafId": "tijdsduur-berekenen",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -4353,6 +4729,7 @@
     },
     {
       "typeId": "tijdsduur",
+      "leafId": "tijdsduur-berekenen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -4365,6 +4742,7 @@
     },
     {
       "typeId": "kalender",
+      "leafId": "kalender-maandrooster",
       "width": 4,
       "mode": "default",
       "count": 1,
@@ -4377,6 +4755,7 @@
     },
     {
       "typeId": "kalender",
+      "leafId": "kalender-maandrooster",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4389,6 +4768,7 @@
     },
     {
       "typeId": "kalender",
+      "leafId": "kalender-maandrooster",
       "width": 2,
       "mode": "default",
       "count": 1,
@@ -4401,6 +4781,7 @@
     },
     {
       "typeId": "kalender",
+      "leafId": "kalender-maandrooster",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4413,6 +4794,7 @@
     },
     {
       "typeId": "kalender",
+      "leafId": "kalender-maandrooster",
       "width": 1,
       "mode": "default",
       "count": 1,
@@ -4425,6 +4807,7 @@
     },
     {
       "typeId": "kalender",
+      "leafId": "kalender-maandrooster",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -4437,6 +4820,7 @@
     },
     {
       "typeId": "controleren",
+      "leafId": "controleren-negenproef",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -4449,6 +4833,7 @@
     },
     {
       "typeId": "controleren",
+      "leafId": "controleren-negenproef",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4461,18 +4846,20 @@
     },
     {
       "typeId": "controleren",
+      "leafId": "controleren-negenproef",
       "width": 2,
       "mode": "default",
       "count": 4,
-      "overflow": 1.7278,
+      "overflow": 1.4822,
       "zoom": 1,
-      "scrollWidth": 584,
+      "scrollWidth": 501,
       "clientWidth": 338,
       "cellHeight": 288,
       "rowCount": 2
     },
     {
       "typeId": "controleren",
+      "leafId": "controleren-negenproef",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4485,42 +4872,46 @@
     },
     {
       "typeId": "controleren",
+      "leafId": "controleren-negenproef",
       "width": 1,
       "mode": "default",
       "count": 4,
-      "overflow": 3.5828,
+      "overflow": 3.0736,
       "zoom": 1,
-      "scrollWidth": 584,
+      "scrollWidth": 501,
       "clientWidth": 163,
       "cellHeight": 288,
       "rowCount": 2
     },
     {
       "typeId": "controleren",
+      "leafId": "controleren-negenproef",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.7055,
+      "overflow": 1.454,
       "zoom": 1,
-      "scrollWidth": 278,
+      "scrollWidth": 237,
       "clientWidth": 163,
       "cellHeight": 168,
       "rowCount": 1
     },
     {
       "typeId": "oppervlakte",
+      "leafId": "oppervlakte-rooster",
       "width": 4,
       "mode": "default",
-      "count": 4,
+      "count": 2,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 1382,
-      "rowCount": 4
+      "cellHeight": 700,
+      "rowCount": 2
     },
     {
       "typeId": "oppervlakte",
+      "leafId": "oppervlakte-rooster",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4528,23 +4919,25 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 491,
+      "cellHeight": 416,
       "rowCount": 1
     },
     {
       "typeId": "oppervlakte",
+      "leafId": "oppervlakte-rooster",
       "width": 2,
       "mode": "default",
-      "count": 4,
+      "count": 2,
       "overflow": 1.1302,
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 338,
-      "cellHeight": 1382,
-      "rowCount": 4
+      "cellHeight": 700,
+      "rowCount": 2
     },
     {
       "typeId": "oppervlakte",
+      "leafId": "oppervlakte-rooster",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4552,23 +4945,25 @@
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 338,
-      "cellHeight": 491,
+      "cellHeight": 416,
       "rowCount": 1
     },
     {
       "typeId": "oppervlakte",
+      "leafId": "oppervlakte-rooster",
       "width": 1,
       "mode": "default",
-      "count": 4,
+      "count": 2,
       "overflow": 2.3436,
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 163,
-      "cellHeight": 1460,
-      "rowCount": 4
+      "cellHeight": 724,
+      "rowCount": 2
     },
     {
       "typeId": "oppervlakte",
+      "leafId": "oppervlakte-rooster",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -4576,11 +4971,12 @@
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 163,
-      "cellHeight": 515,
+      "cellHeight": 440,
       "rowCount": 1
     },
     {
       "typeId": "weegschaal",
+      "leafId": "massa-weegschaal-aflezen",
       "width": 4,
       "mode": "default",
       "count": 4,
@@ -4593,6 +4989,7 @@
     },
     {
       "typeId": "weegschaal",
+      "leafId": "massa-weegschaal-aflezen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4605,6 +5002,7 @@
     },
     {
       "typeId": "weegschaal",
+      "leafId": "massa-weegschaal-aflezen",
       "width": 2,
       "mode": "default",
       "count": 4,
@@ -4617,6 +5015,7 @@
     },
     {
       "typeId": "weegschaal",
+      "leafId": "massa-weegschaal-aflezen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4629,6 +5028,7 @@
     },
     {
       "typeId": "weegschaal",
+      "leafId": "massa-weegschaal-aflezen",
       "width": 1,
       "mode": "default",
       "count": 4,
@@ -4641,6 +5041,7 @@
     },
     {
       "typeId": "weegschaal",
+      "leafId": "massa-weegschaal-aflezen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -4653,6 +5054,85 @@
     },
     {
       "typeId": "vormleer-punt-lijn",
+      "leafId": "vormleer-punt-lijn-herkennen",
+      "width": 4,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 413,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-punt-lijn",
+      "leafId": "vormleer-punt-lijn-herkennen",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 246,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-punt-lijn",
+      "leafId": "vormleer-punt-lijn-herkennen",
+      "width": 2,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 580,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-punt-lijn",
+      "leafId": "vormleer-punt-lijn-herkennen",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 246,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-punt-lijn",
+      "leafId": "vormleer-punt-lijn-herkennen",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 1098,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-punt-lijn",
+      "leafId": "vormleer-punt-lijn-herkennen",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 263,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-hoeken",
+      "leafId": "vormleer-hoeken-herkennen",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -4664,7 +5144,8 @@
       "rowCount": 2
     },
     {
-      "typeId": "vormleer-punt-lijn",
+      "typeId": "vormleer-hoeken",
+      "leafId": "vormleer-hoeken-herkennen",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4676,7 +5157,8 @@
       "rowCount": 2
     },
     {
-      "typeId": "vormleer-punt-lijn",
+      "typeId": "vormleer-hoeken",
+      "leafId": "vormleer-hoeken-herkennen",
       "width": 2,
       "mode": "default",
       "count": 6,
@@ -4688,79 +5170,8 @@
       "rowCount": 2
     },
     {
-      "typeId": "vormleer-punt-lijn",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 235,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-punt-lijn",
-      "width": 1,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 1032,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-punt-lijn",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 252,
-      "rowCount": 2
-    },
-    {
       "typeId": "vormleer-hoeken",
-      "width": 4,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 391,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-hoeken",
-      "width": 4,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 688,
-      "clientWidth": 688,
-      "cellHeight": 235,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-hoeken",
-      "width": 2,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 547,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-hoeken",
+      "leafId": "vormleer-hoeken-herkennen",
       "width": 2,
       "mode": "single",
       "count": 1,
@@ -4773,6 +5184,7 @@
     },
     {
       "typeId": "vormleer-hoeken",
+      "leafId": "vormleer-hoeken-herkennen",
       "width": 1,
       "mode": "default",
       "count": 6,
@@ -4785,6 +5197,7 @@
     },
     {
       "typeId": "vormleer-hoeken",
+      "leafId": "vormleer-hoeken-herkennen",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -4797,6 +5210,7 @@
     },
     {
       "typeId": "vormleer-figuren",
+      "leafId": "vormleer-driehoeken",
       "width": 4,
       "mode": "default",
       "count": 6,
@@ -4804,11 +5218,12 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 391,
+      "cellHeight": 408,
       "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
+      "leafId": "vormleer-driehoeken",
       "width": 4,
       "mode": "single",
       "count": 1,
@@ -4816,55 +5231,59 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 235,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-figuren",
-      "width": 2,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 564,
-      "rowCount": 2
-    },
-    {
-      "typeId": "vormleer-figuren",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
       "cellHeight": 252,
       "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
-      "width": 1,
+      "leafId": "vormleer-driehoeken",
+      "width": 2,
       "mode": "default",
       "count": 6,
       "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 1049,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 581,
       "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
-      "width": 1,
+      "leafId": "vormleer-driehoeken",
+      "width": 2,
       "mode": "single",
       "count": 1,
       "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
+      "scrollWidth": 338,
+      "clientWidth": 338,
       "cellHeight": 269,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-figuren",
+      "leafId": "vormleer-driehoeken",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 1117,
+      "rowCount": 2
+    },
+    {
+      "typeId": "vormleer-figuren",
+      "leafId": "vormleer-driehoeken",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 337,
       "rowCount": 2
     }
   ]

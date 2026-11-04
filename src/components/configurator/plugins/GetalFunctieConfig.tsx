@@ -31,7 +31,7 @@ export default function GetalFunctieConfig({ block }: Props) {
                 <SettingLabel text="Functies:" info="Welke getalfuncties voorkomen (hoeveelheidsgetal, rangordegetal, maatgetal, codegetal). Minstens twee." />
                 <div style={styles.buttonGroup}>
                     {FUNCTIES.map(f => (
-                        <button key={f.key} onClick={() => toggleFunctie(f.key)} style={styles.pill(functies.includes(f.key))}>{f.label}</button>
+                        <button key={f.key} onClick={() => toggleFunctie(f.key)} aria-pressed={functies.includes(f.key)} style={styles.pill(functies.includes(f.key))}>{f.label}</button>
                     ))}
                 </div>
             </div>
@@ -39,8 +39,8 @@ export default function GetalFunctieConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Antwoordvorm:" info="Aankruisen in een tabel of de functienaam zelf schrijven." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('answerMode', 'aankruisen')} style={styles.radioBtn(answerMode === 'aankruisen')}>Aankruisen</button>
-                    <button onClick={() => set('answerMode', 'schrijven')} style={styles.radioBtn(answerMode === 'schrijven')}>Schrijven</button>
+                    <button onClick={() => set('answerMode', 'aankruisen')} aria-pressed={answerMode === 'aankruisen'} style={styles.radioBtn(answerMode === 'aankruisen')}>Aankruisen</button>
+                    <button onClick={() => set('answerMode', 'schrijven')} aria-pressed={answerMode === 'schrijven'} style={styles.radioBtn(answerMode === 'schrijven')}>Schrijven</button>
                 </div>
             </div>
         </div>

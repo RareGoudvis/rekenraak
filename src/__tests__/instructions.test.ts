@@ -1,21 +1,17 @@
 import { describe, test, expect } from 'vitest';
 import { flattenLeaves, LEAF_BY_ID } from '../config/appstructure';
 import { resolveInstruction } from '../config/instructionPresets';
-import { REGISTRY } from '../config/exerciseRegistry';
-import { baseApply, DEFAULT_BASE } from '../config/baseSettings';
+import { seedConstraints, DEFAULT_BASE } from '../config/baseSettings';
 import { WORKSHEET_TEMPLATES } from '../config/worksheetTemplates';
+import { isLayoutType } from './helpers/makeBlock';
 import type { BlockConstraints } from '../services/math/constraintTypes';
 
-// Same merge order as addBlockFromType: registry defaults → base snapshot → leaf override.
-function mergedConstraintsFor(typeId: string, leafDefaults?: Record<string, unknown>): BlockConstraints {
-    const def = REGISTRY[typeId];
-    const registryDefaults = def ? def.defaultConstraints(typeId) : {};
-    const baseSnapshot = def ? baseApply(DEFAULT_BASE, registryDefaults) : {};
-    return { ...registryDefaults, ...baseSnapshot, ...(leafDefaults ?? {}) } as BlockConstraints;
-}
+// The constraints addBlockFromType would store for this leaf at the default base.
+const mergedConstraintsFor = (typeId: string, leafDefaults?: Record<string, unknown>): BlockConstraints =>
+    seedConstraints({ typeId, base: DEFAULT_BASE, override: leafDefaults }) as BlockConstraints;
 
 describe('every sidebar leaf resolves to a real instruction', () => {
-    const leaves = flattenLeaves().filter((l) => !l.typeId.startsWith('layout-'));
+    const leaves = flattenLeaves().filter((l) => !isLayoutType(l.typeId));
 
     test.each(leaves.map((l) => [l.id, l] as const))('%s', (_id, leaf) => {
         const constraints = mergedConstraintsFor(leaf.typeId, leaf.defaultConstraints);
@@ -53,6 +49,7 @@ describe('function-valued instructions cover every setting branch', () => {
         { leafId: 'getalbegrip-functie', overrides: { answerMode: 'aankruisen' }, expectContains: 'Kruis aan' },
         { leafId: 'getalbegrip-functie', overrides: { answerMode: 'schrijven' }, expectContains: 'in de zin' },
         { leafId: 'afronden-nat-rooster', overrides: { roundTargets: ['T', 'H'] }, expectContains: 'T en H' },
+        { leafId: 'afronden-nat-rooster', overrides: { maxGetal: 1_000_000_000, roundTargets: ['HD', 'M', 'TM', 'Mrd'] }, expectContains: 'HD, 1M, 10M en 1MLD' },
         { leafId: 'even-oneven-rooster', overrides: { target: 'even' }, expectContains: 'even getallen' },
         { leafId: 'even-oneven-rooster', overrides: { target: 'oneven' }, expectContains: 'oneven getallen' },
         { leafId: 'deelbaarheid-rooster', overrides: { divisors: [2, 5, 10] }, expectContains: '2, 5 en 10' },
@@ -60,6 +57,7 @@ describe('function-valued instructions cover every setting branch', () => {
         { leafId: 'schattend-nat', overrides: { scaffolding: 'enkel-schatting' }, expectContains: 'Schat het antwoord' },
         { leafId: 'breuken-gemengd', overrides: { direction: 'naar-gemengd' }, expectContains: 'gemengd getal' },
         { leafId: 'breuken-gemengd', overrides: { direction: 'naar-breuk' }, expectContains: 'als breuk' },
+        { leafId: 'breuken-gemengd', overrides: { direction: 'beide' }, expectContains: 'Schrijf als gemengd getal of als breuk.' },
         { leafId: 'vormleer-driehoeken', overrides: { mode: 'herkennen' }, expectContains: 'driehoek' },
         { leafId: 'vormleer-driehoeken', overrides: { mode: 'eigenschappen' }, expectContains: 'eigenschappen' },
         { leafId: 'lengte-meten', overrides: { measureModel: 'meten' }, expectContains: 'Meet' },
@@ -82,7 +80,7 @@ describe('curated templates never fall back to "<label>:"', () => {
     test('every template block has a real instruction', () => {
         for (const tmpl of WORKSHEET_TEMPLATES) {
             for (const block of tmpl.payload.blocks) {
-                if (block.typeId.startsWith('layout-')) continue;
+                if (isLayoutType(block.typeId)) continue;
                 expect(block.instructionText.length).toBeGreaterThan(0);
                 expect(block.instructionText.trim().endsWith(':')).toBe(false);
             }

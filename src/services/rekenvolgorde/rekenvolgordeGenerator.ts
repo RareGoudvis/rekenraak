@@ -14,14 +14,16 @@ function pick<T>(arr: T[]): T {
 
 type Tok = number | string;
 
-// Evaluate a flat token list with ×/: before +/− (brackets already resolved by caller).
-function evalFlat(tokens: Tok[]): number | null {
+// Evaluate a flat token list with ×/: before +/− (brackets already resolved by caller); every intermediate stays within cap.
+function evalFlat(tokens: Tok[], cap = Infinity): number | null {
     const t = [...tokens];
     for (let i = 1; i < t.length - 1; i++) {
         if (t[i] === 'x' || t[i] === ':') {
             const a = t[i - 1] as number, b = t[i + 1] as number;
             if (t[i] === ':' && (b === 0 || a % b !== 0)) return null;
-            t.splice(i - 1, 3, t[i] === 'x' ? a * b : a / b);
+            const v = t[i] === 'x' ? a * b : a / b;
+            if (v > cap) return null;
+            t.splice(i - 1, 3, v);
             i -= 1;
         }
     }
@@ -29,7 +31,7 @@ function evalFlat(tokens: Tok[]): number | null {
     for (let i = 1; i < t.length - 1; i += 2) {
         const b = t[i + 1] as number;
         acc = t[i] === '+' ? acc + b : acc - b;
-        if (acc < 0) return null;
+        if (acc < 0 || acc > cap) return null;
     }
     return acc;
 }
@@ -44,7 +46,9 @@ function friendlyNums(ops: string[], maxGetal: number, tableLimit: number): numb
     const plusMinus = ops.every(o => o === '+' || o === '-');
     const allMul = ops.every(o => o === 'x');
     if (allMul) {
-        const [p, q] = MUL_PAIRS[randInt(0, MUL_PAIRS.length - 1)];
+        // Every factor next to × stays within the table limit, so friendly pairs above it (4 × 25) are out.
+        const fit = MUL_PAIRS.filter(([x, y]) => x <= tableLimit && y <= tableLimit);
+        const [p, q] = fit.length ? fit[randInt(0, fit.length - 1)] : [2, 3];
         const rest = Array.from({ length: opsCount - 1 }, () => randInt(2, Math.min(9, tableLimit)));
         // Friendly factors at the ends (4 × 7 × 25 pattern).
         return [p, ...rest, q];
@@ -65,7 +69,7 @@ function friendlyNums(ops: string[], maxGetal: number, tableLimit: number): numb
     return null;   // mixed ops with ×/: — no friendly bias, plain random works
 }
 
-export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeExercise[] {
+export function generateRekenvolgordeNoted(block: MathBlock): { items: RekenvolgordeExercise[]; note: string | null } {
     const c = block.constraints as RekenvolgordeConstraints;
     const operators: string[] = c.operators ?? ['+', '-', 'x'];
     // GEEN = never brackets · MAG = ~half the items · MOET = every item.
@@ -75,10 +79,21 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
     const tableLimit: number = c.tableLimit ?? 10;
     const count = block.numberOfExercises || 10;
 
+    // ×-only: (a × b) × c equals a × (b × c), so no bracket placement ever changes the answer.
+    const bracketsImpossible = operators.every(o => o === 'x');
+    const dropBrackets = bracketsImpossible && haakjesMode === 'MOET';
+
     const out: RekenvolgordeExercise[] = [];
     const seen = new Set<string>();
+    // Phase 2 widens the pool when phase 1 runs dry: drop the friendly-pair bias (factors still stay within the table limit).
+    let wide = false;
+    let widened = false;
     let attempts = 0;
-    while (out.length < count && attempts < 20000) {
+    while (out.length < count) {
+        if (attempts >= 20000) {
+            if (wide) break;
+            wide = true; widened = true; attempts = 0;
+        }
         attempts++;
         const ops = Array.from({ length: opsCount }, () => pick(operators));
         // Long +/− chains are allowed without ×/: (volgorde = reordering practice);
@@ -89,7 +104,7 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         if (hasMulDiv && opsCount === 2 && !ops.some(o => o === 'x' || o === ':')) continue;
         const needBrackets = !hasMulDiv && opsCount === 2 && haakjesMode !== 'GEEN';
 
-        let nums: number[] | null = opsCount >= 3 ? friendlyNums(ops, maxGetal, tableLimit) : null;
+        let nums: number[] | null = opsCount >= 3 && !wide ? friendlyNums(ops, maxGetal, tableLimit) : null;
         if (!nums) {
             nums = [];
             for (let i = 0; i <= opsCount; i++) {
@@ -101,27 +116,27 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         const flat: Tok[] = [];
         nums.forEach((n, i) => { flat.push(n); if (i < ops.length) flat.push(ops[i]); });
 
-        const plain = evalFlat(flat);
-        if (plain === null || plain > maxGetal * (opsCount >= 3 ? 10 : 1) || plain < 0 || !Number.isInteger(plain)) continue;
+        const plain = evalFlat(flat, maxGetal);
+        if (plain === null || plain > maxGetal || plain < 0 || !Number.isInteger(plain)) continue;
 
         let tokens: Tok[] = flat;
         let answer = plain;
 
-        const wantBrackets = needBrackets || haakjesMode === 'MOET' || (haakjesMode === 'MAG' && Math.random() < 0.5);
+        const wantBrackets = !bracketsImpossible && (needBrackets || haakjesMode === 'MOET' || (haakjesMode === 'MAG' && Math.random() < 0.5));
         if (wantBrackets) {
             // Bracket the FIRST pair (a op b), or the LAST one when the first changes nothing:
             // in a − b + c only a − (b + c) shifts the result, which is the whole point of the
             // bracket. A placement that leaves the answer untouched teaches nothing → retry.
-            const cap = maxGetal * (opsCount >= 3 ? 10 : 1);
+            const cap = maxGetal;
             const placements: Array<{ tokens: Tok[]; answer: number }> = [];
-            const head = evalFlat(flat.slice(0, 3));
+            const head = evalFlat(flat.slice(0, 3), maxGetal);
             if (head !== null) {
-                const a = evalFlat([head, ...flat.slice(3)]);
+                const a = evalFlat([head, ...flat.slice(3)], maxGetal);
                 if (a !== null) placements.push({ tokens: ['(', ...flat.slice(0, 3), ')', ...flat.slice(3)], answer: a });
             }
-            const tailSub = evalFlat(flat.slice(-3));
+            const tailSub = evalFlat(flat.slice(-3), maxGetal);
             if (tailSub !== null && flat.length > 3) {
-                const a = evalFlat([...flat.slice(0, -3), tailSub]);
+                const a = evalFlat([...flat.slice(0, -3), tailSub], maxGetal);
                 if (a !== null) placements.push({ tokens: [...flat.slice(0, -3), '(', ...flat.slice(-3), ')'], answer: a });
             }
             const usable = placements.filter(p => p.answer !== plain && p.answer >= 0 && p.answer <= cap && Number.isInteger(p.answer));
@@ -136,5 +151,13 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         seen.add(key);
         out.push({ id: Math.random().toString(36).substring(2, 9), tokens, answer, firstStep: 0, isManuallyEdited: false });
     }
-    return out;
+    const notes: string[] = [];
+    if (dropBrackets) notes.push('Haakjes weggelaten: bij alleen × veranderen ze de uitkomst niet.');
+    if (out.length < count) notes.push(`Slechts ${out.length} ${out.length === 1 ? 'oefening' : 'oefeningen'} mogelijk bij deze instellingen.`);
+    else if (widened) notes.push('Vriendelijke getallenparen losgelaten om genoeg oefeningen te vinden.');
+    return { items: out, note: notes.length ? notes.join(' ') : null };
+}
+
+export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeExercise[] {
+    return generateRekenvolgordeNoted(block).items;
 }

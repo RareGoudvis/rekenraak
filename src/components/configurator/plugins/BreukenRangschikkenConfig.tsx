@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
 import type { BreukenRangschikkenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -23,20 +24,23 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
         operatorMode = 'oplopend',
         minDenominator = 2,
         maxDenominator = 10,
+        allowImproper = false,
     } = c;
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<BreukenRangschikkenConstraints>);
 
     const showDenoms = fractionMode !== 'speciale';
+    // Stambreuken are 1/n by definition and speciale is a fixed pool: only the free-teller modes take improper ones.
+    const showImproper = fractionMode === 'gelijknamige' || fractionMode === 'gelijknamig-te-maken';
 
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <SettingLabel text="Soort breuken:" info="Welk type breuken er gerangschikt wordt." />
+                <SettingLabel text="Soort reeks:" info="Welk soort reeks er gerangschikt wordt: stambreuken, gelijknamige, gelijknamig te maken of speciale breuken." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {MODES.map(m => (
-                        <button key={m.key} onClick={() => set('fractionMode', m.key)} style={styles.radioBtn(fractionMode === m.key)}>{m.label}</button>
+                        <button key={m.key} onClick={() => set('fractionMode', m.key)} aria-pressed={fractionMode === m.key} style={styles.radioBtn(fractionMode === m.key)}>{m.label}</button>
                     ))}
                 </div>
             </div>
@@ -44,9 +48,9 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Volgorde:" info="Rangschikken van klein naar groot, omgekeerd, of beide." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('operatorMode', 'oplopend')} style={styles.radioBtn(operatorMode === 'oplopend')}>Oplopend (&lt;)</button>
-                    <button onClick={() => set('operatorMode', 'aflopend')} style={styles.radioBtn(operatorMode === 'aflopend')}>Aflopend (&gt;)</button>
-                    <button onClick={() => set('operatorMode', 'beide')} style={styles.radioBtn(operatorMode === 'beide')}>Beide</button>
+                    <button onClick={() => set('operatorMode', 'oplopend')} aria-pressed={operatorMode === 'oplopend'} style={styles.radioBtn(operatorMode === 'oplopend')}>Oplopend (&lt;)</button>
+                    <button onClick={() => set('operatorMode', 'aflopend')} aria-pressed={operatorMode === 'aflopend'} style={styles.radioBtn(operatorMode === 'aflopend')}>Aflopend (&gt;)</button>
+                    <button onClick={() => set('operatorMode', 'beide')} aria-pressed={operatorMode === 'beide'} style={styles.radioBtn(operatorMode === 'beide')}>Beide</button>
                 </div>
             </div>
 
@@ -57,20 +61,15 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
             </div>
 
+            {/* The shared Breuken block: no noemer for the fixed speciale pool, Onechte only where tellers are free. */}
             {showDenoms && (
-                <div style={styles.section}>
-                    <SettingLabel text="Noemer:" info="Bereik van de noemer van de breuken." />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>van</span>
-                        <input type="number" min={2} max={maxDenominator} value={minDenominator}
-                            onChange={(e) => set('minDenominator', Math.max(2, Math.min(Number(e.target.value), maxDenominator)))}
-                            style={inputStyle} />
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>tot</span>
-                        <input type="number" min={minDenominator} max={20} value={maxDenominator}
-                            onChange={(e) => set('maxDenominator', Math.max(minDenominator, Math.min(Number(e.target.value), 20)))}
-                            style={inputStyle} />
-                    </div>
-                </div>
+                <BreukenSettings
+                    noemer={{ shape: 'range', min: minDenominator, max: maxDenominator, onChange: (min, max) => patch({ minDenominator: min, maxDenominator: max }) }}
+                    kinds={showImproper ? [
+                        { kind: 'echt', on: true, locked: true },
+                        { kind: 'onecht', on: !!allowImproper, onToggle: (v) => set('allowImproper', v) },
+                    ] : undefined}
+                />
             )}
         </div>
     );
@@ -91,9 +90,3 @@ export function BreukenRangschikkenStyleConfig({ block }: Props) {
         </div>
     );
 }
-
-const inputStyle: React.CSSProperties = {
-    width: '64px', padding: '8px 10px', backgroundColor: 'var(--bg-input)',
-    border: '1px solid var(--border-color)', borderRadius: '6px',
-    color: 'var(--text-main)', outline: 'none', fontSize: '13px', boxSizing: 'border-box',
-};

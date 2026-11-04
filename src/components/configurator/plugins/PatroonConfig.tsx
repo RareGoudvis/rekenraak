@@ -3,22 +3,25 @@ import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { PatroonConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [20, 100, 1000, 10000, 100000];
 const OPS: Array<{ key: string; label: string }> = [
     { key: '+', label: '+' }, { key: '-', label: '−' }, { key: 'x', label: '×' }, { key: ':', label: ':' },
 ];
 
 export default function PatroonConfig({ block }: Props) {
     const [c, patch] = useConstraints<PatroonConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         numberType = 'natural',
         maxGetal = 100,
@@ -56,24 +59,27 @@ export default function PatroonConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             {/* MAX */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in het patroon mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => set('maxGetal', val)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* GEHELE — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Hoe ver het patroon onder nul mag gaan (negatieve getallen)." />
+                    <SettingLabel text={`Ondergrens: ${formatSignedInt(lowerBound)}`} info="Hoe ver het patroon onder nul mag gaan (negatieve getallen)." />
                     <input type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound} onChange={(e) => set('minGetal', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+                    {lowerBound < -maxGetal && (
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                    )}
                 </div>
             )}
 
@@ -83,7 +89,7 @@ export default function PatroonConfig({ block }: Props) {
                     <SettingLabel text="Max decimalen:" info="Hoeveel cijfers er na de komma mogen staan." />
                     <div style={styles.buttonGroup}>
                         {[1, 2, 3].map(d => (
-                            <button key={d} onClick={() => set('maxDecimals', d)} style={styles.radioBtn(dp === d)}>{d}</button>
+                            <button key={d} onClick={() => set('maxDecimals', d)} aria-pressed={dp === d} style={styles.radioBtn(dp === d)}>{d}</button>
                         ))}
                     </div>
                 </div>
@@ -108,7 +114,7 @@ export default function PatroonConfig({ block }: Props) {
                 <SettingLabel text="Bewerkingen:" info="Welke bewerkingen het patroon mag gebruiken (+ − × :)." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(o => (
-                        <button key={o.key} onClick={() => toggleOp(o.key)} style={styles.pill(ops.includes(o.key))}>{o.label}</button>
+                        <button key={o.key} onClick={() => toggleOp(o.key)} aria-pressed={ops.includes(o.key)} style={styles.pill(ops.includes(o.key))}>{o.label}</button>
                     ))}
                 </div>
             </div>
@@ -128,7 +134,7 @@ export default function PatroonConfig({ block }: Props) {
                         {isAddSub && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
                                 {maskPlaces.map(p => (
-                                    <button key={p.key} onClick={() => toggleOpMask(o.key, p.key)} style={styles.maskBtn(!!s.mask?.[p.key])} title={p.label}>{p.key}</button>
+                                    <button key={p.key} onClick={() => toggleOpMask(o.key, p.key)} aria-pressed={!!s.mask?.[p.key]} style={styles.maskBtn(!!s.mask?.[p.key])} title={p.label}>{p.key}</button>
                                 ))}
                             </div>
                         )}

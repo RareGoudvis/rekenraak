@@ -1,4 +1,4 @@
-import { PLACE_VALUES } from '../math/mathEngine';
+import { PLACE_VALUES, getBridgePlaces, getMaskPlaces } from '../math/mathEngine';
 import type { MathBlock } from '../math/types';
 import type { CijferExercise, CijferConstraints, ConstraintType } from '../math/types';
 
@@ -11,16 +11,26 @@ const randInt = (min: number, max: number): number => {
 
 const genId = (): string => Math.random().toString(36).substring(2, 9);
 
+function gcd(a: number, b: number): number {
+    return b === 0 ? a : gcd(b, a % b);
+}
+
 function scaleOf(dp: number): number {
     return Math.pow(10, dp);
 }
 
-const BRIDGE_KEYS = ['E', 'T', 'H', 'D', 'TD', 'HD'];
+// Integer place keys from the units up (E, T, H, … M, TM, HM, Mrd): index = column above the comma.
+// Derived so a bridge the config offers at M or above is actually enforced.
+const BRIDGE_KEYS = PLACE_VALUES.filter(p => p.weight >= 1).map(p => p.key).reverse();
+
+// Every column that can hold a bridge key, decimals included — a fixed 8-column scan never
+// reached HD with three decimals (or anything above HM on whole numbers).
+const scanColumns = (dp: number): number => dp + BRIDGE_KEYS.length;
 
 function checkAdditionBridges(operands: number[], dp: number, bridges: Record<string, ConstraintType>): boolean {
     const scale = Math.pow(10, dp);
     let carry = 0;
-    for (let pos = 0; pos <= 7; pos++) {
+    for (let pos = 0; pos < scanColumns(dp); pos++) {
         let sum = carry;
         for (const op of operands) {
             const scaled = Math.round(Math.abs(op) * scale);
@@ -42,7 +52,7 @@ function checkSubtractionBridges(a: number, b: number, dp: number, bridges: Reco
     const aScaled = Math.round(a * scale);
     const bScaled = Math.round(b * scale);
     let borrow = 0;
-    for (let pos = 0; pos <= 7; pos++) {
+    for (let pos = 0; pos < scanColumns(dp); pos++) {
         const aDigit = Math.floor(aScaled / Math.pow(10, pos)) % 10;
         const bDigit = Math.floor(bScaled / Math.pow(10, pos)) % 10;
         const diff = aDigit - borrow - bDigit;
@@ -116,17 +126,52 @@ export function divideToDecimals(dividend: number, divisor: number, dp: number):
     return { quotient: q / s, remainder: r / (s * s) };
 }
 
-export function generateCijferExercises(block: MathBlock): CijferExercise[] {
-    const c = block.constraints as CijferConstraints;
+// No fallback (owner decision 2026-10-09): a getalopbouw / bruggetje / term count the max cannot
+// meet gives fewer or no exercises with a note, never an exercise that ignores the settings.
+export function generateCijferExercisesNoted(block: MathBlock): { items: CijferExercise[]; note: string | null } {
+    const c = liveConstraints(block.constraints as CijferConstraints);
     const count = block.numberOfExercises || 4;
     // Stamp the decimal-place count on every exercise: the grid draws the columns the
     // exercise was made with, not the ones the settings happen to say now.
     const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
     const results: CijferExercise[] = [];
     for (let i = 0; i < count; i++) {
-        results.push({ ...generateOne(c), decimalPlaces: dp });
+        const ex = generateOne(c);
+        if (ex) results.push({ ...ex, decimalPlaces: dp });
     }
-    return results;
+    return { items: results, note: results.length >= count ? null : shortNote(c, results.length) };
+}
+
+// Only the getalopbouw places and bruggen the config shows at this max count: a key left over
+// from a larger max (or more decimals) would otherwise empty the block without the teacher seeing why.
+// SYNC: CijferConfig's maskPlaces / bridgePlaces.
+function liveConstraints(c: CijferConstraints): CijferConstraints {
+    const nt = c.numberType === 'decimal' ? 'decimal' : 'natural';
+    const max = c.maxRange || 1000;
+    const maskKeys = new Set(getMaskPlaces(max, nt, nt === 'decimal' ? (c.decimalPlaces || 2) : 0).map(p => p.key));
+    const bridgeKeys = new Set(getBridgePlaces(max, nt).map(p => p.key));
+    const keep = <T,>(o: Record<string, T>, keys: Set<string>) => Object.fromEntries(Object.entries(o).filter(([k]) => keys.has(k)));
+    const live: CijferConstraints = { ...c, bridges: keep(c.bridges ?? {}, bridgeKeys) };
+    for (const k of ['operand0Mask', 'operand1Mask', 'operand2Mask', 'operand3Mask'] as const) {
+        const mask = c[k] as Record<string, boolean> | undefined;
+        if (mask) (live as Record<string, unknown>)[k] = keep(mask, maskKeys);
+    }
+    return live;
+}
+
+function shortNote(c: CijferConstraints, made: number): string {
+    const max = (c.maxRange || 1000).toLocaleString('nl-BE');
+    const hasBridges = c.operator !== 'x' && c.operator !== ':' && Object.values(c.bridges ?? {}).some(v => v === 'REQUIRED' || v === 'FORBIDDEN');
+    const hasMask = [0, 1, 2, 3].some(i => Object.values(getMask(c, i)).some(Boolean));
+    const tips = [hasBridges ? 'minder bruggen' : null, hasMask ? 'een andere getalopbouw' : null].filter(Boolean);
+    const tip = `kies ${tips.length ? tips.join(' of ') : 'een groter maximum'}.`;
+    return made === 0
+        ? `Geen oefeningen mogelijk met deze instellingen tot ${max}: ${tip}`
+        : `Slechts ${made} ${made === 1 ? 'oefening' : 'oefeningen'} mogelijk met deze instellingen tot ${max}: ${tip}`;
+}
+
+export function generateCijferExercises(block: MathBlock): CijferExercise[] {
+    return generateCijferExercisesNoted(block).items;
 }
 
 function getMask(c: CijferConstraints, i: number): Record<string, boolean> {
@@ -134,20 +179,12 @@ function getMask(c: CijferConstraints, i: number): Record<string, boolean> {
     return (c[keys[Math.min(i, 3)]] || {}) as Record<string, boolean>;
 }
 
-function generateOne(c: CijferConstraints): CijferExercise {
+function generateOne(c: CijferConstraints): CijferExercise | null {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const ex = tryGenerate(c);
         if (ex) return ex;
     }
-    // Fallback: simple guaranteed valid exercise
-    const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
-    const s = scaleOf(dp);
-    const half = Math.round((c.maxRange / 2) * s) / s;
-    const quarter = Math.round((c.maxRange / 4) * s) / s;
-    if (c.operator === '+') return { id: genId(), operands: [half, quarter], operator: '+', answer: parseFloat((half + quarter).toFixed(dp)), remainder: 0, isManuallyEdited: false };
-    if (c.operator === '-') return { id: genId(), operands: [half, quarter], operator: '-', answer: parseFloat((half - quarter).toFixed(dp)), remainder: 0, isManuallyEdited: false };
-    if (c.operator === 'x') return { id: genId(), operands: [half, 3], operator: 'x', answer: parseFloat((half * 3).toFixed(dp)), remainder: 0, isManuallyEdited: false };
-    return { id: genId(), operands: [c.maxRange, 4], operator: ':', answer: Math.floor(c.maxRange / 4), remainder: c.maxRange % 4, isManuallyEdited: false };
+    return null;
 }
 
 function tryGenerate(c: CijferConstraints): CijferExercise | null {
@@ -187,12 +224,18 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     if (c.operator === '-') {
-        const maskedA = applyMask(getMask(c, 0), maxVal, dp);
+        const maskA = getMask(c, 0);
+        const maskedA = applyMask(maskA, maxVal, dp);
+        // a mask that doesn't fit used to be dropped silently; retry, then leave the exercise out with a note
+        if (maskedA === null && Object.values(maskA).some(v => v)) return null;
         const a = maskedA !== null
             ? maskedA
             : parseFloat((randInt(Math.ceil(maxVal * s * 0.1), Math.round(maxVal * s)) / s).toFixed(dp));
 
-        const bMaxScaled = Math.round(a * s) - s;
+        // The aftrekker stays ≥ 1, except under a minuend of at most 1 (a getalopbouw of tienden only:
+        // 0,5 − 0,2), which only fits with terms of one decimal unit and up.
+        const bMinScaled = Math.round(a * s) > s ? s : 1;
+        const bMaxScaled = Math.round(a * s) - bMinScaled;
         if (bMaxScaled <= 0) return null;
 
         const maskB = getMask(c, 1);
@@ -205,7 +248,7 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
         } else if (hasMaskB) {
             return null;
         } else {
-            const bScaled = randInt(s, bMaxScaled);
+            const bScaled = randInt(bMinScaled, bMaxScaled);
             if (bScaled <= 0) return null;
             b = parseFloat((bScaled / s).toFixed(dp));
         }
@@ -217,7 +260,8 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     if (c.operator === 'x') {
-        const maxMultiplier = maxVal <= 100 ? 9 : maxVal <= 10000 ? 99 : maxVal <= 1_000_000 ? 999 : 9999;
+        // Tiers past a million: 3-digit multipliers up to 1e7, 4-digit ones up to 1e9.
+        const maxMultiplier = maxVal <= 100 ? 9 : maxVal <= 10000 ? 99 : maxVal <= 10_000_000 ? 999 : 9999;
         const minMultiplier = maxVal <= 100 ? 2 : 10;
 
         // pass dp so decimal place keys (t, h) generate proper fractional multipliers
@@ -229,19 +273,32 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
         const multiplier = hasMaskedMultiplier ? maskedMultiplier : randInt(minMultiplier, maxMultiplier);
         if (multiplier <= 0 || multiplier > maxMultiplier) return null;
 
-        const maxMultiplicandScaled = Math.floor((maxVal * s) / multiplier);
+        // A fractional multiplier shrinks the product, so the multiplicand itself is what the max bounds
+        const maxMultiplicandScaled = Math.floor((maxVal * s) / Math.max(multiplier, 1));
         if (maxMultiplicandScaled < s) return null;
 
+        // Scaled integers keep the key exact: the product needs dp decimals only when
+        // multiplicandScaled × multiplierScaled is a multiple of s, so step to such multiplicands
+        const multiplierScaled = Math.round(multiplier * s);
+        const step = s / gcd(multiplierScaled, s);
         const mask0 = getMask(c, 0);
         const hasMask0 = Object.values(mask0).some(v => v);
         const masked = applyMask(mask0, maxMultiplicandScaled / s, dp);
         // if mask was set but generated value is out of range, retry instead of falling back to random
         if (hasMask0 && masked === null) return null;
-        const multiplicand = masked !== null
-            ? masked
-            : parseFloat((randInt(s, maxMultiplicandScaled) / s).toFixed(dp));
+        let multiplicandScaled: number;
+        if (masked !== null) {
+            multiplicandScaled = Math.round(masked * s);
+            if (multiplicandScaled % step !== 0) return null;
+        } else {
+            const lo = Math.ceil(s / step);
+            const hi = Math.floor(maxMultiplicandScaled / step);
+            if (lo > hi) return null;
+            multiplicandScaled = randInt(lo, hi) * step;
+        }
+        const multiplicand = parseFloat((multiplicandScaled / s).toFixed(dp));
 
-        const answer = parseFloat((multiplicand * multiplier).toFixed(dp));
+        const answer = Math.round((multiplicandScaled * multiplierScaled) / s) / s;
         const mcLen = String(Math.round(multiplicand)).replace('.', '').length;
         const mlLen = String(multiplier).length;
         if (!isDecimal && mcLen < mlLen) {
@@ -251,7 +308,12 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     // Division ':'
-    const maxDivisor = maxVal <= 100 ? 9 : maxVal <= 10_000 ? 99 : 999;
+    // Past 1e7 a 3-digit divisor leaves a 7-digit quotient, so natural numbers grow to 4 digits —
+    // not under a dividend mask (its exact-match retry starves once the divisor outgrows the
+    // dividend) and not for decimals, whose lists stay as they were.
+    const dividendMasked = Object.values(getMask(c, 0)).some(v => v);
+    const bigDivisor = maxVal > 10_000_000 && !isDecimal && !dividendMasked;
+    const maxDivisor = maxVal <= 100 ? 9 : maxVal <= 10_000 ? 99 : bigDivisor ? 9999 : 999;
 
     // pass dp so decimal mask keys (t, h) produce fractional divisors
     const mask1d = getMask(c, 1);
@@ -263,6 +325,8 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     if (divisor <= 0) return null;
     // for unmasked integer divisors enforce minimum of 2
     if (!hasMaskedDivisor && divisor < 2) return null;
+    // A divisor of 1 is no cijfer sum (and leaves no room for a remainder); a mask digit can still roll a 1
+    if (!isDecimal && divisor < 2) return null;
 
     if (isDecimal) {
         const maskDiv = getMask(c, 0);
@@ -283,7 +347,10 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
             if (divisor * 2 > maxVal) return null;
             dividend = randInt(divisor * 2, maxVal);
         }
+        // a fractional divisor makes randInt's offset overshoot the max; a quotient that truncates to 0 is no sum
+        if (dividend > maxVal) return null;
         const { quotient, remainder } = divideToDecimals(dividend, divisor, dp);
+        if (quotient <= 0) return null;
         return { id: genId(), operands: [dividend, divisor], operator: ':', answer: quotient, remainder, isManuallyEdited: false };
     }
 

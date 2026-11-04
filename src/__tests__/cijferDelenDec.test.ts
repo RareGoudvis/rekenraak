@@ -57,7 +57,9 @@ const CASES: [string, Record<string, unknown>][] = [
     ['3 decimals', { decimalPlaces: 3 }],
     ['max 100', { maxRange: 100 }],
     ['max 100 000', { maxRange: 100000 }],
+    ['max 1e6', { maxRange: 1000000 }],
     ['max 1e9, 3 decimals', { maxRange: 1000000000, decimalPlaces: 3 }],
+    ['max 1e9, 1 decimal', { maxRange: 1000000000, decimalPlaces: 1 }],
     ['decimal dividend (E,t,h mask)', { operand0Mask: { T: true, E: true, t: true, h: true } }],
     ['decimal divisor (E,t mask)', { operand1Mask: { E: true, t: true } }],
 ];

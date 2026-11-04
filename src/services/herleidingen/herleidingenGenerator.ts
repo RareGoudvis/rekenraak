@@ -1,5 +1,6 @@
 import type { MathBlock, HerleidingExercise, HerleidingPart } from '../math/types';
 import type { HerleidingenConstraints } from '../math/constraintTypes';
+import { repeatNote } from '../generationNotes';
 
 // Metric ladders. factor = value relative to the SMALLEST unit, so every factor is a power of
 // 10 and all conversions stay exact integers. Oppervlakte steps ×100 and includes the are-units
@@ -24,12 +25,17 @@ export function ladderFor(measure: string): Unit[] {
 
 const ALL_FORMATS = ['enkel-getal', 'enkel-eenheid', 'samengesteld-enkel', 'enkel-samengesteld'] as const;
 const MAX_ATTEMPTS = 20000;
+const CAP_PATIENCE = 2000;
 
 const ri = (n: number) => 1 + Math.floor(Math.random() * Math.max(1, n)); // 1..n
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const round6 = (x: number) => Number(x.toFixed(6)); // avoid float dust on non-exact teacher edits
 
 export function generateHerleidingExercises(block: MathBlock): HerleidingExercise[] {
+    return generateHerleidingExercisesNoted(block).items;
+}
+
+export function generateHerleidingExercisesNoted(block: MathBlock): { items: HerleidingExercise[]; note: string | null } {
     const c = block.constraints as HerleidingenConstraints;
     const measure: string = c.measure ?? 'lengte';
     const maxEnkel: number = Math.max(1, c.maxEnkel ?? c.maxGetal ?? 100);
@@ -37,6 +43,7 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
     const compoundMode: string = c.compoundMode ?? '2';
     const count: number = block.numberOfExercises || 8;
     const formats: string[] = (c.formats?.length ? c.formats : ALL_FORMATS) as string[];
+    const vraag = vraagOf(c);
 
     const ladder = ladderFor(measure);
     let units: Unit[] = ladder.filter(u => (c.units ?? ladder.map(x => x.key)).includes(u.key));
@@ -46,7 +53,14 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
     // Standard formats use ONE unit per factor (the square — listed before its are-alias in
     // LADDERS), so a compound never shows a unit and its alias together (m² + ca).
     const seenF = new Set<number>();
-    const gridUnits = units.filter(u => seenF.has(u.factor) ? false : (seenF.add(u.factor), true));
+    let gridUnits = units.filter(u => seenF.has(u.factor) ? false : (seenF.add(u.factor), true));
+    // Alias-only picks (m² + ca) collapse to one grid unit; fall back to the whole ladder so pairs exist.
+    let widenedUnits = false;
+    if (gridUnits.length < 2) {
+        widenedUnits = true;
+        const seenL = new Set<number>();
+        gridUnits = ladder.filter(u => seenL.has(u.factor) ? false : (seenL.add(u.factor), true));
+    }
 
     // Are-stelsel: ha/a/ca are equal-factor aliases of hm²/dam²/m². Used only by the are formats.
     const areMode: string = c.areMode ?? 'samengesteld';
@@ -150,24 +164,62 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
         return bF <= Number.MAX_SAFE_INTEGER && bF === baseOf(ex.toParts);
     };
 
+    // The biggest number either side of the '=' shows (maxWaarde); a settings combination that can never fit
+    // (km → mm under 10 000) drops the cap rather than return an empty block.
+    const capOn = () => c.maxWaarde !== undefined && !(out.length === 0 && attempts >= CAP_PATIENCE);
+    const tooBig = (ex: HerleidingExercise) => c.maxWaarde !== undefined && ex.fromParts.concat(ex.toParts).some(p => p.value > c.maxWaarde!);
+
     const out: HerleidingExercise[] = [];
     const seen = new Set<string>();
     let attempts = 0;
     while (out.length < count && attempts < MAX_ATTEMPTS) {
         attempts++;
-        const ex = build(pick(formats));
-        if (!ex || !isExact(ex)) continue;
+        const built = build(pick(formats));
+        const ex = built && asks(built, vraag);
+        if (!ex || !isExact(ex) || (capOn() && tooBig(ex))) continue;
         const key = `${ex.format}|${ex.fromParts.map(p => p.key + p.value).join(',')}=${ex.toParts.map(p => p.key + p.value).join(',')}|${ex.blank}`;
         if (seen.has(key)) continue;
         seen.add(key);
         out.push(ex);
     }
-    return out;
+    // Small unit/number spaces run out of distinct exercises; repeat rather than return a short block.
+    const distinct = out.length;
+    for (let i = 0; distinct > 0 && out.length < count; i++) {
+        const src = out[i % distinct];
+        out.push({ ...src, id: `herl-${Math.random().toString(36).slice(2, 9)}` });
+    }
+    const unitNote = widenedUnits ? 'Met alleen deze eenheden zijn geen omzettingen mogelijk; alle eenheden van deze maat zijn gebruikt.' : null;
+    const rep = repeatNote(out.length - distinct);
+    return { items: out, note: unitNote && rep ? `${unitNote} ${rep}` : (unitNote ?? rep) };
 }
 
 function mk(format: string, fromParts: HerleidingPart[], toParts: HerleidingPart[], blank: 'number' | 'unit'): HerleidingExercise {
     return { id: `herl-${Math.random().toString(36).slice(2, 9)}`, format: format as HerleidingExercise['format'], fromParts, toParts, blank, isManuallyEdited: false };
 }
+
+export type HerleidingVraag = 'getal' | 'eenheid' | 'afwisselend';
+
+// Owner 2026-10-11: what a one-quantity answer asks. Saved before the setting, writeUnits (number
+// AND unit) reads afwisselend and writeUnits: false (the registry default then) reads getal, so an
+// old sheet or link keeps its form; a block made since has neither and reads the default.
+export const vraagOf = (c: { vraag?: unknown; writeUnits?: unknown }): HerleidingVraag =>
+    (c.vraag === 'getal' || c.vraag === 'eenheid' || c.vraag === 'afwisselend' ? c.vraag : c.writeUnits === false ? 'getal' : 'afwisselend');
+
+// The are formats keep their number blank: "500 m² = 5 __" would take a and dam² alike.
+const ARE_FORMATS = new Set(['vierkant-are', 'are-vierkant']);
+
+// A one-quantity number blank becomes a unit blank in eenheid (half of them in afwisselend);
+// compound answers stay numbers, and an explicit 'enkel-eenheid' exercise is a unit blank already.
+function asks(ex: HerleidingExercise, vraag: HerleidingVraag): HerleidingExercise {
+    if (ex.blank !== 'number' || ex.toParts.length !== 1 || ARE_FORMATS.has(ex.format)) return ex;
+    const unit = vraag === 'eenheid' || (vraag === 'afwisselend' && Math.random() < 0.5);
+    return unit ? { ...ex, blank: 'unit' } : ex;
+}
+
+// Owner 2026-10-10: a compound answer's zero parts stay blanks on the sheet but leave the key
+// ("71 dl", not "71 dl 0 cl 0 ml"), and the kiosk takes them typed as 0 or left empty.
+export const isZeroAnswerPart = (ex: HerleidingExercise, p: HerleidingPart): boolean =>
+    ex.blank === 'number' && ex.toParts.length > 1 && p.value === 0 && ex.toParts.some(q => q.value !== 0);
 
 // After a teacher edits a SHOWN field, restore the equation invariant base(from) === base(to)
 // by recomputing the blanked answer side. Returns a patched copy (isManuallyEdited).

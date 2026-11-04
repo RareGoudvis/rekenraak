@@ -4,17 +4,19 @@ import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
-import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
 import type { GetallenrijConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [20, 100, 1000, 10000, 100000];
 const STEP_PRESETS = [1, 2, 5, 10, 25, 50, 100];
 const DECIMAL_STEPS = [0.001, 0.01, 0.1, 0.2, 0.5, 1];
 const FRACTION_STEPS = [2, 3, 4, 5, 8, 10];   // denominator d → step 1/d
@@ -28,6 +30,7 @@ const stepDecimals = (s: number): number => {
 
 export default function GetallenrijenConfig({ block }: Props) {
     const [c, patch] = useConstraints<GetallenrijConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         maxGetal = 100,
         step = 5,
@@ -67,9 +70,9 @@ export default function GetallenrijenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Richting:" info="Loopt de reeks stijgend, dalend of beide." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('direction', 'right')} style={styles.radioBtn(direction === 'right')}>↑ Stijgend</button>
-                    <button onClick={() => set('direction', 'left')} style={styles.radioBtn(direction === 'left')}>↓ Dalend</button>
-                    <button onClick={() => set('direction', 'beide')} style={styles.radioBtn(direction === 'beide')}>Beide</button>
+                    <button onClick={() => set('direction', 'right')} aria-pressed={direction === 'right'} style={styles.radioBtn(direction === 'right')}>↑ Stijgend</button>
+                    <button onClick={() => set('direction', 'left')} aria-pressed={direction === 'left'} style={styles.radioBtn(direction === 'left')}>↓ Dalend</button>
+                    <button onClick={() => set('direction', 'beide')} aria-pressed={direction === 'beide'} style={styles.radioBtn(direction === 'beide')}>Beide</button>
                 </div>
             </div>
 
@@ -77,47 +80,55 @@ export default function GetallenrijenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Moeilijkheid:" info="Bepaalt hoeveel vakjes leeg blijven." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('hardMode', false)} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
-                    <button onClick={() => set('hardMode', true)} style={styles.radioBtn(hardMode)}>Moeilijk</button>
+                    <button onClick={() => set('hardMode', false)} aria-pressed={!hardMode} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
+                    <button onClick={() => set('hardMode', true)} aria-pressed={!!hardMode} style={styles.radioBtn(hardMode)}>Moeilijk</button>
                 </div>
             </div>
 
-            {/* STEP — preset set depends on numberType + custom jump */}
-            <div style={styles.section}>
+            {/* STEP — natural / decimal + custom jump; a rational step is the Breuken block's noemer */}
+            {!isRational && <div style={styles.section}>
                 <SettingLabel text="Sprong:" info="De stap tussen opeenvolgende getallen." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {isRational
-                        ? FRACTION_STEPS.map(d => (
-                            <button key={d} onClick={() => set('fractionStep', d)} style={styles.radioBtn(fractionStep === d)}>1/{d}</button>
-                        ))
-                        : (isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
-                            <button key={s} onClick={() => set('step', s)} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
-                        ))}
+                    {(isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
+                        <button key={s} onClick={() => set('step', s)} aria-pressed={step === s} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
+                    ))}
                 </div>
-                {!isRational && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Eigen sprong:</span>
-                        <input
-                            value={customStep}
-                            onChange={(e) => setCustomStep(e.target.value)}
-                            onBlur={commitCustom}
-                            onKeyDown={(e) => { if (e.key === 'Enter') commitCustom(); }}
-                            placeholder="bv. 0,25 of 3"
-                            style={{ width: '90px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px', border: `1px solid ${customStep && !customValid ? '#e11d48' : 'var(--border-color)'}` }}
-                        />
-                        <button onClick={commitCustom} disabled={!customValid} style={{ ...styles.radioBtn(false), opacity: customValid ? 1 : 0.5, cursor: customValid ? 'pointer' : 'not-allowed', flex: '0 0 auto' }}>Zet</button>
-                    </div>
-                )}
-            </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Eigen sprong:</span>
+                    <input
+                        value={customStep}
+                        onChange={(e) => setCustomStep(e.target.value)}
+                        onBlur={commitCustom}
+                        onKeyDown={(e) => { if (e.key === 'Enter') commitCustom(); }}
+                        placeholder="bv. 0,25 of 3"
+                        style={{ width: '90px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px', border: `1px solid ${customStep && !customValid ? '#e11d48' : 'var(--border-color)'}` }}
+                    />
+                    <button onClick={commitCustom} disabled={!customValid} style={{ ...styles.radioBtn(false), opacity: customValid ? 1 : 0.5, cursor: customValid ? 'pointer' : 'not-allowed', flex: '0 0 auto' }}>Zet</button>
+                </div>
+            </div>}
+
+            {/* RATIONALE GETALLEN — the shared Breuken block: sprong = noemer, one teller cap, notation */}
+            {isRational && (
+                <div style={styles.section}>
+                    <BreukenSettings
+                        noemer={{ shape: 'step', value: fractionStep, options: FRACTION_STEPS, onChange: (d) => set('fractionStep', d) }}
+                        teller={{ value: maxTeller, onChange: (v) => set('maxTeller', v) }}
+                        notation={[
+                            { label: 'Schrijf als gemengd getal (1 1/4 i.p.v. 5/4)', on: !!allowMixed, onChange: (v) => set('allowMixed', v) },
+                            { label: 'Niet vereenvoudigen (2/4 blijft 2/4)', on: !!gelijknamig, onChange: (v) => set('gelijknamig', v) },
+                        ]}
+                    />
+                </div>
+            )}
 
             {/* MAX — not for rationals (range driven by step + cells) */}
-            {!isRational && (
+            {range && (
                 <div style={styles.section}>
                     <SettingLabel text="Maximum getal:" info="Het grootste getal in de reeks." />
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                        options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                         onChange={(val) => set('maxGetal', val)}
                         ariaLabel="Maximum getal"
                     />
@@ -127,54 +138,29 @@ export default function GetallenrijenConfig({ block }: Props) {
             {/* GEHELE GETALLEN — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Het kleinste (negatieve) getal in de reeks." />
+                    <SettingLabel text={`Ondergrens: ${formatSignedInt(lowerBound)}`} info="Het kleinste (negatieve) getal in de reeks." />
                     <input
                         type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound}
                         onChange={(e) => set('minGetal', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
                     />
+                    {lowerBound < -maxGetal && (
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                    )}
                 </div>
             )}
 
-            {/* RATIONALE GETALLEN — fraction display toggles */}
-            {isRational && (
-                <div style={styles.section}>
-                    <SettingLabel text="Breuken:" info="Weergave-opties voor breuken in de reeks." />
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Gemengde getallen (1 1/4 i.p.v. 5/4)</span>
-                        <button onClick={() => set('allowMixed', !allowMixed)} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
-                    </div>
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Gelijknamige breuken (niet vereenvoudigen)</span>
-                        <button onClick={() => set('gelijknamig', !gelijknamig)} style={styles.onOffBtn(gelijknamig)}>{gelijknamig ? 'Aan' : 'Uit'}</button>
-                    </div>
-                </div>
-            )}
-
-            {/* SPECIFIEKE GETALOPBOUW — place mask (natural/decimal) or teller/noemer (rational) */}
-            {!isRational ? (
+            {/* SPECIFIEKE GETALOPBOUW — place mask (natural/decimal) */}
+            {!isRational && (
                 <div style={styles.section}>
                     <SettingLabel text="Specifieke getalopbouw:" info="Welke posities in de getallen mogen voorkomen." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask[p.key]} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw.</p>
-                </div>
-            ) : (
-                <div style={styles.section}>
-                    <SettingLabel text="Specifieke getalopbouw:" info="Hoogste teller en de noemer (sprong) van de breuken." />
-                    {/* noemer = de sprong (1/d); teller = hoogste teller in de rij */}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <FractionMaxField
-                            numerator={maxTeller}
-                            denominator={fractionStep}
-                            onNumerator={(v) => set('maxTeller', v)}
-                            onDenominator={(v) => set('fractionStep', v)}
-                        />
-                    </div>
                 </div>
             )}
 

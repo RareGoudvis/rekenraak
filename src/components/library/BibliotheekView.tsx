@@ -52,7 +52,8 @@ export default function BibliotheekView() {
     };
 
     return (
-        <div style={S.overlay}>
+        // no-print: Ctrl+P with this overlay open prints the sheet underneath (as WhiteboardView does).
+        <div className="no-print" style={S.overlay}>
             <header style={S.topbar}>
                 <div style={S.brand}>
                     <Wordmark height={28} />

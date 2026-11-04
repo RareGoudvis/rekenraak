@@ -1,0 +1,5 @@
+{
+  "omtrek": { "combos": 2, "exercises": 4, "violationsByRule": { "max-exceeded": 0, "min-undershot": 1 }, "knownBugHits": { "L12": 0 }, "hangs": 0, "throws": 0, "underfill": 0 },
+  "optellen": { "combos": 1, "exercises": 1, "violationsByRule": {}, "knownBugHits": {}, "hangs": 0, "throws": 0, "underfill": 0 },
+  "afronden": { "combos": 1, "exercises": 1, "violationsByRule": {}, "knownBugHits": {}, "hangs": 0, "throws": 0, "underfill": 0 }
+}

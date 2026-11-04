@@ -51,8 +51,8 @@ export default function MetenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text={isOmtrek ? 'Lengtes:' : 'Soort:'} info="Wat er gemeten wordt (lijnstuk of omtrek van vormen)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('measureModel', 'meten')} style={styles.radioBtn(measureModel === 'meten')}>{isOmtrek ? 'Op schaal (meten)' : 'Meten (schrijven)'}</button>
-                    <button onClick={() => set('measureModel', 'gegeven')} style={styles.radioBtn(measureModel === 'gegeven')}>{isOmtrek ? 'Gegeven' : 'Juist of fout'}</button>
+                    <button onClick={() => set('measureModel', 'meten')} aria-pressed={measureModel === 'meten'} style={styles.radioBtn(measureModel === 'meten')}>{isOmtrek ? 'Op schaal (meten)' : 'Meten (schrijven)'}</button>
+                    <button onClick={() => set('measureModel', 'gegeven')} aria-pressed={measureModel === 'gegeven'} style={styles.radioBtn(measureModel === 'gegeven')}>{isOmtrek ? 'Gegeven' : 'Juist of fout'}</button>
                 </div>
             </div>
 
@@ -61,8 +61,8 @@ export default function MetenConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Nauwkeurigheid:" info="Op hele cm of op de millimeter nauwkeurig meten." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('precision', 'cm')} style={styles.radioBtn(precision === 'cm')}>Hele cm</button>
-                        <button onClick={() => set('precision', 'mm')} style={styles.radioBtn(precision === 'mm')}>Mm-nauwkeurig</button>
+                        <button onClick={() => set('precision', 'cm')} aria-pressed={precision === 'cm'} style={styles.radioBtn(precision === 'cm')}>Hele cm</button>
+                        <button onClick={() => set('precision', 'mm')} aria-pressed={precision === 'mm'} style={styles.radioBtn(precision === 'mm')}>Mm-nauwkeurig</button>
                     </div>
                 </div>
             )}
@@ -98,7 +98,7 @@ export default function MetenConfig({ block }: Props) {
                     <SettingLabel text={`${group.title}:`} info="Welke vormen er voor de omtrek-oefeningen gebruikt mogen worden." />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {group.items.map(o => (
-                            <button key={o.key} onClick={() => toggleShape(o.key)} style={styles.pill(shapes.includes(o.key))}>{o.label}</button>
+                            <button key={o.key} onClick={() => toggleShape(o.key)} aria-pressed={shapes.includes(o.key)} style={styles.pill(shapes.includes(o.key))}>{o.label}</button>
                         ))}
                     </div>
                 </div>

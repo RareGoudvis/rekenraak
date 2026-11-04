@@ -1,36 +1,34 @@
 import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
-import { useBlockWidth, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
+import { PLACE_VALUES } from '../../services/math/mathEngine';
 import { SOL, solutionText } from './solutionStyle';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
+import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, decimalsOf, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
+import { cijferKioskGrid, divQuotientInt, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
+import { borrowedProps, useViewerInteraction } from './ViewerInteractionContext';
+import KioskCell from './KioskCell';
 
 // Printed sheet text (equation header, estimation/controle/QR rows) is a factor of
 // --sheet-size-math; the digit-grid overlay scales off the per-block gridCellSize instead
 // (its own system, not the sheet-wide token), and manual-edit affordances stay screen px.
 const GRID_COLOR = '#aaaaaa';
-const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
+// Units first, so index = columns left of the E column; derived so TM / HM / Mrd grids get headers.
+const PLACE_ABBREVS = PLACE_VALUES.filter(p => p.weight >= 1).map(p => p.key).reverse();
 const DEC_ABBREVS = ['t', 'h', 'd'];
+const NBSP = String.fromCharCode(0xa0);
 
 const ROW_GAP_PX = 12;
-// The header row ("1 234 + 567 =") is Azeret Mono (0.64em advance) at 0.64 of the math
-// token, inside 8px of padding either side and a 0.5px border.
-const HEADER_CHAR_EM = 0.64 * 0.64;
+// The header row ("1 234 + 567 =") is Azeret Mono at 0.64 of the math token, inside 8px
+// of padding either side and a 0.5px border. SYNC: the header cell's fontSize below.
+const HEADER_FONT = 0.64;
 const HEADER_PAD_PX = 18;
 
-/** Decimal columns this exercise was generated with; the constraints are the old-sheet fallback. */
-function dpOf(ex: CijferExercise, c: CijferConstraints): number {
-    return ex.decimalPlaces ?? (c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0);
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function intLen(n: number): number {
-    const abs = Math.abs(Math.floor(n));
-    return abs === 0 ? 1 : String(abs).length;
-}
 
 function fmtDisplay(n: number, dp: number): string {
     const s = dp > 0 ? Math.abs(n).toFixed(dp) : String(Math.abs(Math.round(n)));
@@ -39,13 +37,24 @@ function fmtDisplay(n: number, dp: number): string {
     return dp > 0 ? `${intFmt},${decP}` : intFmt;
 }
 
+// The rest of a division to dp decimals counts in 10^-2dp units (1 : 0,07 = 14,28 r 0,0004),
+// so it prints exactly, up to 2·dp decimals, without the trailing zeros.
+function fmtRest(n: number, dp: number): string {
+    const [intP, decP = ''] = Math.abs(n).toFixed(2 * dp).split('.');
+    const dec = decP.replace(/0+$/, '');
+    const intFmt = intP.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return dec ? `${intFmt},${dec}` : intFmt;
+}
+
 function computeEstimation(ex: CijferExercise): string {
     const roundSig = (n: number): number => {
         if (n === 0) return 0;
         const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(n))) - 1);
         return Math.round(n / mag) * mag;
     };
-    const fmtR = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Same space thousands separator as the header line (was '.'), but non-breaking: this row
+    // wraps inside its box at 1e9, and "≈ 1 / 000 000 000" split a number across two lines.
+    const fmtR = (n: number) => (Math.round(n) < 0 ? '-' : '') + fmtDisplay(n, 0).replace(/ /g, NBSP);
     const opStr = ex.operator === 'x' ? '×' : ex.operator === ':' ? '÷' : ex.operator;
     const rounded = ex.operands.map(o => roundSig(parseFloat(o.toFixed(0))));
     let est = rounded[0];
@@ -60,68 +69,18 @@ function computeEstimation(ex: CijferExercise): string {
 
 // The clickable "1 234 + 567 =" line above the grid. Module level because the width
 // estimate needs it too — the header can be wider than the grid for small operands.
-function headerTextOf(ex: CijferExercise, dp: number): string {
-    const opStr = ex.operator === 'x' ? '×' : ex.operator;
+function headerTermsOf(ex: CijferExercise, dp: number): string[] {
     return ex.operands.map((o, i) => {
         // divisor and multiplier are normally integers; use dp only when they are decimal
         if ((ex.operator === ':' && i === 1) || (ex.operator === 'x' && i > 0)) {
             return fmtDisplay(o, Number.isInteger(o) ? 0 : dp);
         }
         return fmtDisplay(o, dp);
-    }).join(` ${opStr} `) + ' =';
+    });
 }
-
-// Decimal cols at intCols+i (no comma column).
-function getDigitCols(num: number, dp: number, intCols: number): { col: number; char: string }[] {
-    const s = dp > 0 ? Math.abs(num).toFixed(dp) : String(Math.abs(Math.round(num)));
-    const [intPart = '0', decPart = ''] = s.split('.');
-    const result: { col: number; char: string }[] = [];
-    const padded = intPart.padStart(intCols, '0');
-    let found = false;
-    for (let i = 0; i < intCols; i++) {
-        if (padded[i] !== '0') found = true;
-        if (found) result.push({ col: i, char: padded[i] });
-    }
-    if (!found) result.push({ col: intCols - 1, char: '0' });
-    if (dp > 0) {
-        const padDec = decPart.padEnd(dp, '0');
-        for (let i = 0; i < dp; i++) result.push({ col: intCols + i, char: padDec[i] });
-    }
-    return result;
-}
-
-function ppDigitCols(value: number, intCols: number): { col: number; char: string }[] {
-    if (value === 0) return [{ col: intCols - 1, char: '0' }];
-    const s = String(Math.round(value));
-    const offset = intCols - s.length;
-    const result: { col: number; char: string }[] = [];
-    let found = false;
-    for (let i = 0; i < s.length; i++) {
-        if (s[i] !== '0') found = true;
-        if (found) result.push({ col: offset + i, char: s[i] });
-    }
-    return result;
-}
-
-function computeAddCarries(operands: number[], dp: number, intCols: number): { col: number; carry: number }[] {
-    const totalPositions = intCols + dp;
-    const carries: { col: number; carry: number }[] = [];
-    let carry = 0;
-    for (let pos = 0; pos < totalPositions + 1; pos++) {
-        let sum = carry;
-        for (const op of operands) {
-            const scaled = Math.round(Math.abs(op) * Math.pow(10, dp));
-            sum += Math.floor(scaled / Math.pow(10, pos)) % 10;
-        }
-        carry = Math.floor(sum / 10);
-        if (carry > 0) {
-            const correctedCol = pos < dp
-                ? intCols + (dp - 1 - pos)     // decimal positions (no comma col offset)
-                : intCols - 1 - (pos - dp);     // integer positions
-            carries.push({ col: correctedCol, carry });
-        }
-    }
-    return carries;
+const headerOpOf = (ex: CijferExercise) => (ex.operator === 'x' ? '×' : ex.operator);
+function headerTextOf(ex: CijferExercise, dp: number): string {
+    return headerTermsOf(ex, dp).join(` ${headerOpOf(ex)} `) + ' =';
 }
 
 // Grid col = digit col + 1 (operator at col 0).
@@ -141,26 +100,22 @@ function placeLabel(gridCol: number, maxInt: number, dp: number): string | null 
 // over-stated a block of small numbers by a whole column and cost it an exercise per row.
 
 function addSubGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
-    const maxInt = Math.max(...[...ex.operands, ex.answer].map(intLen));
+    const maxInt = addSubMaxInt(ex);
     return 1 + maxInt + dp + extraCols;
 }
 
-function partialProductsOf(ex: CijferExercise, dp: number): number[] {
-    const scaledMultiplicand = Math.round(ex.operands[0] * Math.pow(10, dp));
-    return String(Math.round(ex.operands[1])).split('').reverse()
-        .map((d, shift) => scaledMultiplicand * Number(d) * Math.pow(10, shift));
+function mulGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
+    return 1 + mulLayout(ex, dp).digitCols + extraCols;
 }
 
-function mulGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
-    const maxPPLen = Math.max(...partialProductsOf(ex, dp).map(pp => pp === 0 ? 1 : String(Math.round(pp)).length));
-    return 1 + Math.max(intLen(ex.answer), maxPPLen) + dp + extraCols;
-}
+// A decimal divisor is written with its own decimals (0,7 takes two ruitjes), never rounded.
+const divisorColsOf = (divisor: number) => intLen(divisor) + decimalsOf(divisor);
 
 function divGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
     // The working area always keeps at least 3 decimal columns so a pupil can work past dp.
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
     const leftCols = intLen(ex.operands[0]) + workingDecCols;
-    const rightCols = Math.max(intLen(ex.operands[1]), intLen(ex.operands[0]) + dp);
+    const rightCols = Math.max(divisorColsOf(ex.operands[1]), divQuotientInt(ex) + dp);
     return leftCols + rightCols + extraCols;
 }
 
@@ -174,7 +129,7 @@ function gridColsOf(ex: CijferExercise, dp: number, extraCols: number): number {
 function exWidthPx(ex: CijferExercise, c: CijferConstraints, CELL: number, sheetPx: number): number {
     const dp = dpOf(ex, c);
     const grid = gridColsOf(ex, dp, c.extraCols || 0) * CELL;
-    const header = headerTextOf(ex, dp).length * HEADER_CHAR_EM * sheetPx + HEADER_PAD_PX;
+    const header = monoTextPx(headerTextOf(ex, dp).length, HEADER_FONT, sheetPx) + HEADER_PAD_PX;
     return Math.max(grid, header);
 }
 
@@ -203,12 +158,13 @@ function computeExPerRow(exercises: CijferExercise[], c: CijferConstraints, CELL
 
 // ── Digit overlay ─────────────────────────────────────────────────────────────
 
-interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; }
+// attrs: kiosk-only data attributes (a struck top digit after Lenen); empty on the sheet.
+interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; attrs?: Record<string, string>; }
 
-function DC({ col, row, char, CELL, rowH, color = '#000', small = false }: DCProps) {
+function DC({ col, row, char, CELL, rowH, color = 'inherit', small = false, attrs }: DCProps) {
     const H = rowH ?? CELL;
     return (
-        <div style={{
+        <div {...attrs} style={{
             position: 'absolute',
             left: col * CELL, top: row * H,
             width: CELL, height: H,
@@ -217,7 +173,7 @@ function DC({ col, row, char, CELL, rowH, color = '#000', small = false }: DCPro
             // matching MathBlockRenderer's font size and avoiding the "cijferen looks
             // smaller than mental math" regression.
             fontSize: small ? CELL * 0.48 : CELL * 0.68,
-            fontFamily: 'Azeret Mono, monospace',
+            fontFamily: 'var(--font-sheet-math)',
             fontWeight: 'normal',
             color, userSelect: 'none', boxSizing: 'border-box', pointerEvents: 'none',
         }}>{char}</div>
@@ -236,24 +192,40 @@ function CommaEdge({ afterGridCol, row, CELL, rowH }: { afterGridCol: number; ro
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             paddingBottom: CELL * 0.04,
             fontSize: CELL * 0.60,
-            fontFamily: 'Azeret Mono, monospace',
+            fontFamily: 'var(--font-sheet-math)',
             color: '#888888',
             userSelect: 'none', pointerEvents: 'none',
         }}>,</div>
     );
 }
 
+// Oefenmodus: a ruitje the pupil fills on the kiosk card (only drawn under a fill-cells context).
+function GridCell({ cell, CELL, rowH }: { cell: CijferCell; CELL: number; rowH?: number }) {
+    const H = rowH ?? CELL;
+    const scratch = cell.role === 'carry' || cell.role === 'borrow';
+    return (
+        <KioskCell cellKey={cell.key} label={cell.label} variant={scratch ? 'is-grid is-scratch' : 'is-grid'} style={{
+            position: 'absolute', left: cell.col * CELL, top: cell.row * H, width: CELL, height: H,
+            // SYNC: DC's digit and small sizes.
+            fontSize: scratch ? CELL * 0.48 : CELL * 0.68,
+        }} />
+    );
+}
+
 // ── Add/Sub grid ──────────────────────────────────────────────────────────────
 
-interface GridProps { ex: CijferExercise; CELL: number; dp: number; scaffolding: number; showSolutions: boolean; extraCols: number; extraRows: number; }
+// cells: the kiosk card's fill-in grid (operands printed, every answer ruitje and carry a cell).
+interface GridProps { ex: CijferExercise; CELL: number; dp: number; scaffolding: number; showSolutions: boolean; extraCols: number; extraRows: number; cells?: boolean; }
 
-function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows }: GridProps) {
+function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows, cells }: GridProps) {
+    const ctx = useViewerInteraction();
     const numTerms = ex.operands.length;
-    const maxInt = Math.max(...[...ex.operands, ex.answer].map(intLen));
+    const maxInt = addSubMaxInt(ex);
     const decCols = dp;  // no dedicated comma column
 
     const gridCols = addSubGridCols(ex, dp, extraCols);
-    const freeRows = ex.operator === '-' ? 2 : 1;
+    // SYNC: cijferCells KIOSK_CARRY_ROW: the card keeps one exchange row above a subtraction.
+    const freeRows = ex.operator === '-' && !cells ? 2 : 1;
     const firstOperandRow = 1 + freeRows;
     const lastOperandRow = firstOperandRow + numTerms - 1;
     const lineRow = lastOperandRow + 1;
@@ -267,7 +239,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
     const eGridCol = maxInt;
 
     return (
-        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
+        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
             {/* One px wider and taller than the grid, and every line offset half a stroke:
                 a line drawn exactly at gridW/gridH sits half outside the viewport and is
                 clipped away on screen (it survives at print DPI, so the sheet and the paper
@@ -282,7 +254,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 {scaffolding <= 2 && (
                     <>
                         <line x1={0} y1={1 * CELL} x2={gridW} y2={1 * CELL} stroke="#ccc" strokeWidth={1} />
-                        <line x1={0} y1={lineRow * CELL} x2={gridW} y2={lineRow * CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={0} y1={lineRow * CELL} x2={gridW} y2={lineRow * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
@@ -296,7 +268,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                         position: 'absolute', left: c * CELL, top: 0,
                         width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.44, fontFamily: 'Azeret Mono, monospace',
+                        fontSize: CELL * 0.44, fontFamily: 'var(--font-sheet-math)',
                         color: '#888', userSelect: 'none', pointerEvents: 'none',
                     }}>{label}</div>
                 );
@@ -311,7 +283,8 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
             {scaffolding <= 1 && ex.operands.map((op, opIdx) => {
                 const row = firstOperandRow + opIdx;
                 return getDigitCols(op, dp, maxInt)
-                    .map((d, i) => <DC key={`op${opIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} />);
+                    .map((d, i) => <DC key={`op${opIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL}
+                        attrs={opIdx === 0 ? borrowedProps(ctx, `b${d.col}`) : undefined} />);
             })}
 
             {/* Comma overlay after E col for each operand row (scaffolding=1, decimal) */}
@@ -319,43 +292,49 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 <CommaEdge key={`cop${opIdx}`} afterGridCol={eGridCol} row={firstOperandRow + opIdx} CELL={CELL} />
             ))}
 
-            {/* Level 1 + solutions: answer */}
-            {scaffolding <= 1 && showSolutions &&
+            {/* Solutions at every scaffolding level: the grid geometry is the same, so the empty-grid key draws the same cells. */}
+            {showSolutions &&
                 getDigitCols(ex.answer, dp, maxInt)
                     .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
-            {scaffolding <= 1 && showSolutions && dp > 0 && (
+            {showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
             )}
 
-            {/* Level 1 + solutions: carry row */}
-            {scaffolding <= 1 && showSolutions && ex.operator === '+' &&
+            {/* Solutions: carry row. computeAddCarries keys a carry by the column that MADE it; a
+                pupil writes it over the next column left, so it is drawn at col − 1.
+                SYNC: cijferCells cijferCheck reads the carry cell over col from carries.get(col + 1). */}
+            {showSolutions && ex.operator === '+' &&
                 computeAddCarries(ex.operands, dp, maxInt)
-                    .filter(c => c.col >= 0 && c.col < maxInt + decCols)
-                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
+                    .filter(c => c.col - 1 >= 0 && c.col < maxInt + decCols)
+                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col - 1)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
             }
+
+            {cells && cijferKioskGrid(ex, dp).cells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}
+            {cells && dp > 0 && <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />}
         </div>
     );
 }
 
 // ── Multiplication grid ───────────────────────────────────────────────────────
 
-function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows }: GridProps) {
+function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows, cells }: GridProps) {
     const multiplicand = ex.operands[0];
-    const multiplier = Math.round(ex.operands[1]);
+    const multiplier = ex.operands[1];
 
-    const mulDigits = String(multiplier).split('').reverse();
-    const partialProducts = partialProductsOf(ex, dp);
-
-    const maxPPLen = Math.max(...partialProducts.map(pp => pp === 0 ? 1 : String(Math.round(pp)).length));
-    const maxInt = Math.max(intLen(ex.answer), maxPPLen);
-
-    const n = mulDigits.length;
-    const multiplicandRow = 2;
-    const multiplierRow = 3;
-    const lineRow1 = 4;
+    const { mdp, tdp, partialProducts, digitCols, n } = mulLayout(ex, dp);
+    // Whole-number rows are right-aligned over digitCols; each row's comma sits after its own integer part
+    const maxInt = digitCols - tdp;
+    const mcInt = digitCols - dp;
+    const mlInt = digitCols - mdp;
+    // SYNC: cijferCells kioskMulRows — the card keeps only the rows the pupil fills.
+    const kiosk = cells ? kioskMulRows(n) : null;
+    const multiplicandRow = kiosk?.multiplicand ?? 2;
+    const multiplierRow = kiosk?.multiplier ?? 3;
+    const lineRow1 = kiosk?.ppStart ?? 4;
     const ppStartRow = lineRow1;      // partial products start immediately below first thick line
-    const lineRow2 = ppStartRow + n;
+    const ppRows = kiosk?.ppRows ?? n;
+    const lineRow2 = ppStartRow + ppRows;
     const answerRow = lineRow2;       // answer sits right below the second thick line (no gap row)
     const totalRows = answerRow + 1 + extraRows;
 
@@ -363,10 +342,8 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const gridW = gridCols * CELL;
     const gridH = totalRows * CELL;
 
-    const eGridCol = maxInt;
-
     return (
-        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
+        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
             {/* One px wider and taller than the grid, and every line offset half a stroke:
                 a line drawn exactly at gridW/gridH sits half outside the viewport and is
                 clipped away on screen (it survives at print DPI, so the sheet and the paper
@@ -381,22 +358,22 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 {scaffolding <= 2 && (
                     <>
                         <line x1={0} y1={1 * CELL} x2={gridW} y2={1 * CELL} stroke="#ccc" strokeWidth={1} />
-                        <line x1={0} y1={lineRow1 * CELL} x2={gridW} y2={lineRow1 * CELL} stroke="#222" strokeWidth={2} />
-                        <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={0} y1={lineRow1 * CELL} x2={gridW} y2={lineRow1 * CELL} stroke="currentColor" strokeWidth={2} />
+                        <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
 
             {/* Place value headers */}
             {scaffolding <= 2 && Array.from({ length: gridCols }, (_, c) => {
-                const label = placeLabel(c, maxInt, dp);
+                const label = placeLabel(c, maxInt, tdp);
                 if (!label) return null;
                 return (
                     <div key={`pv${c}`} style={{
                         position: 'absolute', left: c * CELL, top: 0,
                         width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.44, fontFamily: 'Azeret Mono, monospace',
+                        fontSize: CELL * 0.44, fontFamily: 'var(--font-sheet-math)',
                         color: '#888', userSelect: 'none', pointerEvents: 'none',
                     }}>{label}</div>
                 );
@@ -406,41 +383,48 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
             {scaffolding <= 2 && (
                 <>
                     <DC col={0} row={multiplierRow} char="×" CELL={CELL} />
-                    <DC col={0} row={ppStartRow + n - 1} char="+" CELL={CELL} />
+                    {ppRows > 0 && <DC col={0} row={ppStartRow + n - 1} char="+" CELL={CELL} />}
                 </>
             )}
 
             {/* Level 1: multiplicand */}
             {scaffolding <= 1 &&
-                getDigitCols(multiplicand, dp, maxInt)
+                getDigitCols(multiplicand, dp, mcInt)
                     .map((d, i) => <DC key={`mc${i}`} col={toGridCol(d.col)} row={multiplicandRow} char={d.char} CELL={CELL} />)
             }
             {scaffolding <= 1 && dp > 0 && (
-                <CommaEdge afterGridCol={eGridCol} row={multiplicandRow} CELL={CELL} />
+                <CommaEdge afterGridCol={mcInt} row={multiplicandRow} CELL={CELL} />
             )}
 
             {/* Level 1: multiplier */}
             {scaffolding <= 1 &&
-                getDigitCols(multiplier, 0, maxInt)
+                getDigitCols(multiplier, mdp, mlInt)
                     .map((d, i) => <DC key={`ml${i}`} col={toGridCol(d.col)} row={multiplierRow} char={d.char} CELL={CELL} />)
             }
+            {scaffolding <= 1 && mdp > 0 && (
+                <CommaEdge afterGridCol={mlInt} row={multiplierRow} CELL={CELL} />
+            )}
 
-            {/* Partial products — student fills these in; shown as solutions only */}
-            {scaffolding <= 1 && showSolutions && partialProducts.map((pp, ppIdx) => {
-                const row = ppStartRow + (n - 1 - ppIdx);
-                return ppDigitCols(pp, maxInt).map((d, i) => (
+            {/* Partial products — student fills these in; shown as solutions only. Units product on
+                top, the way a pupil writes × 3 before × 70. SYNC: cijferCells p0 (top row) = the units product. */}
+            {showSolutions && partialProducts.map((pp, ppIdx) => {
+                const row = ppStartRow + ppIdx;
+                return ppDigitCols(pp, digitCols).map((d, i) => (
                     <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL} />
                 ));
             })}
 
-            {/* Level 1 + solutions: answer */}
-            {scaffolding <= 1 && showSolutions &&
-                getDigitCols(ex.answer, dp, maxInt)
+            {/* Solutions at every scaffolding level (same geometry): answer */}
+            {showSolutions &&
+                getDigitCols(ex.answer, tdp, maxInt)
                     .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
-            {scaffolding <= 1 && showSolutions && dp > 0 && (
-                <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
+            {showSolutions && tdp > 0 && (
+                <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />
             )}
+
+            {cells && cijferKioskGrid(ex, dp).cells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}
+            {cells && tdp > 0 && <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />}
         </div>
     );
 }
@@ -448,25 +432,30 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
 // ── Division grid ─────────────────────────────────────────────────────────────
 // Dutch staartdeling: dividend left, divisor top-right (in box), quotient below horizontal line.
 
-function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows }: GridProps) {
+function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows, cells }: GridProps) {
     const dividend = ex.operands[0];
     const divisor = ex.operands[1];
     const quotient = ex.answer;
 
     const dividendIntCols = intLen(dividend);
-    const divisorCols = intLen(divisor);
-    // always same width as dividend — student must determine how many digits the quotient needs
-    const quotientIntCols = dividendIntCols;
+    const divisorIntCols = intLen(divisor);
+    const divisorDp = decimalsOf(divisor);
+    const divisorCols = divisorColsOf(divisor);
+    // As wide as the dividend after the komma shift (742,4 : 0,7 → 7424 : 7) — the pupil must
+    // determine how many digits the quotient needs. SYNC: cijferCells divGeometry (the kiosk's q cells).
+    const quotientIntCols = divQuotientInt(ex);
 
     // Working area always has at least 3 decimal cols so students can work past dp if needed
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
-    const dividendDecStr = dp > 0 ? (dividend.toFixed(dp).split('.')[1] || '') : '';
+    // Whole part and decimals from one exact string: rounding the whole part drew 336,6 as "337,60".
+    const [dividendWhole, dividendDecStr = ''] = dividend.toFixed(dp).split('.');
     const leftCols = dividendIntCols + workingDecCols;
     const rightContentCols = Math.max(divisorCols, quotientIntCols + dp);
     const rightCols = rightContentCols;
     const totalCols = leftCols + rightCols + extraCols;
 
-    const workingRows = leftCols * 2 + 1;
+    // The card keeps one working row: the pupil cannot write the subtractions on a screen.
+    const workingRows = cells ? 1 : leftCols * 2 + 1;
     const totalRows = 1 + workingRows + extraRows;
 
     // A staartdeling's working rows carry a subtraction written UNDER the digits above it,
@@ -479,7 +468,7 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
     const gridH = totalRows * ROW_H;
 
     return (
-        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
+        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
             {/* One px wider and taller than the grid, and every line offset half a stroke:
                 a line drawn exactly at gridW/gridH sits half outside the viewport and is
                 clipped away on screen (it survives at print DPI, so the sheet and the paper
@@ -494,17 +483,17 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                 {scaffolding <= 2 && (
                     <>
                         {/* Vertical separator: left section | right section (full height) */}
-                        <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="currentColor" strokeWidth={2} />
                         {/* Divisor box top (right section only) */}
-                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="currentColor" strokeWidth={2} />
                         {/* Divisor box bottom = quotient separator */}
-                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
 
             {/* Dividend integer digits (left, row 0) */}
-            {scaffolding <= 1 && getDigitCols(dividend, 0, dividendIntCols).map((d, i) => (
+            {scaffolding <= 1 && getDigitCols(Number(dividendWhole), 0, dividendIntCols).map((d, i) => (
                 <DC key={`dv${i}`} col={d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
             {/* Decimal digits of dividend (actual digits if dividend is decimal, else "0") */}
@@ -517,18 +506,25 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             )}
 
             {/* Divisor digits (right section, row 0) */}
-            {scaffolding <= 1 && getDigitCols(divisor, 0, divisorCols).map((d, i) => (
+            {scaffolding <= 1 && getDigitCols(divisor, divisorDp, divisorIntCols).map((d, i) => (
                 <DC key={`dr${i}`} col={leftCols + d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
+            {scaffolding <= 1 && divisorDp > 0 && (
+                <CommaEdge afterGridCol={leftCols + divisorIntCols - 1} row={0} CELL={CELL} rowH={ROW_H} />
+            )}
 
-            {/* Quotient digits (right section, row 1 — below horizontal line) */}
-            {scaffolding <= 1 && showSolutions && (
+            {/* Quotient digits (right section, row 1 — below horizontal line), at every scaffolding level */}
+            {showSolutions && (
                 getDigitCols(quotient, dp, quotientIntCols)
                     .map((d, i) => <DC key={`qt${i}`} col={leftCols + d.col} row={1} char={d.char} CELL={CELL} rowH={ROW_H} color={SOL} />)
             )}
-            {scaffolding <= 1 && showSolutions && dp > 0 && (
+            {showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} rowH={ROW_H} />
             )}
+
+            {cells && cijferKioskGrid(ex, dp).cells.filter(cell => cell.role === 'quotient')
+                .map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} rowH={ROW_H} />)}
+            {cells && dp > 0 && <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} rowH={ROW_H} />}
         </div>
     );
 }
@@ -541,16 +537,18 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
     const updateCijferExercise = useWorksheetStore((s) => s.updateCijferExercise);
     const [editing, setEditing] = useState(false);
     const [editValues, setEditValues] = useState<string[]>([]);
+    const scaffold = useShowScaffold();
+    // Oefenmodus: the pupil fills the grid on the card, so it is drawn there with the operands in.
+    const cells = useViewerInteraction()?.kind === 'fill-cells';
 
     const dp = dpOf(ex, c);
-    const scaffolding = c.scaffolding || 3;
+    const scaffolding = cells ? 1 : c.scaffolding || 3;
     const isDivision = ex.operator === ':';
     const isMultiplication = ex.operator === 'x';
-    const extraCols = c.extraCols || 0;
-    const extraRows = c.extraRows || 0;
+    const extraCols = cells ? 0 : c.extraCols || 0;
+    const extraRows = cells ? 0 : c.extraRows || 0;
 
     const opStr = ex.operator === 'x' ? '×' : ex.operator;
-    const headerText = headerTextOf(ex, dp);
 
     const confirmEdit = () => {
         const operands = editValues.map(v => parseFloat(v.replace(',', '.')));
@@ -559,7 +557,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
         let remainder = 0;
         if (ex.operator === '+') answer = parseFloat(operands.reduce((a, b) => a + b, 0).toFixed(dp));
         else if (ex.operator === '-') answer = parseFloat((operands[0] - operands[1]).toFixed(dp));
-        else if (ex.operator === 'x') answer = parseFloat((operands[0] * operands[1]).toFixed(dp));
+        else if (ex.operator === 'x') answer = parseFloat((operands[0] * operands[1]).toFixed(2 * dp));
         else if (dp > 0) {
             // Same helper as the generator, so an edited exercise gets the same true q and r.
             ({ quotient: answer, remainder } = divideToDecimals(operands[0], operands[1], dp));
@@ -570,22 +568,23 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
     };
 
     return (
-        <div className="print-exercise" style={{ marginBottom: 6, display: 'inline-flex', flexDirection: 'column' }}>
-            {editing ? (
+        <div className="print-exercise" style={{ marginBottom: cells ? 0 : 6, display: 'inline-flex', flexDirection: 'column' }}>
+            {/* The fill-in card writes the operands in the grid, and a pupil must not open the teacher's edit form. */}
+            {cells ? null : editing ? (
                 <div style={{ border: '0.5px solid #4a90d9', padding: '4px 8px', backgroundColor: '#f0f8ff', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {ex.operands.map((_, i) => (
                         <React.Fragment key={i}>
-                            {i > 0 && <span style={{ fontSize: 11, fontFamily: 'Azeret Mono, monospace' }}>{opStr}</span>}
+                            {i > 0 && <span style={{ fontSize: 11, fontFamily: 'var(--font-sheet-math)' }}>{opStr}</span>}
                             <input
                                 type="number"
                                 value={editValues[i] ?? ''}
                                 onChange={e => setEditValues(prev => { const next = [...prev]; next[i] = e.target.value; return next; })}
                                 onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditing(false); }}
-                                style={{ width: 70, fontSize: 11, fontFamily: 'Azeret Mono, monospace', textAlign: 'right', border: '1px solid #4a90d9', borderRadius: 3, padding: '1px 4px' }}
+                                style={{ width: 70, fontSize: 11, fontFamily: 'var(--font-sheet-math)', textAlign: 'right', border: '1px solid #4a90d9', borderRadius: 3, padding: '1px 4px', color: 'inherit' }}
                             />
                         </React.Fragment>
                     ))}
-                    <span style={{ fontSize: 11, fontFamily: 'Azeret Mono, monospace' }}>=</span>
+                    <span style={{ fontSize: 11, fontFamily: 'var(--font-sheet-math)' }}>=</span>
                     <button onClick={confirmEdit} style={{ fontSize: 11, padding: '1px 6px', cursor: 'pointer', border: '1px solid #aaa', borderRadius: 3 }}>✓</button>
                     <button onClick={() => setEditing(false)} style={{ fontSize: 11, padding: '1px 6px', cursor: 'pointer', border: '1px solid #aaa', borderRadius: 3 }}>✗</button>
                 </div>
@@ -593,13 +592,16 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 <div
                     onClick={() => { setEditValues(ex.operands.map(o => String(o))); setEditing(true); }}
                     title="Klik om te bewerken"
-                    style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'Azeret Mono, monospace', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
+                    style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'var(--font-sheet-math)', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
                 >
-                    {headerText}
+                    {/* A narrow box breaks the line between terms, never inside "1 445". */}
+                    {headerTermsOf(ex, dp).map((t, i) => (
+                        <React.Fragment key={i}>{i > 0 && ` ${headerOpOf(ex)} `}<span style={{ whiteSpace: 'nowrap' }}>{t}</span></React.Fragment>
+                    ))}{' ='}
                 </div>
             )}
-            {c.withEstimation && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
+            {c.withEstimation && scaffold && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span>≈</span>
                     {showSolutions
                         ? <span style={{ ...solutionText, marginLeft: '4px' }}>{computeEstimation(ex)}</span>
@@ -607,15 +609,22 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     }
                 </div>
             )}
-            {isDivision
-                ? <DivisionGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
+            {/* A display-only oefenmodus card shows the sum alone; a fill-cells card the grid to fill. */}
+            {!scaffold && !cells ? null : isDivision
+                ? <DivisionGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} cells={cells} />
                 : isMultiplication
-                ? <MultiplicationGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
-                : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
+                ? <MultiplicationGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} cells={cells} />
+                : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} cells={cells} />
             }
+            {isDivision && cells && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: CELL * 0.3, marginTop: CELL * 0.3, fontFamily: 'var(--font-sheet-math)', fontSize: CELL * 0.68 }}>
+                    <span>r</span>
+                    <KioskCell cellKey="r" label="Rest" variant="is-grid is-rest" style={{ position: 'relative', width: CELL * 3, height: CELL, fontSize: CELL * 0.68 }} />
+                </div>
+            )}
             {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
-            {!isDivision && !isMultiplication && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
+            {!isDivision && !isMultiplication && scaffold && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions
                         ? <span style={{ ...solutionText, marginLeft: '4px' }}>
@@ -629,12 +638,12 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                         : <div style={{ flex: 1, borderBottom: '1px solid #aaa', height: '13px', marginLeft: '2px' }} />}
                 </div>
             )}
-            {isDivision && (c.showQR !== false) && (
-                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {isDivision && scaffold && (c.showQR !== false) && (
+                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>
                             <span>q  <span style={solutionText}>{fmtDisplay(ex.answer, dp)}</span></span>
-                            <span>r  <span style={solutionText}>{ex.remainder > 0 ? fmtDisplay(ex.remainder, dp) : '0'}</span></span>
+                            <span>r  <span style={solutionText}>{ex.remainder > 0 ? fmtRest(ex.remainder, dp) : '0'}</span></span>
                         </>
                     ) : (
                         <>
@@ -669,7 +678,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
     const CELL = cellPxOf(c.gridCellSize, sheetPx);
 
     if (exercises.length === 0) {
-        return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     const exPerRow = computeExPerRow(exercises, c, CELL, sheetPx, availableWidth);

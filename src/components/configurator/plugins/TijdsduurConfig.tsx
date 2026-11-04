@@ -38,7 +38,7 @@ export default function TijdsduurConfig({ block }: Props) {
                 <SettingLabel text="Tijden op:" info="Hoe fijn de klok tikt: hele uren, kwartieren, 5 minuten of 1 minuut." />
                 <div style={styles.buttonGroup}>
                     {GRANULARITIES.map(g => (
-                        <button key={g.key} onClick={() => toggleIn('granularity', granularity, g.key)} style={styles.pill(granularity.includes(g.key))}>{g.label}</button>
+                        <button key={g.key} onClick={() => toggleIn('granularity', granularity, g.key)} aria-pressed={granularity.includes(g.key)} style={styles.pill(granularity.includes(g.key))}>{g.label}</button>
                     ))}
                 </div>
             </div>
@@ -47,7 +47,7 @@ export default function TijdsduurConfig({ block }: Props) {
                 <SettingLabel text="In te vullen:" info="Welke kolom leeg blijft (wisselt per rij als er meerdere aanstaan)." />
                 <div style={styles.buttonGroup}>
                     {BLANKS.map(b => (
-                        <button key={b.key} onClick={() => toggleIn('blanks', blanks, b.key)} style={styles.pill(blanks.includes(b.key))}>{b.label}</button>
+                        <button key={b.key} onClick={() => toggleIn('blanks', blanks, b.key)} aria-pressed={blanks.includes(b.key)} style={styles.pill(blanks.includes(b.key))}>{b.label}</button>
                     ))}
                 </div>
             </div>
@@ -69,7 +69,7 @@ export default function TijdsduurConfig({ block }: Props) {
 
             <div style={styles.onOffRow}>
                 <SettingLabel text="Over middernacht" info="Ook activiteiten die na middernacht eindigen (23:30 → 01:15)." />
-                <button onClick={() => set('overMidnight', !overMidnight)} style={styles.onOffBtn(overMidnight)}>{overMidnight ? 'Aan' : 'Uit'}</button>
+                <button onClick={() => set('overMidnight', !overMidnight)} aria-pressed={!!overMidnight} style={styles.onOffBtn(overMidnight)}>{overMidnight ? 'Aan' : 'Uit'}</button>
             </div>
         </div>
     );

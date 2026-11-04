@@ -32,7 +32,7 @@ export default function MaateenheidConfig({ block }: Props) {
                 <SettingLabel text="Grootheden:" info="Waarover de zinnen gaan. Temperatuur kan alleen bij 'Schrijven' (er is maar één eenheid)." />
                 <div style={styles.buttonGroup}>
                     {GROOTHEDEN.map(g => (
-                        <button key={g.key} onClick={() => toggleGrootheid(g.key)} style={styles.pill(grootheden.includes(g.key))}>{g.label}</button>
+                        <button key={g.key} onClick={() => toggleGrootheid(g.key)} aria-pressed={grootheden.includes(g.key)} style={styles.pill(grootheden.includes(g.key))}>{g.label}</button>
                     ))}
                 </div>
             </div>
@@ -40,8 +40,8 @@ export default function MaateenheidConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Antwoordvorm:" info="Omcirkelen toont drie keuzes; schrijven laat de leerling de eenheid zelf invullen." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('answerMode', 'omcirkelen')} style={styles.radioBtn(answerMode === 'omcirkelen')}>Omcirkelen</button>
-                    <button onClick={() => set('answerMode', 'schrijven')} style={styles.radioBtn(answerMode === 'schrijven')}>Schrijven</button>
+                    <button onClick={() => set('answerMode', 'omcirkelen')} aria-pressed={answerMode === 'omcirkelen'} style={styles.radioBtn(answerMode === 'omcirkelen')}>Omcirkelen</button>
+                    <button onClick={() => set('answerMode', 'schrijven')} aria-pressed={answerMode === 'schrijven'} style={styles.radioBtn(answerMode === 'schrijven')}>Schrijven</button>
                 </div>
             </div>
 
@@ -49,8 +49,8 @@ export default function MaateenheidConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Keuzes tonen als:" info="Alleen de eenheid (m / cm / km) of de volledige meting (2 m / 2 cm / 2 km)." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('subType', 'eenheid')} style={styles.radioBtn(subType === 'eenheid')}>Eenheid</button>
-                        <button onClick={() => set('subType', 'schatten')} style={styles.radioBtn(subType === 'schatten')}>Volledige meting</button>
+                        <button onClick={() => set('subType', 'eenheid')} aria-pressed={subType === 'eenheid'} style={styles.radioBtn(subType === 'eenheid')}>Eenheid</button>
+                        <button onClick={() => set('subType', 'schatten')} aria-pressed={subType === 'schatten'} style={styles.radioBtn(subType === 'schatten')}>Volledige meting</button>
                     </div>
                 </div>
             )}

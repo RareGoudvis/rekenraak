@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import type { ClockType, ExerciseMode, MinuteDirection, HandChoice, TimeCategory } from '../../../services/clock/clockTypes';
+import { DIRECTION_CHOICES, directionZones } from '../../../services/clock/minuteDirection';
 import type { ClockConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -14,6 +15,11 @@ const TIME_TYPE_LABELS: Record<TimeCategory, string> = {
     kwartier_voor: 'Kwartier voor  (kwart voor 4)',
     nauwkeurig_5: "Tot 5' nauwkeurig  (20 over 3)",
     nauwkeurig_1: "Tot 1' nauwkeurig  (23 over 3)",
+};
+
+const KLOK_ANSWER_HINT: Record<string, string> = {
+    woorden: ' (oefenmodus: tijd in woorden)',
+    digitaal: ' (oefenmodus: tijd typen als uu:mm)',
 };
 
 export default function ClockConfig({ block }: Props) {
@@ -46,8 +52,10 @@ export default function ClockConfig({ block }: Props) {
         <div style={styles.container}>
             {/* Activity + clock type come from the sidebar leaf; show the current mode as a hint. */}
             <div style={{ ...styles.section, fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                {clockType === 'analoog' && exerciseMode === 'lezen' && 'Analoog · Klok zien → tijd in woorden schrijven'}
-                {clockType === 'analoog' && exerciseMode === 'tekenen' && 'Analoog · Tijd in woorden → wijzers tekenen op klok'}
+                {/* Also the Oefenmodus builder's hint, where the pupil types / drags instead of writing / drawing. */}
+                {/* klokAnswer only exists on an oefen-builder row; the sheet has none and names no kiosk answer. */}
+                {clockType === 'analoog' && exerciseMode === 'lezen' && `Analoog · Klok zien → tijd in woorden schrijven${KLOK_ANSWER_HINT[c.klokAnswer ?? ''] ?? ''}`}
+                {clockType === 'analoog' && exerciseMode === 'tekenen' && 'Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)'}
                 {clockType === 'analoog' && exerciseMode === 'omzetten' && 'Analoog · Klok zien → digitale tijd invullen'}
                 {clockType === 'digitaal' && exerciseMode === 'lezen' && 'Digitaal · Digitale tijd zien → tijd in woorden schrijven'}
                 {clockType === 'digitaal' && exerciseMode === 'tekenen' && 'Digitaal · Tijd in woorden → digitale klok invullen'}
@@ -58,8 +66,8 @@ export default function ClockConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Tijdssysteem:" info="12-uurnotatie (1–12) of 24-uurnotatie (0–23)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => updateConstraint('is24hour', false)} style={styles.radioBtn(!is24hour)}>12 uur  (1–12)</button>
-                    <button onClick={() => updateConstraint('is24hour', true)} style={styles.radioBtn(is24hour)}>24 uur  (0–23)</button>
+                    <button onClick={() => updateConstraint('is24hour', false)} aria-pressed={!is24hour} style={styles.radioBtn(!is24hour)}>12 uur  (1–12)</button>
+                    <button onClick={() => updateConstraint('is24hour', true)} aria-pressed={!!is24hour} style={styles.radioBtn(is24hour)}>24 uur  (0–23)</button>
                 </div>
             </div>
 
@@ -84,11 +92,13 @@ export default function ClockConfig({ block }: Props) {
             {/* RICHTING (voor nauwkeurig types) */}
             {showMinuteDirection && (
                 <div style={styles.section}>
-                    <SettingLabel text="Richting:" info="Minuten 'over' of 'voor' het uur, of beide." />
-                    <div style={styles.buttonGroup}>
-                        <button onClick={() => updateConstraint('minuteDirection', 'over')} style={styles.radioBtn(minuteDirection === 'over')}>Over</button>
-                        <button onClick={() => updateConstraint('minuteDirection', 'voor')} style={styles.radioBtn(minuteDirection === 'voor')}>Voor</button>
-                        <button onClick={() => updateConstraint('minuteDirection', 'beide')} style={styles.radioBtn(minuteDirection === 'beide')}>Beide</button>
+                    <SettingLabel text="Richting:" info="Over (5 over 2), voor half (5 voor half 3), over half (5 over half 3), voor (5 voor 3), of alle vier." />
+                    <div style={{ ...styles.buttonGroup, flexWrap: 'wrap' }}>
+                        {DIRECTION_CHOICES.map((ch) => (
+                            <button key={ch.value} onClick={() => updateConstraint('minuteDirection', ch.value)}
+                                aria-pressed={minuteDirection !== 'beide' && directionZones(minuteDirection).includes(ch.value)} style={styles.radioBtn(minuteDirection !== 'beide' && directionZones(minuteDirection).includes(ch.value))}>{ch.label}</button>
+                        ))}
+                        <button onClick={() => updateConstraint('minuteDirection', 'beide')} aria-pressed={minuteDirection === 'beide'} style={styles.radioBtn(minuteDirection === 'beide')}>Alle</button>
                     </div>
                 </div>
             )}
@@ -98,9 +108,9 @@ export default function ClockConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Te tekenen wijzer(s):" info="Welke wijzer(s) de leerling zelf moet tekenen." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => updateConstraint('handChoice', 'uur')} style={styles.radioBtn(handChoice === 'uur')}>Uurwijzer</button>
-                        <button onClick={() => updateConstraint('handChoice', 'minuut')} style={styles.radioBtn(handChoice === 'minuut')}>Minutenwijzer</button>
-                        <button onClick={() => updateConstraint('handChoice', 'beide')} style={styles.radioBtn(handChoice === 'beide')}>Beide</button>
+                        <button onClick={() => updateConstraint('handChoice', 'uur')} aria-pressed={handChoice === 'uur'} style={styles.radioBtn(handChoice === 'uur')}>Uurwijzer</button>
+                        <button onClick={() => updateConstraint('handChoice', 'minuut')} aria-pressed={handChoice === 'minuut'} style={styles.radioBtn(handChoice === 'minuut')}>Minutenwijzer</button>
+                        <button onClick={() => updateConstraint('handChoice', 'beide')} aria-pressed={handChoice === 'beide'} style={styles.radioBtn(handChoice === 'beide')}>Beide</button>
                     </div>
                 </div>
             )}

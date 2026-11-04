@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { GeldRekenenConstraints } from '../../../services/math/constraintTypes';
 
@@ -34,7 +35,7 @@ export default function GeldRekenenConfig({ block }: Props) {
                     <SettingLabel text={subType === 'intrest' ? 'Rentevoeten:' : 'Kortingen:'} info="Welke percenten in de tabel voorkomen." />
                     <div style={styles.buttonGroup}>
                         {percentPool.map(p => (
-                            <button key={p} onClick={() => togglePercent(p)} style={styles.pill(percents.includes(p))}>{p} %</button>
+                            <button key={p} onClick={() => togglePercent(p)} aria-pressed={percents.includes(p)} style={styles.pill(percents.includes(p))}>{p} %</button>
                         ))}
                     </div>
                 </div>
@@ -45,7 +46,7 @@ export default function GeldRekenenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxEuro}
-                    options={[100, 1000, 10000].map(v => ({ value: v, label: `Tot € ${v.toLocaleString('nl-BE')}` }))}
+                    options={RANGES.geldRekenen.map(v => ({ value: v, label: `Tot € ${v.toLocaleString('nl-BE')}` }))}
                     onChange={(v) => set('maxEuro', v)}
                     ariaLabel="Maximum bedrag"
                 />
@@ -53,13 +54,13 @@ export default function GeldRekenenConfig({ block }: Props) {
 
             <div style={styles.onOffRow}>
                 <SettingLabel text="Enkel hele euro's" info="Uit: bedragen kunnen ook centen bevatten (antwoorden blijven op de cent juist)." />
-                <button onClick={() => set('wholeEuros', !wholeEuros)} style={styles.onOffBtn(wholeEuros)}>{wholeEuros ? 'Aan' : 'Uit'}</button>
+                <button onClick={() => set('wholeEuros', !wholeEuros)} aria-pressed={!!wholeEuros} style={styles.onOffBtn(wholeEuros)}>{wholeEuros ? 'Aan' : 'Uit'}</button>
             </div>
 
             {subType === 'intrest' && (
                 <div style={styles.onOffRow}>
                     <SettingLabel text="Ook 6 maanden" info="Naast 1 jaar ook een looptijd van een half jaar (intrest pro rata)." />
-                    <button onClick={() => set('halfYear', !halfYear)} style={styles.onOffBtn(halfYear)}>{halfYear ? 'Aan' : 'Uit'}</button>
+                    <button onClick={() => set('halfYear', !halfYear)} aria-pressed={!!halfYear} style={styles.onOffBtn(halfYear)}>{halfYear ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
         </div>

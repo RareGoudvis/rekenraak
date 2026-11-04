@@ -40,13 +40,13 @@ export default function SubtractionConfig({ block }: Props) {
                 <div style={styles.buttonGroup}>
                     <button
                         onClick={() => updateConstraint('equationType', 'normal')}
-                        style={styles.radioBtn(equationType === 'normal' || !equationType)}
+                        aria-pressed={equationType === 'normal' || !equationType} style={styles.radioBtn(equationType === 'normal' || !equationType)}
                     >
                         Gewone (a - b = ...)
                     </button>
                     <button
                         onClick={() => updateConstraint('equationType', 'puntoefening')}
-                        style={styles.radioBtn(equationType === 'puntoefening')}
+                        aria-pressed={equationType === 'puntoefening'} style={styles.radioBtn(equationType === 'puntoefening')}
                     >
                         Punt (a - . = c)
                     </button>

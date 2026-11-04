@@ -12,6 +12,11 @@ const SPECIAL_POOL: Fraction[] = [
     { n: 7, d: 8 }, { n: 8, d: 9 }, { n: 9, d: 10 }, { n: 11, d: 12 }, { n: 14, d: 15 }, { n: 15, d: 16 },
 ];
 
+// A teller for noemer d: proper 1..d-1, or (improper on, half the draws) d+1..2d-1 — never d/d.
+// Off draws exactly as before (one randInt), so seeded sheets stay byte-identical.
+const drawNumerator = (d: number, improper: boolean): number =>
+    improper && Math.random() < 0.5 ? randInt(d + 1, 2 * d - 1) : randInt(1, d - 1);
+
 function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -22,7 +27,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 // Build `count` distinct fractions for the chosen pool/mode.
-function buildSet(mode: string, count: number, minD: number, maxD: number): Fraction[] {
+function buildSet(mode: string, count: number, minD: number, maxD: number, improper: boolean): Fraction[] {
     const lo = Math.max(2, minD), hi = Math.max(lo, maxD);
 
     if (mode === 'speciale') {
@@ -30,12 +35,15 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
     }
 
     if (mode === 'gelijknamige') {
-        // One shared denominator hosting `count` distinct numerators (needs d-1 >= count).
+        // One shared denominator hosting `count` distinct numerators (needs d-1 >= count, or
+        // 2d-2 >= count with improper tellers d+1..2d-1 on).
         // Honor maxD: if hi is too small, keep d = hi and emit fewer fractions rather than
         // bumping past the configured ceiling (caller degrades gracefully on short arrays).
-        const dLo = Math.min(hi, Math.max(lo, count + 1));
+        const dLo = Math.min(hi, Math.max(lo, improper ? Math.ceil((count + 2) / 2) : count + 1));
         const d = randInt(dLo, hi);
-        const nums = shuffle(Array.from({ length: d - 1 }, (_, i) => i + 1)).slice(0, count);
+        const tellers = Array.from({ length: d - 1 }, (_, i) => i + 1);
+        if (improper) for (let t = d + 1; t < 2 * d; t++) tellers.push(t);
+        const nums = shuffle(tellers).slice(0, count);
         return nums.map(n => ({ n, d }));
     }
 
@@ -43,8 +51,12 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
         // Distinct small denominators (unlike) — pupil makes them gelijknamig first.
         // Strictly within [lo, hi]; if the range holds fewer than `count`, emit fewer.
         const pool = [2, 3, 4, 5, 6, 8, 10, 12].filter(d => d >= lo && d <= hi);
+        // Range holds too few curated denominators (7, 9, 11 …): top up with the other integers in range.
+        if (pool.length < count) {
+            for (let d = lo; d <= hi && pool.length < Math.max(count, 1) + 8; d++) if (!pool.includes(d)) pool.push(d);
+        }
         const dens = shuffle(pool).slice(0, count);
-        return dens.map(d => ({ n: randInt(1, d - 1), d }));
+        return dens.map(d => ({ n: drawNumerator(d, improper), d }));
     }
 
     // stambreuken — numerator 1, distinct denominators strictly within [lo, hi].
@@ -54,12 +66,17 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
 }
 
 export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenExercise[] {
+    return generateBreukenRangschikkenExercisesNoted(block).items;
+}
+
+export function generateBreukenRangschikkenExercisesNoted(block: MathBlock): { items: OrdenenExercise[]; note: string | null } {
     const c = block.constraints as BreukenRangschikkenConstraints;
     const mode: string = c.fractionMode ?? 'stambreuken';
     const count: number = Math.min(5, Math.max(2, c.count ?? 4));
     const operatorMode: string = c.operatorMode ?? 'oplopend';
     const minD: number = c.minDenominator ?? 2;
     const maxD: number = c.maxDenominator ?? 10;
+    const improper = c.allowImproper === true && (mode === 'gelijknamige' || mode === 'gelijknamig-te-maken');
 
     const n = block.numberOfExercises;
     const results: OrdenenExercise[] = [];
@@ -70,7 +87,7 @@ export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenE
         let attempts = 0;
         while (values.length < count && attempts < 200) {
             attempts++;
-            const candidate = buildSet(mode, count, minD, maxD);
+            const candidate = buildSet(mode, count, minD, maxD, improper);
             const seen = new Set<number>();
             values = candidate.filter(f => {
                 const v = val(f);
@@ -89,5 +106,9 @@ export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenE
 
         results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
     }
-    return results;
+    // The noemer range can hold fewer distinct fractions than the asked count.
+    const fewest = results.reduce((m, r) => Math.min(m, r.values.length), count);
+    const fit = fewest === 1 ? 'past maar 1 breuk' : `passen maar ${fewest} breuken`;
+    const note = fewest < count ? `Bij dit bereik van noemers ${fit} per oefening (gevraagd: ${count}).` : null;
+    return { items: results, note };
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { interactionProps, type ViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     numerator: number;
@@ -19,6 +20,12 @@ interface Props {
     // The fixed* sizes above are a teacher's cm request ("een vierkant van 4 cm"), so they
     // must stay physical px; everything else follows the Lettergrootte slider.
     physicalSize?: boolean;
+    // Oefenmodus: set by the kleuren item so the pupil taps the parts to colour; null on the sheet.
+    ix?: ViewerInteraction | null;
+    // Kiosk key of part 0: the second whole of an improper breuk continues at denominator.
+    keyOffset?: number;
+    // Bordmodus breukviz: a teacher-picked fill; the sheet never passes it.
+    fillColor?: string;
 }
 
 // 13pt (the --sheet-size-math default) = 17.33px, so writing the shape geometry as em over
@@ -31,7 +38,7 @@ export const PX_PER_EM_AT_DEFAULT = 17.33;
 export const SHAPE_BUDGET_AT_DEFAULT = 265;
 
 const FILL_COLOR = '#93c5fd';
-const STROKE = '#000';
+const STROKE = 'currentColor';
 
 function polarToXY(cx: number, cy: number, r: number, angleDeg: number) {
     const rad = (angleDeg - 90) * Math.PI / 180;
@@ -45,10 +52,40 @@ function piePath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
     return `M ${cx} ${cy} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
 }
 
+// A phone card is about 3x wider than tall and scales a figure to its height first, so a kiosk
+// square of several parts is drawn this many times wider than tall: every part reaches 44 px.
+const KIOSK_GRID_ASPECT = 2.4;
+// A prime d has no grid: its strips keep at least this width (viewBox units).
+const KIOSK_MIN_STRIP = 30;
+// From this prime d on, one row of strips is too wide to keep 44 px parts on a phone card.
+const KIOSK_TWO_ROW_PRIME = 11;
+
+interface KioskCell { x: number; y: number; w: number; h: number }
+
+/** The parts of a kiosk square of d >= 5 (null below): a grid of the most square-like factor pair, else one row of strips. */
+function kioskSquareCells(d: number, side: number): { width: number; cells: KioskCell[] } | null {
+    if (d < 5) return null;
+    let rows = 1;
+    for (let r = 2; r * r <= d; r++) if (d % r === 0) rows = r;
+    if (rows > 1) {
+        const cols = d / rows, w = (side * KIOSK_GRID_ASPECT) / cols, h = side / rows;
+        return { width: w * cols, cells: Array.from({ length: d }, (_, i) => ({ x: (i % cols) * w, y: Math.floor(i / cols) * h, w, h })) };
+    }
+    if (d < KIOSK_TWO_ROW_PRIME) {
+        const w = Math.max(side / d, KIOSK_MIN_STRIP);
+        return { width: w * d, cells: Array.from({ length: d }, (_, i) => ({ x: i * w, y: 0, w, h: side })) };
+    }
+    // Two rows of equal AREA (a gelijk deel is the same size): the row with more parts is taller.
+    const top = Math.ceil(d / 2), bottom = d - top, width = top * KIOSK_MIN_STRIP;
+    const topH = (side * top) / d;
+    const row = (n: number, y: number, h: number) => Array.from({ length: n }, (_, i) => ({ x: (i * width) / n, y, w: width / n, h }));
+    return { width, cells: [...row(top, 0, topH), ...row(bottom, topH, side - topH)] };
+}
+
 export default function FractionShapeSVG({
     denominator, shape, coloredIndices,
     gridRows, gridCols, showColored = true, cellSize = 35, style,
-    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false,
+    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false, ix = null, fillColor = FILL_COLOR, keyOffset = 0,
 }: Props) {
     // The viewBox always keeps the geometry below in its own units; only the element size
     // switches between physical px and font-relative em.
@@ -64,13 +101,14 @@ export default function FractionShapeSVG({
         return (
             <svg width={size(svgSize)} height={size(svgSize)} viewBox={`0 0 ${svgSize} ${svgSize}`} style={shapeStyle}>
                 {denominator === 1 ? (
-                    <circle cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? FILL_COLOR : 'white'} stroke={STROKE} strokeWidth={1.5} />
+                    <circle {...interactionProps(ix, String(keyOffset))} cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? fillColor : 'white'} stroke={STROKE} strokeWidth={1.5} />
                 ) : (
                     Array.from({ length: denominator }, (_, i) => (
                         <path
                             key={i}
+                            {...interactionProps(ix, String(keyOffset + i))}
                             d={piePath(cx, cy, r, i * sliceDeg, (i + 1) * sliceDeg)}
-                            fill={showColored && coloredIndices.includes(i) ? FILL_COLOR : 'white'}
+                            fill={showColored && coloredIndices.includes(i) ? fillColor : 'white'}
                             stroke={STROKE}
                             strokeWidth={1.5}
                         />
@@ -84,17 +122,23 @@ export default function FractionShapeSVG({
         // SYNC: mirrors the rect branch's fill logic, but the outer shape is always a
         // square divided into `denominator` equal vertical strips (kleuren/herkennen).
         const side = fixedSidePx ?? 90;
+        // Kiosk only (ix set): strips of side/d are under a thumb's 44 px from d = 5 on, so the parts
+        // become a grid of equal cells in a wider figure (kioskSquareCells); the sheet keeps its strips.
+        const grid = ix ? kioskSquareCells(denominator, side) : null;
         const stripW = side / denominator;
+        const width = grid?.width ?? side;
         return (
-            <svg width={size(side)} height={size(side)} viewBox={`0 0 ${side} ${side}`} style={shapeStyle}>
+            <svg width={size(width)} height={size(side)} viewBox={`0 0 ${width} ${side}`} style={shapeStyle}
+                {...(grid && { 'data-kiosk-layout': 'grid' })}>
                 {Array.from({ length: denominator }, (_, i) => (
                     <rect
                         key={i}
-                        x={i * stripW}
-                        y={0}
-                        width={stripW}
-                        height={side}
-                        fill={showColored && coloredIndices.includes(i) ? FILL_COLOR : 'white'}
+                        {...interactionProps(ix, String(keyOffset + i))}
+                        x={grid ? grid.cells[i].x : i * stripW}
+                        y={grid ? grid.cells[i].y : 0}
+                        width={grid ? grid.cells[i].w : stripW}
+                        height={grid ? grid.cells[i].h : side}
+                        fill={showColored && coloredIndices.includes(i) ? fillColor : 'white'}
                         stroke={STROKE}
                         strokeWidth={1.5}
                     />
@@ -117,11 +161,12 @@ export default function FractionShapeSVG({
                     return (
                         <rect
                             key={idx}
+                            {...interactionProps(ix, String(keyOffset + idx))}
                             x={col * cw}
                             y={row * ch}
                             width={cw}
                             height={ch}
-                            fill={showColored && coloredIndices.includes(idx) ? FILL_COLOR : 'white'}
+                            fill={showColored && coloredIndices.includes(idx) ? fillColor : 'white'}
                             stroke={STROKE}
                             strokeWidth={1.5}
                         />

@@ -3,6 +3,8 @@ import { F } from './shared/fieldStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { ControlerenConstraints } from '../../../services/math/constraintTypes';
 
@@ -10,6 +12,7 @@ interface Props { block: MathBlock; }
 
 export default function ControlerenConfig({ block }: Props) {
     const [c, patch] = useConstraints<ControlerenConstraints>(block);
+    const range = useMaxPresets(block);
     const subType: string = c.subType ?? 'negenproef';
     const operators: string[] = c.operators ?? ['+', '-'];
     const maxGetal = c.maxGetal ?? 1000;
@@ -28,36 +31,36 @@ export default function ControlerenConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Bewerkingen:" info="Optellen wordt gecontroleerd met aftrekken en omgekeerd." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => toggleOp('+')} style={styles.pill(operators.includes('+'))}>+</button>
-                        <button onClick={() => toggleOp('-')} style={styles.pill(operators.includes('-'))}>−</button>
+                        <button onClick={() => toggleOp('+')} aria-pressed={operators.includes('+')} style={styles.pill(operators.includes('+'))}>+</button>
+                        <button onClick={() => toggleOp('-')} aria-pressed={operators.includes('-')} style={styles.pill(operators.includes('-'))}>−</button>
                     </div>
                 </div>
             )}
 
-            <div style={styles.section}>
-                <SettingLabel text="Maximum getal:" info="Grootte van de te controleren bewerking." />
+            {range && <div style={styles.section}>
+                <SettingLabel text="Maximum getal:" info="Grootste uitkomst van de te controleren bewerking; de getallen blijven daaronder." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={[1000, 10000].map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Foute uitkomsten:" info="Hoeveel rijen een bewust fout antwoord tonen. Fouten zijn altijd betrapbaar met de proef." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('foutAandeel', 'geen')} style={styles.radioBtn(foutAandeel === 'geen')}>Geen</button>
-                    <button onClick={() => set('foutAandeel', 'helft')} style={styles.radioBtn(foutAandeel === 'helft')}>De helft</button>
-                    <button onClick={() => set('foutAandeel', 'alles')} style={styles.radioBtn(foutAandeel === 'alles')}>Alles</button>
+                    <button onClick={() => set('foutAandeel', 'geen')} aria-pressed={foutAandeel === 'geen'} style={styles.radioBtn(foutAandeel === 'geen')}>Geen</button>
+                    <button onClick={() => set('foutAandeel', 'helft')} aria-pressed={foutAandeel === 'helft'} style={styles.radioBtn(foutAandeel === 'helft')}>De helft</button>
+                    <button onClick={() => set('foutAandeel', 'alles')} aria-pressed={foutAandeel === 'alles'} style={styles.radioBtn(foutAandeel === 'alles')}>Alles</button>
                 </div>
             </div>
 
             {subType === 'negenproef' && (
                 <div style={styles.onOffRow}>
                     <SettingLabel text="Kruis afdrukken" info="Drukt het lege negenproef-kruis af; uit = de leerling tekent het zelf." />
-                    <button onClick={() => set('showKruis', !showKruis)} style={styles.onOffBtn(showKruis)}>{showKruis ? 'Aan' : 'Uit'}</button>
+                    <button onClick={() => set('showKruis', !showKruis)} aria-pressed={!!showKruis} style={styles.onOffBtn(showKruis)}>{showKruis ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
         </div>

@@ -6,13 +6,14 @@ import FragmentableGrid from './FragmentableGrid';
 import type { VerbandenConstraints } from '../../services/math/constraintTypes';
 import { SOL } from './solutionStyle';
 import { ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import KioskCell from './KioskCell';
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 const REP_LABEL: Record<VerbandRep, string> = { breuk: 'breuk', decimaal: 'kommagetal', procent: 'procent' };
@@ -50,7 +51,8 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
                             <span>=</span>
                             {showSolutions
                                 ? renderRep(ex, target, true)
-                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: ANSWER_LINE_H, display: 'inline-block' }} />}
+                                // Oefenmodus: the line is the pupil's cell (SYNC: VERBANDEN_KIOSK keys = rep names).
+                                : <KioskCell cellKey={target} style={{ width: '5em', height: 'max(32px, 1.9em)' }}><span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskCell>}
                             {!showSolutions && <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.55)', color: '#555' }}>({REP_LABEL[target]})</span>}
                         </div>
                     );
@@ -94,7 +96,10 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
                 <div key={ex.id} style={{ display: 'grid', gridTemplateColumns: grid, ...gridFont }}>
                     {reps.map(rep => (
                         <div key={rep} style={cell}>
-                            {rep === ex.given ? renderRep(ex, rep, false) : showSolutions ? renderRep(ex, rep, true) : ''}
+                            {rep === ex.given
+                                ? renderRep(ex, rep, false)
+                                // Oefenmodus: the empty cell is the pupil's; it covers the cell's padding (kiosk.css is-box).
+                                : <KioskCell cellKey={rep} variant="is-box" style={{ flex: 1, width: 0, alignSelf: 'stretch', margin: '-2px -6px' }}>{showSolutions ? renderRep(ex, rep, true) : ''}</KioskCell>}
                         </div>
                     ))}
                 </div>

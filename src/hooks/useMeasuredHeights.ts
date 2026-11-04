@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { MathBlock } from '../services/math/types';
 import type { WidthUnits } from '../services/layout/blockLayout';
 
@@ -144,7 +144,11 @@ export interface MeasuredHeights {
     version: number;
 }
 
-export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
+// `continuationKey` describes the header a continuation page draws (repeatTitle /
+// repeatHeader and whatever sizes it); when it changes, the page-2 body measurement is
+// stale until a page 2 renders again. `sheetKey` is everything sheet-wide that sizes a block's
+// content without being in the block (faces, size sliders, a web font that just loaded).
+export function useMeasuredHeights(blocks: MathBlock[], continuationKey = '', sheetKey = ''): MeasuredHeights {
     // Key is `${blockId}:${widthUnits}`: the same block is a different height at a
     // different width, and both versions stay valid while the teacher toggles between them.
     const cells = useRef<Map<string, number>>(new Map());
@@ -153,14 +157,25 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     const body = useRef<{ first?: number; rest?: number }>({});
     const [version, setVersion] = useState(0);
 
-    // Guard against a measure→pack→measure loop. A converging sheet settles in two or
-    // three passes; a burst means some height is measurement-dependent, and left alone it
-    // re-renders forever — the tab froze on a teacher's sheet before this existed. Past
-    // BREAKER_BUMPS in a second the hook stops accepting measurements for COOLDOWN_MS: the
-    // layout keeps whatever it last had (possibly a few px off) instead of hanging.
+    // Guard against a measure→pack→measure loop: a height that depends on its own
+    // placement re-renders forever (the tab froze on a teacher's sheet before this existed).
+    // Past BREAKER_BUMPS FEEDBACK repacks in a row the hook stops accepting measurements for
+    // COOLDOWN_MS: the layout keeps whatever it last had instead of hanging.
+    //
+    // Only feedback counts: a change found in the very commit that applied this hook's own
+    // previous bump. A change in any other commit was caused by something outside the
+    // measurer (a new block, a width pick, solutions on, a font landing) and starts a new
+    // chain. Counting every bump in a 1 s window instead read the visual gate's cadence (a
+    // fresh, converging cell every ~65 ms, 1–3 bumps each) as a loop, froze the NEXT cell's
+    // measurements and flaked the gate on the promoting breuken cells (2026-10-29).
     const BREAKER_BUMPS = 12;
+    // Backstop for a loop that does not run through this hook's own version (e.g. through a
+    // store write): the gate walk peaks near 25 bumps/s, a render-speed loop runs at hundreds.
+    const BACKSTOP_PER_S = 120;
     const COOLDOWN_MS = 1500;
     const bumps = useRef<number[]>([]);
+    const chain = useRef(0);
+    const feedbackCommit = useRef(false);
     const cooldownUntil = useRef(0);
     // A measure PASS reports every cell on the page one after another, and counting each
     // of those as a repack made the breaker a block-count limit: a plain 10-block sheet
@@ -175,17 +190,27 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         pendingWhat.current = null;
         const now = performance.now();
         bumps.current = [...bumps.current.filter(t => now - t < 1000), now];
-        if (bumps.current.length > BREAKER_BUMPS) {
+        chain.current = feedbackCommit.current ? chain.current + 1 : 1;
+        if (chain.current > BREAKER_BUMPS || bumps.current.length > BACKSTOP_PER_S) {
             cooldownUntil.current = now + COOLDOWN_MS;
             bumps.current = [];
+            chain.current = 0;
             console.warn(`[layout] repack loop broken (${what}); measurements paused ${COOLDOWN_MS}ms`);
             return;
         }
         setVersion(v => v + 1);
-        if (import.meta.env.DEV && bumps.current.length > 5) {
-            console.warn(`[layout] ${bumps.current.length} repacks in 1s — ${what} is feeding back into itself`);
+        if (import.meta.env.DEV && chain.current > 5) {
+            console.warn(`[layout] ${chain.current} repacks in a row — ${what} is feeding back into itself`);
         }
     }, []);
+    // Marks the commit that applied a bump. PageSheet's measure runs in its own layout effect,
+    // which React fires BEFORE this parent one, so its bump's flush microtask is queued first
+    // and still sees the flag; the clear queued here runs right after it.
+    useLayoutEffect(() => {
+        if (version === 0) return;
+        feedbackCommit.current = true;
+        queueMicrotask(() => { feedbackCommit.current = false; });
+    }, [version]);
     const bump = useCallback((what: string) => {
         // Keep the FIRST change of the pass: it is the one that explains the repack.
         pendingWhat.current ??= what;
@@ -207,7 +232,9 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         // and kept telling the clamp a quarter was fine. No version bump either way: the
         // remeasure that follows is what changes the layout, and it bumps.
         for (const b of blocks) {
-            const sig = JSON.stringify(b);
+            // A sheet font or size switch changes every block's content width without touching
+            // the block: an Azeret entry kept a Courier block promoted (2026-10-28 font audit).
+            const sig = `${sheetKey}|${JSON.stringify(b)}`;
             if (measuredOf.get(b.id) === sig) continue;
             measuredOf.set(b.id, sig);
             // Heights are not dropped: they are only ever READ at the width the block
@@ -225,7 +252,7 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
                 if (!alive.has(id)) map.delete(key);
             }
         }
-    }, [blocks]);
+    }, [blocks, sheetKey]);
 
     const onCellMeasure = useCallback((blockId: string, width: number, px: number, intrinsicWidthPx?: number, reflows?: boolean) => {
         if (paused()) return;
@@ -255,6 +282,18 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         }
         if (changed) bump(changed);
     }, [bump]);
+
+    // A one-page sheet keeps the 'rest' body it measured under the OLD continuation header;
+    // packing a block onto page 2 against it would overrun a repeated title. Drop it and fall
+    // back to page 1's body (the taller header: never too optimistic) until page 2 measures.
+    const lastContinuationKey = useRef(continuationKey);
+    useEffect(() => {
+        if (lastContinuationKey.current === continuationKey) return;
+        lastContinuationKey.current = continuationKey;
+        if (body.current.rest === undefined) return;
+        body.current = { first: body.current.first };
+        bump('continuation header changed');
+    }, [continuationKey, bump]);
 
     const onBodyMeasure = useCallback((pageIndex: number, px: number) => {
         if (!(px > 0) || paused()) return;

@@ -1,5 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../math/types';
 import type { MetenConstraints } from '../math/constraintTypes';
+import { formatMathNumber } from '../math/formatters';
+import { MAX_MATH_PX, monoPx, trueSizeBudgetCm } from '../layout/trueSize';
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -19,8 +21,67 @@ function pickLen(min: number, max: number, precision: string): number {
 
 const dist = (a: MeetPoint, b: MeetPoint) => Math.hypot(b.x - a.x, b.y - a.y);
 
+// ── true size (owner 2026-10-10) ─────────────────────────────────────────────
+// Every figure prints at true size, so it must fit its column: the drawn span (width AND height)
+// is capped to the column's cm budget. SYNC: MetenViewer pad — OFFSET 22 + the widest side label
+// ("99,9 cm" at 0.7 of the math font) + 4 a side, 42 bare / 64 with per-side blanks; judged at the
+// largest Cijfers font (16pt) so a bigger font never pushes a true-size figure out.
+const LABEL_FONT = 0.7;
+function figurePadPx(c: MetenConstraints, scaffoldBlanks: boolean): number {
+    const labeled = (c.measureModel ?? 'meten') === 'gegeven';
+    const sideScaffold = scaffoldBlanks && (c.perSideScaffold ?? false);
+    const labelPx = labeled ? monoPx('99,9 cm'.length, LABEL_FONT, MAX_MATH_PX)
+        : sideScaffold ? 38 + 3 + monoPx(2, LABEL_FONT, MAX_MATH_PX) : 0;
+    return Math.max(sideScaffold ? 64 : 42, Math.ceil(22 + labelPx + 4));
+}
+const figureBudgetCm = (block: MathBlock, scaffoldBlanks: boolean) =>
+    trueSizeBudgetCm(block, 2 * figurePadPx(block.constraints as MetenConstraints, scaffoldBlanks));
+
+function spanCm(ex: MeetExercise): number {
+    if (ex.kind === 'cirkel') return 2 * (ex.radius ?? 0);
+    const pts = ex.points ?? [];
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+}
+
+// Draws until a figure fits `budget`, lowering the longest length 1 cm every few misses (and the
+// shortest with it once they meet); the last draw stands if even the shortest does not fit.
+const FIT_TRIES = 240, MISSES_PER_STEP = 12;
+function fitted(draw: (lo: number, hi: number) => MeetExercise, min: number, max: number, budget: number): { ex: MeetExercise; shrunk: boolean } {
+    let hi = Math.max(1, Math.min(max, budget)), ex = draw(Math.min(min, hi), hi);
+    for (let t = 1; t < FIT_TRIES && spanCm(ex) > budget + 1e-9; t++) {
+        if (t % MISSES_PER_STEP === 0) hi = Math.max(1, hi - 1);
+        ex = draw(Math.min(min, hi), hi);
+    }
+    return { ex, shrunk: Math.min(max, budget) < max || hi < Math.min(max, budget) };
+}
+
+const trueSizeNote = (budget: number) =>
+    `Op ware grootte past in deze kolom een figuur van hoogstens ${formatMathNumber(budget)} cm: de lengtes zijn daarop afgestemd.`;
+
 // ── lengte meten ──────────────────────────────────────────────────────────────
+// A path of `corners` + 1 segments of lo..hi cm, walking generally rightward; each turn picks a
+// readable angle so the path doesn't fold back.
+function lijnPath(corners: number, lo: number, hi: number, precision: string): MeetExercise {
+    const pts: MeetPoint[] = [{ x: 0, y: 0 }];
+    const sides: number[] = [];
+    let heading = corners === 0 ? 0 : randInt(-30, 30);
+    for (let i = 0; i <= corners; i++) {
+        if (i > 0) heading += [-50, -35, 35, 50][randInt(0, 3)];
+        heading = Math.max(-75, Math.min(75, heading));
+        const len = pickLen(lo, hi, precision);
+        sides.push(len);
+        const prev = pts[pts.length - 1];
+        pts.push({ x: round1(prev.x + len * Math.cos(rad(heading))), y: round1(prev.y + len * Math.sin(rad(heading))) });
+    }
+    return { id: rndId(), kind: 'lijn', points: pts, sides, perimeter: sum(sides), isManuallyEdited: false };
+}
+
 export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
+    return generateLengteMetenExercisesNoted(block).items;
+}
+
+export function generateLengteMetenExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
     const c = block.constraints as MetenConstraints;
     const precision: string = c.precision ?? 'cm';
     const measureModel: string = c.measureModel ?? 'meten';
@@ -28,25 +89,20 @@ export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
     const maxL: number = c.maxLength ?? 10;
     const maxCorners: number = Math.min(4, Math.max(0, c.maxCorners ?? 0));
     const n = block.numberOfExercises;
+    const budget = figureBudgetCm(block, false);
+    let shrunk = false;
 
-    return Array.from({ length: n }, () => {
-        const corners = randInt(0, maxCorners);
-        const segs = corners + 1;
-        const pts: MeetPoint[] = [{ x: 0, y: 0 }];
-        const sides: number[] = [];
-        // Walk generally rightward; each turn picks a readable angle so the path doesn't fold back.
-        let heading = corners === 0 ? 0 : randInt(-30, 30);
-        for (let i = 0; i < segs; i++) {
-            if (i > 0) heading += [-50, -35, 35, 50][randInt(0, 3)];
-            heading = Math.max(-75, Math.min(75, heading));
-            const len = pickLen(minL, maxL, precision);
-            sides.push(len);
-            const prev = pts[pts.length - 1];
-            pts.push({ x: round1(prev.x + len * Math.cos(rad(heading))), y: round1(prev.y + len * Math.sin(rad(heading))) });
+    const items = Array.from({ length: n }, () => {
+        let corners = randInt(0, maxCorners);
+        let fit = fitted((lo, hi) => lijnPath(corners, lo, hi, precision), minL, maxL, budget);
+        // Short segments that still zigzag out of the column: fewer hoeken, down to a straight line.
+        while (spanCm(fit.ex) > budget + 1e-9 && corners > 0) {
+            corners--;
+            fit = fitted((lo, hi) => lijnPath(corners, lo, hi, precision), minL, maxL, budget);
         }
-        const perimeter = sum(sides);
-
-        const ex: MeetExercise = { id: rndId(), kind: 'lijn', points: pts, sides, perimeter, isManuallyEdited: false };
+        shrunk ||= fit.shrunk;
+        const ex = fit.ex;
+        const perimeter = ex.perimeter;
         // 'gegeven' → a juist/fout claim: ~50% correct, else off by a precision step.
         if (measureModel === 'gegeven') {
             const correct = Math.random() < 0.5;
@@ -56,6 +112,7 @@ export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
         }
         return ex;
     });
+    return { items, note: shrunk ? trueSizeNote(budget) : null };
 }
 
 // ── omtrek shape constructors (cm coordinates + exact side lengths) ──────────────
@@ -68,11 +125,21 @@ function regularPolygon(nSides: number, s: number): MeetPoint[] {
     });
 }
 
+// The second side of a rechthoek that isn't a square: one step up, else down, else the
+// same value (a single-value range has no other length; keeping the max beats overshooting it).
+function otherSide(w: number, min: number, max: number, precision: string): number {
+    const lo = precision === 'mm' ? Math.max(1, Math.min(min, max)) : Math.ceil(Math.max(1, Math.min(min, max)));
+    const hi = precision === 'mm' ? Math.max(lo, max) : Math.floor(Math.max(lo, max));
+    const steps = precision === 'mm' ? [1, -1, 0.1, -0.1] : [1, -1];
+    for (const d of steps) { const h = round1(w + d); if (h >= lo && h <= hi) return h; }
+    return w;
+}
+
 function buildShape(shape: string, min: number, max: number, precision: string): MeetExercise {
     const L = () => pickLen(min, max, precision);
 
     if (shape === 'cirkel') {
-        const r = pickLen(Math.max(1, Math.ceil(min / 2)), Math.max(2, Math.floor(max / 2)), precision);
+        const r = pickLen(Math.max(1, Math.ceil(min / 2)), Math.max(1, Math.floor(max / 2)), precision);
         return { id: rndId(), kind: 'cirkel', shape, radius: r, perimeter: round1(Math.PI * 2 * r), isManuallyEdited: false };
     }
 
@@ -80,7 +147,7 @@ function buildShape(shape: string, min: number, max: number, precision: string):
     let sides: number[];   // exact intended lengths (so 'hele cm' never drifts to 0,9/1,1)
 
     if (shape === 'vierkant') { const s = L(); pts = [{ x: 0, y: 0 }, { x: s, y: 0 }, { x: s, y: s }, { x: 0, y: s }]; sides = [s, s, s, s]; }
-    else if (shape === 'rechthoek') { const w = L(); let h = L(); if (w === h) h = Math.max(1, h + 1); pts = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }]; sides = [w, h, w, h]; }
+    else if (shape === 'rechthoek') { const w = L(); let h = L(); if (w === h) h = otherSide(w, min, max, precision); pts = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }]; sides = [w, h, w, h]; }
     else if (shape === 'ruit' || shape === 'parallellogram') {
         const w = L(); const hlen = shape === 'ruit' ? w : L();
         const th = rad(shape === 'ruit' ? 62 : 68); const bx = round1(hlen * Math.cos(th)), by = round1(hlen * Math.sin(th));
@@ -100,7 +167,15 @@ function buildShape(shape: string, min: number, max: number, precision: string):
     else if (shape === 'trapezium') {
         let aBot = L(), cTop = L(), guard = 0;
         while ((aBot <= cTop || (precision !== 'mm' && (aBot - cTop) % 2 !== 0)) && guard++ < 60) { aBot = L(); cTop = L(); }
-        if (aBot <= cTop) { aBot = cTop + 2; }
+        if (aBot <= cTop || (precision !== 'mm' && (aBot - cTop) % 2 !== 0)) {
+            // Deterministic in-range fallback (cTop + 2 overshot the max): widest pair, even
+            // difference preferred so the legs sit on whole cm; a single-value range has no room.
+            const lo = Math.max(1, Math.min(min, max)), hi = Math.max(lo, max);
+            const top = precision === 'mm' ? hi : Math.floor(hi), bot = precision === 'mm' ? lo : Math.ceil(lo);
+            if (top - 2 >= bot) { aBot = top; cTop = top - 2; }
+            else if (top > bot) { aBot = top; cTop = bot; }
+            else { aBot = cTop + 2; }
+        }
         const offset = (aBot - cTop) / 2;
         const leg = pickLen(Math.max(min, Math.ceil(offset + 1)), max, precision);
         const h = round1(Math.sqrt(Math.max(0.25, leg * leg - offset * offset)));
@@ -139,8 +214,14 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
 
         if (subType === 'rooster') {
             // Whole-cm rectangles or L-figures so counting squares is exact.
-            const w = randInt(Math.max(2, minL), maxL);
-            const h = randInt(2, Math.min(6, maxL));
+            let w = randInt(Math.max(2, minL), maxL);
+            const hLo = Math.max(2, minL);
+            let h = randInt(hLo, Math.max(hLo, Math.min(6, maxL)));
+            // An L needs ≥3 on both sides: redraw instead of silently becoming a rechthoek.
+            if (shape === 'l-figuur' && maxL >= 3 && (w < 3 || h < 3)) {
+                w = randInt(Math.max(3, minL), maxL);
+                h = randInt(Math.max(3, hLo), Math.max(3, hLo, Math.min(6, maxL)));
+            }
             if (shape === 'l-figuur' && w >= 3 && h >= 3) {
                 const cutW = randInt(1, w - 2), cutH = randInt(1, h - 2);
                 const pts: MeetPoint[] = [
@@ -175,13 +256,45 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
     return Array.from({ length: n }, make);
 }
 
-export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {
+// Settings no figure can honour exactly (the output stays as close as possible): say what gave.
+function shapeNote(shapes: string[], min: number, max: number, precision: string, rooster: boolean): string | null {
+    const lo = Math.max(1, Math.min(min, max)), hi = Math.max(lo, max);
+    const room = precision === 'mm' ? hi > lo : Math.floor(hi) - Math.ceil(lo) >= 1;
+    if (rooster) {
+        if (shapes.includes('l-figuur') && max < 3) return 'Een L-figuur heeft zijden van minstens 3 cm: er komen rechthoeken in de plaats.';
+        return shapes.some(s => !['rechthoek', 'vierkant', 'l-figuur'].includes(s)) ? 'Het rooster tekent alleen rechthoeken, vierkanten en L-figuren: andere gekozen vormen worden rechthoeken.' : null;
+    }
+    if (shapes.includes('trapezium') && !room) return 'Een trapezium heeft twee verschillende evenwijdige zijden: bij één lengte is de langste zijde 2 cm langer dan het maximum.';
+    if (shapes.includes('cirkel') && max < 2) return 'Een cirkel met straal 1 cm is breder dan het maximum.';
+    if (shapes.includes('rechthoek') && !room) return 'Van–tot laat maar één lengte toe: de rechthoeken zijn vierkanten.';
+    return null;
+}
+
+export function generateOmtrekExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
     const c = block.constraints as MetenConstraints;
     const precision: string = c.precision ?? 'cm';
     const minL: number = c.minLength ?? 3;
     const maxL: number = c.maxLength ?? 10;
-    const enabled: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['driehoek', 'rechthoek', 'vierkant'];
-    const n = block.numberOfExercises;
+    const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['driehoek', 'rechthoek', 'vierkant'];
+    const budget = figureBudgetCm(block, true);
+    let shrunk = false;
+    const items = Array.from({ length: block.numberOfExercises }, () => {
+        const shape = shapes[randInt(0, shapes.length - 1)];
+        const fit = fitted((lo, hi) => buildShape(shape, lo, hi, precision), minL, maxL, budget);
+        shrunk ||= fit.shrunk;
+        return fit.ex;
+    });
+    const notes = [shapeNote(shapes, minL, maxL, precision, false), shrunk ? trueSizeNote(budget) : null].filter(Boolean);
+    return { items, note: notes.length ? notes.join(' ') : null };
+}
 
-    return Array.from({ length: n }, () => buildShape(enabled[randInt(0, enabled.length - 1)], minL, maxL, precision));
+export function generateOppervlakteExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
+    const c = block.constraints as MetenConstraints;
+    const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['rechthoek', 'vierkant'];
+    const rooster = (c.subType ?? 'berekenen') === 'rooster';
+    return { items: generateOppervlakteExercises(block), note: shapeNote(shapes, c.minLength ?? 2, c.maxLength ?? 8, 'cm', rooster) };
+}
+
+export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {
+    return generateOmtrekExercisesNoted(block).items;
 }

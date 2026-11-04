@@ -2,6 +2,8 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { DeelbaarheidConstraints } from '../../../services/math/constraintTypes';
 
@@ -10,10 +12,10 @@ interface Props {
 }
 
 const DIVISOR_OPTIONS = [2, 3, 4, 5, 6, 9, 10, 25, 50, 100];
-const MAX_PRESETS = [100, 1000, 10000, 100000];
 
 export default function DeelbaarheidConfig({ block }: Props) {
     const [c, patch] = useConstraints<DeelbaarheidConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         layout = 'tabel',
         divisors = [2, 5, 10],
@@ -40,20 +42,20 @@ export default function DeelbaarheidConfig({ block }: Props) {
                         <SettingLabel text="Deelbaar door:" info="Welke delers in de oefening gecontroleerd worden." />
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {DIVISOR_OPTIONS.map(d => (
-                                <button key={d} onClick={() => toggleDivisor(d)} style={styles.radioBtn(divisors.includes(d))}>{d}</button>
+                                <button key={d} onClick={() => toggleDivisor(d)} aria-pressed={divisors.includes(d)} style={styles.radioBtn(divisors.includes(d))}>{d}</button>
                             ))}
                         </div>
                     </div>
-                    <div style={styles.section}>
+                    {range && <div style={styles.section}>
                         <SettingLabel text="Maximum getal:" info="Het grootste getal dat gecontroleerd wordt." />
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>
+                    </div>}
                 </>
             ) : (
                 <>

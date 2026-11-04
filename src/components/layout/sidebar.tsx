@@ -1,15 +1,17 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
+import { Plus, MagnifyingGlass, Student, Chalkboard } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore, type AddBlockOpts } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply } from '../../config/baseSettings';
+import { seedConstraints } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
 import Wordmark from '../ui/Wordmark';
+import BetaCaption from '../ui/BetaCaption';
 import OverzichtPanel from './OverzichtPanel';
+import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
 // A parent survives when any of its descendants match. Returns the filtered tree.
@@ -85,19 +87,22 @@ export default function Sidebar() {
     const setSelectedGrade = useWorksheetStore((state) => state.setSelectedGrade);
     const baseSettings = useWorksheetStore((state) => state.baseSettings);
     const sidebarPreview = useWorksheetStore((state) => state.sidebarPreview);
+    const setView = useWorksheetStore((state) => state.setView);
     const locked = !!curriculum?.locked;
+    const oefenOpen = useWorksheetStore((state) => state.oefenBuilderOpen);
+    const setOefenOpen = useWorksheetStore((state) => state.setOefenBuilderOpen);
 
     // Hover example: after a short delay over a leaf, show a live preview card anchored
     // to its right (or left if it would overflow). Gated on the sidebarPreview setting.
     const [preview, setPreview] = useState<{ typeId: string; constraints: Record<string, unknown>; top: number; left: number } | null>(null);
     const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const resolveConstraints = (typeId: string, override?: Record<string, unknown>): Record<string, unknown> | null => {
-        const def = REGISTRY[typeId];
-        if (!def) return null;
-        const defaults = def.defaultConstraints(typeId);
-        return { ...defaults, ...baseApply(baseSettings, defaults), ...(override ?? {}) };
+    // No leafId for the locked palette: its constraints are the curriculum author's, and the
+    // store likewise keeps a picked leerjaar away from them.
+    const resolveConstraints = (typeId: string, override?: Record<string, unknown>, leafId?: string): Record<string, unknown> | null => {
+        if (!REGISTRY[typeId]) return null;
+        return seedConstraints({ typeId, base: baseSettings, override, grade: selectedGrade, leafId });
     };
-    const leafHover = (typeId: string, override?: Record<string, unknown>) => ({
+    const leafHover = (typeId: string, override?: Record<string, unknown>, leafId?: string) => ({
         onMouseEnter: (e: React.MouseEvent) => {
             if (!sidebarPreview) return;
             const rect = e.currentTarget.getBoundingClientRect();
@@ -105,7 +110,7 @@ export default function Sidebar() {
             const left = rect.right + 12 + W > window.innerWidth ? rect.left - W - 12 : rect.right + 12;
             if (hoverTimer.current) clearTimeout(hoverTimer.current);
             hoverTimer.current = setTimeout(() => {
-                const constraints = resolveConstraints(typeId, override);
+                const constraints = resolveConstraints(typeId, override, leafId);
                 if (constraints) setPreview({ typeId, constraints, top: rect.top, left });
             }, 250);
         },
@@ -158,7 +163,7 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className="mac-vibrant" style={S.aside}>
+        <aside className="mac-vibrant app-panel-left" style={S.aside}>
             <div className="panel-head">
                 <div className="seg-group">
                     <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setSidebarTab('oefeningen')}>Oefeningen</button>
@@ -278,7 +283,7 @@ export default function Sidebar() {
                                                                         style={S.leafBtn}
                                                                         title={`${type.label} toevoegen (één oefening)`}
                                                                         onClick={() => addLeaf(type.typeId!, type.label, type.defaultConstraints, { leafId: type.id, instruction: type.instruction })}
-                                                                        {...leafHover(type.typeId!, type.defaultConstraints)}
+                                                                        {...leafHover(type.typeId!, type.defaultConstraints, type.id)}
                                                                     >
                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                         <span>{type.label}</span>
@@ -315,7 +320,7 @@ export default function Sidebar() {
                                                                                         style={S.leafBtn}
                                                                                         title={`${leaf.label} toevoegen (één oefening)`}
                                                                                         onClick={() => addLeaf(leaf.typeId, leaf.label, leaf.defaultConstraints, { leafId: leaf.id, instruction: leaf.instruction })}
-                                                                                        {...leafHover(leaf.typeId, leaf.defaultConstraints)}
+                                                                                        {...leafHover(leaf.typeId, leaf.defaultConstraints, leaf.id)}
                                                                                     >
                                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                                         <span>{leaf.label}</span>
@@ -350,6 +355,23 @@ export default function Sidebar() {
                 document.body,
             )}
 
+            {/* The two app modes sit at the foot of the list, not in the TopBar: there they
+                pushed stage 0 (all labels) past 1920 px. A locked curriculum hides Oefenmodus
+                (it would offer exercises outside the whitelist) but keeps Bordmodus. */}
+            <div style={S.modeRow}>
+                {!locked && (
+                    <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setOefenOpen(true)}
+                        title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
+                        <Student size={16} aria-hidden="true" /><span>Oefenmodus</span>
+                    </button>
+                )}
+                <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setView('whiteboard')}
+                    title="Bordmodus: oefeningen en hulpmiddelen op het digibord" aria-label="Bordmodus: oefeningen en hulpmiddelen op het digibord">
+                    <Chalkboard size={16} aria-hidden="true" /><span>Bordmodus</span>
+                </button>
+            </div>
+            <BetaCaption />
+
             {/* The wordmark anchors the sidebar's foot instead of sitting in the toolbar's
                 centre track — that frees the middle of the bar for the sheet's own name.
                 Plain link to the static about page rather than a modal — one page to keep
@@ -363,6 +385,7 @@ export default function Sidebar() {
             >
                 <Wordmark height={22} />
             </a>
+            {oefenOpen && <OefenBuilderModal onClose={() => setOefenOpen(false)} />}
         </aside>
     );
 }
@@ -397,6 +420,17 @@ const S = {
         flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 'var(--sp-3)', border: 'none', borderTop: '1px solid var(--separator)',
         background: 'transparent', cursor: 'pointer', lineHeight: 0,
+    } as React.CSSProperties,
+
+    // SYNC: padding/font match leafBtn so a mode button is exactly one sidebar row tall.
+    modeRow: { flex: 'none', display: 'flex', gap: 'var(--sp-1)', padding: 'var(--sp-1) var(--sp-2)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
+    modeBtn: {
+        flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
+        // Same chrome as the TopBar's secondary IconButtons (Oefeningen toevoegen / Menu): a
+        // bordered box, so these read as buttons and not as two labels.
+        background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-sm)', height: 'var(--control-h)', padding: '0 10px',
+        color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit', fontWeight: 600,
+        cursor: 'pointer', whiteSpace: 'nowrap',
     } as React.CSSProperties,
 
     lockedPalette: { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 } as React.CSSProperties,

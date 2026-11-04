@@ -107,9 +107,15 @@ export type MulDivConstraints = AddSubConstraints & {
     divisionLevels?: number[];
     metRestLevel?: number;
     excludeOne?: boolean;
+    // Decimal ×: absent / false = kommagetal × natuurlijk getal (minimumdoelen 2.2, 3 × 0,4);
+    // true = both factors may be kommagetallen ("Kommagetal × kommagetal").
+    decimalTimesDecimal?: boolean;
     // Rational ×/: — cap the denominator the answer may keep after simplifying.
     simplifyMaxDenominatorChecked?: boolean;
     simplifyMaxDenominator?: number;
+    // Set only by gemengd's effectiveBlockFor (never stored): the shared "Maximum uitkomst" also
+    // caps table products, deeltafel dividends and tienvoud answers, which standalone ignore by design.
+    capToMax?: boolean;
 };
 
 // 'Gemengd' = one block that mixes + - x : in a single list. The block keeps ONE shared
@@ -191,6 +197,9 @@ export type ClockConstraints = {
     timeTypes: TimeCategory[];
     minuteDirection: MinuteDirection;
     handChoice: HandChoice;
+    // Oefenmodus only (the sheet never reads it), analoog lezen: 'woorden' = build the time from
+    // uur / half / voor / over chips; 'digitaal' or absent (a link from before 2026-10-13) = type uu:mm.
+    klokAnswer?: 'woorden' | 'digitaal';
 };
 
 // ── Breuken ──────────────────────────────────────────────────────────────────
@@ -199,6 +208,8 @@ export type FractionConstraints = {
     subType: FractionSubType;
     shape: FractionShape;
     shapes?: FractionShape[];          // kleuren/herkennen: included shapes (≥1, mixed per exercise)
+    // kleuren / herkennen: also improper breuken (teller d+1..2d-1, never d/d) over two wholes; off = proper only.
+    allowImproper?: boolean;
     staticSize?: boolean;              // keep shape size constant across denominators (only when 1 shape)
     staticW?: number;                  // rectangle width (cm) when staticSize
     staticH?: number;                  // rectangle height (cm) when staticSize
@@ -235,6 +246,10 @@ export type BreukBewerkConstraints = {
     tablesOnly: boolean;
     allowIrreducible: boolean;
     targetDen: number | '';
+    // Also improper fractions (teller in d+1..2d-1, never d/d) in gelijknamig / vereenvoudigen; off = proper only.
+    allowImproper?: boolean;
+    // 'multiple' = one noemer is a multiple of the other (leerjaar 4 rule); the common noemer is then the larger one. Absent = 'any'.
+    denominatorRelation?: 'any' | 'multiple';
 };
 
 export type BreukenRangschikkenConstraints = {
@@ -243,6 +258,8 @@ export type BreukenRangschikkenConstraints = {
     operatorMode: string;
     minDenominator: number;
     maxDenominator: number;
+    // Also improper fractions (teller in d+1..2d-1, never d/d) in gelijknamige / gelijknamig-te-maken; off = proper only.
+    allowImproper?: boolean;
     // 'lijn' = underline blank (default), 'vak' = bordered box — Differentiatie choice.
     answerStyle?: 'lijn' | 'vak';
 };
@@ -336,7 +353,10 @@ export type OrdenenConstraints = {
     maxGetal: number;
     decimalPlaces: number;
     unitFractionsOnly: boolean;
+    // true = every breuk is a gemengd getal (the old toggle); read only when mixedMode is absent.
     allowMixed: boolean;
+    // Gemengde getallen: 'none' geen · 'some' ook (mixed with plain breuken in one set) · 'all' alleen.
+    mixedMode?: 'none' | 'some' | 'all';
     minGetal?: number;
     numberMask?: PlaceMask;
     minDenominator?: number;
@@ -350,6 +370,12 @@ export type PlaatswaardeConstraints = {
     maxGetal: number;
     numberMask: PlaceMask;
     decimalPlaces: number;
+    // plaats / omcirkelen only: 'plaats' (default) names the place, the choices in the digits' order;
+    // 'plaats-shuffle' the same in a mixed order (no counting along); 'waarde' asks the digit's value.
+    plaatsAnswer?: 'plaats' | 'plaats-shuffle' | 'waarde';
+    // tabel only: the place columns drawn (keys 'Mrd' … 'E', 't', 'h', …), chosen independently
+    // of maxGetal. Absent = each number's own places from its first non-zero digit.
+    tablePlaces?: string[];
 };
 
 export type EvenOnevenConstraints = {
@@ -404,6 +430,8 @@ export type DeelbaarheidConstraints = {
     base: number;
     terms: number;
     givenCount: number;
+    // Kiosk only (prepare): the multiple the single row starts at, so the draws differ.
+    startFrom?: number;
 };
 
 export type DeelbaarheidKleurConstraints = {
@@ -467,6 +495,9 @@ export type KettingConstraints = {
     chainLength: number;
     ops: string[];
     opSettings: Record<string, OpSetting>;
+    // false (default) = every value after the start is blank: the pupil works the whole chain.
+    showIntermediates?: boolean;
+    // Only with showIntermediates: one tussenwaarde is left open next to the end.
     blankMiddle: boolean;
     showArrows: boolean;
     showOperators: boolean;
@@ -551,7 +582,11 @@ export type HerleidingenConstraints = {
     formats: string[];
     compoundMode: string;
     areMode: 'enkel' | 'samengesteld';
-    writeUnits: boolean;
+    // What a one-quantity answer asks: getal = the number for the shown unit, eenheid = the unit for
+    // the shown number, afwisselend = per exercise. Absent = read through vraagOf (legacy writeUnits).
+    vraag?: 'getal' | 'eenheid' | 'afwisselend';
+    // Legacy (before vraag): true = number AND unit → afwisselend, false = getal. Never written any more.
+    writeUnits?: boolean;
     /** The conversion-table scaffold printed with the exercise. */
     scaffolding: 'geen' | 'tabel-headers' | 'tabel-blanco';
     herleidingLayout: 'uitlijnen' | 'compact';
@@ -560,6 +595,8 @@ export type HerleidingenConstraints = {
     tableCellW: number;
     tableCellH: number;
     maxGetal?: number;
+    // No number on either side of the '=' exceeds this (leerjaar seed 10 000; oppervlakte leaf 999 999). No picker: set by the leaf / the leerjaar.
+    maxWaarde?: number;
 };
 
 export type MaateenheidConstraints = {

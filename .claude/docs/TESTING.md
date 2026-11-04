@@ -18,42 +18,211 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | File | What it guards |
 |---|---|
 | `generators.matrix.test.ts` | Every generator runs, across every constraint option. See below. |
+| `limits.matrix.test.ts` | Every generated number stays inside the limit the config promises (max, noemer, zijden, per-term max, …), the block is full, keys are right. Known bugs are listed, not failed. See "The limit harness" below. |
 | `generators.answers.test.ts` | The answer follows from the question: mathEngine ops (incl. fractions, decimals, multi-term chains, division remainder), bruggetjes, cijferen, splitsen sums, breuken-bewerken equivalence, ordenen ordering, deelbaarheid, procenten, verbanden, tijdsduur, kalender, negenproef, herleidingen unit factors. |
 | `geldKey.test.ts` | geld-herkennen key == the money drawn: Σ coupures == `amountCents` (≤ 12 items) and the printed key parses back to it, over 8 settings × 60 seeds; 'euros' format draws whole euros; geld-tekenen too. |
-| `afrondenRound.test.ts` | `roundTo` rounds half up in every place: every x,xx and x,xxx value 0–1000 to E/t/h and every natural 0–100 000 to T/H/D/TD, against an integer/string reference (97,05 → t = 97,1). |
+| `geldTeruggevenKlein.test.tsx` | v1.0.4 Teruggeven tot €1 / €2: prices stay under the coin, key adds up, a short pool repeats, a coin under the min price lowers the floor; the diagram draws one arc when the paid amount is the next whole euro (every scaffold level, paid amount at the waypoint x), a coin / bill for the tekening. |
+| `afrondenRound.test.ts` | `roundTo` rounds half up in every place: every x,xx and x,xxx value 0–1000 to E/t/h and every natural 0–100 000 to T/H/D/TD, and sampled naturals up to 1e9 (plus the half-way values) to every natural target up to 1MLD, against an integer/string reference (97,05 → t = 97,1). |
 | `mabMask.test.ts` | MAB "Specifieke getalopbouw": ticked place = 1-9, unticked = 0, value in 1..max, for mab-herkennen + mab-tekenen over 8 masks × 30 runs; H+T at 1000 draws without repeats; an impossible mask still fills the block. |
 | `cijferDelenDec.test.ts` | cijferen-delen-dec against a BigInt schoolbook long division: quotient cut off after dp decimals, dividend = q·divisor + r with 0 ≤ r < divisor·10^-dp, over dp 1–3, max 100 to 1e9, decimal dividend and divisor masks (495 : 80 → q 6,18 r 0,60). |
 | `cijferEdit.test.tsx` | A teacher-edited decimal division (jsdom: click the header, type, Enter) stores the same long-division key as a generated one (`divideToDecimals`). |
 | `pagePacker.test.ts` | Placement rules, twice. Every pre-skyline test (join a row, start a row, exact fit, page flush, `pageBreakBefore`, spanning blocks, min-width promotion, `pageIndexByBlock`) now runs against `mode: 'rijen'` and is the regression guard; the `aansluitend` suite pins the skyline itself — a block filling the space under a shorter neighbour, ties to the leftmost, a full-width block waiting for the deepest column, per-column page overflow, no overlap, `skylineSlot`. Written against `COL_UNITS` / `ROW_BUDGET`, never literal 6/36, so it survives the grid change. |
-| `persistence.test.ts` | File round-trip, version gate (a newer file throws in Dutch), malformed input, share-link encode/decode, template stripping, curriculum lock, size backstop. |
+| `persistence.test.ts` | File round-trip, version gate (a newer file throws in Dutch; version must be a safe integer ≥ 1), malformed input, share-link encode/decode, template stripping, curriculum lock, size backstop; `updatePreset` / `presetId` in the autosave / refused writes return null-false (2026-10-28); page-design templates (save / load / rename / delete / cap 20 / full storage / junk). |
+| `safeIntegers.test.ts` | Every type whose range reaches ≥ 1e7, at its top preset × max decimals (× and ÷ where they exist), 3 seeds × 30 exercises through the real `generateForBlock`: every number finite, no exponent, ≤ 6 decimals, safe on the 1e6 grid; operands and answer round-trip through `formatMathNumber`; the answer equals BigInt rational arithmetic on the printed operands (a = q·b + r for met rest). Also the stale off-list 1e9 max on the decimal paths (the tienvoud fix). |
+| `fontTokens.test.ts`, `viewers.ink.test.tsx` | No `fontFamily="var(` attribute and no literal `Azeret Mono` outside theme.css / fontOptions.ts; every sidebar leaf rendered under a blue ink (helper `sheetInk.tsx`), solutions on and off, keeps no black fill / stroke / colour outside the documented allowlist (MAB paint). |
+| `breukenOnecht.test.ts`, `breukenFigurenOnecht.test.tsx` | "Ook onechte breuken": flag off = the same exercises as the flag absent (seeded), on = mixes, never n = d, teller < 2d, caps honoured, modes that ignore it; a 7/4 render over two figures; kiosk 5/4 order card and a whole vereenvoudigen answer ("2" and "2/1"). |
+| `mab.squarePattern.test.tsx`, `mab.appearance.test.tsx` | The MAB square pattern: `PATTERN_GLYPH` sizes agree between MabViewer and MabBlocksSVG, columns size for the fullest digit, 9 999 lays nine cubes; the Appearance slot renders the per-rij popup and the slider is gone. |
 | `catalogue.test.ts` | `oefeningen.html` (generated by `scripts/catalogue.mjs`) carries exactly the `APP_STRUCTURE` leaves as `data-leaf` cards and every leaf has its `public/oefeningen/<leafId>.png` — a new or renamed leaf without `npm run catalogue` fails the gate; the Stop hook nudges earlier. |
+| `numberRanges.test.ts` | `floorToPreset` table (below lowest, between, exact, above top, 1e10, NaN, ±Infinity); the grown lists end 1e6/1e7/1e8/1e9, the capped lists keep their own values, every list is sorted, deduped and ≤ `NAT_CEILING`. |
+| `baseSettings.test.ts` | The per-type ceiling: at `DEFAULT_BASE` every registry type and every sidebar leaf merges exactly as the old `baseApply` did (copy of the old function inside the test); L5 lands on each type's own top (deelbaarheid 100 000, MAB / geld / ketting 1 000, decimal 1 000); L6 (1e10 legacy and 1e9) always lands inside the type's list and ≤ `NAT_CEILING`; `withinCeiling` is a no-op ≤ 1e9. |
+| `popupSelect.test.tsx` | `clampToLowest` floors an unmatched value to the nearest lower option (1e10 → top, 5e6 → 1e6, 50 000 → 10 000, 5 → lowest) and never fires for a matching value. |
+| `placeValues.test.ts` | `PLACE_VALUES` up to Mrd: mask/bridge keys at 100 / 1 000 / 1e6 unchanged, 1e9 gives Mrd…E, plural labels, digit completeness for random n ≤ 1e9, `buildMaskedNatural`. |
+| `bignum.generators.test.ts` | Getalbegrip at 1e9 against independent references: Dutch words to een miljard (table + 1 000 random round-trips through a small parser, never "undefined"), splitsen positie-* digit completeness, afronden to M/TM/HM, vergelijken representations rebuilt to the value, plaatswaarde places asked. |
+| `bignum.arithmetic.test.ts` | Hoofdrekenen + cijferen at 1e7–1e9 against a column-arithmetic reference in the test: bridges REQUIRED/FORBIDDEN at M/TM/HM (2–4 terms), masks Mrd/HM/TM, compenseren shape, ×/: andere exact, delen quotient spread, cijferen 4 ops incl. the HD bridge with 3 decimals. Calls generators directly so relaxation can't hide a dropped constraint. |
+| `seedConstraints.test.ts` | The one seeding pipeline: for every leaf, sidebar preview == added block == `makeBlock` (default base and L5 with masks/bridges); exactly five `gradeSetsMax` leaves follow L4/L5/L6 (10 000 / 1e6 / 1e9) with their other pins intact, 1 000 without a grade; splitsen basis/harten/boom keep their pins; a locked curriculum keeps its author's max. |
+| `loadNormalise.test.tsx` | An old 1e10 sheet loads floored to 1e9 inside the single history entry, no stale flags; a locked curriculum's picker shows a value, not a dash. |
+| `furniture.test.ts` | `isFurniture` sits exactly on the five `layout-*` rows; they generate and split nothing. |
+| `useMaxPresets.test.tsx` | The hook returns the registry list/key for the plugin's current constraints, incl. gemengd variant scopes. |
+| `maxPicker.render.test.tsx` | Every config with a max picker over ~1 500 reachable settings: rendered options equal `REGISTRY.maxPresets` (absent where it returns null). ~10-15 s. |
+| `maxPresets.sources.test.ts` | No config imports `RANGES` for a list the registry provides; explicit allowlist (herleidingen stops, geld-rekenen `maxEuro`, base seed buttons), each entry re-checked. |
+| `popupSelect.scroll.test.tsx` | A long PopupSelect opens with the selected option centred when it is below the fold, without `scrollIntoView`. |
+| `hrRowLayout.test.ts` | The hoofdrekenen fit/wrap ladder at 1e6 and 1e9, 2/3/4 terms, Kort/Lang/Stappen: earlier rungs overflow, the chosen one fits, ladder width == drawn row, the Lettergrootte slider moves the choice, tight / met-rest / fraction rows excluded. |
+| `monoGlyphWidth.test.tsx` | One glyph width: splitsen positie-math column, splitsboom box, vergelijken kiezen chip column at 5 / 6 / 9 glyphs (no jump at a threshold). |
+| `blockRules.test.ts` | The pure rules behind `updateBlockSettings` ([blockRules.ts](../../src/store/blockRules.ts)): every key a locked curriculum lets through (incl. the fitToWidth-only constraints patch), and which patches raise the "verouderd" flag (count-only, presentation-only, fitToWidth-only stay clean). |
+| `splitBlock.test.ts` | "Blok splitsen" heuristics ([splitBlock.ts](../../src/services/layout/splitBlock.ts)): `splittableCount` via the registry's exercise field, and `fittingSplitIndex` walking `.print-row`s against the available px (jsdom, stubbed `getBoundingClientRect`, zoom divided back). |
 | `store.test.ts` | Block order: `swapBlocks` (trade places, no-ops, history, curriculum lock) and the insert-before compensation both drag surfaces apply to `reorderBlocks`. jsdom — the store touches `localStorage` on import. |
 | `blockErrorBoundary.test.tsx` | The shared boundary: a throwing child renders the on-sheet message and logs, `fallback={null}` renders nothing, a `resetKey` change recovers; every `EXERCISE_UI` viewer is mounted with wrong-shaped exercise data and must never throw past the boundary (jsdom, `console.error` spy scoped). |
 | `instructions.test.ts` | Every sidebar leaf resolves to a non-empty default instruction that does not end in `:`; function-valued instructions are exercised per option; worksheet templates never fall back to `"<label>:"`. |
-| `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. |
+| `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. A **ceiling pass** repeats that for every sidebar leaf whose type has a max list, at the top of that list (`maxPresets(…)`), and also fails on `undefined`/`NaN` in the rendered text. Crash-only: jsdom has no layout, so fit and overflow at 1e9 belong to `npm run bignum:audit`. |
 | `viewers.stale.test.tsx` | Every viewer renders exercises that were generated under DIFFERENT settings — the window between a setting change and the next Genereer. See below. |
+| `limits.wp1.test.ts` … `limits.wp5.test.ts`, `limits.{vergelijken,fractions,meten}.test.ts`, `limitsWp6.test.tsx`, `cijferLimits.test.ts` | The 2026-10-07/08 limit-fix campaign, one suite per fix package: each repro from BUGS.md (L/E/N ids) over several seeds stays within its limit, impossible settings give the documented Dutch note (singular/plural), valid settings keep their output. Every test was shown to fail on the pre-fix code. |
+| `metRest.test.tsx`, `gradeLists.test.ts`, `seedFit.test.ts`, `baseDecimals.test.ts` | Met rest's max list + level clipping, the Leerjaar 1 = 20 lists and grade switches, the seed-time fit (rounding targets, axis span), base decimals 0 / Leerjaar 4-6 = 2 and the v3 → v4 save migration. |
+| `releaseNotes.test.tsx` | The release-notes list: every example leaf exists and fills its block without a melding, the newest entry drives `RELEASE_VERSION`, every preview renders, banner + Help open the modal, ModalShell focus wrap/return, the seen-key. |
+| `modeButtons.test.tsx` | The sidebar mode row: Oefenmodus opens the builder, Bordmodus switches the view, the row survives the Overzicht tab, a locked curriculum hides Oefenmodus only, the TopBar carries neither. |
+| `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
+| `oefenen.descriptors.test.ts` | Oefenmodus answers: exactly the expected kiosk-capable leaves (`EXPECTED_LEAVES`); every capable leaf × every leerjaar seed × 50 seeds, the descriptor's `answerOf` equals the generator's own answer field re-derived in the test (`TRUTH` per typeId, from-scratch arithmetic: half-up rounding, Roman numerals, unit ladders), `checkAnswer` takes every spelling and refuses a wrong one, every accepted answer is typeable with the offered keys; `supported()` per setting; input kinds per exercise; build trays and drag answers (right / wrong values from `helpers/dragCheck.ts` per family); breuken-bewerken accepts only the asked form. |
+| kiosk triage K1 2026-10-11 (`oefenen.fraction*`, `plaatswaarde.answer*`, `controleren.kiosk*`, `vergelijken.representaties*`, `cardExtent*`, `gelijknamig.common*`, `positietabel.blank*` tests, smoke 13 kinds) | `fraction` input, `plaatsAnswer`, controleren coin per exercise, representaties magnitude, underline inside the card (jsdom + Playwright 4 cases × 3 viewports), any common noemer, leading blanks, one cijferen header |
+| `oefenen.k2.test.ts` · `oefenen.k2.card.test.tsx` | kiosk triage K2 2026-10-11: veelvouden draws ≥ 4 distinct rows in 6, omtrek perimeters pinned, wissel default bills, lengte-meten unsupported on the kiosk, herleidingen `maxWaarde` + grade caps (200 seeds × 4 leaves), hr-dec defaults, afronden ≥ 5, `KioskAnswerSlot` on every typed leaf (0 on the sheet), temperatuur-verschil card |
+| final calls 2026-10-10: `herleidingen.zeroParts.test.tsx`, `herleidingen.targetUnit.test.tsx`, `gemengd.compenseren.test.tsx`, e2e matrix `COMBOS` (writeUnits × showTargetUnit), smoke 12 cases with a `header` check, `viewers.solutionFill.test.tsx`, `topBarShed` stages 4–5, `clockDirection` (minuteDirection zones), `boardHonderdveldWidth`, `oefenen.rowYieldsSeed` (pre-flight uses the kiosk's fixed-seed probe), `constraintSpace.configDrift` now also pins SLIDERS | one red test per decision / BUGS line |
+| report fixes 2026-10-13: `viewers.tijdsduur.test.tsx` (the "volgende dag" marker is its own element, grid template unchanged, on the red key too, kiosk `display` says it), `viewers.kioskCell.scroll.test.tsx` (`scrollIntoView` not called on a fitted card, called inside `[data-kiosk-scroll]`), `hrPresetRow.decimalChain.test.tsx` (decimal ×/: show the note and no factor picker, natural keeps it, decimal +/− keeps its termen picker), `hrFractionAnswers.test.ts` (+: every "Gemengd" operand proper at termCount 2/3/4 × 3 difficulties, a one_step chain uses exactly two noemers one dividing the other), `limits.wp2.test.ts` `[H]` (500 seeded getallenas / -rijen draws keep ≥ 2 givens; no RNG call when none is needed); limit rules `mixed-improper-part` (rational hr) and `givens` (getallenas / -rijen) | tester report 12 Oct + owner finds; see UpdateState 2026-10-13 |
+| klok in woorden 2026-10-13: `timeWords.test.ts` (the four-word grammar: one wording per time, 15 only as kwart, "35 over 3" / "30 over 3" null, hours mod 12, 0–24), `oefenen.klokWoorden.test.tsx` (plays kwart over 3 juist, 15 over 3 fout then kwart on the 2nd kans, 25 voor 4 for 3:35, 35 over 3 fout, 3 uur, half 4; layout, Verder, u/h/v/o/k hotkeys, error row), descriptors TRUTH for both `klokAnswer` values, e2e matrix knows `time-words` (+ klok COMBOS), builder row control / seed / wire round-trip, smoke 17 cases incl. two time-words | owner rules in memory `klok-woorden-rules` |
+| small fixes 2026-10-13: `afrondenRound.test.ts` (+ t and h at 2 / 3 decimals: title = the columns, `columnTargets`), `boardWidenCap.test.tsx` (a widened board card is capped to the room left: `capWidenedWidth`, 240 px floor, 8 px gap), `configPills.ariaPressed.test.tsx` (every APP_STRUCTURE leaf's Config / StyleConfig / AdvancedConfig at its defaults: no button styled as selected without `aria-pressed`; BridgeControl's three-state arrows exempt) | |
+| clean sweep 2026-10-10: `sheetRenderer.sweep.test.tsx` (compenseren shape, breuken-kleuren key, klok hand colours, ordenen spacing, exact rest, staleBlocks, puntoefening), `furniture.test.ts` (no `startsWith('layout-')` under src), `cijferKeyPlacement` / `cijferNoFallback` (carries at col-1, units-first products, honest empty block), `delenSpread`, `afrondenViewer`, `constraintSpace.configDrift.test.tsx` (Config buttons = constraintSpace, `PINS`), `topBarShed` / `useShedStages` (padding + gap read from theme.css), `oefenen.cardScaffold.test.tsx`, number-unit chains in the e2e matrix | one red test per BUGS line fixed in the sweep; see UpdateState 2026-10-10 |
+| `oefenen.e2e.matrix.test.ts` | O24 chain matrix: every leaf-table leaf × constraintSpace option × 3 seeds from a builder row through the share link, `nextExercise`, an answer the pupil can actually enter (keypad keys, buttons, taps, cells, tray, drag), `checkAnswer` right and wrong, to `summary`. Builder-unreachable settings skipped; found bugs pinned `test.fails` until fixed (O25-O27 fixed 2026-10-09, now in `FIXED`). See "Oefenmodus end-to-end". |
+| `oefenen.session.test.ts` | The share-link codec: lossless round-trip for every kiosk leaf at defaults and with every setting changed, removed / unknown / null settings, custom labels / instructions / weights, the same leaf twice; base32 upper-case and case-insensitive; QR budget (4 types ≤ v10, 20 ≤ v20, 20 customised ≤ v40); too large → null; the **frozen** `KIOSK_LEAF_TABLE_V1` / `KIOSK_KEY_TABLE_V1` pinned in full (append only); strict decode with Dutch errors (newer version, unknown type → "Werk de app bij"); `kioskLabel` names and uniqueness. |
+| `oefenen.scheduler.test.ts` | Limits reached exactly, `total` caps, afwisselen never repeats while ≥ 2 remain (round-robin), willekeurig weights ≈ distribution over 10 000 draws, all-zero = equal, `!allowRepeatType` re-draws; `nextExercise` never repeats exactly in 200 draws, flags a forced repeat, is seed-deterministic and restores `Math.random`; gemengd "om de beurt": `made` 0..7 serves + − × : + − × : (willekeurig still varies), a prepared setting that yields nothing falls back to the row's own settings (the slot is not retired); `isDone` on limits / timer / `finishedAt`. |
+| `oefenen.cycle.test.ts` | Gemengd "om de beurt" through the kiosk store (jsdom): 8 answers serve + − × : twice, a reload keeps the turn, another type in between does not shift it (the turn is per slot, `madePerSlot`). |
+| `oefenen.stats.test.ts` | `recordAnswer` + `summary` per slot with readable error rows; runs saved / replaced by index / last 5 kept / per session id; a full quota drops the oldest runs first; no storage → `[]` / `false`. |
+| `oefenen.kioskStore.test.ts` | The kiosk store (jsdom; also 2 kansen: the `retry` phase, `wrongFirst` across a reload, `skipFlash`, the `FLASH_MS` auto-advance, Enter skips a flash, cell navigation `typeCell` / `moveCell` / `enterCell`): start → answer → feedback → next, Controleer needs every field, the run ends locked, testMode skips feedback, statsLocked, the timer lock, Wissen, Opnieuw keeps the old run; reload mid-exercise / after an answer / after the end / with an expired timer; typing rules per input kind; a run over every input kind; every accepted answer typeable; **Lenen** (cijferen aftrekken: the key is on every subtraction with its hint and nowhere else, 52 − 17 / 302 − 17 / 5,2 − 1,7 / 432 − 157 exchange as the pupil would, a second press on the same column changes nothing, a column that needs no exchange still gets one and the check judges what is written, no-op without a column to lend from or outside the exercise phase). |
+| `oefenen.answerLength.test.ts` | No typed answer is cut short (jsdom): every builder leaf whose keypad has a `/` key, at its pickers' tops (termCount × fractionMultMode × fractionOrderMode × equationType × direction …, max teller / noemer / maxGetal, multi_step, gemengd flags, 3 decimals) × 200 seeds through `nextExercise` → each typeable `answerOf` spelling (or fill-cells `rightCells` value) survives `sanitizeAnswer` unchanged; `capOf` per keys (12 · 24 with `/` or a word · time 2); the keypad refuses a 13th digit and a 25th breuk character, a paste is clamped. |
+| `oefenen.kioskScreens.test.tsx` | Every kiosk screen renders without a React error: error / start / each starter type / keypad + Controleer + Volgende / Enter twice / stats mid-run and hidden under statsLocked / the locked end screen with a two-tap Wissen; choice sizes (signs, numbers, words); a captioned field has no placeholder; the progress number while peeking at the stats. |
+| `viewers.interaction.test.tsx`, `viewers.interaction.grids.test.tsx` | Phase C viewer contract (jsdom): every viewer (registry defaults + every sidebar leaf) renders WITHOUT a `ViewerInteractionContext` with no kiosk attributes, role, handlers or inputs, so the sheet is unchanged; the helpers (`toggled`: tap replaces, tap-multi toggles, order appends and cuts from a re-tapped part; a part serves only its own kind; null context = `{}`); `KioskCell` binds an input to its cell; kiosk flows through the real card (vergelijken kiezen, even-oneven rooster, cijferen add / delen, ordenen, fill-cells keypad) incl. juist / fout; the grids (deelbaarheid tabel + kleuren, breuken kleuren) toggle their parts and check right and wrong. |
+| `viewers.interaction.build.test.tsx` | Phase C3 build (jsdom): `built` / `builtCount` (lay, take back, never below 0 or above `max`, zero counts drop out); each build viewer (geld-tekenen incl. verdeeld, geld-wissel, geld-teruggeven, mab-tekenen) draws the laid pieces ONLY under a build context; the kiosk flow lays the right value from the real `Tray` (largest pieces first, so any make-up of the value counts) and checks juist / fout; mab-tekenen stops at nine blocks per place, the geld-wissel tray never holds the shown note, geld-teruggeven stays typed (euro + cent fields and keypad, no tray) without a draw box. |
+| `viewers.interaction.drag.test.tsx` | Phase C4 drag (jsdom): `dragSurfaceProps` / `dragHandleProps` add nothing without a drag context; real `pointerDown` / `pointerMove` / `pointerUp` on the `svg[data-kiosk-drag]` (its client rect mocked at a card scale) and arrow keys on the `role="slider"` handles land the values the descriptor checks: klok tekenen (both hands with the hour carried across 12, the inner ring picks the kleine wijzer, minute-only per minute, a 24-hour face), vormleer hoeken tekenen (5° snap, each class right and wrong, 0°–180°), temperatuur kleuren (per degree, clamped to the scale), weegschaal kleuren (dial step, half-step tolerance). `helpers/dragCheck.ts` feeds `oefenen.descriptors.test.ts` the right / wrong drag values per family over every leerjaar × 50 seeds. |
+| `oefenen.kioskInstruction.test.ts` | No kiosk-capable leaf shows a pen verb (omcirkel, kleur, teken, onderstreep, kruis aan) in the card header at three leerjaren (`kioskInstructionOf`); gemengd getal ↔ breuk under 'beide': the paper says "… of als breuk", each card "Typ als breuk." / "Typ als gemengd getal." per exercise. |
+| `oefenen.gemengdHeader.test.tsx` | The same through builder → `buildSessie` → link → `OefenApp` (jsdom): 12 cards under 'beide', the header follows each one's way (both ways seen); a teacher's own wording still wins. |
+| `oefenen.stop.test.ts` | `stop()` (jsdom): an endless run finishes from exercise / feedback / retry / stats, the card on screen is not counted, `finishedAt` set, persisted so a reload lands on locked, also under testmodus; a no-op with a timer, with limits or a total, before Start and once done. `oefenen.kioskScreens.test.tsx` adds the button: shown only for endless sessions, two taps, Annuleer + 3 s disarm with focus, peek placement. |
+| `oefenen.runHash.test.tsx` | Runs keyed by content (jsdom): the same id with other content → start screen, no resume, no Vorige keren; the same content resumes; a B run never overwrites A's; Wissen keeps A's runs; legacy runs without a hash still show. `oefenen.session.test.ts` adds `sessieContentHash`: stable under key order / id / title / createdAt / a link round trip, differs across 15 content variants. |
+| `oefenen.builderIds.test.tsx` | One id per content in the builder (jsdom): Delen twice → one id, swap a type → new id, swap back → the first id, rename keeps it, edit → new id, revert → original, two edits → two ids, Opslaan keeps one library row. |
+| `oefenBuilder.test.tsx` | Teacher side (jsdom): `normaliseWeights` sums to 100, `buildSessie` (weights, limits, flags, frozen instruction, unsupported rows excluded), `rowsFromSessie` round-trip; the builder adds rows, sets willekeurig + timer and shares a link that decodes to that session; an unsupported setting shows a hint; Opslaan → library under its title, reopening keeps the id; the share modal shows link + QR, the big-QR note past version 25, the A5 print layer and its cleanup, the "too big" note. |
+| `oefenLibrary.test.ts` | `rekenraak_oefen_sessies_v1`: save / list / rename / delete, same id replaces and keeps the name, the 50 cap drops the oldest, a full quota returns `null`, garbage reads as empty. |
+| `qr.test.ts` | `qrMatrix`: finder patterns, timing pattern and dark module, version grows with the payload and gives `null` past v40, an upper-case tail is coded alphanumeric (smaller than the same text in lower case). |
+
+## Bordmodus suites (`src/__tests__/board*` + `instrumentGeometry`, `bordEntry`, `clockMath`, `klokWidget`, `wbCosmetics`)
+
+All jsdom except `boardGroepjes`, `instrumentGeometry` and `clockMath`. An open board bug may be pinned as
+`test.fails` next to its BUGS.md line under "Bordmodus" (fixing it flips the pin to a failure:
+turn it into a plain `test` in the fix commit); none are pinned today, the WB2 pins were all
+flipped by the fold-in fixes. `npx vitest run src/__tests__/board src/__tests__/instrumentGeometry
+src/__tests__/bordEntry src/__tests__/clockMath src/__tests__/klokWidget src/__tests__/wbCosmetics` runs them;
+with `@vitest/coverage-v8` installed (`npm i --no-save`),
+`--coverage --coverage.include='src/board/**'` measures them.
+
+| File | What it guards |
+|---|---|
+| `boardBlocks.test.ts`, `boardGenerate.test.tsx`, `boardInspector.test.tsx`, `boardFrame.test.tsx` | (fold-in) board block == sidebar block per leaf × leerjaar; the sheet's generate path and note; the inspector's StyleConfig / AdvancedConfig; the frame's height cap, stacking contexts and `.no-print`. |
+| `boardPersistence.test.ts` | The strict parser (version gate, partial / garbage / foreign payloads, early strokes without `pts`), a 2-page board with every widget kind through autosave, presets (cap 30, newest first, garbage key), file export and back into the store; quota failure on autosave; page / widget / stroke ids unique after duplicates. |
+| `boardSizing.test.tsx` | Natural widths and titles per kind, every catalogue tool adds at its natural width, the stagger, the frame's zoom per kind, the height cap at several `y`, grip resize (dx only, min 150) and title-bar / hand-tool drag (clamp at 0, grid snap), every prop normaliser's clamps and defaults. |
+| `boardGroepjes.test.ts` | `makeGroups` under seeded `Math.random` (mulberry32, 40 seeds): group counts per mode, must-together pairs and transitive chains, cannot-together, contradictions flagged `ok: false` with every name dealt once, rules naming deleted pupils ignored. |
+| `boardFitWidth` · `boardColorControls` · `geldWisselKey` · `libraryNoPrint` · `breukBewerkCols` | S4 2026-10-10: card fit zoom (+ the font-rounding dead-band loop), PaletteRow neutral custom swatch / row-labelled hex names / reset follows an outside value, geld-wissel model exchange key, overlays `.no-print`, gelijknamig 1-up on a 628 px card |
+| rerun calls R1/R2 2026-10-11: `oefenen.unsupported.test.tsx` (old link with lengte-meten → skipped with a note; alone → ErrorScreen; stored runs untouched), even-oneven n circles, plaatswaarde seeds give number / choice / interactive, cijferen headers per operator, card prompts hidden (`oefenen.cardScaffold`), getallenrij `data-card-extent`, U+202F on the card, Lenen hint | |
+| triage calls M1/M2b 2026-10-11: `herleidingen.vraag.test.tsx` (30: getal / eenheid / afwisselend on sheet + kiosk, migration from writeUnits, Resultaten rows), builder `seedRowConstraints` per leerjaar (every leaf × leerjaar supported and yields), `rowLabelOf`, L4 vs L5 breuken filter, `oefenen.cardScaffold` MAB sizing (piece grows with the cell, bbox inside for 0H3T0E … 9H9T9E), smoke 26 cases incl. mab-herkennen / -tekenen | |
+| `boardSelectTool.test.ts` · `boardSelectToolUi.test.tsx` | Selecteren (M3 2026-10-11): path translation, hit + lasso helpers, the engine (tap, lasso, Shift, move, grid snap, cancel), store undo / redo of move + delete; UI: tool button + `S`, keys, pen / palm cancel unchanged, no settings strip. By hand: draw two strokes, `S`, lasso both, drag 100 px, Ctrl+Z, select one + Delete (shots `~/Downloads/triage-calls/m3/`) |
+| `boardStore.test.tsx` | `useBoardStore`: widget add / update / remove / duplicate / z-order, selection vs inspector, tools, pages (add / duplicate / remove / goto / clear / background), ink undo / redo, the InkLayer pen / marker / eraser, the canvas eye / 🔄 / text tool, the draftBlocks mirror (seed, copy-back, Genereer, teardown leaves sheet blocks and history untouched), debounced autosave, module-init hydration (`vi.resetModules`). |
+| `boardView.smoke.test.tsx` | `WhiteboardView` with every widget kind (catalogue + afbeelding, tekst, geld-item, exercise) on a light and a dark board, the geld dock, every ⚙ panel: no `console.error`, no "undefined"/"NaN", `.no-print`. Weer runs on a stubbed `fetch` and a denied geolocation. |
+| `boardLeaves.test.tsx` | Every sidebar leaf as a board card: `makeBoardBlock` + `regenerateBoardBlock`, mounted through `BoardPageCanvas` with answers off and on: sheet viewer (no `data-kiosk*`), exercises > 0 except layout furniture, no `console.error`, no "undefined"/"NaN". |
+| `boardCatalog.test.ts` | The ★ favourites (cap 6, unknown ids dropped), every background pattern × dark × scale, the board block factory's edges (unknown typeId, locked curriculum drops the leerjaar). |
+| `bordEntry.test.ts` | `/bord.html` boot: without `data-boot` the store starts in the editor, with `data-boot="bord"` straight in the board; leaving the board on bord.html calls `location.assign('/')` (mocked), on index.html it only switches the view. |
+| `clockMath.test.ts` | The pure clock maths (`services/clock/clockMath.ts`) against a circular-distance oracle: `minuteFromAngle` (step snapping, wrap of negative / over-full angles), `hourFromAngle` at every 5° × 5 min (the minute offset: at :50 the hand near the 4 is still 3), `carryHour` both ways across 12, 12 / 24 h folding and the voormiddag / namiddag flip of `turnHourTo`, arrow-key `stepMinutes` / `stepHours` (a full turn of minute steps = one hour). |
+| `klokWidget.test.tsx` | The board KlokWidget under simulated pointer drags (jsdom): the minute hand carries the hour forward and back past 12, a full turn advances exactly one hour also across noon, the hour hand snaps to whole hours and keeps the minutes, the geschreven tijd follows the face after a carry past noon. |
+| `wbCosmetics.test.tsx` | The clock-cosmetics fixes: clock face and geld palette do not select text on drag; the add-panel search ("klok" finds the kloklezen variants and the Klok tool; a typeId finds its row; a found tool lands on the board); every bottom-bar popup closes on Escape and an outside press, not an inside one; twelve adds land on twelve spots and a freed spot is reused (`staggerSlot`); Aantal applies at once (tail cut / top-up keeps the rest); the Werksymbolen panel renders without a key warning. |
+| `boardDrawTools.test.tsx` | P3 lijn / vormen: geometry (grid snap, Shift 45° rays, plain `M…L`, arrowheads as closed triangles after a shortened shaft, segment hit-test), the line and shape `ToolEngine`s (one stroke per drag, < 4 px = nothing, preview / cancel, grid folds dropped, Shift square / circle / equilateral, soft fill, options on the stroke), the InkLayer (preview not a stroke, Escape, Shift mid-drag re-shapes, undo / redo / eraser along the middle or on the outline only, dashed shaft with solid heads), InkSettingsBar options per tool, `L` / `V` shortcuts (not while typing or with Ctrl), a pre-P3 board loads unchanged, 50 shapes save / load / hit-test fast. |
+| `instrumentGeometry.test.ts` | Pure P4 maths: 1 board cm = 10 sheet mm; local ↔ board transforms (clockwise, round-trip); `snapRotation` (3°, 15° with grid), `snapPoint` (8 px, endpoints win ties); per-instrument Vastklikken (absent = all on, each flag alone, master off = free whole degrees); `pathEndpoints` / `strokeEndpoints`; default placement (own spots, 1280 × 720 fallback, passer 5 cm); lat / geodriehoek body and edges; `nearestEdge`, `projectOnEdge` (whole mm, never past the plastic), `startGuidedLine` (wobbly drag → one `M…L`, tap = dot, rays at whole degrees from the centre, the centre beats the hypotenuse, legs guide); passer `openPasser`, `unwrapDelta`, `arcPath` (one `A`, full turn = two half arcs), `arcPts`, the hinge always up; `formatCm`. |
+| `boardInstruments.test.tsx` | The instrument store (toggle one per kind, update / remove / hide all, per page, cleared page keeps them, duplicated page = fresh ids); format v2 (v1 loads unchanged, round-trip, junk / second-of-a-kind dropped, passer radius clamped, Vastklikken flags, newer version refused); the layer (body drag + grid / endpoint snap with a snap dot, rotate handle 45° / 15°, Vastklikken off and endpoints-only, keyboard arrows / Shift / `[ ]` / R / Escape, not while typing, inset core while inking, line / shape make grips inert, a press never reaches the canvas); lat and geodriehoek guide the pen / marker (straight ruled stroke with readout, 45° hypotenuse, a ray from the centre), passer (open on mm, needle snaps, half-turn arc, full circle, marker circle, tap = nothing, erase + undo); the bottom-bar popover (toggles, Vastklikken ⚙, Alles verbergen, Escape, pen stays active). |
+| `boardUndoShortcut.test.tsx` | Board open: Ctrl+Z pops an ink stroke and the worksheet history stays; editor: Ctrl+Z still undoes the sheet and never touches ink; typing in a tekst widget keeps Ctrl+Z for the text. |
+| `boardBackgroundPicker.test.tsx` | A tile for every pattern, scale and board colour; a click applies and keeps the popover open; Escape / outside close; focus on the current pattern, arrows + Enter; the ⚙ popup lost its background section; `backgroundStyle` zoom keeps lines ≥ 1 px and moves the Cornell column with the zoom only. |
+| `boardSettings.test.tsx` | The settings system: every kind but `exercise` has the ⚙ + baseline, registered kinds add their panel; baseline writes (titel, titelbalk, tekstgrootte, accentkleur), the frame's accent dot and font zoom (not for `SELF_SCALED_FONT` kinds); mijn standaard (save → new widgets start from it, caller props win, transient state left out; Vergeet; Standaard herstellen asks once and keeps an image; garbage under the key = none); non-object props load as none; kit controls (no React style warning, `ListEditor` edit / move / remove / add / paste by button). |
+| `boardPropSchema.test.ts` | `readProps` (defaults, clamps, junk per field, empty colour = unset), `cleanProps` (drops junk owned keys, keeps good and foreign keys), reset keeps the content keys, transient state never saved. |
+| `boardSettings{Checklist,Datum,Groepjes,Klok,Namen,Stappenplan,Weer,Werksymbolen}.test.tsx` | Settings round A, one suite per kind: an old board reads exactly as before, junk keys read as defaults after a load, panel edits reach the widget and survive a save / load, plus the kind's own behaviour (templates; date helpers; locked groups, labels, text export; 12 / 24 h digital, the classic face = the sheet clock; no-repeat picks, several names; tap-to-tick steps; wind helpers + refresh interval; named werksymbolen sets saved app-wide). |
+| `board{Stopwatch,Timer,Adem,Geluid,Dobbelsteen,Afbeelding,Tekst}.test.tsx` | Settings round B, one suite per schema'd kind: defaults = the pre-settings look, junk falls back per field, the kind's behaviour (laps, countdown, space bar; keypad / draaien / presets, warn colour, auto-restart; breathing phases and shapes; poster levels and meter bands; 1–6 dice, locks, picture faces, history; image fit / caption / turns; note bullets and lines), every control writes the widget and survives save + load, a reset keeps the content (text, picture, rolls). |
+| `board{Getallenlijn,Positietabel,Honderdveld,Breukviz,MabMat,Geld}.test.tsx` | Settings round C (wiskunde-gereedschap): old boards keep their look (number-line min/max/ticks, positietabel columns, honderdveld palette-index marks, breukviz top-level n/d, MAB counts), junk reads as defaults, the tap modes (markeren / springen / verbergen, paint colour or cycle, tap parts, + / inwissel / autoWissel, editable cells), settings round-trip through the board file and the panels write the store, per-card state (laid blocks, typed cells) never enters a standaard; geld: dock settings default to today, a dropped piece keeps its caption / style, the panel picks denominations / style / caption / size, snap on drop. |
+| `helpers/boardWidgetHarness.tsx` | Shared harness for the per-widget suites (not a suite): `w(kind, props)`, `mountWidget` (rendered live from the store), the ⚙ panel, a save + load through `parseBoardFile`. |
+
+`boardFrame` also covers the headerless pill (hidden until hover / selection / focus, same
+controls as the bar, a pill press never drags, no pill with the title bar on); `boardSizing`
+the new dobbelsteen (1–6, sides 2–100) and adem clamps; `boardStore` the ink draft fix (a
+pointer move queued behind the pointerup no longer crashes on the nulled drawing ref).
 
 ## The generator matrix
 
-Four passes over every `typeId` in `REGISTRY`:
+Five passes over every `typeId` in `REGISTRY`:
 
 - **(a) defaults** — registry defaults at `defaultCount`, 5 runs (generators are random).
 - **(b) sidebar leaves** — every `APP_STRUCTURE` leaf's `defaultConstraints`, 3 runs each.
 - **(c) constraint matrix** — pairwise combinations from `CONSTRAINT_SPACE`, capped at
   `PAIRWISE_CAP` (200) per type.
 - **(d) leerjaar seeds** — every Leerjaar 1-6 base seed through `baseApply` × every type.
+- **(e) ceiling** — every type with `maxPresets`, at the TOP of its own max list. One case
+  per value combination of the keys `maxPresets` branches on (`numberType`, `layout`, `subType`, `preset`, `multiplicationMode`, `viewMode`, `rasterVorm`, `operator` —
+  whichever the type's space declares; branches with no list are skipped), each also with the
+  widest length knob the space has (`termCount` 4, `numberOfTerms` 4, `setSize` 6); 3 runs
+  per case.
 
 Each run asserts: no throw · the exercise array has `numberOfExercises` items · ids unique ·
 no `NaN`/`Infinity` anywhere in the returned data · no holes in arrays ·
 `isManuallyEdited === false`.
 
-Passes (a), (b) and (d) are settings a teacher reaches in one click, so an empty block there
-is a failure. Pass (c) mixes keys the UI would never show together, so an empty result is
+Passes (a), (b), (d) and (e) are settings a teacher reaches in one click, so an empty block there
+is a failure.
+Pass (e) additionally scans every generated string for `undefined` / `NaN` (a word or label
+built from a missing place prints as garbage even when every number is finite).
+`KNOWN_CEILING_FAILURES` at the top of pass (e) holds types that cannot yet hold their
+ceiling while the fix lands in a generator someone else owns: their failures are printed as a
+`[matrix] ceiling pass (e), known failures` table instead of failing the gate, and the table
+says when an entry passes again so it can be deleted. Empty since the 1e9 generators landed. Pass (c) mixes keys the UI would never show together, so an empty result is
 recorded instead of failed — the run ends with a `[matrix]` table listing every constraint
 set that under-produced. Read that table; a new line in it usually means a real narrowing.
 
-`KNOWN_THROWS` at the top of the file lists generators that crash on a reachable setting.
-Each entry names the file and line. Remove the entry when the generator is fixed.
+A setting matching a `KNOWN_SKIPS` entry in `limits.knownBugs.ts` (a known hang or crash) is
+not run here; the limit harness tracks it (that list replaced the old `KNOWN_THROWS`).
+
+## The limit harness (`limits.matrix.test.ts`, `npm run limits:audit`)
+
+The generator matrix proves a generator survives a setting; the limit harness proves it keeps
+the setting's promise. "Maximum uitkomst 100" means no answer above 100, "Max. noemer 4" means no
+noemer 5, "Zijden tot 10 cm" means no 11 cm side.
+
+| File | Role |
+|---|---|
+| `helpers/limitRules.ts` | The rule book. Per generating typeId (`LIMIT_SPECS`): an extractor (operands, answers, intermediates, every printed number, never ids) and the rules that encode its config's promise, each returning `{ rule, observed, limit, example }`. Generic checks for every type in `checkLimits`: `underfill` (only when the block carries no generation note: a short block that says why is intended) / `overfill`, `non-finite`, `empty-exercise`, `malformed`. Answer keys (`answer-key`) are checked wherever the key can be recomputed. The header lists the owner's "not a violation" calls; they are deliberately absent. `GRADE1_MAX_20_TYPES` is the data for the Leerjaar-1 = 20 rule (L20). |
+| `helpers/answerKeys.ts` | The arithmetic both this harness and `generators.answers.test.ts` check keys with. |
+| `helpers/limitHarness.ts` | The runner. `runCase` builds the block like the store (`makeBlock`, grade base, leaf id), generates under a seeded `Math.random` (mulberry32, restored after) through `generateNoted` when the type has one (the store's entry point; the note is kept on the result), times it (`slow` above 2 s per 10 exercises), checks it and labels every violation with its known-bug id. Also the case lists: `leafGradeCases` (every leaf × no grade + Leerjaar 1-6), `pairwiseCases` (the matrix's rows, the max snapped into the list that combo's picker shows: `reachableMax`), `triggerCases`, plus `comboKey` / `stableStringify` / `normalizeForDump`. |
+| `limits.knownBugs.ts` | One `KNOWN_BUGS` entry per open BUGS.md id (`{ id, typeIds, rules, match(typeId, c, grade) }`; `c` = the block's effective constraints) and `KNOWN_SKIPS` for a hang (never run anywhere) or crash (skipped by the generator matrix, caught here). Both lists are empty since the 2026-10-08 fix campaign; the [E1] hang and [E2] crash entries were the template. `skip()` is what `generators.matrix.test.ts` consults. A gemengd rule carries its variant after `@` (`answer>max@x:tienvoud`); an entry rule without `@` covers every variant. |
+| `scripts/limit-trigger-cases.json` | ≥ 1 repro per id: `{ bugId, leafId, typeId, constraints, grade, seed, note }`, run at the leaf's default count. `constraints` is the whole override (leaf defaults included). Shared with the screenshot tool: keep the shape. |
+
+The gate (`npm run check`, ~6 s): every leaf × leerjaar plus every pairwise row, seed 1234, and
+every trigger case. It fails on (1) any violation no `KNOWN_BUGS` entry matches, printed as
+`<typeId> <comboKey> grade= seed=: <rule> observed … limit … :: <example>`, and (2) a known
+bug that no longer reproduces on its trigger cases: `known bug L7 no longer reproduces: delete
+its entry …`. So a fix commit deletes the entry and its BUGS.md line; the trigger case stays as a
+regression guard. A new bug the harness finds gets a BUGS.md line (`[Nx]`), an entry and a trigger
+case. A hang cannot prove it still hangs: delete an `E1`-style skip by hand once fixed.
+
+When a rule is wrong rather than the generator, fix the rule (and say why in one line); when a
+setting is out of reach in the UI, fix `constraintSpace.ts` or `reachableMax`, never the entry.
+
+### The full diagnosis (`npm run limits:audit`)
+
+Not in the gate: `vitest.audit.config.ts` runs only `src/__tests__/audit/**`, which
+`vitest.config.ts` excludes. Same runner and rule book; per typeId it sweeps every leaf × (no
+grade, Leerjaar 1-6), one factor at a time (every value of every `constraintSpace` key × every
+value of the max key), the full cartesian product when ≤ 20 000 rows (else pairwise + seeded
+random rows) and the trigger cases — each row × every seed at 40 exercises. A shortfall above the
+type's default count is a small candidate space running out, not a finding, so the audit only
+reports `underfill` below the default count.
+
+```bash
+npm run limits:audit                                              # everything (~72 min; hr-std-gemengd alone ~50)
+LIMITS_RANDOM=300 npm run limits:audit                            # same sweeps, fewer random rows (~25 min; gemengd ~6)
+LIMITS_ONLY=hr-std-gemengd,schattend-dec npm run limits:audit     # typeIds and/or leafIds
+LIMITS_OUT=<dir> LIMITS_DUMP=<dir>/dump LIMITS_SEEDS=1,2 LIMITS_RANDOM=500 npm run limits:audit
+```
+
+| Env | Default | Meaning |
+|---|---|---|
+| `LIMITS_OUT` | `~/Downloads/limits-audit/<timestamp>` | report directory |
+| `LIMITS_DUMP` | off | also write `<dir>/<typeId>.jsonl` (below) |
+| `LIMITS_ONLY` | all | comma list; a typeId runs the whole type, a leafId runs that leaf and sweeps its type on top of the leaf's defaults |
+| `LIMITS_SEEDS` | `1,2,3` | mulberry32 seeds, each used as-is for every row |
+| `LIMITS_COUNT` | `40` | exercises per block |
+| `LIMITS_RANDOM` | `3000` | random rows for a space above 20 000 combinations |
+
+Output:
+
+- `summary.json` — `{ [typeId]: { combos, exercises, violationsByRule, knownBugHits, hangs, throws, underfill, notedUnderfill, seconds } }` (counts over every exercise; `hangs` = skipped known hangs + `slow` blocks; `notedUnderfill` = short blocks with a generation note, counted, not violations).
+- `violations.json` — array of `{ bugId, typeId, leafId, comboKey, seed, rule, observed, limit, example, note }` (`note` = the block's generation note or null, as context), one row per (block, rule), `bugId: null` = a NEW finding. Every new row up to 5 000 per type and rule; a sample of 200 per known bug, type and rule.
+- `report.md` — per-type table, the NEW findings grouped by type and rule with one repro each, hits per known bug (a 0 there on a full run means the entry may be stale).
+- Dumps (`LIMITS_DUMP`): one line per (row, seed), `stableStringify({ comboKey, seed, exercises, [note], [skipped | threw] })` — keys sorted at every level, so the line order is `comboKey`, `exercises`, [`note`], `seed`, [`skipped`/`threw`]; written line by line (a busy type's blocks never sit in memory); exercises with `id` (and any timestamp field) stripped. `comboKey` = `<leafId or ->|<tag>|<stable-sorted JSON of the override>`, tag ∈ `leaf`, `leaf-L1`…`leaf-L6`, `one-factor`, `cartesian`, `pairwise`, `random`, `trigger-<id>`. Two runs on the same code give byte-identical dumps (verified 2026-10-07; `violations.json` differs only in `slow` timings), which is what `scripts/limits-diff.mjs` compares across a fix. A full dump is large (~30 MB per busy type).
 
 ## The stale-settings sweep (`viewers.stale.test.tsx`)
 
@@ -87,7 +256,12 @@ the Inspector's stale flag.
 
 `src/config/constraintSpace.ts` mirrors the option lists in the config plugins. **A picker
 option added in a plugin must be added there**, or the matrix silently stops covering it —
-the SYNC note at the top of the file says the same. Numeric free fields (sliders, counts)
+the SYNC note at the top of the file says the same. Max-number lists are the exception: they
+are NOT mirrored but imported from `numberRanges.ts` (the union of every
+list the config can show for that key), so a list that grows there is covered here without
+an edit. The shared `MASKS` / `BRIDGE_SETS` carry big-place cases (`{M, E}`, `{HM}`,
+`{TM: 'REQUIRED'}`); pairwise meets them with small maxes too, where they must under-produce,
+never throw. Numeric free fields (sliders, counts)
 get three values: minimum, default, maximum. Purely cosmetic keys no generator reads
 (`boxHeight`, `exercisesPerRow`, …) are left out on purpose.
 
@@ -142,22 +316,23 @@ npm run visual:baseline -- --all   # accept the current rendering as the new bas
 
 It maps the staged files to exercise types, renders only those leaves and compares the
 numbers to a committed baseline. It starts its own dev server (`vite --port 5299
---strictPort`, killed on every exit path) unless `--url` points it at a running one, and
+--strictPort`, killed on every exit path; `--port` or env `VISUAL_GATE_PORT` moves it, so parallel
+worktrees committing at once each set their own) unless `--url` points it at a running one, and
 reuses `scripts/lib/leafWalk.mjs` — the same leaf walk `font-baseline.mjs` uses, so there is
 one copy of the Playwright choreography, and `scripts/lib/visualCompare.mjs` for the
 thresholds shared with `font-compare.mjs`. Per cell the walk waits for the empty sheet to
 land before adding (every cell of a leaf gets the same seeded block id, and the measurer
 prunes the previous cell's intrinsic entries in a passive effect), then waits until the
 applied ScaledBlock zooms and the measurer snapshot are unchanged for two frames (cap 3 s);
-a cell whose measurement the breaker froze is redone once after the cooldown. Two `--all`
+a cell whose measurement the breaker froze is redone once after the cooldown (belt and braces since WP G 2026-10-29: the breaker no longer counts the walk's cadence, see `gate:repro`). Two `--all`
 runs in a row must produce identical rows — that is the determinism check.
 
 | Changed file | Scope |
 |---|---|
 | `src/components/viewer/<X>.tsx` | every typeId whose `EXERCISE_UI` row imports its `Viewer` from that file |
 | a viewer helper (`AnalogClockSVG`, `VerticalFraction`, `MabBlocksSVG`, …) | the registered viewers that import it, transitively, then their typeIds |
-| `src/services/<family>/*.ts` | every typeId whose `REGISTRY` row references anything imported from that file (through `relaxing(…)` and row factories like `cijferRow()` too) |
-| `src/services/math/*`, `src/services/layout/*`, `src/store/*`, `src/config/{appstructure,exerciseRegistry,exerciseUI,baseSettings*}`, `src/components/viewer/{FragmentableGrid,BlockWidthContext,ScaledBlock,BlockErrorBoundary,solutionStyle}`, `src/components/layout/PageSheet.tsx`, `src/App.tsx`, `src/index.css`, `src/assets/theme.css`, `src/hooks/useMeasuredHeights.ts` | **all leaves** — the shared visual surface |
+| `src/services/<family>/*.ts` | every typeId whose `REGISTRY` row references anything imported from that file (through `relaxing(…)` and row factories like `cijferRow()` too) — or from any services file that imports it at runtime, transitively (a helper such as `splitsen/dutchWords.ts` scopes to `splitsen`); plus the typeIds of every viewer that imports one of those files (`vergelijken/representations.ts` → `vergelijken`). `import type` edges are not followed: `constraintTypes.ts` type-imports helpers and would scope every row |
+| `src/services/math/*`, `src/services/layout/*`, `src/store/*`, `src/config/{appstructure,exerciseRegistry,exerciseUI,baseSettings*}`, `src/components/viewer/{FragmentableGrid,BlockWidthContext,ScaledBlock,BlockErrorBoundary,solutionStyle}`, `src/components/layout/PageSheet.tsx`, `src/App.tsx`, `src/components/sheet/*`, `src/hooks/useSheetZoom.ts`, `src/config/numberRanges.ts`, `src/index.css`, `src/assets/theme.css`, `src/hooks/useMeasuredHeights.ts` | **all leaves** — the shared visual surface |
 | anything else (tests, docs, scripts, config plugins, `public/`, `*.html`) | none: "no visual scope", exit 0 without starting a browser |
 
 A new leaf needs no rule: it arrives with a change to `appstructure.ts`, which is already
@@ -180,6 +355,12 @@ When the gate flags a change you meant to make: look at the contact sheet, then
 `npm run visual:baseline -- --files <the same files>` (or `--all`, which also drops rows for
 leaves that no longer exist), stage `scripts/visual-baseline.json`, commit again.
 
+Run the gate from a checkout with its **own** `node_modules`. In a scratch worktree whose
+`node_modules` is a junction to another folder, Vite answers 403 for files outside its root, and
+the walk flags ~81 cells (heights 10-150 px off, "Failed to load resource: 403") that are not
+there in the real folder (2026-09-28). `intrinsicPx` is recorded but never flagged, so it drifts
+until an `--all` refresh.
+
 ### Bypassing
 
 `SKIP_GATE=1 git commit …` skips everything, `SKIP_VISUAL=1` only the browser half, and
@@ -187,6 +368,19 @@ leaves that no longer exist), stage `scripts/visual-baseline.json`, commit again
 are caught by the Claude Code PreToolUse hook `.claude/hooks/commit-bypass-guard.ps1`, which
 answers `permissionDecision: "ask"` so a human has to approve the bypass in person. It reads
 the command string only, so it cannot see a bypass hidden in a script the command runs.
+
+### The breaker-flake repro (`scripts/gate-flake-repro.mjs`, `npm run gate:repro`)
+
+`npm run gate:repro -- --url http://localhost:<port>/ --runs 10` walks only the breuken leaves
+(veelhoek, kleuren, herkennen, hoeveelheid, lijnstuk; `--leaves a,b` / `--all` for others) with
+the visual gate's exact per-cell sequence (clear-and-wait, seed, add, width 4/2/1, solutions, settle,
+retry once on a breaker trip, element screenshot) and logs every `[layout]` warning with the cell and
+phase it fired in (`#retry`, `#shot`), the `measured()` snapshot taken inside the warn, and every
+`document.fonts` loading event interleaved (`timeline.md` + `runs.json` in `--out`, default
+`~/Downloads/gate-flake/repro/<stamp>/`). A cell counts as gate-flagged exactly as the gate would
+(breaker warning left in the row, or height off `visual-baseline.json`). `--no-shots` drops the
+screenshot step, `--prewarm` loads every FontFace first. Exit 1 on any trip, so "0 trips in 10 runs"
+is the proof a breaker fix holds. ~6-10 s per run without a server of its own (no `--url` starts one).
 
 ## The width matrix (`scripts/width-matrix.mjs`)
 
@@ -210,6 +404,9 @@ between runs — two matrices only diff at all because of this. It defaults to 1
 committed result JSONs record the seed they were taken at.
 
 Every registry type × width {4, 2, 1} × count {default, 1} = 354 cells, about 4 minutes.
+Each type is added through its first sidebar leaf the way the catalogue does (leaf label,
+`defaultConstraints`, `leafId`), so "default" is the count a teacher gets from that leaf
+(oppervlakte-rooster = 2, not the registry's 10); rows and the summary carry the `leafId`.
 Each row also carries `rowCount` (the number of `.print-row` elements, i.e. the rendered
 grid rows), which is where `perRowFull` and `rowUnits` come from — counted, not inferred
 from the height ratio.
@@ -231,7 +428,8 @@ against a production build.
 The vertical twin of the width matrix, and the answer to "the tail hint says the next block
 does not fit, but it visibly does". It places ten mixed blocks at mixed widths, lets the
 measure→pack→remeasure chain settle, waits out any breaker cooldown, forces one more
-measure pass, and then prints per cell:
+measure pass, and then prints per cell (each block is added through its typeId's first
+sidebar leaf, as the catalogue adds it, so a leaf's own `defaultCount` applies):
 
 | column | what it is |
 |---|---|
@@ -267,6 +465,12 @@ node scripts/height-audit.mjs --url http://localhost:5174/                    # 
 node scripts/height-audit.mjs --url http://localhost:5174/ --answer-space 28
 ```
 
+`--doc '<json>' | file.json` applies a `docSettings` patch first (through the DEV hook's
+`updateDocSettings`), e.g. the sheet fonts; add `--switch` to apply it only AFTER the ten blocks
+have measured, which is the teacher picking a font on a full sheet and the case where the old
+face's measurements could outlive it. Run both after anything that touches the font tokens or
+the measurement keys (see "Sheet fonts" under the font baseline below).
+
 ### Guarding a writing-space change with font:compare
 
 The recipe branch G used, and the one to reuse for any change to `--sheet-answer-h` or to a
@@ -285,6 +489,139 @@ anything else is a bug, not a normalisation. A commit that deliberately moves pi
 its flagged rows in the commit body. Known false positive: `even-oneven-rooster` and
 `even-oneven-cirkels` at width 2 flip tier between two runs of identical code (BUGS.md) —
 re-run before believing them.
+
+## The big-number audit (`scripts/bignum-audit.mjs`)
+
+Does every exercise still fit its cell at the top of its own max list? The 1e9 line grows the
+arithmetic and getalbegrip max pickers to 1 000 000 000, and a 13-character number is where
+fixed-px columns, centred labels and absolutely placed digits break — which jsdom (the
+ceiling smoke pass) cannot see. Not part of the pre-commit hook; run it after a viewer or
+generator change that touches big numbers or a max list.
+
+```bash
+npm run bignum:audit                                   # starts its own vite on --port (5194), kills it after
+npm run bignum:audit -- --url http://localhost:5173/   # or drive a running dev server
+npm run bignum:audit -- --only splitsen,plaatswaarde-tabel --seeds 1234   # leaf ids or typeIds
+npm run bignum:audit -- --defaults                     # same leaves at their defaults: triage "was it already so?"
+```
+
+Flags: `--seed n` / `--seeds a,b` (default `1234,7`), `--widths` (default `4,2,1`), `--out`
+(default `~/Downloads/bignum-audit/<timestamp>/`), `--no-stress`. ~4.5 min for the full run
+(~1050 cells); needs the DEV-only `window.__rekenraak` hook, so never a production build.
+
+The cell checks live in `scripts/lib/cellProbe.mjs` (shared with the full sweep).
+It reuses the visual gate's leaf walk (`scripts/lib/leafWalk.mjs`) through three opt-in hooks
+the gate never passes: `overrideFor(leaf, page)` turns one leaf into tagged cell variants,
+`probe(page, { key })` measures the settled cell, and `deselect` clears the selection in the
+same tick as the add — otherwise the Inspector mounts, and its max picker would floor a max
+outside the list it shows before the cell is measured (each row is checked for exactly that:
+kind `harness`). Per leaf whose type declares `maxPresets`: the max key set to the top of its
+list (`maxPresetsFor(typeId, c)`), plus the `STRESS` table in the script (hr + / −
+with 3 and 4 terms, × / : 'andere', gemengd all four ops (and 4 terms), cijferen 4 terms /
+schatting / rest, splitsen benen and plaatswaarden with both forms, afronden rooster 12 and
+three targets, vergelijken 2 decimals and kiezen setSize 6, plaatswaarde 3 decimals) ×
+widths × solutions × seeds. The min-width clamp stays ON: it measures what a teacher gets, so
+`w 1 → 4` in the report means the packer widened the block to full width and it still failed.
+
+A cell **fails** on any of:
+
+| kind | what |
+|---|---|
+| `hoverflow` | the sheet shows `.cell-hoverflow-warn` ("Dit blok is Npx te breed") |
+| `inner-scroll` | the `[data-scaled-inner]` scrollWidth exceeds its clientWidth by > 1px |
+| `outside` | any visible descendant of the inner (clipped by its clipping ancestors — an svg clips by default) extends > 1px outside the cell rect; catches centred fixed-px content and absolutely placed labels that scrollWidth misses. The report names the outermost offenders |
+| `text` | `undefined` / `NaN` in the cell text |
+| `console` / `error` | a `console.error`, page error or a thrown cell |
+| `boundary` | the error-boundary text (`ERROR_BOUNDARY_TEXT` in `visualCompare.mjs`) |
+| `harness` | the block does not hold the top max (see `deselect` above) |
+
+Overlapping text boxes inside one exercise (a grid item of a `.print-row`) are **reported,
+not failed**. Output: `result.json` (every cell), `report.md` (failing cells grouped by
+viewer, identical failures collapsed across requested widths and seeds), `contact-sheet.html`
++ `contact-sheet.png` (one card per group, with a screenshot of the cell plus whatever sticks
+out of it), and one PNG per failing or overlapping cell under `seed-<n>/`. Exit code 1 when
+any cell fails.
+
+## The full sweep (`scripts/full-sweep.mjs`)
+
+Every exercise type × every setting the generator matrix covers, rendered in a real browser.
+The matrix proves the generators survive every pairwise row of `constraintSpace.ts`; the sweep
+puts those same rows on the sheet and checks what a teacher would see. Not part of the
+pre-commit hook — run it before a release or after a change that touches many viewers.
+
+```bash
+npm run sweep                                              # starts its own vite on a free port (5330+)
+npm run sweep -- --url http://localhost:5173/
+npm run sweep -- --only splitsen,klok-kloklezen --seeds 1234   # typeIds or leaf ids
+npm run sweep -- --domain bewerkingen --out <dir>          # substrings of the domain label, comma-separated
+npm run sweep -- --chunk 2/4 --out <dir> --resume          # contiguous quarter of the settings
+npm run sweep -- --merge <dirA>,<dirB>,<dirC> --out <dir>  # one report over parallel runs
+npm run sweep -- --report --out <dir>                      # rebuild report + contact sheets only
+npm run sweep -- --review-png --out <dir>                  # + PNG strips per type under review/
+npm run sweep -- --review-png --review-kind leaf,max --out <dir>   # strips of the one-click settings only
+npm run sweep -- --print                                   # the print pass (below)
+```
+
+**Settings** per typeId: every sidebar leaf at its defaults (added exactly as a sidebar click
+adds it, `leafId` and instruction included), every pairwise row of `constraintSpaceFor(typeId)`
+over the registry defaults (the matrix's pass (c): the same `pairwise()` helper and cap, loaded
+in the page from `src/` through Vite, so the rows cannot drift), and every sidebar leaf at its
+defaults with the max key at the top of `maxPresetsFor()` for those settings, added as the
+sidebar adds it (per leaf, not per typeId: the 8 cijferen typeIds share one registry default,
+so a type-level max row drew additions for all of them; 62 max rows where there were 31). Each
+× widths {4, 2, 1} × solutions × seeds {1234, 7}. 1 937 settings → 23 244 cells (2026-09-27, before
+the per-leaf max rows added 31 settings); ~4 cells/s per process, so the whole run is split per
+domain into three parallel processes (`--domain bewerkingen` / `getallen,meetkunde,blad` /
+`meten en`) and merged — about an hour wall-clock (2026-09-27: Bewerkingen 11 700 cells in 57 min at
+3.4 cells/s, the other two in 24 and 7 min alongside). `--resume` skips every cell already in the out
+dir's `cells.jsonl`; a lost browser restarts the walk where it stopped.
+
+It reuses `scripts/lib/leafWalk.mjs` with four opt-ins no other harness passes (a variant with
+`replace: true` gets exactly its constraints instead of the leaf's merged under them;
+`skip(key)` for resume; `sidebarOpts`; a 1600 × 2600 `viewport`, so a block taller than a page
+still screenshots whole), `deselect` like bignum-audit, and the cell checks of
+`scripts/lib/cellProbe.mjs` (shared with bignum-audit). The min-width clamp stays ON.
+
+A cell **fails** on bignum-audit's kinds (`hoverflow`, `inner-scroll`, `outside`, `text`,
+`console` / `error`, `boundary`, `harness` for the max cells) plus:
+
+| kind | what |
+|---|---|
+| `page-overflow` | the page banner (`.page-sheet-warn`) with a block that is not taller than the page body (packer and paper disagree), or on a sidebar leaf at its defaults at full width (effective width 4: widening cannot help). A narrowed leaf or a pairwise row taller than a page is reported as `tall` instead |
+| `empty` | the block has no exercises and no generation note (furniture exempt) |
+
+**Reported, not failed:** `overlap` (text boxes overlapping inside one exercise), `note`
+(the generator relaxed or came up short — the Inspector's note), `empty-noted` (empty, but
+the note says why), `tall` (the block is taller than one page body; with a pairwise row that
+is usually a legitimate extreme).
+
+Output (`--out`, default `~/Downloads/full-sweep/<timestamp>/`): `cells.jsonl` (one line per
+cell), `result.json` (every cell with its verdict, per-type and per-kind totals), `report.md`
+(type → setting → failure, identical failures across widths/seeds collapsed, plus a table of
+the reported-only groups), `index.html` → `sheets/<typeId>.html` (one contact sheet per type:
+rows = setting × seed, columns = width × solutions, failing cells outlined red, reported
+amber, hover a cell for the details), `shots/<typeId>/<cell>-seed<n>.png` (every cell).
+`--review-png` also writes `review/<typeId>-NN.png`: solutions on, first seed, the three
+widths side by side, for a reviewer who reads images. Exit code 1 when any cell fails.
+
+**Print pass** (`--print`, `--per-domain n`, default 6): per domain one mixed sheet — every
+k-th leaf at its defaults plus the domain's first leaf with a max list at its top — packed by
+the real packer, then printed through Chromium (`emulateMedia print`, `page.pdf` A4, margins
+0, backgrounds). It checks PDF page count == screen `.page-sheet` count, the block order per
+page is the same under print media as on screen, no cell ends outside its page in print, and
+no console error; `print/<domain>.pdf`, `<domain>-screen.png` and `print.json` stay for a
+human look (the PDF pixels themselves are not compared).
+
+`--print-shots` adds, per printed sheet, one PNG per `.page-sheet` taken under print media
+(`<domain>-print-p<n>.png`, A4 794x1123), plus `print/contact-sheet.html` (thumbnails per
+domain, click = full size, ok/FAIL flags for page count, order, overflow and console errors) and
+`print/summary.json`, so a reviewer judges the pixels without opening PDFs. There is no PDF
+rasteriser in the repo (no pdfjs, no new dependency), so the print-emulated screenshot is the
+accepted proxy.
+
+What it cannot judge: whether the content is RIGHT (wrong answers, a solution drawn in the
+wrong box, odd wrapping that still fits, unreadably small text, Dutch wording). That needs the
+contact sheets, read by a person.
 
 ## Font baseline / compare (`scripts/font-baseline.mjs`, `scripts/font-compare.mjs`)
 
@@ -321,6 +658,83 @@ promote at), or a pixel diff (`pixelmatch` + `pngjs`, top 28px masked so the tit
 expected +4px never trips it) exceeds 0.5%. Writes `report.json` (every row),
 `report.md` (pixel-diff descending), and `contact-sheet.html` (before/after side by side,
 flagged rows only — a clean sweep should produce an almost-empty sheet).
+
+### Sheet fonts (`--doc`)
+
+`font-baseline.mjs --doc '<json>' | file.json` patches `docSettings` once before the walk
+(`window.__rekenraak.updateDocSettings`, then `document.fonts.ready`), so a whole run can be taken
+under another sheet face and diffed against a default run with the same seed. The WP C3 recipe
+(2026-10-28), with the widest text face and a mono face from the pickers in `fontOptions.ts`:
+
+```bash
+node scripts/font-baseline.mjs --url http://localhost:5319/ --out ~/Downloads/fonts/a                       # defaults
+node scripts/font-baseline.mjs --url http://localhost:5319/ --out ~/Downloads/fonts/b --doc verdana.json    # fontFamilyText/Header/Titel/HeaderVelden/Footer
+node scripts/font-baseline.mjs --url http://localhost:5319/ --out ~/Downloads/fonts/c --doc courier.json    # fontFamilyMath
+node scripts/font-compare.mjs --before ~/Downloads/fonts/a --after ~/Downloads/fonts/b --out ~/Downloads/fonts/ab
+```
+
+Here a flag is expected (pixels move): read it as a **reflow** (more rows, fewer columns, a
+narrower or wider tier) or a **clip** (ink outside the cell, text cut by an `overflow:hidden`
+box, a hoverflow / page banner the default run did not have, packer ≠ paper in the height
+audit). Run `--widths 1` too: the quarter column is where a face first wraps. The mono width
+estimates (`monoTextPx`, `MONO_ADVANCE_EM` 0.65) stay on Azeret on purpose: every offered mono
+face advances less (JetBrains Mono / Courier New 0.6, Consolas 0.55), so the estimate can only
+over-reserve. A face that advances more than 0.65 em would have to move that constant first.
+
+## Before/after review (limit campaign) (`scripts/trigger-shots.mjs`, `scripts/limits-diff.mjs`)
+
+After a batch of generator fixes the owner should only recheck what moved. Two tools, one
+recipe: `trigger:shots` shows the known-bug trigger cases as real sheet cells, `limits:diff`
+diffs two `npm run limits:audit` runs (exercise-level), and the existing `font:baseline` /
+`font:compare` catch visual collateral on every leaf.
+
+**`npm run trigger:shots`** renders each case of a case file as a cell, in exactly the
+font-baseline output shape, so `font:compare` diffs two runs unchanged.
+
+```bash
+npm run dev -- --port 5190 --strictPort                                  # own port, kill it afterwards
+node scripts/trigger-shots.mjs --url http://localhost:5190/ \
+     --cases scripts/limit-trigger-cases.json --out ~/Downloads/limit-fix-check/before
+# options: --widths 4,2  --solutions 0,1  --only L1,L3 (bugIds)  --timeout 60000 (ms per case)
+```
+
+Case file: `[{ bugId, leafId, typeId, constraints, grade: null|1..6, seed, note }]` (a small sample
+lives in `scripts/fixtures/limit-trigger-cases.sample.json`). Per case it opens a fresh page,
+seeds `Math.random`, sets the leerjaar via `getState().setSelectedGrade(grade)` (seeds base
+settings like picking a grade in the sidebar), adds the block through `leafWalk.mjs`
+(`addBlockFromType(typeId, label, {...leaf.defaultConstraints, ...constraints}, ...)`),
+deselects in the same tick (the Inspector's max picker would otherwise floor out-of-list
+values) and screenshots the cell. Cell keys are `<bugId>-<caseIdx>-w<w>-s<0|1>`; `caseIdx` is
+the position in the case file, so keep the file append-only between before and after. A case
+that hangs (timeout), throws, or names an unknown leaf becomes `error` rows in `index.json`;
+the run carries on, and `font:compare` flags those rows.
+
+**`npm run limits:diff`** compares two `limits:audit` output dirs (`summary.json`,
+`violations.json`, optional `dump/<typeId>.jsonl`):
+
+A full dump is ~1.3 GB, which overruns Node's default heap: run the script directly with a bigger
+heap (`npm run limits:diff` cannot pass the flag).
+
+```bash
+node --max-old-space-size=24000 scripts/limits-diff.mjs --before <audit-before> --after <audit-after> \
+     --out ~/Downloads/limit-fix-check/limits-diff --touched getallenas,omtrek --samples 3
+```
+
+`report.md` + a self-contained `report.html` list, in order: NEW violations (in after, not
+before; a `bugId` of null in red is a fix that introduced a fresh limit break), totals per rule
+and per bugId, then per typeId: combos identical / changed / only-before / only-after, hangs,
+throws and underfill deltas, violations by rule and known-bug hits, and sample before/after
+exercise pairs of changed combos. A typeId not listed in `--touched` whose dump changed is
+flagged COLLATERAL (an untouched generator must stay byte-identical).
+
+**Recipe**
+
+1. On the pre-fix rc: `limits:audit` into `before/audit`, `trigger:shots` into `before/shots`,
+   `font:baseline --out before/font` (same `--seed` later).
+2. Land the fixes, repeat all three into `after/...`.
+3. `limits:diff` (pass `--touched`), then `font:compare` twice (`shots` and `font`). Open
+   `report.html` and the two `contact-sheet.html` files; the flagged rows are the owner's
+   review list.
 
 ## The exercise catalogue (`scripts/catalogue.mjs`)
 
@@ -388,3 +802,178 @@ computed against a stale scroll position points off-screen and the drop silently
 There is no native drag-and-drop left in the app (`dist/assets/*.js` contains no
 `setDragImage`/`dataTransfer` of ours) — an extension that hooks `dragstart` used to hang
 the tab for a whole drag.
+
+## Oefenmodus end-to-end
+
+Three layers: the chain matrix (vitest, in the gate), the kiosk smoke (Playwright, a script,
+out of the gate) and the by-hand recipe (Playwright from a scratch folder) below them.
+
+### The chain matrix (`oefenen.e2e.matrix.test.ts`, in the gate, ~2 s)
+
+Every `KIOSK_LEAF_TABLE_V1` leaf × each `constraintSpace` option on its own (plus the leaf
+defaults) × seeds 1-3, through the pupil's whole chain without a browser: a builder row
+(`limit: 1`) → `buildSessie` → `encodeSessie` / `decodeSessie` (the pupil runs the decoded
+link) → `nextExercise` → the descriptor's answer → **enterable**: a typed answer must survive
+`sanitizeAnswer` with the descriptor's `keys` (so every character is on the keypad, within the
+field's `capOf`: 12 chars, 24 with a `/` key or for a word), a choice must be one of the buttons, tap / tap-multi / order must be reachable by
+tapping `interact.keys` parts, fill-cells via `rightCells` (each cell typeable and no longer
+than its `cellOf` length), build via a bounded change-making over the tray's `pieces`, drag by
+setting the handle(s) → `checkAnswer` (with the row's `exactForm`) takes it and refuses a
+wrong one (answer + 1, one teller more, a spoilt cell, one piece more, a handle off by one
+step) → `recordAnswer` → `summary` says 1 gemaakt / 1 juist / 100 %, and after the wrong one
+1 fout with a readable error row (no `undefined` / `NaN`, expected = `expectedText`, not empty).
+2026-10-09: 3 764 variants, 10 617 chains (number 4 713, fill-cells 3 138, multi-number 588,
+choice 528, order 402, tap-multi 360, tap 324, drag 210, time 166, build 111, missing-operand 42,
+text 30, number+rest 5).
+
+Not run, and counted in the summary line it logs: variants the builder cannot make
+(`reachable()`: a max outside the registry's `maxPresets` list for those settings, and the
+`UNREACHABLE` table: a pinned `numberType`, decimal getallenas steps on a natural leaf), rows
+`kioskSupports` refuses (the builder leaves them out), and rows the pre-flight `rowYields`
+flags dead (Delen stays off; `oefenen.zeroOutput.test.ts` owns those). `lengte-meten` and
+`omtrek` are in the leaf table but not in `listOefenLeaves()` (capable only off their
+defaults): pinned in `NOT_IN_BUILDER`, still run as a link would carry them.
+
+Reading a failure: one test per leaf; the assertion lists `<variant>: seed <n>: <what broke>`
+with the exercise JSON. "not typeable with keys [...]" = the keypad lacks a character (or the
+answer is over the field's cap); "checkAnswer refuses the entered answer" = what the card lets the pupil
+enter is not what the check wants (cell count, spelling); "takes the wrong answer" = the check is
+too loose; "unreadable error row" = Resultaten would show `undefined` / an empty Juist cell. A
+real bug gets a BUGS.md line and a `KNOWN_BREAKS` entry (`bugId`, leaf regex, message regex, one
+sample variant): the sweep skips matching breaks and a `test.fails` pin runs the sample, so the
+fix flips it (then drop the entry and the BUGS line in the fix commit). A variant no teacher can
+reach goes into `UNREACHABLE` with the reason. Pinned today: none (O25–O27 moved to the `FIXED`
+list, which keeps running their sample variants). `oefenen.kioskInstruction.test.ts` also bans
+"in woorden" in a kiosk header.
+
+### The kiosk smoke (`scripts/oefen-smoke.mjs`, `npm run oefen:smoke`, out of the gate)
+
+```bash
+node scripts/oefen-smoke.mjs --out ~/Downloads/oefen-check/smoke    # starts + kills its own Vite on a free port (scripts/lib/devServer.mjs)
+# --url http://localhost:5478/ uses a server you already run instead
+# options: --only number,drag (kinds)  --viewports 1280x800,1024x768  --seed 1234  --headed
+```
+
+One leaf per input kind (number `hr-std-optellen-nat`, number+rest `hr-std-delen-nat` met rest,
+time `klok-analoog-lezen`, choice `vergelijken-getallen`, tap `vergelijken-kiezen`, tap-multi
+`even-oneven-rooster`, order `getalbegrip-ordenen-nat`, fill-cells `cijferen-optellen-nat`,
+build `geld-tekenen`, drag `temperatuur-kleuren`) × 1280×800 and 1024×768, plus the 2026-10-28
+cases `breuken-herkennen-onecht` (answered as a gemengd getal through the three-field fraction input) /
+`breuken-kleuren-onecht` (tap-multi takes the first n parts when the answer is a count) /
+`breuken-vereenvoudigen-onecht` (answered mixed), `mab-herkennen-9999` / `mab-tekenen-9999` (nine cubes
+laid); `--seed-onecht` (default 4) picks a seed whose first draw is onecht. Per case: the link
+is made in-page through `listOefenLeaves` → `buildSessie` (one row, limit 1) → `encodeSessie`; a
+fresh context seeds `Math.random` (mulberry32, `--seed`) so two runs show the same exercises;
+Start; the expected answer is read in the page (`kioskFor(typeId).answerOf`, `kioskInteractOf`,
+`rightCells` for cijferen carries; same module instances as the kiosk); it is entered with real
+clicks: keypad keys (fields clicked first), choice buttons, `[data-kiosk-key]` parts on the
+card, each `input[data-kiosk-cell]` then the keypad, `[data-tray-key]` tiles, and a mouse drag
+that presses on the `[data-kiosk-handle]` and slides along it until the store holds the value.
+Then Controleer → `.kiosk-feedback-text` must start with "Juist" → the flash runs out and the
+run ends on the locked screen, whose `.kiosk-stats-total` must say "1 van 1 juist"; any console
+error fails the case.
+
+Output: `<out>/index.json` in the font-baseline shape (`rows[]` keyed
+`<leafId>-w<viewport width>-s<0|1>`: s0 = the whole kiosk with the answer entered, s1 = the
+Resultaten screen; `text`, `cellHeightPx`, `intrinsicPx`, `screenshot`, plus `kind` / `ok`), one
+PNG per row, and `<leafId>-w<w>-fail.png` for a failed case. `font:compare --before <run1>
+--after <run2>` diffs two runs (a clean pair: 0 flagged). Exit code 1 when a case fails; the
+console line says which step: "expected input kind X, the card asks Y" (the leaf's default
+changed: pick another leaf), "no keypad key for ','", "Controleer stays disabled" (the entered
+answer is incomplete), `feedback "Fout!"` (UI and check disagree), `Resultaten says …`, or
+"console: …". The 2026-10-09 run: 20 / 20 ok in 34 s (`~/Downloads/oefen-check/fix-h/`).
+
+### By hand (the 2026-10-08 K4 recipe)
+
+Run it after a kiosk / builder change, with a dev server (`npx vite --port <p> --strictPort`,
+kill it after) and scripts in a scratch folder (`~/Downloads/<task>-check/`), never in the repo:
+
+1. **Teacher** at 1440×900, fresh context: Overslaan → `getByRole('button', { name: /^Oefenmodus/ })`
+   → add leaves with `button[title="Toevoegen aan de sessie"]` (filter by exact text), change
+   settings in each row's `section[aria-label="<label>"]` (its real Config), the row's `Meer`
+   stepper (limits: ∞, 5, 10 …), `input[type=range][id^="w-"]` for the kans (willekeurig only),
+   timer `getByRole('button', { name: '5 min', exact: true })`, the two switches by aria-label.
+   Opslaan (no title → a `window.prompt`), then `Delen` (exact) → read
+   `a[href*="oefenen.html#oefen="]`; Kopieer link → `navigator.clipboard.readText()` (grant
+   clipboard permissions). Groot tonen → screenshot → Escape closes only that layer.
+   A5: stub `window.print` first (else the print layer unmounts), click Afdrukken (A5), then
+   `emulateMedia({ media: 'print' })` + `page.pdf({ preferCSSPageSize: true })` → one A5 page.
+2. **Pupil** in a new context per viewport — 844×390 (touch: tap the keypad keys / choices),
+   1280×800 (keyboard only: Start has focus → Enter; `keyboard.type` + Enter per field; a choice
+   = its key for `< = >`, else focus the radio + Space, Tab to Controleer + Enter), 390×844.
+   The right answer comes from the page itself: `await import('/src/oefenen/useOefenStore.ts')`
+   and `/src/services/oefenen/kiosk.ts` inside `page.evaluate` resolve to the SAME module
+   instances the kiosk runs, so `kioskFor(typeId).answerOf(shown.exercise, shown.constraints)`
+   is the expected answer. Mix right and wrong, check `.kiosk-feedback-text`, open Resultaten
+   mid-run, finish, compare `.kiosk-errors` rows with the wrong answers, reload (stays locked),
+   Opnieuw, Resultaten → Wissen → Ja → start screen and no `rekenraak_oefen_*` key left.
+3. **Variants**: build variant links in-page through `session.ts` (`decodeSessie` the teacher's
+   link, patch `testMode` / `statsLocked` / `timerMin` / drop the limits, `sessieLink`); the timer
+   with `page.clock.install()` + `clock.runFor()`; broken links (a changed char, truncated,
+   `packWire([2, …])`, an unknown leaf) must land on the ErrorScreen; library: Mijn bladen ›
+   Oefensessies › Delen and › Bewerken → Delen give the same link as the builder.
+4. **Sweep**: one session with every `kioskCapableLeaves()` leaf at its defaults (limit 1,
+   afwisselen) answered right through the UI at 844×390 / 1024×768 / 390×844 — every card must
+   say Juist!, no element scrolls horizontally, no `.kiosk-card-fallback`; review the cards as
+   contact sheets.
+5. **Phase C + kansen** (844×390 touch): for a tap leaf (`even-oneven-rooster`, `breuken-kleuren`) tap the
+   `[data-kiosk-key]` parts (the right keys via `kioskInteractOf(d, c).answerOf` in `page.evaluate`), for an
+   order leaf (`getalbegrip-ordenen-nat`) tap in order and look for `data-kiosk-order`, for a fill-cells leaf
+   (`cijferen-optellen-nat`, `splitsen-basis`) press keypad digits (the first cell is active, a full cell
+   hands on) and Enter after the last cell; every tap part and `input[data-kiosk-cell]` must measure ≥ 40 px
+   (`boundingBox`). Build a session with `attempts: 2`: a wrong answer shows "Fout — probeer nog eens",
+   the card says "Kans 2 van 2" and the same exercise is back; a 2nd wrong shows Fout, a right one Juist and
+   stats list it under "Juist na 2e kans". The flash goes on by itself (no Volgende); a tap or Enter skips it.
+6. `npm run visual:gate -- --all` stays at 0 flagged (the kiosk never changes the sheet).
+
+## Bordmodus by hand (Playwright recipe)
+
+The board has no `window.__rekenraak` hook of its own; drive it through the UI against a dev
+server (`npm run dev -- --port <p>`, kill it afterwards). Viewport 1920 × 1080 (the bottom bar
+clips at 1280, BUGS.md "Bordmodus"). Real `mouse.move/down/up` for every drag (widget title
+bar, resize grip, clock hands, geld palette) — the board runs on pointer events.
+
+1. **Enter** — either `page.goto('/bord.html')` (boots straight in, no welcome modal) or
+   `/` → the sidebar-foot button `within(aside).getByRole('button', { name: /Bordmodus/ })`. The overlay is `[data-whiteboard]`; the page is `[data-board-canvas]`.
+2. **Add widgets** — `getByLabel('Toevoegen aan bord')` → "RekenRaak blok…" opens the add
+   panel: type in `Zoeken…` (e.g. "klok"), click a variant → one exercise card. Klasmanagement /
+   Organisatie / Wiskunde-gereedschap add tool cards; add six or more and check they land on
+   different spots.
+3. **Inspector** — click a card's title bar to select it, then `getByLabel('Widget-instellingen')`
+   (⚙). An exercise card shows Aantal / Witruimte / Tekstgrootte, the type's Config,
+   "Differentiatie" (StyleConfig) and "Geavanceerd" where the family has one. Move the Aantal
+   slider: the card changes at once.
+4. **Note** — pick impossible settings (e.g. a bridge rule the max cannot satisfy) and press
+   "Genereer nieuwe oefeningen": `[data-generation-note]` appears in the inspector, same box as
+   the sheet Inspector.
+5. **Reload** — wait > 1.5 s (debounced autosave), `page.reload()`: the same pages, cards and
+   ink come back (`localStorage.rekenraak_board_autosave_v1`).
+6. **Verlaten** — `getByRole('button', { name: 'Bordmodus verlaten' })`: from `/` it shows the
+   editor with the sheet unchanged; from `/bord.html` it navigates to `/`.
+7. **Print = sheet only** — with the board open, `page.emulateMedia({ media: 'print' })` (or
+   `page.pdf()`): `[data-whiteboard]` is `display: none` (`.no-print`) and the worksheet's
+   `.page-sheet`s are what print.
+8. **Lijn / vormen** — press `L` (or the "Lijn / pijl" button), drag on `[data-board-canvas]`
+   with `mouse.down/move/up`: a `[data-ink-preview]` follows while dragging, one stroke lands on
+   release; hold Shift (`keyboard.down('Shift')`) mid-drag to see the 45° snap; Escape mid-drag
+   drops it. In the settings strip pick an arrow / dashed, then `V` for vormen: rect, ellipse,
+   triangle, soft fill, Shift = square / circle / equilateral. Ctrl+Z / Ctrl+Y walk them back
+   and forth (the sheet underneath does not change).
+9. **Meetinstrumenten** — `getByLabel('Meetinstrumenten')` → toggle Lat, Geodriehoek, Passer
+   (`g[data-instrument="lat"]` …). Drag a body (`[data-instrument-grip="body"]`) near a line end
+   or, with Uitlijnen on, a grid point: `[data-snap-dot]` shows and it jumps there. Turn with the
+   round handle: the readout pill shows degrees, it clicks onto 45°. With the pen, start a drag
+   on the lat's measuring edge and wobble: one straight stroke with a cm readout. From the
+   geodriehoek's centre: a ray with a degree readout. Passer: drag the pencil leg to open it
+   (cm readout), then the pencil tip round the needle: an arc, a full turn = a circle. Open the
+   ⚙ next to a placed instrument (Vastklikken), switch the master off and drag again: no snap.
+   "Pagina leegmaken" keeps the instruments; reload keeps them (format v2 autosave).
+10. **Widget settings** — on any card ⚙ (`getByLabel('Widget-instellingen')`): the kind's own
+    sections, then "Kaart" (Titel, Titelbalk tonen, Tekstgrootte, Accentkleur) and
+    "Standaard". Turn Titelbalk off: hovering the card shows the `[data-widget-pill]` with ⚙ /
+    duplicate / delete. "Bewaar als mijn standaard", then add the same tool again: it starts
+    from the saved look; "Standaard herstellen" asks once. Screenshot each panel at 1920 × 1080
+    (the flyout is 340 px wide; nothing should wrap into slivers). The geld dock has its own ⚙.
+11. **Achtergrond** — the paint-roller button opens the tile picker: every pattern, three
+    sizes, Licht / Donker as live previews; a click applies at once and the popover stays
+    open; arrows + Enter work from the focused tile; Escape closes.

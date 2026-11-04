@@ -1,5 +1,6 @@
 import type { FractionExercise, FractionSubType, FractionShape, MathBlock } from '../math/types';
 import type { FractionConstraints } from '../math/constraintTypes';
+import { trueSizeBudgetCm } from '../layout/trueSize';
 
 function getGridLayout(denominator: number): { rows: number; cols: number } {
     const layouts: Record<number, [number, number]> = {
@@ -31,7 +32,7 @@ function randInt(min: number, max: number) {
 }
 
 function makeShapeExercise(subType: FractionSubType, block: MathBlock): FractionExercise {
-    const { shape = 'rectangle', shapes, minDenominator = 2, maxDenominator = 8 } = block.constraints as FractionConstraints;
+    const { shape = 'rectangle', shapes, minDenominator = 2, maxDenominator = 8, allowImproper } = block.constraints as FractionConstraints;
     // Teacher may enable several shapes; pick one per exercise (back-compat: fall back to single `shape`).
     const shapeOptions: FractionShape[] = Array.isArray(shapes) && shapes.length ? shapes : [shape as FractionShape];
     const chosenShape = shapeOptions[randInt(0, shapeOptions.length - 1)];
@@ -40,17 +41,25 @@ function makeShapeExercise(subType: FractionSubType, block: MathBlock): Fraction
     // that silently substituted 4 for ranges like 7-7 or 13-16 — outside the range.)
     const lo = Math.max(2, minDenominator), hi = Math.max(lo, maxDenominator);
     const denominator = randInt(lo, hi);
-    const numerator = randInt(1, denominator - 1);
+    // "Ook onechte breuken": half the draws take a teller d+1..2d-1 (never d/d), drawn over two wholes.
+    // Off short-circuits before Math.random, so seeded sheets stay byte-identical.
+    const numerator = allowImproper === true && Math.random() < 0.5
+        ? randInt(denominator + 1, 2 * denominator - 1) : randInt(1, denominator - 1);
     // Square = single row of `denominator` vertical strips; rectangle uses the per-denominator grid.
     const { rows, cols } = chosenShape === 'square' ? { rows: 1, cols: denominator } : getGridLayout(denominator);
-    const coloredIndices = shuffle(Array.from({ length: denominator }, (_, i) => i))
-        .slice(0, numerator).sort((a, b) => a - b);
+    // An improper breuk fills the first whole and scatters the rest over the second, as a proper one does.
+    const wholes = Math.ceil(numerator / denominator);
+    const rest = numerator - (wholes - 1) * denominator;
+    const full = Array.from({ length: (wholes - 1) * denominator }, (_, i) => i);
+    const coloredIndices = [...full, ...shuffle(Array.from({ length: denominator }, (_, i) => full.length + i))
+        .slice(0, rest).sort((a, b) => a - b)];
     return {
         id: Math.random().toString(36).substring(2, 9),
         subType,
         numerator, denominator,
         shape: chosenShape,
         coloredIndices, gridRows: rows, gridCols: cols,
+        ...(wholes > 1 && { wholes }),
         isManuallyEdited: false,
     };
 }
@@ -60,7 +69,9 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
     // Total = denominator × multiplier must stay ≤ maxTotal, so the denominator can't
     // exceed maxTotal and the multiplier is bounded (was forced ≥2 → total up to 2×den
     // overshot maxTotal when maxTotal < 2×denominator).
-    const lo = Math.max(2, minDenominator);
+    // maxTotal under the minimum denominator: pull lo down so the total stays ≤ maxTotal
+    // (a denominator < 2 has no proper fraction, hence the floor of 2).
+    const lo = Math.min(Math.max(2, minDenominator), Math.max(2, maxTotal));
     const hi = Math.max(lo, Math.min(maxDenominator, maxTotal));
     const denominator = randInt(lo, hi);
     const numerator = randInt(1, denominator - 1);
@@ -76,12 +87,22 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
     };
 }
 
+// The lijnstuk prints at true size (owner 2026-10-10), so its length is capped to the whole cm
+// its column holds. SYNC: FractionViewer columnWidth (the cell less 16 px).
+// Its instruction and calc rows measure 164 px of min-content (2026-10-10), over a quarter's 151,
+// so the packer prints a quarter-width lijnstuk at a half: that is the column it gets.
+const LIJNSTUK_RESERVE_PX = 16, LIJNSTUK_MIN_TIER = 2;
+const lijnstukCapCm = (block: MathBlock) => Math.max(1, Math.floor(trueSizeBudgetCm(block, LIJNSTUK_RESERVE_PX, LIJNSTUK_MIN_TIER)));
+
 function makeLijnstukExercise(block: MathBlock): FractionExercise {
     const { minDenominator = 2, maxDenominator = 6, minLineLength = 1, maxLineLength = 15 } = block.constraints as FractionConstraints;
-    // Swap-safe length window; line = denominator × multiplier keeps each of the
-    // `denominator` segments a whole number of cm.
-    const loLen = Math.max(1, Math.min(minLineLength, maxLineLength));
-    const hiLen = Math.max(loLen, maxLineLength);
+    // Swap-safe length window under the column's cap; line = denominator × multiplier keeps
+    // each of the `denominator` segments a whole number of cm.
+    const cap = lijnstukCapCm(block);
+    const minLen = Math.max(1, Math.min(minLineLength, maxLineLength));
+    // A minimum the column cannot hold gives way entirely: any whole-cm multiple under the cap.
+    const loLen = minLen > cap ? 1 : minLen;
+    const hiLen = Math.max(loLen, Math.min(maxLineLength, cap));
     // Only pick denominators that fit at least once within the max length (mult=1 → length=d ≤ hiLen);
     // otherwise a line of d cm would already blow the ceiling.
     const denChoices: number[] = [];
@@ -164,15 +185,36 @@ function makeAbstractExercise(block: MathBlock): FractionExercise {
     };
 }
 
+export function generateFractionExercisesNoted(block: MathBlock): { items: FractionExercise[]; note: string | null } {
+    const c = block.constraints as FractionConstraints;
+    const amount = c.subType === 'hoeveelheid' || c.subType === 'hoeveelheid-rechthoek';
+    let note = amount && Math.max(2, c.minDenominator ?? 2) > (c.maxTotal ?? 20)
+        ? 'Het totaal is kleiner dan de minimale noemer: er wordt een kleinere noemer gebruikt.' : null;
+    if (c.subType === 'lijnstuk' && Math.max(1, c.maxLineLength ?? 15) > lijnstukCapCm(block)) {
+        note = `Op ware grootte past in deze kolom een lijnstuk van hoogstens ${lijnstukCapCm(block)} cm: de lijnstukken zijn daarop afgestemd.`;
+    }
+    return { items: generateFractionExercises(block), note };
+}
+
+const SHAPE_RETRIES = 40;
+
 export function generateFractionExercises(block: MathBlock): FractionExercise[] {
     const subType = ((block.constraints as FractionConstraints).subType || 'kleuren') as FractionSubType;
     const count = block.numberOfExercises || 6;
+    // kleuren / herkennen: each breuk once while the range has fresh ones (the default repeated 7/8).
+    const seen = new Set<string>();
+    const freshShape = (st: FractionSubType): FractionExercise => {
+        let ex = makeShapeExercise(st, block);
+        for (let t = 0; t < SHAPE_RETRIES && seen.has(`${ex.numerator}/${ex.denominator}`); t++) ex = makeShapeExercise(st, block);
+        seen.add(`${ex.numerator}/${ex.denominator}`);
+        return ex;
+    };
 
     return Array.from({ length: count }, (): FractionExercise => {
         switch (subType) {
             case 'kleuren':
             case 'herkennen':
-                return makeShapeExercise(subType, block);
+                return freshShape(subType);
             case 'hoeveelheid':
             case 'hoeveelheid-rechthoek':
                 return makeAmountExercise(subType, block);

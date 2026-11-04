@@ -1,3 +1,5 @@
+import { sharedPluginStyles as styles } from './sharedPluginStyles';
+
 interface Props {
     label?: string;
     numerator: number;
@@ -6,21 +8,28 @@ interface Props {
     onDenominator: (v: number) => void;
 }
 
-// Canonical fraction getalopbouw control: a teller input over a bar over a noemer
-// input (same visual as the addition "Breuk 1" widget). Use everywhere a fraction's
-// max teller/noemer is configured.
+// The highest teller over a bar over the highest noemer: kept where the picture itself helps
+// (gemengd getal ↔ breuk, where the cap is an onechte breuk). The words sit beside the inputs,
+// a title tooltip is not a label (UI-GUIDE rule 5).
 export default function FractionMaxField({ label, numerator, denominator, onNumerator, onDenominator }: Props) {
     return (
         <div style={colStyle}>
-            {label && <label style={labelStyle}>{label}</label>}
-            <input type="number" min="1" value={numerator} onChange={(e) => onNumerator(Math.max(1, Number(e.target.value)))} style={inputStyle} title="Max. teller" />
+            {label && <span style={labelStyle}>{label}</span>}
+            <div style={rowStyle}>
+                <input type="number" min="1" value={numerator} aria-label="Hoogste teller" onChange={(e) => onNumerator(Math.max(1, Number(e.target.value)))} style={inputStyle} />
+                <span style={styles.miniLabel}>teller</span>
+            </div>
             <hr style={lineStyle} />
-            <input type="number" min="2" value={denominator} onChange={(e) => onDenominator(Math.max(2, Number(e.target.value)))} style={inputStyle} title="Max. noemer" />
+            <div style={rowStyle}>
+                <input type="number" min="2" value={denominator} aria-label="Hoogste noemer" onChange={(e) => onDenominator(Math.max(2, Number(e.target.value)))} style={inputStyle} />
+                <span style={styles.miniLabel}>noemer</span>
+            </div>
         </div>
     );
 }
 
-const colStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '70px' };
-const labelStyle: React.CSSProperties = { fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 0', textAlign: 'center', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', outline: 'none', fontSize: '14px', fontWeight: 'bold' };
-const lineStyle: React.CSSProperties = { width: '100%', border: 'none', borderBottom: '2px solid var(--text-muted)', margin: '8px 0' };
+const colStyle: React.CSSProperties = { display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' };
+const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' };
+const labelStyle: React.CSSProperties = { ...styles.miniLabel, marginBottom: 'var(--sp-1)' };
+const inputStyle: React.CSSProperties = { width: '70px', padding: '8px 0', textAlign: 'center', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', ...styles.numInput };
+const lineStyle: React.CSSProperties = { width: '70px', margin: 'var(--sp-2) 0', border: 'none', borderBottom: '2px solid var(--text-muted)' };

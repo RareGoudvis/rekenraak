@@ -1,17 +1,21 @@
 import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
+import { LEAF_BY_ID } from '../../config/appstructure';
+import { seedConstraints, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
+import type { Leerjaar } from '../../config/gradePresets';
 
-// SYNC: mirrors `addBlockFromType` in src/store/useWorksheetStore.tsx (the block literal
-// plus the registry-defaults → base-snapshot → leaf-override merge order). Reimplemented
-// rather than imported because the store is React/zustand and these suites run in node.
-// If the store's block literal changes, change it here too.
+// SYNC: mirrors the block literal of `addBlockFromType` (src/store/slices/blocksSlice.ts);
+// the constraints come from the same seedConstraints(). Reimplemented rather than imported
+// because the store is React/zustand and these suites run in node.
 
 export interface MakeBlockOptions {
     /** Leaf `defaultConstraints` from APP_STRUCTURE, or an ad-hoc constraint override. */
     constraints?: Record<string, unknown>;
     /** Global base difficulty to snapshot in (defaults to DEFAULT_BASE). */
     base?: BaseSettings;
+    /** Picked leerjaar + the leaf it came from, for leaves whose pinned max yields to it. */
+    grade?: Leerjaar | null;
+    leafId?: string;
     /** Overrides for the block's own fields (count, layoutPreset, widthUnits, …). */
     block?: Partial<MathBlock>;
     /** Deterministic id instead of a random one, so failures name the block. */
@@ -22,8 +26,7 @@ let seq = 0;
 
 export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBlock {
     const def = REGISTRY[typeId];
-    const registryDefaults = def ? def.defaultConstraints(typeId) : {};
-    const baseSnapshot = def ? baseApply(opts.base ?? DEFAULT_BASE, registryDefaults) : {};
+    const base = opts.base ?? DEFAULT_BASE;
 
     return {
         id: opts.id ?? `t${(seq += 1).toString(36)}`,
@@ -32,10 +35,10 @@ export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBloc
         instructionMode: 'geen',
         layoutPreset: 'inline-short',
         steppedLines: 3,
-        numberOfExercises: def ? def.defaultCount : 10,
+        numberOfExercises: (opts.leafId ? LEAF_BY_ID[opts.leafId]?.defaultCount : undefined) ?? (def ? def.defaultCount : 10),
         totalPoints: 5,
         verticalSpacing: 18,
-        constraints: { ...registryDefaults, ...baseSnapshot, ...(opts.constraints ?? {}) },
+        constraints: seedConstraints({ typeId, base, override: opts.constraints, grade: opts.grade, leafId: opts.leafId }),
         exercises: [],
         ...(opts.block ?? {}),
     } as MathBlock;
@@ -49,4 +52,4 @@ export function generateFor(block: MathBlock): unknown[] {
 }
 
 /** typeIds that carry no generator — sheet furniture drawn purely from constraints. */
-export const isLayoutType = (typeId: string) => typeId.startsWith('layout-');
+export const isLayoutType = (typeId: string) => !!REGISTRY[typeId]?.isFurniture;

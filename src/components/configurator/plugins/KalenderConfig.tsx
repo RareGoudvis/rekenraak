@@ -48,7 +48,7 @@ export default function KalenderConfig({ block }: Props) {
                         <SettingLabel text="Vraagtypes:" info="Welke soorten vragen onder het rooster staan." />
                         <div style={styles.buttonGroup}>
                             {QUESTION_TYPES.map(q => (
-                                <button key={q.key} onClick={() => toggleQ(q.key)} style={styles.pill(questionTypes.includes(q.key))}>{q.label}</button>
+                                <button key={q.key} onClick={() => toggleQ(q.key)} aria-pressed={questionTypes.includes(q.key)} style={styles.pill(questionTypes.includes(q.key))}>{q.label}</button>
                             ))}
                         </div>
                     </div>

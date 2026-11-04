@@ -4,19 +4,26 @@ import type { DocSettings } from '../store/useWorksheetStore';
 import type { BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import { REGISTRY } from '../config/exerciseRegistry';
+import type { OefenSessie } from './oefenen/types';
+import { MAX_TITLE, newSessieId } from './oefenen/session';
 
 // Bump this when the JSON schema gains/loses required fields so older files
 // fail loudly instead of half-loading. Keep the parser strict on read.
 // v2 added optional baseSettings + curriculum (both back-compat: absent → defaults).
 // v3 moved the page grid from 6 to 4 column units, which re-uses the same numbers for
 // different widths — hence a version-gated migration, never a value-based one.
-export const WORKSHEET_FORMAT_VERSION = 3;
+// v4 changed the base's default decimals from 2 to 0 (kommagetallen are leerjaar 4+).
+export const WORKSHEET_FORMAT_VERSION = 4;
 
 const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
 const PRESETS_KEY = 'rekenraak_presets_v1';
 export const RELEASE_SEEN_KEY = 'rekenraak_release_seen_v1';
+// Returning-teacher upgrade modal: written on close/CTA, holds the RELEASE_VERSION it was seen for.
+export const UPGRADE_SEEN_KEY = 'rekenraak_upgrade_seen_v1';
 export const TRYOUT_SEEN_KEY = 'rekenraak_tryout_seen_v1';
 export const MAX_PRESETS = 50;
+const OEFEN_SESSIES_KEY = 'rekenraak_oefen_sessies_v1';
+export const MAX_OEFEN_SESSIES = 50;
 // Measured against the LZ-compressed, URL-safe payload (not raw JSON). 30 KB of
 // such text stays under mainstream browser URL limits incl. mobile, and — since
 // worksheet JSON compresses ~8× — covers ~100+ blocks before this backstop trips.
@@ -76,6 +83,9 @@ export interface SerialisableState {
 export interface AutosaveRecord {
     savedAt: string;
     payload: WorksheetFile;
+    // The Mijn bladen entry this sheet was opened from, so "Bewaren" after a reload still
+    // updates that entry instead of asking for a name and making a copy.
+    presetId?: string;
 }
 
 export interface Preset {
@@ -94,7 +104,12 @@ const V2_TO_V3_WIDTH: Record<number, 1 | 2 | 4> = { 6: 4, 3: 2, 2: 2 };
 
 /** Bring an older worksheet file up to the current format. Pure; safe to call twice. */
 export function migrateWorksheetFile(file: WorksheetFile): WorksheetFile {
-    if (file.version >= 3) return file;
+    if (file.version >= WORKSHEET_FORMAT_VERSION) return file;
+    const v3 = file.version >= 3 ? file : migrateGridToV3(file);
+    return { ...v3, version: 4, baseSettings: baseDecimalsToV4(v3) };
+}
+
+function migrateGridToV3(file: WorksheetFile): WorksheetFile {
     const blocks = (file.blocks ?? []).map(b => {
         const w = b.widthUnits as number | undefined;
         if (w === undefined) return b;
@@ -103,6 +118,17 @@ export function migrateWorksheetFile(file: WorksheetFile): WorksheetFile {
         return { ...b, widthUnits: mapped ?? 4 };
     });
     return { ...file, version: 3, blocks };
+}
+
+// A v3 base holding 2 decimals with a non-decimal number type and no leerjaar 4-6 got them from
+// the old default (or a leerjaar 4-6 pick that "Alle leerjaren" never undid): whole numbers now.
+// A decimal base (its Decimalen picker is the only place a teacher sets them) or a leerjaar 4-6
+// sheet keeps its value; so does any 1 or 3, which no default ever wrote. Blocks are untouched.
+function baseDecimalsToV4(file: WorksheetFile): BaseSettings | undefined {
+    const base = file.baseSettings;
+    if (!base || base.baseDecimalPlaces !== 2 || base.baseNumberType === 'decimal') return base;
+    if (file.selectedGrade != null && file.selectedGrade >= 4) return base;
+    return { ...base, baseDecimalPlaces: 0 };
 }
 
 // Filesystem-safe slug from the worksheet title; falls back to 'naamloos'.
@@ -179,6 +205,58 @@ export function exportWorksheet(state: SerialisableState): void {
     downloadJson(`werkbundel-${safeSlug(state.header.titel)}-${todayStamp()}${WORKSHEET_FILE_EXT}`, JSON.stringify(buildPayload(state), null, 2));
 }
 
+// ── Save back to the same file (File System Access API, Chromium only) ─────────
+
+// Only what saving and reopening touch, so tests can hand over a plain object.
+export type WorksheetFileHandle = Pick<FileSystemFileHandle, 'name' | 'getFile' | 'createWritable'>;
+
+// lib.dom has the handle types but not the window pickers (not yet a standard).
+type PickerWindow = Window & {
+    showOpenFilePicker?: (options: object) => Promise<WorksheetFileHandle[]>;
+    showSaveFilePicker?: (options: object) => Promise<WorksheetFileHandle>;
+};
+const pickerWindow = (): PickerWindow | undefined => (typeof window === 'undefined' ? undefined : window as PickerWindow);
+
+const PICKER_TYPES = [{ description: 'RekenRaak-werkblad', accept: { 'application/json': [WORKSHEET_FILE_EXT, '.json'] } }];
+
+// Firefox and Safari have no pickers: they keep the <input type=file> + download route.
+export function hasFilePickers(): boolean {
+    const w = pickerWindow();
+    return typeof w?.showOpenFilePicker === 'function' && typeof w?.showSaveFilePicker === 'function';
+}
+
+// The user cancelling a picker rejects with AbortError; that is a choice, not a failure.
+export function isPickerAbort(error: unknown): boolean {
+    return (error as { name?: string } | null)?.name === 'AbortError';
+}
+
+/** null = no picker API in this browser. Throws on an invalid file, before the handle is kept. */
+export async function openWorksheetFromPicker(): Promise<{ file: WorksheetFile; handle: WorksheetFileHandle } | null> {
+    const picker = pickerWindow()?.showOpenFilePicker;
+    if (!picker) return null;
+    const [handle] = await picker({ multiple: false, types: PICKER_TYPES });
+    const file = await handle.getFile();
+    return { file: parseWorksheetFile(await file.text()), handle };
+}
+
+// With a handle: write back into that file. Without one: ask where (save picker), or fall
+// back to today's download when the browser has no picker. handle = what to reuse next time.
+export async function saveWorksheetToFile(state: SerialisableState, handle?: WorksheetFileHandle | null): Promise<{ handle: WorksheetFileHandle | null; downloaded: boolean }> {
+    let target = handle ?? null;
+    if (!target) {
+        const picker = pickerWindow()?.showSaveFilePicker;
+        if (!picker) {
+            exportWorksheet(state);
+            return { handle: null, downloaded: true };
+        }
+        target = await picker({ suggestedName: `werkbundel-${safeSlug(state.header.titel)}${WORKSHEET_FILE_EXT}`, types: PICKER_TYPES });
+    }
+    const writable = await target.createWritable();
+    await writable.write(JSON.stringify(buildPayload(state), null, 2));
+    await writable.close();
+    return { handle: target, downloaded: false };
+}
+
 // Export an already-built WorksheetFile (e.g. a saved-sheet payload from the library)
 // without a lossy rebuild through SerialisableState.
 export function exportWorksheetFile(file: WorksheetFile, title: string): void {
@@ -194,7 +272,8 @@ export function parseWorksheetFile(json: string): WorksheetFile {
     }
     if (!parsed || typeof parsed !== 'object') throw new Error('Bestand heeft geen geldig formaat.');
     const obj = parsed as Record<string, unknown>;
-    if (typeof obj.version !== 'number') throw new Error('Versie-veld ontbreekt of is ongeldig.');
+    // A fractional, negative or NaN-ish version would slip past the `>` gate and the migration.
+    if (typeof obj.version !== 'number' || !Number.isSafeInteger(obj.version) || obj.version < 1) throw new Error('Versie-veld ontbreekt of is ongeldig.');
     if (obj.version > WORKSHEET_FORMAT_VERSION) {
         throw new Error(`Bestand komt uit een nieuwere versie (v${obj.version}). Werk de app bij om dit te openen.`);
     }
@@ -216,9 +295,9 @@ export function parseWorksheetFile(json: string): WorksheetFile {
 
 /** Returns false when the write failed (quota full, storage unavailable) so the top bar
     can say so instead of showing a green "bewaard" dot over a sheet that was never saved. */
-export function saveAutosave(state: SerialisableState, curriculum?: CurriculumLock | null): boolean {
+export function saveAutosave(state: SerialisableState, curriculum?: CurriculumLock | null, presetId?: string | null): boolean {
     try {
-        const record: AutosaveRecord = { savedAt: new Date().toISOString(), payload: buildPayload(state, 'full', curriculum ?? undefined) };
+        const record: AutosaveRecord = { savedAt: new Date().toISOString(), payload: buildPayload(state, 'full', curriculum ?? undefined), ...(presetId ? { presetId } : {}) };
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(record));
         return true;
     } catch { return false; }
@@ -231,7 +310,8 @@ export function loadAutosave(): AutosaveRecord | null {
         const parsed = JSON.parse(raw) as AutosaveRecord;
         // Sanity check — bail if the embedded payload is unreadable.
         if (!parsed?.payload || !Array.isArray(parsed.payload.blocks)) return null;
-        return { ...parsed, payload: migrateWorksheetFile(parsed.payload) };
+        const presetId = typeof parsed.presetId === 'string' ? parsed.presetId : undefined;
+        return { savedAt: parsed.savedAt, payload: migrateWorksheetFile(parsed.payload), ...(presetId ? { presetId } : {}) };
     } catch { return null; }
 }
 
@@ -253,11 +333,14 @@ export function loadPresets(): Preset[] {
     } catch { return []; }
 }
 
-function persistPresets(list: Preset[]): void {
-    try { localStorage.setItem(PRESETS_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+// False when the browser refused the write (quota full): the caller must say so, because
+// the next loadPresets() re-reads storage and the entry would silently not be there.
+function persistPresets(list: Preset[]): boolean {
+    try { localStorage.setItem(PRESETS_KEY, JSON.stringify(list)); return true; } catch { return false; }
 }
 
-export function savePreset(name: string, state: SerialisableState): Preset {
+/** null = the write was refused (storage full). */
+export function savePreset(name: string, state: SerialisableState): Preset | null {
     const list = loadPresets();
     const trimmed = (name || '').trim() || (state.header.titel || 'Naamloos').trim() || 'Naamloos';
     const entry: Preset = {
@@ -270,8 +353,20 @@ export function savePreset(name: string, state: SerialisableState): Preset {
     const next = [...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt));
     // Drop oldest when exceeding the cap so the most recent 20 survive.
     const trimmedList = next.slice(-MAX_PRESETS);
-    persistPresets(trimmedList);
-    return entry;
+    return persistPresets(trimmedList) ? entry : null;
+}
+
+export type UpdatePresetResult = 'ok' | 'missing' | 'failed';
+
+// Overwrite an existing entry with the current sheet, keeping its id and name: what
+// "Bewaren" means for a sheet opened from Mijn bladen. 'missing' = deleted meanwhile
+// (another tab), so the caller can fall back to saving a new entry.
+export function updatePreset(id: string, state: SerialisableState): UpdatePresetResult {
+    const list = loadPresets();
+    const index = list.findIndex(p => p.id === id);
+    if (index === -1) return 'missing';
+    list[index] = { ...list[index], savedAt: new Date().toISOString(), blockCount: state.blocks.length, payload: buildPayload(state) };
+    return persistPresets(list) ? 'ok' : 'failed';
 }
 
 export function deletePreset(id: string): void {
@@ -294,13 +389,12 @@ export function duplicatePreset(id: string): Preset | null {
     const src = list.find(p => p.id === id);
     if (!src) return null;
     const entry: Preset = { ...src, id: newPresetId(), name: `${src.name} (kopie)`.slice(0, 80), savedAt: new Date().toISOString() };
-    persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
-    return entry;
+    return persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS)) ? entry : null;
 }
 
 // Add an imported .rekenraak payload to the library, preserving its exercises (no
-// SerialisableState round-trip). Used by Mijn bladen "Importeer…".
-export function savePresetFromFile(file: WorksheetFile, name: string): Preset {
+// SerialisableState round-trip). Used by Mijn bladen "Importeer…". null = write refused.
+export function savePresetFromFile(file: WorksheetFile, name: string): Preset | null {
     const list = loadPresets();
     const trimmed = (name || '').trim() || (file.header?.titel || 'Naamloos').trim() || 'Naamloos';
     const entry: Preset = {
@@ -310,8 +404,113 @@ export function savePresetFromFile(file: WorksheetFile, name: string): Preset {
         blockCount: Array.isArray(file.blocks) ? file.blocks.length : 0,
         payload: file,
     };
-    persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
-    return entry;
+    return persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS)) ? entry : null;
+}
+
+// ── Page-design templates (docSettings only, no blocks, max 20) ───────────────
+
+// docSettings holds no exercise content, only how the page looks (header/footer/opdracht
+// style, spacing, numbering, font sizes), so a snapshot of it is a reusable page design.
+export interface PageDesign {
+    id: string;
+    name: string;
+    savedAt: string;
+    docSettings: DocSettings;
+}
+
+const PAGE_DESIGNS_KEY = 'rekenraak_page_designs_v1';
+export const MAX_PAGE_DESIGNS = 20;
+
+export function loadPageDesigns(): PageDesign[] {
+    try {
+        const raw = localStorage.getItem(PAGE_DESIGNS_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.filter(d => d && typeof d.id === 'string' && typeof d.name === 'string' && d.docSettings && typeof d.docSettings === 'object');
+    } catch { return []; }
+}
+
+// False = the browser refused the write (quota full); same contract as persistPresets.
+function persistPageDesigns(list: PageDesign[]): boolean {
+    try { localStorage.setItem(PAGE_DESIGNS_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+/** null = the write was refused (storage full). */
+export function savePageDesign(name: string, docSettings: DocSettings): PageDesign | null {
+    const entry: PageDesign = {
+        id: newPresetId(),
+        name: ((name || '').trim() || 'Naamloos').slice(0, 80),
+        savedAt: new Date().toISOString(),
+        docSettings: { ...docSettings },
+    };
+    // Drop the oldest past the cap so the most recent 20 survive.
+    const next = [...loadPageDesigns(), entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PAGE_DESIGNS);
+    return persistPageDesigns(next) ? entry : null;
+}
+
+export function deletePageDesign(id: string): void {
+    persistPageDesigns(loadPageDesigns().filter(d => d.id !== id));
+}
+
+/** false = the write was refused (storage full). */
+export function renamePageDesign(id: string, name: string): boolean {
+    const trimmed = (name || '').trim().slice(0, 80) || 'Naamloos';
+    return persistPageDesigns(loadPageDesigns().map(d => d.id === id ? { ...d, name: trimmed } : d));
+}
+
+// ── Oefenmodus sessions (teacher library, keyed by OefenSessie.id) ────────────
+
+export interface OefenSessieEntry {
+    id: string;
+    name: string;
+    savedAt: string;
+    sessie: OefenSessie;
+}
+
+export function loadOefenSessies(): OefenSessieEntry[] {
+    try {
+        const raw = localStorage.getItem(OEFEN_SESSIES_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.filter(e => e && typeof e.id === 'string' && Array.isArray(e.sessie?.types));
+    } catch { return []; }
+}
+
+// false when the browser refuses the write (quota / private mode): the caller tells the teacher.
+function persistOefenSessies(list: OefenSessieEntry[]): boolean {
+    try { localStorage.setItem(OEFEN_SESSIES_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+// Saving a session whose id is already in the library replaces it (that is "Bewerken" → "Opslaan").
+export function saveOefenSessie(sessie: OefenSessie, name?: string): OefenSessieEntry | null {
+    const list = loadOefenSessies();
+    const prev = list.find(e => e.id === sessie.id);
+    const trimmed = (name ?? prev?.name ?? sessie.title ?? '').trim().slice(0, 80) || 'Oefensessie';
+    const entry: OefenSessieEntry = { id: sessie.id, name: trimmed, savedAt: new Date().toISOString(), sessie };
+    const next = [...list.filter(e => e.id !== sessie.id), entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt));
+    // Drop the oldest beyond the cap so the most recent ones survive.
+    return persistOefenSessies(next.slice(-MAX_OEFEN_SESSIES)) ? entry : null;
+}
+
+export function deleteOefenSessie(id: string): void {
+    persistOefenSessies(loadOefenSessies().filter(e => e.id !== id));
+}
+
+// A copy ships under a new id, so pupils' stored runs of the original never mix into it.
+export function duplicateOefenSessie(id: string): OefenSessieEntry | null {
+    const src = loadOefenSessies().find(e => e.id === id);
+    if (!src) return null;
+    const copyId = newSessieId();
+    // The link refuses a title past MAX_TITLE: cut the name, never the "(kopie)".
+    const sessie: OefenSessie = { ...src.sessie, id: copyId, ...(src.sessie.title ? { title: `${src.sessie.title.slice(0, MAX_TITLE - 8)} (kopie)` } : {}) };
+    return saveOefenSessie(sessie, `${src.name.slice(0, 72)} (kopie)`);
+}
+
+export function renameOefenSessie(id: string, name: string): void {
+    const trimmed = (name || '').trim().slice(0, 80) || 'Oefensessie';
+    persistOefenSessies(loadOefenSessies().map(e => e.id === id ? { ...e, name: trimmed } : e));
 }
 
 // ── Share via URL hash (base64 in fragment, not query — never leaves browser) ─

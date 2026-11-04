@@ -3,6 +3,7 @@ import FractionExerciseItem from './FractionExerciseItem';
 import FragmentableGrid from './FragmentableGrid';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
@@ -17,14 +18,23 @@ export default function FractionViewer({ block, showSolutions }: Props) {
     const subType = c.subType || 'kleuren';
     const answerFmt = c.answerFormat as string | undefined;
     // These subtypes (and hoeveelheid with breuk-questions) need full width per item.
-    const is1Col = subType === 'lijnstuk' || subType === 'veelhoek' || (subType === 'hoeveelheid' && answerFmt === 'met-breukvragen');
+    const is1Col = subType === 'lijnstuk' || (subType === 'hoeveelheid' && answerFmt === 'met-breukvragen');
     const exList = block.fractionExercises || [];
     const gap = block.verticalSpacing || 14;
     // The figures are drawn in em, so a column is only as wide as the shape budget times the
     // teacher's Lettergrootte setting — at 18pt two of them no longer fit a full-width block.
     // 16px = the item's own 8px padding on both sides.
     const availableWidth = useBlockWidth();
-    const itemMinPx = SHAPE_BUDGET_AT_DEFAULT * (useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT) + 16;
+    const mathPx = useSheetSizePx('math');
+    // A veelhoek sits two to a row when its grid (32 px cells, 1 cm without the grid) and its
+    // "Verdeel en kleur ¾ van deze figuur." line fit half the block: six of them one per row
+    // ran past one A4 page at the default (sweep 2026-09-27). SYNC: FractionExerciseItem veelhoek.
+    const veelhoekCell = c.showGrid !== false ? 32 : 37.8;
+    const veelhoekMinPx = () => Math.max(
+        ...(block.fractionExercises || []).map(ex => (ex.rectangleWidth ?? 3) * veelhoekCell),
+        monoTextPx(34, 0.75, mathPx) + 24,
+    ) + 16;
+    const itemMinPx = subType === 'veelhoek' ? veelhoekMinPx() : SHAPE_BUDGET_AT_DEFAULT * (mathPx / PX_PER_EM_AT_DEFAULT) + 16;
 
     if (exList.length === 0) {
         // Screen-only chrome — not a printed sheet font, so it stays a fixed px size.

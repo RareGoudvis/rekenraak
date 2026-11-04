@@ -8,7 +8,7 @@ export interface ClockExercise {
     id: string;
     hours: number;        // 1-12 (12h mode) or 0-23 (24h mode)
     minutes: number;      // 0-59
-    timeText: string;     // Dutch: "kwart over 3", "25 voor 1"
+    timeText: string;     // Dutch: "kwart over 3", "5 over half 1"
     digitalText: string;  // "03:15", "12:35"
     exerciseMode?: ExerciseMode;
     clockType?: ClockType;
@@ -25,7 +25,8 @@ export type TimeCategory =
     | 'nauwkeurig_5'  // to 5-minute precision
     | 'nauwkeurig_1'; // to 1-minute precision
 
-export type MinuteDirection = 'over' | 'voor' | 'beide';
+// over/voor split at :30 (legacy, kept for saved sheets); the four zone values are the Config's choices, see minuteDirection.ts
+export type MinuteDirection = 'over' | 'voor' | 'beide' | 'uur-over' | 'half-voor' | 'half-over' | 'uur-voor';
 export type ClockType = 'analoog' | 'digitaal';
 export type ExerciseMode = 'lezen' | 'tekenen' | 'omzetten';
 export type HandChoice = 'uur' | 'minuut' | 'beide';
@@ -35,7 +36,8 @@ export type HandChoice = 'uur' | 'minuut' | 'beide';
 // ============================================================================
 
 export function formatTimeText(hours: number, minutes: number, is24hour: boolean): string {
-    const displayHour = is24hour ? hours : hours; // 12h: caller passes 1-12 already
+    // 12h: the caller passes 1-12 already. 24h midnight reads 24, like "half 24" below: never "5 over 0".
+    const displayHour = is24hour && hours === 0 ? 24 : hours;
     // Next-hour reference for 'half/kwart voor/… voor'. In 24h keep it in 24h space
     // (23 → 24, never 0) so 23:30 reads "half 24", not the nonsensical "half 0".
     const nextHour = is24hour
@@ -46,7 +48,11 @@ export function formatTimeText(hours: number, minutes: number, is24hour: boolean
     if (minutes === 15) return `kwart over ${displayHour}`;
     if (minutes === 30) return `half ${nextHour}`;
     if (minutes === 45) return `kwart voor ${nextHour}`;
-    if (minutes < 30) return `${minutes} over ${displayHour}`;
+    // Flemish school convention: up to 20 past counts from the hour, 21-29 to the half
+    // ("5 voor half 2"), 31-39 from the half ("5 over half 2"), from 40 on to the next hour.
+    if (minutes <= 20) return `${minutes} over ${displayHour}`;
+    if (minutes < 30) return `${30 - minutes} voor half ${nextHour}`;
+    if (minutes < 40) return `${minutes - 30} over half ${nextHour}`;
     return `${60 - minutes} voor ${nextHour}`;
 }
 

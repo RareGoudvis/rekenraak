@@ -100,7 +100,7 @@ export default function SheetThumbnail({ file, height = 200, maxBlocks = 3 }: Pr
 const wrap: React.CSSProperties = {
     overflow: 'hidden', pointerEvents: 'none',
     fontSize: 'calc(var(--sheet-size-text) * 0.65)', color: '#000', background: '#fff',
-    fontFamily: 'Azeret Mono, monospace',
+    fontFamily: 'var(--font-sheet-math)',
 };
 // Inner renders at the nominal page width, left-aligned (NEVER fit-content — collapses
 // width:100% viewers like getallenas/thermometer/MAB), scaled down to the card width.

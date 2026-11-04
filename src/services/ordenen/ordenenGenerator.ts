@@ -1,6 +1,7 @@
 import type { MathBlock, OrdenenExercise, Fraction } from '../math/types';
 import { numberMatchesMask } from '../math/mathEngine';
 import type { OrdenenConstraints } from '../math/constraintTypes';
+import { countOefeningen } from '../generationNotes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -17,17 +18,28 @@ interface OrdConstraints {
     maxDenominator?: number;
     unitFractionsOnly?: boolean;       // 'stambreuken' — numerator fixed to 1
     allowMixed?: boolean;              // 'gemengde getallen' — add a whole part
+    mixedMode?: OrdenenMixedMode;
 }
 
-function genValue(numberType: string, c: OrdConstraints): number | Fraction {
+export type OrdenenMixedMode = 'none' | 'some' | 'all';
+
+// A sheet saved before the tri-state only has allowMixed: true read as "alleen", false as "geen".
+export const ordenenMixedMode = (c: { mixedMode?: OrdenenMixedMode; allowMixed?: boolean }): OrdenenMixedMode =>
+    c.mixedMode ?? (c.allowMixed ? 'all' : 'none');
+
+// slot = the value's place in its set: under 'some' the first is gemengd and the second plain, so a set always mixes both.
+function genValue(numberType: string, c: OrdConstraints, slot = 0): number | Fraction {
     const maxGetal = c.maxGetal ?? 100;
+    // SYNC: blockLayout.ts ordenenMaxChars. The max itself is never drawn (owner call 1, 2026-10-09):
+    // "1 000,00" at max 1 000 came up ~1 in 100 000 yet forced the decimal default to one per row.
     if (numberType === 'geheel') {
-        const min = c.minGetal ?? -maxGetal;
-        return randInt(min, maxGetal);
+        // A teacher-set lower bound stays inclusive; the default one mirrors the exclusive max.
+        const min = c.minGetal ?? -(maxGetal - 1);
+        return randInt(min, Math.max(min, maxGetal - 1));
     }
     if (numberType === 'decimal') {
         const f = Math.pow(10, Math.min(3, Math.max(1, c.decimalPlaces ?? 1)));
-        return randInt(0, maxGetal * f) / f;
+        return randInt(0, Math.round(maxGetal * f) - 1) / f;
     }
     if (numberType === 'rational') {
         // Swap-tolerant: 'Noemer van 8 tot 3' becomes 3..8 rather than collapsing to 8 only.
@@ -38,13 +50,20 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
         const d = randInt(minD, maxD);
         const n = c.unitFractionsOnly ? 1 : randInt(1, Math.max(1, d - 1));   // proper fraction part
         const f: Fraction = { n, d };
-        if (c.allowMixed) f.whole = randInt(1, 5);
+        const mixed = ordenenMixedMode(c);
+        // 'none' and 'all' make the same random calls as before the tri-state, so old sheets regenerate alike.
+        const whole = mixed === 'all' || (mixed === 'some' && (slot === 0 || (slot > 1 && Math.random() < 0.5)));
+        if (whole) f.whole = randInt(1, 5);
         return f;
     }
-    return randInt(0, maxGetal); // natural
+    return randInt(0, maxGetal - 1); // natural
 }
 
 export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
+    return generateOrdenenExercisesNoted(block).items;
+}
+
+export function generateOrdenenExercisesNoted(block: MathBlock): { items: OrdenenExercise[]; note: string | null } {
     const c = block.constraints as OrdenenConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const count: number = c.count ?? 3;
@@ -57,20 +76,24 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
 
     const oc: OrdConstraints = {
         maxGetal, minGetal: c.minGetal, decimalPlaces, minDenominator: c.minDenominator,
-        maxDenominator: c.maxDenominator, unitFractionsOnly: c.unitFractionsOnly, allowMixed: c.allowMixed,
+        maxDenominator: c.maxDenominator, unitFractionsOnly: c.unitFractionsOnly, allowMixed: c.allowMixed, mixedMode: c.mixedMode,
     };
 
     const n = block.numberOfExercises;
     const results: OrdenenExercise[] = [];
+    let relaxed = 0;
 
     for (let i = 0; i < n; i++) {
         const values: (number | Fraction)[] = [];
         const seen = new Set<number>();
         let attempts = 0;
-        while (values.length < count && attempts < 2000) {
+        // A mask the range can't fill (decimal + H at max 100) gives a short or empty row: finish unmasked and say so.
+        let maskOn = useMask;
+        while (values.length < count && attempts < 4000) {
             attempts++;
-            const v = genValue(numberType, oc);
-            if (useMask && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
+            if (maskOn && attempts > 2000) { maskOn = false; relaxed++; }
+            const v = genValue(numberType, oc, values.length);
+            if (maskOn && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
             const key = val(v);
             if (seen.has(key)) continue;
             seen.add(key);
@@ -84,8 +107,10 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
         const ordered = [...values].sort((a, b) => (operator === '<' ? val(a) - val(b) : val(b) - val(a)));
         const display = [...values].sort(() => Math.random() - 0.5);
 
-        results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
+        // The printed decimals travel with the numbers: 544,30 keeps its zero beside 127,49.
+        results.push({ id: rndId(), values: ordered, display, operator, ...(decimalPlaces ? { decimalPlaces } : {}), isManuallyEdited: false });
     }
 
-    return results;
+    const note = relaxed > 0 ? `De getalopbouw past niet bij dit maximum; voor ${countOefeningen(relaxed)} is ze losgelaten.` : null;
+    return { items: results, note };
 }

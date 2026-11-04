@@ -1,26 +1,29 @@
 import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
+import { ordenenMixedMode } from '../../../services/ordenen/ordenenGenerator';
 import type { OrdenenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [20, 100, 1000, 10000, 100000];
 const OPERATORS = [
     { val: 'oplopend', label: 'Oplopend (<)' },
     { val: 'aflopend', label: 'Aflopend (>)' },
     { val: 'beide', label: 'Beide' },
 ];
 
-const numInput: React.CSSProperties = { width: '70px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px' };
-
 export default function OrdenenConfig({ block }: Props) {
     const [c, patch] = useConstraints<OrdenenConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         count = 3,
         operatorMode = 'oplopend',
@@ -32,8 +35,8 @@ export default function OrdenenConfig({ block }: Props) {
         minDenominator = 2,
         maxDenominator = 10,
         unitFractionsOnly = false,
-        allowMixed = false,
     } = c;
+    const mixedMode = ordenenMixedMode(c);
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<OrdenenConstraints>);
@@ -49,7 +52,7 @@ export default function OrdenenConfig({ block }: Props) {
                 <SettingLabel text="Volgorde:" info="Of de reeksen oplopend, aflopend of door elkaar staan." />
                 <div style={styles.buttonGroup}>
                     {OPERATORS.map(o => (
-                        <button key={o.val} onClick={() => set('operatorMode', o.val)} style={styles.radioBtn(operatorMode === o.val)}>
+                        <button key={o.val} onClick={() => set('operatorMode', o.val)} aria-pressed={operatorMode === o.val} style={styles.radioBtn(operatorMode === o.val)}>
                             {o.label}
                         </button>
                     ))}
@@ -68,13 +71,13 @@ export default function OrdenenConfig({ block }: Props) {
             </div>
 
             {/* MAX — natural/decimal/geheel only (rationals use denominators) */}
-            {numberType !== 'rational' && (
+            {range && (
                 <div style={styles.section}>
                     <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de reeksen mag voorkomen." />
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                        options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                         onChange={(v) => set('maxGetal', v)}
                         ariaLabel="Maximum getal"
                     />
@@ -84,13 +87,16 @@ export default function OrdenenConfig({ block }: Props) {
             {/* GEHELE GETALLEN — lower bound slider, down to -maxGetal */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Ondergrens: {lowerBound.toLocaleString('nl-BE')}</label>
+                    <label style={styles.label}>Ondergrens: {formatSignedInt(lowerBound)}</label>
                     <input
                         type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound}
                         onChange={(e) => set('minGetal', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
                     />
+                    {lowerBound < -maxGetal && (
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                    )}
                 </div>
             )}
 
@@ -113,31 +119,26 @@ export default function OrdenenConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask?.[p.key]} style={styles.maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw.</p>
                 </div>
             )}
 
-            {/* RATIONALE GETALLEN — denominator range + stambreuk / gemengd */}
+            {/* RATIONALE GETALLEN — the shared Breuken block */}
             {numberType === 'rational' && (
                 <div style={styles.section}>
-                    <SettingLabel text="Specifieke getalopbouw:" info="Stel het bereik van de noemers en het soort breuken in." />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Noemer van</span>
-                        <input type="number" min={2} max={20} value={minDenominator} onChange={(e) => set('minDenominator', Math.max(2, Number(e.target.value)))} style={numInput} />
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>tot</span>
-                        <input type="number" min={2} max={20} value={maxDenominator} onChange={(e) => set('maxDenominator', Math.max(2, Number(e.target.value)))} style={numInput} />
-                    </div>
-                    <div style={{ ...styles.onOffRow, marginTop: '8px' }}>
-                        <span style={styles.onOffLabel}>Enkel stambreuken (teller = 1)</span>
-                        <button onClick={() => set('unitFractionsOnly', !unitFractionsOnly)} style={styles.onOffBtn(unitFractionsOnly)}>{unitFractionsOnly ? 'Aan' : 'Uit'}</button>
-                    </div>
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Gemengde getallen (bv. 1 1/4)</span>
-                        <button onClick={() => set('allowMixed', !allowMixed)} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
-                    </div>
+                    <BreukenSettings
+                        noemer={{ shape: 'range', min: minDenominator, max: maxDenominator, onChange: (min, max) => patch({ minDenominator: min, maxDenominator: max }) }}
+                        // A teller-1 breuk can be drawn either way, so Stambreuken stays lit; Echte off = only stambreuken.
+                        kinds={[
+                            { kind: 'stam', on: true, locked: true },
+                            { kind: 'echt', on: !unitFractionsOnly, onToggle: (v) => set('unitFractionsOnly', !v) },
+                        ]}
+                        kindsHint="Zet Echte breuken uit voor enkel stambreuken (teller = 1)."
+                        mixed={{ value: mixedMode, onChange: (m) => patch({ mixedMode: m, allowMixed: m === 'all' }) }}
+                    />
                 </div>
             )}
         </div>

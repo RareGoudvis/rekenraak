@@ -53,6 +53,8 @@ export interface FractionExercise {
     coloredIndices?: number[];
     gridRows?: number;
     gridCols?: number;
+    // kleuren / herkennen with an improper breuk: shapes side by side (coloredIndices span wholes × denominator); absent = 1.
+    wholes?: number;
     // Amount-based (hoeveelheid, hoeveelheid-rechthoek)
     total?: number;
     objectShape?: 'circle' | 'square';
@@ -101,6 +103,8 @@ export interface OrdenenExercise {
     values: (number | Fraction)[];   // ordered per operator (the answer)
     display: (number | Fraction)[];  // shuffled prompt shown on top
     operator: '<' | '>';
+    // Decimal blocks: the printed decimals, trailing zeros kept (544,30 beside 127,49).
+    decimalPlaces?: number;
     isManuallyEdited: boolean;
 }
 
@@ -145,6 +149,8 @@ export interface AfrondenExercise {
     number?: number;      // simpel view: the single number
     targetKey?: string;   // simpel view: which place to round to (T/H/D/TD or E/t/h)
     numbers?: number[];   // rooster view: the left-column numbers
+    // Decimal blocks: the printed decimals of number / numbers, trailing zeros kept (4,10).
+    decimalPlaces?: number;
     isManuallyEdited: boolean;
 }
 
@@ -497,7 +503,7 @@ export interface ClockExercise {
     id: string;
     hours: number;        // 1-12 (12h mode) or 0-23 (24h mode)
     minutes: number;      // 0-59
-    timeText: string;     // "kwart over 3", "25 voor 1"
+    timeText: string;     // "kwart over 3", "5 over half 1"
     digitalText: string;  // "03:15"
     // exerciseMode/clockType/is24hour/handChoice ride along from generation time so a mode
     // or clock-type drift never prints the very time it was drawn to ask the pupil for (§4).

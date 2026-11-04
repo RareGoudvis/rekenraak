@@ -4,8 +4,10 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
-import { SOL, centerWhenSingle } from './solutionStyle';
+import { SOL, solutionText, centerWhenSingle } from './solutionStyle';
 import { ordenenRowPx } from '../../services/layout/blockLayout';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
+import { formatMathNumber } from '../../services/math/formatters';
 
 interface Props {
     block: MathBlock;
@@ -14,7 +16,7 @@ interface Props {
 
 // Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
 // stays fixed px; VerticalFraction's numeric fontSize prop converts itself internally).
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 const valOf = (v: number | Fraction): number => isFrac(v) ? (v.whole ?? 0) + v.n / v.d : v;
 
@@ -38,13 +40,15 @@ function parseValue(text: string): number | Fraction | null {
     return Number.isFinite(num) ? num : null;
 }
 
-function renderVal(v: number | Fraction, color?: string) {
-    if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={15} mono />;
-    return <span style={{ color, fontWeight: 'normal' }}>{v.toLocaleString('nl-BE')}</span>;
+// `solution`: the key, red and bold (viewer rule 3: a b/w printer only sees the bold).
+// `dp`: a decimal block's printed decimals (544,30 keeps its zero).
+function renderVal(v: number | Fraction, solution = false, dp?: number) {
+    if (isFrac(v)) return <span style={{ display: 'inline-flex', fontWeight: solution ? solutionText.fontWeight : 'normal' }}><VerticalFraction value={v} color={solution ? SOL : undefined} fontSize={15} mono /></span>;
+    return <span style={solution ? solutionText : { fontWeight: 'normal' }}>{formatMathNumber(v, dp)}</span>;
 }
 
 // Click a prompt number to edit it; commit re-sorts the answer.
-function EditableValue({ value, onCommit }: { value: number | Fraction; onCommit: (v: number | Fraction) => void }) {
+function EditableValue({ value, onCommit, dp }: { value: number | Fraction; onCommit: (v: number | Fraction) => void; dp?: number }) {
     const [editing, setEditing] = useState(false);
     const [text, setText] = useState('');
     if (editing) {
@@ -55,13 +59,13 @@ function EditableValue({ value, onCommit }: { value: number | Fraction; onCommit
                 onChange={(e) => setText(e.target.value)}
                 onBlur={() => { const p = parseValue(text); if (p !== null) onCommit(p); setEditing(false); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
-                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)', fontWeight: 'normal', border: '1px solid var(--accent-purple, #ac29e9)', borderRadius: '4px', padding: '1px 4px' }}
+                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)', fontWeight: 'normal', border: '1px solid var(--accent-purple, #ac29e9)', borderRadius: '4px', padding: '1px 4px', color: 'inherit' }}
             />
         );
     }
     return (
         <span onClick={() => { setText(toText(value)); setEditing(true); }} style={{ cursor: 'text' }} title="Klik om aan te passen">
-            {renderVal(value)}
+            {renderVal(value, false, dp)}
         </span>
     );
 }
@@ -70,12 +74,12 @@ function EditableValue({ value, onCommit }: { value: number | Fraction; onCommit
 // consistent size across every exercise rather than a per-value guess (owner rule: never
 // a hardcoded 64px, always the widest value's width). Fractions are a stacked num/denom
 // pair, so their "width" is the wider of the two (plus the whole number, if mixed).
-function charsOf(v: number | Fraction): number {
+function charsOf(v: number | Fraction, dp?: number): number {
     if (isFrac(v)) {
         const parts = [String(v.n), String(v.d)];
         return Math.max(...parts.map((s) => s.length)) + (v.whole ? String(v.whole).length + 1 : 0);
     }
-    return v.toLocaleString('nl-BE').length;
+    return formatMathNumber(v, dp).length;
 }
 
 export default function OrdenenViewer({ block, showSolutions }: Props) {
@@ -83,6 +87,8 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
     const patchExercise = useWorksheetStore((s) => s.patchExercise);
     const gap = block.verticalSpacing || 14;
     const availableWidth = useBlockWidth();
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the numbers in order.
+    const ix = useViewerInteraction();
     const c = (block.constraints ?? {}) as Record<string, unknown>;
     const answerStyle = (c.answerStyle as 'lijn' | 'vak' | undefined) ?? 'lijn';
 
@@ -106,7 +112,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
 
     // Answer blank/box is one fixed width for the whole block: the widest value actually
     // generated, never a magic 64px that clips a 5-digit answer or strands a 1-digit one.
-    const maxChars = Math.max(2, ...exercises.flatMap((e) => e.values.map(charsOf)));
+    const maxChars = Math.max(2, ...exercises.flatMap((e) => e.values.map(v => charsOf(v, e.decimalPlaces))));
     const blankWidthCh = `${maxChars}ch`;
 
     return (
@@ -121,6 +127,8 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                 // and answer rows of this exercise, so a blank always sits directly under its
                 // number — separators are a narrow fixed track, numbers auto-size to content.
                 const gridTemplateColumns = Array(n).fill('max-content').join(' 22px ');
+                // Flemish lists decimal numbers with ';': "970,55, 902,86" reads as one number.
+                const listSep = ex.decimalPlaces || ex.display.some(v => !isFrac(v) && !Number.isInteger(v)) ? ';' : ',';
                 return (
                     <div key={ex.id} className="print-exercise" style={{
                         display: 'grid', gridTemplateColumns, columnGap: 0, rowGap: '10px',
@@ -129,20 +137,39 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                         {/* shuffled prompt numbers (click to edit) */}
                         {ex.display.map((v, i) => (
                             <div key={`p${i}`} style={{ gridRow: 1, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', fontWeight: 'normal', whiteSpace: 'nowrap' }}>
-                                <EditableValue value={v} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />
-                                {i < n - 1 && <span>,</span>}
+                                {/* Kiosk: a tap target (≥ 44 px on a phone) that takes its place in the pupil's order. */}
+                                {ix
+                                    ? <span {...interactionProps(ix, String(i), 'order')} style={{ padding: '9px 7px', borderRadius: '8px' }}>{renderVal(v, false, ex.decimalPlaces)}</span>
+                                    : <EditableValue value={v} dp={ex.decimalPlaces} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />}
+                                {i < n - 1 && <span>{listSep}</span>}
                             </div>
                         ))}
                         {/* ordered blanks/boxes, aligned to the same columns */}
-                        {ex.values.map((v, i) => (
-                            <div key={`a${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
-                                {showSolutions
-                                    ? renderVal(v, SOL)
-                                    : answerStyle === 'vak'
-                                        ? <span style={{ border: '1.5px solid #000', borderRadius: '4px', width: blankWidthCh, height: '26px', display: 'inline-block' }} />
-                                        : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: ANSWER_LINE_H, display: 'inline-block' }} />}
-                            </div>
-                        ))}
+                        {ex.values.map((v, i) => {
+                            const blank = answerStyle === 'vak'
+                                ? <span style={{ border: '1.5px solid #000', borderRadius: '4px', width: blankWidthCh, height: '26px', display: 'inline-block' }} />
+                                : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: ANSWER_LINE_H, display: 'inline-block' }} />;
+                            const tapped = ix?.state.order[i];
+                            return (
+                                <div key={`a${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
+                                    {showSolutions
+                                        ? renderVal(v, true, ex.decimalPlaces)
+                                        : ix
+                                            // Kiosk: the tapped value lands on its line (or in its box). A hidden copy of a
+                                            // value keeps the slot's size from the start, so the card does not rescale mid-order.
+                                            ? <span style={{
+                                                display: 'inline-grid', justifyItems: 'center', alignItems: 'end', minWidth: blankWidthCh,
+                                                ...(answerStyle === 'vak'
+                                                    ? { border: '1.5px solid #000', borderRadius: '4px', minHeight: '26px' }
+                                                    : { borderBottom: '1.5px solid #000', minHeight: ANSWER_LINE_H }),
+                                            }}>
+                                                <span style={{ gridArea: '1 / 1', visibility: 'hidden' }} aria-hidden>{renderVal(v, false, ex.decimalPlaces)}</span>
+                                                {tapped !== undefined && <span style={{ gridArea: '1 / 1' }}>{renderVal(ex.display[Number(tapped)], false, ex.decimalPlaces)}</span>}
+                                            </span>
+                                            : blank}
+                                </div>
+                            );
+                        })}
                         {/* operator glyph between consecutive answers, in the separator column */}
                         {ex.values.slice(1).map((_, i) => (
                             <div key={`o${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', fontWeight: 'normal' }}>

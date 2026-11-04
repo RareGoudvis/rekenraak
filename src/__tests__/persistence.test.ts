@@ -1,10 +1,18 @@
-import { describe, test, expect, beforeAll } from 'vitest';
+import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import {
     WORKSHEET_FORMAT_VERSION,
     parseWorksheetFile,
     migrateWorksheetFile,
+    openWorksheetFromPicker,
+    saveWorksheetToFile,
+    isPickerAbort,
     encodeShareLink,
     decodeShareHash,
+    loadPageDesigns,
+    savePageDesign,
+    renamePageDesign,
+    deletePageDesign,
+    MAX_PAGE_DESIGNS,
     type SerialisableState,
     type CurriculumLock,
 } from '../services/persistence';
@@ -42,6 +50,79 @@ function fileFromShare(link: string | null) {
     const hash = link!.slice(link!.indexOf('#'));
     return decodeShareHash(hash);
 }
+
+// Chromium's File System Access API: "Bewaar bestand" writes back into the file that was
+// opened or saved before, without the picker; other browsers keep the download.
+describe('save to the same worksheet file', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    test('saves to a chosen file, then overwrites the same file without reopening the picker', async () => {
+        const worksheet = state();
+        const written: string[] = [];
+        const write = vi.fn(async (content: string) => { written.push(content); });
+        const close = vi.fn(async () => {});
+        const handle = { name: 'rekenblad.rekenraak', createWritable: vi.fn(async () => ({ write, close })) };
+        const picker = vi.fn(async () => handle);
+        vi.stubGlobal('window', { showSaveFilePicker: picker });
+
+        const first = await saveWorksheetToFile(worksheet);
+        expect(first).toEqual({ handle, downloaded: false });
+        expect(picker).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(written[0]).version).toBe(WORKSHEET_FORMAT_VERSION);
+        expect(JSON.parse(written[0]).blocks).toEqual(JSON.parse(JSON.stringify(worksheet.blocks)));
+        expect(close).toHaveBeenCalledTimes(1);
+
+        await saveWorksheetToFile({ ...worksheet, header: { ...worksheet.header, titel: 'Bijgewerkt' } }, first.handle);
+        expect(picker).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(written[1]).header.titel).toBe('Bijgewerkt');
+    });
+
+    test('a file saved through a handle reopens through the same handle', async () => {
+        const worksheet = state();
+        let contents = '';
+        const handle = {
+            name: 'rekenblad.rekenraak',
+            createWritable: async () => ({ write: async (c: string) => { contents = c; }, close: async () => {} }),
+            getFile: async () => ({ text: async () => contents }),
+        };
+        vi.stubGlobal('window', { showSaveFilePicker: async () => handle, showOpenFilePicker: async () => [handle] });
+
+        await saveWorksheetToFile(worksheet);
+        const opened = await openWorksheetFromPicker();
+        expect(opened?.handle).toBe(handle);
+        expect(opened?.file).toMatchObject({
+            version: WORKSHEET_FORMAT_VERSION,
+            blocks: JSON.parse(JSON.stringify(worksheet.blocks)),
+            header: worksheet.header,
+            baseSettings: worksheet.baseSettings,
+        });
+    });
+
+    test('an invalid file is rejected before its handle is kept', async () => {
+        vi.stubGlobal('window', { showOpenFilePicker: async () => [{ getFile: async () => ({ text: async () => 'not JSON' }) }] });
+        await expect(openWorksheetFromPicker()).rejects.toThrow('Bestand is geen geldige JSON.');
+    });
+
+    test('without the API, open returns null and save downloads', async () => {
+        const click = vi.fn();
+        let blob: Blob | undefined;
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('document', { createElement: () => ({ click, style: {} }), body: { appendChild: vi.fn(), removeChild: vi.fn() } });
+        vi.stubGlobal('URL', { createObjectURL: (b: Blob) => { blob = b; return 'blob:x'; }, revokeObjectURL: vi.fn() });
+        expect(await openWorksheetFromPicker()).toBeNull();
+        expect(await saveWorksheetToFile(state())).toEqual({ handle: null, downloaded: true });
+        expect(click).toHaveBeenCalledOnce();
+        expect(parseWorksheetFile(await blob!.text()).version).toBe(WORKSHEET_FORMAT_VERSION);
+    });
+
+    test('a cancelled picker is an abort, not a failure', async () => {
+        const abort = Object.assign(new Error('The user aborted a request.'), { name: 'AbortError' });
+        vi.stubGlobal('window', { showSaveFilePicker: async () => { throw abort; } });
+        const err = await saveWorksheetToFile(state()).catch(e => e);
+        expect(isPickerAbort(err)).toBe(true);
+        expect(isPickerAbort(new Error('disk full'))).toBe(false);
+    });
+});
 
 describe('worksheet file', () => {
     test('serialise → parse round-trip keeps blocks, header, footer and settings', () => {
@@ -128,6 +209,9 @@ describe('worksheet file', () => {
     test.each([
         ['not json at all', 'geen geldige JSON'],
         [JSON.stringify({ blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: 0, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: 2.5, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: -1, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
         [JSON.stringify({ version: 2, header: {}, footer: {}, docSettings: {} }), 'blocks-veld'],
         [JSON.stringify({ version: 2, blocks: [], footer: {}, docSettings: {} }), 'header-veld'],
         [JSON.stringify({ version: 2, blocks: [], header: {}, docSettings: {} }), 'footer-veld'],
@@ -154,21 +238,23 @@ describe('v2 → v3 width migration', () => {
 
     test('6 → vol, 3 → ½, 2 → ½, absent stays absent', () => {
         const migrated = migrateWorksheetFile(v2File([6, 3, 2, undefined]));
-        expect(migrated.version).toBe(3);
+        expect(migrated.version).toBe(4);
         expect(migrated.blocks.map(b => b.widthUnits)).toEqual([4, 2, 2, undefined]);
     });
 
     test('parseWorksheetFile migrates a v2 file on the way in', () => {
         const parsed = parseWorksheetFile(JSON.stringify(v2File([6, 3, 2])));
-        expect(parsed.version).toBe(3);
+        expect(parsed.version).toBe(4);
         expect(parsed.blocks.map(b => b.widthUnits)).toEqual([4, 2, 2]);
     });
 
-    test('a v3 file is left alone (and migrating twice is a no-op)', () => {
+    test('a v3 file keeps its widths, a v4 file is left alone (migrating twice is a no-op)', () => {
         const v3 = { ...v2File([4, 2, 1]), version: 3 };
         const once = migrateWorksheetFile(v3);
-        expect(once).toBe(v3);
-        expect(migrateWorksheetFile(once).blocks.map(b => b.widthUnits)).toEqual([4, 2, 1]);
+        expect(once.blocks).toBe(v3.blocks);
+        expect(migrateWorksheetFile(once)).toBe(once);
+        const v4 = { ...v2File([4, 2, 1]), version: 4 };
+        expect(migrateWorksheetFile(v4)).toBe(v4);
     });
 
     test('a width the old grid never had widens instead of overflowing', () => {
@@ -292,5 +378,79 @@ describe('share link', () => {
             return { ...block, exercises: generateFor(block) as typeof block.exercises };
         });
         expect(encodeShareLink({ ...s, blocks: many })).toBeNull();
+    });
+});
+
+describe('page-design templates', () => {
+    // This suite runs in node: a Map-backed stand-in for localStorage, with a switch that
+    // makes every write throw the way a full browser storage does.
+    let store: Map<string, string>;
+    let full: boolean;
+    const g = globalThis as unknown as Record<string, unknown>;
+    beforeEach(() => {
+        store = new Map();
+        full = false;
+        g.localStorage = {
+            getItem: (k: string) => store.get(k) ?? null,
+            setItem: (k: string, v: string) => { if (full) throw new DOMException('full', 'QuotaExceededError'); store.set(k, v); },
+            removeItem: (k: string) => { store.delete(k); },
+        };
+    });
+    afterEach(() => { delete g.localStorage; vi.useRealTimers(); });
+
+    const design = (over: Partial<DocSettings> = {}) => ({ ...state().docSettings, ...over });
+
+    test('save then load round-trips the docSettings, never blocks', () => {
+        const saved = savePageDesign('  Kader-blad  ', design({ headerStyle: 'kader', blockSpacing: 20 }));
+        expect(saved).not.toBeNull();
+        const list = loadPageDesigns();
+        expect(list).toHaveLength(1);
+        expect(list[0].name).toBe('Kader-blad');
+        expect(list[0].docSettings).toMatchObject({ headerStyle: 'kader', blockSpacing: 20 });
+        expect(Object.keys(list[0]).sort()).toEqual(['docSettings', 'id', 'name', 'savedAt']);
+    });
+
+    test('an empty name becomes Naamloos, a long one is cut at 80', () => {
+        savePageDesign('   ', design());
+        savePageDesign('x'.repeat(120), design());
+        const names = loadPageDesigns().map(d => d.name);
+        expect(names).toContain('Naamloos');
+        expect(names.some(n => n.length === 80)).toBe(true);
+    });
+
+    test('rename and delete touch only their own entry', () => {
+        const a = savePageDesign('A', design())!;
+        const b = savePageDesign('B', design())!;
+        expect(renamePageDesign(a.id, 'A2')).toBe(true);
+        expect(loadPageDesigns().map(d => d.name).sort()).toEqual(['A2', 'B']);
+        deletePageDesign(a.id);
+        expect(loadPageDesigns().map(d => d.id)).toEqual([b.id]);
+    });
+
+    test(`keeps the newest ${MAX_PAGE_DESIGNS}`, () => {
+        vi.useFakeTimers();
+        for (let i = 0; i < MAX_PAGE_DESIGNS + 3; i++) {
+            vi.setSystemTime(new Date(Date.UTC(2026, 9, 1, 0, i)));
+            savePageDesign(`D${i}`, design());
+        }
+        const names = loadPageDesigns().map(d => d.name);
+        expect(names).toHaveLength(MAX_PAGE_DESIGNS);
+        expect(names[0]).toBe('D3');
+        expect(names[names.length - 1]).toBe(`D${MAX_PAGE_DESIGNS + 2}`);
+    });
+
+    test('a full storage returns null and keeps the list as it was', () => {
+        savePageDesign('Bestaand', design());
+        full = true;
+        expect(savePageDesign('Nieuw', design())).toBeNull();
+        expect(renamePageDesign(loadPageDesigns()[0].id, 'Anders')).toBe(false);
+        expect(loadPageDesigns().map(d => d.name)).toEqual(['Bestaand']);
+    });
+
+    test('garbage in storage loads as an empty or filtered list', () => {
+        store.set('rekenraak_page_designs_v1', '{not json');
+        expect(loadPageDesigns()).toEqual([]);
+        store.set('rekenraak_page_designs_v1', JSON.stringify([{ id: 'x', name: 'ok', savedAt: '', docSettings: {} }, { id: 1 }, null]));
+        expect(loadPageDesigns().map(d => d.id)).toEqual(['x']);
     });
 });

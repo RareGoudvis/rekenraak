@@ -1,0 +1,1226 @@
+import type {
+    AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, DeelbaarheidKleurExercise, Equation, EvenOnevenExercise,
+    ClockExercise, Fraction, FractionExercise, GeldExercise, TijdsduurExercise, VerbandExercise,
+    GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, HerleidingPart,
+    MaateenheidExercise, MabExercise, MeetExercise, OrdenenExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise,
+    RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
+    VormleerExercise, WeegschaalExercise,
+} from '../math/types';
+import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskExtraKey, type KioskInput, type KioskInteract, type KioskKey } from './types';
+import { cijferCheck, cijferGiven, cijferKioskGrid, cijferLenen, type CijferCheck } from '../cijferen/cijferCells';
+import { cijferDp } from '../cijferen/cijferLayout';
+import { gcd, isFraction } from '../math/answerKeys';
+import { formatMathNumber, opGlyph } from '../math/formatters';
+import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afrondenGenerator';
+import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
+import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
+import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
+import { placeOrder, plaatsView, tabelPlaces } from '../plaatswaarde/plaatswaardeGenerator';
+import type { GeldWisselExercise } from '../math/types';
+import type { KioskDescriptor as AnyKioskDescriptor } from './types';
+import type { KioskPiece } from './types';
+import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
+import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
+import { timeWords, timeWordsFields } from '../clock/timeWords';
+import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
+import { formatGewicht } from '../weegschaal/weegschaalGenerator';
+import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
+import { MIXED_VARIANTS, type PlaatswaardeConstraints } from '../math/constraintTypes';
+
+// Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
+// imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
+
+// Same type-erasing helper as the registry's row(): each descriptor names its exercise shape.
+const descriptor = <E>(d: KioskDescriptor<E>): KioskDescriptor => d as KioskDescriptor;
+
+const numberTypeOf = (c: Record<string, unknown>) => (c.numberType as string | undefined) ?? 'natural';
+
+// Generators keep decimals as floats (0.1 + 0.2): 9 places strips the float tail and still
+// keeps every value the generators can make (≤ 1e9, ≤ 3 decimals).
+const plain = (x: number): string => String(Number(x.toFixed(9)));
+
+// Every accepted spelling of a number: dot and comma decimal ('2.5', '2,5').
+export function numberSpellings(x: number): string[] {
+    const dot = plain(x);
+    const comma = dot.replace('.', ',');
+    return comma === dot ? [dot] : [comma, dot];
+}
+
+// A fraction as mixed number and as improper fraction ('1 3/4' and '7/4'); whole values as
+// the integer only. The generators hand back reduced fractions, so only those forms count.
+export function fractionSpellings(f: Fraction): string[] {
+    const whole = f.whole ?? 0;
+    const sign = whole < 0 || f.n < 0 ? '-' : '';
+    const w = Math.abs(whole), n = Math.abs(f.n), d = Math.abs(f.d);
+    const totalN = w * d + n;
+    if (totalN % d === 0) return [`${sign}${totalN / d}`];
+    const mixedW = Math.floor(totalN / d), mixedN = totalN % d;
+    const improper = `${sign}${totalN}/${d}`;
+    return mixedW > 0 ? [`${sign}${mixedW} ${mixedN}/${d}`, improper] : [improper];
+}
+
+const valueSpellings = (v: number | Fraction) => (isFraction(v) ? fractionSpellings(v) : numberSpellings(v));
+
+// O8: a breuk-kind row that asks to compute (Reken uit., a rij of breuken) takes any equal value
+// (26/8 for 3 1/4); other number kinds never answer with a breuk, so the row has no option.
+const valueWhenRational = (c: Record<string, unknown>) => (numberTypeOf(c) === 'rational' ? false : undefined);
+
+const showValue = (v: number | Fraction): string => {
+    if (!isFraction(v)) return formatMathNumber(plain(v)).replace('-', '−');
+    const n = `${v.n}/${v.d}`;
+    return v.whole ? `${v.whole} ${n}` : n;
+};
+
+// Phase C2: the pupil fills the blanks ON the card. Every cell is required, except where a want
+// holds an empty alternative ('0|', a leading zero that may stay blank); the answer is the cells in
+// key order, each with its accepted spellings.
+function cellsInteract<E>(keysOf: (ex: E, c: Record<string, unknown>) => string[], wantsOf: (ex: E, c: Record<string, unknown>) => string[],
+    cellOf?: (key: string, ex: E, c: Record<string, unknown>) => KioskCellSpec): KioskInteract<E> {
+    return {
+        kind: 'fill-cells',
+        keys: keysOf,
+        cellOf,
+        answerOf: (ex, c) => wantsOf(ex, c).join(INTERACT_SEP),
+        fromState: (st, ex, c) => {
+            const v = keysOf(ex, c).map(k => (st.cells[k] ?? '').trim());
+            const wants = wantsOf(ex, c);
+            const missing = v.some((x, i) => x === '' && !(wants[i] ?? '').split('|').includes(''));
+            return missing || v.every(x => x === '') ? '' : v.join(INTERACT_SEP);
+        },
+    };
+}
+
+// ── Hoofdrekenen (+ − × :) ───────────────────────────────────────────────────
+
+// The blank of a puntoefening: missingIndex, or the 2-term missingTerm the rational paths set.
+function missingIndexOf(eq: Equation): number | undefined {
+    if (eq.missingIndex !== undefined) return eq.missingIndex;
+    if (eq.missingTerm === 'operand1') return 0;
+    if (eq.missingTerm === 'operand2') return 1;
+    return undefined;
+}
+
+// SYNC: MathBlockRenderer draws the "= ___ r ___" row whenever `remainder` is set.
+// Met-rest mode sets it on every row, so the kiosk asks for a rest exactly when the sheet does.
+const hasRest = (eq: Equation) => eq.remainder !== undefined;
+
+const hrInput = (eq: Equation): KioskInput => {
+    if (hasRest(eq)) return 'number+rest';
+    return missingIndexOf(eq) !== undefined ? 'missing-operand' : 'number';
+};
+
+const hrKeys = (c: Record<string, unknown>): KioskKey[] => {
+    const nt = numberTypeOf(c);
+    if (nt === 'decimal') return [','];
+    if (nt === 'rational') return ['/', ' '];
+    if (nt === 'geheel') return ['-'];
+    return [];
+};
+
+const MIXED_IDS: ReadonlySet<string> = new Set(MIXED_VARIANTS.map(v => v.id));
+
+export const HR_KIOSK = descriptor<Equation>({
+    input: 'number',
+    inputOf: hrInput,
+    keys: hrKeys,
+    exactFormDefault: valueWhenRational,
+    // Gemengd "om de beurt": the sheet gives exercise i variant i % n, but a one-exercise kiosk
+    // block would always get the first; the slot's own count picks the turn instead.
+    prepare: (c, _rng, draw) => {
+        if (c.mix !== 'cycle' || !Array.isArray(c.variants)) return c;
+        const variants = (c.variants as string[]).filter(v => MIXED_IDS.has(v));
+        return variants.length > 1 ? { ...c, variants: [variants[(draw?.made ?? 0) % variants.length]] } : c;
+    },
+    answerOf: (eq) => {
+        if (hasRest(eq)) return [plain(eq.answer as number), String(eq.remainder ?? 0)];
+        const idx = missingIndexOf(eq);
+        return valueSpellings(idx !== undefined ? eq.operands[idx] : eq.answer);
+    },
+    display: (eq) => {
+        const idx = hasRest(eq) ? undefined : missingIndexOf(eq);
+        const ops = eq.operators ?? eq.operands.slice(1).map(() => eq.operator);
+        const terms = eq.operands.map((o, i) => (i === idx ? '?' : showValue(o)));
+        const lhs = terms.reduce((acc, t, i) => `${acc} ${opGlyph(ops[i - 1])} ${t}`);
+        if (hasRest(eq)) return `${lhs} = ? r ?`;
+        return `${lhs} = ${idx !== undefined ? showValue(eq.answer) : '?'}`;
+    },
+});
+
+// ── Procenten ────────────────────────────────────────────────────────────────
+
+// nemen: "25 % van 80 = ?" → answer; welk-percent: "20 van 80 = ? %" → percent.
+const isWelk = (c: Record<string, unknown>) => c.subType === 'welk-percent';
+
+export const PROCENTEN_KIOSK = descriptor<ProcentExercise>({
+    input: 'number',
+    answerOf: (ex, c) => numberSpellings(isWelk(c) ? ex.percent : ex.answer),
+    display: (ex, c) => isWelk(c)
+        ? `${formatMathNumber(ex.answer)} van ${formatMathNumber(ex.base)} = ? %`
+        : `${formatMathNumber(ex.percent)} % van ${formatMathNumber(ex.base)} = ?`,
+    supported: (c) => (c.subType ?? 'nemen') === 'nemen' || isWelk(c),
+});
+
+// ── Afronden (simpel: one field; rooster: every cell of the table ON the card) ─
+
+const afrondenTarget = (ex: AfrondenExercise, c: Record<string, unknown>) => {
+    const all = targetsFor(numberTypeOf(c));
+    // SYNC: AfrondenViewer falls back to the first target the same way.
+    return all.find(t => t.key === ex.targetKey) ?? all[0];
+};
+const isAfrondenRooster = (c: Record<string, unknown>) => (c.subType ?? 'rooster') === 'rooster';
+// SYNC: AfrondenViewer rooster columns (usableTargets with its defaults; the first target when none is usable).
+function roosterTargets(c: Record<string, unknown>) {
+    const nt = numberTypeOf(c);
+    const dec = nt === 'decimal';
+    const cols = usableTargets(nt, Number(c.maxGetal ?? (dec ? 100 : 1000)), Number(c.decimalPlaces ?? 2), (c.roundTargets as string[] | undefined) ?? (dec ? ['E', 't'] : ['T', 'H']));
+    return cols.length ? cols : [targetsFor(nt)[0]];
+}
+// SYNC: AfrondenViewer rooster KioskCell keys: r<row>_<target key>, row by row.
+const afrondenInteract = cellsInteract<AfrondenExercise>(
+    (ex, c) => (ex.numbers ?? []).flatMap((_, i) => roosterTargets(c).map(t => `r${i}_${t.key}`)),
+    (ex, c) => (ex.numbers ?? []).flatMap(n => roosterTargets(c).map(t => numberSpellings(roundTo(n, t.weight)).join('|'))),
+);
+
+export const AFRONDEN_KIOSK = descriptor<AfrondenExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (isAfrondenRooster(c) ? 'interactive' : 'number'),
+    keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
+    interact: afrondenInteract,
+    answerOf: (ex, c) => (isAfrondenRooster(c) ? [afrondenInteract.answerOf(ex, c)] : numberSpellings(roundTo(ex.number ?? 0, afrondenTarget(ex, c).weight))),
+    display: (ex, c) => (isAfrondenRooster(c)
+        ? `${(ex.numbers ?? []).map(showNum).join(' · ')} afronden op ${roosterTargets(c).map(t => t.key).join(', ')}: ?`
+        : `${formatMathNumber(plain(ex.number ?? 0))} ≈ ? (op ${afrondenTarget(ex, c).label})`),
+    supported: (c) => ['simpel', 'rooster'].includes((c.subType as string | undefined) ?? 'rooster'),
+});
+
+// ── Vergelijken ──────────────────────────────────────────────────────────────
+
+// getallen / representaties: < = > between a and b (a breuk side compares by its value);
+// kiezen: tap the grootste / kleinste ON the card (Phase C); the viewer's keys are positions.
+const isKiezen = (c: Record<string, unknown>) => c.subType === 'kiezen';
+const showNum = (x: number) => formatMathNumber(plain(x));
+const kiezenAnswer = (ex: VergelijkenExercise) => {
+    const nums = ex.numbers ?? [];
+    // SYNC: VergelijkenViewer circles Math.min / Math.max by ex.target.
+    return (ex.target ?? 'grootste') === 'kleinste' ? Math.min(...nums) : Math.max(...nums);
+};
+const sideText = (v: number | undefined, f: Fraction | undefined) => (f ? showValue(f) : showNum(v ?? 0));
+
+export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
+    input: 'choice',
+    inputOf: (_ex, c) => (isKiezen(c) ? 'interactive' : 'choice'),
+    choices: ['<', '=', '>'],
+    choicesOf: (ex, c) => (isKiezen(c) ? (ex.numbers ?? []).map(showNum) : ['<', '=', '>']),
+    kioskInstruction: (ex, c) => (isKiezen(c) ? `Tik op het ${(ex.target ?? c.chooseTarget) === 'kleinste' ? 'kleinste' : 'grootste'} getal.` : undefined),
+    interact: {
+        kind: 'tap',
+        keys: (ex) => (ex.numbers ?? []).map((_, i) => String(i)),
+        answerOf: (ex) => showNum(kiezenAnswer(ex)),
+        // The tapped number's value, so two equal maxima both count and a stats row reads "437".
+        fromState: (st, ex) => {
+            const n = st.selected.length ? ex.numbers?.[Number(st.selected[0])] : undefined;
+            return n === undefined ? '' : showNum(n);
+        },
+    },
+    answerOf: (ex, c) => {
+        if (isKiezen(c)) return [showNum(kiezenAnswer(ex))];
+        const a = ex.a ?? 0, b = ex.b ?? 0;
+        return [a < b ? '<' : a > b ? '>' : '='];
+    },
+    display: (ex, c) => isKiezen(c)
+        ? `${ex.target ?? 'grootste'} van ${(ex.numbers ?? []).map(showNum).join(' · ')}: ?`
+        : `${sideText(ex.a, ex.aFrac)} ? ${sideText(ex.b, ex.bFrac)}`,
+});
+
+// ── Cijferen (Phase C2: the pupil fills the grid itself on the card) ─────────
+
+// SYNC: cijferCells.ts keys: a = answer digit, p = partial product, q = quotient digit (one digit
+// each, a full ruitje hands on); c = carry, b = exchanged top digit (scratch, tapped); r = rest.
+const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, c: { length: 1, scratch: true }, b: { length: 2, scratch: true }, r: {} };
+
+// Aftrekken: the pupil can let the kiosk do a column's exchange (inwisselen) instead of typing
+// the new top digits; it exchanges whether or not the column needs it (cijferLenen).
+const LENEN_KEY: KioskExtraKey<CijferExercise> = {
+    id: 'lenen', label: 'Lenen', hotkeys: ['l', 'L', '-'],
+    // One line for every subtraction, so it explains the key without saying whether this exercise needs it.
+    hint: 'Lenen: wissel een tiental',
+    apply: (state, active, ex, c) => cijferLenen(ex, cijferDp(ex, c), state, active),
+};
+
+export interface CijferKioskOptions {
+    // A real carry or exchanged digit left blank is wrong (default); false = only a WRONG one is (tests only).
+    // Either way a column with no carry / exchange takes blank or 0 (or its untouched top digit).
+    strictCarries?: boolean;
+}
+
+// Every answer ruitje is checked digit by digit, and so is every carry / exchange (see options).
+export function cijferKiosk({ strictCarries = true }: CijferKioskOptions = {}): KioskDescriptor {
+    const chk = (ex: CijferExercise, c: Record<string, unknown>) => cijferCheck(ex, cijferDp(ex, c), strictCarries);
+    const interactAnswer = (ex: CijferExercise, c: Record<string, unknown>) => chk(ex, c).wants.join(INTERACT_SEP);
+    return descriptor<CijferExercise>({
+        input: 'interactive',
+        // The grid takes digits only; a decimal rest (0,03) needs the comma.
+        keys: (c) => (numberTypeOf(c) === 'decimal' && c.operator === ':' ? [','] : []),
+        extraKeys: (ex) => (ex.operator === '-' ? [LENEN_KEY] : []),
+        // A needed carry left blank is Fout (owner rule), so the card says the carries count; one text
+        // per operator (÷ has no carry row), so it never tells whether this exercise has any.
+        kioskInstruction: (ex) => (ex.operator === ':' ? 'Cijfer uit.'
+            : ex.operator === '-' ? 'Cijfer uit. Typ ook je leencijfers.' : 'Cijfer uit. Typ ook je onthoudcijfers.'),
+        interact: {
+            kind: 'fill-cells',
+            keys: (ex, c) => cijferKioskGrid(ex, cijferDp(ex, c)).cells.map(k => k.key),
+            cellOf: (key) => CIJFER_CELL[key[0]] ?? {},
+            answerOf: interactAnswer,
+            fromState: (st, ex, c) => cijferGiven(chk(ex, c), st.cells)?.join(INTERACT_SEP) ?? '',
+            show: (answer, ex, c) => cijferShow(chk(ex, c), answer),
+        },
+        answerOf: (ex, c) => [interactAnswer(ex, c)],
+        display: (ex) => `${ex.operands.map(showValue).join(` ${opGlyph(ex.operator)} `)} = ${ex.operator === ':' ? '? r ?' : '?'}`,
+    });
+}
+export const CIJFER_KIOSK = cijferKiosk();
+
+// The stats line of a cijfer answer: the answer row as a number, the partial products before
+// it, and the carries the pupil wrote ("1245 (onthouden 1 1)").
+function cijferShow(chk: CijferCheck, answer: string): string {
+    const parts = answer.split(INTERACT_SEP.trim()).map(p => p.trim().split('|')[0]);
+    const byCell = new Map<string, string>();
+    const pps: string[] = [];
+    const scratch: string[] = [];
+    let quotient = '', rest = '';
+    chk.parts.forEach((p, i) => {
+        const v = parts[i] ?? '';
+        if ('rest' in p) rest = v;
+        else if ('kind' in p) { if (p.kind === 'pp') pps.push(v); else quotient = v; }
+        else if (/^[cb]/.test(p.cell)) { if (v) scratch.push(v); }
+        else byCell.set(p.cell, v);
+    });
+    if (chk.parts.some(p => 'rest' in p)) return `${quotient.replace('.', ',')} r ${rest.replace('.', ',')}`;
+    const digits = chk.answerCells.map(k => byCell.get(k) || '_');
+    const int = digits.slice(0, chk.answerInt).join('').replace(/^_+/, '') || '0';
+    const dec = digits.slice(chk.answerInt).join('').replace(/_+$/, '');
+    const row = dec ? `${int},${dec}` : int;
+    const sum = pps.length ? `${pps.join(' + ')} = ${row}` : row;
+    return scratch.length ? `${sum} (onthouden ${scratch.join(' ')})` : sum;
+}
+
+// ── Getalbegrip ──────────────────────────────────────────────────────────────
+
+// Digits of `n` from its highest non-zero place down to E (or 10^-dp), as the sheet prints them.
+// SYNC: PlaatswaardeViewer placesOf / placesFor.
+function plaatsenOf(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
+    const own = (String(ex.number).split('.')[1] ?? '').length;
+    const dp = Math.max(Number(c.decimalPlaces ?? 0), own);
+    const all = getMaskPlaces(Math.max(Number(c.maxGetal ?? 1000), ex.number), dp > 0 ? 'decimal' : 'natural', dp);
+    const start = all.findIndex(p => digitAtPlace(ex.number, p.weight) !== 0);
+    return (start < 0 ? all.slice(-1) : all.slice(start)).map(p => ({ ...p, digit: digitAtPlace(ex.number, p.weight) }));
+}
+const plaatsOf = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => plaatsenOf(ex, c).find(p => p.key === ex.placeKey);
+// What the block asks: Antwoord 'waarde' turns a plaats / omcirkelen block into a waarde one.
+const pwSub = (c: Record<string, unknown>) => plaatsView(c);
+// The place choices as shown: mixed for Antwoord 'plaats-shuffle' (SYNC: PlaatswaardeViewer chips).
+const shownPlaatsen = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => {
+    const ps = plaatsenOf(ex, c);
+    return placeOrder(ps.length, ex, c).map(i => ps[i]);
+};
+const isPwTabel = (c: Record<string, unknown>) => pwSub(c) === 'tabel';
+// The viewer's own columns (tabelPlaces, incl. a teacher's tablePlaces), so the cells match.
+const tabelCells = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => tabelPlaces(ex, c as Partial<PlaatswaardeConstraints>);
+// tabel: the digit under every place, keyed by the place (one-digit cells hand the keypad on).
+const pwTabelInteract = cellsInteract<PlaatswaardeExercise>(
+    (ex, c) => tabelCells(ex, c).map(p => p.key),
+    (ex, c) => tabelCells(ex, c).map(p => String(p.digit)),
+    () => ({ length: 1 }),
+);
+
+// waarde: type the digit's value (300, 0,05); plaats: tap the place name; omcirkelen: tap
+// its letter (H, t) ON the card (Phase C), among the number's own place chips like the sheet's.
+const isOmcirkelen = (c: Record<string, unknown>) => pwSub(c) === 'omcirkelen';
+export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : isOmcirkelen(c) || isPwTabel(c) ? 'interactive' : 'choice'),
+    // The tabel's cells take one digit each.
+    keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 && !isPwTabel(c) ? [','] : []),
+    // tabel fills cells (C2); omcirkelen taps a chip through `interact` below (C1a).
+    interactOf: (c) => (isPwTabel(c) ? pwTabelInteract : undefined),
+    kioskInstruction: (_ex, c) => (isOmcirkelen(c) ? 'Tik op de plaats van het onderstreepte cijfer.'
+        : pwSub(c) === 'waarde' && c.subType !== 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : undefined),
+    // A plaats / omcirkelen row answering the value is named like the waarde leaf; door elkaar says so.
+    rowLabel: (label, c) => (c.subType !== 'plaats' && c.subType !== 'omcirkelen' ? label
+        : c.plaatsAnswer === 'waarde' ? `${label.split(' · ')[0]} · waarde van cijfer`
+        : c.plaatsAnswer === 'plaats-shuffle' ? `${label} (door elkaar)` : label),
+    // Each leaf plays as its name says: waarde types the value; plaats and omcirkelen mix the places (in the digits' order a screen only counts along).
+    kioskSeed: (c) => (c.subType === 'waarde' ? { plaatsAnswer: 'waarde' } : c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'plaats-shuffle' } : undefined),
+    choicesOf: (ex, c) => shownPlaatsen(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
+    // Keys are chip positions (SYNC: PlaatswaardeViewer omcirkelen chips); the answer is the letter.
+    interact: {
+        kind: 'tap',
+        keys: (ex, c) => shownPlaatsen(ex, c).map((_, i) => String(i)),
+        answerOf: (ex, c) => plaatsOf(ex, c)?.key ?? '',
+        fromState: (st, ex, c) => (st.selected.length ? shownPlaatsen(ex, c)[Number(st.selected[0])]?.key ?? '' : ''),
+    },
+    answerOf: (ex, c) => {
+        if (isPwTabel(c)) return [pwTabelInteract.answerOf(ex, c)];
+        const p = plaatsOf(ex, c);
+        if (!p) return [];
+        if (pwSub(c) === 'waarde') return numberSpellings(Number((p.digit * p.weight).toFixed(4)));
+        return [pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key];
+    },
+    display: (ex, c) => (isPwTabel(c)
+        ? `${showNum(ex.number)} in de plaatswaardetabel: ?`
+        : `${showNum(ex.number)}: ${pwSub(c) === 'waarde' ? 'waarde' : 'plaats'} van het cijfer op ${plaatsOf(ex, c)?.key ?? '?'} = ?`),
+});
+
+// cirkels: the pupil groups the circles and picks even / oneven. rooster: taps every even (or
+// oneven) number ON the card (Phase C); the answer is that set, smallest first.
+const isRooster = (c: Record<string, unknown>) => c.subType !== 'cirkels';
+const roosterTarget = (c: Record<string, unknown>) => ((c.target as string | undefined) ?? 'even');
+const roosterSet = (nums: readonly number[]) => [...nums].sort((a, b) => a - b).map(showNum).join(INTERACT_SEP);
+const roosterAnswer = (ex: EvenOnevenExercise, c: Record<string, unknown>) => {
+    // SYNC: EvenOnevenViewer isTarget.
+    const even = roosterTarget(c) === 'even';
+    return roosterSet((ex.numbers ?? []).filter(n => (n % 2 === 0) === even));
+};
+export const EVEN_ONEVEN_KIOSK = descriptor<EvenOnevenExercise>({
+    input: 'choice',
+    inputOf: (_ex, c) => (isRooster(c) ? 'interactive' : 'choice'),
+    choices: ['even', 'oneven'],
+    kioskInstruction: (_ex, c) => (isRooster(c) ? `Tik op alle ${roosterTarget(c)} getallen.` : 'Tik op even of oneven.'),
+    interact: {
+        kind: 'tap-multi',
+        keys: (ex) => (ex.numbers ?? []).map((_, i) => String(i)),
+        answerOf: roosterAnswer,
+        fromState: (st, ex) => roosterSet(st.selected.map(k => ex.numbers?.[Number(k)]).filter((n): n is number => n !== undefined)),
+    },
+    answerOf: (ex, c) => [isRooster(c) ? roosterAnswer(ex, c) : (ex.number ?? 0) % 2 === 0 ? 'even' : 'oneven'],
+    display: (ex, c) => (isRooster(c) ? `${roosterTarget(c)} in ${(ex.numbers ?? []).map(showNum).join(' ')}: ?` : `${ex.number ?? 0} is ?`),
+});
+
+// herkennen: Roman → number; schrijven: number → Roman, typed on the device keyboard.
+const isSchrijven = (c: Record<string, unknown>) => c.subType === 'schrijven';
+export const ROMEINSE_KIOSK = descriptor<RomeinseExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (isSchrijven(c) ? 'text' : 'number'),
+    answerOf: (ex, c) => (isSchrijven(c) ? [ex.roman] : numberSpellings(ex.value)),
+    display: (ex, c) => (isSchrijven(c) ? `${ex.value} = ? (Romeins)` : `${ex.roman} = ?`),
+});
+
+// SYNC: GetalFunctieViewer FUNCTIE_LABEL (aankruisen columns) / FUNCTIE_FULL (schrijven).
+const FUNCTIE_LABEL: Record<string, string> = { hoeveelheid: 'hoeveelheid', rang: 'rangorde', maat: 'maat', code: 'code' };
+const FUNCTIE_FULL: Record<string, string> = { hoeveelheid: 'hoeveelheidsgetal', rang: 'rangordegetal', maat: 'maatgetal', code: 'codegetal' };
+const functiesOf = (c: Record<string, unknown>) => {
+    const f = c.functies as string[] | undefined;
+    return f?.length ? f : ['hoeveelheid', 'rang', 'maat', 'code'];
+};
+const isSchrijf = (c: Record<string, unknown>) => c.answerMode === 'schrijven';
+// aankruisen: tick the column ON the card (Phase C); keys are column positions
+// (SYNC: GetalFunctieViewer cols), the answer the column's name.
+export const GETALFUNCTIE_KIOSK = descriptor<GetalFunctieExercise>({
+    input: 'interactive',
+    inputOf: (_ex, c) => (isSchrijf(c) ? 'text' : 'interactive'),
+    kioskInstruction: (_ex, c) => (isSchrijf(c) ? undefined : 'Wat betekent het getal? Tik het juiste vakje aan.'),
+    interact: {
+        kind: 'tap',
+        keys: (_ex, c) => functiesOf(c).map((_, i) => String(i)),
+        answerOf: (ex) => FUNCTIE_LABEL[ex.functie],
+        fromState: (st, _ex, c) => {
+            const f = st.selected.length ? functiesOf(c)[Number(st.selected[0])] : undefined;
+            return f ? FUNCTIE_LABEL[f] ?? f : '';
+        },
+    },
+    // Schrijven takes the full word and the short column name alike.
+    answerOf: (ex, c) => (isSchrijf(c) ? [FUNCTIE_FULL[ex.functie], FUNCTIE_LABEL[ex.functie]] : [FUNCTIE_LABEL[ex.functie]]),
+    display: (ex) => `${ex.sentence.replace('___', ex.number)} → ${ex.number} is een ?`,
+});
+
+export const MAB_KIOSK = descriptor<MabExercise>({
+    input: 'number',
+    answerOf: (ex) => numberSpellings(ex.value),
+    display: (ex) => `MAB ${([[ex.thousands, 'D'], [ex.hundreds, 'H'], [ex.tens, 'T'], [ex.units, 'E']] as const).filter(([n]) => n).map(([n, k]) => `${n}${k}`).join(' ')} = ?`,
+});
+
+// ── Schattend, rekenvolgorde, controleren ───────────────────────────────────
+
+// Only the estimate is asked; the rounded operands are the pupil's own scrap work.
+// SYNC: SchattendViewer rows (round both for + −, only a for × :).
+function schatting(ex: SchattendExercise, c: Record<string, unknown>): number {
+    const all = targetsFor(numberTypeOf(c));
+    const t = all.find(x => x.key === ex.targetKey) ?? all[0];
+    const ra = roundTo(ex.a, t.weight);
+    const rb = ex.operator === '+' || ex.operator === '-' ? roundTo(ex.b, t.weight) : ex.b;
+    const units = (n: number) => Math.round(n * ROUND_SCALE);
+    if (ex.operator === '+') return (units(ra) + units(rb)) / ROUND_SCALE;
+    if (ex.operator === '-') return (units(ra) - units(rb)) / ROUND_SCALE;
+    return ex.operator === 'x' ? Number((ra * rb).toFixed(6)) : Number((ra / rb).toFixed(6));
+}
+export const SCHATTEND_KIOSK = descriptor<SchattendExercise>({
+    input: 'number',
+    keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
+    answerOf: (ex, c) => numberSpellings(schatting(ex, c)),
+    display: (ex) => `${showNum(ex.a)} ${opGlyph(ex.operator)} ${showNum(ex.b)} ≈ ? (op ${ex.targetKey})`,
+});
+
+export const REKENVOLGORDE_KIOSK = descriptor<RekenvolgordeExercise>({
+    input: 'number',
+    answerOf: (ex) => numberSpellings(ex.answer),
+    // SYNC: RekenvolgordeViewer renderTokens (tight brackets).
+    display: (ex) => `${ex.tokens.map(t => (typeof t === 'number' ? showNum(t) : opGlyph(t))).join(' ').replace(/\( /g, '(').replace(/ \)/g, ')')} = ?`,
+});
+
+// Negenproef and omgekeerde bewerking both end in the sheet's juist / fout pills: the pupil
+// taps one ON the card (Phase C). Keys: 0 = juist, 1 = fout (SYNC: ControlerenViewer mark).
+const JUIST_FOUT = ['juist', 'fout'];
+const controleAnswer = (ex: ControleExercise) => (ex.shownAnswer === ex.correctAnswer ? 'juist' : 'fout');
+export const CONTROLEREN_KIOSK = descriptor<ControleExercise>({
+    input: 'interactive',
+    kioskInstruction: (_ex, c) => `Controleer met de ${c.subType === 'omgekeerde' ? 'omgekeerde bewerking' : 'negenproef'}: tik op juist of fout.`,
+    // The sheet plants its slips on the odd rows ('helft'), and a one-exercise kiosk block is always
+    // row 0 (12 of 12 "juist" in class): each kiosk exercise flips its own coin instead.
+    prepare: (c, rng) => ((c.foutAandeel ?? 'helft') === 'helft' ? { ...c, foutAandeel: rng() < 0.5 ? 'alles' : 'geen' } : c),
+    interact: {
+        kind: 'tap',
+        keys: () => ['0', '1'],
+        answerOf: controleAnswer,
+        fromState: (st) => (st.selected.length ? JUIST_FOUT[Number(st.selected[0])] ?? '' : ''),
+    },
+    answerOf: (ex) => [controleAnswer(ex)],
+    display: (ex) => `${showNum(ex.a)} ${opGlyph(ex.operator)} ${showNum(ex.b)} = ${showNum(ex.shownAnswer)}: juist of fout?`,
+});
+
+// ── Vormleer (herkennen: name the hoek / vierhoek) ──────────────────────────
+
+// Triangles have two naming systems (by angle and by side): a rechthoekige driehoek can also
+// be gelijkbenig, so a set mixing both would have two right buttons. One system at a time.
+const BY_ANGLE = ['scherphoekig', 'rechthoekig', 'stomphoekig'];
+const BY_SIDE = ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'];
+const conceptsOf = (c: Record<string, unknown>) => (c.concepts as string[] | undefined) ?? [];
+// Phase C4: hoeken tekenen = drag the free been open to the asked class (hoekDrag.ts: snapped
+// to 5°, right within the class's range). A drawn figuur or punt-lijn has no single value.
+const isHoekDrag = (c: Record<string, unknown>) => c.mode === 'tekenen' && c.kind === 'hoek';
+const hoekName = (ex: VormleerExercise) => CONCEPT_NAMES[ex.concept] ?? ex.concept;
+// What the card drew, for an error row, without naming the soort (that is the answer).
+const FIGURE_BY_CORNERS: Record<number, string> = { 3: 'driehoek', 4: 'vierhoek' };
+const figureText = (ex: VormleerExercise) => (ex.kind === 'hoek'
+    ? `hoek van ${ex.angleDeg ?? '?'}°`
+    : `${FIGURE_BY_CORNERS[ex.points?.length ?? 0] ?? 'figuur'}${ex.sides?.length ? `, zijden ${ex.sides.map(showNum).join(' · ')} cm` : ''}`);
+const hoekDrag: KioskInteract<VormleerExercise> = {
+    kind: 'drag',
+    keys: () => ['a'],
+    answerOf: (ex) => String(hoekTarget(ex.concept).centre),
+    fromState: (st) => (st.drag?.a === undefined ? '' : String(st.drag.a)),
+    tolerance: (ex) => hoekTarget(ex.concept).tolerance,
+    // The canonical answer is the class's centre: the stats name the class instead.
+    show: (answer, ex) => (answer === String(hoekTarget(ex.concept).centre) ? hoekName(ex) : `${answer}°`),
+};
+export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
+    input: 'choice',
+    inputOf: (_ex, c) => (isHoekDrag(c) ? 'interactive' : 'choice'),
+    interactOf: (c) => (isHoekDrag(c) ? hoekDrag : undefined),
+    choicesOf: (_ex, c) => conceptsOf(c).map(k => CONCEPT_NAMES[k] ?? k),
+    answerOf: (ex, c) => (isHoekDrag(c) ? [hoekDrag.answerOf(ex, c)] : [hoekName(ex)]),
+    display: (ex, c) => (isHoekDrag(c) ? `teken een ${hoekName(ex)}: ?°` : `${figureText(ex)}: welke soort?`),
+    kioskInstruction: (ex, c) => (isHoekDrag(c) ? `Sleep het been tot je een ${hoekName(ex)} hebt.` : undefined),
+    supported: (c) => {
+        const ks = conceptsOf(c);
+        if (isHoekDrag(c)) return ks.length >= 1 && ks.every(k => HOEK_DRAG_CONCEPTS.includes(k));
+        if ((c.mode ?? 'herkennen') !== 'herkennen' || (c.kind !== 'hoek' && c.kind !== 'figuur')) return false;
+        return ks.length >= 2 && !(ks.some(k => BY_ANGLE.includes(k)) && ks.some(k => BY_SIDE.includes(k)));
+    },
+});
+
+// ── Meten ────────────────────────────────────────────────────────────────────
+
+// aflezen: read the thermometer; verschil: the difference (never negative); kleuren (Phase C4):
+// drag the mercury to the asked degree (1° a step, so exactly that degree).
+const tempDrag: KioskInteract<TemperatuurExercise> = {
+    kind: 'drag',
+    keys: () => ['t'],
+    answerOf: (ex) => String(ex.celsius),
+    fromState: (st) => (st.drag?.t === undefined ? '' : String(st.drag.t)),
+    show: (answer) => `${answer.replace('-', '−')} °C`,
+};
+export const TEMPERATUUR_KIOSK = descriptor<TemperatuurExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.variant === 'kleuren' ? 'interactive' : 'number'),
+    interact: tempDrag,
+    keys: (c) => (c.includeNegatives && c.variant === 'aflezen' ? ['-'] : []),
+    answerOf: (ex, c) => (ex.variant === 'kleuren' ? [tempDrag.answerOf(ex, c)]
+        : numberSpellings(ex.variant === 'verschil' ? Math.abs(ex.celsius - (ex.celsius2 ?? 0)) : ex.celsius)),
+    display: (ex) => (ex.variant === 'verschil' ? `verschil ${ex.celsius} °C en ${ex.celsius2 ?? 0} °C = ? °C`
+        : ex.variant === 'kleuren' ? `thermometer tot ${ex.celsius} °C: ?` : 'thermometer: ? °C'),
+    kioskInstruction: (ex) => (ex.variant === 'kleuren' ? 'Sleep het kwik tot de juiste temperatuur.' : undefined),
+    supported: (c) => c.variant === 'aflezen' || c.variant === 'verschil' || c.variant === 'kleuren',
+});
+
+// The dial reads in the block's notatie: grams, kilograms with a comma, or kg + g (two fields).
+const gewichtNotatie = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.notatie ?? (c.notatie as string | undefined) ?? 'g';
+// kleuren (Phase C4): drag a needle round to the asked weight, snapped to the dial's step.
+// Legacy saves may still say 'tekenen' (renamed to 'kleuren').
+const isWeegKleuren = (mode: unknown) => mode === 'kleuren' || mode === 'tekenen';
+const weegMode = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.mode ?? (c.mode as string | undefined) ?? 'aflezen';
+const weegDrag: KioskInteract<WeegschaalExercise> = {
+    kind: 'drag',
+    keys: () => ['g'],
+    answerOf: (ex) => String(ex.grams),
+    fromState: (st) => (st.drag?.g === undefined ? '' : String(st.drag.g)),
+    tolerance: (ex, c) => (ex.stepGram ?? (c.stepGram as number | undefined) ?? 50) / 2,
+    show: (answer, ex, c) => formatGewicht(Number(answer), gewichtNotatie(ex, c)),
+};
+export const WEEGSCHAAL_KIOSK = descriptor<WeegschaalExercise>({
+    input: 'number',
+    inputOf: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? 'interactive' : gewichtNotatie(ex, c) === 'kg-g' ? 'multi-number' : 'number'),
+    interactOf: (c) => (isWeegKleuren(c.mode) ? weegDrag : undefined),
+    keys: (c) => (c.notatie === 'kg-komma' ? [','] : []),
+    labels: () => ['kg', 'g'],
+    answerOf: (ex, c) => {
+        if (isWeegKleuren(weegMode(ex, c))) return [weegDrag.answerOf(ex, c)];
+        const n = gewichtNotatie(ex, c);
+        if (n === 'kg-g') return [String(Math.floor(ex.grams / 1000)), String(ex.grams % 1000)];
+        return numberSpellings(n === 'kg-komma' ? ex.grams / 1000 : ex.grams);
+    },
+    display: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? `weegschaal tot ${formatGewicht(ex.grams, gewichtNotatie(ex, c))}: ?`
+        : `weegschaal: ? ${gewichtNotatie(ex, c) === 'kg-komma' ? 'kg' : gewichtNotatie(ex, c) === 'kg-g' ? 'kg ? g' : 'g'}`),
+    kioskInstruction: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? 'Sleep de wijzer tot het juiste gewicht.' : undefined),
+    supported: (c) => (c.mode ?? 'aflezen') === 'aflezen' || isWeegKleuren(c.mode),
+});
+
+// Labelled sides only ('gegeven'): measuring with a ruler on a scaled card is not to size.
+// omtrek asks the perimeter (round1, cm); lengte-meten (juist / fout about a stated length) is no longer offered.
+const round1 = (v: number) => Math.round(v * 10) / 10;   // SYNC: MetenViewer round1
+const isGegeven = (c: Record<string, unknown>) => c.measureModel === 'gegeven';
+export const LENGTE_KIOSK = descriptor<MeetExercise>({
+    input: 'choice',
+    choices: ['juist', 'fout'],
+    answerOf: (ex) => [ex.claimCorrect ? 'juist' : 'fout'],
+    display: (ex) => `lengte = ${showNum(round1(ex.claim ?? 0))} cm: juist of fout?`,
+    // A bare line "lengte = 4 cm: juist of fout?" has nothing to measure on a screen: kept for old links, never offered.
+    supported: () => false,
+});
+export const OMTREK_KIOSK = descriptor<MeetExercise>({
+    input: 'number',
+    keys: (c) => (c.precision === 'mm' || (c.shapes as string[] | undefined)?.includes('cirkel') ? [','] : []),
+    answerOf: (ex) => numberSpellings(round1(ex.perimeter)),
+    display: (ex) => `omtrek ${ex.shape ?? ex.kind} = ? cm`,
+    supported: isGegeven,
+});
+
+// Rooster: count the squares; berekenen: the area (+ the omtrek as a second field when asked).
+const asksOmtrek = (c: Record<string, unknown>) => !!c.askOmtrek && c.subType !== 'rooster';
+export const OPPERVLAKTE_KIOSK = descriptor<MeetExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (asksOmtrek(c) ? 'multi-number' : 'number'),
+    keys: (c) => (c.subType === 'rooster' ? [] : [',']),
+    labels: () => ['opp. cm²', 'omtrek cm'],
+    answerOf: (ex, c) => {
+        const area = numberSpellings(round1(ex.area ?? 0));
+        return asksOmtrek(c) ? [area.join('|'), numberSpellings(round1(ex.perimeter)).join('|')] : area;
+    },
+    display: (ex) => `oppervlakte ${ex.shape ?? ''} = ? cm²`,
+});
+
+// omcirkelen: tap one of the sheet's chips ON the card (Phase C); schrijven: type the unit
+// ('°C' also as 'C'). SYNC: MaateenheidViewer chipText (schatten shows value + unit).
+const chipText = (ex: MaateenheidExercise, c: Record<string, unknown>, u: string) =>
+    (c.subType === 'schatten' ? `${showNum(ex.value)} ${u}` : u);
+export const MAATEENHEID_KIOSK = descriptor<MaateenheidExercise>({
+    input: 'interactive',
+    inputOf: (ex) => (ex.choices ? 'interactive' : 'text'),
+    kioskInstruction: (ex) => (ex.choices ? 'Tik op de passende maateenheid.' : undefined),
+    // Keys are chip positions; the answer is the chip's text.
+    interact: {
+        kind: 'tap',
+        keys: (ex) => (ex.choices ?? []).map((_, i) => String(i)),
+        answerOf: (ex, c) => chipText(ex, c, ex.unit),
+        fromState: (st, ex, c) => {
+            const u = st.selected.length ? ex.choices?.[Number(st.selected[0])] : undefined;
+            return u === undefined ? '' : chipText(ex, c, u);
+        },
+    },
+    answerOf: (ex, c) => (ex.choices ? [chipText(ex, c, ex.unit)] : [...new Set([ex.unit, ex.unit.replace('°', '')])]),
+    display: (ex) => ex.sentence.replace('___', '?'),
+    // Schatten written out is a number and a unit in one line: not one word to check.
+    supported: (c) => !(c.answerMode === 'schrijven' && c.subType === 'schatten'),
+});
+
+// number blank (vraag getal, a compound): one field per part, labelled with its unit; unit blank
+// (vraag eenheid, 'enkel-eenheid'): tap the unit. One answer each, exact (owner 2026-10-11).
+// The buttons: the ticked units plus the exercise's own, ONE per unit size in ladder order (the
+// generator's own pick per size, so ca never competes with m²).
+function herleidUnits(ex: HerleidingExercise, c: Record<string, unknown>): string[] {
+    const keys = new Set([...((c.units as string[] | undefined) ?? []), ...ex.fromParts.map(p => p.key), ...ex.toParts.map(p => p.key)]);
+    const sizes = new Set<number>();
+    return ladderFor((c.measure as string | undefined) ?? 'lengte')
+        .filter(u => keys.has(u.key) && !sizes.has(u.factor) && (sizes.add(u.factor), true))
+        .map(u => u.key);
+}
+const partsText = (ps: HerleidingPart[]) => ps.map(p => `${showNum(p.value)} ${p.key}`).join(' ');
+// A typed whole number in the sheet's spacing (2350 → 2 350); anything else as typed.
+const showTyped = (t: string) => (/^\d+$/.test(t.trim()) ? showNum(Number(t)) : t.trim());
+export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
+    input: 'number',
+    kioskInstruction: (ex) => (ex.blank === 'unit' ? 'Welke eenheid?' : ex.toParts.length === 1 ? `Zet om naar ${ex.toParts[0].key}.` : undefined),
+    inputOf: (ex) => (ex.blank === 'unit' ? 'choice' : ex.toParts.length > 1 ? 'multi-number' : 'number'),
+    choicesOf: (ex, c) => herleidUnits(ex, c),
+    labels: (ex) => ex.toParts.map(p => p.key),
+    answerOf: (ex) => {
+        if (ex.blank === 'unit') return [ex.toParts[0].key];
+        // '0|': a zero part may be typed as 0 or left empty (owner 2026-10-10).
+        return ex.toParts.length > 1 ? ex.toParts.map(p => (isZeroAnswerPart(ex, p) ? '0|' : String(p.value))) : numberSpellings(ex.toParts[0].value);
+    },
+    // From the shape only (a compound number blank), so the button never hints at which part is 0.
+    blankFields: (ex) => ex.blank === 'number' && ex.toParts.length > 1,
+    // The Resultaten row names what was asked: "235 cm = ? m" / "235 cm = 2,35 ?".
+    display: (ex) => (ex.blank === 'unit'
+        ? `${partsText(ex.fromParts)} = ${showNum(ex.toParts[0].value)} ?`
+        : `${partsText(ex.fromParts)} = ${ex.toParts.map(p => `? ${p.key}`).join(' ')}`),
+    // An answer reads as a quantity: "235 dm" for a tapped unit, "2 m 35 cm" for the fields; a zero part
+    // left empty or typed 0 is left out, like the key ("71 dl").
+    showAnswer: (parts, ex) => (ex.blank === 'unit'
+        ? `${showNum(ex.toParts[0].value)} ${parts[0] ?? ''}`
+        : ex.toParts.flatMap((p, i) => (!parts[i] || (isZeroAnswerPart(ex, p) && /^0+$/.test(parts[i])) ? [] : [`${showTyped(parts[i])} ${p.key}`])).join(' ')),
+});
+
+// ── Geld ─────────────────────────────────────────────────────────────────────
+
+const euros = (cents: number) => numberSpellings(cents / 100);
+// Whole euros bare (€ 10), else always two cent digits (€ 1,70), like the sheet.
+const showEuro = (cents: number) => `€ ${cents % 100 === 0 ? showNum(cents / 100) : formatMathNumber((cents / 100).toFixed(2))}`;
+
+// The amount in euros; the decimaal format needs the comma.
+export const GELD_KIOSK = descriptor<GeldExercise>({
+    input: 'number',
+    keys: (c) => (c.format === 'decimaal' ? [','] : []),
+    answerOf: (ex) => euros(ex.amountCents),
+    display: (ex) => `${ex.denominations.filter(d => d.count > 0).map(d => `${d.count} × ${showEuro(d.valueCents)}`).join(' + ')} = € ?`,
+});
+
+// euro-cent (the default, and 'beide'): "__ euro en __ cent" as two fields; decimaal: € 3,75.
+const teruggevenDecimaal = (c: Record<string, unknown>) => c.antwoordFormat === 'decimaal';
+export const GELD_TERUGGEVEN_KIOSK = descriptor<GeldTeruggevenExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (teruggevenDecimaal(c) ? 'number' : 'multi-number'),
+    keys: (c) => (teruggevenDecimaal(c) ? [','] : []),
+    labels: () => ['euro', 'cent'],
+    answerOf: (ex, c) => (teruggevenDecimaal(c)
+        ? euros(ex.changeCents)
+        : [String(Math.floor(ex.changeCents / 100)), String(ex.changeCents % 100)]),
+    display: (ex) => `${showEuro(ex.priceCents)} betalen met ${showEuro(ex.payWithCents)}: terug ?`,
+    // An amount reads "€ 2,65", not the fields "2 ; 65"; a cent field past 99 stays as typed.
+    showAnswer: (parts, _ex, c) => {
+        if (teruggevenDecimaal(c)) {
+            const raw = (parts[0] ?? '').replace(/\s/g, '');
+            return /^\d+([,.]\d{1,2})?$/.test(raw) ? showEuro(Math.round(Number(raw.replace(',', '.')) * 100)) : `€ ${raw}`;
+        }
+        const [e = '', ct = ''] = parts;
+        return /^\d+$/.test(e) && /^\d{1,2}$/.test(ct) ? showEuro(Number(e) * 100 + Number(ct)) : `${e} euro ${ct} cent`;
+    },
+});
+
+// korting: korting in € + nieuwe prijs (two fields); intrest: the interest. Winst asks a word too.
+// SYNC: GeldRekenenViewer rows.
+const kortingCents = (ex: GeldRekenenExercise) => ((ex.priceCents ?? 0) * (ex.percent ?? 0)) / 100;
+const intrestCents = (ex: GeldRekenenExercise) => ((ex.capitalCents ?? 0) * (ex.percent ?? 0)) / 100 * ((ex.months ?? 12) / 12);
+export const GELD_REKENEN_KIOSK = descriptor<GeldRekenenExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.subType === 'korting' ? 'multi-number' : 'number'),
+    keys: () => [','],
+    labels: () => ['korting €', 'nieuwe prijs €'],
+    answerOf: (ex) => (ex.subType === 'korting'
+        ? [euros(kortingCents(ex)).join('|'), euros((ex.priceCents ?? 0) - kortingCents(ex)).join('|')]
+        : euros(intrestCents(ex))),
+    display: (ex) => (ex.subType === 'korting'
+        ? `${showEuro(ex.priceCents ?? 0)} − ${ex.percent} %: korting ? nieuwe prijs ?`
+        : `${ex.percent} % van ${showEuro(ex.capitalCents ?? 0)} (${ex.months === 6 ? '6 maanden' : '1 jaar'}) = ?`),
+    supported: (c) => c.subType === 'korting' || c.subType === 'intrest',
+});
+
+// ── Rijen: one field per blank, left to right ───────────────────────────────
+
+// A value as the sheet prints it AND reduced: an ordenen row can show 6/8, and copying it
+// over is right there (only breuken-bewerken asks for one particular form).
+function shownSpellings(v: number | Fraction): string[] {
+    if (!isFraction(v)) return numberSpellings(v);
+    const g = gcd(v.n, v.d) || 1;
+    return [...new Set([...fractionSpellings(v), ...fractionSpellings({ whole: v.whole, n: v.n / g, d: v.d / g })])];
+}
+// Every blank's value as one multi-number entry (a fraction in all its spellings).
+const blanksOf = (values: readonly (number | Fraction)[], mask: readonly boolean[]) =>
+    values.filter((_, i) => mask[i]).map(v => shownSpellings(v).join('|'));
+const rowText = (values: readonly (number | Fraction)[], mask: readonly boolean[], sep: string) =>
+    values.map((v, i) => (mask[i] ? '?' : showValue(v))).join(sep);
+// The keys a number kind needs: decimals a comma, fractions a slash (+ space for gemengd), gehele a minus.
+const kindKeys = (c: Record<string, unknown>): KioskKey[] => {
+    const nt = numberTypeOf(c);
+    return nt === 'decimal' ? [','] : nt === 'rational' ? ['/', ' '] : nt === 'geheel' ? ['-'] : [];
+};
+
+// An operator blank (arrows on, the sign not printed) is a second kind of answer: those
+// settings stay out. Kettingsommen print every sign by default.
+// SYNC: PatroonViewer `filled` (showOperators && i < operatorsShown).
+const operatorsAllShown = (c: Record<string, unknown>) => {
+    if (!c.showArrows) return true;
+    const ops = typeof c.ticks === 'number' ? c.ticks - 1 : Number(c.chainLength ?? 4);
+    return !!c.showOperators && Number(c.operatorsShown ?? 0) >= ops;
+};
+// Phase C2: every blank of the row is a cell ON the card, keyed v<index> (SYNC: PatroonViewer,
+// GetallenrijenViewer, GetallenasViewer KioskCell keys).
+const blankKeys = (mask: readonly boolean[]) => mask.flatMap((b, i) => (b ? [`v${i}`] : []));
+const patroonInteract = cellsInteract<PatroonExercise>((ex) => blankKeys(ex.blankMask), (ex) => blanksOf(ex.values, ex.blankMask));
+export const PATROON_KIOSK = descriptor<PatroonExercise>({
+    input: 'interactive',
+    keys: kindKeys,
+    exactFormDefault: valueWhenRational,
+    interact: patroonInteract,
+    answerOf: (ex, c) => [patroonInteract.answerOf(ex, c)],
+    display: (ex) => rowText(ex.values, ex.blankMask, ' – '),
+    supported: operatorsAllShown,
+});
+
+// SYNC: GetallenasViewer derives a legacy natural line from start + step.
+const axisValues = (ex: GetallenasExercise) => (ex.values?.length ? ex.values : Array.from({ length: ex.tickCount }, (_, i) => ex.start + (ex.direction === 'left' ? -i : i) * ex.step));
+const axisInteract = cellsInteract<GetallenasExercise>((ex) => blankKeys(ex.blankMask), (ex) => blanksOf(axisValues(ex), ex.blankMask));
+// O26: an "Eigen sprong" of 0,5 on a natural / gehele rij makes kommagetallen. Read from the
+// step SETTING, never the exercise, so the keypad stays the same from one rij to the next.
+const axisKeys = (c: Record<string, unknown>): KioskKey[] => {
+    const keys = kindKeys(c);
+    const decimalStep = typeof c.step === 'number' && !Number.isInteger(c.step);
+    return decimalStep && !keys.includes(',') && numberTypeOf(c) !== 'rational' ? [...keys, ','] : keys;
+};
+export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
+    input: 'interactive',
+    keys: axisKeys,
+    exactFormDefault: valueWhenRational,
+    interact: axisInteract,
+    answerOf: (ex, c) => [axisInteract.answerOf(ex, c)],
+    display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
+});
+
+// veelvouden: the multiples after the given ones (the kiosk card prints the whole run, no
+// "enz." cap). tabel: tap the divisor cells of one number's row where it divides (Phase C).
+const isTabel = (c: Record<string, unknown>) => (c.layout ?? 'tabel') === 'tabel';
+// SYNC: DeelbaarheidViewer reads the same default divisor columns.
+const divisorsOf = (c: Record<string, unknown>) => (Array.isArray(c.divisors) ? c.divisors as number[] : [2, 5, 10]);
+const numberSet = (ns: readonly number[]) => [...ns].sort((a, b) => a - b).map(showNum).join(INTERACT_SEP);
+const tabelAnswer = (ex: DeelbaarheidExercise, c: Record<string, unknown>) =>
+    numberSet(divisorsOf(c).filter(d => (ex.number ?? 0) % d === 0));
+export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
+    input: 'multi-number',
+    inputOf: (_ex, c) => (isTabel(c) ? 'interactive' : 'multi-number'),
+    kioskInstruction: (ex, c) => (isTabel(c) ? `Tik aan door welke getallen ${showNum(ex.number ?? 0)} deelbaar is.` : undefined),
+    interact: {
+        kind: 'tap-multi',
+        // Key = the divisor column's position.
+        keys: (_ex, c) => divisorsOf(c).map((_, i) => String(i)),
+        answerOf: tabelAnswer,
+        fromState: (st, _ex, c) => numberSet(st.selected.map(k => divisorsOf(c)[Number(k)]).filter((d): d is number => d !== undefined)),
+        // O27: a number no column divides is answered by tapping nothing; Resultaten says so instead of an empty cell.
+        show: (answer) => answer.trim() || 'geen',
+    },
+    answerOf: (ex, c) => (isTabel(c) ? [tabelAnswer(ex, c)] : (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String)),
+    display: (ex, c) => (isTabel(c)
+        ? `${showNum(ex.number ?? 0)} deelbaar door ${divisorsOf(c).join(', ')}: ?`
+        : (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – ')),
+    supported: (c) => c.layout === 'veelvouden' || isTabel(c),
+    // A kiosk block holds one row, which would always read "0 – 9 – …": draw the deler (the teacher's base or one of
+    // the divisors) and the start multiple per exercise.
+    prepare: (c, rng) => {
+        if (c.layout !== 'veelvouden') return c;
+        const pool = [...new Set([Number(c.base ?? 9), ...divisorsOf(c)])];
+        return { ...c, base: pool[Math.floor(rng() * pool.length)], startFrom: Math.floor(rng() * 11) };
+    },
+});
+
+// Kleuren / omcirkelen / kleurraster: tap every multiple of the divisor. Each row has ONE
+// divisor (a leaf with several just draws one per row), so every setting is served except
+// the rest line, which asks for a typed remainder per number.
+// SYNC: DeelbaarheidKleurViewer shows kioskNumbers(); a key is the position in that list.
+const kleurShown = (ex: DeelbaarheidKleurExercise) => kioskNumbers(ex.numbers, ex.divisor);
+const kleurMultiples = (ex: DeelbaarheidKleurExercise, nums: readonly number[]) => numberSet(nums.filter(n => n % ex.divisor === 0));
+export const DEELBAARHEID_KLEUR_KIOSK = descriptor<DeelbaarheidKleurExercise>({
+    input: 'interactive',
+    kioskInstruction: (ex) => `Tik op elk getal dat deelbaar is door ${ex.divisor}.`,
+    interact: {
+        kind: 'tap-multi',
+        keys: (ex) => kleurShown(ex).map((_, i) => String(i)),
+        answerOf: (ex) => kleurMultiples(ex, kleurShown(ex)),
+        fromState: (st, ex) => numberSet(st.selected.map(k => kleurShown(ex)[Number(k)]).filter((n): n is number => n !== undefined)),
+    },
+    answerOf: (ex) => [kleurMultiples(ex, kleurShown(ex))],
+    display: (ex) => `veelvouden van ${ex.divisor} in ${kleurShown(ex).map(showNum).join(' ')}: ?`,
+    // viewMode 'raster' is the legacy spelling of strip + rechthoek (no rest line there either).
+    supported: (c) => !(c.showRest && c.viewMode !== 'raster' && c.rasterVorm !== 'rechthoek'),
+});
+
+// Tap the shuffled values ON the card in order (Phase C 'order'); keys are display positions.
+// A value reads in one canonical spelling (a breuk reduced), so two equal values (6/8 and
+// 3/4) may come in either order and the answer string still matches.
+const orderText = (v: number | Fraction) => (isFraction(v) ? fractionSpellings(reduce(v))[0] : showValue(v));
+export const ORDENEN_KIOSK = descriptor<OrdenenExercise>({
+    input: 'interactive',
+    kioskInstruction: (ex, c) => `Tik de ${c.fractionMode !== undefined ? 'breuken' : 'getallen'} aan van ${ex.operator === '>' ? 'groot naar klein' : 'klein naar groot'}.`,
+    interact: {
+        kind: 'order',
+        keys: (ex) => ex.display.map((_, i) => String(i)),
+        answerOf: (ex) => ex.values.map(orderText).join(INTERACT_SEP),
+        // '' until every value has its place, so Controleer waits for the whole row.
+        fromState: (st, ex) => (st.order.length === ex.display.length
+            ? st.order.map(k => orderText(ex.display[Number(k)])).join(INTERACT_SEP)
+            : ''),
+    },
+    answerOf: (ex) => [ex.values.map(orderText).join(INTERACT_SEP)],
+    display: (ex) => `${ex.display.map(showValue).join(', ')} → ${ex.values.map(() => '?').join(` ${ex.operator} `)}`,
+});
+
+// basis / harten: the partner of every given number (cell per pair); boom: the one blank box;
+// positie-tabel: the digit under every place (one-digit cells). Benen and the math rows are not served yet.
+const splitsLayout = (c: Record<string, unknown>) => (c.layout as string | undefined) ?? 'basic';
+const isPlaceTable = (c: Record<string, unknown>) => splitsLayout(c) === 'positie-tabel';
+const splitsWants = (ex: SplitsenExercise, c: Record<string, unknown>): string[] => {
+    const layout = splitsLayout(c);
+    if (layout === 'positie-tabel') {
+        // A column above the number's first digit may stay blank (24 in D H T E): nobody writes 0024.
+        const places = ex.placeBreakdown ?? [];
+        const first = places.findIndex(p => p.digit !== 0);
+        return places.map((p, i) => (i < first ? '0|' : String(p.digit)));
+    }
+    if (layout === 'splitsboom') {
+        const p = ex.pairs[0];
+        const pos = ex.blankPos ?? 'right';
+        return [numberSpellings(pos === 'top' ? ex.total : pos === 'left' ? p.given : p.answer).join('|')];
+    }
+    return ex.pairs.map(p => numberSpellings(p.answer).join('|'));
+};
+// SYNC: SplitsenViewer KioskCell keys (p<i> per pair, b = the boom's blank, the place key in the table).
+const splitsKeys = (ex: SplitsenExercise, c: Record<string, unknown>): string[] => {
+    const layout = splitsLayout(c);
+    if (layout === 'positie-tabel') return (ex.placeBreakdown ?? []).map(p => p.key);
+    if (layout === 'splitsboom') return ['b'];
+    return ex.pairs.map((_, i) => `p${i}`);
+};
+const splitsInteract = cellsInteract<SplitsenExercise>(splitsKeys, splitsWants, (_k, _ex, c) => (isPlaceTable(c) ? { length: 1 } : {}));
+export const SPLITSEN_KIOSK = descriptor<SplitsenExercise>({
+    input: 'interactive',
+    keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 && splitsLayout(c) === 'basic' ? [','] : []),
+    kioskInstruction: (_ex, c) => (isPlaceTable(c) ? 'Vul de positietabel in.' : undefined),
+    interact: splitsInteract,
+    answerOf: (ex, c) => [splitsInteract.answerOf(ex, c)],
+    display: (ex, c) => {
+        const layout = splitsLayout(c);
+        if (layout === 'positie-tabel') return `${showNum(ex.total)} in de positietabel: ?`;
+        if (layout === 'splitsboom') {
+            const pos = ex.blankPos ?? 'right';
+            const [top, left, right] = [ex.total, ex.pairs[0]?.given ?? 0, ex.pairs[0]?.answer ?? 0].map(showNum);
+            return `${pos === 'top' ? '?' : top} = ${pos === 'left' ? '?' : left} + ${pos === 'right' ? '?' : right}`;
+        }
+        return `${showNum(ex.total)} = ${ex.pairs.map(p => `${showNum(p.given)} + ?`).join(' ; ')}`;
+    },
+    supported: (c) => ['basic', 'splitsboom', 'verliefde-harten', 'positie-tabel'].includes(splitsLayout(c)),
+});
+
+// ── Breuken ──────────────────────────────────────────────────────────────────
+
+const fracText = (f: Fraction) => (f.whole ? `${f.whole} ${f.n}/${f.d}` : `${f.n}/${f.d}`);
+const reduce = (f: Fraction): Fraction => {
+    const g = gcd(f.n, f.d) || 1;
+    return { whole: f.whole, n: f.n / g, d: f.d / g };
+};
+
+// The FORM is the exercise here, so only that form counts: naar-gemengd a gemengd getal
+// (the fraction part simplified or not), naar-breuk an improper fraction (idem),
+// vereenvoudigen the lowest terms, gelijknamig the two fractions over the common noemer.
+function bewerkSpellings(ex: BreukBewerkExercise, f: Fraction): string[] {
+    // A whole lowest-terms value (6/3 → 2) reads as the integer; "2/1" is the same lowest form.
+    if (ex.subType === 'vereenvoudigen' && !f.whole && f.n % f.d === 0) return [String(f.n / f.d), fracText(f)];
+    // An onechte breuk may also be written as a gemengd getal of the same lowest terms (5/2 or 2 1/2; owner 2026-10-28).
+    if (ex.subType === 'vereenvoudigen' && !f.whole && f.n > f.d) return [fracText(f), fracText({ whole: Math.floor(f.n / f.d), n: f.n % f.d, d: f.d })];
+    if (ex.subType === 'gelijknamig' || ex.subType === 'vereenvoudigen') return [fracText(f)];
+    const whole = (f.whole ?? 0) + Math.floor(f.n / f.d);
+    const n = f.n % f.d;
+    if (ex.direction === 'naar-breuk') {
+        const top = whole * f.d + n;
+        return [...new Set([`${top}/${f.d}`, fracText(reduce({ n: top, d: f.d }))])];
+    }
+    if (n === 0) return [String(whole)];
+    return [...new Set([`${whole} ${n}/${f.d}`, fracText(reduce({ whole, n, d: f.d }))])];
+}
+// gelijknamig: any COMMON noemer counts (6/14 en 7/14 for 3/7 en 2/4, not only the kgv's 12/28 en
+// 14/28; pupil-play pass 2026-10-10): one shared noemer, each breuk equal to its own. A noemer the
+// teacher fixed (targetDen, when the generator could use it) is the one asked.
+function gelijknamigOk(given: readonly string[], ex: BreukBewerkExercise, c: Record<string, unknown>): boolean {
+    const parts = given.map(g => /^(\d+)\/(\d+)$/.exec(g.replace(/\s+/g, '')));
+    if (parts.length !== ex.inputs.length || parts.some(m => !m)) return false;
+    const dens = parts.map(m => Number(m![2]));
+    if (dens[0] === 0 || dens.some(x => x !== dens[0])) return false;
+    // A multiple pair ignores the doelnoemer (the generator does too), so it never narrows the answer.
+    const fixed = c.targetDen === '' || c.targetDen == null || c.denominatorRelation === 'multiple' ? null : Number(c.targetDen);
+    if (fixed !== null && ex.answers[0]?.d === fixed && dens[0] !== fixed) return false;
+    // BigInt cross products, as check.ts compares breuken.
+    return parts.every((m, i) => {
+        const f = ex.inputs[i];
+        return BigInt(m![1]) * BigInt(f.d) === BigInt((f.whole ?? 0) * f.d + f.n) * BigInt(m![2]);
+    });
+}
+export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
+    // The space types a gemengd getal: gemengd itself, and an onechte vereenvoudigen answer (2 1/2).
+    keys: (c) => (c.subType === 'gemengd' || (c.subType === 'vereenvoudigen' && c.allowImproper === true) ? ['/', ' '] : ['/']),
+    exactFormDefault: () => true,
+    // 'beide' mixes both ways in one block; the card shows one exercise, so its header names that one's way.
+    kioskInstruction: (ex) => (ex.subType !== 'gemengd' ? undefined : ex.direction === 'naar-breuk' ? 'Typ als breuk.' : 'Typ als gemengd getal.'),
+    labels: () => ['1ste breuk', '2de breuk'],
+    answerOf: (ex) => (ex.subType === 'gelijknamig'
+        ? ex.answers.map(a => bewerkSpellings(ex, a).join('|'))
+        : bewerkSpellings(ex, ex.answers[0])),
+    // The row's "any equal value" (exact false) keeps the per-field value compare.
+    checkFields: (given, ex, c, exact) => (ex.subType === 'gelijknamig' && exact ? gelijknamigOk(given, ex, c) : undefined),
+    display: (ex) => `${ex.inputs.map(fracText).join(' en ')} → ${ex.answers.map(() => '?').join(' en ')}`,
+});
+
+// SYNC: VerbandenViewer derives kommagetal (3 places) and procent (1 place) from n/d.
+const REP_LABEL: Record<string, string> = { breuk: 'breuk', decimaal: 'kommagetal', procent: 'procent %' };
+const verbandAnswer = (f: Fraction, rep: string): string[] => {
+    if (rep === 'decimaal') return numberSpellings(Number((f.n / f.d).toFixed(3)));
+    if (rep === 'procent') return numberSpellings(Number(((f.n / f.d) * 100).toFixed(1)));
+    return [...new Set([fracText(f), fracText(reduce(f))])];
+};
+// SYNC: VerbandenViewer — paren asks ex.target (else the first other rep), the tabel every rep
+// but the given one; its KioskCells are keyed by the rep name.
+const verbandFields = (ex: VerbandExercise, c: Record<string, unknown>): string[] => {
+    const reps = (c.reps as string[] | undefined) ?? ['breuk', 'decimaal', 'procent'];
+    if (c.subType === 'paren') return [ex.target ?? reps.find(r => r !== ex.given) ?? 'decimaal'];
+    return reps.filter(r => r !== ex.given);
+};
+// Phase C2: every asked representation is a cell ON the card; a breuk is typed with '/', a
+// percent without the % sign.
+const verbandInteract = cellsInteract<VerbandExercise>(verbandFields, (ex, c) => verbandFields(ex, c).map(r => verbandAnswer(ex.fraction, r).join('|')));
+export const VERBANDEN_KIOSK = descriptor<VerbandExercise>({
+    input: 'interactive',
+    keys: () => [',', '/'],
+    // The breuk cell takes any equal breuk; the cell's kind (breuk, kommagetal, %) still counts.
+    exactFormDefault: () => false,
+    interact: verbandInteract,
+    answerOf: (ex, c) => [verbandInteract.answerOf(ex, c)],
+    display: (ex, c) => `${verbandAnswer(ex.fraction, ex.given)[0]}${ex.given === 'procent' ? ' %' : ''} = ${verbandFields(ex, c).map(r => `? (${REP_LABEL[r]})`).join(' = ')}`,
+});
+
+// herkennen: the coloured part as a breuk, typed noemer first then teller (the `fraction` input; owner
+// 2026-10-10: the sheet's two counting questions are scaffold, not the answer); hoeveelheid: how
+// many objects n/d of the total is. The shapes to colour or a line to divide are drawing.
+const fracSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'kleuren';
+const isHerkennen = (c: Record<string, unknown>) => fracSub(c) === 'herkennen';
+// SYNC: FractionExerciseItem coloredCount (concreet: rounded; abstract: 4 places).
+const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
+    ? parseFloat((parseFloat(((ex.total ?? 0) / ex.denominator).toFixed(4)) * ex.numerator).toFixed(4))
+    : Math.round(((ex.total ?? 0) * ex.numerator) / ex.denominator));
+// kleuren: tap n of the d parts ON the figure; the answer is HOW MANY are tapped (any parts count).
+const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
+// herkennen's drawn form; an onechte breuk also as a gemengd getal over the same noemer (7/4, 1 3/4; 14/8 only by value).
+const drawnSpellings = (n: number, d: number): string[] =>
+    (n > d && n % d !== 0 ? [`${n}/${d}`, `${Math.floor(n / d)} ${n % d}/${d}`] : [`${n}/${d}`]);
+export const BREUKEN_KIOSK = descriptor<FractionExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isHerkennen(c) ? 'fraction' : 'number'),
+    // The fraction only: "tik 3 van de 6 delen" gave the answer away (owner, O22). herkennen counts
+    // the drawn form, so its header says so.
+    kioskInstruction: (ex, c) => (isKleuren(c) ? `Kleur ${ex.numerator}/${ex.denominator} in.`
+        : isHerkennen(c) ? 'Welk deel is gekleurd? Typ de breuk zoals je ze ziet.' : undefined),
+    interact: {
+        kind: 'tap-multi',
+        // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included);
+        // an improper breuk's second whole continues at denominator.
+        keys: (ex) => Array.from({ length: (ex.wholes ?? 1) * ex.denominator }, (_, i) => String(i)),
+        answerOf: (ex) => String(ex.numerator),
+        fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
+    },
+    keys: (c) => (fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
+    // Onechte breuken on: a whole field before the breuk, so 7/4 may also be typed as 1 3/4 (geheel left empty for 7/4).
+    labels: (_ex, c) => (isHerkennen(c) && c.allowImproper === true ? ['geheel', 'noemer', 'teller'] : ['noemer', 'teller']),
+    // herkennen: the drawn parts (2/6 for two of six, not 1/3); the row's Antwoord may take any equal breuk.
+    exactFormDefault: (c) => (isHerkennen(c) ? true : undefined),
+    answerOf: (ex, c) => {
+        if (isKleuren(c)) return [String(ex.numerator)];
+        if (isHerkennen(c)) return drawnSpellings(ex.numerator, ex.denominator);
+        return numberSpellings(deelVan(ex));
+    },
+    display: (ex, c) => (isKleuren(c)
+        ? `kleur ${ex.numerator}/${ex.denominator}: ?`
+        : isHerkennen(c)
+        ? `gekleurd deel van ${ex.denominator} delen: ?`
+        : `${ex.numerator}/${ex.denominator} van ${ex.total ?? 0} = ?`),
+    supported: (c) => ['kleuren', 'herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
+});
+
+// ── Tijd ─────────────────────────────────────────────────────────────────────
+
+const hm = (h: number, m: number) => `${h}:${String(m).padStart(2, '0')}`;
+
+// Read an analoge klok, or write a spoken time ("kwart over 3") digitally. A clock face has
+// no ochtend / avond, so 3:15 and 15:15 both count (and 0:00 / 12:00 for twaalf uur).
+// Reading a digitale klok asks the time in words: not served.
+const klokMode = (ex: ClockExercise, c: Record<string, unknown>) => ex.exerciseMode ?? (c.exerciseMode as string | undefined) ?? 'lezen';
+const klokType = (ex: ClockExercise, c: Record<string, unknown>) => ex.clockType ?? (c.clockType as string | undefined) ?? 'analoog';
+// Phase C4: an analoge klok to draw = drag the hands the pupil would draw (klokDragHands);
+// the answer is the face as 'h:mm', 3:15 and 15:15 one position (check.ts drag).
+const isKlokDrag = (ex: ClockExercise, c: Record<string, unknown>) => klokMode(ex, c) === 'tekenen' && klokType(ex, c) === 'analoog';
+const KLOK_HAND_WORDS: Record<string, string> = { m: 'de grote wijzer', h: 'de kleine wijzer', hm: 'de wijzers' };
+const isKlokLezenAnaloog = (c: Record<string, unknown>) =>
+    ((c.exerciseMode as string | undefined) ?? 'lezen') === 'lezen' && ((c.clockType as string | undefined) ?? 'analoog') === 'analoog';
+// Absent = 'digitaal': a link from before the setting keeps its uu:mm; a new builder row starts on woorden (kioskSeed).
+const klokAnswerOf = (c: Record<string, unknown>) => (c.klokAnswer === 'woorden' ? 'woorden' : 'digitaal');
+const klokDrag: KioskInteract<ClockExercise> = {
+    kind: 'drag',
+    keys: klokDragHands,
+    answerOf: (ex) => klokText(ex.hours, ex.minutes),
+    fromState: (st, ex, c) => klokGiven(ex, c, st.drag ?? {}),
+};
+// Read an analoge klok in words on the card: a chip (uur · half · voor · over) + the hour (+ minutes or kwart),
+// checked by value in the four-word grammar (timeWords.ts), never the sheet's "voor half" / "over half" forms.
+const isKlokWoorden = (ex: ClockExercise, c: Record<string, unknown>) =>
+    klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' && klokAnswerOf(c) === 'woorden';
+export const KLOK_KIOSK = descriptor<ClockExercise>({
+    input: 'time',
+    inputOf: (ex, c) => (isKlokDrag(ex, c) ? 'interactive' : isKlokWoorden(ex, c) ? 'time-words' : 'time'),
+    interact: klokDrag,
+    answerOf: (ex, c) => {
+        if (isKlokDrag(ex, c)) return [klokDrag.answerOf(ex, c)];
+        if (isKlokWoorden(ex, c)) return timeWordsFields(timeWords(ex.hours, ex.minutes));
+        const h12 = ex.hours % 12;
+        return (h12 === 0 ? [0, 12] : [h12, h12 + 12]).map(h => hm(h, ex.minutes));
+    },
+    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? `analoge klok toont ${hm(ex.hours % 12 || 12, ex.minutes)}` : `digitale klok toont ${ex.digitalText}`}: hoe laat?`
+        : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
+    // Owner call 13: the paper's lezen asks the time in words on a writing line; the card builds it from
+    // the word chips, or (klokAnswer 'digitaal', older links) takes uu:mm.
+    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.`
+        : isKlokWoorden(ex, c) ? 'Lees de klok en zeg hoe laat het is.'
+        : klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' ? 'Lees de klok en typ de tijd (uu:mm).' : undefined),
+    // Owner 2026-10-13: a new row reads the clock in words, like the sheet; the link carries the key as a row diff.
+    kioskSeed: (c) => (isKlokLezenAnaloog(c) ? { klokAnswer: 'woorden' } : undefined),
+    rowSetting: (c) => (isKlokLezenAnaloog(c) ? {
+        key: 'klokAnswer', label: 'Antwoord', value: klokAnswerOf(c),
+        options: [{ value: 'woorden', label: 'In woorden' }, { value: 'digitaal', label: 'Als uu:mm' }],
+    } : undefined),
+    // Only an explicit uu:mm pick renames the row: an older link (no key) keeps its name and its content hash.
+    rowLabel: (label, c) => (isKlokLezenAnaloog(c) && c.klokAnswer === 'digitaal' ? `${label} · uu:mm` : label),
+    supported: (c) => {
+        const type = (c.clockType as string | undefined) ?? 'analoog';
+        // No tijdstype ticked: the generator has no minutes to draw from (clockGenerator returns []).
+        if (Array.isArray(c.timeTypes) && c.timeTypes.length === 0) return false;
+        return type === 'analoog' || ((c.exerciseMode as string | undefined) ?? 'lezen') === 'tekenen';
+    },
+});
+
+// begin / einde: a 24-hour time as the row prints it (past midnight wraps); duur: uur + min.
+const clock24 = (min: number) => hm(Math.floor(min / 60) % 24, min % 60);
+export const TIJDSDUUR_KIOSK = descriptor<TijdsduurExercise>({
+    input: 'time',
+    inputOf: (ex) => (ex.blank === 'duur' ? 'multi-number' : 'time'),
+    labels: () => ['uur', 'min'],
+    answerOf: (ex) => {
+        if (ex.blank === 'duur') {
+            const d = ex.endMin - ex.startMin;
+            return [String(Math.floor(d / 60)), String(d % 60)];
+        }
+        return [clock24(ex.blank === 'begin' ? ex.startMin : ex.endMin)];
+    },
+    display: (ex) => {
+        const cell = (k: 'begin' | 'einde' | 'duur', v: string) => (ex.blank === k ? '?' : v);
+        // clock24 wraps past midnight; a given einde must still say it is the next day (as the sheet does).
+        const nextDay = ex.endMin >= 1440 ? ' (volgende dag)' : '';
+        return `begin ${cell('begin', clock24(ex.startMin))} · einde ${cell('einde', clock24(ex.endMin) + (ex.blank === 'einde' ? '' : nextDay))} · duur ${cell('duur', `${ex.endMin - ex.startMin} min`)}`;
+    },
+});
+
+// ── Phase C3: build from the tray ────────────────────────────────────────────
+
+// The pupil lays pieces from the kiosk tray; the answer is what they are worth together
+// (total cents, the number), so any make-up of the right value counts. '' = nothing laid yet.
+function buildInteract<E>(piecesOf: (ex: E, c: Record<string, unknown>) => KioskPiece[], answerOf: (ex: E) => number,
+    show?: (answer: string) => string): KioskInteract<E> {
+    return {
+        kind: 'build',
+        pieces: piecesOf,
+        keys: (ex, c) => piecesOf(ex, c).map(p => p.key),
+        answerOf: (ex) => String(answerOf(ex)),
+        fromState: (st, ex, c) => {
+            if (!st.build.length) return '';
+            const value = new Map(piecesOf(ex, c).map(p => [p.key, p.value]));
+            return String(st.build.reduce((sum, b) => sum + (value.get(b.key) ?? 0) * b.count, 0));
+        },
+        ...(show && { show: (a: string) => show(a) }),
+    };
+}
+
+const ALL_MONEY = DENOMINATION_CATALOGUE.map(d => d.valueCents);
+const moneyPiece = (cents: number): KioskPiece => ({ key: String(cents), label: cents >= 100 ? `€ ${cents / 100}` : `${cents} cent`, value: cents });
+
+// Teken het bedrag: the ticked coins and bills, largest first, none above the block's top amount.
+// SYNC: generateGeldExercisesNoted draws amounts up to maxGetal euros from the same ticked set.
+const tekenenMoney = (c: Record<string, unknown>) => {
+    const allowed = Array.isArray(c.allowedDenominations) ? c.allowedDenominations as number[] : ALL_MONEY;
+    const max = Number(c.maxGetal ?? 10) * 100;
+    return ALL_MONEY.filter(v => allowed.includes(v) && v <= max);
+};
+export const GELD_TEKENEN_KIOSK = descriptor<GeldExercise>({
+    input: 'interactive',
+    interact: buildInteract((_ex, c) => tekenenMoney(c).map(moneyPiece), ex => ex.amountCents, a => showEuro(Number(a))),
+    answerOf: (ex) => [String(ex.amountCents)],
+    display: (ex) => `${showEuro(ex.amountCents)} leggen: ?`,
+    kioskInstruction: 'Leg het bedrag.',
+    supported: (c) => tekenenMoney(c).length > 0,
+});
+
+// Wissel: the same amount in smaller money. The tray holds the coins and bills below the shown
+// one, down to a hundredth of it (a €5 note: €2 … 5 cent; €500: €200 … €5), so the note itself
+// is never in it and any make-up of its value is a real exchange.
+const wisselMoney = (bill: number) => ALL_MONEY.filter(v => v < bill && v * 100 >= bill);
+// The teacher's bills that have smaller money to change into (not a 5 cent).
+// SYNC: generateGeldWisselExercises reads exerciseBills, 500 when empty.
+const wisselBills = (c: Record<string, unknown>) =>
+    (Array.isArray(c.exerciseBills) && c.exerciseBills.length ? c.exerciseBills.map(Number) : [500]).filter(b => wisselMoney(b).length > 0);
+export const GELD_WISSEL_KIOSK = descriptor<GeldWisselExercise>({
+    input: 'interactive',
+    interact: buildInteract((ex) => wisselMoney(ex.billValueCents).map(moneyPiece), ex => ex.billValueCents, a => showEuro(Number(a))),
+    answerOf: (ex) => [String(ex.billValueCents)],
+    display: (ex) => `${showEuro(ex.billValueCents)} wisselen: ?`,
+    kioskInstruction: 'Wissel: leg hetzelfde bedrag met kleiner geld.',
+    supported: (c) => wisselBills(c).length > 0,
+    // The sheet gives exercise i the i-th bill; a kiosk block holds one exercise, so draw one of them.
+    prepare: (c, rng) => {
+        const bills = wisselBills(c);
+        return bills.length ? { ...c, exerciseBills: [bills[Math.floor(rng() * bills.length)]] } : c;
+    },
+});
+
+// MAB tekenen: lay the number with D / H / T / E blocks. A column holds a digit (at most 9 of a
+// block: ten units ARE a ten), so the laid number has one make-up, the positietabel's.
+// SYNC: MabViewer's columns (D from maxNumber 1000, H from 100, T from 10; E always).
+const MAB_PIECES: Array<KioskPiece & { from: number }> = [
+    { key: 'D', label: 'duizendtal', value: 1000, max: 9, from: 1000 },
+    { key: 'H', label: 'honderdtal', value: 100, max: 9, from: 100 },
+    { key: 'T', label: 'tiental', value: 10, max: 9, from: 10 },
+    { key: 'E', label: 'eenheid', value: 1, max: 9, from: 0 },
+];
+const mabPieces = (c: Record<string, unknown>): KioskPiece[] =>
+    MAB_PIECES.filter(p => Number(c.maxNumber || 100) >= p.from).map(p => ({ key: p.key, label: p.label, value: p.value, max: p.max }));
+export const MAB_TEKENEN_KIOSK = descriptor<MabExercise>({
+    input: 'interactive',
+    interact: buildInteract((_ex, c) => mabPieces(c), ex => ex.value),
+    answerOf: (ex) => [String(ex.value)],
+    display: (ex) => `${formatMathNumber(String(ex.value))} met MAB: ?`,
+    kioskInstruction: 'Leg het getal met MAB-materiaal.',
+});
+
+// Teruggeven with a draw box (antwoordType tekenen-schrijven): the change is laid from a tray of
+// every coin and bill below the note paid with, instead of typed; the other settings stay typed.
+const teruggevenLays = (c: Record<string, unknown>) => c.antwoordType === 'tekenen-schrijven';
+const teruggevenBuild = buildInteract<GeldTeruggevenExercise>((ex) => ALL_MONEY.filter(v => v < ex.payWithCents).map(moneyPiece), ex => ex.changeCents, a => showEuro(Number(a)));
+const typedTeruggeven = GELD_TERUGGEVEN_KIOSK as AnyKioskDescriptor<GeldTeruggevenExercise>;
+export const GELD_TERUGGEVEN_LAY_KIOSK = descriptor<GeldTeruggevenExercise>({
+    ...typedTeruggeven,
+    inputOf: (ex, c) => (teruggevenLays(c) ? 'interactive' : typedTeruggeven.inputOf!(ex, c)),
+    interactOf: (c) => (teruggevenLays(c) ? teruggevenBuild : undefined),
+    answerOf: (ex, c) => (teruggevenLays(c) ? [teruggevenBuild.answerOf(ex, c)] : typedTeruggeven.answerOf(ex, c)),
+    kioskInstruction: (_ex, c) => (teruggevenLays(c) ? 'Hoeveel krijg je terug? Leg het wisselgeld.' : undefined),
+});

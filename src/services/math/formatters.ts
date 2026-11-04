@@ -1,14 +1,19 @@
+// A plain space is a full cell wide in the mono card font ("7  400"); the pupil page swaps in a narrow one.
+let thousandsSeparator = ' ';
+export const setThousandsSeparator = (sep: string): void => { thousandsSeparator = sep; };
+
 /**
  * Zet een getal om naar een string met decimale komma en spaties per duizendtal.
  * Voorbeeld: 1234.56 -> "1 234,56"
  */
-export const formatMathNumber = (num: number | string | undefined): string => {
+export const formatMathNumber = (num: number | string | undefined, decimalPlaces?: number): string => {
     if (num === undefined || num === '') return '';
-    const str = String(num);
+    // A fixed-decimals block keeps its trailing zeros: 4.1 at 2 decimals is "4,10".
+    const str = typeof num === 'number' && decimalPlaces ? num.toFixed(decimalPlaces) : String(num);
     const [integerPart, decimalPart] = str.split('.');
 
     // 1. Duizendtal-spaties toevoegen
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
 
     // 2. Decimale komma toevoegen (als er decimalen zijn)
     if (decimalPart !== undefined) {
@@ -16,6 +21,9 @@ export const formatMathNumber = (num: number | string | undefined): string => {
     }
     return formattedInteger;
 };
+/** Whole number as printed on sheets and in the sidebar: space thousands, true minus (U+2212). */
+export const formatSignedInt = (n: number): string => formatMathNumber(n).replace('-', '−');
+
 /**
  * Printed glyphs for the four operators. Display only — the stored operator stays
  * ASCII ('+' | '-' | 'x' | ':'), so nothing that parses or compares an operator has

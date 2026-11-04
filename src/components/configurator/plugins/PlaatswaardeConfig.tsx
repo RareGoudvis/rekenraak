@@ -3,15 +3,17 @@ import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { PlaatswaardeConstraints } from '../../../services/math/constraintTypes';
+import { TABLE_PLACES_TOP } from '../../../services/plaatswaarde/plaatswaardeGenerator';
 
 interface Props { block: MathBlock; }
 
-const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
-
 export default function PlaatswaardeConfig({ block }: Props) {
     const [c, patch] = useConstraints<PlaatswaardeConstraints>(block);
+    const range = useMaxPresets(block);
     const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = c;
 
     const set = (key: string, value: unknown) =>
@@ -19,20 +21,44 @@ export default function PlaatswaardeConfig({ block }: Props) {
 
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
+    // Tabel columns: any place, independent of the max (a teacher may want an empty HD column
+    // above numbers to 1000). Unset = the max's own places; at least one stays selected.
+    const tableOptions = getMaskPlaces(TABLE_PLACES_TOP, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
+    const shownPlaces = (c.tablePlaces ?? places.map(p => p.key)).filter(k => tableOptions.some(p => p.key === k));
+    const toggleTablePlace = (key: string) => {
+        const next = shownPlaces.includes(key) ? shownPlaces.filter(k => k !== key) : tableOptions.map(p => p.key).filter(k => k === key || shownPlaces.includes(k));
+        if (next.length > 0) set('tablePlaces', next);
+    };
 
-    // subType (view) is chosen by the sidebar leaf — not repeated here.
+    // subType (view) is chosen by the sidebar leaf — not repeated here; plaats / omcirkelen pick how
+    // the pupil answers (in the digits' order the place is only counted along, owner 2026-10-10).
+    const asksPlace = c.subType === 'plaats' || c.subType === 'omcirkelen';
     return (
         <div style={styles.container}>
-            <div style={styles.section}>
+            {asksPlace && <div style={styles.section}>
+                <SettingLabel text="Antwoord:" info="Plaats: de leerling noemt de plaats van het onderstreepte cijfer (H, T, E op volgorde of door elkaar). Waarde: de leerling schrijft wat het cijfer waard is (128 → 20)." />
+                <PopupSelect
+                    value={c.plaatsAnswer ?? 'plaats'}
+                    options={[
+                        { value: 'plaats', label: 'Plaats (op volgorde)' },
+                        { value: 'plaats-shuffle', label: 'Plaats (door elkaar)' },
+                        { value: 'waarde', label: 'Waarde van het cijfer' },
+                    ]}
+                    onChange={(v) => set('plaatsAnswer', v)}
+                    ariaLabel="Antwoord"
+                />
+            </div>}
+
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Decimalen:" info="Aantal decimalen achter de komma." />
@@ -48,11 +74,20 @@ export default function PlaatswaardeConfig({ block }: Props) {
                 <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     {places.map(p => (
-                        <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                        <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask[p.key]} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                     ))}
                 </div>
                 <p style={styles.hint}>Leeg = vrije opbouw.</p>
             </div>
+
+            {c.subType === 'tabel' && <div style={styles.section}>
+                <SettingLabel text="Kolommen in de tabel:" info="Kies welke plaatswaarden als kolom in de tabel staan, los van het maximum getal." />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {tableOptions.map(p => (
+                        <button key={p.key} type="button" onClick={() => toggleTablePlace(p.key)} aria-pressed={shownPlaces.includes(p.key)} style={styles.maskBtn(shownPlaces.includes(p.key))} title={p.label}>{p.key}</button>
+                    ))}
+                </div>
+            </div>}
         </div>
     );
 }

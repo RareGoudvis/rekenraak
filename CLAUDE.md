@@ -8,14 +8,14 @@ Guidance for Claude Code (claude.ai/code) working in this repository. This file 
 
 | Doc | What's in it |
 |---|---|
-| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | The deep map: data flow (§2), state table (§3), data model (§4), registry contract (§5), generator contract (§6), per-typeId registry table (§7), viewers (§8), print + page model incl. measurement contract (§9), persistence/sharing (§10), file map (§11), teacher-workflow layer (§13) |
+| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | The deep map: data flow (§2), state table (§3), data model (§4), registry contract (§5), generator contract (§6), per-typeId registry table (§7), viewers (§8), print + page model incl. measurement contract (§9), persistence/sharing (§10), file map (§11), teacher-workflow layer (§13), Oefenmodus pupil kiosk (§15) |
 | [.claude/docs/UI-GUIDE.md](.claude/docs/UI-GUIDE.md) | The eight design rules, the tokens (`theme.css`), canonical component styles, the one solution-red |
 | [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | vitest suites (generator matrix, answers, packer, persistence, store, viewer smoke) + the Playwright harnesses (width matrix, height audit, font baseline/compare, drag recipe) |
 | [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; delete the line in the commit that fixes it |
 | [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Session log, newest first |
 | `.claude/docs/REVIEW.local.md` | The owner review list (local, gitignored via `*.local.md`): what Ruben still checks on screen/print, deliberate non-fixes, open items. Agents read it, only the owner deletes rows |
 | [.claude/docs/klascement.md](.claude/docs/klascement.md) | Teacher-facing intro (Dutch): what it does, what's in it, why, free-forever ethos |
-| [src/components/viewer/README.md](src/components/viewer/README.md) | The six rules every viewer must follow |
+| [src/components/viewer/README.md](src/components/viewer/README.md) | The seven rules every viewer must follow |
 
 ---
 
@@ -29,7 +29,13 @@ npm run build          # tsc -b && vite build
 npm run lint
 npm run matrix         # Playwright width matrix → scripts/width-matrix.result*.json (needs a dev server; --url --seed)
 npm run height:audit   # Playwright vertical measurement audit (needs a dev server)
+npm run bignum:audit   # Playwright: every leaf at its max-list top (1e9) × widths × solutions → overflow/NaN report + contact sheet
 npm run font:baseline  # screenshot every sidebar leaf (--out dir --seed); font:compare diffs two runs
+npm run limits:audit   # full limit diagnosis, out of the gate (env LIMITS_OUT/DUMP/ONLY/SEEDS/COUNT/RANDOM) → summary.json, violations.json, report.md (+ seeded dumps)
+npm run limits:diff    # diff two limits:audit dirs (--before --after --out [--touched]) → report.md/.html
+npm run trigger:shots  # screenshot the repro cases in scripts/limit-trigger-cases.json (font-baseline shape; font:compare diffs two runs)
+npm run oefen:smoke    # Playwright kiosk smoke: one leaf per input kind × 1280×800 / 1024×768 → index.json + PNGs (needs a dev server; --url --out)
+npm run gate:repro     # Playwright: the gate's breuken walk ×N, exit 1 on a repack-breaker trip (--url --runs --no-shots); the proof a measurement fix holds
 npm run gate           # what the pre-commit hook runs: check + visual gate on the staged files
 npm run visual:gate    # -- --all | --files a,b | --scope-only : targeted leaf walk vs scripts/visual-baseline.json
 npm run visual:baseline # accept a visual change: rewrites the scoped rows of the baseline (stage the JSON)
@@ -37,7 +43,11 @@ npm run prepare        # after a clone: git config core.hooksPath .githooks
 ```
 
 The dev build exposes `window.__rekenraak` (typeIds, leaves, seed, measured, addBlockFromType,
-updateBlockSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses.
+updateBlockSettings, updateDocSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses.
+
+`oefenen.html` is an **extra Vite entry** (`vite.config.ts` rollupOptions.input `oefenen`): the
+Oefenmodus pupil kiosk, its own React root under `src/oefenen/`. The dev server serves it at
+`/oefenen.html#oefen=<payload>`; the teacher makes the link in the app (Oefenmodus button).
 
 ---
 
@@ -46,7 +56,20 @@ updateBlockSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses
 Dutch (Flemish) primary-school **worksheet generator**. Teachers compose math exercise
 blocks, preview them on virtual A4 pages, and export via the browser print dialog (Save as
 PDF). UI text is Dutch; code and comments are English. Everything is client-side React 19 +
-TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
+TypeScript + Vite + one worksheet Zustand store (Bordmodus has its own) — no backend, no
+account, no tracking.
+
+Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `bord.html` (the same app
+booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
+static SEO pages `about.html`, `faq.html`, `oefeningen.html`.
+
+Bordmodus widgets get their options through the settings registry
+([src/board/settings/registry.ts](src/board/settings/registry.ts)), never a `kind` switch: a new
+widget's options = a model (`<kind>Model.ts` or `mathTools/`) + a `<Kind>Settings.tsx` panel on
+the `controls.tsx` kit + one `WIDGET_SETTINGS` line + (schema'd kinds) one `PROP_SCHEMAS` row;
+per-card state keys go into `TRANSIENT_PROP_KEYS`. Ink tools are `ToolEngine`s
+(`drawTools.ts`), instruments live in `instrumentGeometry.ts` + `InstrumentLayer.tsx`
+(board format v2). Detail: ARCHITECTURE §14.
 
 ---
 
@@ -74,6 +97,12 @@ TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
   or font sizes** in viewers (read `useBlockWidth()`, use the `--sheet-size-*` tokens).
 - Comments explain **why**, one line, in English (rules below).
 
+## Release notes
+
+Every release prepends an entry to [releaseNotes.ts](src/config/releaseNotes.ts) (it drives the
+"Nieuw" banner and the "Wat is er nieuw" modal): short teacher-language items (nieuw / gewijzigd /
+opgelost), and an `example` (leaf + settings, optional "Eerst → Nu") for every exercise change.
+
 ## Session tracking
 
 At the end of every conversation where changes were made, prepend a new entry to
@@ -100,7 +129,7 @@ structural source files changed without these docs.
 Types are declared in a **central registry** keyed by exact `typeId`:
 [exerciseRegistry.ts](src/config/exerciseRegistry.ts) (pure data — generator, exercise
 field, typed defaults) + [exerciseUI.tsx](src/config/exerciseUI.tsx) (Viewer, Config,
-optional StyleConfig / AdvancedConfig). Dispatch / Inspector / App / `addBlockFromType` are
+optional StyleConfig / AppearanceConfig / AdvancedConfig). Dispatch / Inspector / App / `addBlockFromType` are
 **registry lookups, not if-else branches**. Full contract: [ARCHITECTURE §5](.claude/docs/ARCHITECTURE.md);
 the per-typeId table is §7.
 
@@ -111,19 +140,38 @@ the per-typeId table is §7.
    [viewer/README.md](src/components/viewer/README.md)
 4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`,
    reading/writing through `useConstraints<XConstraints>`
-5. One `row<XConstraints>({...})` in `REGISTRY` + one row in `EXERCISE_UI` (same key)
+5. One `row<XConstraints>({...})` in `REGISTRY` + one row in `EXERCISE_UI` (same key). A type
+   with a max-number picker declares `maxPresets` on its row and takes the list from
+   [numberRanges.ts](src/config/numberRanges.ts) (its top = the type's didactic ceiling; never a
+   literal in the config: the Config renders `useMaxPresets(block)?.presets`, constraintSpace reads the same list). A leaf whose pinned max should follow a picked leerjaar sets `gradeSetsMax: true`
 6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`,
-   optional `defaultConstraints` and an `instruction` (default opdracht-titel, string or fn); its options in [constraintSpace.ts](src/config/constraintSpace.ts)
+   optional `defaultConstraints`, optional `defaultCount` and an `instruction` (default opdracht-titel, string or fn); its options in [constraintSpace.ts](src/config/constraintSpace.ts)
    so the generator matrix tests them
 7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/services/layout/blockLayout.ts)
    (first-paint fallback; the real clamp and heights are measured) — run `npm run matrix`
-8. Regenerate the public catalogue: `npm run catalogue` against a dev server, commit
+8. A `LIMIT_SPECS` entry in [limitRules.ts](src/__tests__/helpers/limitRules.ts) (what the
+   type's limits promise; `limits.matrix.test.ts` fails the gate without one) and its options in
+   constraintSpace (step 6)
+9. Regenerate the public catalogue: `npm run catalogue` against a dev server, commit
    `oefeningen.html` + `public/oefeningen/<leafId>.png`. `catalogue.test.ts` fails the gate
    when the page's leaves differ from `APP_STRUCTURE`; the Stop hook nudges earlier.
+10. Optional, Oefenmodus: a `kiosk` descriptor in
+   [kioskDescriptors.ts](src/services/oefenen/kioskDescriptors.ts) on the REGISTRY row, then
+   **append** each leaf it makes capable to `KIOSK_LEAF_TABLE_V1` in
+   [kiosk.ts](src/services/oefenen/kiosk.ts) (append only: shared links index it) and add it to
+   the descriptors test (`EXPECTED_LEAVES`, the typeId's `TRUTH`) and the pinned table copy in
+   `oefenen.session.test.ts`. To let the pupil answer ON the exercise (tap / tap-multi /
+   fill-cells / order / build / drag) give the descriptor `input: 'interactive'` + `interact`
+   (`answerOf` / `fromState` / `keys` / `cellOf`) and mark the viewer's parts with
+   `interactionProps` / `<KioskCell>` from `ViewerInteractionContext`: no attributes or handlers
+   without the context (the sheet stays byte-identical; `viewers.interaction*.test.tsx` + the
+   visual gate prove it). Build leaves also take `interact.pieces` + `EXERCISE_UI[typeId].TrayPiece`,
+   a per-draw `prepare(c, rng)` and action keys (`extraKeys`, e.g. Lenen) are optional descriptor fields; drag
+   leaves use `kioskDrag.ts`. Contract: ARCHITECTURE §8 + §15.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
-**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode
-(`src/board/`, branch `whiteboard` only)** → §14.
+**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **Bordmodus /
+whiteboard (`src/board/`, `/bord.html`; tools, instruments, widget settings)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
 
 ---
 

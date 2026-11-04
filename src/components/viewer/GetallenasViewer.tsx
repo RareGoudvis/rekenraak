@@ -4,13 +4,20 @@ import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import { SOL } from './solutionStyle';
+import { monoTextPx } from '../../services/layout/blockLayout';
+import KioskCell from './KioskCell';
+import { useViewerInteraction } from './ViewerInteractionContext';
+
+// Oefenmodus: a blank's cell under its tick. Tall enough to stay a 40px target at the card's
+// ~1.4x scale; the line grows by the extra height so nothing hangs below it.
+const KIOSK_CELL_H = 32;
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 // SYNC: same "px measured at the 13pt default, scaled by the slider" convention as
 // ClockViewer / MabViewer / FractionExerciseItem (see BlockWidthContext.tsx).
@@ -20,7 +27,7 @@ function label(v: number | Fraction, fontSize: number, scale: number, color?: st
     // Fraction glyphs get cramped sooner than plain digits, so they cap at the middle
     // shrink step (13px at the 13pt default) rather than following the top step.
     if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={Math.min(13 * scale, fontSize)} mono />;
-    return <span style={{ fontSize: `${fontSize}px`, fontWeight: 'normal', color: color || '#000', fontFamily: mono, whiteSpace: 'nowrap' }}>{formatMathNumber(v)}</span>;
+    return <span style={{ fontSize: `${fontSize}px`, fontWeight: 'normal', color: color || 'inherit', fontFamily: mono, whiteSpace: 'nowrap' }}>{formatMathNumber(v)}</span>;
 }
 
 function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutions: boolean }) {
@@ -34,36 +41,41 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
 
     // Fit the axis to the printable width: shrink the classic 96px tick gap when many
     // ticks won't fit, and step the label font down until neighbouring labels can't
-    // collide (mono advance ≈ 0.62em). Big maxGetal + 10 ticks used to run off-page.
+    // collide. Big maxGetal + 10 ticks used to run off-page.
     const A4_CONTENT_PX = useBlockWidth();
-    const pad = 24;
-    const gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
     const labelChars = Math.max(1, ...values.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
     // Same three stops as before (15/13/11px at the 13pt default), now scaled by the math
     // token so the shrink follows the Lettergrootte slider instead of a fixed px ladder.
     const scale = useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT;
     const STEPS_PX = [15, 13, 11];
     let fontSize = STEPS_PX[0] * scale;
+    let pad = 24, gap = 96;
     for (const px of STEPS_PX) {
         fontSize = px * scale;
-        if (labelChars * fontSize * 0.62 + 12 <= gap) break;
+        const labelPx = monoTextPx(labelChars, 1, fontSize);
+        // Labels are centred on their tick, so the end ticks need half the widest label of
+        // margin; 24 is the arrowhead's own room. A 1e5 label hung 5-15px out of the cell.
+        pad = Math.max(24, Math.ceil(labelPx / 2) + 2);
+        gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
+        if (labelPx + 12 <= gap) break;
     }
 
     const W = pad * 2 + gap * (tickCount - 1);
     const axisY = 30;
-    const H = hasFrac ? 88 : 70;
+    const cells = useViewerInteraction()?.kind === 'fill-cells';
+    const H = (hasFrac ? 88 : 70) + (cells ? 10 : 0);
     const tickX = (i: number) => pad + i * gap;
 
     return (
         <div style={{ position: 'relative', width: W, height: H, fontFamily: mono }}>
             <svg width={W} height={H} style={{ display: 'block', position: 'absolute', inset: 0 }}>
-                <line x1={pad - 12} y1={axisY} x2={W - pad + 12} y2={axisY} stroke="#000" strokeWidth="1.5" />
+                <line x1={pad - 12} y1={axisY} x2={W - pad + 12} y2={axisY} stroke="currentColor" strokeWidth="1.5" />
                 {arrowLeft
-                    ? <polygon points={`${pad - 12},${axisY} ${pad - 4},${axisY - 5} ${pad - 4},${axisY + 5}`} fill="#000" />
-                    : <polygon points={`${W - pad + 12},${axisY} ${W - pad + 4},${axisY - 5} ${W - pad + 4},${axisY + 5}`} fill="#000" />}
+                    ? <polygon points={`${pad - 12},${axisY} ${pad - 4},${axisY - 5} ${pad - 4},${axisY + 5}`} fill="currentColor" />
+                    : <polygon points={`${W - pad + 12},${axisY} ${W - pad + 4},${axisY - 5} ${W - pad + 4},${axisY + 5}`} fill="currentColor" />}
                 {Array.from({ length: tickCount }, (_, i) => {
                     const x = tickX(i);
-                    return <line key={i} x1={x} y1={axisY - 7} x2={x} y2={axisY + 7} stroke="#000" strokeWidth="1.5" />;
+                    return <line key={i} x1={x} y1={axisY - 7} x2={x} y2={axisY + 7} stroke="currentColor" strokeWidth="1.5" />;
                 })}
             </svg>
             {/* HTML label layer (so fractions can render vertically) */}
@@ -72,7 +84,11 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
                 return (
                     <div key={i} style={{ position: 'absolute', left: tickX(i), top: axisY + 12, transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                         {blank
-                            ? (showSolutions ? label(v, fontSize, scale, SOL) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: ANSWER_LINE_H }} />)
+                            ? (showSolutions ? label(v, fontSize, scale, SOL) : (
+                                <KioskCell cellKey={`v${i}`} style={{ width: gap - 6, height: KIOSK_CELL_H, fontSize: `${fontSize}px` }}>
+                                    <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: ANSWER_LINE_H }} />
+                                </KioskCell>
+                            ))
                             : label(v, fontSize, scale)}
                     </div>
                 );

@@ -5,6 +5,13 @@ import type { BreukBewerkConstraints } from '../math/constraintTypes';
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
+// A teller for noemer d: proper 1..d-1, or (improper on, half the draws) d+1..min(2d-1, cap) — never d/d.
+// Off draws exactly as before (one randInt), so seeded sheets stay byte-identical.
+function drawNumerator(d: number, improper: boolean, cap = Infinity): number {
+    const hi = Math.min(2 * d - 1, cap);
+    if (improper && hi > d && Math.random() < 0.5) return randInt(d + 1, hi);
+    return randInt(1, Math.max(1, Math.min(d - 1, cap)));
+}
 
 // gemengd: improper↔mixed. direction set per item ('beide' randomises).
 // maxNumerator/maxDenominator cap the improper fraction (getalopbouw widget).
@@ -36,14 +43,43 @@ function divisorsInRange(target: number, lo: number, hi: number): number[] {
     return out;
 }
 
+// Noemers in [lo, hi] that have a multiple (×2 or more) still in range — the 'multiple' pair's smaller noemer.
+function multipleBases(lo: number, hi: number): number[] {
+    const out: number[] = [];
+    for (let d = Math.max(2, lo); d * 2 <= hi; d++) out.push(d);
+    return out;
+}
+
+// A noemer pair where one is a multiple of the other (3 & 6), in random order. No pair in range:
+// the largest base under the cap (pulled below the min, see limitNote), or 2 & 4 when the cap is 3.
+function multiplePair(lo: number, hi: number): [number, number] {
+    const bases = multipleBases(lo, hi);
+    let small: number, large: number;
+    if (bases.length > 0) {
+        small = bases[randInt(0, bases.length - 1)];
+        large = small * randInt(2, Math.floor(hi / small));
+    } else {
+        small = Math.max(2, Math.floor(hi / 2));
+        large = small * 2;
+    }
+    return Math.random() < 0.5 ? [small, large] : [large, small];
+}
+
 // gelijknamig: two fractions with different denominators → a common denominator.
 // targetDen (when it has ≥2 divisors in range) fixes the common denominator; else the LCM.
-function makeGelijknamig(minD: number, maxD: number, targetDen: number | null): BreukBewerkExercise {
-    const lo = Math.max(2, minD), hi = Math.max(lo + 1, maxD);
+// relation 'multiple' (leerjaar 4): one noemer a multiple of the other, the larger one is the common noemer.
+function makeGelijknamig(minD: number, maxD: number, targetDen: number | null, improper: boolean, multiple: boolean): BreukBewerkExercise {
+    // Two different denominators need a range of ≥2 values: when min ≥ max pull lo down
+    // so the cap holds (tot 20 → 19 & 20); only maxD = 2 has no room and must reach 3.
+    const hi = Math.max(maxD, 2) < 3 ? 3 : Math.max(2, maxD);
+    const lo = Math.min(Math.max(2, minD), hi - 1);
 
     let d1: number, d2: number, L: number;
-    const divisors = targetDen && targetDen >= 2 ? divisorsInRange(targetDen, lo, hi) : [];
-    if (targetDen && divisors.length >= 2) {
+    const divisors = !multiple && targetDen && targetDen >= 2 ? divisorsInRange(targetDen, lo, hi) : [];
+    if (multiple) {
+        [d1, d2] = multiplePair(lo, hi);
+        L = Math.max(d1, d2);
+    } else if (targetDen && divisors.length >= 2) {
         d1 = divisors[randInt(0, divisors.length - 1)];
         let guard = 0;
         do { d2 = divisors[randInt(0, divisors.length - 1)]; } while (d2 === d1 && guard++ < 40);
@@ -54,38 +90,47 @@ function makeGelijknamig(minD: number, maxD: number, targetDen: number | null): 
         do { d2 = randInt(lo, hi); } while (d1 === d2 && guard++ < 40);
         L = lcm(d1, d2);
     }
-    const n1 = randInt(1, d1 - 1);
-    const n2 = randInt(1, d2 - 1);
+    const n1 = drawNumerator(d1, improper);
+    const n2 = drawNumerator(d2, improper);
     const inputs: Fraction[] = [{ n: n1, d: d1 }, { n: n2, d: d2 }];
     const answers: Fraction[] = [{ n: n1 * (L / d1), d: L }, { n: n2 * (L / d2), d: L }];
     return { id: rndId(), subType: 'gelijknamig', inputs, answers, isManuallyEdited: false };
 }
 
-// A coprime proper fraction with denominator ≤ maxDen, numerator ≤ maxNum.
-function coprimeBase(maxNum: number, maxDen: number): Fraction {
+// A coprime fraction with denominator ≤ maxDen, numerator ≤ maxNum; proper unless improper is on.
+function coprimeBase(maxNum: number, maxDen: number, improper: boolean): Fraction {
     let guard = 0;
     while (guard++ < 60) {
         const d = randInt(2, Math.max(2, maxDen));
-        const n = randInt(1, Math.max(1, Math.min(d - 1, maxNum)));
+        const n = drawNumerator(d, improper, maxNum);
         const s = simplifyFraction(n, d);
         if (s.n === n && s.d === d) return s;   // already coprime
     }
     return { n: 1, d: 2 };
 }
 
+const canReduce = (maxNum: number, maxDen: number) => maxNum >= 2 && maxDen >= 4;
+
 // vereenvoudigen: a reducible fraction → its lowest-terms form. tablesOnly keeps the
 // base denominator and the scale factor within the times tables (≤10). allowIrreducible
 // occasionally emits an already-coprime fraction (answer = input) so pupils must judge.
-function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean, allowIrreducible: boolean): BreukBewerkExercise {
+function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean, allowIrreducible: boolean, improper: boolean): BreukBewerkExercise {
     if (allowIrreducible && Math.random() < 0.3) {
-        const f = coprimeBase(maxNum, maxDen);
+        const f = coprimeBase(maxNum, maxDen, improper);
+        return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
+    }
+
+    // A reducible proper fraction needs at least 2/4: under tighter caps the closest valid
+    // output is an irreducible fraction within the caps (see noteFor).
+    if (!canReduce(maxNum, maxDen)) {
+        const f = coprimeBase(maxNum, tablesOnly ? Math.min(10, maxDen) : maxDen, improper);
         return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
     }
 
     let guard = 0;
     while (guard++ < 80) {
         const baseDenCap = tablesOnly ? Math.min(10, maxDen) : maxDen;
-        const base = coprimeBase(maxNum, baseDenCap);
+        const base = coprimeBase(maxNum, baseDenCap, improper);
         const kCap = Math.min(
             Math.floor(maxNum / base.n),
             Math.floor(maxDen / base.d),
@@ -100,6 +145,36 @@ function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean,
     return { id: rndId(), subType: 'vereenvoudigen', inputs: [{ n: 2, d: 4 }], answers: [{ n: 1, d: 2 }], isManuallyEdited: false };
 }
 
+// Settings the generator can't honour exactly: the output stays as close as possible
+// and this says what had to give.
+function limitNote(subType: string, c: BreukBewerkConstraints): string | null {
+    const minD = c.minDenominator ?? 2, maxD = c.maxDenominator ?? 10, maxN = c.maxNumerator ?? 10;
+    if (subType === 'gemengd' && maxN < 3) return 'Een gemengd getal heeft minstens teller 3 (3/2): de teller loopt hier boven het maximum.';
+    if (subType === 'vereenvoudigen' && !canReduce(maxN, maxD)) return 'Bij dit maximum bestaat geen breuk om te vereenvoudigen: de breuken zijn al vereenvoudigd.';
+    if (subType === 'gelijknamig' && c.denominatorRelation === 'multiple') {
+        const hi = Math.max(maxD, 2) < 3 ? 3 : Math.max(2, maxD), lo = Math.min(Math.max(2, minD), hi - 1);
+        if (multipleBases(lo, hi).length > 0) return null;
+        if (hi < 4) return `Bij maximum noemer ${Math.max(2, maxD)} past geen noemer met een veelvoud ervan: noemer 4 wordt ook gebruikt.`;
+        return `Van ${minD} tot ${maxD} past geen noemer met een veelvoud ervan: de kleinste noemer is er onder gekozen.`;
+    }
+    if (subType === 'gelijknamig') {
+        const targetDen = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+        // A noemer leaves [min, max]: min = max (second one picked just below) or max 2 (3 added).
+        if (Math.max(maxD, 2) >= 3 && Math.max(2, minD) >= maxD) return 'Van–tot laat maar één noemer toe; de tweede noemer is er net onder gekozen.';
+        if (Math.max(maxD, 2) < 3) return 'Bij maximum noemer 2 zijn er geen twee verschillende noemers: noemer 3 wordt ook gebruikt.';
+        if (targetDen && targetDen >= 2) {
+            const hi = Math.max(2, maxD), lo = Math.min(Math.max(2, minD), hi - 1);
+            if (divisorsInRange(targetDen, lo, hi).length < 2) return `Noemer ${targetDen} heeft minder dan twee delers in dit bereik: het kleinste gemeenschappelijke veelvoud wordt gebruikt.`;
+        }
+    }
+    return null;
+}
+
+export function generateBreukBewerkExercisesNoted(block: MathBlock): { items: BreukBewerkExercise[]; note: string | null } {
+    const subType: string = (block.constraints as BreukBewerkConstraints).subType ?? 'gemengd';
+    return { items: generateBreukBewerkExercises(block), note: limitNote(subType, block.constraints as BreukBewerkConstraints) };
+}
+
 export function generateBreukBewerkExercises(block: MathBlock): BreukBewerkExercise[] {
     const c = block.constraints as BreukBewerkConstraints;
     const subType: string = c.subType ?? 'gemengd';
@@ -110,11 +185,13 @@ export function generateBreukBewerkExercises(block: MathBlock): BreukBewerkExerc
     const tablesOnly: boolean = c.tablesOnly ?? true;
     const allowIrreducible: boolean = c.allowIrreducible ?? false;
     const targetDen: number | null = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+    const improper: boolean = c.allowImproper === true;
+    const multiple: boolean = c.denominatorRelation === 'multiple';
     const n = block.numberOfExercises;
 
     return Array.from({ length: n }, () => {
-        if (subType === 'gelijknamig') return makeGelijknamig(minD, maxD, targetDen);
-        if (subType === 'vereenvoudigen') return makeVereenvoudigen(maxN, maxD, tablesOnly, allowIrreducible);
+        if (subType === 'gelijknamig') return makeGelijknamig(minD, maxD, targetDen, improper, multiple);
+        if (subType === 'vereenvoudigen') return makeVereenvoudigen(maxN, maxD, tablesOnly, allowIrreducible, improper);
         return makeGemengd(maxN, maxD, dirMode);
     });
 }

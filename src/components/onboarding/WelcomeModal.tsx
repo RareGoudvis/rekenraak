@@ -32,6 +32,9 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
                         <p style={{ margin: '0 0 24px', fontSize: '14px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
                             Welkom bij RekenRaak — maak in een paar klikken een rekenblad. Hoe wil je beginnen?
                         </p>
+                        <p style={{ margin: '-14px 0 24px', fontSize: '13px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+                            Nieuw: Oefenmodus (leerlingen oefenen op hun toestel) en Bordmodus (digibord), allebei in bèta.
+                        </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <button
                                 ref={primaryBtnRef}

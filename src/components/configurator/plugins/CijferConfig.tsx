@@ -5,6 +5,8 @@ import type { CijferConstraints } from '../../../services/math/types';
 import { getMaskPlaces, getBridgePlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import BridgeControl from '../BridgeControl';
 import SettingLabel from './SettingLabel';
 import { useSheetSizePx } from '../../viewer/BlockWidthContext';
@@ -14,10 +16,9 @@ interface Props {
     block: MathBlock;
 }
 
-const MAX_RANGES = [20, 100, 1_000, 10_000, 100_000, 1_000_000, 1_000_000_000];
-
 export default function CijferConfig({ block }: Props) {
     const [c, patch] = useConstraints<CijferConstraints>(block);
+    const range = useMaxPresets(block);
     const isDecimal = c.numberType === 'decimal';
     const isDivision = c.operator === ':';
     const isAddition = c.operator === '+';
@@ -44,16 +45,16 @@ export default function CijferConfig({ block }: Props) {
         <div style={styles.container}>
 
             {/* MAXIMUM BEREIK */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={c.maxRange}
-                    options={MAX_RANGES.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxRange', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* DECIMAL PLACES */}
             {isDecimal && (
@@ -73,8 +74,8 @@ export default function CijferConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Uitkomst:" info="Of de deling exact opgaat of een rest mag overhouden." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('withRemainder', false)} style={styles.radioBtn(!c.withRemainder)}>Exact</button>
-                        <button onClick={() => set('withRemainder', true)} style={styles.radioBtn(!!c.withRemainder)}>Met rest</button>
+                        <button onClick={() => set('withRemainder', false)} aria-pressed={!c.withRemainder} style={styles.radioBtn(!c.withRemainder)}>Exact</button>
+                        <button onClick={() => set('withRemainder', true)} aria-pressed={!!c.withRemainder} style={styles.radioBtn(!!c.withRemainder)}>Met rest</button>
                     </div>
                 </div>
             )}
@@ -83,8 +84,8 @@ export default function CijferConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Voorafgaande schatting:" info="Voeg een schattingsregel toe vóór de berekening." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('withEstimation', false)} style={styles.radioBtn(!c.withEstimation)}>Geen</button>
-                    <button onClick={() => set('withEstimation', true)} style={styles.radioBtn(!!c.withEstimation)}>Toevoegen</button>
+                    <button onClick={() => set('withEstimation', false)} aria-pressed={!c.withEstimation} style={styles.radioBtn(!c.withEstimation)}>Geen</button>
+                    <button onClick={() => set('withEstimation', true)} aria-pressed={!!c.withEstimation} style={styles.radioBtn(!!c.withEstimation)}>Toevoegen</button>
                 </div>
             </div>
 
@@ -113,7 +114,7 @@ export default function CijferConfig({ block }: Props) {
                                 <label style={{ ...styles.label, fontSize: 'var(--text-xs)', marginBottom: '4px' }}>Getal {i + 1}:</label>
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                     {maskPlaces.map(p => (
-                                        <button key={p.key} onClick={() => setMask(maskKey, p.key, !mask[p.key])} style={styles.maskBtn(!!mask[p.key])}>
+                                        <button key={p.key} onClick={() => setMask(maskKey, p.key, !mask[p.key])} aria-pressed={!!mask[p.key]} style={styles.maskBtn(!!mask[p.key])}>
                                             {p.key}
                                         </button>
                                     ))}
@@ -162,7 +163,7 @@ export function CijferStyleConfig({ block }: Props) {
                         <button
                             key={level}
                             onClick={() => patch({ scaffolding: level })}
-                            style={{
+                            aria-pressed={isActive} style={{
                                 ...F.radioBtn(isActive),
                                 justifyContent: 'flex-start', padding: '7px 12px',
                                 color: isActive ? 'white' : 'var(--text-main)',

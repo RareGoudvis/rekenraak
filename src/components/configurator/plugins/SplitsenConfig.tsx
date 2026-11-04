@@ -8,18 +8,19 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { SplitsenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [10, 20, 100, 1000, 10000, 100000, 1000000];
-const HEART_PRESETS = [10, 20, 100];
 
 export default function SplitsenConfig({ block }: Props) {
 
     const [c, patch] = useConstraints<SplitsenConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         maxGetal = 10,
         operand1Mask = {},
@@ -80,10 +81,6 @@ export default function SplitsenConfig({ block }: Props) {
 
     // Layout is fixed by the sidebar leaf; the config only refines that layout.
     const currentLayout = typeof layout === 'string' ? layout : 'basic';
-    const maxPresets = isPositie && currentLayout !== 'positie-tabel'
-        ? [...MAX_PRESETS, 1000000000]
-        : MAX_PRESETS;
-    const BOOM_PRESETS = [10, 20, 100, 1000];   // splitsboom capped at 1 000
 
     return (
         <div style={styles.container}>
@@ -94,7 +91,7 @@ export default function SplitsenConfig({ block }: Props) {
                     <SettingLabel text="Welk getal ontbreekt (mag meerdere):" info="Welke plek(ken) in de splitsboom de leerling invult." />
                     <div style={styles.buttonGroup}>
                         {[{ key: 'top', label: 'Bovenaan' }, { key: 'left', label: 'Links' }, { key: 'right', label: 'Rechts' }].map(o => (
-                            <button key={o.key} onClick={() => toggleBlank(o.key)} style={styles.pill(blankPositions.includes(o.key))}>{o.label}</button>
+                            <button key={o.key} onClick={() => toggleBlank(o.key)} aria-pressed={blankPositions.includes(o.key)} style={styles.pill(blankPositions.includes(o.key))}>{o.label}</button>
                         ))}
                     </div>
                 </div>
@@ -106,7 +103,7 @@ export default function SplitsenConfig({ block }: Props) {
                     <SettingLabel text="Decimalen:" info="Aantal cijfers na de komma (0 = enkel gehele getallen)." />
                     <div style={styles.buttonGroup}>
                         {[0, 1, 2, 3].map(dp => (
-                            <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
+                            <button key={dp} onClick={() => set('decimalPlaces', dp)} aria-pressed={decimalPlaces === dp} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
                         ))}
                     </div>
                 </div>
@@ -122,7 +119,7 @@ export default function SplitsenConfig({ block }: Props) {
                     ]).map((row, r) => (
                         <div key={r} style={{ ...styles.buttonGroup, marginBottom: '6px' }}>
                             {row.map(o => (
-                                <button key={o.key} onClick={() => toggleBenen(o.key)} style={styles.pill(benenVariants.includes(o.key))}>{o.label}</button>
+                                <button key={o.key} onClick={() => toggleBenen(o.key)} aria-pressed={benenVariants.includes(o.key)} style={styles.pill(benenVariants.includes(o.key))}>{o.label}</button>
                             ))}
                         </div>
                     ))}
@@ -135,23 +132,23 @@ export default function SplitsenConfig({ block }: Props) {
                     <div style={styles.section}>
                         <SettingLabel text="Notatie (wat mag voorkomen):" info="Met letters (7H+9T+2E) of uitgebreid (300+70+8)." />
                         <div style={styles.buttonGroup}>
-                            <button onClick={() => toggleMathForm('letters')} style={styles.pill(mathForms.includes('letters'))}>Letters (7H+9T+2E)</button>
-                            <button onClick={() => toggleMathForm('expanded')} style={styles.pill(mathForms.includes('expanded'))}>Uitgebreid (300+70+8)</button>
+                            <button onClick={() => toggleMathForm('letters')} aria-pressed={mathForms.includes('letters')} style={styles.pill(mathForms.includes('letters'))}>Letters (7H+9T+2E)</button>
+                            <button onClick={() => toggleMathForm('expanded')} aria-pressed={mathForms.includes('expanded')} style={styles.pill(mathForms.includes('expanded'))}>Uitgebreid (300+70+8)</button>
                         </div>
                     </div>
                     <div style={styles.section}>
                         <SettingLabel text="Richting:" info="Splitsen (942=…) of samenstellen (…=942), of beide." />
                         <div style={styles.buttonGroup}>
-                            <button onClick={() => set('mathDirection', 'decompose')} style={styles.radioBtn(mathDirection === 'decompose')}>Splitsen (942=…)</button>
-                            <button onClick={() => set('mathDirection', 'compose')} style={styles.radioBtn(mathDirection === 'compose')}>Samenstellen (…=942)</button>
-                            <button onClick={() => set('mathDirection', 'beide')} style={styles.radioBtn(mathDirection === 'beide')}>Beide</button>
+                            <button onClick={() => set('mathDirection', 'decompose')} aria-pressed={mathDirection === 'decompose'} style={styles.radioBtn(mathDirection === 'decompose')}>Splitsen (942=…)</button>
+                            <button onClick={() => set('mathDirection', 'compose')} aria-pressed={mathDirection === 'compose'} style={styles.radioBtn(mathDirection === 'compose')}>Samenstellen (…=942)</button>
+                            <button onClick={() => set('mathDirection', 'beide')} aria-pressed={mathDirection === 'beide'} style={styles.radioBtn(mathDirection === 'beide')}>Beide</button>
                         </div>
                     </div>
                     <div style={styles.section}>
                         <SettingLabel text="Volgorde van de termen:" info="Op volgorde (H, T, E) of gehusseld, zodat de leerling niet zomaar kan aflezen." />
                         <div style={styles.buttonGroup}>
-                            <button onClick={() => set('mathOrder', 'volgorde')} style={styles.radioBtn(mathOrder === 'volgorde')}>Op volgorde</button>
-                            <button onClick={() => set('mathOrder', 'gehusseld')} style={styles.radioBtn(mathOrder === 'gehusseld')}>Gehusseld</button>
+                            <button onClick={() => set('mathOrder', 'volgorde')} aria-pressed={mathOrder === 'volgorde'} style={styles.radioBtn(mathOrder === 'volgorde')}>Op volgorde</button>
+                            <button onClick={() => set('mathOrder', 'gehusseld')} aria-pressed={mathOrder === 'gehusseld'} style={styles.radioBtn(mathOrder === 'gehusseld')}>Gehusseld</button>
                         </div>
                     </div>
                 </>
@@ -184,12 +181,12 @@ export default function SplitsenConfig({ block }: Props) {
             )}
 
             {/* MAXIMUM GETAL */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat gesplitst mag worden." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(currentLayout === 'verliefde-harten' ? HEART_PRESETS : isBoom ? BOOM_PRESETS : maxPresets).map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => {
                         set('maxGetal', val);
                         if (fixedTotal && fixedTotal > val) set('fixedTotal', null);
@@ -197,7 +194,7 @@ export default function SplitsenConfig({ block }: Props) {
                     }}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* SPECIFIC NUMBER STRUCTURE — place-value layouts (which places the number has) */}
             {isPositie && (
@@ -205,7 +202,7 @@ export default function SplitsenConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(operand1Mask?.[p.key])}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!(operand1Mask?.[p.key])} style={styles.maskBtn(operand1Mask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw. Bv. enkel T, E en t.</p>
@@ -243,7 +240,7 @@ export default function SplitsenConfig({ block }: Props) {
                         <button
                             key={p.key}
                             onClick={() => toggleMask(p.key)}
-                            style={styles.maskBtn(operand1Mask?.[p.key])}
+                            aria-pressed={!!(operand1Mask?.[p.key])} style={styles.maskBtn(operand1Mask?.[p.key])}
                         >
                             {p.key}
                         </button>
@@ -259,7 +256,7 @@ export default function SplitsenConfig({ block }: Props) {
                         <button
                             key={p.key}
                             onClick={() => toggleMask2(p.key)}
-                            style={styles.maskBtn(operand2Mask?.[p.key])}
+                            aria-pressed={!!(operand2Mask?.[p.key])} style={styles.maskBtn(operand2Mask?.[p.key])}
                         >
                             {p.key}
                         </button>

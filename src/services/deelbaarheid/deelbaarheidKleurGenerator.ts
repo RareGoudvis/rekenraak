@@ -32,8 +32,12 @@ export function generateDeelbaarheidKleurExercises(block: MathBlock): Deelbaarhe
     const rasterCols: number = c.rasterCols ?? 10;
     const n = block.numberOfExercises;
 
-    return Array.from({ length: n }, () => {
-        const divisor = divisors[randInt(0, divisors.length - 1)];   // random divisor per row
+    // Every chosen divisor gets a row before any repeats, so a title naming them all ("2, 5 en 10")
+    // is true of the rows drawn; a shuffled start keeps one-row blocks (the kiosk) varied.
+    const order = [...divisors];
+    for (let i = order.length - 1; i > 0; i--) { const j = randInt(0, i); [order[i], order[j]] = [order[j], order[i]]; }
+    return Array.from({ length: n }, (_, row) => {
+        const divisor = order[row % order.length];
         if (isRechthoek) {
             // Pad UP to a full rectangle (a multiple of rasterCols) so the last visual row
             // is not ragged — capped at maxGetal, since there are no more distinct numbers
@@ -46,4 +50,26 @@ export function generateDeelbaarheidKleurExercises(block: MathBlock): Deelbaarhe
         }
         return { id: rndId(), divisor, numbers: stripNumbers(perRow, maxGetal, divisor), isManuallyEdited: false };
     });
+}
+
+// Oefenmodus: a thumb-sized card cannot hold a 100-cell kleurraster, so the card shows at most
+// this many numbers. SYNC: DeelbaarheidKleurViewer and the kiosk descriptor both read the same list.
+export const KIOSK_MAX_NUMBERS = 20;
+
+// The numbers the card shows: the first KIOSK_MAX_NUMBERS, but never fewer than two multiples
+// when the full list has them (a long list with few multiples would otherwise often cut them all).
+export function kioskNumbers(numbers: readonly number[], divisor: number): number[] {
+    if (numbers.length <= KIOSK_MAX_NUMBERS) return [...numbers];
+    const isMul = (n: number) => n % divisor === 0;
+    const shown = numbers.slice(0, KIOSK_MAX_NUMBERS);
+    const need = 2 - shown.filter(isMul).length;
+    if (need <= 0) return shown;
+    const extra = numbers.slice(KIOSK_MAX_NUMBERS).filter(isMul).slice(0, need);
+    // Spread the swapped-in multiples over the list, onto non-multiples only.
+    extra.forEach((m, k) => {
+        let p = Math.floor(((k + 1) * KIOSK_MAX_NUMBERS) / (extra.length + 1));
+        while (isMul(shown[p])) p = (p + 1) % KIOSK_MAX_NUMBERS;
+        shown[p] = m;
+    });
+    return shown;
 }

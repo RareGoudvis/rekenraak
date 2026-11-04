@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, type WidthUnits } from '../services/layout/blockLayout';
+import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, monoTextPx, grownColumn, splitColumns, ordenenRowPx, ordenenMaxChars, MONO_ADVANCE_EM, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 
 // The width clamp has two regimes: with a measured content width it answers the smallest
@@ -34,6 +34,23 @@ describe('minWidthUnits — fallback (no measurement)', () => {
             constraints: { numberType: 'natural', maxGetal: 1000000, multiplicationMode: 'tafels', selectedTables: [2, 5, 10], tableLimit: 10 },
         });
         expect(minWidthUnits(block)).toBe(1);
+    });
+
+    // The gemengd tussenstap lives in perVariant (or in a compenseren variant chip), not in the
+    // top-level preset: reading only that one made the block paint a quarter-wide then reflow.
+    test('gemengd with a compenseren tussenstap variant needs a half on the first paint', () => {
+        const viaOverride = makeBlock('hr-std-gemengd', {
+            constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-'], mix: 'random', perVariant: { '-': { preset: 'compenseren' } } },
+        });
+        const viaChip = makeBlock('hr-std-gemengd', {
+            constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-:compenseren'], mix: 'random' },
+        });
+        const plain = makeBlock('hr-std-gemengd', {
+            constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-'], mix: 'random' },
+        });
+        expect(minWidthUnits(viaOverride)).toBe(2);
+        expect(minWidthUnits(viaChip)).toBe(2);
+        expect(minWidthUnits(plain)).toBe(1);
     });
 
     test('delen met rest needs a half — the rest blank does not fit beside the quotient', () => {
@@ -201,8 +218,8 @@ describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () =>
         expect(minWidthUnits(lijnstuk, measure(10, 1))).toBe(1);
     });
 
-    test('mab-tekenen can go to a quarter, mab-herkennen stays at a half', () => {
-        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(1);
+    test('mab-tekenen and mab-herkennen both floor at a half (the D/H/T/E table needs room to draw)', () => {
+        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(2);
         expect(minWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
     });
 
@@ -226,5 +243,89 @@ describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () =>
     test('breuken-rangschikken: wide denominators and a long row need the full width', () => {
         const block = makeBlock('breuken-rangschikken', { constraints: { maxDenominator: 1000, count: 5 } });
         expect(minWidthUnits(block, measure(10, 1))).toBe(4);
+    });
+});
+
+describe('fallbackMinWidth — cijferen reads maxRange', () => {
+    // Cijferen keeps its ceiling under maxRange; reading only maxGetal sent a 1e9 grid to a quarter.
+    test('a cijferen block at a billion claims the full width before it is measured', () => {
+        const block = makeBlock('cijferen-optellen-nat', { constraints: { maxRange: 1_000_000_000 } });
+        expect(minWidthUnits(block)).toBe(4);
+    });
+
+    test('at ten thousand it claims a half, at its default a quarter', () => {
+        expect(minWidthUnits(makeBlock('cijferen-optellen-nat', { constraints: { maxRange: 10_000 } }))).toBe(2);
+        expect(minWidthUnits(makeBlock('cijferen-optellen-nat', { constraints: { maxRange: 1000 } }))).toBe(1);
+    });
+});
+
+describe('getalbegrip width helpers', () => {
+    const MATH_PX = 13 * 96 / 72;
+
+    test('monoTextPx is chars x 0.65em x the font factor', () => {
+        expect(MONO_ADVANCE_EM).toBe(0.65);
+        expect(monoTextPx(13, 1, MATH_PX)).toBeCloseTo(13 * 0.65 * MATH_PX);
+        expect(monoTextPx(10, 0.81, 20)).toBeCloseTo(10 * 0.65 * 0.81 * 20);
+    });
+
+    test('ordenenRowPx counts every printed glyph: each number, the "," or ";" after it and the 22px separator track', () => {
+        // Five numbers under 10 000 (5 glyphs each); four gaps, each a 22px track + one separator glyph.
+        const glyph = 0.65 * 17.33;
+        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 10000 }, 5)).toBeCloseTo(5 * 5 * glyph + 4 * (22 + glyph));
+        // pw017 {decimal, 3 dp, 100 000}, 4 numbers: the old estimate (8px air + 20px per gap) was 8px short.
+        const c = { numberType: 'decimal', maxGetal: 100000, decimalPlaces: 3 };
+        expect(ordenenRowPx('ordenen', c, 4)).toBeCloseTo(4 * 10 * glyph + 3 * (22 + glyph));
+    });
+
+    // The draw stays under the max (call 1, 2026-10-09), so the widest value is one step below it.
+    test.each([
+        [{ numberType: 'natural', maxGetal: 100 }, '99'],
+        [{ numberType: 'natural', maxGetal: 100000 }, '99 999'],
+        [{ numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, '99,99'],
+        [{ numberType: 'decimal', maxGetal: 1000, decimalPlaces: 1 }, '999,9'],
+        [{ numberType: 'decimal', maxGetal: 100000, decimalPlaces: 3 }, '99 999,999'],
+        [{ numberType: 'geheel', maxGetal: 10000 }, '-9 999'],
+        [{ numberType: 'geheel', maxGetal: 10000, minGetal: -20000 }, '-20 000'],
+        [{ numberType: 'geheel', maxGetal: 10000, minGetal: 0 }, '9 999'],
+    ])('ordenenMaxChars %j counts "%s"', (c, printed) => {
+        expect(ordenenMaxChars('ordenen', c)).toBe(printed.length);
+    });
+
+    // The stacked-fraction row is a LAYOUT-table flag, not a typeId branch: only the
+    // denominator's width counts, whatever natural-number settings ride along.
+    test('ordenenMaxChars: breuken-rangschikken counts its widest denominator', () => {
+        expect(ordenenMaxChars('breuken-rangschikken', { maxDenominator: 12, numberType: 'natural', maxGetal: 100000 })).toBe(2);
+        expect(ordenenMaxChars('breuken-rangschikken', {})).toBe(2);
+    });
+
+    test('the decimal ordenen default (max 1 000, 2 decimals) fits a half again: "999,99", never "1 000,00"', () => {
+        const c = { numberType: 'decimal', maxGetal: 1000, decimalPlaces: 2, count: 3 };
+        expect(ordenenRowPx('ordenen', c, 3)).toBeLessThanOrEqual(330 - 28);
+        expect(minWidthUnits(makeBlock('ordenen', { constraints: c }), measure(10, 1))).toBe(2);
+    });
+
+    test('grownColumn keeps the tuned px while the text fits, so default sheets print as before', () => {
+        // "1 000" in an afronden rooster cell: 5 glyphs at 0.81 are far under 104px.
+        expect(grownColumn(104, 5, 0.81, MATH_PX, 8)).toEqual({ px: 104, css: '104px' });
+    });
+
+    test('grownColumn grows to the widest text past a million, following the math token', () => {
+        const col = grownColumn(96, 13, 0.81, MATH_PX, 8);                 // "1 000 000 000"
+        expect(col.px).toBeCloseTo(13 * 0.65 * 0.81 * MATH_PX + 8);
+        expect(col.px).toBeGreaterThan(96);
+        expect(col.css).toBe('calc(var(--sheet-size-math) * 6.845 + 8px)');
+    });
+
+    test('splitColumns keeps one table while it fits', () => {
+        expect(splitColumns(2, 104, 96, 688)).toEqual([2]);
+        expect(splitColumns(0, 104, 96, 688)).toEqual([]);
+    });
+
+    test('splitColumns splits an over-wide rooster into balanced tables, larger first', () => {
+        // 8 targets of 128px after a 110px number column: 4 fit a full row.
+        expect(splitColumns(8, 110, 128, 688)).toEqual([4, 4]);
+        expect(splitColumns(5, 110, 128, 688)).toEqual([3, 2]);
+        // A column wider than the cell still gets a table of one, never zero.
+        expect(splitColumns(3, 110, 400, 334)).toEqual([1, 1, 1]);
     });
 });
