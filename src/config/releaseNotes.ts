@@ -31,9 +31,9 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
-        version: '1.1.0',
-        date: '2026-11',
-        summary: 'Oefenmodus en Bordmodus in bèta, aangepaste breukenoefeningen en extra opmaakinstellingen.',
+        version: '1.2.0',
+        date: '2026-11-04',
+        summary: 'Oefenmodus en Bordmodus in bèta, nieuwe breukenoefeningen, opmaak per domein, getallen tot 1 miljard.',
         items: [
             // ── 2026-11-03 (3): colours + size in the rail, widget previews, beta caption ──
             {
