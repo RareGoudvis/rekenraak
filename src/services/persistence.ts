@@ -18,6 +18,8 @@ export const WORKSHEET_FORMAT_VERSION = 4;
 const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
 const PRESETS_KEY = 'rekenraak_presets_v1';
 export const RELEASE_SEEN_KEY = 'rekenraak_release_seen_v1';
+// Returning-teacher upgrade modal: written on close/CTA, holds the RELEASE_VERSION it was seen for.
+export const UPGRADE_SEEN_KEY = 'rekenraak_upgrade_seen_v1';
 export const TRYOUT_SEEN_KEY = 'rekenraak_tryout_seen_v1';
 export const MAX_PRESETS = 50;
 const OEFEN_SESSIES_KEY = 'rekenraak_oefen_sessies_v1';

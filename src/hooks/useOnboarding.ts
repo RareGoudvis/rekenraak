@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { isBordPage } from '../bootEntry';
 
-const TOUR_SEEN_KEY = 'rekenraak_tour_seen_v1';
+export const TOUR_SEEN_KEY = 'rekenraak_tour_seen_v1';
 
 // Welcome modal, interactive tour, Help modal, the demo video opened from Help and the
 // "Wat is er nieuw" notes (from the release banner or from Help).

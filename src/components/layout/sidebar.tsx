@@ -89,7 +89,8 @@ export default function Sidebar() {
     const sidebarPreview = useWorksheetStore((state) => state.sidebarPreview);
     const setView = useWorksheetStore((state) => state.setView);
     const locked = !!curriculum?.locked;
-    const [oefenOpen, setOefenOpen] = useState(false);
+    const oefenOpen = useWorksheetStore((state) => state.oefenBuilderOpen);
+    const setOefenOpen = useWorksheetStore((state) => state.setOefenBuilderOpen);
 
     // Hover example: after a short delay over a leaf, show a live preview card anchored
     // to its right (or left if it would overflow). Gated on the sidebarPreview setting.
