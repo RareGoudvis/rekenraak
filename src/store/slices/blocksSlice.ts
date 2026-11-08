@@ -38,17 +38,22 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
         const def = REGISTRY[typeId];
         // A locked curriculum's constraints are the author's: the teacher's leerjaar never re-seeds them.
         const grade = state.curriculum?.locked ? null : state.selectedGrade;
-        const mergedConstraints = seedConstraints({ typeId, base: state.baseSettings, override: overrideConstraints, grade, leafId: opts?.leafId }) as BlockConstraints;
+        // Eenvoudig cards arrive resolved for their own leerjaar: re-seeding would apply this
+        // teacher's base and strip the pinned max of grade-driven leaves.
+        const mergedConstraints = (opts?.exact
+            ? { ...overrideConstraints }
+            : seedConstraints({ typeId, base: state.baseSettings, override: overrideConstraints, grade, leafId: opts?.leafId })) as BlockConstraints;
 
         const newBlock: MathBlock = {
             id: Math.random().toString(36).substring(2, 9),
             typeId,
             leafId: opts?.leafId,
+            ...(opts?.cardId ? { cardId: opts.cardId } : {}),
             instructionText: resolveInstruction(opts?.instruction, typeId, label, mergedConstraints),
             instructionMode: 'geen',
             layoutPreset: 'inline-short',
             steppedLines: 3,
-            numberOfExercises: (opts?.leafId ? LEAF_BY_ID[opts.leafId]?.defaultCount : undefined) ?? (def ? def.defaultCount : 10),
+            numberOfExercises: opts?.count ?? (opts?.leafId ? LEAF_BY_ID[opts.leafId]?.defaultCount : undefined) ?? (def ? def.defaultCount : 10),
             totalPoints: 5,
             // Writing room between exercises. 14 was tight for a 7-year-old's handwriting;
             // teachers can still dial it 8-40 per block under Opmaak.

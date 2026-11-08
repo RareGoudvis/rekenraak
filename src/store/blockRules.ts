@@ -39,7 +39,8 @@ const COUNT_SAFE = new Set(['numberOfExercises', 'totalPoints']);
 // Pure presentation keys: they change how the block prints, never what it asks of
 // the child, so they must not raise the "verouderd" flag either.
 // widthUnits: the exercises are unchanged, only the cell the packer places them in.
-const PRESENTATION_SAFE = new Set(['itemNumbering', 'widthUnits']);
+// cardId: which Eenvoudig card the block came from, bookkeeping only.
+const PRESENTATION_SAFE = new Set(['itemNumbering', 'widthUnits', 'cardId']);
 
 // countOnly = top up/trim the existing exercises; marksStale = raise the "verouderd" flag.
 export function classifyUpdate(next: Partial<MathBlock>, prevConstraints: BlockConstraints | undefined): { countOnly: boolean; marksStale: boolean } {
