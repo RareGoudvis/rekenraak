@@ -64,6 +64,9 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 ## Tooling
 
 
+- **Limits audit, geld-teruggeven (2026-11-08, also on 64c49a2):** with `maxPriceEuros: 0` a price under the minimum appears (90c against a 100c floor, rule `value<min`). Only that edge value of the constraint space.
+- **Limits audit, ordenen (2026-11-08, also on 64c49a2):** rational with `unitFractionsOnly` and min = max noemer has one possible value, so the set comes up short with no note (rule `count-short`).
+
 ## Bordmodus
 
 
