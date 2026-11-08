@@ -19,23 +19,24 @@ describe('splittableCount', () => {
     });
 });
 
-// jsdom has no layout: every element gets a stubbed rect height instead.
-function sized<T extends HTMLElement>(el: T, height: number): T {
-    el.getBoundingClientRect = () => ({ height, width: 0, top: 0, left: 0, right: 0, bottom: height, x: 0, y: 0, toJSON: () => ({}) });
-    return el;
+// jsdom has no layout: rects are stubbed from a vertical stack (top offsets), so margins count.
+function rect(el: HTMLElement, top: number, height: number) {
+    el.getBoundingClientRect = () => ({ height, width: 0, top, left: 0, right: 0, bottom: top + height, x: 0, y: top, toJSON: () => ({}) });
 }
 
-// A cell of `rows` .print-row rows, each `rowH` tall with `perRow` items, plus `chrome` px
-// of title and padding around them.
-function cell(rows: number, rowH: number, perRow: number, chrome: number): HTMLElement {
+// A cell of `rows` rows (`cls`), each `rowH` tall with `perRow` items and `gap` margin between
+// them, below `chrome` px of title and padding.
+function cell(rows: number, rowH: number, perRow: number, chrome: number, gap = 0, cls = 'print-row'): HTMLElement {
     const root = document.createElement('div');
     for (let r = 0; r < rows; r++) {
-        const row = sized(document.createElement('div'), rowH);
-        row.className = 'print-row';
+        const row = document.createElement('div');
+        row.className = cls;
         for (let i = 0; i < perRow; i++) row.appendChild(document.createElement('span'));
+        rect(row, chrome + r * (rowH + gap), rowH);
         root.appendChild(row);
     }
-    return sized(root, rows * rowH + chrome);
+    rect(root, 0, chrome + rows * rowH + (rows - 1) * gap);
+    return root;
 }
 
 describe('fittingSplitIndex', () => {
@@ -52,6 +53,16 @@ describe('fittingSplitIndex', () => {
 
     test('a row with no children counts as one exercise', () => {
         expect(fittingSplitIndex(cell(4, 50, 0, 0), 120, 4, 1)).toBe(2);
+    });
+
+    test('row margins are not title height', () => {
+        // 10 chrome, rows of 50 with 14 margin: bottoms at 60, 124, 188, 252. 200 fits three rows.
+        expect(fittingSplitIndex(cell(5, 50, 1, 10, 14), 200, 10, 1)).toBe(3);
+        // Margin-as-title would have read 10 + 4*14 = 66 chrome and fitted only 2 rows.
+    });
+
+    test('falls back to .print-exercise when there are no rows', () => {
+        expect(fittingSplitIndex(cell(5, 50, 3, 10, 0, 'print-exercise'), 120, 5, 1)).toBe(2);
     });
 
     test('null when the DOM says nothing useful', () => {
