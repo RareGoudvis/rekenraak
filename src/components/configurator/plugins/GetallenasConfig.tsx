@@ -1,5 +1,4 @@
 import { useConstraints } from '../useConstraints';
-import { useState } from 'react';
 import type { MathBlock } from '../../../services/math/types';
 import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -9,6 +8,8 @@ import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import BreukenSettings from './shared/BreukenSettings';
 import type { GetallenasConstraints } from '../../../services/math/constraintTypes';
+import JumpPicker from './shared/JumpPicker';
+import { chosenJumps, useSetJumps } from './shared/jumpSelection';
 
 interface Props {
     block: MathBlock;
@@ -23,7 +24,6 @@ export default function GetallenasConfig({ block }: Props) {
     const range = useMaxPresets(block);
     const {
         maxGetal = 100,
-        step = 5,
         direction = 'right',
         hardMode = false,
         ticks = 6,
@@ -41,11 +41,8 @@ export default function GetallenasConfig({ block }: Props) {
     const isDecimal = numberType === 'decimal';
     const lowerBound = minGetal ?? -maxGetal;
 
-    // Custom decimal step text — validated before committing.
-    const [customStep, setCustomStep] = useState('');
-    const customNum = Number(customStep.replace(',', '.'));
-    const customValid = customStep.trim() !== '' && Number.isFinite(customNum) && customNum > 0;
-    const commitCustom = () => { if (customValid) set('step', customNum); };
+    const chosen = chosenJumps(c);
+    const setJumps = useSetJumps(block);
 
     return (
         <div style={styles.container}>
@@ -61,35 +58,17 @@ export default function GetallenasConfig({ block }: Props) {
 
             {/* HARD MODE */}
             <div style={styles.section}>
-                <SettingLabel text="Moeilijkheid:" info="Makkelijk plaatst ronde getallen, moeilijk niet." />
+                <SettingLabel text="Moeilijkheid:" info="Hoe vaak een streepje leeg is: bij Minder lege vakjes ongeveer 4 op de 10, bij Meer lege vakjes ongeveer 6 op de 10. Het eerste streepje blijft altijd ingevuld, er blijven minstens twee ingevuld en minstens één is leeg." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('hardMode', false)} aria-pressed={!hardMode} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
-                    <button onClick={() => set('hardMode', true)} aria-pressed={!!hardMode} style={styles.radioBtn(hardMode)}>Moeilijk</button>
+                    <button onClick={() => set('hardMode', false)} aria-pressed={!hardMode} style={styles.radioBtn(!hardMode)}>Minder lege vakjes</button>
+                    <button onClick={() => set('hardMode', true)} aria-pressed={!!hardMode} style={styles.radioBtn(hardMode)}>Meer lege vakjes</button>
                 </div>
             </div>
 
             {/* STEP — natural / decimal; a rational step is the Breuken block's noemer */}
             {!isRational && <div style={styles.section}>
-                <SettingLabel text="Sprong:" info="De afstand tussen twee streepjes op de as." />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {(isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
-                        <button key={s} onClick={() => set('step', s)} aria-pressed={step === s} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
-                    ))}
-                </div>
-                {isDecimal && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Eigen sprong:</span>
-                        <input
-                            value={customStep}
-                            onChange={(e) => setCustomStep(e.target.value)}
-                            onBlur={commitCustom}
-                            onKeyDown={(e) => { if (e.key === 'Enter') commitCustom(); }}
-                            placeholder="bv. 0,005"
-                            style={{ width: '90px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px', border: `1px solid ${customStep && !customValid ? '#e11d48' : 'var(--border-color)'}` }}
-                        />
-                        <button onClick={commitCustom} disabled={!customValid} style={{ ...styles.radioBtn(false), opacity: customValid ? 1 : 0.5, cursor: customValid ? 'pointer' : 'not-allowed', flex: '0 0 auto' }}>Zet</button>
-                    </div>
-                )}
+                <SettingLabel text="Sprong:" info="De afstand tussen twee streepjes op de as. Kies je er meer dan één, dan krijgt elke getallenas om beurt een andere sprong." />
+                <JumpPicker chosen={chosen} presets={isDecimal ? DECIMAL_STEPS : STEP_PRESETS} onChange={setJumps} withCustom={isDecimal} customPlaceholder="bv. 0,005" />
             </div>}
 
             {/* RATIONALE GETALLEN — the shared Breuken block: the sprong is the noemer, the rest is notation */}
