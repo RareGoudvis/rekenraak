@@ -287,7 +287,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
             {/* ── Scaffolding (herkennen) ── */}
             {subType === 'herkennen' && (
                 <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
                     <div style={F.optionCol}>
                         {([
                             { val: 'fraction-questions', label: 'Breukvragen' },
@@ -307,7 +307,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
             {/* ── Scaffolding (hoeveelheid concreet) ── */}
             {subType === 'hoeveelheid' && (
                 <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
                     <div style={F.optionCol}>
                         {([
                             { val: 'met-hulp',        label: 'Met hulplijnen' },
@@ -345,7 +345,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
             {/* ── Scaffolding (hoeveelheid-rechthoek) ── */}
             {subType === 'hoeveelheid-rechthoek' && (
                 <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
                     <div className="seg-group">
                         <button onClick={() => patch({ answerFormat: 'met-berekening' })} className="seg-btn" aria-pressed={(c.answerFormat ?? 'met-berekening') === 'met-berekening'}>Met lijnen</button>
                         <button onClick={() => patch({ answerFormat: 'zonder-berekening' })} className="seg-btn" aria-pressed={(c.answerFormat ?? 'met-berekening') === 'zonder-berekening'}>Zonder lijnen</button>
@@ -356,7 +356,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
             {/* ── Scaffolding (lijnstuk / hoeveelheid-abstract) — with example line layout ── */}
             {(subType === 'lijnstuk' || subType === 'hoeveelheid-abstract') && (
                 <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
                     <div style={F.optionCol}>
                         {([
                             // lijnstuk works in cm (line lengths); hoeveelheid-abstract is unitless.

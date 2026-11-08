@@ -39,15 +39,15 @@ function HrStdStyleConfig({ block }: { block: MathBlock }) {
             {/* Puntoefeningen (a + . = c) staan per definitie op één korte lijn — geen layoutkeuze. */}
             {c.equationType !== 'puntoefening' && (
                 <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Schrijfruimte</label>
                     <div className="seg-group">
-                        <button onClick={() => updateBlockLayout(block.id, 'inline-short')} className="seg-btn" aria-pressed={(block.layoutPreset ?? 'inline-short') === 'inline-short'}>Kort</button>
-                        <button onClick={() => updateBlockLayout(block.id, 'inline-long')}  className="seg-btn" aria-pressed={(block.layoutPreset ?? 'inline-short') === 'inline-long'}>Lang</button>
-                        <button onClick={() => updateBlockLayout(block.id, 'stepped')}      className="seg-btn" aria-pressed={(block.layoutPreset ?? 'inline-short') === 'stepped'}>Stappen</button>
+                        <button onClick={() => updateBlockLayout(block.id, 'inline-short')} className="seg-btn" aria-pressed={(block.layoutPreset ?? 'inline-short') === 'inline-short'}>Korte lijn</button>
+                        <button onClick={() => updateBlockLayout(block.id, 'inline-long')}  className="seg-btn" aria-pressed={(block.layoutPreset ?? 'inline-short') === 'inline-long'}>Lange lijn</button>
+                        <button onClick={() => updateBlockLayout(block.id, 'stepped')}      className="seg-btn" aria-pressed={(block.layoutPreset ?? 'inline-short') === 'stepped'}>Onder elkaar</button>
                     </div>
                     {(block.layoutPreset ?? 'inline-short') === 'stepped' && (
                         <div style={{ marginTop: '8px' }}>
-                            <label style={F.label}>Aantal stappenlijnen: {block.steppedLines ?? 3}</label>
+                            <label style={F.label}>Aantal lijnen: {block.steppedLines ?? 3}</label>
                             <input
                                 type="range" min="1" max="10" step="1"
                                 style={F.range}

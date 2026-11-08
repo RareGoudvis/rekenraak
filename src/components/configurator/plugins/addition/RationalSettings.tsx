@@ -12,8 +12,8 @@ interface Props { block: MathBlock; }
 // 'one_step' = ongelijknamig with one noemer a multiple of the other; 'multi_step' = free noemers.
 const DIFFICULTY = [
     { val: 'same',       label: 'Gelijknamig' },
-    { val: 'one_step',   label: 'Ongelijknamig (eenvoudig)' },
-    { val: 'multi_step', label: 'Ongelijknamig (moeilijk)' },
+    { val: 'one_step',   label: 'Ene noemer past in de andere (bv. 1/2 + 1/4)' },
+    { val: 'multi_step', label: 'Noemers passen niet in elkaar (bv. 1/4 + 1/6)' },
 ] as const;
 
 // + − with breuken: the shared Breuken block per breuk. A gemengd operand is a separate draw in the
@@ -58,7 +58,7 @@ export default function RationalSettings({ block }: Props) {
                 <span style={F.switchText}>Zelfde grenzen voor beide breuken</span>
                 <Switch checked={linkFractions} onChange={(v) => patch(v ? { linkFractions: true, maxNumerator2: maxNumerator1, maxDenominator2: maxDenominator1 } : { linkFractions: false })} aria-label="Zelfde grenzen voor beide breuken" />
             </div>
-            <SettingLabel text="Noemers" info="Gelijknamige breuken, of ongelijknamige: eenvoudig (de ene noemer is een veelvoud van de andere) of moeilijk." />
+            <SettingLabel text="Noemers" info="Gelijknamig: dezelfde noemer. Ene noemer past in de andere: de ene noemer is een veelvoud van de andere (1/2 + 1/4). Noemers passen niet in elkaar: geen van beide past in de andere (1/4 + 1/6)." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {DIFFICULTY.map(({ val, label }) => (
                     <button key={val} type="button" onClick={() => patch({ fractionDifficulty: val })} aria-pressed={fractionDifficulty === val}

@@ -31,7 +31,7 @@ const solutionCells = (root: Element) => root.querySelectorAll('[style*="--ink-s
 describe('board inspector: family sections', () => {
     test('cijferen shows the scaffolding control; the eye then shows the answers', () => {
         const { container, live } = openCijferWidget();
-        expect(screen.getByText('Scaffolding')).toBeTruthy();
+        expect(screen.getByText('Hulp op het blad')).toBeTruthy();
         act(() => { fireEvent.click(screen.getByText('Structuur en ingevulde getallen')); });
         expect((live().block!.constraints as Record<string, unknown>).scaffolding).toBe(1);
 

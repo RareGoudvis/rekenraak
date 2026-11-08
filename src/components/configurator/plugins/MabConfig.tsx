@@ -147,7 +147,7 @@ export function MabStyleConfig({ block }: Props) {
     const isHerkennen = block.typeId === 'mab-herkennen';
     return (
         <>
-            <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+            <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
             <div className="seg-group">
                 <button onClick={() => patch({ scaffolding: 'positietabel' })} className="seg-btn" aria-pressed={scaff === 'positietabel'}>Positietabel</button>
                 <button onClick={() => patch({ scaffolding: 'kader' })}        className="seg-btn" aria-pressed={scaff === 'kader'}>Kader</button>

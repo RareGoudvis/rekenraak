@@ -151,7 +151,7 @@ export function CijferStyleConfig({ block }: Props) {
     return (
         <>
             {/* ── Scaffolding (Structuur+Getallen / Enkel Structuur / Enkel Ruitjes) ── */}
-            <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+            <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
             <div style={F.optionCol}>
                 {([
                     { level: 1, label: 'Structuur en ingevulde getallen' },
