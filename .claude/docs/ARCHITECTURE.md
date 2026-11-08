@@ -93,7 +93,7 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelisted sidebar + frozen difficulty) — see §13 |
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks edited via the real config plugins: by the curriculum builder (§13) and by the Bordmodus inspector, which mirrors the selected board card here (§14); not rendered/autosaved/historied |
 | `view` | `WorksheetView` = `'editor' \| 'mijn-bladen' \| 'bibliotheek' \| 'whiteboard'` | Which full-screen view is active. UI-only. Starts at `initialView()` ([bootEntry.ts](../../src/bootEntry.ts): `'whiteboard'` on bord.html); `setView` to a non-board view on bord.html navigates to `/` instead (§14) |
-| `sidebarTab` | `'oefeningen' \| 'overzicht'` | Which sidebar tab is open. The strip renders in the TopBar (above the sidebar column), the panel renders the content — see §9 "Shell" |
+| `sidebarTab` | `'eenvoudig' \| 'oefeningen' \| 'overzicht'` | Which sidebar tab is open (`oefeningen` = full tree, labelled Uitgebreid; `overzicht` = blocks on the sheet, labelled Werkblad). The strip renders in the TopBar (above the sidebar column), the panel renders the content — see §9 "Shell" |
 | `inspectorTab` | `'blad' \| 'weergave' \| 'oefening'` | Which inspector tab is open. Labels read Oefeningen / Opmaak / Blad (content first); default `oefening` |
 | `bladSection` | `'koptekst' \| 'opdrachten' \| 'voettekst'` | Which Blad sub-tab shows. Set by its own tab strip AND by clicking the header/footer **on the sheet**, so both routes land in the same place |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo, max `MAX_HISTORY = 50` |
@@ -233,7 +233,7 @@ one exercise array **per family** (only one is populated per block, keyed by
 | `ordenenExercises` | `OrdenenExercise` (carries `decimalPlaces`; `formatMathNumber(n, dp)` keeps trailing zeros) | `ordenen`, `breuken-rangschikken` (reuses field + OrdenenViewer) |
 | `breukBewerkExercises` | `BreukBewerkExercise` | `breuken-bewerken` |
 | `deelbaarheidExercises` | `DeelbaarheidExercise` (veelvouden: the first row starts at 0, every other row at its own multiple) | `deelbaarheid` |
-| `getallenasExercises` | `GetallenasExercise` | `getallenas`, `getallenrijen` (reuses field, own generator/viewer) |
+| `getallenasExercises` | `GetallenasExercise` | `getallenas`, `getallenrijen` (reuses field, own generator/viewer; optional `jumps` = the repeating in-rij pattern, §6) |
 | `meetExercises` | `MeetExercise` | `lengte-meten`, `omtrek` (cm-scale geometry) |
 | `patroonExercises` | `PatroonExercise` | `getalpatronen` |
 | `deelbaarheidKleurExercises` | `DeelbaarheidKleurExercise` | `deelbaarheid-kleuren` |
@@ -305,6 +305,7 @@ The four consumers are now **table lookups, not branches**:
 | Viewer routing | [SheetBlock.tsx](../../src/components/sheet/SheetBlock.tsx) | `EXERCISE_UI[typeId].Viewer` |
 | Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `LEAF_BY_ID[leafId]?.defaultCount ?? .defaultCount` (a leaf may carry its own count; only oppervlakte-rooster does, = 2) |
 | Seed fit | [baseSettings.ts](../../src/config/baseSettings.ts) `seedConstraints` | `SEED_FIT[typeId](c, grade, override)` (exerciseRegistry.ts) — runs last, only when the max came from the seed (not pinned by the override): schattend/afronden drop rounding targets that can't round at the seeded max; getallenas/-rijen lower ticks (min 4), then the step, so a default never needs a note; breuken-bewerken gelijknamig seeds `denominatorRelation` 'multiple' at leerjaar ≤ 4 and 'any' at 5–6 (absent without a leerjaar; a teacher's own value wins; `fitBreukBewerkGrade`, E3) |
+| Neighbour order | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].arrange?(items, block, before?)` runs after dedupe in `generateForBlock` and on the new tail in `generateExtra`, so a rule between neighbours survives top-ups (mixed jumps: no two lines in a row on one jump) |
 | Generation note | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generateNoted?` → `{ items, note }`; the note lands on the block (`generationNote`, Inspector box, §6) |
 | Oefenmodus | [kiosk.ts](../../src/services/oefenen/kiosk.ts) `kioskFor` / `kioskSupports` / `kioskCapableLeaves` | `REGISTRY[typeId].kiosk` (+ `.supported(c)` over the registry defaults): which leaves the builder lists, how the kiosk asks and checks (§15) |
 
@@ -431,6 +432,7 @@ the retry loop and build exactly `n` items directly.
 
 ### Shared cross-generator concepts
 
+- **Mixed jumps** ([jumps.ts](../../src/services/getallenas/jumps.ts), getallenas + getallenrijen): `constraints.jumps` with 2+ distinct positive numbers switches it on; otherwise the old single-`step` path runs with the same random draws (golden test `getallenJumps.legacy.test.ts`). Rational never mixes. Getallenas and `jumpMode: 'per-rij'`: each line takes one jump in rotation, all at the same tick count (`fitJumps`). `jumpMode: 'in-rij'`: one row repeats the pattern (`fitPattern`: at least jumps+2 cells, the first jumps+1 given; trims cells, then trailing jumps, with a note, never a smaller jump), anchored on the gcd of the jumps, `ex.jumps` set and `ex.step` = gcd. The kiosk `prepare` starts the rotation at a random jump per exercise.
 - **`INTERNAL_SCALE = 1_000_000`** ([mathEngine.ts](../../src/services/math/mathEngine.ts)) —
   all arithmetic is done as scaled integers to avoid JS float rounding, divided
   back at display time. **Integer-safety rule (2026-10-28):** 1e9 × INTERNAL_SCALE (1e15) is safe for
@@ -1041,7 +1043,7 @@ because at ½/¼ it lands on top of the neighbouring block's ink.
 
 **Splitting instead of reordering.** A block that does not fit the rest of a page still moves
 whole, so `PageSheet` measures the blank tail it leaves and, past three row units (72px),
-offers "Het volgende blok past hier niet meer — splitsen" on an explicit grid row under the
+offers "Het volgende blok past hier niet meer — splitsen" (only when `canSplitNext(tailPx)` from SheetPages finds a real split point via `fittingSplitIndex`, which reads row bottoms from the cell's top so row margins count, and falls back to `.print-exercise` for cijfer and geld teruggeven) on an explicit grid row under the
 last cell. That, and the `Scissors` control on any block with two or more exercises, open one
 popover ("Splitsen na oefening N") which calls `splitBlock` (§3). N defaults to the largest cut
 whose leading `.print-row` heights still fit the available space, measured off the rendered
@@ -1297,6 +1299,7 @@ src/
 ├── index.css                    # global + ALL print CSS (@page, @media print)
 ├── assets/theme.css             # tokens (fonts come from @fontsource via index.css; favicons live in public/)
 ├── config/
+│   ├── eenvoudig/{cards.json,cards.ts,nav.ts,resolveCard.ts}   # Eenvoudig mode card table (lazy-loaded), topic nav, and resolveCard: a card seeds from its OWN leerjaar preset, never the teacher's Basisinstellingen (§13)
 │   ├── appstructure.ts          # APP_STRUCTURE tree (Domain→Subdomain→ExerciseType)
 │   ├── exerciseRegistry.ts      # REGISTRY: typeId → {exerciseField, generate, defaultConstraints, defaultCount} (pure data)
 │   ├── exerciseUI.tsx           # EXERCISE_UI: typeId → {Viewer, Config} (React)
@@ -1371,6 +1374,7 @@ src/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
 │   ├── generationNotes.ts       # shared Dutch note wording (countOefeningen, repeatNote) for generateNoted rows + the dedupe's "Kleine reeks"
+│   ├── eenvoudigMode.ts         # default sidebar mode (localStorage, new teacher = Eenvoudig, tour already seen = Uitgebreid) + effectiveSidebarTab for locked curricula (§13)
 │   ├── generateDispatch.ts      # generateForBlock / generateExtra / regenerateBlock: registry lookup, sheet-wide dedupe (§6) → generic setExercises
 │   ├── persistence.ts           # autosave / presets / share-link / file import-export / oefensessies library (§10)
 │   ├── qr.ts                    # QR matrix via npm qrcode-generator (level M, base32 tail as an alphanumeric segment) + canvas painter; teacher bundle only (§15)
@@ -1411,6 +1415,7 @@ src/
 │   ├── ordenen/{ordenenGenerator.ts,breukenRangschikkenGenerator.ts}   # rangschikken → OrdenenExercise[] (fractions)
 │   ├── deelbaarheid/{deelbaarheidGenerator.ts,deelbaarheidKleurGenerator.ts}   # kleur = strip/markeren/raster veelvouden
 │   ├── getallenas/getallenasGenerator.ts
+│   ├── getallenas/jumps.ts                      # mixed jumps: distinctJumps, patternGrid, fitPattern, arrangeJumps (§6; shared with getallenrij)
 │   ├── getallenas/blankMask.ts                  # ensureTwoGivens: a line / row of 3+ ticks shows ≥ 2 numbers (shared with getallenrij)
 │   ├── getallenrij/getallenrijGenerator.ts     # sequences (getallenas without the axis line)
 │   ├── patroon/{patroonGenerator.ts,kettingGenerator.ts}   # getalpatronen 1–4-step op-cycle; kettingsommen reuse PatroonExercise[]
@@ -1663,6 +1668,10 @@ other half. `baseApply` no longer writes fraction keys; the old `baseUnitFractio
 getallenas / -rijen rat leaves stopped pinning `fractionStep: 4` (generator + registry default) so
 the base reaches them — an ACCEPTED_DRIFT row in `oefenen.session.defaults.test.ts`. Seeding is
 pinned in `seedConstraints.test.ts`.
+
+### Eenvoudig card mode (data layer)
+
+[src/config/eenvoudig/](../../src/config/eenvoudig/) holds the card table. `resolveCard(variant)` is the one pure path from a card to `{ typeId, leafId, label, instruction, constraints, count }`, used by the preview, the add and the tests, so a card builds the same block for every teacher. `addBlockFromType` takes three matching options: `exact` (constraints are already resolved, skip `seedConstraints`), `count`, and `cardId` (saved on `MathBlock.cardId`, in `PRESENTATION_SAFE`, so the Inspector knows which card made the block; absent on blocks from the full list). `ExercisePreview` gained `unclamped`, `showSolutions` and `fitOne` (one exercise, no title, scaled and centred on its measured ink). `eenvoudig.cards.test.tsx` walks every variant.
 
 ### Mass-add modal ("Toevoegen")
 
