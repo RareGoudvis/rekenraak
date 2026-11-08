@@ -24,6 +24,8 @@ import type { RegionStyle } from '../../store/useWorksheetStore';
 import Switch from '../ui/Switch';
 import { F } from './plugins/shared/fieldStyles';
 import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
+import QuickBlock, { MoreToggle } from './QuickBlock';
+import { effectiveSidebarTab } from '../../services/eenvoudigMode';
 
 const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string }> = {
     naam:   { min: 100, max: 500, label: 'Naam' },
@@ -39,6 +41,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const bladSection = useWorksheetStore((state) => state.bladSection);
     const setBladSection = useWorksheetStore((state) => state.setBladSection);
     const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [moreOpen, setMoreOpen] = useState(false);
+    const sidebarTab = useWorksheetStore((state) => state.sidebarTab);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
     const rootStyle = embedded ? S.embedded : S.sidebar;
@@ -663,7 +667,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                     <>
                                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
                                                             <label style={{ ...S.label, marginTop: 0 }}>
-                                                                Schrijfruimte (dit blok) ({px}px){override == null ? ' · volgt blad' : ''}
+                                                                Schrijfhoogte ({px}px){override == null ? ' · volgt blad' : ''}
                                                             </label>
                                                             {override != null && (
                                                                 <button
@@ -872,6 +876,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     // panel is a single scroll of everything.
     const hasBlock = !!activeBlock;   // 'document' resolves to no block, as in TopBar
     const shown = !hasBlock ? 'blad' : tab;
+    // The quick block belongs to Eenvoudig only, and only for blocks that generate exercises.
+    const quickMode = !!activeBlock && !REGISTRY[activeBlock.typeId]?.isFurniture && effectiveSidebarTab(sidebarTab, locked) === 'eenvoudig';
 
 
     return (
@@ -894,6 +900,30 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     </div>
                 );
             })()}
+            {/* Eenvoudig: a highlighted quick block first, the full Inspector folded under "Alle instellingen". */}
+            {quickMode ? (
+                <div style={S.panelScroll}>
+                    <QuickBlock block={activeBlock} />
+                    <MoreToggle open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} />
+                    {moreOpen && (<>
+            <div className="panel-head">
+                <div className="seg-group">
+                    {([['oefening', 'Oefeningen', hasBlock], ['weergave', 'Opmaak', hasBlock], ['blad', 'Blad', true]] as const).map(([id, label, on]) => (
+                        <button
+                            key={id}
+                            className="seg-btn"
+                            aria-pressed={shown === id}
+                            disabled={!on}
+                            title={on ? undefined : 'Kies eerst een blok op het blad'}
+                            onClick={() => setInspectorTab(id)}
+                        >{label}</button>
+                    ))}
+                </div>
+            </div>
+                    {shown === 'blad' ? docContent : blockContent}
+                    </>)}
+                </div>
+            ) : (<>
             <div className="panel-head">
                 <div className="seg-group">
                     {([['oefening', 'Oefeningen', hasBlock], ['weergave', 'Opmaak', hasBlock], ['blad', 'Blad', true]] as const).map(([id, label, on]) => (
@@ -911,6 +941,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
             <div style={S.panelScroll}>
                 {shown === 'blad' ? docContent : blockContent}
             </div>
+            </>)}
         </aside>
     );
 }
