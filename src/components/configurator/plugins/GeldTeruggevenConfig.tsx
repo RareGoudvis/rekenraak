@@ -139,14 +139,14 @@ export function GeldTeruggevenStyleConfig({ block }: { block: MathBlock }) {
     const scaffolding: string = c.scaffolding ?? 'ingevuld';
     return (
         <>
-            <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+            <label style={{ ...F.label, marginTop: '12px' }}>Hulp op het blad</label>
             <div style={F.optionCol}>
                 {([
-                    { value: 'ingevuld',            label: 'Ingevuld' },
-                    { value: 'basis',               label: 'Basis' },
-                    { value: 'structuur',           label: 'Structuur' },
+                    { value: 'ingevuld',            label: 'Alles ingevuld' },
+                    { value: 'basis',               label: 'Begin en einde ingevuld' },
+                    { value: 'structuur',           label: 'Leeg schema' },
                     { value: 'rechthoek',           label: 'Lege ruimte' },
-                    { value: 'leeg',                label: 'Geen' },
+                    { value: 'leeg',                label: 'Geen hulp' },
                 ] as const).map(opt => (
                     <button key={opt.value}
                         onClick={() => patch({ scaffolding: opt.value })}

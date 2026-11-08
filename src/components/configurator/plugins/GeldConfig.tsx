@@ -130,8 +130,8 @@ export function GeldStyleConfig({ block }: { block: MathBlock }) {
                 <>
                     <label style={{ ...F.label, marginTop: '12px' }}>Tekenvak</label>
                     <div className="seg-group">
-                        <button className="seg-btn" aria-pressed={gScaffolding === 'eenvoudig'} onClick={() => patch({ scaffolding: 'eenvoudig' })}>Eenvoudig</button>
-                        <button className="seg-btn" aria-pressed={gScaffolding === 'verdeeld'} onClick={() => patch({ scaffolding: 'verdeeld' })}>Verdeeld (€ / cent)</button>
+                        <button className="seg-btn" aria-pressed={gScaffolding === 'eenvoudig'} onClick={() => patch({ scaffolding: 'eenvoudig' })}>Eén vak</button>
+                        <button className="seg-btn" aria-pressed={gScaffolding === 'verdeeld'} onClick={() => patch({ scaffolding: 'verdeeld' })}>Vak voor € en cent</button>
                     </div>
                 </>
             )}

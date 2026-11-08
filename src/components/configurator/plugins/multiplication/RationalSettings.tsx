@@ -54,7 +54,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
         <div>
             {/* COMBINATIE — which kinds of numbers meet */}
             <div style={styles.section}>
-                <SettingLabel text="Moeilijkheidsgraad (Combinatie):" info="Welke soorten getallen je combineert (natuurlijk, breuk of kommagetal)." />
+                <SettingLabel text="Welke getallen:" info="Welke soorten getallen je combineert (natuurlijk, breuk of kommagetal)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <button onClick={() => updateConstraint('fractionMultMode', 'natural_fraction')} aria-pressed={fractionMultMode === 'natural_fraction'} style={radioListBtnStyle(fractionMultMode === 'natural_fraction')}>Natuurlijk getal {sym} Breuk</button>
                     <button onClick={() => updateConstraint('fractionMultMode', 'fraction_fraction')} aria-pressed={isFracFrac} style={radioListBtnStyle(isFracFrac)}>Breuk {sym} Breuk</button>

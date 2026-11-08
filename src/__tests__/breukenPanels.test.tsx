@@ -78,7 +78,7 @@ describe('hoofdrekenen + − rat', () => {
     test('the link is a Switch with words, gelijknamig / ongelijknamig sits in the block', () => {
         const read = mount('hr-std-optellen', { numberType: 'rational' });
         expect(screen.getByRole('switch', { name: 'Zelfde grenzen voor beide breuken' }).getAttribute('aria-checked')).toBe('true');
-        fireEvent.click(screen.getByRole('button', { name: 'Ongelijknamig (moeilijk)' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Noemers passen niet in elkaar (bv. 1/4 + 1/6)' }));
         expect(read().fractionDifficulty).toBe('multi_step');
         fireEvent.click(screen.getAllByRole('button', { name: 'Alleen gemengde getallen' })[0]);
         expect(read()).toMatchObject({ mixedNumber1: true, mixedNumber2: false });

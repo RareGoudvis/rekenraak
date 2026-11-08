@@ -16,15 +16,15 @@ export default function RekenvolgordeStyleConfig({ block }: { block: MathBlock }
     return (
         <>
             <ItemNumberingRow block={block} />
-            <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+            <label style={{ ...F.label, marginTop: '12px' }}>Schrijfruimte</label>
             <div className="seg-group">
-                <button onClick={() => updateBlockLayout(block.id, 'inline-short')} className="seg-btn" aria-pressed={preset === 'inline-short'}>Kort</button>
-                <button onClick={() => updateBlockLayout(block.id, 'inline-long')}  className="seg-btn" aria-pressed={preset === 'inline-long'}>Lang</button>
-                <button onClick={() => updateBlockLayout(block.id, 'stepped')}      className="seg-btn" aria-pressed={preset === 'stepped'}>Stappen</button>
+                <button onClick={() => updateBlockLayout(block.id, 'inline-short')} className="seg-btn" aria-pressed={preset === 'inline-short'}>Korte lijn</button>
+                <button onClick={() => updateBlockLayout(block.id, 'inline-long')}  className="seg-btn" aria-pressed={preset === 'inline-long'}>Lange lijn</button>
+                <button onClick={() => updateBlockLayout(block.id, 'stepped')}      className="seg-btn" aria-pressed={preset === 'stepped'}>Onder elkaar</button>
             </div>
             {preset === 'stepped' && (
                 <div style={{ marginTop: '8px' }}>
-                    <label style={F.label}>Aantal stappenlijnen: {block.steppedLines ?? 3}</label>
+                    <label style={F.label}>Aantal lijnen: {block.steppedLines ?? 3}</label>
                     <input
                         type="range" min="1" max="10" step="1"
                         style={F.range}
