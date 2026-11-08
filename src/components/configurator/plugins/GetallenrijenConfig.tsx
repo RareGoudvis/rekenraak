@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
@@ -12,6 +11,8 @@ import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import BreukenSettings from './shared/BreukenSettings';
 import type { GetallenrijConstraints } from '../../../services/math/constraintTypes';
+import JumpPicker from './shared/JumpPicker';
+import { chosenJumps, useSetJumps } from './shared/jumpSelection';
 
 interface Props {
     block: MathBlock;
@@ -33,7 +34,6 @@ export default function GetallenrijenConfig({ block }: Props) {
     const range = useMaxPresets(block);
     const {
         maxGetal = 100,
-        step = 5,
         direction = 'right',
         hardMode = false,
         ticks = 6,
@@ -44,6 +44,7 @@ export default function GetallenrijenConfig({ block }: Props) {
         gelijknamig = false,
         numberMask = {},
         maxTeller = 25,
+        jumpMode = 'per-rij',
     } = c;
 
     const set = (key: string, value: unknown) =>
@@ -53,16 +54,12 @@ export default function GetallenrijenConfig({ block }: Props) {
     const isRational = numberType === 'rational';
     const isDecimal = numberType === 'decimal';
     const lowerBound = minGetal ?? -maxGetal;
-    // Mask places must match the step's decimal precision, else a selected place (e.g. 'h')
+    // Mask places must match the jumps' decimal precision, else a selected place (e.g. 'h')
     // is shown but never honored by the generator (which derives dp from the step).
-    const maskPlaces = getMaskPlaces(maxGetal, isDecimal ? 'decimal' : 'natural', isDecimal ? stepDecimals(step) : 0);
-
-    // Custom jump — any positive number, validated before committing. Available for
-    // every place-value number type (rationals use the 1/d presets instead).
-    const [customStep, setCustomStep] = useState('');
-    const customNum = Number(customStep.replace(',', '.'));
-    const customValid = customStep.trim() !== '' && Number.isFinite(customNum) && customNum > 0;
-    const commitCustom = () => { if (customValid) set('step', customNum); };
+    const chosen = chosenJumps(c);
+    const setJumps = useSetJumps(block);
+    // With several jumps the mask must cover the finest one.
+    const maskPlaces = getMaskPlaces(maxGetal, isDecimal ? 'decimal' : 'natural', isDecimal ? Math.max(...chosen.map(stepDecimals)) : 0);
 
     return (
         <div style={styles.container}>
@@ -78,33 +75,26 @@ export default function GetallenrijenConfig({ block }: Props) {
 
             {/* BLANK DENSITY */}
             <div style={styles.section}>
-                <SettingLabel text="Moeilijkheid:" info="Bepaalt hoeveel vakjes leeg blijven." />
+                <SettingLabel text="Moeilijkheid:" info="Hoe vaak een vakje leeg blijft: bij Minder lege vakjes ongeveer 4 op de 10, bij Meer lege vakjes ongeveer 6 op de 10. Het eerste vakje blijft altijd ingevuld, er blijven minstens twee ingevuld en minstens één is leeg." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('hardMode', false)} aria-pressed={!hardMode} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
-                    <button onClick={() => set('hardMode', true)} aria-pressed={!!hardMode} style={styles.radioBtn(hardMode)}>Moeilijk</button>
+                    <button onClick={() => set('hardMode', false)} aria-pressed={!hardMode} style={styles.radioBtn(!hardMode)}>Minder lege vakjes</button>
+                    <button onClick={() => set('hardMode', true)} aria-pressed={!!hardMode} style={styles.radioBtn(hardMode)}>Meer lege vakjes</button>
                 </div>
             </div>
 
             {/* STEP — natural / decimal + custom jump; a rational step is the Breuken block's noemer */}
             {!isRational && <div style={styles.section}>
-                <SettingLabel text="Sprong:" info="De stap tussen opeenvolgende getallen." />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {(isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
-                        <button key={s} onClick={() => set('step', s)} aria-pressed={step === s} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
-                    ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Eigen sprong:</span>
-                    <input
-                        value={customStep}
-                        onChange={(e) => setCustomStep(e.target.value)}
-                        onBlur={commitCustom}
-                        onKeyDown={(e) => { if (e.key === 'Enter') commitCustom(); }}
-                        placeholder="bv. 0,25 of 3"
-                        style={{ width: '90px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px', border: `1px solid ${customStep && !customValid ? '#e11d48' : 'var(--border-color)'}` }}
-                    />
-                    <button onClick={commitCustom} disabled={!customValid} style={{ ...styles.radioBtn(false), opacity: customValid ? 1 : 0.5, cursor: customValid ? 'pointer' : 'not-allowed', flex: '0 0 auto' }}>Zet</button>
-                </div>
+                <SettingLabel text="Sprong:" info="De stap tussen opeenvolgende getallen. Kies je er meer dan één, dan wisselen de sprongen af." />
+                <JumpPicker chosen={chosen} presets={isDecimal ? DECIMAL_STEPS : STEP_PRESETS} onChange={setJumps} withCustom customPlaceholder="bv. 0,25 of 3" />
+                {chosen.length >= 2 && (
+                    <div style={{ marginTop: '10px' }}>
+                        <SettingLabel text="Sprongen:" info="Per rij: elke rij heeft één eigen sprong, om beurt. In één rij: de sprongen wisselen af binnen dezelfde rij." />
+                        <div style={styles.buttonGroup}>
+                            <button onClick={() => set('jumpMode', 'per-rij')} aria-pressed={jumpMode !== 'in-rij'} style={styles.radioBtn(jumpMode !== 'in-rij')}>Per rij</button>
+                            <button onClick={() => set('jumpMode', 'in-rij')} aria-pressed={jumpMode === 'in-rij'} style={styles.radioBtn(jumpMode === 'in-rij')}>In één rij</button>
+                        </div>
+                    </div>
+                )}
             </div>}
 
             {/* RATIONALE GETALLEN — the shared Breuken block: sprong = noemer, one teller cap, notation */}
