@@ -18,7 +18,7 @@ export default function ModeChoice({ initial }: { initial?: DefaultMode }) {
                 <button key={o.mode} type="button" role="radio" aria-checked={mode === o.mode} onClick={() => pick(o.mode)} style={{
                     flex: '1 1 160px', textAlign: 'left', padding: '8px 12px', cursor: 'pointer', fontFamily: 'inherit',
                     borderRadius: 'var(--radius-sm)', color: 'var(--text-main)',
-                    border: mode === o.mode ? '2px solid var(--accent)' : '1px solid var(--border-color)',
+                    border: mode === o.mode ? '2px solid var(--text-muted)' : '1px solid var(--border-color)',
                     background: mode === o.mode ? 'var(--bg-surface)' : 'var(--bg-input)',
                 }}>
                     <strong style={{ display: 'block', fontSize: 'var(--text-sm)' }}>{o.label}</strong>

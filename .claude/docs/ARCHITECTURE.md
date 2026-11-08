@@ -94,6 +94,7 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks edited via the real config plugins: by the curriculum builder (§13) and by the Bordmodus inspector, which mirrors the selected board card here (§14); not rendered/autosaved/historied |
 | `view` | `WorksheetView` = `'editor' \| 'mijn-bladen' \| 'bibliotheek' \| 'whiteboard'` | Which full-screen view is active. UI-only. Starts at `initialView()` ([bootEntry.ts](../../src/bootEntry.ts): `'whiteboard'` on bord.html); `setView` to a non-board view on bord.html navigates to `/` instead (§14) |
 | `sidebarTab` | `'eenvoudig' \| 'oefeningen' \| 'overzicht'` | Which sidebar tab is open (`oefeningen` = full tree, labelled Uitgebreid; `overzicht` = blocks on the sheet, labelled Werkblad). The strip renders in the TopBar (above the sidebar column), the panel renders the content — see §9 "Shell" |
+| `eenvoudigPanel` | `EenvoudigPanel \| null` | What the panel beside the Eenvoudig sidebar shows: `{ kind: 'topic', topicId }` or `{ kind: 'combo', only?, editBlockId? }`. Transient: never saved, shared or in history |
 | `inspectorTab` | `'blad' \| 'weergave' \| 'oefening'` | Which inspector tab is open. Labels read Oefeningen / Opmaak / Blad (content first); default `oefening` |
 | `bladSection` | `'koptekst' \| 'opdrachten' \| 'voettekst'` | Which Blad sub-tab shows. Set by its own tab strip AND by clicking the header/footer **on the sheet**, so both routes land in the same place |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo, max `MAX_HISTORY = 50` |
@@ -1315,6 +1316,7 @@ src/
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
 │   ├── releaseNotes.ts          # per-version "Wat is er nieuw" list (newest first) behind the banner (§10)
 │   ├── beta.ts                  # BETA_MODULES { oefenmodus, bordmodus } one-boolean beta flags, BETA_TEXT, FEEDBACK_URL (the contact form)
+│   ├── quickSettings.ts         # QUICK_SETTINGS: per generating typeId the layout / pills rows of the Eenvoudig quick block (§13; a test fails on a missing row)
 │   ├── upgradeNotes.ts          # copy of the UpgradeModal (title, intro, two mode cards, ≤ 160-char highlights)
 │   ├── firstRun.ts              # first-run card copy per module (oefenmodus / bordmodus)
 │   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner, derived from releaseNotes[0]
@@ -1517,9 +1519,10 @@ src/
     │   ├── ReleaseNotesModal.tsx  # "Wat is er nieuw": releaseNotes items grouped, live example per exercise item (§10)
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx); Mijn bladen also lists the Oefensessies (Delen / Bewerken / hernoemen / verwijderen)
     ├── library/saveToLibrary.ts  # saveCurrentToLibrary: update the linked preset or ask a name; a refused write alerts (TopBar + Mijn bladen share it)
+    ├── onboarding/{ModeChoice.tsx,EenvoudigBanner.tsx}    # Eenvoudig / Uitgebreid radios for Welcome + Upgrade; dismissible explanation, screen-only, hidden when locked
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
     ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video); one line names Oefenmodus + Bordmodus
-    ├── onboarding/UpgradeModal.tsx                        # once-per-version "Nieuw in RekenRaak 1.2" for returning users: two mode cards with CTAs + highlights (gate in useBootLoad)
+    ├── onboarding/UpgradeModal.tsx                        # once-per-version "Nieuw in RekenRaak" for returning users: two mode cards with CTAs + highlights (gate in useBootLoad)
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
     ├── curriculum/draftBlock.ts                           # makeDraftBlock(typeId, constraints, id?): the off-sheet block both builders mount Configs on (§13)
@@ -1529,6 +1532,7 @@ src/
     ├── oefenen/OefenCatalogue.tsx                         # §15 the builder's type picker: Zoek oefening… + leerjaar chips (the sidebar's rules), kiosk-capable leaves only
     ├── oefenen/oefenBuild.ts                              # pure: listOefenLeaves (+ searchText / minGrade), filterOefenLeaves, rowYields / deadRows (pre-flight), buildSessie (unsupported rows excluded, weights → whole %), rowsFromSessie, LIMIT_STEPS / TIMER_STEPS
     ├── oefenen/OefenShareModal.tsx                        # §15 summary chips + own-exercises note, link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
+    ├── eenvoudig/               # Eenvoudig mode UI: EenvoudigPane (leerjaar + topics), EenvoudigPanelHost (no-print portal on body beside the sidebar, driven by `eenvoudigPanel`), TopicPanel (range row + fixed-size one-exercise cards + pills), ComboBuilder + comboModel (Combinatie / Zelf samenstellen on hr-std-gemengd), addCard (the one add path) (§13)
     ├── shared/{ExercisePreview.tsx,SheetThumbnail.tsx}    # §13 fit-to-card live example; mini sheet preview
     ├── ui/{IconButton,Wordmark,Switch,PopupSelect,InfoTip,Swatch,ModalPortal,ModalShell}.tsx
     ├── ui/BetaBadge.tsx        # "bèta" pill on the sidebar-foot Oefenmodus / Bordmodus buttons, gated by BETA_MODULES
@@ -1536,6 +1540,7 @@ src/
     ├── ui/FirstRunCard.tsx     # once-per-device intro card per module (copy from config/firstRun.ts), replay from Help
     ├── configurator/
     │   ├── InspectorAccordion.tsx # disclosure row for the Blad › Opdrachten style cards (closed unless a value is set) (E1)
+    │   ├── QuickBlock.tsx      # generic Eenvoudig quick block: renders any QUICK_SETTINGS row, Aanpassen, Alle instellingen toggle (§13)
     │   ├── Inspector.tsx       # mounts EXERCISE_UI[typeId].Config; locked-mode gating
     │   ├── GenerationNote.tsx  # the "versoepeld / slechts N / kon geen oefeningen maken" callout under Genereer, shared by the sheet Inspector and BoardInspector
     │   ├── RegionStyleFields.tsx  # per-region look-and-feel (family/size/bold/italic/underline/colour/fill/padding) + ResetAllStylesButton
@@ -1546,6 +1551,7 @@ src/
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers
     │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins; honours ConstraintScope
     │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
+    │   ├── plugins/shared/{JumpPicker.tsx,jumpSelection.ts}   # multi-select jumps for getallenas + getallenrijen: `step` = first chosen, `jumps` written only for 2+
     │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
     │   ├── plugins/shared/BreukenSettings.tsx # the one controlled "Breuken" block every fraction leaf mounts (noemer / teller / soorten / gemengd / schrijfwijze / extras) (F1)
     │   ├── plugins/shared/fractionVariant.ts  # variantDefaults + constraintsForVariant: a breuken variant switch keeps every key the new variant understands (noemer range, maxTotal), resets per-variant keys
@@ -1672,6 +1678,12 @@ pinned in `seedConstraints.test.ts`.
 ### Eenvoudig card mode (data layer)
 
 [src/config/eenvoudig/](../../src/config/eenvoudig/) holds the card table. `resolveCard(variant)` is the one pure path from a card to `{ typeId, leafId, label, instruction, constraints, count }`, used by the preview, the add and the tests, so a card builds the same block for every teacher. `addBlockFromType` takes three matching options: `exact` (constraints are already resolved, skip `seedConstraints`), `count`, and `cardId` (saved on `MathBlock.cardId`, in `PRESENTATION_SAFE`, so the Inspector knows which card made the block; absent on blocks from the full list). `ExercisePreview` gained `unclamped`, `showSolutions` and `fitOne` (one exercise, no title, scaled and centred on its measured ink). `eenvoudig.cards.test.tsx` walks every variant.
+
+### Eenvoudig mode: default, Inspector, onboarding
+
+The panel beside the sidebar is `EenvoudigPanelHost`: a `.no-print` portal on `<body>`, positioned from the measured sidebar edge, outside the sheet and its measurement. Clicking a topic toggles `eenvoudigPanel`; a pick adds the block through `addCard` (`exact`, `count`, `cardId`) and closes the panel. Combinatie and Zelf samenstellen build real `hr-std-gemengd` blocks (`variants` + `perVariant`; decimals through the `-dec` leaf, no breuken because the generator has none) with `cardId` `combo` or `combo:<op>`; `editBlockId` edits that block in place. Tabs and the Inspector render from `effectiveSidebarTab`.
+
+`readDefaultMode()` ([eenvoudigMode.ts](../../src/services/eenvoudigMode.ts)) sets the tab in a layout effect in `useBootLoad`: a saved choice wins, else tour already seen = Uitgebreid, else Eenvoudig. The harnesses set the tour key, so they stay on Uitgebreid. Clicking Eenvoudig or Uitgebreid, Welcome and Upgrade save the choice; the tour only calls `setSidebarTab` and restores the tab on close, because it needs the full tree (`sidebar-nav`) and must not change the teacher's preference. A locked curriculum renders from `effectiveSidebarTab`, so Eenvoudig, its quick block and its banner all disappear while the stored tab is left alone. In Eenvoudig the Inspector shows `QuickBlock` first and folds the full Inspector under "Alle instellingen"; Uitgebreid and Werkblad are unchanged.
 
 ### Mass-add modal ("Toevoegen")
 

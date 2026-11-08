@@ -31,6 +31,40 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
+        version: '1.3.0',
+        date: '2026-11',
+        summary: 'Eenvoudig: een blad maken met kaarten. Getallenas en getallenrijen met meerdere sprongen tegelijk.',
+        items: [
+            { kind: 'nieuw', text: 'Eenvoudig: kies een oefening op een kaart en ze staat meteen op je blad. De volledige lijst blijft onder Uitgebreid.' },
+            {
+                kind: 'nieuw',
+                text: 'Getallenrijen: kies meerdere sprongen tegelijk, om beurt per rij of afwisselend binnen één rij.',
+                example: { leafId: 'getalbegrip-getallenrijen-nat', constraints: { step: 5, jumps: [5, 10], jumpMode: 'in-rij' }, grade: 3, before: 'Eerst: één sprong per blok.', after: 'Nu: bv. +5 en +10 om beurt in dezelfde rij.' },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Getallenas: kies meerdere sprongen tegelijk; elke lijn krijgt om beurt een eigen sprong.',
+                example: { leafId: 'getalbegrip-getallenassen-nat', constraints: { step: 5, jumps: [5, 10] }, grade: 3, count: 2, height: 170, before: 'Eerst: elke lijn dezelfde sprong.', after: 'Nu: lijn 1 met +5, lijn 2 met +10.' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Breuken optellen: "eenvoudig" en "moeilijk" zeggen nu wat ze bedoelen.',
+                example: { leafId: 'hr-std-optellen-rat', before: 'Eerst: Ongelijknamig (eenvoudig) / (moeilijk).', after: 'Nu: Ene noemer past in de andere / Noemers passen niet in elkaar.' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Hoofdrekenen: de schrijfruimte heet nu Korte lijn, Lange lijn of Onder elkaar.',
+                example: { leafId: 'hr-std-optellen-nat', grade: 3, before: 'Eerst: Kort, Lang, Stappen.', after: 'Nu: Korte lijn, Lange lijn, Onder elkaar.' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Geld teruggeven: de hulp op het blad heet nu Alles ingevuld, Begin en einde ingevuld, Leeg schema of Geen hulp.',
+                example: { leafId: 'geld-teruggeven', before: 'Eerst: Ingevuld, Basis, Structuur, Geen.', after: 'Nu: de namen zeggen wat er op het blad staat.' },
+            },
+            { kind: 'opgelost', text: 'De vraag om een blok te splitsen verschijnt alleen nog als er echt een deel van het blok past.' },
+        ],
+    },
+    {
         version: '1.2.0',
         date: '2026-11-04',
         summary: 'Oefenmodus en Bordmodus in bèta, nieuwe breukenoefeningen, opmaak per domein, getallen tot 1 miljard.',

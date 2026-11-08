@@ -155,7 +155,8 @@ the per-typeId table is §7.
 9. Regenerate the public catalogue: `npm run catalogue` against a dev server, commit
    `oefeningen.html` + `public/oefeningen/<leafId>.png`. `catalogue.test.ts` fails the gate
    when the page's leaves differ from `APP_STRUCTURE`; the Stop hook nudges earlier.
-10. Optional, Oefenmodus: a `kiosk` descriptor in
+10. One row per generating typeId in [quickSettings.ts](src/config/quickSettings.ts) (the Eenvoudig Inspector block; `quickSettings.test.tsx` fails the gate without one). Cards for it in `src/config/eenvoudig/cards.json` are optional: without one the type simply stays in Uitgebreid.
+11. Optional, Oefenmodus: a `kiosk` descriptor in
    [kioskDescriptors.ts](src/services/oefenen/kioskDescriptors.ts) on the REGISTRY row, then
    **append** each leaf it makes capable to `KIOSK_LEAF_TABLE_V1` in
    [kiosk.ts](src/services/oefenen/kiosk.ts) (append only: shared links index it) and add it to

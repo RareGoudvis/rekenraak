@@ -293,6 +293,10 @@ changes in the store, change it here too.**
 Print output, the page-break CSS, layout measurement and anything that needs a real
 browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review checklist.
 
+## Eenvoudig mode suites
+
+`eenvoudig.cards.test.tsx` walks every card variant (resolveCard unchanged under every base and grade, exactly one exercise, no failure note, viewer renders, every card reachable). `eenvoudig.pane.test.tsx` covers listing, picks equal to `resolveCard`, tabs, locked files and combo add/edit. `quickSettings.test.tsx` fails on a generating typeId without a row. `getallenJumps.legacy.test.ts` pins single-jump output to a golden recorded from the old code; `getallenJumps.test.ts` covers the mixed jumps.
+
 ## The commit gate (`.githooks/pre-commit`, `scripts/visual-gate.mjs`)
 
 Every commit runs the gate. `npm install` wires it (`prepare` sets `core.hooksPath
@@ -355,7 +359,7 @@ When the gate flags a change you meant to make: look at the contact sheet, then
 `npm run visual:baseline -- --files <the same files>` (or `--all`, which also drops rows for
 leaves that no longer exist), stage `scripts/visual-baseline.json`, commit again.
 
-Run the gate from a checkout with its **own** `node_modules`. In a scratch worktree whose
+Run the gate from a checkout with its **own** `node_modules` (a hard-linked copy is fine: `cp -al`). In a scratch worktree whose
 `node_modules` is a junction to another folder, Vite answers 403 for files outside its root, and
 the walk flags ~81 cells (heights 10-150 px off, "Failed to load resource: 403") that are not
 there in the real folder (2026-09-28). `intrinsicPx` is recorded but never flagged, so it drifts
