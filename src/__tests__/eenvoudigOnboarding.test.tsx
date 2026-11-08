@@ -87,4 +87,10 @@ describe('banner', () => {
         expect(screen.queryByTestId('eenvoudig-banner')).toBeNull();
         unmount();
     });
+
+    test('stays away under a locked curriculum, where Eenvoudig is hidden', () => {
+        useWorksheetStore.setState({ curriculum: { locked: true } as never, sidebarTab: 'eenvoudig' });
+        render(<EenvoudigBanner />);
+        expect(screen.queryByTestId('eenvoudig-banner')).toBeNull();
+    });
 });

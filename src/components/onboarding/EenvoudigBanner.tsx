@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Cards } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { effectiveSidebarTab } from '../../services/eenvoudigMode';
 
 export const EENVOUDIG_BANNER_KEY = 'rekenraak_eenvoudig_banner_seen_v1';
 
 // Shown only while the teacher is on the Eenvoudig tab (where the explanation helps); screen-only.
 export default function EenvoudigBanner() {
-    const onEenvoudig = useWorksheetStore((s) => s.sidebarTab === 'eenvoudig');
+    // Effective tab: a locked curriculum hides Eenvoudig, so the banner must not explain it there.
+    const onEenvoudig = useWorksheetStore((s) => effectiveSidebarTab(s.sidebarTab, !!s.curriculum?.locked) === 'eenvoudig');
     const [dismissed, setDismissed] = useState(() => {
         try { return localStorage.getItem(EENVOUDIG_BANNER_KEY) === '1'; } catch { return false; }
     });

@@ -4,7 +4,7 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { CONSTRAINT_SPACE } from '../config/constraintSpace';
-import { QUICK_SETTINGS } from '../config/quickSettings';
+import { QUICK_SETTINGS, type QuickPills } from '../config/quickSettings';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import Inspector from '../components/configurator/Inspector';
 
@@ -89,5 +89,12 @@ describe('Inspector quick block', () => {
         render(<Inspector />);
         fireEvent.click(screen.getByRole('button', { name: 'Aanpassen' }));
         expect(useWorksheetStore.getState().eenvoudigPanel).toEqual({ kind: 'combo', only: 'x', editBlockId: id });
+    });
+
+    test.each(['getallenas', 'getallenrijen'])('%s hides the single-jump pill when it could not take effect', (typeId) => {
+        const step = QUICK_SETTINGS[typeId].find(s => s.kind === 'pills' && s.key === 'step') as QuickPills;
+        expect(step.when?.({ step: 5 })).toBe(true);
+        expect(step.when?.({ step: 5, jumps: [5, 10] })).toBe(false);
+        expect(step.when?.({ step: 5, numberType: 'rational' })).toBe(false);
     });
 });

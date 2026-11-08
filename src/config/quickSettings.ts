@@ -66,7 +66,8 @@ const mab: QuickSpec[] = [
 ];
 const getallenlijn: QuickSpec[] = [
     upTo('maxGetal', 'Tot welk getal?', [20, 100, 1000, 10000]),
-    pills('step', 'Grootte van de sprong', [['1', 1], ['2', 2], ['5', 5], ['10', 10], ['100', 100]]),
+    // With 2+ jumps the generators follow `jumps`, and a rational step is its noemer: this pill would do nothing.
+    pills('step', 'Grootte van de sprong', [['1', 1], ['2', 2], ['5', 5], ['10', 10], ['100', 100]], { when: c => c.numberType !== 'rational' && !(Array.isArray(c.jumps) && c.jumps.length >= 2) }),
 ];
 const divisors = (bigger: number[]): QuickPills =>
     pills('divisors', 'Deelbaar door', [['2', [2]], ['2, 5 en 10', [2, 5, 10]], ['Grotere getallen', bigger]]);
