@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ModalShell from '../ui/ModalShell';
+import ModeChoice from './ModeChoice';
+import { readDefaultMode, saveDefaultMode } from '../../services/eenvoudigMode';
 
 interface Props {
     onClose: () => void;
@@ -20,6 +22,10 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
     }, [showVideo]);
 
     const titleId = 'welcome-modal-title';
+    // Closing marks the tour seen, which would silently flip the no-choice default to Uitgebreid: pin the shown choice first.
+    const keepChoice = () => { if (mode === 'welcome') saveDefaultMode(readDefaultMode()); };
+    const startTour = () => { keepChoice(); onStartTour(); };
+    const skip = () => { keepChoice(); onClose(); };
 
     return (
         <ModalShell onClose={onClose} ariaLabel="Welkom bij RekenRaak" variant="dialog" maxWidth={showVideo ? 760 : 460}>
@@ -35,10 +41,12 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
                         <p style={{ margin: '-14px 0 24px', fontSize: '13px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
                             Nieuw: Oefenmodus (leerlingen oefenen op hun toestel) en Bordmodus (digibord), allebei in bèta.
                         </p>
+                        <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700 }}>Zo begin je</p>
+                        <div style={{ margin: '0 0 24px' }}><ModeChoice /></div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <button
                                 ref={primaryBtnRef}
-                                onClick={onStartTour}
+                                onClick={startTour}
                                 style={{
                                     padding: '12px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                                     fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
@@ -54,7 +62,7 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
                                 }}
                             >Bekijk de video (1 min)</button>
                             <button
-                                onClick={onClose}
+                                onClick={skip}
                                 style={{
                                     padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                                     fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',

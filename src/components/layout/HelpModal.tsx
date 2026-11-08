@@ -42,7 +42,7 @@ const MODULE_HELP: Record<BetaModule, { title: string; bullets: string[] }> = {
 
 // Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
 // share worksheets. Kept in sync with the current chrome (topbar "Menu" and "Bewaren" buttons,
-// Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
+// Eenvoudig/Uitgebreid/Werkblad tabs, Bibliotheek presets). Reuses theme CSS variables.
 export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowReleaseNotes }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
     const [replayed, setReplayed] = useState<BetaModule | null>(null);
@@ -95,7 +95,7 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                 {tab === 'maken' && (
                     <>
                         <Section title="1. Oefening kiezen">
-                            In de linker zijbalk, tabblad <strong>Oefeningen</strong>, klik je op een leerdomein, dan een onderdeel, dan het type oefening. Het blok verschijnt meteen op het blad in het midden. Wil je er meerdere tegelijk? Gebruik <strong>Toevoegen</strong> bovenaan — daar zoek je en zie je een voorbeeld van elk type.
+                            In de linker zijbalk zie je drie tabbladen. Onder <strong>Eenvoudig</strong> kies je een oefening op een kaart en komt ze in één klik op het blad. Onder <strong>Uitgebreid</strong> klik je op een leerdomein, dan een onderdeel, dan het type oefening. Het blok verschijnt meteen op het blad in het midden. Wil je er meerdere tegelijk? Gebruik <strong>Toevoegen</strong> bovenaan — daar zoek je en zie je een voorbeeld van elk type.
                         </Section>
                         <Section title="2. Het blok aanpassen">
                             Klik op een blok om het <strong>rechterpaneel</strong> te openen. Daar stel je in: aantal oefeningen, getalbereik (maximum getal), getalsoort, niveau/moeilijkheid, en voor hoofdrekenen/cijferen ook de getalopbouw en de bruggetjes. Onder <strong>Geavanceerd</strong> vind je witruimte en tekstgrootte van het blok.
@@ -106,8 +106,8 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                         <Section title="4. Het blad opmaken">
                             Klik op een lege plek naast de blokken (of deselecteer) → het rechterpaneel toont de <strong>documentinstellingen</strong>: titel en titelpositie, koptekst (naam/klas/nummer/datum), voettekst, scores tonen, en de opdracht-stijl. Via <strong>Stijl aanpassen</strong> regel je lettergrootte, kleur en opvulling per zone.
                         </Section>
-                        <Section title="5. Overzicht en ordenen">
-                            Het tabblad <strong>Overzicht</strong> (links) toont alle blokken op een rij. Versleep om te herordenen, dupliceer of verwijder een blok, en zie waar de pagina’s eindigen. Klik op een rij om naar dat blok op het blad te springen.
+                        <Section title="5. Werkblad en ordenen">
+                            Het tabblad <strong>Werkblad</strong> (links) toont alle blokken op een rij. Versleep om te herordenen, dupliceer of verwijder een blok, en zie waar de pagina’s eindigen. Klik op een rij om naar dat blok op het blad te springen.
                         </Section>
                         <Section title="6. Voorbeelden bij het zweven">
                             Onder <strong>Menu</strong> bovenaan zet je <strong>Voorbeeld bij zweven</strong> aan of uit (een voorbeeldkaartje wanneer je over een oefening in de lijst zweeft).
