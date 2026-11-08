@@ -13,6 +13,7 @@ const INITIAL_SIDEBAR_PREVIEW = loadInitialSidebarPreview();
 export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set) => ({
     activeBlockId: null,
     sidebarTab: 'oefeningen',
+    eenvoudigPanel: null,
     inspectorTab: 'oefening',
     bladSection: 'koptekst',
     oefenBuilderOpen: false,
@@ -33,6 +34,7 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
         : { activeBlockId: id }),
     // Pure view state, like the other UI toggles: never pushed to history.
     setSidebarTab: (t) => set({ sidebarTab: t }),
+    setEenvoudigPanel: (panel) => set({ eenvoudigPanel: panel }),
     setInspectorTab: (t) => set({ inspectorTab: t }),
     setBladSection: (s) => set({ bladSection: s }),
     setOefenBuilderOpen: (open) => set({ oefenBuilderOpen: open }),

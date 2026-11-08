@@ -459,9 +459,13 @@ export type GetallenasConstraints = {
     allowMixed?: boolean;
     gelijknamig?: boolean;
     fractionStep?: number;
+    // Two or more chosen jumps; fewer means the single `step` above, which always stays set.
+    jumps?: number[];
 };
 
 export type GetallenrijConstraints = GetallenasConstraints & {
+    // With 2+ jumps: 'per-rij' gives each row one jump in turn, 'in-rij' repeats them inside one row.
+    jumpMode?: 'per-rij' | 'in-rij';
     numberMask: PlaceMask;
     fractionStep: number;
     maxTeller: number;

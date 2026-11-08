@@ -227,6 +227,8 @@ export interface GetallenasExercise {
     // Precomputed tick values L→R (source of truth for decimal/rational/geheel lines).
     values?: (number | Fraction)[];
     numberType?: string;      // natural | decimal | rational | geheel
+    // Mixed jumps only: the repeating jumps inside this row (+5, +10, +5, ...). Absent = one jump, `step`.
+    jumps?: number[];
     isManuallyEdited: boolean;
 }
 
@@ -430,6 +432,9 @@ export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     // known — several leaves share one typeId with different constraints, so this is what
     // lets the Inspector's "Standaardtekst…" picker float THIS leaf's own line first.
     leafId?: string;
+    // The Eenvoudig card this block was added from: many cards share one leaf, so leafId cannot
+    // tell the Inspector which choices to offer. Absent on blocks from the full exercise list.
+    cardId?: string;
     locked?: boolean;
     // UI-only feedback from the last generate (relaxed settings / shortfall / failure).
     // Never persisted: persistence.ts strips it, and setting it pushes no history.

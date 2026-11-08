@@ -11,7 +11,23 @@ import type { MixedVariantId } from '../services/math/constraintTypes';
 export interface AddBlockOpts {
     leafId?: string;
     instruction?: string | InstructionFn;
+    // Eenvoudig cards: the constraints are already resolved for the card's own leerjaar, so the
+    // store must not seed them again from this teacher's Basisinstellingen or picked leerjaar.
+    exact?: boolean;
+    // Exercises in the new block, when a card asks for another count than the leaf's default.
+    count?: number;
+    // The Eenvoudig card this block came from (see MathBlock.cardId).
+    cardId?: string;
 }
+
+// The left panel's three tabs. 'oefeningen' is the full exercise tree (labelled Uitgebreid),
+// 'overzicht' the list of blocks on the sheet (labelled Werkblad).
+export type SidebarTab = 'eenvoudig' | 'oefeningen' | 'overzicht';
+
+// What the panel beside the Eenvoudig sidebar shows; null = closed.
+export type EenvoudigPanel =
+    | { kind: 'topic'; topicId: string }
+    | { kind: 'combo'; only?: '+' | '-' | 'x' | ':'; editBlockId?: string };
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
 
@@ -207,8 +223,11 @@ export interface UiSlice {
     setActiveSelection: (id: string | 'document' | null) => void;
     // Panel tabs live in the store because their strips render in the TopBar, above the
     // column each belongs to, while the panels themselves render the content.
-    sidebarTab: 'oefeningen' | 'overzicht';
-    setSidebarTab: (t: 'oefeningen' | 'overzicht') => void;
+    sidebarTab: SidebarTab;
+    setSidebarTab: (t: SidebarTab) => void;
+    // Transient UI state: never saved, shared or pushed to history.
+    eenvoudigPanel: EenvoudigPanel | null;
+    setEenvoudigPanel: (panel: EenvoudigPanel | null) => void;
     inspectorTab: 'blad' | 'weergave' | 'oefening';
     setInspectorTab: (t: 'blad' | 'weergave' | 'oefening') => void;
     // Which sub-tab the Blad panel shows. Set by its own tab strip and by clicking the
