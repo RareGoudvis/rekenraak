@@ -1521,7 +1521,7 @@ src/
     ├── library/saveToLibrary.ts  # saveCurrentToLibrary: update the linked preset or ask a name; a refused write alerts (TopBar + Mijn bladen share it)
     ├── onboarding/{ModeChoice.tsx,EenvoudigBanner.tsx}    # Eenvoudig / Uitgebreid radios for Welcome + Upgrade; dismissible explanation, screen-only, hidden when locked
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
-    ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video); one line names Oefenmodus + Bordmodus
+    ├── onboarding/WelcomeModal.tsx                        # first visit: step 1 picks how to add exercises (each mode explained), step 2 tour / demo video / skip (also Help's video); one line names Oefenmodus + Bordmodus
     ├── onboarding/UpgradeModal.tsx                        # once-per-version "Nieuw in RekenRaak" for returning users: two mode cards with CTAs + highlights (gate in useBootLoad)
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)

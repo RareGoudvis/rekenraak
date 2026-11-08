@@ -202,8 +202,11 @@ export default function App() {
             The tag is absolutely positioned, so this changes nothing the packer measures. */}
         <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 48px 48px' }}>
 
-        <EenvoudigBanner />
-        <SheetBanners releaseVisible={releaseBannerVisible} onDismissRelease={dismissReleaseBanner} onOpenReleaseNotes={onboarding.openReleaseNotes} />
+        {/* As wide as the sheet at most; .sheet-banners keeps clear of the page label hanging above page 1. */}
+        <div className="no-print sheet-banners" style={{ width: '100%', maxWidth: PAGE_W_PX * sheetZoom }}>
+          <EenvoudigBanner />
+          <SheetBanners releaseVisible={releaseBannerVisible} onDismissRelease={dismissReleaseBanner} onOpenReleaseNotes={onboarding.openReleaseNotes} />
+        </div>
 
         <div
           ref={a4Ref}

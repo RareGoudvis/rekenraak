@@ -92,6 +92,9 @@
   position: relative;
   box-sizing: border-box;
 }
+/* Clears the page label that hangs above the first page; nothing when no banner shows. */
+.sheet-banners:not(:empty) { padding-bottom: 24px; }
+
 .page-sheet-tag {
   position: absolute; top: -20px; left: 2px;
   font-size: 11px; color: var(--text-muted); user-select: none;

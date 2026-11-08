@@ -46,8 +46,8 @@ const bannerStyles = {
     backgroundColor: 'var(--bg-panel)',
     border: '1px solid var(--border-color)',
     borderRadius: '8px',
-    fontSize: '12px', color: 'var(--text-muted)',
-    fontFamily: 'var(--font-sheet-math)',
+    fontSize: 'var(--text-sm)', color: 'var(--text-muted)',
+    fontFamily: 'var(--font-ui)',
   } as React.CSSProperties,
   bannerClose: {
     marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)',

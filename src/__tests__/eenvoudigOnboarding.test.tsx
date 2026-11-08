@@ -58,8 +58,19 @@ describe('welcome and upgrade', () => {
     });
     test('skipping the welcome pins the shown default (Eenvoudig) before the tour key flips it', () => {
         render(<WelcomeModal onClose={() => {}} onStartTour={() => {}} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Verder' }));
         fireEvent.click(screen.getByRole('button', { name: 'Overslaan' }));
         expect(localStorage.getItem(DEFAULT_MODE_KEY)).toBe('eenvoudig');
+    });
+    test('welcome explains both modes first; the tour and video come after the choice', () => {
+        render(<WelcomeModal onClose={() => {}} onStartTour={() => {}} />);
+        expect(screen.getByRole('radio', { name: /klik op een kaart met een voorbeeld/ })).toBeTruthy();
+        expect(screen.getByRole('radio', { name: /elke instelling meteen bij de hand/ })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Start de rondleiding' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Verder' }));
+        expect(screen.getByRole('button', { name: 'Start de rondleiding' })).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Terug naar de keuze' }));
+        expect(screen.getByRole('radio', { name: /Uitgebreid/ })).toBeTruthy();
     });
     test('upgrade preselects Uitgebreid for a returning teacher and saves a switch', () => {
         localStorage.setItem(TOUR_SEEN_KEY, '1');

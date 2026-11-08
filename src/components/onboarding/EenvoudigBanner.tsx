@@ -21,7 +21,7 @@ export default function EenvoudigBanner() {
         <div className="no-print" data-testid="eenvoudig-banner" onClick={(e) => e.stopPropagation()} style={{
             display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', marginBottom: '12px',
             backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px',
-            fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-sheet-math)',
+            fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)',
         }}>
             <Cards size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
             <span><strong style={{ color: 'var(--text-main)', fontWeight: 600 }}>Eenvoudig:</strong> kies een oefening op een kaart en ze staat meteen op je blad. Wil je alle instellingen? Wissel bovenaan links naar Uitgebreid. Onder Werkblad zie je alle blokken op een rij.</span>

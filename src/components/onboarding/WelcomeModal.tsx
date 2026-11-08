@@ -10,39 +10,58 @@ interface Props {
     mode?: 'welcome' | 'video';
 }
 
-// First-visit greeting shown instead of auto-opening the tour: teacher picks tour, a 1-min
-// demo video, or skip. Also doubles as the standalone video view opened from HelpModal
+// First-visit greeting shown instead of auto-opening the tour: the teacher first picks how to add
+// exercises (each mode explained), then tour, a 1-min demo video, or skip. Also doubles as the standalone video view opened from HelpModal
 // (mode='video'), so the video markup and styling live in one place.
 export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }: Props) {
     const [showVideo, setShowVideo] = useState(mode === 'video');
+    const [step, setStep] = useState<'mode' | 'start'>('mode');
     const primaryBtnRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (!showVideo) primaryBtnRef.current?.focus();
-    }, [showVideo]);
+    }, [showVideo, step]);
 
     const titleId = 'welcome-modal-title';
     // Closing marks the tour seen, which would silently flip the no-choice default to Uitgebreid: pin the shown choice first.
     const keepChoice = () => { if (mode === 'welcome') saveDefaultMode(readDefaultMode()); };
     const startTour = () => { keepChoice(); onStartTour(); };
-    const skip = () => { keepChoice(); onClose(); };
+    // Every way out goes through here, the X included, or the choice is lost when the tour key is set.
+    const close = () => { keepChoice(); onClose(); };
 
     return (
-        <ModalShell onClose={onClose} ariaLabel="Welkom bij RekenRaak" variant="dialog" maxWidth={showVideo ? 760 : 460}>
+        <ModalShell onClose={close} ariaLabel="Welkom bij RekenRaak" variant="dialog" maxWidth={showVideo ? 760 : step === 'mode' ? 560 : 460}>
             <div style={{ padding: '32px', fontFamily: 'var(--font-sheet-text)', color: 'var(--text-main)' }} role="dialog" aria-labelledby={titleId}>
-                {!showVideo ? (
+                {!showVideo && step === 'mode' ? (
                     <>
                         <h2 id={titleId} style={{ margin: '0 0 10px', fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>
                             Welkom bij RekenRaak
                         </h2>
+                        <p style={{ margin: '0 0 20px', fontSize: '14px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+                            Maak in een paar klikken een rekenblad. Kies eerst hoe je oefeningen wil toevoegen. Je kan later altijd wisselen, links bovenaan.
+                        </p>
+                        <div style={{ margin: '0 0 20px' }}><ModeChoice detailed /></div>
+                        <button
+                            ref={primaryBtnRef}
+                            onClick={() => setStep('start')}
+                            style={{
+                                width: '100%', padding: '12px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+                                border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--accent-on)',
+                            }}
+                        >Verder</button>
+                    </>
+                ) : !showVideo ? (
+                    <>
+                        <h2 id={titleId} style={{ margin: '0 0 10px', fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>
+                            Klaar om te starten
+                        </h2>
                         <p style={{ margin: '0 0 24px', fontSize: '14px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
-                            Welkom bij RekenRaak — maak in een paar klikken een rekenblad. Hoe wil je beginnen?
+                            Wil je eerst even zien hoe het werkt?
                         </p>
                         <p style={{ margin: '-14px 0 24px', fontSize: '13px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
                             Nieuw: Oefenmodus (leerlingen oefenen op hun toestel) en Bordmodus (digibord), allebei in bèta.
                         </p>
-                        <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700 }}>Zo begin je</p>
-                        <div style={{ margin: '0 0 24px' }}><ModeChoice /></div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <button
                                 ref={primaryBtnRef}
@@ -62,13 +81,20 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
                                 }}
                             >Bekijk de video (1 min)</button>
                             <button
-                                onClick={skip}
+                                onClick={close}
                                 style={{
                                     padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                                     fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',
                                     border: 'none', background: 'transparent', color: 'var(--text-muted)',
                                 }}
                             >Overslaan</button>
+                            <button
+                                onClick={() => setStep('mode')}
+                                style={{
+                                    padding: '4px 18px', cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit',
+                                    border: 'none', background: 'transparent', color: 'var(--text-muted)', textDecoration: 'underline',
+                                }}
+                            >Terug naar de keuze</button>
                         </div>
                     </>
                 ) : (
@@ -86,7 +112,7 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '18px', flexWrap: 'wrap', gap: '10px' }}>
                             {mode === 'welcome' ? (
                                 <button
-                                    onClick={onStartTour}
+                                    onClick={startTour}
                                     style={{
                                         background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                                         fontSize: '13px', fontFamily: 'inherit', color: 'var(--accent-purple)', textDecoration: 'underline',
@@ -95,7 +121,7 @@ export default function WelcomeModal({ onClose, onStartTour, mode = 'welcome' }:
                             ) : <span />}
                             <button
                                 ref={primaryBtnRef}
-                                onClick={onClose}
+                                onClick={close}
                                 style={{
                                     padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                                     fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
