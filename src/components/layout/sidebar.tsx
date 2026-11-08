@@ -12,6 +12,10 @@ import Wordmark from '../ui/Wordmark';
 import BetaCaption from '../ui/BetaCaption';
 import OverzichtPanel from './OverzichtPanel';
 import OefenBuilderModal from '../oefenen/OefenBuilderModal';
+import EenvoudigPane from '../eenvoudig/EenvoudigPane';
+import EenvoudigPanelHost from '../eenvoudig/EenvoudigPanelHost';
+import { effectiveSidebarTab, saveDefaultMode } from '../../services/eenvoudigMode';
+import type { SidebarTab } from '../../store/types';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
 // A parent survives when any of its descendants match. Returns the filtered tree.
@@ -133,8 +137,17 @@ export default function Sidebar() {
     // Multiple type-accordions can be open at once — opening a subdomain expands them all.
     const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState('');
-    const tab = useWorksheetStore((state) => state.sidebarTab);
+    const storedTab = useWorksheetStore((state) => state.sidebarTab);
     const setSidebarTab = useWorksheetStore((state) => state.setSidebarTab);
+    const setEenvoudigPanel = useWorksheetStore((state) => state.setEenvoudigPanel);
+    // A locked file only offers its author's palette, which lives in the Uitgebreid pane.
+    const tab = effectiveSidebarTab(storedTab, locked);
+    // Eenvoudig and Uitgebreid are the two ways to start; the pick is remembered, Werkblad is not a start screen.
+    const pickTab = (next: SidebarTab) => {
+        setEenvoudigPanel(null);
+        if (next === 'eenvoudig' || next === 'oefeningen') saveDefaultMode(next);
+        setSidebarTab(next);
+    };
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(
@@ -166,11 +179,12 @@ export default function Sidebar() {
         <aside className="mac-vibrant app-panel-left" style={S.aside}>
             <div className="panel-head">
                 <div className="seg-group">
-                    <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setSidebarTab('oefeningen')}>Oefeningen</button>
-                    <button className="seg-btn" aria-pressed={tab === 'overzicht'} onClick={() => setSidebarTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
+                    {!locked && <button className="seg-btn" aria-pressed={tab === 'eenvoudig'} onClick={() => pickTab('eenvoudig')} data-tour="eenvoudig-tab">Eenvoudig</button>}
+                    <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => pickTab('oefeningen')}>Uitgebreid</button>
+                    <button className="seg-btn" aria-pressed={tab === 'overzicht'} onClick={() => pickTab('overzicht')} data-tour="overzicht-tab">Werkblad</button>
                 </div>
             </div>
-            {tab === 'overzicht' ? <OverzichtPanel /> : (<>
+            {tab === 'overzicht' ? <OverzichtPanel /> : tab === 'eenvoudig' ? <EenvoudigPane /> : (<>
 
             {locked && (
                 <div style={S.lockedPalette}>
@@ -385,6 +399,7 @@ export default function Sidebar() {
             >
                 <Wordmark height={22} />
             </a>
+            {!locked && <EenvoudigPanelHost />}
             {oefenOpen && <OefenBuilderModal onClose={() => setOefenOpen(false)} />}
         </aside>
     );
