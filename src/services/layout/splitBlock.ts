@@ -24,17 +24,18 @@ export function splittableCount(block: MathBlock): number {
 // offsetHeight inside ScaledBlock's CSS `zoom` is unzoomed local px and would not
 // compare with the page box around it.
 export function fittingSplitIndex(cell: HTMLElement, availablePx: number, count: number, zoom: number): number | null {
-    const rows = Array.from(cell.querySelectorAll<HTMLElement>('.print-row'));
+    let rows = Array.from(cell.querySelectorAll<HTMLElement>('.print-row'));
+    // Cijfer and GeldTeruggeven have no FragmentableGrid: each exercise is its own unit.
+    const perRow = rows.length > 0;
+    if (!perRow) rows = Array.from(cell.querySelectorAll<HTMLElement>('.print-exercise'));
     if (rows.length < 2 || !(availablePx > 0)) return null;
-    const h = (el: HTMLElement) => el.getBoundingClientRect().height / zoom;
-    const rowsTotal = rows.reduce((sum, r) => sum + h(r), 0);
-    // Whatever is not an exercise row — the opdracht title, block padding — has to fit too.
-    let used = h(cell) - rowsTotal;
+    // Offsets from the cell's top: a row's bottom is everything above it (title, padding and
+    // the rows' own marginBottom) plus itself, which `cell height - sum(rows)` would get wrong.
+    const top = cell.getBoundingClientRect().top;
     let n = 0;
     for (const row of rows) {
-        used += h(row);
-        if (used > availablePx) break;
-        n += row.children.length || 1;
+        if ((row.getBoundingClientRect().bottom - top) / zoom > availablePx) break;
+        n += perRow ? row.children.length || 1 : 1;
     }
     return n >= 1 && n < count ? n : null;
 }

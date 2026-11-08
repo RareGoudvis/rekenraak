@@ -44,6 +44,9 @@ interface Props {
     /** Offer to split the block that starts the NEXT page, when this page ends in a big
         blank tail. Absent when there is no next page or its first block cannot be cut. */
     onSplitNext?: (tailPx: number, anchor: DOMRect) => void;
+    /** Whether the next block has a real split point in `tailPx` of free space; without it the
+        hint would promise a split the popover cannot offer. Absent = no check. */
+    canSplitNext?: (tailPx: number) => boolean;
     /** The two ways out of "this block is taller than a page", offered by the banner on the
         block it actually measured: shrink it to fit, or cut it in two. */
     onFitBlock?: (blockId: string) => void;
@@ -103,6 +106,7 @@ export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
     onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure, onSplitNext, onFitBlock, onSplitBlock,
     tailPx: packedTailPx,
+    canSplitNext,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
     // The positioning layer for the cells. The body itself carries the side padding, and
@@ -211,7 +215,7 @@ export default function PageSheet({
                 {/* Never automatic: the page says what it sees and the teacher decides.
                     Absolutely positioned (see .page-tail-hint) and outside the canvas, so
                     it is never mistaken for a cell by the measure pass. */}
-                {onSplitNext && (packedTailPx ?? tailPx) > TAIL_HINT_PX && (
+                {onSplitNext && (packedTailPx ?? tailPx) > TAIL_HINT_PX && (canSplitNext?.(packedTailPx ?? tailPx) ?? true) && (
                     <div
                         className="no-print page-tail-hint"
                         onClick={(e) => e.stopPropagation()}

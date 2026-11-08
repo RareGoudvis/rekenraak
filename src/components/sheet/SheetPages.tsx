@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
-import PageSheet from '../layout/PageSheet';
+import PageSheet, { PAGE_W_PX } from '../layout/PageSheet';
 import { skylineSlot, type PackedPage } from '../../services/layout/pagePacker';
-import { splittableCount } from '../../services/layout/splitBlock';
+import { splittableCount, fittingSplitIndex } from '../../services/layout/splitBlock';
 import { cellWidthPx } from '../viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../viewer/scaledBlockFit';
 import type { MeasuredHeights } from '../../hooks/useMeasuredHeights';
@@ -111,6 +111,17 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
             if (!next || splittableCount(next) < 2) return undefined;
             return (tailPx: number, anchorRect: DOMRect) => onOpenSplit(next.id, anchorRect, tailPx);
           })()}
+          canSplitNext={(tailPx: number) => {
+            // Same measurement the popover uses, so hint and popover agree. The next
+            // page's first cell is already in the DOM (rendered before this page's hint).
+            const next = packedPages[pi + 1]?.blocks[0]?.block;
+            if (!next) return false;
+            const cell = document.querySelector<HTMLElement>(`[data-block-id="${next.id}"]`);
+            if (!cell) return true; // not measured yet: keep the old behaviour, no flicker
+            const sheet = cell.closest('.page-sheet');
+            const zoom = sheet ? (sheet.getBoundingClientRect().width / PAGE_W_PX) || 1 : 1;
+            return fittingSplitIndex(cell, tailPx, splittableCount(next), zoom) !== null;
+          }}
           onFitBlock={fitBlockToPage}
           onSplitBlock={(blockId, anchor) => onOpenSplit(blockId, anchor)}
           header={<SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} continuation={pi > 0} />}
