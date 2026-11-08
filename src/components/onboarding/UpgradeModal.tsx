@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Student, Chalkboard } from '@phosphor-icons/react';
 import ModalShell from '../ui/ModalShell';
+import ModeChoice from './ModeChoice';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { BETA_TEXT } from '../../config/beta';
 import { UPGRADE_TITLE, UPGRADE_INTRO, UPGRADE_MODES, UPGRADE_HIGHLIGHTS } from '../../config/upgradeNotes';
@@ -31,6 +32,14 @@ export default function UpgradeModal({ onClose, onOpenReleaseNotes }: Props) {
                     <p style={S.intro}>{UPGRADE_INTRO}</p>
                 </div>
                 <div style={S.body}>
+                    {/* A locked curriculum has no Eenvoudig, so there is nothing to choose. */}
+                    {!locked && (
+                        <section aria-label="Zo begin je" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                            <strong style={S.cardTitle}>Nieuw: Eenvoudig, een snellere manier om een blad te maken</strong>
+                            <p style={S.cardText}>Kies een oefening op een kaart en ze staat meteen op je blad. Kies hier waarmee je voortaan begint; je kan altijd wisselen bovenaan links.</p>
+                            <ModeChoice />
+                        </section>
+                    )}
                     <div style={S.cards}>
                         {!locked && (
                             <Card icon={<Student size={20} aria-hidden="true" />} title={UPGRADE_MODES.oefenmodus.title}

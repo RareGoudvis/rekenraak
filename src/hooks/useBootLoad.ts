@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, UPGRADE_SEEN_KEY } from '../services/persistence';
 import { TOUR_SEEN_KEY } from './useOnboarding';
 import { isBordPage } from '../bootEntry';
 import { RELEASE_VERSION } from '../config/version';
+import { readDefaultMode } from '../services/eenvoudigMode';
 
 // Boot-time hooks: share-link, autosave-restore offer, release-banner check.
 // Each runs exactly once. Order matters — a shared link wins over an autosave.
@@ -11,6 +12,13 @@ export function useBootLoad(): { releaseBannerVisible: boolean; dismissReleaseBa
   const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
   const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
   const [upgradeVisible, setUpgradeVisible] = useState(false);
+  const setSidebarTab = useWorksheetStore((state) => state.setSidebarTab);
+
+  // Layout effect so the first paint already shows the teacher's own tab (no Uitgebreid flash).
+  useLayoutEffect(() => {
+    setSidebarTab(readDefaultMode());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // 1. Shared link in URL hash.

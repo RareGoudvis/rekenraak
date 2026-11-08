@@ -1,6 +1,6 @@
 // Pure copy for the returning-teacher upgrade modal (UpgradeModal.tsx). Dutch, teacher language.
-export const UPGRADE_TITLE = 'Nieuw in RekenRaak 1.2';
-export const UPGRADE_INTRO = 'Twee nieuwe manieren om te werken, en een stapel verbeteringen aan de bladen die je al kent.';
+export const UPGRADE_TITLE = 'Nieuw in RekenRaak';
+export const UPGRADE_INTRO = 'Een eenvoudigere manier om een blad te maken, twee nieuwe manieren om te werken en een stapel verbeteringen aan de bladen die je al kent.';
 
 export const UPGRADE_MODES = {
     oefenmodus: {

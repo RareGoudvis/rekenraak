@@ -28,6 +28,7 @@ import SplitPopover, { POPOVER_W, type SplitTarget } from './components/sheet/Sp
 import SheetPages from './components/sheet/SheetPages';
 import SheetControlsRail from './components/sheet/SheetControlsRail';
 import SheetBanners from './components/sheet/SheetBanners';
+import EenvoudigBanner from './components/onboarding/EenvoudigBanner';
 import { useSheetZoom } from './hooks/useSheetZoom';
 import { useBootLoad } from './hooks/useBootLoad';
 import { useOnboarding } from './hooks/useOnboarding';
@@ -201,6 +202,7 @@ export default function App() {
             The tag is absolutely positioned, so this changes nothing the packer measures. */}
         <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 48px 48px' }}>
 
+        <EenvoudigBanner />
         <SheetBanners releaseVisible={releaseBannerVisible} onDismissRelease={dismissReleaseBanner} onOpenReleaseNotes={onboarding.openReleaseNotes} />
 
         <div

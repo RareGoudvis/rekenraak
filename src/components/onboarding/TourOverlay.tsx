@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 
 interface Props { onClose: () => void; }
@@ -10,18 +10,24 @@ interface Step { sel: string; title: string; body: string; advance: Advance; }
 // and advances either on a real action (block added / exercises generated) or a Next click.
 // The overlay is non-blocking (pointer-events:none) so the user can actually do each step.
 const STEPS: Step[] = [
-    { sel: '[data-tour="sidebar-nav"]', title: '1. Kies een oefening', body: 'Klik op een oefening in de lijst links om ze aan je blad toe te voegen.', advance: 'blocks' },
+    { sel: '[data-tour="sidebar-nav"]', title: '1. Kies een oefening', body: 'Klik op een oefening in de lijst links om ze aan je blad toe te voegen. (De volledige lijst staat onder “Uitgebreid”.)', advance: 'blocks' },
     { sel: '[data-tour="inspector"]', title: '2. Pas ze aan', body: 'In dit paneel rechts stel je het blok in: aantal oefeningen, moeilijkheidsgraad, getalbereik en meer.', advance: 'next' },
     { sel: '[data-tour="generate-block"]', title: '3. Genereer', body: 'Klik op Genereer om de oefeningen te maken (of opnieuw te maken met andere getallen).', advance: 'exercises' },
     { sel: '[data-tour="print"]', title: '4. Afdrukken', body: 'Klaar! Hier druk je af of bewaar je als PDF — met of zonder oplossingen. Je hoeft nu niet te klikken.', advance: 'next' },
     { sel: '[data-tour="menu"]', title: '5. Menu', body: 'Achter “Menu” zit alles rond je blad: delen via een link, de basis-moeilijkheid, instellingen en kant-en-klare bladen. Bewaren en bestanden vind je bij de knop “Bewaren”.', advance: 'next' },
     { sel: '[data-tour="menu"]', title: '6. Laad een voorbeeldblad', body: 'Geen tijd om zelf te bouwen? Open “Menu” → “Kant-en-klare bladen” en kies een blad dat je daarna nog kan aanpassen.', advance: 'next' },
-    { sel: '[data-tour="overzicht-tab"]', title: '7. Overzicht', body: 'In het tabblad “Overzicht” zie je alle blokken op een rij: versleep om te ordenen, dupliceer of verwijder, en zie waar de pagina’s eindigen.', advance: 'finish' },
+    { sel: '[data-tour="overzicht-tab"]', title: '7. Werkblad', body: 'In het tabblad “Werkblad” zie je alle blokken op een rij: versleep om te ordenen, dupliceer of verwijder, en zie waar de pagina’s eindigen. Zin in een snellere weg? Het tabblad “Eenvoudig” zet een oefening in één klik op je blad.', advance: 'finish' },
 ];
 
 const TT_W = 290;
 
-export default function TourOverlay({ onClose }: Props) {
+export default function TourOverlay({ onClose: onCloseProp }: Props) {
+    const setSidebarTab = useWorksheetStore((s) => s.setSidebarTab);
+    // The tour points into the full list, which only Uitgebreid shows. Tab only, never the saved
+    // default: a tour must not change the teacher's choice. Closing puts the teacher's tab back.
+    const tabBefore = useRef(useWorksheetStore.getState().sidebarTab);
+    useLayoutEffect(() => { setSidebarTab('oefeningen'); }, [setSidebarTab]);
+    const onClose = () => { setSidebarTab(tabBefore.current); onCloseProp(); };
     const [step, setStep] = useState(0);
     const [rect, setRect] = useState<DOMRect | null>(null);
     const blocksLen = useWorksheetStore((s) => s.blocks.length);

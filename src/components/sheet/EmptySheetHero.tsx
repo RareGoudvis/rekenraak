@@ -15,7 +15,7 @@ export default function EmptySheetHero() {
           <span style={styles.heroStepIcon}><ListChecks size={20} weight="bold" /></span>
           <div>
             <p style={styles.heroStepTitle}>1. Kies een oefening</p>
-            <p style={styles.heroStepBody}>Links staan alle oefeningen per domein, geordend zoals het leerplan. Zoek op naam of filter op leerjaar met het menu naast het zoekveld. Eén klik zet een blok op het blad.</p>
+            <p style={styles.heroStepBody}>Links kies je het snelst onder Eenvoudig, met een kaart per oefening. Onder Uitgebreid staan alle oefeningen per domein, geordend zoals het leerplan. Zoek op naam of filter op leerjaar met het menu naast het zoekveld. Eén klik zet een blok op het blad.</p>
           </div>
         </li>
         <li style={styles.heroStep}>
@@ -36,7 +36,7 @@ export default function EmptySheetHero() {
           <span style={styles.heroStepIcon}><Hand size={20} weight="bold" /></span>
           <div>
             <p style={styles.heroStepTitle}>4. Schik het blad</p>
-            <p style={styles.heroStepBody}>Zet een blok vol, half of kwart breed, sleep het naar de juiste plaats of laat het op een nieuwe pagina beginnen. Het tabblad Overzicht toont alle blokken op een rij.</p>
+            <p style={styles.heroStepBody}>Zet een blok vol, half of kwart breed, sleep het naar de juiste plaats of laat het op een nieuwe pagina beginnen. Het tabblad Werkblad toont alle blokken op een rij.</p>
           </div>
         </li>
         <li style={styles.heroStep}>
