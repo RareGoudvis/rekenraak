@@ -101,7 +101,7 @@ export function generateForBlock(stored: MathBlock, uniqueExercises?: boolean): 
     const { items, note } = def.generateNoted ? def.generateNoted(block) : { items: def.generate(block), note: null };
     if (!uniqueExercises || items.length <= 1) return { items, note };
     const { items: deduped, shortBy } = dedupeWithTopUp(block, def.generate, items, def.exerciseKey ?? defaultExerciseKey);
-    return { items: deduped, note: joinNotes(withoutRepeatNote(note), shortNote(shortBy)) };
+    return { items: def.arrange ? def.arrange(deduped, block) : deduped, note: joinNotes(withoutRepeatNote(note), shortNote(shortBy)) };
 }
 
 // Teacher-facing wording for a pool too small to fill the block — one phrasing for both
@@ -119,14 +119,16 @@ export function generateExtra(block: MathBlock, existing: unknown[], want: numbe
     // Ask the generator for the shortfall only — the kept exercises already cover the rest.
     const sized = { ...withinCeiling(block), numberOfExercises: need };
     const { items, note } = def.generateNoted ? def.generateNoted(sized) : { items: def.generate(sized), note: null };
-    if (!unique) return { items: [...existing, ...items.slice(0, need)], note };
+    // The new tail restarts the generator's rotation: arrange it against the item it follows.
+    const tail = (xs: unknown[]) => (def.arrange ? def.arrange(xs, sized, existing[existing.length - 1]) : xs);
+    if (!unique) return { items: [...existing, ...tail(items.slice(0, need))], note };
     const keyFn = def.exerciseKey ?? defaultExerciseKey;
     const { items: fresh, shortBy } = dedupeWithTopUp(sized, def.generate, items, keyFn, {
         wanted: need,
         exclude: new Set(existing.map(keyFn)),
         pad: existing,
     });
-    return { items: [...existing, ...fresh], note: joinNotes(withoutRepeatNote(note), shortNote(shortBy)) };
+    return { items: [...existing, ...tail(fresh)], note: joinNotes(withoutRepeatNote(note), shortNote(shortBy)) };
 }
 
 /** Content key of one exercise, for callers that add to an existing set. */

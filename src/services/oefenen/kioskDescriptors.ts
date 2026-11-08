@@ -6,6 +6,7 @@ import type {
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
     VormleerExercise, WeegschaalExercise,
 } from '../math/types';
+import { distinctJumps } from '../getallenas/jumps';
 import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskExtraKey, type KioskInput, type KioskInteract, type KioskKey } from './types';
 import { cijferCheck, cijferGiven, cijferKioskGrid, cijferLenen, type CijferCheck } from '../cijferen/cijferCells';
 import { cijferDp } from '../cijferen/cijferLayout';
@@ -783,7 +784,9 @@ const axisInteract = cellsInteract<GetallenasExercise>((ex) => blankKeys(ex.blan
 // step SETTING, never the exercise, so the keypad stays the same from one rij to the next.
 const axisKeys = (c: Record<string, unknown>): KioskKey[] => {
     const keys = kindKeys(c);
-    const decimalStep = typeof c.step === 'number' && !Number.isInteger(c.step);
+    // Mixed jumps: any decimal jump among them needs the comma, whichever one this exercise ends up using.
+    const jumps = Array.isArray(c.jumps) ? c.jumps.filter((j): j is number => typeof j === 'number') : [];
+    const decimalStep = [c.step, ...jumps].some(s => typeof s === 'number' && !Number.isInteger(s));
     return decimalStep && !keys.includes(',') && numberTypeOf(c) !== 'rational' ? [...keys, ','] : keys;
 };
 export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
@@ -793,6 +796,14 @@ export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
     interact: axisInteract,
     answerOf: (ex, c) => [axisInteract.answerOf(ex, c)],
     display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
+    // A kiosk block holds one exercise, which would always take the first jump: start the rotation at a random
+    // jump per exercise, keeping the whole list so axisKeys stays stable.
+    prepare: (c, rng) => {
+        const jumps = distinctJumps(c as { numberType?: string; jumps?: number[] });
+        if (jumps.length < 2) return c;
+        const k = Math.floor(rng() * jumps.length);
+        return { ...c, jumps: [...jumps.slice(k), ...jumps.slice(0, k)] };
+    },
 });
 
 // veelvouden: the multiples after the given ones (the kiosk card prints the whole run, no

@@ -329,6 +329,8 @@ const getallenasSpace: OptionSpace = {
     ticks: [4, 5, 6, 7, 8, 9, 10],
     // Ondergrens (gehele getallen only; the other number types ignore it).
     minGetal: [0, -50, -1000],
+    // [] = unset (the single `step`); the rest are realistic mixed-jump sets.
+    jumps: [[], [5, 10], [2, 5, 10], [10, 100], [25, 50], [0.5, 1]],
 };
 
 const getallenrijSpace: OptionSpace = {
@@ -338,6 +340,7 @@ const getallenrijSpace: OptionSpace = {
     fractionStep: [2, 4, 10],
     maxTeller: [1, 3, 10, 25],
     showFrame: [true, false],
+    jumpMode: ['per-rij', 'in-rij'],
 };
 
 const metenSpace: OptionSpace = {

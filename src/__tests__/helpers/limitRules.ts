@@ -15,6 +15,7 @@ import { effectiveBlockFor } from '../../services/math/mixedGenerator';
 import { ladderFor } from '../../services/herleidingen/herleidingenGenerator';
 import { NIVEAU_MAX } from '../../services/romeinse/romeinseGenerator';
 import { getBridgePlaces, numberMatchesMask } from '../../services/math/mathEngine';
+import { distinctJumps, patternGrid } from '../../services/getallenas/jumps';
 import { scaled, isFraction, fracValue, numValue, applyOp, evaluateChain, evaluateTokens, gcd } from './answerKeys';
 
 // ── The limit harness rule book ──────────────────────────────────────────────
@@ -430,8 +431,26 @@ const asSpec = (isRij: boolean): TypeSpec<GetallenasExercise> => ({
         const givens = (e.blankMask ?? []).filter(b => !b).length;
         if (e.tickCount > 2 && givens < 2) push('givens', givens, 2, ex);
         // A line shortened (or a step shrunk) to fit its bounds is intended only when the note says so.
-        if (!ctx.note && (e.tickCount < n(c.ticks, 6) || (nt !== 'rational' && !sameNum(e.step, n(c.step, 5) || 1)))) {
-            push('line-shrunk-silently', `${e.tickCount} × +${e.step}`, `${n(c.ticks, 6)} × +${n(c.step, 5)}`, ex);
+        // Mixed jumps: a per-line / per-rij step is any chosen jump; an in-rij row's step is their gcd.
+        const jumps = distinctJumps({ numberType: nt, jumps: c.jumps as number[] | undefined });
+        const inRij = isRij && jumps.length >= 2 && c.jumpMode === 'in-rij';
+        const okSteps = inRij ? [patternGrid(0, 0, jumps, 2, false).g] : jumps.length ? jumps : [n(c.step, 5) || 1];
+        if (!ctx.note && (e.tickCount < n(c.ticks, 6) || (nt !== 'rational' && !okSteps.some(s => sameNum(e.step, s))))) {
+            push('line-shrunk-silently', `${e.tickCount} × +${e.step}`, `${n(c.ticks, 6)} × +${okSteps.join('/')}`, ex);
+        }
+        if (inRij && !ctx.note && e.jumps) {
+            const k = e.jumps.length;
+            const mask = e.blankMask ?? [];
+            if (k < jumps.length || e.jumps.some((j, i) => !sameNum(j, jumps[i]))) push('pattern-jumps', e.jumps.join(','), jumps.join(','), ex);
+            if (mask.slice(0, k + 1).some(Boolean)) push('pattern-givens', mask.slice(0, k + 1).join(','), `first ${k + 1} given`, ex);
+            if (!mask.some(Boolean)) push('pattern-blank', 0, 1, ex);
+        }
+        if (inRij && e.jumps) {
+            const nums = vals.map(numValue);
+            for (let i = 1; i < nums.length; i++) {
+                const want = e.jumps[(i - 1) % e.jumps.length] * (e.direction === 'left' ? -1 : 1);
+                if (!sameNum(nums[i] - nums[i - 1], want)) { push('pattern-step', nums[i] - nums[i - 1], want, ex); break; }
+            }
         }
         if (nt === 'rational') {
             const d = n(c.fractionStep, 4) > 1 ? n(c.fractionStep, 4) : 4;
@@ -449,6 +468,15 @@ const asSpec = (isRij: boolean): TypeSpec<GetallenasExercise> => ({
         const mask = c.numberMask as Record<string, boolean> | undefined;
         if (isRij && !ctx.note && (nt === 'natural' || nt === 'decimal') && mask && !numberMatchesMask(e.start, mask, max, nt, decimalsOf(e.step))) {
             push('mask-ignored', e.start, Object.keys(mask).filter(k => mask[k]).join(','), ex);
+        }
+    },
+    // Mixed jumps per line / per rij: neighbours never share a jump (unless a note says jumps merged).
+    block: (items, ctx, push) => {
+        const c = ctx.c;
+        const jumps = distinctJumps({ numberType: c.numberType as string | undefined, jumps: c.jumps as number[] | undefined });
+        if (jumps.length < 2 || (isRij && c.jumpMode === 'in-rij') || ctx.note) return;
+        for (let i = 1; i < items.length; i++) {
+            if (sameNum(items[i].step, items[i - 1].step)) { push('jumps-neighbour', items[i].step, 'a different jump', `line ${i}: +${items[i].step}`); break; }
         }
     },
 });

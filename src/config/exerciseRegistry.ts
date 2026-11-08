@@ -26,6 +26,7 @@ import { generateMabExercises } from '../services/mab/mabGenerator';
 import { generateOrdenenExercises, generateOrdenenExercisesNoted } from '../services/ordenen/ordenenGenerator';
 import { generateDeelbaarheidExercises } from '../services/deelbaarheid/deelbaarheidGenerator';
 import { generateGetallenasExercises, generateGetallenasExercisesNoted } from '../services/getallenas/getallenasGenerator';
+import { arrangeJumps } from '../services/getallenas/jumps';
 import { generateGetallenrijExercises, generateGetallenrijExercisesNoted } from '../services/getallenrij/getallenrijGenerator';
 import { generateLengteMetenExercises, generateLengteMetenExercisesNoted, generateOmtrekExercises, generateOmtrekExercisesNoted, generateOppervlakteExercises, generateOppervlakteExercisesNoted } from '../services/meten/metenGenerator';
 import { generatePatroonExercises, generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
@@ -95,6 +96,9 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     // fields that would make two identical sums look different under the default
     // JSON.stringify(id-stripped) key; omit otherwise.
     exerciseKey?: (ex: unknown) => string;
+    // Reorders a finished set (after dedupe / top-up) so a rule between neighbours holds again, e.g. mixed
+    // jumps never on two lines in a row. `before` = the exercise already on the sheet ahead of `items`.
+    arrange?: (items: unknown[], block: MathBlock, before?: unknown) => unknown[];
     // The max-number list this block's config shows for its current settings (numberType,
     // layout, mode…), top = the type's didactic ceiling. baseApply floors the grade seed
     // into it. Omitted / null = no max picker for these settings.
@@ -534,8 +538,8 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'deelbaarheid': row<DeelbaarheidConstraints>({ exerciseField: 'deelbaarheidExercises', generate: generateDeelbaarheidExercises, defaultConstraints: deelbaarheidDefaults, defaultCount: 6, maxPresets: deelbaarheidMax , kiosk: VEELVOUDEN_KIOSK }),
     'getalpatronen': row<PatroonConstraints>({ exerciseField: 'patroonExercises', generate: generatePatroonExercises, generateNoted: generatePatroonExercisesNoted, defaultConstraints: patroonDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.patronen) , kiosk: PATROON_KIOSK }),
     'deelbaarheid-kleuren': row<DeelbaarheidKleurConstraints>({ exerciseField: 'deelbaarheidKleurExercises', generate: generateDeelbaarheidKleurExercises, defaultConstraints: deelbaarheidKleurDefaults, defaultCount: 3, maxPresets: deelbaarheidKleurMax, kiosk: DEELBAARHEID_KLEUR_KIOSK }),
-    'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK }),
-    'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK }),
+    'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, arrange: arrangeJumps, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK }),
+    'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, arrange: arrangeJumps, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK }),
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises, generateNoted: generateLengteMetenExercisesNoted, defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: LENGTE_KIOSK }),
     // Real-size figures one per row (up to a 10 cm square, ~450 px with its answer): two fit
     // one A4 page at the default; six ran to 2 093 px (sweep 2026-09-27).

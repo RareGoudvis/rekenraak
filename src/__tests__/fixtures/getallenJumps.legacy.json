@@ -1,0 +1,2391 @@
+{
+ "as": {
+  "items": [
+   {
+    "id": "3sq3u4e",
+    "start": 55,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     55,
+     60,
+     65,
+     70,
+     75,
+     80
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "bxvomq3",
+    "start": 0,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20,
+     25
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "pi1lxvj",
+    "start": 15,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     true,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     15,
+     20,
+     25,
+     30,
+     35,
+     40
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "ptfnt1b",
+    "start": 15,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     15,
+     20,
+     25,
+     30,
+     35,
+     40
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "58i2vql",
+    "start": 30,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     30,
+     35,
+     40,
+     45,
+     50,
+     55
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "nz2owcx",
+    "start": 10,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     10,
+     15,
+     20,
+     25,
+     30,
+     35
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-beide": {
+  "items": [
+   {
+    "id": "xkxydfl",
+    "start": 650,
+    "step": 50,
+    "tickCount": 8,
+    "blankMask": [
+     false,
+     true,
+     false,
+     true,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     650,
+     700,
+     750,
+     800,
+     850,
+     900,
+     950,
+     1000
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "0y515hd",
+    "start": 500,
+    "step": 50,
+    "tickCount": 8,
+    "blankMask": [
+     false,
+     false,
+     true,
+     true,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     500,
+     450,
+     400,
+     350,
+     300,
+     250,
+     200,
+     150
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "u2ls2sk",
+    "start": 400,
+    "step": 50,
+    "tickCount": 8,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     true,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     400,
+     450,
+     500,
+     550,
+     600,
+     650,
+     700,
+     750
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "jf20rnz",
+    "start": 800,
+    "step": 50,
+    "tickCount": 8,
+    "blankMask": [
+     false,
+     false,
+     true,
+     true,
+     false,
+     true,
+     true,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     800,
+     750,
+     700,
+     650,
+     600,
+     550,
+     500,
+     450
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "al9uf85",
+    "start": 0,
+    "step": 50,
+    "tickCount": 8,
+    "blankMask": [
+     false,
+     true,
+     true,
+     true,
+     true,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     50,
+     100,
+     150,
+     200,
+     250,
+     300,
+     350
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "rh84bxj",
+    "start": 350,
+    "step": 50,
+    "tickCount": 8,
+    "blankMask": [
+     false,
+     true,
+     true,
+     false,
+     true,
+     true,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     350,
+     300,
+     250,
+     200,
+     150,
+     100,
+     50,
+     0
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-dec": {
+  "items": [
+   {
+    "id": "tv7ymch",
+    "start": 8,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     8,
+     7.5,
+     7,
+     6.5,
+     6,
+     5.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "503p2ac",
+    "start": 7.5,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     7.5,
+     7,
+     6.5,
+     6,
+     5.5,
+     5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "h0n0yta",
+    "start": 3.5,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     3.5,
+     3,
+     2.5,
+     2,
+     1.5,
+     1
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "s9yarsi",
+    "start": 6,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     6,
+     5.5,
+     5,
+     4.5,
+     4,
+     3.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "qghlnlj",
+    "start": 7.5,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     7.5,
+     7,
+     6.5,
+     6,
+     5.5,
+     5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "82wonrv",
+    "start": 9,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     true,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     9,
+     8.5,
+     8,
+     7.5,
+     7,
+     6.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-geh": {
+  "items": [
+   {
+    "id": "o3xwn89",
+    "start": 30,
+    "step": 10,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     30,
+     40,
+     50,
+     60,
+     70,
+     80
+    ],
+    "numberType": "geheel",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "h0saubx",
+    "start": 80,
+    "step": 10,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     80,
+     70,
+     60,
+     50,
+     40,
+     30
+    ],
+    "numberType": "geheel",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "608h9bi",
+    "start": -40,
+    "step": 10,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     -40,
+     -30,
+     -20,
+     -10,
+     0,
+     10
+    ],
+    "numberType": "geheel",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "dggrwka",
+    "start": -40,
+    "step": 10,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     -40,
+     -30,
+     -20,
+     -10,
+     0,
+     10
+    ],
+    "numberType": "geheel",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "8va748t",
+    "start": -20,
+    "step": 10,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     -20,
+     -10,
+     0,
+     10,
+     20,
+     30
+    ],
+    "numberType": "geheel",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "g2a22cw",
+    "start": -30,
+    "step": 10,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     -30,
+     -20,
+     -10,
+     0,
+     10,
+     20
+    ],
+    "numberType": "geheel",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-rat": {
+  "items": [
+   {
+    "id": "o3xwn89",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     3,
+     {
+      "whole": 3,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 3,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 3,
+      "n": 3,
+      "d": 4
+     },
+     4,
+     {
+      "whole": 4,
+      "n": 1,
+      "d": 4
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "h0saubx",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     {
+      "whole": 4,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 4,
+      "n": 1,
+      "d": 4
+     },
+     4,
+     {
+      "whole": 3,
+      "n": 3,
+      "d": 4
+     },
+     {
+      "whole": 3,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 3,
+      "n": 1,
+      "d": 4
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "608h9bi",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "n": 1,
+      "d": 2
+     },
+     {
+      "n": 3,
+      "d": 4
+     },
+     1,
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 1,
+      "n": 3,
+      "d": 4
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "dggrwka",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "n": 1,
+      "d": 4
+     },
+     {
+      "n": 1,
+      "d": 2
+     },
+     {
+      "n": 3,
+      "d": 4
+     },
+     1,
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 2
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "8va748t",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     1,
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 1,
+      "n": 3,
+      "d": 4
+     },
+     2,
+     {
+      "whole": 2,
+      "n": 1,
+      "d": 4
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "g2a22cw",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "n": 3,
+      "d": 4
+     },
+     1,
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 1,
+      "n": 3,
+      "d": 4
+     },
+     2
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-one": {
+  "items": [
+   {
+    "id": "tv7ymch",
+    "start": 55,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     55,
+     60,
+     65,
+     70,
+     75,
+     80
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "503p2ac",
+    "start": 50,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     50,
+     55,
+     60,
+     65,
+     70,
+     75
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "h0n0yta",
+    "start": 10,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     10,
+     15,
+     20,
+     25,
+     30,
+     35
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "s9yarsi",
+    "start": 35,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     35,
+     40,
+     45,
+     50,
+     55,
+     60
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "qghlnlj",
+    "start": 50,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     50,
+     55,
+     60,
+     65,
+     70,
+     75
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "82wonrv",
+    "start": 65,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     65,
+     70,
+     75,
+     80,
+     85,
+     90
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-same": {
+  "items": [
+   {
+    "id": "9dufbei",
+    "start": 55,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     55,
+     60,
+     65,
+     70,
+     75,
+     80
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "39np66e",
+    "start": 45,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     45,
+     50,
+     55,
+     60,
+     65,
+     70
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "5wadq1q",
+    "start": 25,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     25,
+     30,
+     35,
+     40,
+     45,
+     50
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "jw2yihb",
+    "start": 0,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20,
+     25
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "4rhhck9",
+    "start": 35,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     35,
+     40,
+     45,
+     50,
+     55,
+     60
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "43v6lml",
+    "start": 60,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     60,
+     65,
+     70,
+     75,
+     80,
+     85
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "as-shrink": {
+  "items": [
+   {
+    "id": "0y8fipf",
+    "start": 0,
+    "step": 5,
+    "tickCount": 5,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "yizfa6g",
+    "start": 0,
+    "step": 5,
+    "tickCount": 5,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "7ejdxuf",
+    "start": 0,
+    "step": 5,
+    "tickCount": 5,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "dr1i40i",
+    "start": 0,
+    "step": 5,
+    "tickCount": 5,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "gan3iuk",
+    "start": 0,
+    "step": 5,
+    "tickCount": 5,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "lonucpz",
+    "start": 0,
+    "step": 5,
+    "tickCount": 5,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": "Sprong +5 met 6 streepjes past niet tot 20: 5 streepjes gebruikt."
+ },
+ "rij": {
+  "items": [
+   {
+    "id": "jbckj6f",
+    "start": 55,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     55,
+     60,
+     65,
+     70,
+     75,
+     80
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "a7foqm5",
+    "start": 70,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     70,
+     75,
+     80,
+     85,
+     90,
+     95
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "edoyp3z",
+    "start": 35,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     true,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     35,
+     40,
+     45,
+     50,
+     55,
+     60
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "hfkbjq4",
+    "start": 60,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     60,
+     65,
+     70,
+     75,
+     80,
+     85
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "jjhykpb",
+    "start": 15,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     15,
+     20,
+     25,
+     30,
+     35,
+     40
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "k016u7n",
+    "start": 5,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     5,
+     10,
+     15,
+     20,
+     25,
+     30
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "rij-mask": {
+  "items": [
+   {
+    "id": "tuska3r",
+    "start": 905,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     905,
+     910,
+     915,
+     920,
+     925,
+     930
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "j2hd1j0",
+    "start": 305,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     305,
+     300,
+     295,
+     290,
+     285,
+     280
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "mrce7kn",
+    "start": 605,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     605,
+     610,
+     615,
+     620,
+     625,
+     630
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "slstcnx",
+    "start": 705,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     true,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     705,
+     710,
+     715,
+     720,
+     725,
+     730
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "zsc6oe1",
+    "start": 305,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     305,
+     300,
+     295,
+     290,
+     285,
+     280
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "ta1mlwc",
+    "start": 805,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     false,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     805,
+     800,
+     795,
+     790,
+     785,
+     780
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "rij-dec": {
+  "items": [
+   {
+    "id": "0fxifd7",
+    "start": 10,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     10,
+     9.5,
+     9,
+     8.5,
+     8,
+     7.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "k88flcr",
+    "start": 10,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     true,
+     true,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     10,
+     9.5,
+     9,
+     8.5,
+     8,
+     7.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "tyaahew",
+    "start": 10,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     10,
+     9.5,
+     9,
+     8.5,
+     8,
+     7.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "g27zdae",
+    "start": 10,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     10,
+     9.5,
+     9,
+     8.5,
+     8,
+     7.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "fwglrfq",
+    "start": 10,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "left",
+    "values": [
+     10,
+     9.5,
+     9,
+     8.5,
+     8,
+     7.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "px9whew",
+    "start": 10,
+    "step": 0.5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     true,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     10,
+     9.5,
+     9,
+     8.5,
+     8,
+     7.5
+    ],
+    "numberType": "decimal",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "rij-rat": {
+  "items": [
+   {
+    "id": "l39xtgj",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "whole": 4,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 4,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 4,
+      "n": 3,
+      "d": 4
+     },
+     5,
+     {
+      "whole": 5,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 5,
+      "n": 1,
+      "d": 2
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "xsufu6z",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "whole": 4,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 4,
+      "n": 3,
+      "d": 4
+     },
+     5,
+     {
+      "whole": 5,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 5,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 5,
+      "n": 3,
+      "d": 4
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "8l65jju",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     true,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "n": 3,
+      "d": 4
+     },
+     1,
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 1,
+      "n": 3,
+      "d": 4
+     },
+     2
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "j1i5tgy",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "whole": 2,
+      "n": 3,
+      "d": 4
+     },
+     3,
+     {
+      "whole": 3,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 3,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 3,
+      "n": 3,
+      "d": 4
+     },
+     4
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "e563xye",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     true,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     {
+      "whole": 4,
+      "n": 3,
+      "d": 4
+     },
+     5,
+     {
+      "whole": 5,
+      "n": 1,
+      "d": 4
+     },
+     {
+      "whole": 5,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 5,
+      "n": 3,
+      "d": 4
+     },
+     6
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "6ruc32h",
+    "start": 0,
+    "step": 1,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     true,
+     false
+    ],
+    "direction": "left",
+    "values": [
+     {
+      "whole": 1,
+      "n": 3,
+      "d": 4
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 2
+     },
+     {
+      "whole": 1,
+      "n": 1,
+      "d": 4
+     },
+     1,
+     {
+      "n": 3,
+      "d": 4
+     },
+     {
+      "n": 1,
+      "d": 2
+     }
+    ],
+    "numberType": "rational",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "rij-one": {
+  "items": [
+   {
+    "id": "9dufbei",
+    "start": 55,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     55,
+     60,
+     65,
+     70,
+     75,
+     80
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "39np66e",
+    "start": 45,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     45,
+     50,
+     55,
+     60,
+     65,
+     70
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "5wadq1q",
+    "start": 25,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     25,
+     30,
+     35,
+     40,
+     45,
+     50
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "jw2yihb",
+    "start": 0,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     5,
+     10,
+     15,
+     20,
+     25
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "4rhhck9",
+    "start": 35,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     35,
+     40,
+     45,
+     50,
+     55,
+     60
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "43v6lml",
+    "start": 60,
+    "step": 5,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     60,
+     65,
+     70,
+     75,
+     80,
+     85
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": null
+ },
+ "rij-fixed": {
+  "items": [
+   {
+    "id": "4f3cpik",
+    "start": 8,
+    "step": 2,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     8,
+     10,
+     12,
+     14,
+     16,
+     18
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "zsrpdyi",
+    "start": 4,
+    "step": 2,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     4,
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "jnl38il",
+    "start": 8,
+    "step": 2,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     true,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     8,
+     10,
+     12,
+     14,
+     16,
+     18
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "34c9zux",
+    "start": 0,
+    "step": 2,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     2,
+     4,
+     6,
+     8,
+     10
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "xdh8qhq",
+    "start": 0,
+    "step": 2,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true
+    ],
+    "direction": "right",
+    "values": [
+     0,
+     2,
+     4,
+     6,
+     8,
+     10
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   },
+   {
+    "id": "w5s6hc2",
+    "start": 6,
+    "step": 2,
+    "tickCount": 6,
+    "blankMask": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "direction": "right",
+    "values": [
+     6,
+     8,
+     10,
+     12,
+     14,
+     16
+    ],
+    "numberType": "natural",
+    "isManuallyEdited": false
+   }
+  ],
+  "note": "Sprong +50 past niet tot 20: sprong +2 gebruikt."
+ }
+}

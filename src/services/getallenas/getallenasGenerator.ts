@@ -1,6 +1,8 @@
 import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import type { GetallenasConstraints } from '../math/constraintTypes';
 import { ensureTwoGivens } from './blankMask';
+import { distinctJumps, plus, r6, rangeText } from './jumps';
+import { joinNotes } from '../generationNotes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -67,6 +69,34 @@ export function fitLine(lo: number, hi: number, stepN: number, ticks: number, di
     return { step: stepN, ticks, note: null };
 }
 
+export type JumpsFit = { jumps: number[]; ticks: number; note: string | null };
+
+// One line (or row) per jump: every jump must fit with the SAME tick count, so neighbours look alike.
+// Fits each jump alone, takes the fewest ticks any needed, refits at that count, then drops jumps that
+// shrank onto one another.
+export function fitJumps(lo: number, hi: number, jumps: number[], ticks: number, directionMode: string, minStep: number, unit: string): JumpsFit {
+    let t = ticks;
+    let fits = jumps.map(j => fitLine(lo, hi, j, t, directionMode, minStep, unit));
+    for (let guard = 0; guard < 8; guard++) {
+        const m = Math.min(...fits.map(f => f.ticks));
+        if (m >= t) break;
+        t = m;
+        fits = jumps.map(j => fitLine(lo, hi, j, t, directionMode, minStep, unit));
+    }
+    const stepsChanged = fits.some((f, i) => f.step !== jumps[i]);
+    const seen = new Set<number>();
+    const used: number[] = [];
+    for (const f of fits) {
+        if (seen.has(r6(f.step))) continue;
+        seen.add(r6(f.step));
+        used.push(f.step);
+    }
+    let note: string | null = null;
+    if (t < ticks) note = `Sprongen ${plus(jumps)} met ${ticks} ${unit} passen niet ${rangeText(lo, hi)}: ${t} ${unit} gebruikt.`;
+    if (stepsChanged) note = joinNotes(note, `Sprongen ${plus(jumps)} passen niet ${rangeText(lo, hi)}: sprongen ${plus(used)} gebruikt.`);
+    return { jumps: used, ticks: t, note };
+}
+
 export function generateGetallenasExercisesNoted(block: MathBlock): { items: GetallenasExercise[]; note: string | null } {
     const c = block.constraints as GetallenasConstraints;
     const numberType: string = c.numberType ?? 'natural';
@@ -75,9 +105,16 @@ export function generateGetallenasExercisesNoted(block: MathBlock): { items: Get
     const directionMode: string = c.direction ?? 'right';
     const hardMode: boolean = c.hardMode ?? false;
     const lo = numberType === 'geheel' ? (c.minGetal ?? -maxGetal) : 0;
-    const fit = numberType === 'rational'
-        ? { step, ticks: c.ticks ?? 6, note: null }
-        : fitLine(lo, maxGetal, step || 1, c.ticks ?? 6, directionMode, numberType === 'decimal' ? 0.001 : 1, 'streepjes');
+    // 2+ distinct jumps: line i uses jump i mod k, so neighbouring lines differ; never mixed inside a line.
+    const chosen = distinctJumps(c);
+    const minStep = numberType === 'decimal' ? 0.001 : 1;
+    const multiFit = chosen.length ? fitJumps(lo, maxGetal, chosen, c.ticks ?? 6, directionMode, minStep, 'streepjes') : null;
+    const rotation = multiFit && multiFit.jumps.length >= 2 ? multiFit.jumps : null;
+    const fit = multiFit
+        ? { step: multiFit.jumps[0], ticks: multiFit.ticks, note: multiFit.note }
+        : numberType === 'rational'
+            ? { step, ticks: c.ticks ?? 6, note: null }
+            : fitLine(lo, maxGetal, step || 1, c.ticks ?? 6, directionMode, minStep, 'streepjes');
     const ticks = fit.ticks;
 
     const n = block.numberOfExercises;
@@ -89,7 +126,7 @@ export function generateGetallenasExercisesNoted(block: MathBlock): { items: Get
 
         let values: (number | Fraction)[];
         let start = 0;
-        const usedStep = fit.step;
+        const usedStep = rotation ? rotation[i % rotation.length] : fit.step;
 
         if (numberType === 'rational') {
             // Unit-fraction step 1/d; values are i/d from a whole-number start.
