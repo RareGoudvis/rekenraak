@@ -1,7 +1,8 @@
 import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import { numberMatchesMask, getMaskPlaces } from '../math/mathEngine';
 import type { GetallenrijConstraints } from '../math/constraintTypes';
-import { fitLine } from '../getallenas/getallenasGenerator';
+import { fitLine, fitJumps } from '../getallenas/getallenasGenerator';
+import { distinctJumps, fitPattern, patternGrid, plus } from '../getallenas/jumps';
 import { ensureTwoGivens } from '../getallenas/blankMask';
 import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
@@ -84,9 +85,21 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
     // Rational rows count in units of 1/d; maxTeller (getalopbouw) caps the highest teller.
     const d = c.fractionStep && c.fractionStep > 1 ? c.fractionStep : 4;
     const maxWholeUnits = c.maxTeller && c.maxTeller >= 1 ? Math.floor(c.maxTeller) : 5 * d;
-    const fit = numberType === 'rational'
-        ? { step, ...fitFractionRow(maxWholeUnits, d, c.ticks ?? 6) }
-        : fitLine(lo, maxGetal, step || 1, c.ticks ?? 6, directionMode, numberType === 'decimal' ? 0.001 : 1, 'vakjes');
+    const minStep = numberType === 'decimal' ? 0.001 : 1;
+    // 2+ distinct jumps: 'per-rij' gives row i jump i mod k; 'in-rij' repeats them inside every row.
+    const chosen = distinctJumps(c);
+    const inRij = chosen.length >= 2 && c.jumpMode === 'in-rij';
+    const patternFit = inRij ? fitPattern(lo, maxGetal, chosen, c.ticks ?? 6, directionMode, 'vakjes') : null;
+    // A pattern that cannot keep two jumps falls back to the first jump alone, by the usual fit.
+    const multiFit = chosen.length && !patternFit ? fitJumps(lo, maxGetal, inRij ? [chosen[0]] : chosen, c.ticks ?? 6, directionMode, minStep, 'vakjes') : null;
+    const rotation = multiFit && multiFit.jumps.length >= 2 ? multiFit.jumps : null;
+    const fit = patternFit
+        ? { step: patternFit.jumps[0], ticks: patternFit.ticks, note: patternFit.note }
+        : multiFit
+            ? { step: multiFit.jumps[0], ticks: multiFit.ticks, note: multiFit.note }
+            : numberType === 'rational'
+                ? { step, ...fitFractionRow(maxWholeUnits, d, c.ticks ?? 6) }
+                : fitLine(lo, maxGetal, step || 1, c.ticks ?? 6, directionMode, minStep, 'vakjes');
     const ticks = fit.ticks;
     const numberMask: Record<string, boolean> = c.numberMask ?? {};
     // 'Specifieke getalopbouw' only constrains place-value number types (anchor value).
@@ -104,9 +117,43 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
         // arrowLeft = descending L→R: a 'dalend' row subtracts as you read right.
         const arrowLeft = directionMode === 'beide' ? Math.random() < 0.5 : directionMode === 'left';
 
+        if (patternFit) {
+            const jumpsUsed = patternFit.jumps;
+            const grid = patternGrid(lo, maxGetal, jumpsUsed, ticks, arrowLeft);
+            const gStep = grid.g;
+            const dp = stepDecimals(gStep);
+            if (grid.aU >= grid.bU) anchorForced = true;
+            let rowStart = 0;
+            let attempts = 0;
+            do {
+                rowStart = Math.round(pick(grid.aU, grid.bU) * gStep * 1e6) / 1e6;
+                attempts++;
+            } while (useMask && !numberMatchesMask(rowStart, numberMask, maxGetal, numberType as 'natural' | 'decimal', dp) && attempts < 80);
+            if (useMask && !numberMatchesMask(rowStart, numberMask, maxGetal, numberType as 'natural' | 'decimal', dp)) {
+                const scale = Math.pow(10, dp);
+                const stepS = Math.round(gStep * scale);
+                const key = `${stepS},${grid.aU},${grid.bU}`;
+                if (!anchorCache.has(key)) {
+                    const weightsS = getMaskPlaces(maxGetal, numberType as 'natural' | 'decimal', dp).filter(p => numberMask[p.key]).map(p => Math.round(p.weight * scale));
+                    anchorCache.set(key, maskedAnchorUnits(weightsS, stepS, grid.aU, grid.bU));
+                }
+                const options = anchorCache.get(key)!;
+                if (options.length) rowStart = Math.round(options[randInt(0, options.length - 1)] * gStep * 1e6) / 1e6;
+                else maskMisses++;
+            }
+            const rowValues = [rowStart, ...grid.steps.map(s => Math.round((arrowLeft ? rowStart - s : rowStart + s) * 1e6) / 1e6)];
+            // The first jumps+1 cells stay given so every jump has been seen once; blanks only after that.
+            const given = jumpsUsed.length + 1;
+            const ratioIn = hardMode ? 0.6 : 0.4;
+            const rowMask = Array.from({ length: ticks }, (_, k) => k >= given && Math.random() < ratioIn);
+            if (!rowMask.some(Boolean)) rowMask[ticks - 1] = true;
+            results.push({ id: rndId(), start: rowStart, step: gStep, tickCount: ticks, blankMask: rowMask, direction: arrowLeft ? 'left' : 'right', values: rowValues, numberType, jumps: jumpsUsed, isManuallyEdited: false });
+            continue;
+        }
+
         let values: (number | Fraction)[];
         let start = 0;
-        const usedStep = fit.step;
+        const usedStep = rotation ? rotation[i % rotation.length] : fit.step;
 
         if (numberType === 'rational') {
             const fracOpts = { mixed: c.allowMixed ?? true, simplify: !(c.gelijknamig ?? false) };
@@ -141,11 +188,12 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
             // The random draws above stay first so rows that already matched keep their seeded output.
             if (useMask && !numberMatchesMask(start, numberMask, maxGetal, numberType as 'natural' | 'decimal', dp)) {
                 const scale = Math.pow(10, dp);
+                const stepS = Math.round(stepN * scale);
                 const [aU, bU] = arrowLeft ? [need, Math.max(need, hiU)] : [loU, Math.max(loU, upper)];
-                const key = `${aU},${bU}`;
+                const key = `${stepS},${aU},${bU}`;
                 if (!anchorCache.has(key)) {
                     const weightsS = getMaskPlaces(maxGetal, numberType as 'natural' | 'decimal', dp).filter(p => numberMask[p.key]).map(p => Math.round(p.weight * scale));
-                    anchorCache.set(key, maskedAnchorUnits(weightsS, Math.round(stepN * scale), aU, bU));
+                    anchorCache.set(key, maskedAnchorUnits(weightsS, stepS, aU, bU));
                 }
                 const options = anchorCache.get(key)!;
                 if (options.length) start = options[randInt(0, options.length - 1)] * stepN;
@@ -165,10 +213,11 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
     }
     let maskNote: string | null = null;
     if (maskMisses > 0) {
-        const keys = getMaskPlaces(maxGetal, numberType as 'natural' | 'decimal', stepDecimals(fit.step)).filter(p => numberMask[p.key]).map(p => p.key).join(', ');
+        const maskDp = Math.max(...(rotation ?? patternFit?.jumps ?? [fit.step]).map(stepDecimals));
+        const keys = getMaskPlaces(maxGetal, numberType as 'natural' | 'decimal', maskDp).filter(p => numberMask[p.key]).map(p => p.key).join(', ');
         const range = lo === 0 ? `tot ${nl(maxGetal)}` : `van ${nl(lo)} tot ${nl(maxGetal)}`;
         const where = maskMisses >= n ? '' : ` bij ${maskMisses} van de ${n} rijen`;
-        maskNote = `De getalopbouw (${keys}) van het eerste getal past niet bij sprong +${nl(fit.step)} ${range} en is${where} genegeerd.`;
+        maskNote = `De getalopbouw (${keys}) van het eerste getal past niet bij ${rotation || patternFit ? `de sprongen ${plus(rotation ?? patternFit!.jumps)}` : `sprong +${nl(fit.step)}`} ${range} en is${where} genegeerd.`;
     }
     const note = joinNotes(fit.note, maskNote);
     return { items: results, note: anchorForced ? joinNotes(note, repeatNote(repeatsIn(results))) : note };
