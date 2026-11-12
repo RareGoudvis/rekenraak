@@ -1,5 +1,8 @@
 /* Stappenhulp (tutor.html): phone first, big type and 44 px targets, the sheet's own number face. */
-html:has(.tutor-body), .tutor-body, .tutor-body #root { width: 100%; min-height: 100dvh; }
+/* theme.css locks html/body/#root to one screen with overflow hidden (the editor scrolls inside its
+   panels); a phone page has to scroll as a page, so the stappenhulp undoes that lock. */
+html:has(.tutor-body), .tutor-body, .tutor-body #root { width: 100%; height: auto; min-height: 100dvh; overflow: visible; }
+html:has(.tutor-body) { overflow-y: auto; }
 /* Paper card and juist green, SYNC with --kiosk-paper / --kiosk-ink / --kiosk-ok in kiosk.css. */
 .tutor-body { --tutor-paper: #fff; --tutor-ink: #000; --tutor-ok: #1E7B3A; margin: 0; background: var(--bg-base); color: var(--text-main); font-family: var(--font-ui); touch-action: manipulation; }
 .tutor-app { min-height: 100dvh; display: flex; flex-direction: column; }

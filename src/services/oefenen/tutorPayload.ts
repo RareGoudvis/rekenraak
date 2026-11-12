@@ -11,8 +11,14 @@ type ItemNumberingMode = MathBlock['itemNumbering'];
 //         [ops, operands, missing index | -1, answer?], or 0 for a sum the QR cannot carry (a breuk).
 
 export const TUTOR_HASH_PREFIX = '#t=';
-// Served next to the editor, so every printed QR keeps working wherever the page is later hosted.
+// The production stappenhulp; the fallback when the sheet is printed from a non-https origin (a dev server).
 export const TUTOR_URL = 'https://rekenraak.be/tutor.html';
+
+// The stappenhulp next to the editor that printed the sheet, so a Cloudflare Pages preview's QR
+// opens that preview's tutor.html; localhost cannot be reached from a phone, so it prints production.
+export function tutorUrlFor(origin: string): string {
+    return origin.startsWith('https://') ? `${origin}/tutor.html` : TUTOR_URL;
+}
 const TUTOR_VERSION = 1;
 // Generous for one A4 page (≈ 50 sums ≈ 1 kB of JSON); the cap stops a hand-made deflate bomb.
 const MAX_JSON = 20_000;

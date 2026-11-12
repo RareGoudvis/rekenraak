@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { QR_QUIET, qrMatrixOrNull, qrVersionOf } from '../../services/qr';
-import { TUTOR_HASH_PREFIX, TUTOR_URL } from '../../services/oefenen/tutorPayload';
+import { TUTOR_HASH_PREFIX, tutorUrlFor } from '../../services/oefenen/tutorPayload';
 
 // 30 mm at 96 dpi (30 / 25.4 × 96 ≈ 113): a full A4 page of sums (≈ 50) needs version 13, and
 // version 15 (77 modules + quiet zone ≈ 0.35 mm each) is the smallest a phone still reads off a laser print.
@@ -10,7 +10,7 @@ const MAX_VERSION = 15;
 // The stappenhulp QR in a page's footer. Every page reserves the box, even without sums, so
 // switching pages never changes a footer's height (the packer would chase its own tail).
 export default function TutorQr({ payload }: { payload: string | null }) {
-    const matrix = useMemo(() => (payload ? qrMatrixOrNull(TUTOR_URL + TUTOR_HASH_PREFIX + payload) : null), [payload]);
+    const matrix = useMemo(() => (payload ? qrMatrixOrNull(tutorUrlFor(window.location.origin) + TUTOR_HASH_PREFIX + payload) : null), [payload]);
     const tooBig = !!payload && (!matrix || qrVersionOf(matrix) > MAX_VERSION);
     const box = { width: `${QR_PX}px`, height: `${QR_PX}px`, flex: 'none' as const, position: 'relative' as const };
     if (!matrix || tooBig) {

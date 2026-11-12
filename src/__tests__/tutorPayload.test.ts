@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeTutor, encodeTutorPage, TUTOR_HASH_PREFIX, TUTOR_URL } from '../services/oefenen/tutorPayload';
+import { decodeTutor, encodeTutorPage, TUTOR_HASH_PREFIX, TUTOR_URL, tutorUrlFor } from '../services/oefenen/tutorPayload';
 import { packText } from '../services/oefenen/session';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
 import { REGISTRY } from '../config/exerciseRegistry';
@@ -57,5 +57,10 @@ describe('tutor payload', () => {
         ], hasSteps)!;
         const matrix = qrMatrixOrNull(TUTOR_URL + TUTOR_HASH_PREFIX + payload)!;
         expect(qrVersionOf(matrix)).toBeLessThanOrEqual(15);
+    });
+
+    it('the QR points at the tutor next to the editor that printed it (https only)', () => {
+        expect(tutorUrlFor('https://feat-stappen.rekenraak.pages.dev')).toBe('https://feat-stappen.rekenraak.pages.dev/tutor.html');
+        expect(tutorUrlFor('http://localhost:5173')).toBe(TUTOR_URL);
     });
 });
