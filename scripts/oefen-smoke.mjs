@@ -354,12 +354,43 @@ async function runCase(c, link, [w, h]) {
     }
 }
 
+// ── The bare page and kind.html: Zelf oefenen picker (no link), one tap into the topics ────
+async function runZelfCase([w, h], page0) {
+    const base = { leafId: `zelf-picker-${page0.replace('.html', '')}`, path: 'oefenmodus › zelf', typeId: '', width: w, kind: 'zelf' };
+    const errors = [];
+    const context = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await context.newPage();
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', e => errors.push(String(e)));
+    const rows = [];
+    try {
+        await page.goto(`${URL}/${page0}`);
+        await page.getByRole('heading', { name: 'Welk leerjaar?' }).waitFor({ timeout: 5000 });
+        for (const [i, step] of [['Welk leerjaar?', null], ['Wat wil je oefenen?', '2']].entries()) {
+            if (step[1]) await page.getByRole('button', { name: step[1], exact: true }).click();
+            await page.getByRole('heading', { name: step[0] }).waitFor({ timeout: 5000 });
+            const name = `${base.leafId}-w${w}-s${i}.png`;
+            await page.locator('.oefen-app').screenshot({ path: join(OUT, name) });
+            rows.push({ ...base, solutions: i, cellHeightPx: h, intrinsicPx: w, text: await page.locator('.oefen-app').innerText(), screenshot: name, consoleErrors: [...errors], ok: true });
+        }
+        if (errors.length) throw new Error(`console: ${errors.join(' | ')}`);
+        console.log(`  ok    zelf        ${page0} @${w}x${h}`);
+        return rows;
+    } catch (err) {
+        console.log(`  FAIL  zelf        ${page0} @${w}x${h}: ${err.message}`);
+        return [...rows, { ...base, solutions: rows.length, ok: false, error: err.message, consoleErrors: [...errors] }];
+    } finally {
+        await context.close();
+    }
+}
+
 const t0 = Date.now();
 const links = await makeLinks();
 const rows = [];
 for (const [w, h] of VIEWPORTS) {
     console.log(`viewport ${w}x${h}`);
     for (let i = 0; i < CASES.length; i++) rows.push(...await runCase(CASES[i], links[i], [w, h]));
+    if (!ONLY.length || ONLY.includes('zelf')) for (const page0 of ['oefenen.html', 'kind.html']) rows.push(...await runZelfCase([w, h], page0));
 }
 await browser.close();
 own?.stop();

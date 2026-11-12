@@ -38,9 +38,9 @@ afterEach(() => {
 });
 
 describe('kiosk screens', () => {
-    test('no link and a broken link show the error screen', () => {
+    test('a broken link shows the error screen (no link at all shows the Zelf oefenen picker)', () => {
         render(<OefenApp />);
-        expect(screen.getByRole('alert').textContent).toMatch(/werkt niet/);
+        expect(screen.queryByRole('alert')).toBeNull();
         cleanup();
         st().load('#oefen=kapot');
         render(<OefenApp />);

@@ -127,7 +127,7 @@ function canon(v: unknown): string {
 }
 
 // FNV-1a 32-bit: short and stable; it only has to tell apart the contents shipped under one session id on one device.
-function fnv1a(text: string): string {
+export function fnv1a(text: string): string {
     let h = 0x811c9dc5;
     for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
     return h.toString(16).padStart(8, '0');

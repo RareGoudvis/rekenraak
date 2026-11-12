@@ -69,6 +69,9 @@ interface OefenState {
     storageFailed: boolean;
 
     load(hash: string): void;
+    // The session is set in as if its link had been opened (load's second half).
+    open(s: OefenSessie): void;
+    openZelf(s: OefenSessie): void;
     start(): void;
     // The next exercise (or the end screen): what a feedback flash does when it ends.
     next(): void;
@@ -372,6 +375,10 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 set({ sessie: null, run: null, error: e instanceof Error ? e.message : 'Deze oefenlink is ongeldig.' });
                 return;
             }
+            get().open(s);
+        },
+
+        open(s) {
             clearFlash();
             const unsupported = unsupportedSlots(s);
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
@@ -392,6 +399,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // A reload mid-retry comes back on the second try (cur.wrongFirst is kept).
             if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0, activeCell: firstCell(s, cur) });
             else get().next();
+        },
+
+        // A self-made Zelf oefenen session: no link, and it starts at once (the picker was the confirm screen).
+        openZelf(s) {
+            get().open(s);
+            const { phase, sessie } = get();
+            // A finished run of the same choice is not reopened on its stats: the pupil asked for a new one.
+            if (sessie && (phase === 'start' || phase === 'locked')) get().start();
         },
 
         start() {

@@ -3,14 +3,7 @@ import { Play } from '@phosphor-icons/react';
 import { useOefenStore } from '../useOefenStore';
 import { viablePlannedTotal, viableTypes } from '../../services/oefenen/stats';
 import { unsupportedSlots } from '../../services/oefenen/scheduler';
-
-// Fullscreen hides the browser chrome on a tablet; refused or unsupported is fine.
-function tryFullscreen() {
-    try {
-        const p = document.documentElement.requestFullscreen?.();
-        if (p) p.catch(() => { /* refused: keep going in the window */ });
-    } catch { /* unsupported (iOS Safari) */ }
-}
+import { tryFullscreen } from './fullscreen';
 
 // The confirm screen after scanning: what this session is, then Start.
 export default function StartScreen() {

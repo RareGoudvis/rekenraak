@@ -4,6 +4,7 @@ import StartScreen from './kiosk/StartScreen';
 import Kiosk from './kiosk/Kiosk';
 import StatsScreen from './kiosk/StatsScreen';
 import ErrorScreen from './kiosk/ErrorScreen';
+import ZelfPicker from './zelf/ZelfPicker';
 
 // Root of the pupil kiosk (oefenen.html). Routed by the URL hash: #oefen=<payload>.
 export default function OefenApp() {
@@ -19,6 +20,8 @@ export default function OefenApp() {
         return () => window.removeEventListener('hashchange', onHash);
     }, [load]);
 
+    // No link at all (no error either): the pupil picks an exercise alone. A broken link still gets its error.
+    if (!error && !sessie) return <div className="oefen-app"><ZelfPicker /></div>;
     if (error || !sessie) {
         return <div className="oefen-app"><ErrorScreen message={error} /></div>;
     }
