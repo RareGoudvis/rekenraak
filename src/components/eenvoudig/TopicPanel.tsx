@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import ExercisePreview from '../shared/ExercisePreview';
 import { accentOf } from './topicAccent';
@@ -7,6 +7,7 @@ import { resolveCard } from '../../config/eenvoudig/resolveCard';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useEenvoudigUi } from './useEenvoudigUi';
 import { addCardToSheet } from './addCard';
+import { cardSpanFor, rememberedSpan, rememberSpan } from './cardSpan';
 import { planPills } from './pills';
 import type { ComboOpId } from './comboModel';
 
@@ -24,17 +25,24 @@ function TypeCard({ x, accent }: { x: CardType; accent: string }) {
     const first = x.vars[0];
     const resolved = useMemo(() => { try { return resolveCard(first); } catch { return null; } }, [first]);
     const pills = useMemo(() => planPills(x), [x]);
+    // Wide ink (a number line, a chain) gets a double slot; remembered per card so reopening does not jump.
+    const [span, setSpan] = useState<1 | 2>(() => rememberedSpan(first.id));
+    const onInk = useCallback((ink: { w: number; h: number }) => {
+        const next = cardSpanFor(ink.w, ink.h);
+        rememberSpan(first.id, next);
+        setSpan(next);
+    }, [first.id]);
     // A card whose example cannot be built would add a block nobody can see first: leave it out.
     if (!resolved) return null;
     return (
         <div
-            className="ez-tc" role="button" tabIndex={0} title={x.name} style={accentStyle(accent)}
+            className={span === 2 ? 'ez-tc ez-tc-2' : 'ez-tc'} role="button" tabIndex={0} title={x.name} style={accentStyle(accent)}
             onClick={() => addCardToSheet(first)}
             onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); addCardToSheet(first); } }}
         >
             <div className="ez-tc-h"><b>{x.name}</b></div>
             <div className="ez-tc-p">
-                <ExercisePreview typeId={resolved.typeId} constraints={resolved.constraints} height={100} fitOne unclamped showSolutions={false} />
+                <ExercisePreview typeId={resolved.typeId} constraints={resolved.constraints} height={100} fitOne unclamped showSolutions={false} onInk={onInk} />
             </div>
             <div className="ez-tc-r">
                 {pills.lead && <span className="ez-tc-l">{pills.lead}</span>}
