@@ -18,6 +18,7 @@ function evalLine(tokens: StepToken[]): number {
     const flat: (number | string)[] = [];
     for (const t of tokens) {
         if (t.t === 'num') flat.push(t.v);
+        else if (t.t === 'frac') flat.push(t.n / t.d);
         else if (t.t === 'unit') flat.push((flat.pop() as number) * UNIT[t.u]);
         else if (t.t === 'op') flat.push(t.op);
         else flat.push(t.t === 'open' ? '(' : ')');
@@ -116,7 +117,7 @@ describe('shapes without × / : steps', () => {
         ['above 10 000', e(99, 'x', 999)],
         ['a puntoefening', e(5, 'x', 65, { missingTerm: 'operand2' })],
         ['a tienvoud variant', e(46, 'x', 10, { variant: 'x:tienvoud' })],
-        ['kommagetal × kommagetal', e(0.6, 'x', 0.3)],
+        ['kommagetal × kommagetal with 3 decimals', e(0.125, 'x', 0.4)],
     ])('%s', (_name, eq) => {
         expect(workedSteps(eq)).toBeNull();
     });
@@ -149,7 +150,7 @@ describe('every line equals the answer', () => {
         expect(checked).toBeGreaterThan(1000);
     });
 
-    it('kommagetallen via eenheden', () => {
+    it('kommagetallen via eenheden (via breuken where eenheden does not apply)', () => {
         for (const x of [0.2, 0.6, 0.9, 1.2, 0.04, 0.08, 0.15, 0.006]) {
             for (const n of [2, 3, 4, 5, 9]) {
                 for (const eq of [e(x, 'x', n), e(n, 'x', x), e(x * n, ':', n)]) {
