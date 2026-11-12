@@ -9,7 +9,7 @@ import type { Leerjaar } from '../../config/gradePresets';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useEenvoudigUi } from './useEenvoudigUi';
 import {
-    COMBO_OPS, COMBO_STEPS, COMBO_TABLES, OP_NAME, OP_SYMBOL, activeOps, bridgeChoices, bridgePlacesOf, bridgeId, comboConstraints,
+    COMBO_OPS, COMBO_STEPS, COMBO_TABLES, OP_NAME, OP_SYMBOL, REST_DELERS, REST_LEVELS, activeOps, restLevelFits, restLevelOf, bridgeChoices, bridgePlacesOf, bridgeId, comboConstraints,
     comboFromConstraints, comboLeafId, newCombo, placesOf,
     type ComboOpId, type ComboOpState, type ComboState,
 } from './comboModel';
@@ -29,6 +29,8 @@ const sumText = (e: Equation): string => {
     const n = (v: unknown) => formatMathNumber(v as number);
     return `${n(e.operands[0])} ${opGlyph(e.operator)} ${n(e.operands[1])}`;
 };
+// A met-rest sum asks two numbers, as on the sheet: "55 : 6 = ___ r ___".
+const answerSlot = (e: Equation) => (e.remainder !== undefined ? <><u /> r <u /></> : <u />);
 
 const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
 
@@ -131,10 +133,37 @@ export default function ComboBuilder({ only, editBlockId }: Props) {
                                             <div className="seg-group">
                                                 <button type="button" className="seg-btn" aria-pressed={o.mode === 'tafels'} onClick={() => patchOp(k, { mode: 'tafels' })}>Tafels</button>
                                                 <button type="button" className="seg-btn" aria-pressed={o.mode === 'num'} onClick={() => patchOp(k, { mode: 'num' })}>Eigen getallen</button>
+                                                {k === ':' && <button type="button" className="seg-btn" aria-pressed={o.mode === 'rest'} title="Niet-opgaande delingen: er blijft een rest over (52 : 6 = 8 r 4)." onClick={() => patchOp(k, { mode: 'rest' })}>Met rest</button>}
                                             </div>
                                         </div>
                                     )}
-                                    {isMulDiv && !komma && o.mode === 'tafels' ? (
+                                    {k === ':' && !komma && o.mode === 'rest' ? (
+                                        <>
+                                            <div className="ez-line"><span>Delers</span>
+                                                <div className="ez-ctrl">
+                                                    {REST_DELERS.map(t => (
+                                                        <button key={t} type="button" style={styles.maskBtn(o.tables.includes(t))} aria-pressed={o.tables.includes(t)}
+                                                            onClick={() => { const next = toggle(o.tables, t).sort((p, q) => p - q); if (next.some(d => REST_DELERS.includes(d))) patchOp(k, { tables: next }); }}>{t}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="ez-line"><span>Niveau</span>
+                                                <div className="seg-group">
+                                                    {REST_LEVELS.map(l => (
+                                                        <button key={l} type="button" className="seg-btn" disabled={!restLevelFits(state, l)} aria-pressed={restLevelOf(state, o) === l}
+                                                            title={l === 1 ? 'Bv. 52 : 6 = 8 r 4' : l === 2 ? 'Bv. 67 : 6 = 11 r 1' : 'Bv. 127 : 6 = 21 r 1'}
+                                                            onClick={() => patchOp(k, { restLevel: l })}>N{l}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="ez-line"><span>Kladlijn</span>
+                                                <div className="seg-group">
+                                                    <button type="button" className="seg-btn" aria-pressed={!o.klad} onClick={() => patchOp(k, { klad: false })}>Uit</button>
+                                                    <button type="button" className="seg-btn" aria-pressed={o.klad} title="Een lijn voor de veelvouden van de deler (6 × 9 = 54 · 6 × 10 = 60)." onClick={() => patchOp(k, { klad: true })}>Aan</button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : isMulDiv && !komma && o.mode === 'tafels' ? (
                                         <div className="ez-line"><span>Tafels</span>
                                             <div className="ez-ctrl">
                                                 {COMBO_TABLES.map(t => (
@@ -172,7 +201,7 @@ export default function ComboBuilder({ only, editBlockId }: Props) {
                     <div className="ez-pv-h"><b>Voorbeeld</b><button type="button" onClick={() => setNonce(n => n + 1)}>Andere getallen</button></div>
                     {none
                         ? <p className="ez-pv-none">Zet minstens één bewerking aan.</p>
-                        : <div className="ez-sums">{sums.map(e => <div key={e.id}>{sumText(e)} = <u /></div>)}</div>}
+                        : <div className="ez-sums">{sums.map(e => <div key={e.id}>{sumText(e)} = {answerSlot(e)}</div>)}</div>}
                 </div>
                 <button type="button" className="ez-cta" disabled={none} onClick={submit}>{editBlock ? 'Bijwerken' : 'Zet op het blad'}</button>
             </div>

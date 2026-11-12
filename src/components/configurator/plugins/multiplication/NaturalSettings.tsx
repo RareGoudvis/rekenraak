@@ -214,7 +214,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             {blockedMetRestLevels.map(l => `N${l}`).join(' en ')} {blockedMetRestLevels.length > 1 ? 'passen' : 'past'} niet onder het maximum deeltal.
                         </p>
                     )}
-                    <div style={styles.section}>
+                    <div style={{ marginTop: 'var(--sp-4)' }}>
                         <div style={styles.onOffRow}>
                             <SettingLabel text="Kladlijn voor de veelvouden" info="Een lijn naast elke deling. De leerling schrijft er de veelvouden van de deler onder en boven het deeltal (bv. 6 × 9 = 54 · 6 × 10 = 60). Op de correctiesleutel staan ze in het rood." />
                             <button onClick={() => updateConstraint('metRestKladlijn', !metRestKladlijn)} aria-pressed={metRestKladlijn} style={styles.onOffBtn(metRestKladlijn)}>

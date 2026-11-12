@@ -7,6 +7,7 @@ import { seedConstraints, DEFAULT_BASE } from '../../config/baseSettings';
 import { GRADE_PRESETS, type Leerjaar } from '../../config/gradePresets';
 import { GRADE_MAX } from '../../config/eenvoudig/cards';
 import type { MixedVariantId } from '../../services/math/constraintTypes';
+import { clipMetRestLevel, metRestLevelFits } from '../../config/numberRanges';
 
 export type ComboOpId = '+' | '-' | 'x' | ':';
 export const COMBO_OPS: ComboOpId[] = ['+', '-', 'x', ':'];
@@ -16,6 +17,12 @@ export const OP_SYMBOL: Record<ComboOpId, string> = { '+': '+', '-': '−', 'x':
 export const COMBO_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15];
 // The range buttons of the natural flyout (the hoofdrekenen list up to the leerplan ceiling of leerjaar 5).
 export const COMBO_STEPS = [10, 20, 100, 1_000, 10_000, 100_000, 1_000_000];
+// Met rest (: only): the delers and niveaus of the delen config (SYNC: NaturalSettings MET_REST_TABLES).
+export const REST_DELERS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+export const REST_LEVELS = [1, 2, 3] as const;
+export const restLevelFits = (s: ComboState, level: number): boolean => metRestLevelFits(level, maxOf(s));
+// The niveau that generates: the picked one, or lower when the range cuts it off (as the delen config clips it).
+export const restLevelOf = (s: ComboState, o: ComboOpState): number => clipMetRestLevel(o.restLevel, maxOf(s));
 
 // Kommagetallen are built on two decimals and a ceiling of 100, the hoofdrekenen default of the -dec leaf.
 const DEC_MAX = 100;
@@ -29,9 +36,12 @@ export interface ComboOpState {
     a: string[];
     b: string[];
     br: Bridge;
-    // x and : only: ask the tafels, or free numbers built from the places.
-    mode: 'tafels' | 'num';
+    // x and : only: ask the tafels, or free numbers built from the places; : also niet-opgaand ('rest').
+    mode: 'tafels' | 'num' | 'rest';
     tables: number[];
+    // Met rest: the niveau (N1-N3) and the kladlijn for the deler's multiples, as the delen config writes them.
+    restLevel: number;
+    klad: boolean;
 }
 
 export interface ComboState {
@@ -40,7 +50,7 @@ export interface ComboState {
     ops: Record<ComboOpId, ComboOpState>;
 }
 
-const blankOp = (): ComboOpState => ({ on: false, a: [], b: [], br: 'any', mode: 'tafels', tables: [2, 3, 4, 5, 6, 7, 8, 9, 10] });
+const blankOp = (): ComboOpState => ({ on: false, a: [], b: [], br: 'any', mode: 'tafels', tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], restLevel: 1, klad: false });
 
 export function defaultComboMax(grade: Leerjaar): number {
     return [...COMBO_STEPS].filter(m => m <= GRADE_MAX[grade]).pop() ?? 1000;
@@ -109,6 +119,13 @@ export function comboConstraints(s: ComboState, grade: Leerjaar): Record<string,
         } else if (s.kind === 'komma') {
             // Kommagetal times or divided by a natural number (minimumdoelen 2.2): only the first number is shaped.
             perVariant[k] = { operand1Mask: toMask(o.a), operand2Mask: {} };
+        } else if (k === ':' && o.mode === 'rest') {
+            // A deler of 0 or 1 makes no rest; a tafel pick outside 2-12 falls back to the default delers.
+            const delers = o.tables.filter(t => REST_DELERS.includes(t));
+            perVariant[k] = {
+                multiplicationMode: 'met_rest', selectedTables: delers.length ? delers : blankOp().tables.filter(t => t > 1),
+                metRestLevel: restLevelOf(s, o), ...(o.klad && { metRestKladlijn: true }),
+            };
         } else if (o.mode === 'tafels') {
             perVariant[k] = { multiplicationMode: 'tafels', selectedTables: o.tables, tableLimit: 10 };
         } else {
@@ -151,8 +168,11 @@ export function comboFromConstraints(c: Record<string, unknown>, grade: Leerjaar
         o.b = keysOf(p.operand2Mask);
         if (p.multiplicationMode === 'andere') o.mode = 'num';
         else if (p.multiplicationMode === 'tafels') o.mode = 'tafels';
+        else if (p.multiplicationMode === 'met_rest' && k === ':') o.mode = 'rest';
         else o.mode = k === 'x' || k === ':' ? 'num' : 'tafels';
         if (Array.isArray(p.selectedTables)) o.tables = p.selectedTables as number[];
+        if (typeof p.metRestLevel === 'number') o.restLevel = p.metRestLevel;
+        o.klad = p.metRestKladlijn === true;
         const br = (p.bridges ?? {}) as Record<string, string>;
         const req = Object.keys(br).filter(key => br[key] === 'REQUIRED');
         const forb = Object.keys(br).filter(key => br[key] === 'FORBIDDEN');
