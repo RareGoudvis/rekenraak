@@ -8,6 +8,7 @@ import SettingLabel from './SettingLabel';
 import BreukenSettings from './shared/BreukenSettings';
 import { breukenFigureCeiling } from '../../../config/numberRanges';
 import { constraintsForVariant } from './shared/fractionVariant';
+import { blockHasSteps } from '../../../services/stepsAvailability';
 import type { FractionConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -320,6 +321,21 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             </button>
                         ))}
                     </div>
+
+                    {/* The other scaffolds' key already fills the same rows, so only zonder hulp offers the steps. */}
+                    {(c.answerFormat ?? 'met-hulp') === 'zonder-hulp' && blockHasSteps(block) && (
+                        <>
+                            <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
+                            <div className="seg-group">
+                                {([{ key: 'uit', label: 'Uit' }, { key: 'basis', label: 'Aan' }] as const).map(({ key, label }) => (
+                                    <button key={key} className="seg-btn" aria-pressed={(c.solutionSteps ?? 'uit') === key}
+                                        onClick={() => patch({ solutionSteps: key })}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
 
                     {/* Groepering — makkelijker groeperen helpt starters de delen zien */}
                     <label style={{ ...F.label, marginTop: '12px' }}>Groepering</label>

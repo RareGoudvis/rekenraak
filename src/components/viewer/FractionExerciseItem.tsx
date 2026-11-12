@@ -7,6 +7,8 @@ import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { useSheetSizePx, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
 import KioskAnswerSlot from './KioskAnswerSlot';
+import { breukHoeveelheidSteps, stepText } from '../../services/math/workedSteps';
+import { formatMathNumber } from '../../services/math/formatters';
 
 // Object geometry is written as px at the 13pt default and emitted as em, so the drawn
 // hoeveelheid objects follow the Lettergrootte slider.
@@ -64,6 +66,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const hTotal = ex.total ?? 0;
     const hGroup = parseFloat((hTotal / Math.max(1, ex.denominator)).toFixed(4));
     const hCount = parseFloat((hGroup * ex.numerator).toFixed(4));
+    // Worked steps in the key (zonder-hulp only: the other scaffolds already fill the same rows).
+    const keyLines = showSolutions && (c.solutionSteps ?? 'uit') !== 'uit'
+        ? (breukHoeveelheidSteps(ex)?.flatMap(l => (l.compact ? [stepText(l.compact, formatMathNumber)] : [])) ?? [])
+        : [];
     const fillIn = (v: number, w: number) => showSolutions ? sol(String(v)) : blank(w);
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 2px' }} />;
     // lijnstuk's calc rows (cm : denominator = part, numerator × part = arc) size their blanks
@@ -329,8 +335,12 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                     {simpleGrid}
                 </div>
                 {questionLine}
-                <div style={{ borderBottom: '1.5px solid #000', width: '100%', height: ANSWER_LINE_H }} />
-                <div style={{ borderBottom: '1.5px solid #000', width: '100%', height: ANSWER_LINE_H }} />
+                {/* Key with steps: the two working lines carry the calculation (12 : 3 = 4, 2 × 4 = 8) instead of staying empty. */}
+                {[0, 1].map(i => (
+                    <div key={i} style={{ borderBottom: '1.5px solid #000', width: '100%', height: ANSWER_LINE_H, ...(keyLines[i] && { display: 'flex', alignItems: 'flex-end' }) }}>
+                        {keyLines[i] && sol(keyLines[i])}
+                    </div>
+                ))}
             </div>
         );
     }

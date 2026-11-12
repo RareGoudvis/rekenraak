@@ -212,6 +212,8 @@ export type ClockConstraints = {
 
 export type FractionConstraints = {
     subType: FractionSubType;
+    // Answer key only, hoeveelheid zonder hulp: the calculation lines in the working rows ('uit' / absent = empty rows).
+    solutionSteps?: 'uit' | 'basis' | 'alle';
     shape: FractionShape;
     shapes?: FractionShape[];          // kleuren/herkennen: included shapes (≥1, mixed per exercise)
     // kleuren / herkennen: also improper breuken (teller d+1..2d-1, never d/d) over two wholes; off = proper only.
