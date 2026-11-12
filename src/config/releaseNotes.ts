@@ -77,6 +77,8 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 example: { leafId: 'hr-std-delen-nat', constraints: { multiplicationMode: 'met_rest', metRestLevel: 1, maxGetal: 100, metRestKladlijn: true }, grade: 3, height: 170, before: 'Eerst: alleen 55 : 6 = ... r ...', after: 'Nu: met een kladlijn: 0 6 12 18 24 30 36 42 48 54.' },
             },
             { kind: 'nieuw', text: 'Combinatie en Zelf samenstellen: ook delingen met rest.' },
+            { kind: 'nieuw', text: 'Stappen via breuken bij kommagetallen, zoals in Op.stap: 0,72 : 0,8 = 72/100 : 8/10 = 72/100 × 10/8 = ... = 0,9.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen: duidelijkere namen voor kinderen, en procenten staan apart van kommagetallen.' },
             { kind: 'nieuw', text: 'Ook stappen bij de tafels: 3 × 6 = 6 + 6 + 6, en bij deeltafels tellen in sprongen (0, 4, 8, 12 ...).' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kiezen zelf hun leerjaar en oefening, ook op een telefoon. De link en QR-code vind je bij Oefenmodus.' },
             { kind: 'gewijzigd', text: 'Zelf oefenen kiest makkelijker: per onderwerp een paar grote knoppen, zoals Zonder brug of Met brug.' },

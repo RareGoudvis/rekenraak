@@ -295,7 +295,7 @@ browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review check
 
 ## Worked steps suites
 
-`workedSteps.test.ts` checks the owner's whiteboard examples line by line and that every line evaluates to the answer, plus a null-shape table. `workedSteps.key.test.tsx` checks the rendered answer key, `workedSteps.kiosk.test.ts` the kiosk `steps` phase, `tutorPayload.test.ts` the QR round trip and the preset rule, `tutorApp.test.tsx` the stappenhulp page, and `stepsAvailability.test.ts` the one rule plus the Oefenmodus switch probe.
+`workedSteps.test.ts` checks the owner's whiteboard examples line by line and that every line evaluates to the answer, plus a null-shape table. `workedSteps.key.test.tsx` checks the rendered answer key, `workedSteps.kiosk.test.ts` the kiosk `steps` phase, `tutorPayload.test.ts` the QR round trip and the preset rule, `tutorApp.test.tsx` the stappenhulp page, and `stepsAvailability.test.ts` the one rule plus the Oefenmodus switch probe, `workedSteps.muldiv` / `.rest` / `.breuken` the × : strategies (a real token evaluator, Op.stap examples line by line). `oefenen.zelfLabels.test.ts` fails when Zelf oefenen can show a heading without a child-friendly label.
 
 ## Eenvoudig mode suites
 
