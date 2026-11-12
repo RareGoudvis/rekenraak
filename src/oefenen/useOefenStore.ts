@@ -7,6 +7,8 @@ import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 import { KWART, TIME_WORDS } from '../services/clock/timeWords';
+import { REGISTRY } from '../config/exerciseRegistry';
+import type { StepLine } from '../services/math/workedSteps';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -14,7 +16,8 @@ import { KWART, TIME_WORDS } from '../services/clock/timeWords';
 // start = confirm screen · exercise = answering · feedback = juist/fout flashes, then the next
 // exercise follows by itself · retry = "fout, probeer nog eens" flashes (2 kansen), then the same
 // exercise again · stats = Stats opened mid-run · locked = the run ended (timer, done or Stoppen).
-export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'retry' | 'stats' | 'locked';
+// 'steps' = after a final fout on an exercise with worked steps: the card waits for Toon de stappen / Volgende.
+export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'retry' | 'steps' | 'stats' | 'locked';
 
 // How long each flash stays before the kiosk moves on by itself (Enter or a tap skips it):
 // juist is a glance, fout and the retry get time to sink in.
@@ -52,7 +55,9 @@ interface OefenState {
     field: number;
     lastCorrect: boolean | null;
     // Where closeStats returns to; a flash interrupted by Stats resumes as if it had ended.
-    statsFrom: 'exercise' | 'feedback' | 'retry';
+    statsFrom: 'exercise' | 'feedback' | 'retry' | 'steps';
+    // The worked steps offered after a final fout (owner decision 2026-11-12), null otherwise.
+    stepsOffer: StepLine[] | null;
     // Phase C: what the pupil did ON the card (taps, filled cells, order) for an 'interactive'
     // exercise, and the cell the keypad types into. Reset with every new exercise.
     interaction: InteractionState;
@@ -347,6 +352,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         input: [''],
         field: 0,
         lastCorrect: null,
+        stepsOffer: null,
         statsFrom: 'exercise',
         interaction: EMPTY_INTERACTION,
         activeCell: null,
@@ -366,7 +372,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const unsupported = unsupportedSlots(s);
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
             if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
             // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
             const runs = loadRunsFor(s);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
@@ -395,6 +401,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         next() {
             clearFlash();
+            set({ stepsOffer: null });
             const { sessie: s, run } = get();
             if (!s || !run) return;
             const now = Date.now();
@@ -471,7 +478,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         skipFlash() {
             const { phase } = get();
-            if (phase === 'feedback') get().next();
+            // A fout with steps does not move on by itself: the pupil chooses Toon de stappen or Volgende.
+            if (phase === 'feedback') { if (get().stepsOffer) { clearFlash(); set({ phase: 'steps' }); } else get().next(); }
             else if (phase === 'retry') { clearFlash(); secondTry(); }
         },
 
@@ -502,7 +510,9 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const stats = recordAnswer(run.stats, cur.slot, type.typeId, cur.exercise, given, correct, Math.max(0, now - cur.shownAt), cur.constraints, now, cur.wrongFirst);
             const updated: OefenRun = { ...run, stats, current: undefined };
             persist(updated);
-            set({ run: updated, lastCorrect: correct });
+            // Only after the final try: steps during a retry would give the answer away. Testmodus never shows them.
+            const stepsOffer = correct || s.testMode || s.noSteps ? null : REGISTRY[type.typeId]?.steps?.(cur.exercise, cur.constraints) ?? null;
+            set({ run: updated, lastCorrect: correct, stepsOffer });
             // Testmodus: no juist/fout per exercise, straight on to the next one.
             if (s.testMode) { get().next(); return; }
             set({ phase: 'feedback' });
@@ -511,7 +521,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         openStats() {
             const { phase, sessie: s, run } = get();
-            if (!s || !run || (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry')) return;
+            if (!s || !run || (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry' && phase !== 'steps')) return;
             if (resultsHidden(s, run)) return;
             // The flash waits behind the stats; closing them ends it.
             clearFlash();
@@ -543,7 +553,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         stop() {
             const { phase, sessie: s, run } = get();
             if (!s || !run || !canStop(s, run)) return;
-            if (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry' && phase !== 'stats') return;
+            if (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry' && phase !== 'steps' && phase !== 'stats') return;
             finish(run);
         },
 

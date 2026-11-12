@@ -44,7 +44,7 @@ export function newSessieId(): string {
 //   session: [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]
 //   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?, exact?]
 // created: whole minutes when createdAt falls on a minute (the builder floors it), else ms.
-// flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked.
+// flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked · 4 noSteps.
 // leaf:    index into KIOSK_LEAF_TABLE_V1, else the leafId string.
 // diff:    flat [key, value, key, value…] of the constraints that differ from the leaf's seed
 //          (key = index into KIOSK_KEY_TABLE_V1, else the key string); removed: seed keys absent.
@@ -60,7 +60,7 @@ type WireKey = number | string;
 type WireRow = unknown[];
 type OefenWire = unknown[];
 
-const FLAG_RANDOM = 1, FLAG_REPEAT = 2, FLAG_TEST = 4, FLAG_LOCKED = 8;
+const FLAG_RANDOM = 1, FLAG_REPEAT = 2, FLAG_TEST = 4, FLAG_LOCKED = 8, FLAG_NO_STEPS = 16;
 const MINUTE = 60_000;
 // Below this a `created` is minutes: 1e10 minutes is the year ~21000, 1e10 ms is 1970.
 const MINUTES_BELOW = 1e10;
@@ -136,7 +136,8 @@ function fnv1a(text: string): string {
 /** What a pupil practises, as a fingerprint: id, title and createdAt left out (a rename keeps it), attempts as the kiosk reads them. */
 export function sessieContentHash(s: OefenSessie): string {
     const { types, mode, allowRepeatType, timerMin, testMode, statsLocked, total } = s;
-    return fnv1a(canon({ types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts: attemptsOf(s) }));
+    // noSteps only when set, so every session made before it keeps its id and its pupils' runs.
+    return fnv1a(canon({ types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts: attemptsOf(s), ...(s.noSteps && { noSteps: true }) }));
 }
 
 const keyOut = (k: string): WireKey => { const i = KIOSK_KEY_TABLE_V1.indexOf(k); return i >= 0 ? i : k; };
@@ -173,7 +174,7 @@ function rowOut(t: OefenType, slot: number, n: number): WireRow {
 /** The positional wire form (exported for the size tests). */
 export function toWire(s: OefenSessie): OefenWire {
     const flags = (s.mode === 'willekeurig' ? FLAG_RANDOM : 0) | (s.allowRepeatType ? FLAG_REPEAT : 0)
-        | (s.testMode ? FLAG_TEST : 0) | (s.statsLocked ? FLAG_LOCKED : 0);
+        | (s.testMode ? FLAG_TEST : 0) | (s.statsLocked ? FLAG_LOCKED : 0) | (s.noSteps ? FLAG_NO_STEPS : 0);
     return trim([
         OEFEN_VERSION, s.id,
         s.createdAt % MINUTE === 0 && s.createdAt / MINUTE < MINUTES_BELOW ? s.createdAt / MINUTE : s.createdAt,
@@ -218,6 +219,15 @@ function fromBase32(text: string): Uint8Array | null {
 /** Any text → the link payload (deflate + base32); the bound tests pack bombs with it. */
 export function packText(text: string): string {
     return toBase32(deflateSync(strToU8(text), { level: 9 }));
+}
+
+/** The link payload → text, or null when it is not base32 / DEFLATE or inflates past `maxBytes` (a deflate bomb). */
+export function unpackText(data: string, maxBytes: number): string | null {
+    const bytes = fromBase32(data);
+    if (!bytes || bytes.length === 0) return null;
+    let inflated: Uint8Array;
+    try { inflated = inflateSync(bytes, { out: new Uint8Array(maxBytes + 1) }); } catch { return null; }
+    return inflated.length > maxBytes ? null : strFromU8(inflated);
 }
 
 /** Any JSON value → the link payload; encodeSessie and the tests use it. */
@@ -311,6 +321,7 @@ function fromWire(w: unknown): Record<string, unknown> {
         allowRepeatType: !!(flags & FLAG_REPEAT),
         testMode: !!(flags & FLAG_TEST),
         statsLocked: !!(flags & FLAG_LOCKED),
+        ...(flags & FLAG_NO_STEPS ? { noSteps: true } : {}),
         types: rows.map((r, i) => rowIn(r, i, rows.length)),
         ...(title != null && { title }),
         ...(timerMin != null && { timerMin }),
@@ -344,7 +355,7 @@ export function parseSessie(raw: unknown): OefenSessie {
     if (typeof raw.v !== 'number') return bad('versie ontbreekt');
     if (raw.v > OEFEN_VERSION) throw new Error(`Deze oefenlink komt uit een nieuwere versie (v${raw.v}). Werk de app bij om ze te openen.`);
     if (raw.v !== OEFEN_VERSION) return bad(`versie ${raw.v}`);
-    const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts } = raw;
+    const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts, noSteps } = raw;
     if (typeof id !== 'string' || !ID_RE.test(id)) return bad('id');
     if (title !== undefined && typeof title !== 'string') return bad('titel');
     if (typeof title === 'string' && title.length > MAX_TITLE) return bad('titel te lang');
@@ -356,6 +367,7 @@ export function parseSessie(raw: unknown): OefenSessie {
     if (timerMin !== undefined && (typeof timerMin !== 'number' || !(timerMin > 0 && timerMin <= MAX_TIMER_MIN))) return bad('timer');
     if (total !== undefined && !(isPosInt(total) && (total as number) <= MAX_TOTAL)) return bad('totaal');
     if (attempts !== undefined && attempts !== 1 && attempts !== 2) return bad('kansen');
+    if (noSteps !== undefined && typeof noSteps !== 'boolean') return bad('stappen');
     return {
         v: OEFEN_VERSION, id, createdAt, mode: mode as OefenMode, allowRepeatType, testMode, statsLocked,
         types: types.map(parseType),
@@ -364,6 +376,7 @@ export function parseSessie(raw: unknown): OefenSessie {
         ...(total !== undefined && { total: total as number }),
         // Only a real second try is kept: 1, absent and testMode all mean one try.
         ...(attemptsOf({ attempts: attempts as OefenAttempts | undefined, testMode }) === 2 && { attempts: 2 as const }),
+        ...(noSteps === true && { noSteps: true as const }),
     };
 }
 

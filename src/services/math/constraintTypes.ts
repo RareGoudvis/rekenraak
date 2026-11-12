@@ -86,6 +86,9 @@ export type AddSubConstraints = {
     presetFactors?: number[];
     /** compenseren: print the intermediate step ('tussenstap') or only the answer. */
     compenserenScaffold?: 'tussenstap' | 'geen';
+    // Answer key only: print the worked steps under each sum ('basis' = the owner's kept lines,
+    // 'alle' = also the optional ones). Absent = 'uit'; the pupil's sheet never changes.
+    solutionSteps?: 'uit' | 'basis' | 'alle';
     // Rational (fraction) sub-settings.
     fractionDifficulty?: string;
     mixedNumber1?: boolean;

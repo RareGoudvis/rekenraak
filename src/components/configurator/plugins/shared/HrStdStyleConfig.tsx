@@ -4,6 +4,7 @@ import { F } from './fieldStyles';
 import ItemNumberingRow from './ItemNumberingRow';
 import type { MathBlock } from '../../../../services/math/types';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
+import { blockHasSteps } from '../../../../services/stepsAvailability';
 
 // The Differentiatie rows shared by the four hoofdrekenen leaves, mounted through
 // EXERCISE_UI[typeId].StyleConfig. The + − breuk difficulty (gelijknamig / ongelijknamig) is
@@ -11,8 +12,29 @@ import type { AddSubConstraints } from '../../../../services/math/constraintType
 function HrStdStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
     const updateBlockLayout = useWorksheetStore((s) => s.updateBlockLayout);
+    // Only offered when some exercise on the block has a strategy (today: optellen by rijgen).
+    const hasSteps = blockHasSteps(block);
     return (
         <>
+            {/* ── Tussenstappen in de verbetersleutel ── */}
+            {hasSteps && (
+                <>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
+                    <div className="seg-group">
+                        {([
+                            { key: 'uit', label: 'Uit' },
+                            { key: 'basis', label: 'Basis' },
+                            { key: 'alle', label: 'Alle' },
+                        ] as const).map(({ key, label }) => (
+                            <button key={key} className="seg-btn" aria-pressed={(c.solutionSteps ?? 'uit') === key}
+                                onClick={() => patch({ solutionSteps: key })}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+
             {/* ── Compenseren-preset: tussenstap aan/uit ── */}
             {c.preset === 'compenseren' && (
                 <>

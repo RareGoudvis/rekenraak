@@ -10,7 +10,7 @@ interface Props {
 
 const TEXT: Record<FlashKind, string> = { juist: 'Juist!', fout: 'Fout', retry: 'Fout — probeer nog eens' };
 
-// Juist / fout only, never the right answer (owner decision). It flashes over the answer panel
+// Juist / fout only, never the right answer; worked steps come after it, in StepsPanel (owner decision 2026-11-12). It flashes over the answer panel
 // and moves on by itself; a tap (or Enter, in Kiosk) skips the wait, the bar shows it running out.
 export default function FeedbackOverlay({ kind, onSkip }: Props) {
     const ok = kind === 'juist';

@@ -19,14 +19,15 @@ export const STARTER_TYPES: OefenType[] = [
 
 export const starterSessie = (over: Partial<OefenSessie> = {}): OefenSessie => ({
     v: 1, id: 'kiosktest', createdAt: 0, types: STARTER_TYPES, mode: 'afwisselen',
-    allowRepeatType: false, testMode: false, statsLocked: false, ...over,
+    // Steps off by default: these suites test the plain juist/fout flow; workedSteps.kiosk turns them on.
+    allowRepeatType: false, testMode: false, statsLocked: false, noSteps: true, ...over,
 });
 
 export const hashOf = (s: OefenSessie) => `#oefen=${encodeSessie(s)}`;
 
 export function resetKiosk() {
     localStorage.clear();
-    useOefenStore.setState({ sessie: null, error: null, phase: 'start', run: null, shown: null, input: [''], field: 0, lastCorrect: null, statsFrom: 'exercise', interaction: EMPTY_INTERACTION, activeCell: null });
+    useOefenStore.setState({ sessie: null, error: null, phase: 'start', run: null, shown: null, input: [''], field: 0, lastCorrect: null, stepsOffer: null, statsFrom: 'exercise', interaction: EMPTY_INTERACTION, activeCell: null });
 }
 
 /** The accepted answer and input kind of the exercise on the card. */

@@ -1,0 +1,55 @@
+/* Stappenhulp (tutor.html): phone first, big type and 44 px targets, the sheet's own number face. */
+/* theme.css locks html/body/#root to one screen with overflow hidden (the editor scrolls inside its
+   panels); a phone page has to scroll as a page, so the stappenhulp undoes that lock. */
+html:has(.tutor-body), .tutor-body, .tutor-body #root { width: 100%; height: auto; min-height: 100dvh; overflow: visible; }
+html:has(.tutor-body) { overflow-y: auto; }
+/* Paper card and juist green, SYNC with --kiosk-paper / --kiosk-ink / --kiosk-ok in kiosk.css. */
+.tutor-body { --tutor-paper: #fff; --tutor-ink: #000; --tutor-ok: #1E7B3A; margin: 0; background: var(--bg-base); color: var(--text-main); font-family: var(--font-ui); touch-action: manipulation; }
+.tutor-app { min-height: 100dvh; display: flex; flex-direction: column; }
+.tutor-bar {
+  position: sticky; top: 0; z-index: 2;
+  min-height: 56px; display: flex; align-items: center; gap: var(--sp-2);
+  padding: 0 var(--sp-3); background: var(--bg-surface); border-bottom: 1px solid var(--separator);
+}
+.tutor-bar h1 { margin: 0; font-size: 18px; font-weight: 700; }
+.tutor-back {
+  min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; color: var(--accent); border-radius: var(--radius-sm); cursor: pointer;
+}
+.tutor-main, .tutor-start {
+  width: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box;
+  padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.tutor-start { text-align: center; align-items: center; justify-content: center; flex: 1; }
+.tutor-start h2 { margin: 0; font-size: 24px; line-height: 1.25; }
+.tutor-start p { margin: 0; font-size: 17px; line-height: 1.45; color: var(--text-muted); }
+.tutor-start-icon { color: var(--accent); }
+.tutor-quiet { margin: 0; font-size: 15px; color: var(--text-muted); line-height: 1.45; }
+.tutor-error { margin: 0; font-size: 16px; color: var(--danger); line-height: 1.45; }
+.tutor-btn {
+  align-self: stretch; min-height: 52px; padding: 0 var(--sp-4);
+  border: 1px solid var(--separator); border-radius: var(--radius-md);
+  background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: 18px; font-weight: 600; cursor: pointer;
+}
+.tutor-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); font-size: 20px; font-weight: 700; min-height: 60px; }
+.tutor-btn-quiet { border-color: transparent; background: transparent; color: var(--accent); }
+.tutor-group h2 { margin: var(--sp-2) 0; font-size: 17px; }
+.tutor-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.tutor-item {
+  width: 100%; min-height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-3);
+  padding: 6px var(--sp-3); border: 0; border-radius: var(--radius-md);
+  background: var(--tutor-paper); color: var(--tutor-ink); box-shadow: var(--shadow-1); font: inherit; text-align: left; cursor: pointer;
+}
+.tutor-item svg { color: var(--accent); flex: none; }
+.tutor-item.is-off { background: var(--bg-surface-2); color: var(--text-muted); box-shadow: none; cursor: default; }
+.tutor-item-label { width: 28px; flex: none; font-size: 16px; color: var(--text-muted); }
+.tutor-item-sum { flex: 1; display: flex; flex-direction: column; font-family: var(--font-sheet-math); font-size: 20px; }
+.tutor-item-sum small { font-family: var(--font-ui); font-size: 13px; }
+.tutor-card { background: var(--tutor-paper); color: var(--tutor-ink); border-radius: var(--radius-lg); box-shadow: var(--shadow-2); padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); }
+.tutor-sum { font-family: var(--font-sheet-math); font-size: 32px; white-space: nowrap; }
+.tutor-lines { list-style: none; margin: 0; padding: var(--sp-3) 0 0; border-top: 1px solid var(--separator); font-family: var(--font-sheet-math); font-size: 18px; line-height: 1.7; }
+.tutor-lines li { white-space: nowrap; font-weight: 700; }
+.tutor-lines li.is-new { color: var(--accent); }
+.tutor-lines li.is-extra { font-weight: 400; color: var(--text-muted); }
+.tutor-done { margin: 0; min-height: 52px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: color-mix(in srgb, var(--tutor-ok) 12%, var(--bg-surface)); color: var(--tutor-ok); font-size: 18px; font-weight: 700; }
+.tutor-video { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--radius-lg); background: #000; }

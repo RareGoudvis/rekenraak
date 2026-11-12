@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import PageSheet, { PAGE_W_PX } from '../layout/PageSheet';
 import { skylineSlot, type PackedPage } from '../../services/layout/pagePacker';
@@ -9,6 +9,9 @@ import type { MeasuredHeights } from '../../hooks/useMeasuredHeights';
 import type { SheetDnd } from '../../hooks/useSheetDnd';
 import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
+import TutorQr from './TutorQr';
+import { encodeTutorPage } from '../../services/oefenen/tutorPayload';
+import { blockHasSteps, stepsFor } from '../../services/stepsAvailability';
 import EmptySheetHero from './EmptySheetHero';
 import SheetBlock from './SheetBlock';
 
@@ -81,6 +84,11 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
   // plus the one gap that separates them from it.
   const cellLeft = (x: number) => (x <= 0 ? 0 : cellWidth(x) + colGapPx);
 
+  // Sheet-wide, not per page: a QR on one page and none on the next would let footer heights chase the packer.
+  const tutorQr = useMemo(
+    () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasSteps(block))),
+    [docSettings.tutorQr, packedPages],
+  );
   return (
     <>
       {packedPages.map((page, pi) => (
@@ -125,7 +133,15 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           onFitBlock={fitBlockToPage}
           onSplitBlock={(blockId, anchor) => onOpenSplit(blockId, anchor)}
           header={<SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} continuation={pi > 0} />}
-          footer={<SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
+          footer={tutorQr ? (
+            <div className="tutor-qr-foot">
+              <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />
+              <TutorQr payload={encodeTutorPage(
+                page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '' })),
+                (block, ex) => stepsFor(block.typeId, ex, block.constraints) !== null,
+              )} />
+            </div>
+          ) : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
         >
           {blocks.length === 0 && pi === 0 && (
             <EmptySheetHero />
