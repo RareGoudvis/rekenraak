@@ -4,6 +4,7 @@ import { resolveCard } from '../../config/eenvoudig/resolveCard';
 import type { Leerjaar } from '../../config/gradePresets';
 import { rowYields, withKioskSeed } from '../../components/oefenen/oefenBuild';
 import { kioskLabelOf, kioskSupports } from '../../services/oefenen/kiosk';
+import { childLabel } from './zelfLabels';
 import { MAX_TYPES, fnv1a } from '../../services/oefenen/session';
 import { OEFEN_VERSION, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 
@@ -25,7 +26,8 @@ const cut = (text: string, max: number) => (text.length <= max ? text : `${text.
 export const modeKey = (m: ZelfMode): string => (m.kind === 'count' ? `n${m.n}` : `t${m.min}`);
 
 // One plain choice on the pupil's screen: a few card variants that belong together.
-export interface ZelfChoice { key: string; label: string; vars: CardVariant[] }
+// `source` = the Op.stap heading / card name the label was made from (absent for labels built in code).
+export interface ZelfChoice { key: string; label: string; vars: CardVariant[]; source?: string }
 
 const toType = (v: CardVariant): OefenType => {
     const card = resolveCard(v);
@@ -154,14 +156,40 @@ function tafelChoices(cards: UsableCard[]): ZelfChoice[] {
     return [...out, { key: 'alles', label: ALLES, vars: all }];
 }
 
+const KOMMA_TOPIC = 'Kommagetallen en procenten';
+
+export type NumberKind = 'procent' | 'komma' | 'other';
+
+// Procent wins: "Kommagetal en procent" exercises are about procent, and a pupil must not meet procent sums under Kommagetallen.
+export function numberKindOf(card: CardType, v: CardVariant): NumberKind {
+    if (/procent|percent/i.test(`${card.name} ${v.l} ${v.label} ${v.leafId}`)) return 'procent';
+    if (card.kind === 'komma' || /komma|decimaa?l/i.test(`${card.name} ${v.l} ${v.label}`) || /-dec(?![a-z])/.test(v.leafId)) return 'komma';
+    return 'other';
+}
+
+// A topic that holds both procent and kommagetal sums: one choice per kind, never a mix, so no "Alles door elkaar".
+function kindChoices(cards: UsableCard[], topicId: string): ZelfChoice[] | null {
+    const vars = cards.flatMap(c => c.vars.map(v => ({ v, k: numberKindOf(c.card, v) })));
+    const has = (k: NumberKind) => vars.some(x => x.k === k);
+    // Its own topic always splits (leerjaar 4 has komma + breuk but no procent yet); elsewhere only when both kinds meet.
+    if (!(topicId === KOMMA_TOPIC || (has('procent') && has('komma')))) return null;
+    const pick = (k: NumberKind, key: string, label: string): ZelfChoice[] => {
+        const hit = vars.filter(x => x.k === k).map(x => x.v);
+        return hit.length ? [{ key, label, vars: hit }] : [];
+    };
+    return [...pick('other', 'breuken', 'Breuken'), ...pick('komma', 'komma', 'Kommagetallen'), ...pick('procent', 'procent', 'Procenten')];
+}
+
 // Anything else: the curriculum heading of the cards (komma / breuk cards without one get their kind), else the card names.
-function generalChoices(cards: UsableCard[]): ZelfChoice[] {
+function generalChoices(cards: UsableCard[], topicId: string): ZelfChoice[] {
+    const split = kindChoices(cards, topicId);
+    if (split) return split;
     const kindName = (c: UsableCard) => c.card.kind === 'komma' ? 'Kommagetallen' : c.card.kind === 'breuk' ? 'Breuken' : 'Gewone getallen';
     const bySection = groupBy(cards, c => c.card.section || kindName(c));
     const byName = groupBy(cards, c => c.card.name);
     const groups = bySection.size >= 2 && bySection.size <= 5 ? bySection : byName.size <= 5 ? byName : bySection.size <= 5 ? bySection : null;
     if (!groups) return [{ key: 'alles', label: ALLES, vars: cards.flatMap(c => c.vars) }];
-    const out = [...groups].map(([name, cs]) => ({ key: `${groups === bySection ? 's' : 'c'}:${name}`, label: name, vars: cs.flatMap(c => c.vars) }));
+    const out = [...groups].map(([name, cs]) => ({ key: `${groups === bySection ? 's' : 'c'}:${name}`, label: childLabel(topicId, name), source: name, vars: cs.flatMap(c => c.vars) }));
     return out.length > 1 ? [...out, { key: 'alles', label: ALLES, vars: cards.flatMap(c => c.vars) }] : out;
 }
 
@@ -169,14 +197,14 @@ function generalChoices(cards: UsableCard[]): ZelfChoice[] {
 export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string): ZelfChoice[] {
     const cards = usableVariants(data, grade).get(topicId) ?? [];
     if (!cards.length) return [];
-    const raw = BRUG_TOPIC.test(topicId) ? brugChoices(cards) : TAFEL_TOPIC.test(topicId) ? tafelChoices(cards) : generalChoices(cards);
+    const raw = BRUG_TOPIC.test(topicId) ? brugChoices(cards) : TAFEL_TOPIC.test(topicId) ? tafelChoices(cards) : generalChoices(cards, topicId);
     // A choice that repeats another one's variants only adds a button.
     const out: ZelfChoice[] = [];
     for (const c of raw) {
         const vars = uniq(c.vars);
         const dup = out.findIndex(o => same(o.vars, vars));
-        if (dup >= 0) { if (c.label === ALLES) out[dup] = { ...out[dup], label: ALLES }; continue; }
-        out.push({ key: `${grade}|${topicId}|${c.key}`, label: cut(c.label, MAX_LABEL), vars });
+        if (dup >= 0) { if (c.label === ALLES) out[dup] = { ...out[dup], label: ALLES, source: undefined }; continue; }
+        out.push({ key: `${grade}|${topicId}|${c.key}`, label: cut(c.label, MAX_LABEL), vars, source: c.source });
     }
     return out;
 }
