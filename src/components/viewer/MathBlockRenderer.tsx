@@ -12,10 +12,10 @@ import { MIXED_VARIANTS, mixedVariant } from '../../services/math/constraintType
 import { SOL, solutionText } from './solutionStyle';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
 import { itemLabel, itemLabelChars } from './itemNumbering';
-import { hrRowLayout, hrRowStats, HR_SOLUTION_FONT } from '../../services/layout/hrRowLayout';
+import { hrRowLayout, hrRowStats, metRestKladLayout, HR_SOLUTION_FONT, MET_REST_HELP_BLANK_PX, MET_REST_QUOTIENT_BLANK_PX, MET_REST_REST_BLANK_PX } from '../../services/layout/hrRowLayout';
 import KioskAnswerSlot from './KioskAnswerSlot';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { stepsAtLevel, stepText, type StepLine } from '../../services/math/workedSteps';
+import { stepsAtLevel, stepText, stepLineText, type StepLine } from '../../services/math/workedSteps';
 
 interface Props {
     block: MathBlock;
@@ -171,15 +171,16 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const compScaffoldOn = scaffold && (mixedOptions
         ? mixedOptions.some(v => variantTussenstap(v.id))
         : c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap');
-    const {
-        tight, fontScale, wrapChain, labelPx, labelColPx, termBoxPx, answerLinePx,
-        gridCols, colGap, colJustify, blankW: BLANK_W, blankM: BLANK_M,
-        opGlyphPx: OP_GLYPH_PX, opTermGap: OP_TERM_GAP, termUnitGap: TERM_UNIT_GAP, eqGap: EQ_GAP, answerGap: ANSWER_GAP, charPx,
-    } = hrRowLayout({
+    const rowLayout = hrRowLayout({
         ...hrRowStats(block.exercises, sheetPx),
         widthPx: blockPx, mathPx: sheetPx, layout, compScaffoldOn,
         labelChars: itemLabelChars(block.itemNumbering, block.exercises.length),
     });
+    const {
+        tight, fontScale, wrapChain, labelPx, labelColPx, termBoxPx, answerLinePx,
+        gridCols, colGap, colJustify, blankW: BLANK_W, blankM: BLANK_M,
+        opGlyphPx: OP_GLYPH_PX, opTermGap: OP_TERM_GAP, termUnitGap: TERM_UNIT_GAP, eqGap: EQ_GAP, answerGap: ANSWER_GAP, charPx,
+    } = rowLayout;
     // A style at `factor` × the math token, scaled by the fit ladder's font step.
     const atFont = (style: React.CSSProperties, factor: number): React.CSSProperties =>
         ({ ...style, fontSize: `calc(var(--sheet-size-math) * ${Math.round(factor * fontScale * 1000) / 1000})` });
@@ -242,10 +243,27 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // blank sized to its own answer would tell the child how many digits to expect), and
     // the help column is the "(" + dotted blank + ")" measured as a box so it can be a
     // fixed column rather than inline content that shifts the sum.
-    const HELP_BLANK_PX = 40;
-    const QUOTIENT_BLANK_PX = 40;
-    const REST_BLANK_PX = 30;
+    const HELP_BLANK_PX = MET_REST_HELP_BLANK_PX;
+    const QUOTIENT_BLANK_PX = MET_REST_QUOTIENT_BLANK_PX;
+    const REST_BLANK_PX = MET_REST_REST_BLANK_PX;
     const HELP_COL_PX = 2 * OP_GLYPH_PX + HELP_BLANK_PX + 4;
+    // The kladlijn follows the sum's own tab in gemengd (a ':' tab setting), the block elsewhere.
+    const kladOn = (ex: Equation) => scaffold && ex.remainder !== undefined && !!(mixedOptions
+        ? (mixedC.perVariant?.[(ex.variant ?? ':') as MixedVariantId]?.metRestKladlijn ?? c.metRestKladlijn)
+        : c.metRestKladlijn);
+    // The deler's multiples under and over the deeltal: what the pupil writes on the kladlijn.
+    const kladTexts = (ex: Equation): [string, string] => {
+        const d = ex.operands[1] as number, q = ex.answer as number;
+        return [`${formatMathNumber(d)} × ${formatMathNumber(q)} = ${formatMathNumber(d * q)}`, `${formatMathNumber(d)} × ${formatMathNumber(q + 1)} = ${formatMathNumber(d * (q + 1))}`];
+    };
+    const KLAD_SEP = ' · ';
+    const kladRows = block.exercises.filter(ex => !!ex?.operands && kladOn(ex)).map(kladTexts);
+    const klad = kladRows.length > 0 ? metRestKladLayout(rowLayout, {
+        widthPx: blockPx, helpOn: !tight && scaffold,
+        kladChars: Math.max(...kladRows.map(([lo, hi]) => lo.length + KLAD_SEP.length + hi.length)),
+        multipleChars: Math.max(...kladRows.flat().map(t => t.length)),
+    }) : null;
+    const kladLine: React.CSSProperties = { borderBottom: '1.5px dotted #000', width: '100%', height: ANSWER_LINE_H };
     const labelCell = (i: number) => {
         const text = itemLabel(block.itemNumbering, i);
         if (!text) return null;
@@ -271,8 +289,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     const slot = (w: number, val: string) => showSolutions
                         ? <span style={{ ...solutionText, padding: 0, width: `${w}px`, display: 'inline-block', textAlign: 'center' }}>{val}</span>
                         : <KioskAnswerSlot><div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>;
-                    return (
-                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'var(--font-sheet-math)', height: '24px' }}>
+                    const exKlad = klad && kladOn(ex) ? klad : null;
+                    const texts = exKlad ? kladTexts(ex) : null;
+                    // The row itself shows the quotient and rest, so the key's steps under it stop before that last line.
+                    const restSteps = stepsOf(ex)?.slice(0, -1) ?? [];
+                    const below = restSteps.length > 0 || exKlad?.place === 'below';
+                    const rowEl = (
+                        <div key={below ? undefined : ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'var(--font-sheet-math)', height: '24px' }}>
                             {labelCell(exIndex)}
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
                                 cell it is the first thing to go, so the division itself still fits.
@@ -301,6 +324,27 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                 <span style={{ margin: `0 ${EQ_GAP}px`, fontStyle: 'italic' }}>r</span>
                                 {slot(REST_BLANK_PX, String(ex.remainder))}
                             </div>
+                            {exKlad?.place === 'beside' && texts && (
+                                <div style={{ flex: 1, minWidth: `${exKlad.minPx}px`, marginLeft: `${exKlad.gapPx}px`, display: 'flex', alignItems: 'center' }}>
+                                    {showSolutions ? <span style={{ ...solutionText, whiteSpace: 'nowrap' }}>{texts.join(KLAD_SEP)}</span> : <div style={kladLine} />}
+                                </div>
+                            )}
+                        </div>
+                    );
+                    if (!below) return rowEl;
+                    // Under the sum, from the dividend's x: the room a half or quarter cell still has.
+                    const belowLine = (content: React.ReactNode, i: number) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-end', minHeight: ANSWER_ROW_H, marginLeft: `${labelColPx}px` }}>{content}</div>
+                    );
+                    const kladContent = exKlad?.place === 'below' && texts
+                        ? (exKlad.lines === 1 ? [texts.join(KLAD_SEP)] : texts).map((t, i) => belowLine(showSolutions ? <span style={solutionText}>{t}</span> : <div style={kladLine} />, i))
+                        : null;
+                    return (
+                        <div key={ex.id} style={{ display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-sheet-math)' }}>
+                            {rowEl}
+                            {restSteps.map((l, i) => belowLine(
+                                <span style={{ ...atFont(styles.solutionText, 1), padding: 0, fontWeight: l.basis ? 700 : 400 }}>{stepLineText(l, formatMathNumber)}</span>, i))}
+                            {kladContent && <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1)' }}>{kladContent}</div>}
                         </div>
                     );
                 }
@@ -417,7 +461,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             {steps ? (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>{steps.map((line, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: ANSWER_ROW_H, whiteSpace: 'nowrap' }}>
-                                        <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
+                                        {!line.aside && <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>}
                                         {/* Basis lines bold like every solution; the optional lines thinner, so a teacher sees which ones a pupil may skip. */}
                                         <span style={{ ...atFont(styles.solutionText, 1), padding: 0, fontWeight: line.basis ? 700 : 400 }}>{stepText(line.tokens, formatMathNumber)}</span>
                                     </div>

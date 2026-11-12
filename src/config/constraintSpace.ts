@@ -93,6 +93,8 @@ const hrMulDiv: OptionSpace = {
     excludeOne: [false, true],
     // multiplication/NaturalSettings 'Met rest' niveau and the 'andere' delen niveaus (N1-N6).
     metRestLevel: [1, 2, 3],
+    // 'Met rest' kladlijn for the deler's multiples (viewer only).
+    metRestKladlijn: [false, true],
     divisionLevels: [[], [1], [6], [1, 2, 3, 4, 5, 6]],
 };
 
@@ -119,7 +121,7 @@ const hrMixed: OptionSpace = {
         {},
         { x: { selectedTables: [7] } },
         { '+': { maxGetal: 20 }, ':': { tableLimit: 5 } },
-        { x: { multiplicationMode: 'andere' }, ':': { multiplicationMode: 'met_rest', selectedTables: [7], metRestLevel: 3 } },
+        { x: { multiplicationMode: 'andere' }, ':': { multiplicationMode: 'met_rest', selectedTables: [7], metRestLevel: 3, metRestKladlijn: true } },
     ],
 };
 

@@ -92,6 +92,11 @@ function itemIn(raw: unknown): Equation | null {
     if (ops.length > 1 && ops.length !== operands.length - 1) return bad('bewerking');
     if (typeof missing !== 'number' || missing < -1 || missing >= operands.length) return bad('open plaats');
     const operator = ops[0] as Equation['operator'];
+    // A whole a : d that does not go is a met-rest sum: only those get steps, so only those travel (no wire change).
+    const [a, d] = operands as number[];
+    if (ops === ':' && operands.length === 2 && missing < 0 && Number.isInteger(a) && Number.isInteger(d) && d > 1 && a % d !== 0) {
+        return { id: '', operands: [a, d], operator, isManuallyEdited: false, answer: Math.floor(a / d), remainder: a % d };
+    }
     const eq: Equation = {
         id: '', operands: operands as number[], operator, isManuallyEdited: false,
         // The steps build their own lines; the answer is worked out so every operator decodes truthfully.

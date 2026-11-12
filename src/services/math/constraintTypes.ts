@@ -109,6 +109,9 @@ export type MulDivConstraints = AddSubConstraints & {
     divisionLevel?: number;
     divisionLevels?: number[];
     metRestLevel?: number;
+    // Delen met rest only: true = a kladlijn beside each sum for the deler's multiples under and over the
+    // deeltal (6 × 9 = 54 · 6 × 10 = 60), filled in red on the key; absent / false = no line (the sheet as before).
+    metRestKladlijn?: boolean;
     excludeOne?: boolean;
     // Decimal ×: absent / false = kommagetal × natuurlijk getal (minimumdoelen 2.2, 3 × 0,4);
     // true = both factors may be kommagetallen ("Kommagetal × kommagetal").
