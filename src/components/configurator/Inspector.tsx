@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { blockHasSteps } from '../../services/stepsAvailability';
+import { blockHasTutorSteps } from '../../services/stepsAvailability';
 import { minWidthUnits, pickerMinWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
 import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth, useIntrinsicEntries } from '../../hooks/useMeasuredHeights';
@@ -75,7 +75,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const footerData = useWorksheetStore((state) => state.footer);
     const docSettings = useWorksheetStore((state) => state.docSettings);
     // The stappenhulp QR is only offered while some sum on the sheet has worked steps.
-    const anySteps = useMemo(() => blocks.some(blockHasSteps), [blocks]);
+    const anySteps = useMemo(() => blocks.some(blockHasTutorSteps), [blocks]);
     const updateHeader = useWorksheetStore((state) => state.updateHeader);
     const updateFooter = useWorksheetStore((state) => state.updateFooter);
     const updateDocSettings = useWorksheetStore((state) => state.updateDocSettings);

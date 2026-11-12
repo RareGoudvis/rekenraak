@@ -1,4 +1,4 @@
-import type { Equation, MathBlock } from '../services/math/types';
+import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 import type {
     BlockConstraints, AddSubConstraints, MulDivConstraints, CijferConstraints, ClockConstraints,
     FractionConstraints, BreukBewerkConstraints, BreukenRangschikkenConstraints, SplitsenConstraints,
@@ -14,7 +14,7 @@ import type {
 } from '../services/math/constraintTypes';
 import { generateAdditionExercises, generateSubtractionExercises, generateMultiplicationExercises, generateDivisionExercises, generateDivisionExercisesNoted } from '../services/math/mathEngine';
 import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
-import { handigSteps, workedSteps, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
+import { breukHoeveelheidSteps, handigSteps, workedSteps, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
 import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
 import { generateFractionExercises, generateFractionExercisesNoted } from '../services/fractions/fractionGenerator';
@@ -120,6 +120,7 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
 // fails here rather than silently reaching a generator. The cast erases C again: rows are
 // stored heterogeneously, and every consumer looks a type up by its string typeId.
 // One function serves every hoofdrekenen row: the strategy follows the exercise's operator and preset.
+const breukSteps = (ex: unknown) => breukHoeveelheidSteps(ex as FractionExercise);
 const hrSteps = (ex: unknown, c: Record<string, unknown>) => workedSteps(ex as Equation, c);
 const hrHandig = (ex: unknown, c: Record<string, unknown>) => handigSteps(ex as Equation, c);
 
@@ -530,7 +531,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'cijferen-delen-dec':            cijferRow(2),
 
     'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 , kiosk: KLOK_KIOSK }),
-    'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, generateNoted: generateFractionExercisesNoted, defaultConstraints: fractionDefaults, defaultCount: 6 , kiosk: BREUKEN_KIOSK }),
+    'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, generateNoted: generateFractionExercisesNoted, defaultConstraints: fractionDefaults, defaultCount: 6 , kiosk: BREUKEN_KIOSK, steps: breukSteps }),
     'splitsen':       row<SplitsenConstraints>({ exerciseField: 'splitsenExercises', generate: generateSplitsenExercises, defaultConstraints: splitsenDefaults, defaultCount: 5, maxPresets: splitsenMax , kiosk: SPLITSEN_KIOSK }),
 
     'geld-herkennen':  row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises, generateNoted: generateGeldExercisesNoted,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld) , kiosk: GELD_KIOSK }),
