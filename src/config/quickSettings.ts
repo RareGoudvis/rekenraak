@@ -28,9 +28,16 @@ export interface QuickLayout {
     kind: 'layout';
 }
 
-export type QuickSpec = QuickPills | QuickLayout;
+// The type's own whole settings panel, for types whose panel is still short (owner, 2026-11-12: the
+// vormleer types are not fleshed out yet, so one pill would hide most of what they offer).
+export interface QuickFull {
+    kind: 'full';
+}
+
+export type QuickSpec = QuickPills | QuickLayout | QuickFull;
 
 const layout: QuickLayout = { kind: 'layout' };
+const full: QuickFull = { kind: 'full' };
 const pills = (key: string, label: string, options: Array<[string, unknown]>, extra: Partial<QuickPills> = {}): QuickPills =>
     ({ kind: 'pills', key, label, options: options.map(([l, value]) => ({ label: l, value })), ...extra });
 
@@ -41,16 +48,12 @@ const onOff = (key: string, label: string, on: string, off: string, fallback: bo
     pills(key, label, [[on, true], [off, false]], { fallback, ...extra });
 
 const tablesMode = (c: QuickConstraints) => (c.multiplicationMode ?? 'tafels') === 'tafels';
-const isMode = (...modes: string[]) => (c: QuickConstraints) => modes.includes((c.mode as string) ?? 'herkennen');
 const shapeSubType = (c: QuickConstraints) => c.subType === undefined || c.subType === 'kleuren' || c.subType === 'herkennen';
 
 const cijfer: QuickSpec[] = [upTo('maxRange', 'Tot welk getal?', [100, 1000, 10000, 100000])];
 const tafels: QuickSpec[] = [
     pills('selectedTables', 'Welke tafels?', [['2, 5 en 10', [2, 5, 10]], ['3, 4 en 6', [3, 4, 6]], ['7, 8 en 9', [7, 8, 9]], ['Alle tafels', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]], { when: tablesMode, free: true }),
     layout,
-];
-const vormleerAnswer: QuickSpec[] = [
-    pills('answerMode', 'Hoe antwoordt de leerling?', [['Woordbank', 'woordbank'], ['Zelf schrijven', 'schrijven']], { fallback: 'woordbank', when: isMode('herkennen', 'benoemen') }),
 ];
 const meten: QuickSpec[] = [
     pills('measureModel', 'Wat doet de leerling?', [['Meten met de lat', 'meten'], ['Maten zijn gegeven', 'gegeven']]),
@@ -184,7 +187,7 @@ export const QUICK_SETTINGS: Record<string, QuickSpec[]> = {
         pills('stepGram', 'Streepjes per', [['20 g', 20], ['50 g', 50], ['100 g', 100], ['250 g', 250]]),
         pills('notatie', 'Antwoord in', [['Gram', 'g'], ['Kilo met komma', 'kg-komma'], ['Kilo en gram', 'kg-g']]),
     ],
-    'vormleer-punt-lijn': vormleerAnswer,
-    'vormleer-hoeken': vormleerAnswer,
-    'vormleer-figuren': vormleerAnswer,
+    'vormleer-punt-lijn': [full],
+    'vormleer-hoeken': [full],
+    'vormleer-figuren': [full],
 };

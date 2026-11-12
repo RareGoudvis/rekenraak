@@ -54,6 +54,16 @@ describe('Inspector quick block', () => {
         expect(screen.getByRole('button', { name: /Opmaak/ })).toBeTruthy();
     });
 
+    test('vormleer shows its whole settings panel in the quick block', () => {
+        expect(QUICK_SETTINGS['vormleer-hoeken']).toEqual([{ kind: 'full' }]);
+        useWorksheetStore.getState().clearBlocks();
+        useWorksheetStore.getState().addBlockFromType('vormleer-hoeken', 'Hoeken');
+        useWorksheetStore.setState({ activeBlockId: useWorksheetStore.getState().blocks[0].id });
+        render(<Inspector />);
+        const quick = screen.getByTestId('quick-block');
+        expect(quick.querySelectorAll('button').length).toBeGreaterThan(3);
+    });
+
     test('always offers the number of exercises, and changing it changes the block', () => {
         render(<Inspector />);
         const slider = screen.getByLabelText(/Aantal oefeningen/) as HTMLInputElement;

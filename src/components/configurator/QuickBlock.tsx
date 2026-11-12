@@ -3,6 +3,7 @@ import { Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { QUICK_SETTINGS, type QuickPills, type QuickSpec } from '../../config/quickSettings';
+import { EXERCISE_UI } from '../../config/exerciseUI';
 import { loadEenvoudigData } from '../../config/eenvoudig/cards';
 import { regenerateBlock } from '../../services/generateDispatch';
 import type { MathBlock } from '../../services/math/types';
@@ -34,6 +35,12 @@ function useCardTopic(cardId: string | undefined): string | null {
         return () => { live = false; };
     }, [cardId]);
     return found && found.id === cardId ? found.topic : null;
+}
+
+// A type whose whole panel is short enough to show in the quick block (QuickFull).
+function FullConfig({ block }: { block: MathBlock }) {
+    const Config = EXERCISE_UI[block.typeId]?.Config;
+    return Config ? <div className="qb-row"><Config block={block} /></div> : null;
 }
 
 // How many exercises matters for every type, so the quick block always offers it (same rule as the Opdrachtblok slider).
@@ -155,6 +162,8 @@ export default function QuickBlock({ block }: { block: MathBlock }) {
             <CountRow block={block} />
             {specs.map((spec, i) => spec.kind === 'layout'
                 ? <LayoutRow key={`layout-${i}`} block={block} />
+                : spec.kind === 'full'
+                ? <FullConfig key={`full-${i}`} block={block} />
                 : <PillsRow key={spec.key} block={block} spec={spec} />)}
             <div className="qb-gen">
                 <IconButton
