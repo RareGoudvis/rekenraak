@@ -95,11 +95,21 @@ describe('handig rekenen: an optional view, never the standard method', () => {
     });
 });
 
+describe('tafels: herhaalde optelling and jumps (Op.stap 2.2.GL2.33 / GL2.34)', () => {
+    it('3 × 2 = 2 + 2 + 2 = 6, with the counting row under Alle', () => {
+        expect(basis(workedSteps(e(3, 'x', 2)))).toEqual(['2 + 2 + 2', '6']);
+        expect(text(workedSteps(e(3, 'x', 2))!)).toEqual(['2 + 2 + 2', '2, 4, 6', '6']);
+    });
+    it('20 : 4 counted in jumps from 0', () => {
+        expect(basis(workedSteps(e(20, ':', 4)))).toEqual(['0, 4, 8, 12, 16, 20', '5']);
+    });
+});
+
 describe('shapes without × / : steps', () => {
     it.each<[string, Equation]>([
-        ['a tafel', e(6, 'x', 7)],
-        ['a deeltafel', e(56, ':', 7)],
-        ['one round part (5 × 20 reads as 5 × 2 T)', e(5, 'x', 2)],
+        ['times one', e(1, 'x', 7)],
+        ['ten groups (10 × 7 is read as 7 T)', e(10, 'x', 7)],
+        ['a deeltafel with quotient 1', e(7, ':', 7)],
         ['met rest', e(55, ':', 6, { remainder: 1 })],
         ['a divisor of 10 or more', e(240, ':', 12)],
         ['niet opgaand without a rest field', e(55, ':', 6)],
@@ -126,7 +136,11 @@ describe('every line equals the answer', () => {
                     const want = op === 'x' ? x * y : x / y;
                     for (const lines of [workedSteps(eq), ...handigSteps(eq).map(h => h.lines)]) {
                         if (!lines) continue;
-                        for (const l of lines) expect(close(evalLine(l.tokens), want), `${x} ${op} ${y}: ${stepText(l.tokens)}`).toBe(true);
+                        for (const l of lines) {
+                            // A counting row lists jumps or running totals, not an equality: it must end on the answer's value.
+                            if (l.kind === 'multiples') { const last = l.tokens[l.tokens.length - 1]; expect(last.t === 'num' && (op === 'x' ? last.v === want : last.v === x), stepText(l.tokens)).toBe(true); continue; }
+                            expect(close(evalLine(l.tokens), want), `${x} ${op} ${y}: ${stepText(l.tokens)}`).toBe(true);
+                        }
                         checked++;
                     }
                 }

@@ -81,7 +81,7 @@ describe('sweep: every a + b with a >= 10 and a + b <= 1000', () => {
 
 describe('shapes without a strategy return null', () => {
     it.each([
-        ['a tafel', eq(6, 7, { operator: 'x', answer: 42 })],
+        ['times one', eq(1, 7, { operator: 'x', answer: 7 })],
         ['aftrekken onder nul', eq(188, 247, { operator: '-', answer: -59 })],
         ['aftrekken: brug op een 0-cijfer (403 − 20)', eq(503, 128, { operator: '-', answer: 375 })],
         ['gemengd tienvoud variant', eq(46, 10, { operator: 'x', answer: 460, variant: 'x:tienvoud' })],
@@ -118,7 +118,7 @@ describe('registry wiring', () => {
         }
         expect(REGISTRY['hr-std-optellen'].steps!(eq(475, 368), {})).not.toBeNull();
         expect(REGISTRY['hr-std-aftrekken'].steps!(eq(475, 368, { operator: '-' }), {})).not.toBeNull();
-        expect(REGISTRY['hr-std-vermenigvuldigen'].steps!(eq(6, 7, { operator: 'x' }), {})).toBeNull();
+        expect(REGISTRY['hr-std-vermenigvuldigen'].steps!(eq(1, 7, { operator: 'x' }), {})).toBeNull();
         expect(REGISTRY['hr-std-vermenigvuldigen'].steps!(eq(5, 65, { operator: 'x' }), {})).not.toBeNull();
         expect(REGISTRY['hr-std-delen'].handig!(eq(57, 3, { operator: ':' }), {}).map(h => h.name)).toEqual(['Compenseren']);
     });

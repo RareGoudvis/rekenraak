@@ -313,19 +313,39 @@ function restSteps(eq: Equation, a: number, d: number): StepLine[] | null {
     return q <= 10 ? tafelRest(a, d, q, r) : splitsenRest(a, d, q, r);
 }
 
+// A list of jumps or running totals: "0, 4, 8, 12".
+const countLine = (vals: number[], basis: boolean): StepLine =>
+    ({ ...line('multiples', basis, vals.flatMap((v, i) => (i ? [{ t: 'sep' } as StepToken, num(v)] : [num(v)]))), aside: true });
+
+// A tafel by herhaalde optelling (Op.stap 2.2.GL2.33: 3 × 2 = 2 + 2 + 2 = 6): a groups of b. "Alle stappen"
+// adds the counting row (2, 4, 6).
+function herhaaldeOptelling(a: number, b: number): StepLine[] | null {
+    if (a < 2 || a > 9 || b < 2 || b > 10) return null;
+    const terms = Array.from({ length: a }, () => b);
+    return [line('parts', true, nums(terms)), countLine(terms.map((_, i) => b * (i + 1)), false), line('answer', true, [num(a * b)])];
+}
+
+// A deeltafel by counting in jumps of the deler (Op.stap 2.2.GL2.34: 20 : 4 → 4, 8, 12, 16, 20, 5 sprongen;
+// from 0, like the met-rest kladlijn).
+function sprongenDeel(a: number, d: number): StepLine[] | null {
+    const q = a / d;
+    if (q < 2) return null;
+    return [countLine(Array.from({ length: q + 1 }, (_, i) => d * i), true), line('answer', true, [num(q)])];
+}
+
 function maalSteps(a: number, b: number): StepLine[] | null {
     if (!Number.isInteger(a) || !Number.isInteger(b)) return eenhedenMaal(a, b);
     if (a < 2 || b < 2 || a * b > MAX_MULDIV) return null;
-    // A tafel is known by heart: no steps.
-    if (a <= 10 && b <= 10) return null;
+    // A tafel: herhaalde optelling, the method pupils learn it by (Op.stap L2-L3).
+    if (a <= 10 && b <= 10) return herhaaldeOptelling(a, b);
     return analogieMaal(a, b) ?? splitsenMaal(a, b);
 }
 
 function deelSteps(a: number, d: number): StepLine[] | null {
     if (!Number.isInteger(a)) return eenhedenDeel(a, d);
     if (!Number.isInteger(d) || d < 2 || d > 9 || a > MAX_MULDIV || a % d !== 0) return null;
-    // A deeltafel is known by heart.
-    if (a / d <= 10) return null;
+    // A deeltafel: counted in jumps of the deler (Op.stap L2-L3).
+    if (a / d <= 10) return sprongenDeel(a, d);
     return analogieDeel(a, d) ?? splitsenDeel(a, d);
 }
 

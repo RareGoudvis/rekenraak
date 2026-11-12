@@ -26,13 +26,13 @@ describe('steps availability', () => {
         expect(blockHasSteps(withSums('hr-std-optellen', [eq(140, 99)], { preset: 'compenseren' }))).toBe(true);
     });
 
-    it('puntoefeningen, tafels and types without a strategy have none', () => {
+    it('puntoefeningen and types without a strategy have none; a tafel has herhaalde optelling', () => {
         expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368, { missingTerm: 'operand2' })]))).toBe(false);
-        expect(blockHasSteps(withSums('hr-std-vermenigvuldigen', [eq(6, 7, { operator: 'x', answer: 42 })]))).toBe(false);
+        expect(blockHasSteps(withSums('hr-std-vermenigvuldigen', [eq(6, 7, { operator: 'x', answer: 42 })]))).toBe(true);
         expect(blockHasSteps(makeBlock('klok-kloklezen'))).toBe(false);
     });
 
-    it('the Oefenmodus switch: an optellen row can show steps, a tafel row cannot', () => {
+    it('the Oefenmodus switch: optellen and tafel rows can show steps, a klok row cannot', () => {
         const leaves = listOefenLeaves();
         const row = (id: string) => {
             const leaf = leaves.find(l => l.id === id)!;
@@ -40,6 +40,8 @@ describe('steps availability', () => {
             return { leaf, constraints: seedRowConstraints(leaf, 3) };
         };
         expect(rowMayHaveSteps(row('hr-std-optellen-nat'))).toBe(true);
-        expect(rowMayHaveSteps(row('hr-std-vermenigvuldigen-nat'))).toBe(false);
+        expect(rowMayHaveSteps(row('hr-std-vermenigvuldigen-nat'))).toBe(true);
+        const klok = leaves.find(l => l.typeId === 'klok-kloklezen')!;
+        expect(rowMayHaveSteps({ leaf: klok, constraints: seedRowConstraints(klok, 3) })).toBe(false);
     });
 });

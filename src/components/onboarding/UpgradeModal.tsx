@@ -37,7 +37,7 @@ export default function UpgradeModal({ onClose, onOpenReleaseNotes }: Props) {
                         <section aria-label="Zo begin je" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
                             <strong style={S.cardTitle}>Nieuw: Eenvoudig, een snellere manier om een blad te maken</strong>
                             <p style={S.cardText}>Kies een oefening op een kaart en ze staat meteen op je blad. Kies hier waarmee je voortaan begint; je kan altijd wisselen bovenaan links.</p>
-                            <ModeChoice />
+                            <ModeChoice detailed />
                         </section>
                     )}
                     <div style={S.cards}>
@@ -73,11 +73,13 @@ function Card({ icon, title, text, onTry }: { icon: React.ReactNode; title: stri
 }
 
 const S = {
-    root: { display: 'flex', flexDirection: 'column', maxHeight: '90vh', fontFamily: 'var(--font-sheet-text)', color: 'var(--text-main)' } as React.CSSProperties,
+    // Shrinks to the shell (ModalShell caps at 85vh, overflow hidden), so the body scrolls instead of the header being cut.
+    root: { display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, fontFamily: 'var(--font-sheet-text)', color: 'var(--text-main)' } as React.CSSProperties,
     header: { padding: '18px 44px 14px 20px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 } as React.CSSProperties,
     title: { margin: '0 0 6px', fontSize: '20px', fontWeight: 700 } as React.CSSProperties,
     intro: { margin: 0, fontSize: 'var(--text-sm)', lineHeight: 1.5, color: 'var(--text-muted)' } as React.CSSProperties,
-    body: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' } as React.CSSProperties,
+    // minHeight 0 lets the body scroll; otherwise the column squeezes the header when the content grows.
+    body: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' } as React.CSSProperties,
     cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-3)' } as React.CSSProperties,
     card: { padding: 'var(--sp-3) var(--sp-4)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)', border: '1px solid var(--accent)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', alignItems: 'flex-start' } as React.CSSProperties,
     cardTitle: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', fontSize: 'var(--text-base)' } as React.CSSProperties,
