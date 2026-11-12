@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ListNumbers } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../services/math/formatters';
-import { stepText, type HandigStrategy, type StepLine } from '../../services/math/workedSteps';
+import { stepLineText, type HandigStrategy, type StepLine } from '../../services/math/workedSteps';
 
 interface Props {
     lines: StepLine[];
@@ -38,7 +38,7 @@ export default function StepsPanel({ lines, handig = [], onNext }: Props) {
                     <ol className="kiosk-steps-lines" aria-live="polite">
                         {shownLines.map(({ l, i }) => (
                             <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>
-                                = {stepText(l.tokens, formatMathNumber)}
+                                {stepLineText(l, formatMathNumber)}
                             </li>
                         ))}
                     </ol>
@@ -57,7 +57,7 @@ export default function StepsPanel({ lines, handig = [], onNext }: Props) {
                         <div key={h.name} className="kiosk-steps-handig">
                             <p className="kiosk-steps-lead">{h.name}</p>
                             <ol className="kiosk-steps-lines">
-                                {h.lines.map((l, i) => <li key={i} className="kiosk-math">= {stepText(l.tokens, formatMathNumber)}</li>)}
+                                {h.lines.map((l, i) => <li key={i} className="kiosk-math">{stepLineText(l, formatMathNumber)}</li>)}
                             </ol>
                         </div>
                     ))}

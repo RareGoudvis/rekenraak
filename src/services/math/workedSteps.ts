@@ -12,22 +12,30 @@ export type StepToken =
     | { t: 'open' }
     | { t: 'close' }
     // A place-value unit after a number: "48 T" (tientallen), "18 t" (tienden), as in the Op.stap examples.
-    | { t: 'unit'; u: StepUnit };
+    | { t: 'unit'; u: StepUnit }
+    // Inside an aside line: "6 × 9 = 54", and "en" between two of them.
+    | { t: 'eq' }
+    | { t: 'and' }
+    // Delen met rest: "9 rest 1"; the part after it is what is left over, not divided.
+    | { t: 'rest' };
 
 export type StepUnit = 'T' | 'H' | 'D' | 't' | 'h' | 'd';
 
 // 'first' = the place-value split, 'move' = previous result + the next part, 'split' = a brug
 // part split into fill + rest, 'fill' = the result after the fill, 'answer' = the result alone.
 // × and :: 'parts' = the split written out, 'distribute' = spread over the parts, 'values' = the
-// partial results, 'units' = a sum read in tientallen / tienden ("8 × 6 T").
-export type StepKind = 'first' | 'move' | 'split' | 'fill' | 'answer' | 'parts' | 'distribute' | 'values' | 'units';
+// partial results, 'units' = a sum read in tientallen / tienden ("8 × 6 T"). Met rest: 'multiples' =
+// the divisor's multiples around the deeltal, 'remainder' = the deeltal as that multiple plus the rest.
+export type StepKind = 'first' | 'move' | 'split' | 'fill' | 'answer' | 'parts' | 'distribute' | 'values' | 'units' | 'multiples' | 'remainder';
 
-// Every line reads as "= <tokens>"; the renderer draws the "=" and the original sum itself.
+// A line reads as "= <tokens>"; the renderer draws the "=" and the original sum itself. An `aside`
+// line is a side calculation ("6 × 9 = 54 en 6 × 10 = 60") that stands on its own, without that "=".
 // `basis` = shown at the Basisstappen level; Alle shows every line.
 export interface StepLine {
     kind: StepKind;
     basis: boolean;
     tokens: StepToken[];
+    aside?: true;
 }
 
 export type StepLevel = 'basis' | 'alle';
@@ -261,6 +269,47 @@ function eenhedenDeel(a: number, d: number): StepLine[] | null {
     return [line('units', true, [num(m), u, op(':'), num(d)]), line('units', true, [num(m / d), u]), line('answer', true, [num(roundTo(m / d / 10 ** dp, dp))])];
 }
 
+// Delen met rest by heart (owner, 2026-11-12: "write out the multiplications of the divider, also the one
+// above"): 55 : 6 → 6 × 9 = 54 en 6 × 10 = 60, 55 = 54 + 1, = 9 rest 1.
+function tafelRest(a: number, d: number, q: number, r: number): StepLine[] {
+    const lines: StepLine[] = [
+        { ...line('multiples', true, [num(d), op('x'), num(q), { t: 'eq' }, num(d * q), { t: 'and' }, num(d), op('x'), num(q + 1), { t: 'eq' }, num(d * (q + 1))]), aside: true },
+        { ...line('remainder', true, [num(a), { t: 'eq' }, num(d * q), op('+'), num(r)]), aside: true },
+    ];
+    lines.push(line('answer', true, [num(q), { t: 'rest' }, num(r)]));
+    return lines;
+}
+
+// A bigger quotient by splitsen en verdelen with the rest split off (Op.stap 2.2.GL5.19):
+// 235 : 3 = (210 + 24 + 1) : 3 = (210 : 3) + (24 : 3) rest 1 = 70 + 8 rest 1 = 78 rest 1.
+function splitsenRest(a: number, d: number, q: number, r: number): StepLine[] | null {
+    const parts: number[] = [];
+    let left = a;
+    for (let place = 10 ** (String(a).length - 1); place >= 1; place /= 10) {
+        const k = Math.floor(left / (d * place));
+        if (k > 0) { parts.push(k * d * place); left -= k * d * place; }
+    }
+    if (left !== r || parts.length === 0) return null;
+    const rest: StepToken[] = [{ t: 'rest' }, num(r)];
+    const lines: StepLine[] = [
+        line('parts', true, [OPEN, ...nums([...parts, r]), CLOSE, op(':'), num(d)]),
+        line('distribute', true, [...joinWith(parts.map(p => bracket(p, ':', d)), '+'), ...rest]),
+    ];
+    // One part: its quotient already is the answer, so the values line would only repeat it.
+    if (parts.length > 1) lines.push(line('values', true, [...nums(parts.map(p => p / d)), ...rest]));
+    lines.push(line('answer', true, [num(q), ...rest]));
+    return lines;
+}
+
+// Met rest: the delers the config offers (2-12), a quotient of at least 1 and a rest the generator would
+// write (1 up to the deler); the steps must agree with the key, so a hand-edited answer gets none.
+function restSteps(eq: Equation, a: number, d: number): StepLine[] | null {
+    if (eq.operator !== ':' || !Number.isInteger(a) || !Number.isInteger(d) || d < 2 || d > 12 || a > MAX_MULDIV) return null;
+    const q = Math.floor(a / d), r = a - q * d;
+    if (q < 1 || r < 1 || eq.remainder !== r || eq.answer !== q) return null;
+    return q <= 10 ? tafelRest(a, d, q, r) : splitsenRest(a, d, q, r);
+}
+
 function maalSteps(a: number, b: number): StepLine[] | null {
     if (!Number.isInteger(a) || !Number.isInteger(b)) return eenhedenMaal(a, b);
     if (a < 2 || b < 2 || a * b > MAX_MULDIV) return null;
@@ -376,7 +425,6 @@ function plainOperands(eq: Equation, c?: Partial<AddSubConstraints>): [number, n
     if (!eq || eq.operands?.length !== 2) return null;
     if (eq.operators && eq.operators.some(o => o !== eq.operator)) return null;
     if (eq.missingIndex !== undefined || (eq.missingTerm && eq.missingTerm !== 'result')) return null;
-    if (eq.remainder !== undefined) return null;
     if (c?.equationType === 'puntoefening') return null;
     const [a, b] = eq.operands;
     if (typeof a !== 'number' || typeof b !== 'number' || !Number.isFinite(a) || !Number.isFinite(b)) return null;
@@ -398,6 +446,7 @@ export function workedSteps(eq: Equation, c?: Partial<AddSubConstraints>): StepL
     const preset = presetOf(eq, c);
     if (preset === null) return null;
     const [a, b] = ab;
+    if (eq.remainder !== undefined) return preset && preset !== 'vrij' ? null : restSteps(eq, a, b);
     if (eq.operator === 'x') return preset && preset !== 'vrij' ? null : maalSteps(a, b);
     if (eq.operator === ':') return preset && preset !== 'vrij' ? null : deelSteps(a, b);
     if (eq.operator !== '+' && eq.operator !== '-') return null;
@@ -420,7 +469,8 @@ export interface HandigStrategy {
 // on the answer key. Worked out from the sum itself; a strategy equal to the standard steps is left out.
 export function handigSteps(eq: Equation, c?: Partial<AddSubConstraints>): HandigStrategy[] {
     const ab = plainOperands(eq, c);
-    if (!ab || presetOf(eq, c) === null) return [];
+    // Compenseren and ontbinden are written for opgaande delingen only.
+    if (!ab || presetOf(eq, c) === null || eq.remainder !== undefined) return [];
     const [a, b] = ab;
     const found: [HandigStrategy['name'], StepLine[] | null][] =
         eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ['Ontbinden', ontbindenMaal(a, b)]]
@@ -444,7 +494,15 @@ export function stepText(tokens: StepToken[], fmt: (n: number) => string = Strin
         else if (tok.t === 'op') s += ` ${tok.op === 'x' ? '×' : tok.op === '-' ? '−' : tok.op} `;
         else if (tok.t === 'open') s += '(';
         else if (tok.t === 'close') s += ')';
+        else if (tok.t === 'eq') s += ' = ';
+        else if (tok.t === 'and') s += ' en ';
+        else if (tok.t === 'rest') s += ' rest ';
         else s += ` ${tok.u}`;
     }
     return s;
+}
+
+// One line as the pupil reads it: "= …", or an aside on its own.
+export function stepLineText(l: StepLine, fmt: (n: number) => string = String): string {
+    return l.aside ? stepText(l.tokens, fmt) : `= ${stepText(l.tokens, fmt)}`;
 }
