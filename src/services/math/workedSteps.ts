@@ -1,4 +1,4 @@
-import type { Equation } from './types';
+import type { Equation, FractionExercise } from './types';
 import type { AddSubConstraints } from './constraintTypes';
 
 // Worked steps ("tussenstappen") for hoofdrekenen: one pure function per strategy, rendered by
@@ -21,7 +21,9 @@ export type StepToken =
     // Delen met rest: "9 rest 1"; the part after it is what is left over, not divided.
     | { t: 'rest' }
     // A breuk, drawn stacked; via breuken (Op.stap 2.2.GL6.37: 54/10 : 9 = 6/10).
-    | { t: 'frac'; n: number; d: number };
+    | { t: 'frac'; n: number; d: number }
+    // A literal word inside a line ("2 keer", "1/3 van 12"); carries its own spaces.
+    | { t: 'word'; w: string };
 
 export type StepUnit = 'T' | 'H' | 'D' | 't' | 'h' | 'd';
 
@@ -31,9 +33,10 @@ export type StepUnit = 'T' | 'H' | 'D' | 't' | 'h' | 'd';
 // partial results, 'units' = a sum read in tientallen / tienden ("8 × 6 T"). Met rest: 'multiples' =
 // the divisor's multiples around the deeltal, 'remainder' = the deeltal as that multiple plus the rest.
 // Via breuken: 'fractions' = the sum in breuken, 'invert' = × the omgekeerde, 'product' = one breuk,
-// 'simplify' = that breuk vereenvoudigd.
+// 'simplify' = that breuk vereenvoudigd. Breuk van een hoeveelheid: 'whole' = het geheel, 'noemer' = the
+// number of equal parts, 'one' = one part (g : n), 'take' = the parts taken, 'closing' = "t/n van g = answer".
 export type StepKind = 'first' | 'move' | 'split' | 'fill' | 'answer' | 'parts' | 'distribute' | 'values' | 'units' | 'multiples' | 'remainder'
-    | 'fractions' | 'invert' | 'product' | 'simplify';
+    | 'fractions' | 'invert' | 'product' | 'simplify' | 'whole' | 'noemer' | 'one' | 'take' | 'closing';
 
 // A line reads as "= <tokens>"; the renderer draws the "=" and the original sum itself. An `aside`
 // line is a side calculation ("6 × 9 = 54 en 6 × 10 = 60") that stands on its own, without that "=".
@@ -43,6 +46,11 @@ export interface StepLine {
     basis: boolean;
     tokens: StepToken[];
     aside?: true;
+    // A line that is a question for the pupil (Oefenmodus, tutor): `hint` shows first, `tokens` are the revealed answer.
+    question?: string;
+    hint?: string;
+    // The same step as a bare calculation, without its question: what the answer key prints ("12 : 3 = 4").
+    compact?: StepToken[];
 }
 
 export type StepLevel = 'basis' | 'alle';
@@ -575,6 +583,29 @@ export function handigSteps(eq: Equation, c?: Partial<AddSubConstraints>): Handi
     return found.filter((f): f is [HandigStrategy['name'], StepLine[]] => !!f[1] && key(f[1]) !== key(standard)).map(([name, lines]) => ({ name, lines }));
 }
 
+// Breuk van een hoeveelheid (Op.stap 2.1.GL3.23): four questions, then the breuk written out. Whole
+// amounts only; a part that does not divide evenly has no method yet.
+export function breukHoeveelheidSteps(ex: FractionExercise | undefined): StepLine[] | null {
+    if (!ex || ex.subType !== 'hoeveelheid') return null;
+    const { numerator: t, denominator: n, total: g } = ex;
+    if (![t, n, g].every(v => typeof v === 'number' && Number.isInteger(v)) || t < 1 || n < 2 || !g || g < 1 || g % n !== 0) return null;
+    const part = g / n;
+    const calc = (x: number, o: 'x' | ':', y: number, r: number): StepToken[] => [num(x), op(o), num(y), { t: 'eq' }, num(r)];
+    const ask = (kind: StepKind, question: string, hint: string, tokens: StepToken[], compact?: StepToken[]): StepLine =>
+        ({ kind, basis: true, aside: true, question, hint, tokens, ...(compact && { compact }) });
+    const word = (w: string): StepToken => ({ t: 'word', w });
+    return [
+        ask('whole', 'Wat is het geheel?', "Welk getal staat na 'van'?", [num(g)]),
+        ask('noemer', 'In hoeveel gelijke delen verdeel je het geheel?', 'Kijk naar de noemer.', [num(n)]),
+        ask('one', 'Hoeveel is één deel?', 'Deel het geheel door de noemer.', calc(g, ':', n, part), calc(g, ':', n, part)),
+        // One part taken needs no sum: "1 keer" already is the answer.
+        t === 1
+            ? ask('take', 'Hoeveel delen neem je?', 'Kijk naar de teller.', [num(1), word(' keer')])
+            : ask('take', 'Hoeveel delen neem je?', 'Kijk naar de teller.', [num(t), word(' keer'), { t: 'sep' }, ...calc(t, 'x', part, t * part)], calc(t, 'x', part, t * part)),
+        { kind: 'closing', basis: true, aside: true, tokens: [{ t: 'frac', n: t, d: n }, word(' van '), num(g), { t: 'eq' }, num(t * part)] },
+    ];
+}
+
 export function stepsAtLevel(lines: StepLine[], level: StepLevel): StepLine[] {
     return level === 'alle' ? lines : lines.filter(l => l.basis);
 }
@@ -592,6 +623,7 @@ export function stepText(tokens: StepToken[], fmt: (n: number) => string = Strin
         else if (tok.t === 'sep') s += ', ';
         else if (tok.t === 'rest') s += ' rest ';
         else if (tok.t === 'frac') s += `${fmt(tok.n)}/${fmt(tok.d)}`;
+        else if (tok.t === 'word') s += tok.w;
         else s += ` ${tok.u}`;
     }
     return s;

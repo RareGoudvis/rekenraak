@@ -950,6 +950,13 @@ html:has(.oefen-body),
 .kiosk-steps-lines li.is-new { color: var(--accent); }
 .kiosk-steps-lines li.is-extra { font-weight: 400; color: var(--text-muted); }
 .kiosk-steps-done { margin: 0; font-size: var(--kiosk-text); font-weight: 700; color: var(--kiosk-ok); }
+/* Question steps: the question, its hint, then the answer once the pupil taps. */
+.kiosk-steps-questions li { white-space: normal; }
+.kiosk-steps-questions li + li { margin-top: var(--sp-3); }
+.kiosk-steps-q p { margin: 0; }
+.kiosk-steps-question { font-size: var(--kiosk-text); }
+.kiosk-steps-hint { font-size: var(--kiosk-text); font-weight: 400; color: var(--text-muted); }
+.kiosk-steps-answer { font-size: var(--kiosk-text-lg); color: var(--accent); }
 @keyframes kiosk-steps-pulse {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
   50% { box-shadow: 0 0 0 10px transparent; }

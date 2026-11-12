@@ -11,7 +11,7 @@ import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
 import TutorQr from './TutorQr';
 import { encodeTutorPage } from '../../services/oefenen/tutorPayload';
-import { blockHasSteps, stepsFor } from '../../services/stepsAvailability';
+import { blockHasTutorSteps, stepsFor } from '../../services/stepsAvailability';
 import EmptySheetHero from './EmptySheetHero';
 import SheetBlock from './SheetBlock';
 
@@ -86,7 +86,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
 
   // Sheet-wide, not per page: a QR on one page and none on the next would let footer heights chase the packer.
   const tutorQr = useMemo(
-    () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasSteps(block))),
+    () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasTutorSteps(block))),
     [docSettings.tutorQr, packedPages],
   );
   return (

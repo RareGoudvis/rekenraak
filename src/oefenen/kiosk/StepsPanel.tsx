@@ -3,6 +3,7 @@ import { ListNumbers } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { HandigStrategy, StepLine } from '../../services/math/workedSteps';
 import { StepLineView } from '../../components/viewer/StepTokens';
+import QuestionSteps from './QuestionSteps';
 
 interface Props {
     lines: StepLine[];
@@ -19,6 +20,7 @@ export default function StepsPanel({ lines, handig = [], onNext }: Props) {
     const [alle, setAlle] = useState(false);
     const [showHandig, setShowHandig] = useState(false);
 
+    const asking = lines.some(l => l.question);
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
     const total = basisIdx.length;
     const upto = basisIdx[Math.min(revealed, total) - 1];
@@ -34,7 +36,7 @@ export default function StepsPanel({ lines, handig = [], onNext }: Props) {
                         <ListNumbers weight="bold" aria-hidden /> Toon de stappen
                     </button>
                 </>
-            ) : (
+            ) : asking ? <QuestionSteps lines={lines} /> : (
                 <>
                     <ol className="kiosk-steps-lines" aria-live="polite">
                         {shownLines.map(({ l, i }) => (
