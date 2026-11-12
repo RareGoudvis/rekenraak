@@ -94,6 +94,8 @@ export interface BuilderSettings {
     statsLocked: boolean;
     // Kansen per oefening; absent = 1.
     attempts?: OefenAttempts;
+    // "Stappen tonen na een fout" switched off; absent = on.
+    noSteps?: boolean;
 }
 
 // Slider 0-50; 0 is the left stop and means no cap (limit undefined).
@@ -145,6 +147,7 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
         statsLocked: s.statsLocked,
         // A retry needs the juist/fout feedback testmodus hides, so testmodus ships one try.
         ...(s.attempts === 2 && !s.testMode ? { attempts: 2 as const } : {}),
+        ...(s.noSteps ? { noSteps: true as const } : {}),
     };
     return { sessie, excluded };
 }

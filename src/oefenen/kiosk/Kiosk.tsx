@@ -9,6 +9,7 @@ import TopBar from './TopBar';
 import ExerciseCard from './ExerciseCard';
 import AnswerInput from './AnswerInput';
 import FeedbackOverlay from './FeedbackOverlay';
+import StepsPanel from './StepsPanel';
 import StatsScreen from './StatsScreen';
 import StorageBanner from './StorageBanner';
 
@@ -51,6 +52,8 @@ function useKioskKeys() {
                 if (e.repeat) return;
                 // During a flash Enter only skips it, also on a focused button (Controleer must not fire).
                 if (st.phase === 'feedback' || st.phase === 'retry') { e.preventDefault(); st.skipFlash(); return; }
+                // Steps offered after a fout: Enter is Volgende (a focused button keeps its own action).
+                if (st.phase === 'steps' && !onButton) { e.preventDefault(); st.next(); return; }
                 if (onButton || st.phase !== 'exercise') return;
                 e.preventDefault();
                 // The next cell to fill, Controleer after the last one.
@@ -119,6 +122,8 @@ export default function Kiosk() {
     const phase = useOefenStore(s => s.phase);
     const lastCorrect = useOefenStore(s => s.lastCorrect);
     const skipFlash = useOefenStore(s => s.skipFlash);
+    const stepsOffer = useOefenStore(s => s.stepsOffer);
+    const next = useOefenStore(s => s.next);
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
     useKioskKeys();
     if (!sessie || !run) return null;
@@ -156,6 +161,7 @@ export default function Kiosk() {
                             <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} />
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} />}
+                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} onNext={next} />}
                     </section>
                 </main>
             )}

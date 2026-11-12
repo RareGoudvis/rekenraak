@@ -921,3 +921,38 @@ html:has(.oefen-body),
   .kiosk-table th:last-child,
   .kiosk-table td:last-child { padding-right: var(--sp-2); }
 }
+
+/* Worked steps after a final fout (StepsPanel): covers the answer panel like a flash, but waits for the pupil. */
+.kiosk-steps {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  background: var(--bg-surface);
+}
+.kiosk-panel:has(> .kiosk-steps) > :not(.kiosk-steps) { visibility: hidden; }
+.kiosk-steps-lead { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; color: var(--danger); }
+.kiosk-steps-lines {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  border-radius: var(--radius-md);
+  font-size: var(--kiosk-text-lg);
+  line-height: 1.6;
+}
+.kiosk-steps-lines li { white-space: nowrap; font-weight: 700; }
+/* The line just revealed, so the pupil sees where to look; optional lines stay quieter. */
+.kiosk-steps-lines li.is-new { color: var(--accent); }
+.kiosk-steps-lines li.is-extra { font-weight: 400; color: var(--text-muted); }
+.kiosk-steps-done { margin: 0; font-size: var(--kiosk-text); font-weight: 700; color: var(--kiosk-ok); }
+@keyframes kiosk-steps-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  50% { box-shadow: 0 0 0 10px transparent; }
+}
+.kiosk-steps-pulse { animation: kiosk-steps-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .kiosk-steps-pulse { animation: none; } }

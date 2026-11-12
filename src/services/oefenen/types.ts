@@ -52,6 +52,8 @@ export interface OefenSessie {
     // Tries per exercise: 2 = a wrong first answer gets one retry. Absent = 1; testMode forces 1
     // (no feedback means the pupil never learns the first try was wrong). Read via attemptsOf.
     attempts?: OefenAttempts;
+    // The teacher turned off "Stappen tonen na een fout". Absent = on, so links made before it offer steps.
+    noSteps?: true;
 }
 
 export type OefenAttempts = 1 | 2;
