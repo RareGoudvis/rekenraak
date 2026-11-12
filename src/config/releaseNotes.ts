@@ -71,6 +71,12 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Ook stappen bij vermenigvuldigen en opgaande delingen, zoals in Op.stap: splitsen en verdelen, naar analogie met de tafels, kommagetallen.',
                 example: { leafId: 'hr-std-vermenigvuldigen-nat', constraints: { multiplicationMode: 'tafels', selectedTables: [5], tableLimit: 20, solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: alleen de uitkomst.', after: 'Nu: 5 × 65 = 5 × (60 + 5) = (5 × 60) + (5 × 5) = 300 + 25 = 325.' },
             },
+            {
+                kind: 'nieuw',
+                text: 'Delen met rest: een kladlijn naast elke som voor de tafel van de deler, en stappen in de verbetersleutel en Oefenmodus.',
+                example: { leafId: 'hr-std-delen-nat', constraints: { multiplicationMode: 'met_rest', metRestLevel: 1, maxGetal: 100, metRestKladlijn: true }, grade: 3, height: 170, before: 'Eerst: alleen 55 : 6 = ... r ...', after: 'Nu: met een kladlijn voor 6 × 9 = 54 en 6 × 10 = 60.' },
+            },
+            { kind: 'nieuw', text: 'Combinatie en Zelf samenstellen: ook delingen met rest.' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kiezen zelf hun leerjaar en oefening, ook op een telefoon. De link en QR-code vind je bij Oefenmodus.' },
             { kind: 'gewijzigd', text: 'Op een klein scherm kies je nu zelf: als leerling oefenen of toch verder als leerkracht.' },
             { kind: 'nieuw', text: 'Leerlingen kunnen in Oefenmodus en de stappenhulp ook handig rekenen bekijken: compenseren en ontbinden.' },

@@ -1065,7 +1065,7 @@ both `onCellMeasure` and the tail measurement it depends on.
   - product ≤ 10 000
 - **: opgaand**: the same three strategies (2340 : 3 = (2100 + 240) : 3 = …).
 
-Tafels, deeltafels, met rest and tienvoud return null. Units are a `unit` token (T H D t h d), and "Alle stappen" works out the final sum only when it needs a carry. `handigSteps` (registry `handig`, `stepsAvailability.handigFor`) adds compenseren and ontbinden as an optional pupil view in Oefenmodus and the stappenhulp, never on the answer key (Op.stap 9 × 13, 57 : 3, 25 × 32, 3000 : 12).
+**Met rest** has its own steps. With a quotient ≤ 10, the multiples of the divisor around the deeltal come first as an `aside` line (6 × 9 = 54 en 6 × 10 = 60, written without a leading "="), then 55 = 54 + 1, then 9 rest 1. A bigger quotient uses splitsen with the rest split off (Op.stap 235 : 3 = (210 + 24 + 1) : 3 = 78 rest 1). The tokens `eq`, `and` and `rest` support these lines, and `stepLineText` renders them in all three places. Tafels, deeltafels and tienvoud return null. Units are a `unit` token (T H D t h d), and "Alle stappen" works out the final sum only when it needs a carry. `handigSteps` (registry `handig`, `stepsAvailability.handigFor`) adds compenseren and ontbinden as an optional pupil view in Oefenmodus and the stappenhulp, never on the answer key (Op.stap 9 × 13, 57 : 3, 25 × 32, 3000 : 12).
 
 [stepsAvailability.ts](../../src/services/stepsAvailability.ts) is the one rule for where steps are offered. `stepsFor(typeId, ex, constraints)` runs the type's `steps` under that block's own settings, so a compenseren or tienvoud preset never gets rijgen. `blockHasSteps(block)` decides whether an option is shown at all: the answer-key toggle in `HrStdStyleConfig`, the Blad-tab checkbox "Stappenhulp-QR", and (through `oefenBuild.rowMayHaveSteps`, 12 fixed-seed kiosk draws) the Oefenmodus switch "Stappen tonen na een fout".
 
@@ -2644,6 +2644,8 @@ The picker is [ZelfPicker.tsx](../../src/oefenen/zelf/ZelfPicker.tsx). The pupil
 The store opens the session with `openZelf` (no hash). After a zelf run, the end screen offers "Andere oefening".
 
 Teachers find the link in the Oefenmodus builder ([ZelfLinkCard.tsx](../../src/components/oefenen/ZelfLinkCard.tsx): the link, a copy button and a QR).
+
+**Kladlijn (met rest):** `constraints.metRestKladlijn` (absent = off; delen and the gemengd ':' tab, met-rest mode only) draws a dotted writing line for the divisor's multiples next to each met-rest sum, or below it when it does not fit (`metRestKladLayout` in hrRowLayout.ts). The answer key fills it in red (6 × 9 = 54 · 6 × 10 = 60). Oefenmodus never shows it. The Combinatie / Zelf samenstellen builder offers "Met rest" for ':'. The stappenhulp treats any whole a : d that does not go as a met-rest sum, so the QR format is unchanged.
 
 **Small screens:** the editor's `.mobile-block` is a choice, not a wall. "Ik ben een leerling: zelf oefenen" goes to `/kind.html`. "Toch verder als leerkracht" dismisses it, remembered per device in `rekenraak_small_screen_teacher`.
 
