@@ -617,38 +617,41 @@ textarea:focus-visible,
   width: 100%;
   max-width: 360px;
   border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
-  background: #111;
+  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
 }
-.mobile-block-title { font-size: 20px; font-weight: 700; }
-.mobile-block > span:not(.mobile-block-title) { max-width: 420px; font-size: 15px; }
+.mobile-block-title { font-size: 20px; font-weight: 700; color: var(--text-main); }
+.mobile-block > span:not(.mobile-block-title) { max-width: 420px; font-size: 15px; color: var(--text-muted); }
 .mobile-block-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
 .mobile-block-links a {
-  color: #fff; text-decoration: none; font-size: 14px; font-weight: 600;
-  padding: 10px 16px; border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 999px;
+  color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 600;
+  padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-surface);
 }
+.mobile-block-links a:hover { background: var(--bg-hover); }
 .mobile-block-choice { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; max-width: 420px; }
 .mobile-block-primary, .mobile-block-secondary {
   min-height: 48px; padding: 10px 16px; border-radius: 12px; font: inherit; font-size: 15px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; cursor: pointer;
 }
 .mobile-block-primary { background: var(--accent); border: 1px solid var(--accent); color: var(--accent-on); }
-.mobile-block-secondary { background: transparent; border: 1px solid rgba(255, 255, 255, 0.45); color: #fff; }
+.mobile-block-secondary { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-main); }
+.mobile-block-secondary:hover { background: var(--bg-hover); }
 
 @media screen and (max-width: 768px) {
   .mobile-block {
     display: flex;
     position: fixed;
     inset: 0;
-    background: #000;
-    color: #fff;
+    background: var(--bg-base);
+    color: var(--text-main);
     align-items: center;
     justify-content: center;
     text-align: center;
     padding: 32px;
-    font-family: 'Azeret Mono', system-ui, sans-serif;
-    font-size: 18px;
-    line-height: 1.6;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.5;
     z-index: 9999;
     flex-direction: column;
     gap: 16px;
@@ -664,15 +667,15 @@ textarea:focus-visible,
     display: flex;
     position: fixed;
     inset: 0;
-    background: #000;
-    color: #fff;
+    background: var(--bg-base);
+    color: var(--text-main);
     align-items: center;
     justify-content: center;
     text-align: center;
     padding: 32px;
-    font-family: 'Azeret Mono', system-ui, sans-serif;
-    font-size: 18px;
-    line-height: 1.6;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.5;
     z-index: 9999;
     flex-direction: column;
     gap: 16px;
@@ -680,7 +683,7 @@ textarea:focus-visible,
   .mobile-block-hint {
     display: block;
     font-size: 14px;
-    color: #aaa;
+    color: var(--text-muted);
   }
 }
 
