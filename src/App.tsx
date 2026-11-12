@@ -45,6 +45,8 @@ const SHEET_FONT_TOKENS = [
   ['fontFamilyFooter', '--font-sheet-footer'],
 ] as const;
 
+const SMALL_SCREEN_KEY = 'rekenraak_small_screen_teacher';
+
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,6 +65,12 @@ export default function App() {
 
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const onboarding = useOnboarding();
+  // A small screen gets a choice, not a wall: a teacher can go on anyway, remembered per device.
+  const [teacherOnSmall, setTeacherOnSmall] = useState(() => { try { return localStorage.getItem(SMALL_SCREEN_KEY) === '1'; } catch { return false; } });
+  const continueAsTeacher = () => {
+    try { localStorage.setItem(SMALL_SCREEN_KEY, '1'); } catch { /* private mode: only this visit */ }
+    setTeacherOnSmall(true);
+  };
   const { releaseBannerVisible, dismissReleaseBanner, upgradeVisible, closeUpgrade } = useBootLoad();
 
   // Browser tab title follows the worksheet title.
@@ -161,11 +169,16 @@ export default function App() {
 
   return (
     <>
+    {!teacherOnSmall && (
     <div className="mobile-block">
       <video className="mobile-block-demo" src="/rekenraak-demo.mp4" autoPlay loop muted playsInline />
-      <span className="mobile-block-title">RekenRaak werkt op een groot scherm</span>
-      <span>Hiermee maak je werkbladen op A4-formaat — daarvoor staan het blad én alle instellingen naast elkaar. Open de tool op een computer, laptop of tablet om aan de slag te gaan.</span>
+      <span className="mobile-block-title">RekenRaak werkt het best op een groot scherm</span>
+      <span>Hiermee maak je werkbladen op A4-formaat. Daarvoor staan het blad en alle instellingen naast elkaar. Op een computer, laptop of tablet werkt alles het best.</span>
       <span className="mobile-block-hint">Tip: draai je tablet in liggende stand (landscape).</span>
+      <div className="mobile-block-choice">
+        <a className="mobile-block-primary" href="/kind.html">Ik ben een leerling: zelf oefenen</a>
+        <button type="button" className="mobile-block-secondary" onClick={continueAsTeacher}>Toch verder als leerkracht</button>
+      </div>
       {/* A phone must not be a dead end: the static pages read fine on any screen. */}
       <nav className="mobile-block-links" aria-label="Meer over RekenRaak">
         <a href="/about.html">Over RekenRaak</a>
@@ -173,6 +186,7 @@ export default function App() {
         <a href="/oefeningen.html">Alle oefeningen</a>
       </nav>
     </div>
+    )}
     {onboarding.welcomeOpen && <WelcomeModal onClose={onboarding.closeWelcome} onStartTour={onboarding.startTourFromWelcome} />}
     {upgradeVisible && !onboarding.welcomeOpen && <UpgradeModal onClose={closeUpgrade} onOpenReleaseNotes={onboarding.openReleaseNotes} />}
     {onboarding.tourOpen && <TourOverlay onClose={onboarding.closeTour} />}
