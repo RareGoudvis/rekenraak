@@ -9,6 +9,9 @@ import type { MeasuredHeights } from '../../hooks/useMeasuredHeights';
 import type { SheetDnd } from '../../hooks/useSheetDnd';
 import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
+import TutorQr from './TutorQr';
+import { encodeTutorPage } from '../../services/oefenen/tutorPayload';
+import { REGISTRY } from '../../config/exerciseRegistry';
 import EmptySheetHero from './EmptySheetHero';
 import SheetBlock from './SheetBlock';
 
@@ -125,7 +128,15 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           onFitBlock={fitBlockToPage}
           onSplitBlock={(blockId, anchor) => onOpenSplit(blockId, anchor)}
           header={<SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} continuation={pi > 0} />}
-          footer={<SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
+          footer={docSettings.tutorQr ? (
+            <div className="tutor-qr-foot">
+              <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />
+              <TutorQr payload={encodeTutorPage(
+                page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '' })),
+                (typeId) => !!REGISTRY[typeId]?.steps,
+              )} />
+            </div>
+          ) : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
         >
           {blocks.length === 0 && pi === 0 && (
             <EmptySheetHero />

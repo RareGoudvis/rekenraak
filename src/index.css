@@ -964,3 +964,12 @@ button.ez-pill:hover { background: var(--bg-active); }
 /* Three tab labels share the narrowed sidebar (232 / 208 px): trim the segment padding so none is cut. */
 .app-panel-left .panel-head .seg-btn { padding-inline: 4px; min-width: 0; }
 @media screen and (max-width: 1100px) { .app-panel-left .panel-head .seg-btn { font-size: var(--text-xs); } }
+
+/* Stappenhulp QR (docSettings.tutorQr): the footer text keeps its row, the QR sits at the right. */
+.tutor-qr-foot { display: flex; align-items: flex-end; gap: 12px; }
+.tutor-qr-foot > .print-tfoot-inner { flex: 1 1 auto; min-width: 0; }
+.tutor-qr-note {
+  position: absolute; inset: 0; display: flex; align-items: center; text-align: center;
+  font-family: var(--font-ui); font-size: 10px; color: var(--danger);
+  border: 1px dashed var(--danger); border-radius: var(--radius-xs); padding: 4px;
+}
