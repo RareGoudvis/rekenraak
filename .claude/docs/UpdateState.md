@@ -5,7 +5,7 @@ Most recent entry first.
 
 ---
 
-**2026-11-12** — Worked steps (feat/stappen, merged into `rc-oefenen`): rijgen for + and − in the answer key, Oefenmodus after a final fout, and the pupil stappenhulp (`tutor.html`) via a page QR. Review fixes: one rule (`stepsAvailability.ts`) for where steps are offered, so the tutor follows the block preset and options only show where steps exist; docs and release notes added.
+**2026-11-12** — Worked steps (feat/stappen, merged into `rc-oefenen`): rijgen for + and − in the answer key, Oefenmodus after a final fout, and the pupil stappenhulp (`tutor.html`) via a page QR. Review fixes: one rule (`stepsAvailability.ts`) for where steps are offered, so the tutor follows the block preset and options only show where steps exist; docs and release notes added. Then × and opgaande : steps (Op.stap notation, handig rekenen as an optional pupil view), and Zelf oefenen (`kind.html`, pupils pick their own exercise, phones supported; the small-screen block became a choice).
 
 **2026-11-08** — Eenvoudig mode batch on local `rc-oefenen` (not pushed; beta for the owner's testers, release planned early January 2027): card sidebar mode with tabs Eenvoudig / Uitgebreid / Werkblad, card data + `resolveCard` + one-exercise preview, Inspector quick block, Combinatie builder, default mode + onboarding, mixed jumps for getallenas/getallenrijen (engine and UI), clearer teacher labels, split hint only when a real split exists, release entry 1.3.0. Worktrees need a real `node_modules`: a junction makes Vite 403 the sheet fonts, which falsely flags 77 gate cells.
 

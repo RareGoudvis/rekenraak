@@ -59,7 +59,7 @@ PDF). UI text is Dutch; code and comments are English. Everything is client-side
 TypeScript + Vite + one worksheet Zustand store (Bordmodus has its own) — no backend, no
 account, no tracking.
 
-Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `tutor.html` (the pupil stappenhulp, `src/tutor/`, opened from a sheet's QR), `bord.html` (the same app
+Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `tutor.html` (the pupil stappenhulp, `src/tutor/`, opened from a sheet's QR), `kind.html` (Zelf oefenen: pupils pick an exercise themselves, no teacher link; the same kiosk root as `oefenen.html`), `bord.html` (the same app
 booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
 static SEO pages `about.html`, `faq.html`, `oefeningen.html`.
 

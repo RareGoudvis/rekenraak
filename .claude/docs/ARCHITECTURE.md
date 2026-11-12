@@ -1298,6 +1298,7 @@ src/
 ├── App.tsx                      # shell: 3-panel layout, packing (packPages + measured), composition of components/sheet/
 ├── main.tsx                     # React entry (index.html and bord.html both load it)
 ├── bootEntry.ts                 # isBordPage() (<html data-boot="bord">), initialView(), leaveBordPage() → '/' (§14)
+├── oefenen/zelf/{ZelfPicker.tsx,zelfSessie.ts}   # Zelf oefenen: the pupil picker behind kind.html / bare oefenen.html (§15)
 ├── tutor/                       # stappenhulp behind tutor.html: TutorApp (sheet → sums → steps), Scanner (camera QR), StepsView (§15)
 ├── oefenen/                     # Oefenmodus pupil kiosk: its own React root behind oefenen.html, never imports App or the worksheet store (§15)
 │   ├── main.tsx                 # entry: decodes location.hash into the store BEFORE the first paint, imports index.css + kiosk/kiosk.css
@@ -2628,6 +2629,23 @@ nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new o
 - Every device generates its own exercises from the seed in the link: two pupils never see the same sums.
 - Old links outlive the kiosk's leaf list: a type the kiosk no longer supports is skipped with a note, never
   served; the stored runs for that slot stay untouched.
+
+### Zelf oefenen (kind.html, pupils without a teacher link)
+
+`kind.html` is its own entry page. It boots the same kiosk root ([main.tsx](../../src/oefenen/main.tsx)) and needs no hash, so a subdomain can later serve it as its index. The bare `oefenen.html` (no `#oefen=`, no error) shows the same picker. A broken link still gets the error screen, and `load('')` still returns `sessie: null, error: null`.
+
+The picker is [ZelfPicker.tsx](../../src/oefenen/zelf/ZelfPicker.tsx). The pupil picks a leerjaar, then a topic from the Eenvoudig nav, then a card variant (the leerjaar's default range plus the komma and breuk cards), then 3, 5 or 10 oefeningen or 1, 3 or 5 minuten.
+
+[zelfSessie.ts](../../src/oefenen/zelf/zelfSessie.ts):
+- `usableVariants` keeps the variants that pass `kioskSupports` and `rowYields`.
+- `buildZelfSessie` makes one `OefenType` from `resolveCard` plus `oefenBuild.withKioskSeed`, with `total` or `timerMin` set and steps on.
+- The session id is `zelf-` + `fnv1a(variant|mode|n)`: the same choice shows the pupil's earlier runs, and it never collides with a teacher's 8-character id.
+
+The store opens the session with `openZelf` (no hash). After a zelf run, the end screen offers "Andere oefening".
+
+Teachers find the link in the Oefenmodus builder ([ZelfLinkCard.tsx](../../src/components/oefenen/ZelfLinkCard.tsx): the link, a copy button and a QR).
+
+**Small screens:** the editor's `.mobile-block` is a choice, not a wall. "Ik ben een leerling: zelf oefenen" goes to `/kind.html`. "Toch verder als leerkracht" dismisses it, remembered per device in `rekenraak_small_screen_teacher`.
 
 ### Steps after a fout and the stappenhulp
 
