@@ -397,11 +397,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     <h4 style={S.cardTitle}>Voettekst</h4>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>De voettekst staat onderaan elke pagina.</p>
                     {anySteps && (<>
-                    <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={!!docSettings.tutorQr} onChange={(e) => updateDocSettings({ tutorQr: e.target.checked })} style={S.checkbox} />
-                        Stappenhulp-QR onderaan elke pagina
-                    </label>
-                    <p style={{ ...S.hintText, margin: '0 0 12px' }}>Leerlingen scannen de QR en zien hoe ze elke som van die pagina stap voor stap uitrekenen. Zet dit uit bij een toets: de QR verklapt de antwoorden.</p>
+                        <div style={S.switchRow}>
+                            <span style={S.switchText}>Stappenhulp-QR onderaan elke pagina</span>
+                            <Switch checked={!!docSettings.tutorQr} onChange={(v) => updateDocSettings({ tutorQr: v })} aria-label="Stappenhulp-QR onderaan elke pagina" />
+                        </div>
+                        <p style={{ ...S.hintText, margin: '0 0 12px' }}>Leerlingen scannen de QR en zien hoe ze elke som van die pagina stap voor stap uitrekenen. Zet dit uit bij een toets: de QR verklapt de antwoorden.</p>
                     </>)}
                     <label style={S.label}>Voettekst stijl</label>
                     <div className="seg-group" style={{ marginBottom: '12px' }}>
