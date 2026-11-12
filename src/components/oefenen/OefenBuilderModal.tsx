@@ -12,6 +12,7 @@ import BetaStrip from '../ui/BetaStrip';
 import FirstRunCard from '../ui/FirstRunCard';
 import OefenShareModal from './OefenShareModal';
 import OefenCatalogue from './OefenCatalogue';
+import ZelfLinkCard from './ZelfLinkCard';
 import { MAX_TITLE, MAX_TYPES, newSessieId, sessieContentHash } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
@@ -149,6 +150,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                 <div style={S.header}>
                     <h2 style={S.title}>Oefenmodus</h2>
                     <p style={S.subtitle}>Kies een paar soorten oefeningen en stel ze in. Leerlingen scannen de QR-code of openen de link en oefenen op hun eigen toestel; de resultaten blijven op dat toestel.</p>
+                    <ZelfLinkCard />
                 </div>
 
                 <BetaStrip module="oefenmodus" />
