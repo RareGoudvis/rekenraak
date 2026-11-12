@@ -945,7 +945,8 @@ html:has(.oefen-body),
   font-size: var(--kiosk-text-lg);
   line-height: 1.6;
 }
-.kiosk-steps-lines li { white-space: nowrap; font-weight: 700; }
+/* Long lines (2 + 2 + 2 …, jumps, three-term chains) wrap at their spaces instead of running off a phone. */
+.kiosk-steps-lines li { white-space: normal; overflow-wrap: anywhere; font-weight: 700; }
 /* The line just revealed, so the pupil sees where to look; optional lines stay quieter. */
 .kiosk-steps-lines li.is-new { color: var(--accent); }
 .kiosk-steps-lines li.is-extra { font-weight: 400; color: var(--text-muted); }

@@ -113,4 +113,12 @@ describe('Zelf oefenen sessie', () => {
             for (const cards of topics.values()) expect(cards.every(c => c.vars.length > 0)).toBe(true);
         }
     });
+
+    test('audit 2026-11-13: Zonder brug only holds variants that promise no brug; procent is decided per variant', async () => {
+        data = await loadEenvoudigData();
+        for (const { c } of allChoices()) {
+            if (c.key === 'zonder') for (const v of c.vars) expect(v.l, v.id).toMatch(/^zonder brug/i);
+            if (c.key === 'procent') for (const v of c.vars) expect(`${v.l} ${v.label}`, v.id).not.toMatch(/kommagetal\)?$|naar kommagetal|= \(?kommagetal/i);
+        }
+    });
 });

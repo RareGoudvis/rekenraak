@@ -67,6 +67,13 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 - **Limits audit, geld-teruggeven (2026-11-08, also on 64c49a2):** with `maxPriceEuros: 0` a price under the minimum appears (90c against a 100c floor, rule `value<min`). Only that edge value of the constraint space.
 - **Limits audit, ordenen (2026-11-08, also on 64c49a2):** rational with `unitFractionsOnly` and min = max noemer has one possible value, so the set comes up short with no note (rule `count-short`).
 
+- **Audit 2026-11-13, kiosk on phones:** in 27 Zelf oefenen choices the kiosk card is wider than a 390 px screen. Getallenas labels overlap at 1e8–1e9, and the positietabel in "Getallen lezen en schrijven" is cut off.
+- **Audit 2026-11-13, quick block:** Cijferen Aftrekken card `C:c231-l3` with "Tot welk getal? 100" generates 0 exercises with no note. A quick pill should never offer a value the card's other settings rule out.
+- **Audit 2026-11-13, temperatuur:** `B:temp-3-aflezen` with Verschil and "Onder nul: Zonder" logs `<rect> attribute height: negative value -48` repeatedly. After Verschil the instruction still reads "Lees de temperatuur af."
+- **Audit 2026-11-13, short pools without a note:** count 20 gives klok "Hele uren" 12 and weegschaal 19 exercises, with no "Kleine reeks" note.
+- **Audit 2026-11-13, options that don't do what they say:** Oppervlakte "Rechthoekige driehoek" draws rectangles; Schatten "Eenheden" rounds to tientallen; Romeinse "tot 2 500 … ook jaartallen" generates up to 3804 (MMMDCCCIV).
+- **Audit 2026-11-13, card data:** 39 of the 56 "Geen brug nodig" card variants generate brug sums (`C:c010-l1` "T − TE": every sum crosses the ten). The label or the card's bridge settings are wrong (owner call). Zelf oefenen no longer files them under "Zonder brug".
+
 ## Bordmodus
 
 

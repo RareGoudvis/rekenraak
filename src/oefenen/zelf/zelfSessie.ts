@@ -110,7 +110,8 @@ export function usableVariants(data: EenvoudigData, grade: Leerjaar): Map<string
 }
 
 const ALLES = 'Alles door elkaar';
-const ZONDER = /^(zonder brug|geen brug nodig)/i;
+// Only "Zonder brug" promises no brug; "Geen brug nodig" variants forbid nothing (the audit found brug sums in them), so they go to Alles only.
+const ZONDER = /^zonder brug/i;
 const MET = /^brug bij /i;
 const BRUG_TOPIC = /(Optellen|Aftrekken)$/;
 const TAFEL_TOPIC = /tafels$/;
@@ -162,7 +163,10 @@ export type NumberKind = 'procent' | 'komma' | 'other';
 
 // Procent wins: "Kommagetal en procent" exercises are about procent, and a pupil must not meet procent sums under Kommagetallen.
 export function numberKindOf(card: CardType, v: CardVariant): NumberKind {
-    if (/procent|percent/i.test(`${card.name} ${v.l} ${v.label} ${v.leafId}`)) return 'procent';
+    // Decided per variant: a procent card can hold a breuk → kommagetal exercise, which belongs with Kommagetallen.
+    const own = `${v.l} ${v.label}`;
+    if (/procent|percent|%/i.test(own)) return 'procent';
+    if (/procent|percent/i.test(`${card.name} ${v.leafId}`) && !/komma|decima|breuk/i.test(own)) return 'procent';
     if (card.kind === 'komma' || /komma|decimaa?l/i.test(`${card.name} ${v.l} ${v.label}`) || /-dec(?![a-z])/.test(v.leafId)) return 'komma';
     return 'other';
 }
