@@ -30,7 +30,7 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
         'Van plaats wisselen en schakelen': 'Omwisselen en groeperen',
         'Volgorde van bewerkingen': 'Rekenvolgorde',
         'Naar analogie': 'Op dezelfde manier',
-        'Compenseren': 'Bijna ronde getallen',
+        'Compenseren': 'Compenseren',
         'Kettingsommen': 'Kettingsommen',
         'Handige werkwijzen': 'Slimme trucs',
     },
