@@ -14,6 +14,8 @@ import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginSty
 import { itemLabel, itemLabelChars } from './itemNumbering';
 import { hrRowLayout, hrRowStats, HR_SOLUTION_FONT } from '../../services/layout/hrRowLayout';
 import KioskAnswerSlot from './KioskAnswerSlot';
+import { REGISTRY } from '../../config/exerciseRegistry';
+import { stepsAtLevel, stepText, type StepLine } from '../../services/math/workedSteps';
 
 interface Props {
     block: MathBlock;
@@ -142,7 +144,17 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // regardless of the stored preset (the Kort/Lang/Stappen control is hidden for them).
     const c = block.constraints as MulDivConstraints;
     const isPunt = c.equationType === 'puntoefening';
-    const layout = isPunt ? 'inline-short' : block.layoutPreset;
+    // Answer key with worked steps: only with solutions on, and only for sums that have a strategy.
+    const stepLevel = showSolutions ? (c.solutionSteps ?? 'uit') : 'uit';
+    const stepsFn = REGISTRY[block.typeId]?.steps;
+    const stepsOf = (ex: Equation): StepLine[] | null => {
+        if (stepLevel === 'uit' || !stepsFn) return null;
+        const lines = stepsFn(ex, block.constraints as Record<string, unknown>);
+        return lines ? stepsAtLevel(lines, stepLevel) : null;
+    };
+    const anySteps = stepLevel !== 'uit' && block.exercises.some(ex => !!ex && stepsOf(ex) !== null);
+    // Steps stack under their sum, so the key lays the block out like "Onder elkaar" (one column).
+    const layout = anySteps ? 'stepped' : isPunt ? 'inline-short' : block.layoutPreset;
 
     // 'Gemengd' (mixed-operator) block: NOT a typeId check — any family whose constraints
     // carry a `variants` array gets the per-exercise operator switch (only hr-std-gemengd
@@ -318,6 +330,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     const delta = tienvoud - b;
                     if (delta >= 1 && delta <= 2) compParts = { tienvoud, delta };
                 }
+                const steps = stepsOf(ex);
                 const compBlank = (v: number) => showSolutions
                     ? <span style={{ ...solutionText, padding: '0 4px' }}>{formatMathNumber(v)}</span>
                     : <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
@@ -401,8 +414,17 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                     {compBlank(compParts.delta)}
                                 </div>
                             )}
-                            {!anyMissing ? (
-                                Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
+                            {steps ? (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>{steps.map((line, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: ANSWER_ROW_H, whiteSpace: 'nowrap' }}>
+                                        <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
+                                        {/* Basis lines bold like every solution; the optional lines thinner, so a teacher sees which ones a pupil may skip. */}
+                                        <span style={{ ...atFont(styles.solutionText, 1), padding: 0, fontWeight: line.basis ? 700 : 400 }}>{stepText(line.tokens, formatMathNumber)}</span>
+                                    </div>
+                                ))}</div>
+                            ) : !anyMissing ? (
+                                // A sum without steps on a key with steps keeps the teacher's own line count.
+                                Array.from({ length: block.layoutPreset === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: ANSWER_ROW_H }}>
                                         <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
                                         {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : i === 0 ? <KioskAnswerSlot><div style={styles.workLine(layout, answerLinePx, tight)}></div></KioskAnswerSlot> : <div style={styles.workLine(layout, answerLinePx, tight)}></div>}
