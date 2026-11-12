@@ -990,6 +990,8 @@ html:has(.oefen-body),
   overflow-wrap: anywhere;
   cursor: pointer;
 }
+.zelf-grid-choices { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); max-width: 720px; }
+.zelf-choice-big { font-size: var(--kiosk-text-lg); min-height: 88px; }
 .zelf-choice-num { font-size: var(--kiosk-text-xl); min-height: 88px; }
 @media (hover: hover) { .zelf-choice:hover { background: var(--bg-hover); } }
 .zelf-choice:active { background: var(--bg-active); }

@@ -5,12 +5,25 @@ import StopButton from './StopButton';
 import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
 import { isZelfSessie } from '../zelf/zelfSessie';
-import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
+import { attemptsOf, type OefenError, type OefenRun, type OefenSessie, type OefenSummaryRow } from '../../services/oefenen/types';
 
 // The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
 function givenText(e: OefenError): string {
     if (e.secondTry) return `${e.given}, dan juist`;
     return e.second !== undefined ? `${e.given}, dan ${e.second}` : e.given;
+}
+
+// A self-made choice mixes many variants that share a label: show what was done, once per label.
+function mergeByLabel(rows: OefenSummaryRow[]): OefenSummaryRow[] {
+    const out = new Map<string, OefenSummaryRow>();
+    for (const r of rows.filter(x => x.made > 0)) {
+        const a = out.get(r.label);
+        if (!a) { out.set(r.label, { ...r, errors: [...r.errors] }); continue; }
+        a.made += r.made; a.correct += r.correct; a.wrong += r.wrong; a.secondTry += r.secondTry;
+        a.errors.push(...r.errors);
+        a.pct = Math.round((a.correct / a.made) * 100);
+    }
+    return [...out.values()];
 }
 
 // Per type gemaakt / juist / fout / %, then every mistake with the pupil's answer and the
@@ -19,7 +32,8 @@ function givenText(e: OefenError): string {
 function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
     const retired = retiredSlots(sessie);
     // A retired type is not listed unless this run made some of it (an old run, before the type was retired).
-    const rows = summary(run.stats, sessie).filter(r => r.made > 0 || !retired.has(r.slot));
+    const listed = summary(run.stats, sessie).filter(r => r.made > 0 || !retired.has(r.slot));
+    const rows = isZelfSessie(sessie) ? mergeByLabel(listed) : listed;
     const errors = rows.flatMap(r => r.errors.map(e => ({ ...e, label: r.label })));
     const retries = attemptsOf(sessie) === 2 || rows.some(r => r.secondTry > 0);
     return (
