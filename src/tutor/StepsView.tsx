@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatMathNumber } from '../services/math/formatters';
-import { stepLineText, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
+import type { HandigStrategy, StepLine } from '../services/math/workedSteps';
+import { StepLineView } from '../components/viewer/StepTokens';
 
 // One sum's worked steps: nothing until the pupil asks, then one Basis line per tap (the newest
 // in blue), with Alle stappen adding the optional in-between lines. SYNC: oefenen StepsPanel.
@@ -22,7 +23,7 @@ export default function StepsView({ sum, lines, handig = [] }: { sum: string; li
                 {shown.length > 0 ? (
                     <ol className="tutor-lines" aria-live="polite">
                         {shown.map(({ l, i }) => (
-                            <li key={i} className={`${i === upto ? 'is-new' : ''}${l.basis ? '' : ' is-extra'}`}>{stepLineText(l, formatMathNumber)}</li>
+                            <li key={i} className={`${i === upto ? 'is-new' : ''}${l.basis ? '' : ' is-extra'}`}><StepLineView line={l} fmt={formatMathNumber} /></li>
                         ))}
                     </ol>
                 ) : (
@@ -46,7 +47,7 @@ export default function StepsView({ sum, lines, handig = [] }: { sum: string; li
                 <div key={h.name} className="tutor-card">
                     <div className="tutor-sum">{h.name}</div>
                     <ol className="tutor-lines">
-                        {h.lines.map((l, i) => <li key={i}>{stepLineText(l, formatMathNumber)}</li>)}
+                        {h.lines.map((l, i) => <li key={i}><StepLineView line={l} fmt={formatMathNumber} /></li>)}
                     </ol>
                 </div>
             ))}

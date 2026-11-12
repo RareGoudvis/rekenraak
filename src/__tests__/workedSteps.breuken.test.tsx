@@ -1,9 +1,17 @@
-import { describe, expect, it } from 'vitest';
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
 import { handigSteps, stepText, stepsAtLevel, workedSteps, type StepLine, type StepToken } from '../services/math/workedSteps';
-import type { Equation } from '../services/math/types';
+import { StepLineView } from '../components/viewer/StepTokens';
+import MathBlockRenderer from '../components/viewer/MathBlockRenderer';
+import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
+import { makeBlock } from './helpers/makeBlock';
+import type { Equation, MathBlock } from '../services/math/types';
 
 // Via breuken (Op.stap 2.2.GL6.37): the standard for kommagetal × kommagetal and anything : a kommagetal,
 // an extra handig view next to eenheden for kommagetal : natuurlijk getal.
+
+afterEach(cleanup);
 
 const e = (a: number, op: Equation['operator'], b: number): Equation =>
     ({ id: 'x', operands: [a, b], operator: op, answer: 0, isManuallyEdited: false });
@@ -109,5 +117,27 @@ describe('every line equals the answer', () => {
         expect(simplified).toEqual({ t: 'frac', n: 9, d: 10 });
         // 700/35 is 20 at once: no "20/1" in between.
         expect(workedSteps(e(70, ':', 3.5))!.some(l => l.kind === 'simplify')).toBe(false);
+    });
+});
+
+describe('rendering', () => {
+    it('a breuk is stacked; a line without one stays a plain string', () => {
+        const [first] = workedSteps(e(5.4, ':', 1.2))!;
+        const c = render(<StepLineView line={first} fmt={fmt} />).container;
+        expect(c.querySelectorAll('[role="math"]')).toHaveLength(2);
+        expect(c.textContent).toBe('= 5410 : 1210');
+        cleanup();
+        const plain = workedSteps(e(5.4, ':', 9))![0];
+        expect(render(<StepLineView line={plain} fmt={fmt} />).container.innerHTML).toBe('= 54 t : 9');
+    });
+
+    it('the answer key stacks the breuken under the sum', () => {
+        const block: MathBlock = {
+            ...makeBlock('hr-std-delen', { id: 'del', constraints: { numberType: 'decimal', maxGetal: 100, decimalPlaces: 2, solutionSteps: 'basis' } }),
+            exercises: [{ ...e(0.72, ':', 0.8), answer: 0.9 }],
+        };
+        const c = render(<BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}><MathBlockRenderer block={block} showSolutions /></BlockWidthProvider>).container;
+        expect(c.querySelectorAll('[role="math"]').length).toBe(2 + 2 + 1 + 1);
+        expect((c.textContent ?? '').replace(/\s+/g, ' ')).toContain('=0,9');
     });
 });
