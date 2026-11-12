@@ -19,7 +19,9 @@ export type StepToken =
     // Between counted jumps: "0, 5, 10, 15".
     | { t: 'sep' }
     // Delen met rest: "9 rest 1"; the part after it is what is left over, not divided.
-    | { t: 'rest' };
+    | { t: 'rest' }
+    // A breuk, drawn stacked; via breuken (Op.stap 2.2.GL6.37: 54/10 : 9 = 6/10).
+    | { t: 'frac'; n: number; d: number };
 
 export type StepUnit = 'T' | 'H' | 'D' | 't' | 'h' | 'd';
 
@@ -28,7 +30,10 @@ export type StepUnit = 'T' | 'H' | 'D' | 't' | 'h' | 'd';
 // × and :: 'parts' = the split written out, 'distribute' = spread over the parts, 'values' = the
 // partial results, 'units' = a sum read in tientallen / tienden ("8 × 6 T"). Met rest: 'multiples' =
 // the divisor's multiples around the deeltal, 'remainder' = the deeltal as that multiple plus the rest.
-export type StepKind = 'first' | 'move' | 'split' | 'fill' | 'answer' | 'parts' | 'distribute' | 'values' | 'units' | 'multiples' | 'remainder';
+// Via breuken: 'fractions' = the sum in breuken, 'invert' = × the omgekeerde, 'product' = one breuk,
+// 'simplify' = that breuk vereenvoudigd.
+export type StepKind = 'first' | 'move' | 'split' | 'fill' | 'answer' | 'parts' | 'distribute' | 'values' | 'units' | 'multiples' | 'remainder'
+    | 'fractions' | 'invert' | 'product' | 'simplify';
 
 // A line reads as "= <tokens>"; the renderer draws the "=" and the original sum itself. An `aside`
 // line is a side calculation ("6 × 9 = 54 en 6 × 10 = 60") that stands on its own, without that "=".
@@ -333,8 +338,71 @@ function sprongenDeel(a: number, d: number): StepLine[] | null {
     return [countLine(Array.from({ length: q + 1 }, (_, i) => d * i), true), line('answer', true, [num(q)])];
 }
 
+// Via breuken (Op.stap 2.2.GL6.37). The range, so the steps stay mental: at most 2 decimals, a teller of
+// at most 1000, a natural operand up to 1000 (a factor up to 100), the result at most 10 000 with at most
+// 3 decimals. Outside it: null.
+const MAX_TELLER = 1000;
+const MAX_BREUK_PRODUCT = 100_000;
+const gcd = (x: number, y: number): number => (y ? gcd(y, x % y) : x);
+const frac = (n: number, d: number): StepToken => ({ t: 'frac', n, d });
+
+// A kommagetal as its decimal breuk (5,4 → 54/10), a natural number as itself; null outside the range.
+function asBreuk(x: number): { n: number; d: number } | null {
+    if (x <= 0) return null;
+    const dp = decimalsOf(x);
+    if (dp > 2) return null;
+    const n = Math.round(x * 10 ** dp);
+    return n <= MAX_TELLER ? { n, d: 10 ** dp } : null;
+}
+const breukTok = (b: { n: number; d: number }): StepToken => (b.d === 1 ? num(b.n) : frac(b.n, b.d));
+
+// 0,4 × 0,3 = 4/10 × 3/10 = 12/100 = 0,12. The product keeps its noemer 10 or 100, so it reads off as a kommagetal.
+function breukenMaal(a: number, b: number): StepLine[] | null {
+    if (Number.isInteger(a) && Number.isInteger(b)) return null;
+    const x = asBreuk(a), y = asBreuk(b);
+    if (!x || !y || (x.d === 1 && (x.n < 2 || x.n > 100)) || (y.d === 1 && (y.n < 2 || y.n > 100))) return null;
+    const p = x.n * y.n, q = x.d * y.d;
+    if (p > MAX_MULDIV) return null;
+    return [
+        line('fractions', true, [breukTok(x), op('x'), breukTok(y)]),
+        line('product', true, [frac(p, q)]),
+        line('answer', true, [num(roundTo(p / q, 4))]),
+    ];
+}
+
+// : a natural number divides the teller (5,4 : 9 = 54/10 : 9 = 6/10 = 0,6); : a kommagetal is × its omgekeerde,
+// then vereenvoudigd (0,72 : 0,8 = 72/100 : 8/10 = 72/100 × 10/8 = 720/800 = 9/10 = 0,9).
+function breukenDeel(a: number, d: number): StepLine[] | null {
+    if (Number.isInteger(a) && Number.isInteger(d)) return null;
+    const x = asBreuk(a), y = asBreuk(d);
+    if (!x || !y) return null;
+    if (y.d === 1) {
+        if (y.n < 2 || y.n > 9 || x.n % y.n !== 0) return null;
+        return [
+            line('fractions', true, [breukTok(x), op(':'), num(y.n)]),
+            line('product', true, [frac(x.n / y.n, x.d)]),
+            line('answer', true, [num(roundTo(x.n / y.n / x.d, 2))]),
+        ];
+    }
+    const p = x.n * y.d, q = x.d * y.n;
+    if (p > MAX_BREUK_PRODUCT || q > MAX_BREUK_PRODUCT) return null;
+    const g = gcd(p, q), sp = p / g, sq = q / g;
+    // The quotient must be a kommagetal of at most 3 decimals (1 : 0,3 is not).
+    if (1000 % sq !== 0 || sp / sq > MAX_MULDIV) return null;
+    const lines = [
+        line('fractions', true, [breukTok(x), op(':'), frac(y.n, y.d)]),
+        line('invert', true, [breukTok(x), op('x'), frac(y.d, y.n)]),
+        line('product', true, [frac(p, q)]),
+    ];
+    if (g > 1 && sq > 1) lines.push(line('simplify', true, [frac(sp, sq)]));
+    lines.push(line('answer', true, [num(roundTo(sp / sq, 3))]));
+    return lines;
+}
+
 function maalSteps(a: number, b: number): StepLine[] | null {
-    if (!Number.isInteger(a) || !Number.isInteger(b)) return eenhedenMaal(a, b);
+    // Kommagetal × kommagetal via breuken; × a natural number via eenheden where that applies.
+    if (!Number.isInteger(a) && !Number.isInteger(b)) return breukenMaal(a, b);
+    if (!Number.isInteger(a) || !Number.isInteger(b)) return eenhedenMaal(a, b) ?? breukenMaal(a, b);
     if (a < 2 || b < 2 || a * b > MAX_MULDIV) return null;
     // A tafel: herhaalde optelling, the method pupils learn it by (Op.stap L2-L3).
     if (a <= 10 && b <= 10) return herhaaldeOptelling(a, b);
@@ -342,7 +410,9 @@ function maalSteps(a: number, b: number): StepLine[] | null {
 }
 
 function deelSteps(a: number, d: number): StepLine[] | null {
-    if (!Number.isInteger(a)) return eenhedenDeel(a, d);
+    // : a kommagetal via breuken; a kommagetal : a natural number via eenheden where that applies.
+    if (!Number.isInteger(d)) return breukenDeel(a, d);
+    if (!Number.isInteger(a)) return eenhedenDeel(a, d) ?? breukenDeel(a, d);
     if (!Number.isInteger(d) || d < 2 || d > 9 || a > MAX_MULDIV || a % d !== 0) return null;
     // A deeltafel: counted in jumps of the deler (Op.stap L2-L3).
     if (a / d <= 10) return sprongenDeel(a, d);
@@ -484,7 +554,7 @@ export function workedSteps(eq: Equation, c?: Partial<AddSubConstraints>): StepL
 }
 
 export interface HandigStrategy {
-    name: 'Compenseren' | 'Ontbinden';
+    name: 'Compenseren' | 'Ontbinden' | 'Via breuken';
     lines: StepLine[];
 }
 
@@ -496,8 +566,8 @@ export function handigSteps(eq: Equation, c?: Partial<AddSubConstraints>): Handi
     if (!ab || presetOf(eq, c) === null || eq.remainder !== undefined) return [];
     const [a, b] = ab;
     const found: [HandigStrategy['name'], StepLine[] | null][] =
-        eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ['Ontbinden', ontbindenMaal(a, b)]]
-        : eq.operator === ':' ? [['Compenseren', compenserenDeel(a, b)], ['Ontbinden', ontbindenDeel(a, b)]]
+        eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ['Ontbinden', ontbindenMaal(a, b)], ['Via breuken', breukenMaal(a, b)]]
+        : eq.operator === ':' ? [['Compenseren', compenserenDeel(a, b)], ['Ontbinden', ontbindenDeel(a, b)], ['Via breuken', breukenDeel(a, b)]]
         : Number.isInteger(a) && Number.isInteger(b) ? [['Compenseren', compenserenPlusMin(a, b, eq.operator as '+' | '-')]]
         : [];
     const standard = workedSteps(eq, c);
@@ -521,6 +591,7 @@ export function stepText(tokens: StepToken[], fmt: (n: number) => string = Strin
         else if (tok.t === 'and') s += ' en ';
         else if (tok.t === 'sep') s += ', ';
         else if (tok.t === 'rest') s += ' rest ';
+        else if (tok.t === 'frac') s += `${fmt(tok.n)}/${fmt(tok.d)}`;
         else s += ` ${tok.u}`;
     }
     return s;

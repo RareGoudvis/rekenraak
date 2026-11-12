@@ -15,7 +15,11 @@ import { itemLabel, itemLabelChars } from './itemNumbering';
 import { hrRowLayout, hrRowStats, metRestKladLayout, HR_SOLUTION_FONT, MET_REST_HELP_BLANK_PX, MET_REST_QUOTIENT_BLANK_PX, MET_REST_REST_BLANK_PX } from '../../services/layout/hrRowLayout';
 import KioskAnswerSlot from './KioskAnswerSlot';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { stepsAtLevel, stepText, stepLineText, type StepLine } from '../../services/math/workedSteps';
+import { stepsAtLevel, stepLineText, type StepLine } from '../../services/math/workedSteps';
+import { StepTokens } from './StepTokens';
+
+// A working row with a stacked breuk: two 0.8em digit lines plus the bar need about 1.4 rows of room.
+const FRAC_ROW_H = `calc(${ANSWER_ROW_H} * 1.4)`;
 
 interface Props {
     block: MathBlock;
@@ -462,10 +466,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             )}
                             {steps ? (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>{steps.map((line, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: ANSWER_ROW_H, whiteSpace: 'nowrap' }}>
+                                    // A stacked breuk (via breuken) is taller than a digit line: its row gets the room and centres, so "=" meets the breukstreep.
+                                    <div key={i} style={{ display: 'flex', width: '100%', whiteSpace: 'nowrap', ...(line.tokens.some(t => t.t === 'frac') ? { alignItems: 'center', height: FRAC_ROW_H } : { alignItems: 'flex-end', height: ANSWER_ROW_H }) }}>
                                         {!line.aside && <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>}
                                         {/* Basis lines bold like every solution; the optional lines thinner, so a teacher sees which ones a pupil may skip. */}
-                                        <span style={{ ...atFont(styles.solutionText, 1), padding: 0, fontWeight: line.basis ? 700 : 400 }}>{stepText(line.tokens, formatMathNumber)}</span>
+                                        <span style={{ ...atFont(styles.solutionText, 1), padding: 0, fontWeight: line.basis ? 700 : 400 }}><StepTokens tokens={line.tokens} fmt={formatMathNumber} /></span>
                                     </div>
                                 ))}</div>
                             ) : !anyMissing ? (
