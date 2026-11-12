@@ -200,9 +200,9 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                     </div>
                                 </div>
                                 {/* The kiosk hides a test's results until the end anyway; the teacher's own choice returns when testmodus goes off. */}
-                                {/* Only optellen has worked steps for now (rijgen); other types simply never offer them. */}
+                                {/* Only optellen and aftrekken have worked steps for now (rijgen); other types simply never offer them. */}
                                 <SwitchRow label="Stappen tonen na een fout" checked={showSteps && !testMode} onChange={setShowSteps} disabled={testMode}
-                                    note={testMode ? 'In testmodus is er geen juist/fout, dus ook geen stappen.' : 'Voorlopig enkel bij optellen.'} />
+                                    note={testMode ? 'In testmodus is er geen juist/fout, dus ook geen stappen.' : 'Voorlopig enkel bij optellen en aftrekken.'} />
                                 <SwitchRow label="Statistieken pas op het einde" checked={statsLocked || testMode} onChange={setStatsLocked} disabled={testMode}
                                     note={testMode ? 'In testmodus zie je de resultaten pas op het einde.' : undefined} />
                             </div>
