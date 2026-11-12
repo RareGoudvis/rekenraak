@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { ArrowLeft, Play } from '@phosphor-icons/react';
 import { useEenvoudigData } from '../../components/eenvoudig/useEenvoudigData';
 import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
-import type { CardVariant } from '../../config/eenvoudig/cards';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { useOefenStore } from '../useOefenStore';
 import { tryFullscreen } from '../kiosk/fullscreen';
-import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, modeKey, usableVariants, type ZelfMode } from './zelfSessie';
+import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
 
 // The page opened without a link: a pupil picks leerjaar, onderwerp, oefening and how much, and starts alone.
 export default function ZelfPicker() {
@@ -14,11 +13,13 @@ export default function ZelfPicker() {
     const openZelf = useOefenStore(s => s.openZelf);
     const [grade, setGrade] = useState<Leerjaar | null>(null);
     const [topicId, setTopicId] = useState<string | null>(null);
-    const [variant, setVariant] = useState<CardVariant | null>(null);
+    const [choice, setChoice] = useState<ZelfChoice | null>(null);
     const [mode, setMode] = useState<ZelfMode>({ kind: 'count', n: 5 });
 
+    const choices = data && grade !== null && topicId !== null ? choicesFor(data, grade, topicId) : [];
+    // A topic with one choice skips that step, so Back from "Hoeveel" leaves the topic too.
     const back = () => {
-        if (variant) setVariant(null);
+        if (choice) { setChoice(null); if (choices.length <= 1) setTopicId(null); }
         else if (topicId) setTopicId(null);
         else setGrade(null);
     };
@@ -59,7 +60,11 @@ export default function ZelfPicker() {
                             <h2 className="zelf-section-title">{section.name}</h2>
                             <div className="zelf-grid">
                                 {list.map(t => (
-                                    <button key={t.id} type="button" className="zelf-choice" onClick={() => setTopicId(t.id)}>{t.label}</button>
+                                    <button key={t.id} type="button" className="zelf-choice" onClick={() => {
+                                        setTopicId(t.id);
+                                        const only = choicesFor(data, grade, t.id);
+                                        if (only.length === 1) setChoice(only[0]);
+                                    }}>{t.label}</button>
                                 ))}
                             </div>
                         </section>
@@ -69,24 +74,19 @@ export default function ZelfPicker() {
         );
     }
 
-    const cards = topics.get(topicId) ?? [];
-    const topicLabel = EENVOUDIG_NAV.flatMap(s => s.topics).find(t => t.id === topicId)?.label ?? '';
+    const topicLabel = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === topicId)?.label ?? '';
 
-    if (variant === null) {
+    if (choice === null) {
         return (
             <main className="oefen-center zelf">
                 {backBtn}
                 <h1 className="oefen-title">{topicLabel}</h1>
-                {cards.map(({ card, vars }) => (
-                    <section key={`${card.name}|${vars[0].id}`} className="zelf-section" aria-label={card.name}>
-                        <h2 className="zelf-section-title">{card.name}</h2>
-                        <div className="zelf-grid">
-                            {vars.map(v => (
-                                <button key={v.id} type="button" className="zelf-choice" onClick={() => setVariant(v)}>{v.l || card.name}</button>
-                            ))}
-                        </div>
-                    </section>
-                ))}
+                <p className="oefen-lead">Wat wil je oefenen?</p>
+                <div className="zelf-grid zelf-grid-choices">
+                    {choices.map(c => (
+                        <button key={c.key} type="button" className="zelf-choice zelf-choice-big" onClick={() => setChoice(c)}>{c.label}</button>
+                    ))}
+                </div>
             </main>
         );
     }
@@ -110,12 +110,12 @@ export default function ZelfPicker() {
         <main className="oefen-center zelf">
             {backBtn}
             <h1 className="oefen-title">Hoeveel wil je doen?</h1>
-            <p className="oefen-lead">{variant.label}</p>
+            <p className="oefen-lead">{topicLabel}: {choice.label}</p>
             {group('count', 'Aantal oefeningen')}
             <p className="zelf-or">of op tijd</p>
             {group('timer', 'Aantal minuten')}
             <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big"
-                onClick={() => { tryFullscreen(); openZelf(buildZelfSessie(variant, mode)); }}>
+                onClick={() => { tryFullscreen(); openZelf(buildZelfSessie(choice, mode)); }}>
                 <Play weight="fill" aria-hidden /> Begin met oefenen
             </button>
         </main>
