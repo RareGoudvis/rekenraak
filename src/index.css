@@ -922,6 +922,8 @@ textarea:focus-visible,
 .ez-grid { display: grid; grid-template-columns: repeat(auto-fill, 216px); gap: 12px; }
 .ez-tc { border: 1px solid var(--separator); border-left: 3px solid var(--ez-line); border-radius: 10px; background: var(--bg-surface); padding: 10px; width: 216px; box-sizing: border-box; display: grid; grid-template-rows: 36px 100px 24px; gap: 7px; cursor: pointer; text-align: left; min-width: 0; }
 .ez-tc:hover { background: var(--bg-active); }
+.ez-tc-2 { grid-column: span 2; width: auto; }
+@media (max-width: 700px) { .ez-tc-2 { grid-column: auto; width: 216px; } }
 .ez-tc:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
 .ez-tc-h { display: flex; align-items: center; min-width: 0; }
 .ez-tc-h b { font-size: 13.5px; line-height: 18px; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }

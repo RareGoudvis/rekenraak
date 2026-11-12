@@ -20,6 +20,8 @@ interface Props {
     // A furniture block (layout-*) has no exercise and is fitted itself.
     fitOne?: boolean;
     maxScale?: number;                       // fitOne only: how far a small sum may be enlarged; default 1.5
+    // fitOne only: the measured ink size (px, unscaled, laid out at full block width) after every fit.
+    onInk?: (ink: { w: number; h: number }) => void;
 }
 
 // A preview never needs huge numbers, and a generator fed an out-of-range max (e.g. the
@@ -113,7 +115,9 @@ function inkBox(root: HTMLElement): Box | null {
     return box;
 }
 
-export default function ExercisePreview({ typeId, constraints, nonce = 0, height = 150, count = 1, emptyText, unclamped = false, showSolutions = true, fitOne = false, maxScale = 1.5 }: Props) {
+export default function ExercisePreview({ typeId, constraints, nonce = 0, height = 150, count = 1, emptyText, unclamped = false, showSolutions = true, fitOne = false, maxScale = 1.5, onInk }: Props) {
+    const onInkRef = useRef(onInk);
+    useEffect(() => { onInkRef.current = onInk; });
     const { ref: boxRef, inView } = useInView<HTMLDivElement>();
     const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
@@ -152,6 +156,7 @@ export default function ExercisePreview({ typeId, constraints, nonce = 0, height
                 const inkW = ink.r - ink.l;
                 const inkH = ink.b - ink.t;
                 if (inkW <= 0 || inkH <= 0) return;
+                onInkRef.current?.({ w: inkW, h: inkH });
                 const origin = inner.getBoundingClientRect();
                 const s = Math.min(maxScale, boxW / inkW, boxH / inkH);
                 // Centre the ink box, not the layout box: its offset inside inner is (ink - origin).
