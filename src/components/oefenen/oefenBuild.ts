@@ -31,6 +31,10 @@ export function filterOefenLeaves(leaves: OefenLeaf[], query: string, grade: Lee
     return leaves.filter(l => (grade === null || l.minGrade <= grade) && (!needle || l.searchText.some(s => s.includes(needle))));
 }
 
+/** The kiosk's own start on top of a leaf's constraints (kioskSeed), shared by the builder and Zelf oefenen so both start alike. */
+export const withKioskSeed = (typeId: string, c: Record<string, unknown>): Record<string, unknown> =>
+    ({ ...c, ...kioskFor(typeId)?.kioskSeed?.(c) });
+
 export function listOefenLeaves(): OefenLeaf[] {
     const capable = new Set(kioskCapableLeaves().map(l => l.id));
     const appLeaf = new Map(flattenLeaves().map(l => [l.id, l]));
@@ -48,7 +52,7 @@ export function listOefenLeaves(): OefenLeaf[] {
                 domainId: dom.id,
                 domainLabel: dom.label,
                 accentVar: dom.accentVar,
-                constraints: { ...leaf.defaultConstraints, ...kioskFor(leaf.typeId)?.kioskSeed?.(leaf.defaultConstraints ?? {}) },
+                constraints: withKioskSeed(leaf.typeId, leaf.defaultConstraints ?? {}),
                 instruction: leaf.instruction,
                 searchText: [label, leaf.label, ...(t.children ? [t.label] : []), sub.label, dom.label].map(s => s.toLowerCase()),
                 minGrade: LEERJAREN.find(g => leafAllowedForGrade(leaf, g)) ?? 6,
@@ -169,7 +173,7 @@ export function rowsFromSessie(sessie: OefenSessie): BuilderRow[] {
 const yieldCache = new WeakMap<object, Map<string, boolean>>();
 
 /** The row's settings give the kiosk at least one exercise: one draw through the kiosk's own nextExercise. */
-export function rowYields(row: Pick<BuilderRow, 'leaf' | 'constraints'>, rng?: Rng): boolean {
+export function rowYields(row: { leaf: Pick<OefenLeaf, 'id' | 'typeId' | 'label'>; constraints: Record<string, unknown> }, rng?: Rng): boolean {
     const cacheKey = `${row.leaf.typeId}|${row.leaf.id}`;
     const cached = rng ? undefined : yieldCache.get(row.constraints)?.get(cacheKey);
     if (cached !== undefined) return cached;

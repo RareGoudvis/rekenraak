@@ -4,6 +4,7 @@ import StorageBanner from './StorageBanner';
 import StopButton from './StopButton';
 import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
+import { isZelfSessie } from '../zelf/zelfSessie';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
 
 // The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
@@ -93,7 +94,7 @@ export default function StatsScreen() {
     const sessie = useOefenStore(s => s.sessie);
     const run = useOefenStore(s => s.run);
     const phase = useOefenStore(s => s.phase);
-    const { closeStats, restart, clear } = useOefenStore.getState();
+    const { closeStats, restart, clear, load } = useOefenStore.getState();
     const [confirmClear, setConfirmClear] = useState(false);
     const [viewing, setViewing] = useState<OefenRun | null>(null);
     if (!sessie || !run) return null;
@@ -166,6 +167,7 @@ export default function StatsScreen() {
             {locked && (
                 <div className="kiosk-stats-actions">
                     <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
+                    {isZelfSessie(sessie) && <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={() => load('')}>Andere oefening</button>}
                     {confirmClear ? (
                         <>
                             <button type="button" className="kiosk-btn kiosk-btn-danger is-armed" onClick={clear}>Ja, alles wissen</button>

@@ -956,3 +956,43 @@ html:has(.oefen-body),
 }
 .kiosk-steps-pulse { animation: kiosk-steps-pulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .kiosk-steps-pulse { animation: none; } }
+
+/* ── Zelf oefenen (picker on the bare page) ────────────────────────────────── */
+.zelf { justify-content: flex-start; }
+.zelf-back { align-self: flex-start; }
+.zelf-section { width: min(100%, 960px); display: flex; flex-direction: column; gap: var(--sp-2); }
+.zelf-section-title {
+  margin: 0;
+  font-size: var(--kiosk-text);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+}
+.zelf-grid {
+  width: min(100%, 960px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-2);
+}
+.zelf-grid-grades { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 640px; }
+.zelf-choice {
+  min-height: max(var(--kiosk-tap), 64px);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--separator);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text-main);
+  font: inherit;
+  font-size: var(--kiosk-text);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.zelf-choice-num { font-size: var(--kiosk-text-xl); min-height: 88px; }
+@media (hover: hover) { .zelf-choice:hover { background: var(--bg-hover); } }
+.zelf-choice:active { background: var(--bg-active); }
+.zelf-choice.is-picked { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
+.zelf-or { margin: 0; color: var(--text-muted); }
+.zelf-amount { max-width: 720px; }
