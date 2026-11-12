@@ -73,8 +73,8 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
-                text: 'Delen met rest: een kladlijn naast elke som voor de tafel van de deler, en stappen in de verbetersleutel en Oefenmodus.',
-                example: { leafId: 'hr-std-delen-nat', constraints: { multiplicationMode: 'met_rest', metRestLevel: 1, maxGetal: 100, metRestKladlijn: true }, grade: 3, height: 170, before: 'Eerst: alleen 55 : 6 = ... r ...', after: 'Nu: met een kladlijn voor 6 × 9 = 54 en 6 × 10 = 60.' },
+                text: 'Delen met rest: een kladlijn om in sprongen te tellen (0, 5, 10, 15 ...), en stappen in de verbetersleutel en Oefenmodus.',
+                example: { leafId: 'hr-std-delen-nat', constraints: { multiplicationMode: 'met_rest', metRestLevel: 1, maxGetal: 100, metRestKladlijn: true }, grade: 3, height: 170, before: 'Eerst: alleen 55 : 6 = ... r ...', after: 'Nu: met een kladlijn: 0 6 12 18 24 30 36 42 48 54.' },
             },
             { kind: 'nieuw', text: 'Combinatie en Zelf samenstellen: ook delingen met rest.' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kiezen zelf hun leerjaar en oefening, ook op een telefoon. De link en QR-code vind je bij Oefenmodus.' },

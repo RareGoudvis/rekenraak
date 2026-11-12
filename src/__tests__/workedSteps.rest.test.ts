@@ -43,7 +43,11 @@ const splitAt = (tokens: StepToken[], kind: StepToken['t']): StepToken[][] => {
 // Every line must hold for the sum: an aside is a true equality, a "= …" line is worth a : d (its rest over d).
 function checkLines(a: number, d: number, ls: StepLine[]) {
     for (const l of ls) {
-        if (l.aside) {
+        if (l.kind === 'multiples') {
+            // The counted jumps: 0, d, 2d … up to the deeltal.
+            const vals = l.tokens.filter(t => t.t === 'num').map(t => (t as { v: number }).v);
+            expect(vals, stepText(l.tokens)).toEqual(Array.from({ length: Math.floor(a / d) + 1 }, (_, i) => i * d));
+        } else if (l.aside) {
             for (const eqn of splitAt(l.tokens, 'and')) {
                 const [lhs, rhs] = splitAt(eqn, 'eq');
                 expect(evalTokens(lhs), stepText(l.tokens)).toBe(evalTokens(rhs));
@@ -59,8 +63,9 @@ function checkLines(a: number, d: number, ls: StepLine[]) {
 }
 
 describe('met rest, the owner\'s and Op.stap examples', () => {
-    it('55 : 6 by the tafel: both multiples, the deeltal split, the answer', () => {
-        expect(lines(rest(55, 6))).toEqual(['6 × 9 = 54 en 6 × 10 = 60', '55 = 54 + 1', '= 9 rest 1']);
+    it('26 : 5 counted in jumps (owner, 2026-11-12), then the deeltal split and the answer', () => {
+        expect(lines(rest(26, 5))).toEqual(['0, 5, 10, 15, 20, 25', '26 = 25 + 1', '= 5 rest 1']);
+        expect(lines(rest(55, 6))).toEqual(['0, 6, 12, 18, 24, 30, 36, 42, 48, 54', '55 = 54 + 1', '= 9 rest 1']);
         expect(workedSteps(rest(55, 6))!.slice(0, 2).every(l => l.aside)).toBe(true);
     });
     it('235 : 3 by splitsen en verdelen (Op.stap 2.2.GL5.19)', () => {
@@ -70,8 +75,8 @@ describe('met rest, the owner\'s and Op.stap examples', () => {
         expect(lines(rest(245, 6))).toEqual(['= (240 + 5) : 6', '= (240 : 6) rest 5', '= 40 rest 5']);
     });
     it('quotient 10 still uses the tafel, delers up to 12', () => {
-        expect(lines(rest(65, 6))[0]).toBe('6 × 10 = 60 en 6 × 11 = 66');
-        expect(lines(rest(100, 12))).toEqual(['12 × 8 = 96 en 12 × 9 = 108', '100 = 96 + 4', '= 8 rest 4']);
+        expect(lines(rest(65, 6))[0]).toBe('0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60');
+        expect(lines(rest(100, 12))).toEqual(['0, 12, 24, 36, 48, 60, 72, 84, 96', '100 = 96 + 4', '= 8 rest 4']);
     });
 });
 

@@ -248,20 +248,22 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const REST_BLANK_PX = MET_REST_REST_BLANK_PX;
     const HELP_COL_PX = 2 * OP_GLYPH_PX + HELP_BLANK_PX + 4;
     // The kladlijn follows the sum's own tab in gemengd (a ':' tab setting), the block elsewhere.
-    const kladOn = (ex: Equation) => scaffold && ex.remainder !== undefined && !!(mixedOptions
+    // Counting in jumps only stays short up to a quotient of 10; a bigger one is split, not counted.
+    const kladOn = (ex: Equation) => scaffold && ex.remainder !== undefined && (ex.answer as number) <= 10 && !!(mixedOptions
         ? (mixedC.perVariant?.[(ex.variant ?? ':') as MixedVariantId]?.metRestKladlijn ?? c.metRestKladlijn)
         : c.metRestKladlijn);
-    // The deler's multiples under and over the deeltal: what the pupil writes on the kladlijn.
-    const kladTexts = (ex: Equation): [string, string] => {
-        const d = ex.operands[1] as number, q = ex.answer as number;
-        return [`${formatMathNumber(d)} × ${formatMathNumber(q)} = ${formatMathNumber(d * q)}`, `${formatMathNumber(d)} × ${formatMathNumber(q + 1)} = ${formatMathNumber(d * (q + 1))}`];
-    };
-    const KLAD_SEP = ' · ';
-    const kladRows = block.exercises.filter(ex => !!ex?.operands && kladOn(ex)).map(kladTexts);
+    // The pupil counts in jumps of the deler on the kladlijn (owner: 26 : 5 → 0 5 10 15 20 25).
+    const jumpsTo = (d: number, n: number) => Array.from({ length: n + 1 }, (_, i) => formatMathNumber(d * i));
+    // The key shows the jumps up to the quotient; the line always has room for 10 jumps, so its length never gives the quotient away.
+    const kladTexts = (ex: Equation): string[] => jumpsTo(ex.operands[1] as number, ex.answer as number);
+    const kladRoom = (ex: Equation): string[] => jumpsTo(ex.operands[1] as number, 10);
+    const KLAD_SEP = '  ';
+    const halves = (xs: string[]): string[] => { const m = Math.ceil(xs.length / 2); return [xs.slice(0, m).join(KLAD_SEP), xs.slice(m).join(KLAD_SEP)]; };
+    const kladRows = block.exercises.filter(ex => !!ex?.operands && kladOn(ex)).map(kladRoom);
     const klad = kladRows.length > 0 ? metRestKladLayout(rowLayout, {
         widthPx: blockPx, helpOn: !tight && scaffold,
-        kladChars: Math.max(...kladRows.map(([lo, hi]) => lo.length + KLAD_SEP.length + hi.length)),
-        multipleChars: Math.max(...kladRows.flat().map(t => t.length)),
+        kladChars: Math.max(...kladRows.map(r => r.join(KLAD_SEP).length)),
+        multipleChars: Math.max(...kladRows.map(r => Math.max(...halves(r).map(t => t.length)))),
     }) : null;
     const kladLine: React.CSSProperties = { borderBottom: '1.5px dotted #000', width: '100%', height: ANSWER_LINE_H };
     const labelCell = (i: number) => {
@@ -337,7 +339,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-end', minHeight: ANSWER_ROW_H, marginLeft: `${labelColPx}px` }}>{content}</div>
                     );
                     const kladContent = exKlad?.place === 'below' && texts
-                        ? (exKlad.lines === 1 ? [texts.join(KLAD_SEP)] : texts).map((t, i) => belowLine(showSolutions ? <span style={solutionText}>{t}</span> : <div style={kladLine} />, i))
+                        ? (exKlad.lines === 1 ? [texts.join(KLAD_SEP)] : halves(texts)).map((t, i) => belowLine(showSolutions ? <span style={solutionText}>{t}</span> : <div style={kladLine} />, i))
                         : null;
                     return (
                         <div key={ex.id} style={{ display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-sheet-math)' }}>

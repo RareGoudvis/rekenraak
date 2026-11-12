@@ -226,7 +226,7 @@ export interface MetRestKlad {
     minPx: number;
 }
 
-/** Where the met-rest kladlijn goes: beside the sum when the key's "6 × 9 = 54 · 6 × 10 = 60" fits there, else below it. */
+/** Where the met-rest kladlijn goes: beside the sum when room for ten jumps of the deler (0 6 12 … 60) fits there, else below it. */
 export function metRestKladLayout(l: HrRowLayout, o: { widthPx: number; helpOn: boolean; kladChars: number; multipleChars: number }): MetRestKlad {
     const helpPx = o.helpOn ? 2 * l.opGlyphPx + MET_REST_HELP_BLANK_PX + 4 + l.answerGap : 0;
     const rowPx = l.labelColPx + helpPx + l.termBoxPx + l.termUnitGap + l.opGlyphPx + l.opTermGap + l.termBoxPx

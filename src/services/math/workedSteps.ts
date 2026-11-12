@@ -16,6 +16,8 @@ export type StepToken =
     // Inside an aside line: "6 × 9 = 54", and "en" between two of them.
     | { t: 'eq' }
     | { t: 'and' }
+    // Between counted jumps: "0, 5, 10, 15".
+    | { t: 'sep' }
     // Delen met rest: "9 rest 1"; the part after it is what is left over, not divided.
     | { t: 'rest' };
 
@@ -269,11 +271,12 @@ function eenhedenDeel(a: number, d: number): StepLine[] | null {
     return [line('units', true, [num(m), u, op(':'), num(d)]), line('units', true, [num(m / d), u]), line('answer', true, [num(roundTo(m / d / 10 ** dp, dp))])];
 }
 
-// Delen met rest by heart (owner, 2026-11-12: "write out the multiplications of the divider, also the one
-// above"): 55 : 6 → 6 × 9 = 54 en 6 × 10 = 60, 55 = 54 + 1, = 9 rest 1.
+// Delen met rest by counting in jumps of the deler (owner, 2026-11-12: "26 : 5 → 0 5 10 15 20 25"; Op.stap
+// 2.2.GL3.32): 26 : 5 → 0, 5, 10, 15, 20, 25, 26 = 25 + 1, = 5 rest 1.
 function tafelRest(a: number, d: number, q: number, r: number): StepLine[] {
+    const jumps = Array.from({ length: q + 1 }, (_, i) => d * i);
     const lines: StepLine[] = [
-        { ...line('multiples', true, [num(d), op('x'), num(q), { t: 'eq' }, num(d * q), { t: 'and' }, num(d), op('x'), num(q + 1), { t: 'eq' }, num(d * (q + 1))]), aside: true },
+        { ...line('multiples', true, jumps.flatMap((v, i) => (i ? [{ t: 'sep' } as StepToken, num(v)] : [num(v)]))), aside: true },
         { ...line('remainder', true, [num(a), { t: 'eq' }, num(d * q), op('+'), num(r)]), aside: true },
     ];
     lines.push(line('answer', true, [num(q), { t: 'rest' }, num(r)]));
@@ -496,6 +499,7 @@ export function stepText(tokens: StepToken[], fmt: (n: number) => string = Strin
         else if (tok.t === 'close') s += ')';
         else if (tok.t === 'eq') s += ' = ';
         else if (tok.t === 'and') s += ' en ';
+        else if (tok.t === 'sep') s += ', ';
         else if (tok.t === 'rest') s += ' rest ';
         else s += ` ${tok.u}`;
     }

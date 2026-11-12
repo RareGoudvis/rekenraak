@@ -36,6 +36,26 @@ function useCardTopic(cardId: string | undefined): string | null {
     return found && found.id === cardId ? found.topic : null;
 }
 
+// How many exercises matters for every type, so the quick block always offers it (same rule as the Opdrachtblok slider).
+function CountRow({ block }: { block: MathBlock }) {
+    const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
+    const aantal = block.numberOfExercises || 10;
+    return (
+        <div className="qb-row">
+            <label className="qb-q" htmlFor={`qb-count-${block.id}`}>Aantal oefeningen: {aantal}</label>
+            <input
+                id={`qb-count-${block.id}`} type="range" min="1" max="20" step="1" value={aantal}
+                style={{ accentColor: 'var(--accent-purple)' }}
+                onChange={(e) => {
+                    const next = Number(e.target.value);
+                    // The score caps at 2 points per exercise, as in the Opdrachtblok.
+                    updateBlockSettings(block.id, { numberOfExercises: next, totalPoints: Math.min(block.totalPoints || 0, next * 2) });
+                }}
+            />
+        </div>
+    );
+}
+
 function PillsRow({ block, spec }: { block: MathBlock; spec: QuickPills }) {
     const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
     const c = (block.constraints ?? {}) as Record<string, unknown>;
@@ -132,6 +152,7 @@ export default function QuickBlock({ block }: { block: MathBlock }) {
                 </div>
                 {block.cardId && onEdit && <button type="button" className="qb-edit" onClick={onEdit}>Aanpassen</button>}
             </div>
+            <CountRow block={block} />
             {specs.map((spec, i) => spec.kind === 'layout'
                 ? <LayoutRow key={`layout-${i}`} block={block} />
                 : <PillsRow key={spec.key} block={block} spec={spec} />)}

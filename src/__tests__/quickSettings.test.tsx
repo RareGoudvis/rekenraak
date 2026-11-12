@@ -54,6 +54,13 @@ describe('Inspector quick block', () => {
         expect(screen.getByRole('button', { name: /Opmaak/ })).toBeTruthy();
     });
 
+    test('always offers the number of exercises, and changing it changes the block', () => {
+        render(<Inspector />);
+        const slider = screen.getByLabelText(/Aantal oefeningen/) as HTMLInputElement;
+        fireEvent.change(slider, { target: { value: '14' } });
+        expect(useWorksheetStore.getState().blocks[0].numberOfExercises).toBe(14);
+    });
+
     test.each(['oefeningen', 'overzicht'] as const)('is absent on the %s tab', (tab) => {
         useWorksheetStore.setState({ sidebarTab: tab });
         render(<Inspector />);
