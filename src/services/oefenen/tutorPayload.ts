@@ -26,6 +26,14 @@ const TUTOR_VERSION = 1;
 const MAX_JSON = 20_000;
 const MAX_TITLE = 60;
 const OPS = new Set(['+', '-', 'x', ':']);
+const VARIANT_RE = /^[+\-x:](:compenseren)?$/;
+
+// One operator throughout (a chain of the same op): fold left; mixed operators are never revealed.
+function answerOf(ops: string, operands: number[]): number {
+    if (![...ops].every(o => o === ops[0])) return 0;
+    const fold = operands.reduce((acc, v) => (ops[0] === '+' ? acc + v : ops[0] === '-' ? acc - v : ops[0] === 'x' ? acc * v : acc / v));
+    return Number(fold.toFixed(6));
+}
 
 export interface TutorGroup {
     n: number | null;
@@ -41,13 +49,22 @@ export interface TutorSheet {
 const missingOf = (eq: Equation): number =>
     eq.missingIndex ?? (eq.missingTerm === 'operand1' ? 0 : eq.missingTerm === 'operand2' ? 1 : -1);
 
-function itemOut(eq: Equation): unknown {
+// A compenseren sum travels with its variant ('+:compenseren'), so the tutor shows the same strategy as
+// the answer key; the block preset lives in the settings, which the QR does not carry.
+function variantOf(block: MathBlock, eq: Equation): string | undefined {
+    if (eq.variant?.includes(':')) return eq.variant;
+    return (block.constraints as { preset?: string } | undefined)?.preset === 'compenseren' ? `${eq.operator}:compenseren` : undefined;
+}
+
+function itemOut(eq: Equation, variant?: string): unknown {
     if (!eq?.operands?.every(o => typeof o === 'number' && Number.isFinite(o))) return 0;
     const ops = eq.operators && eq.operators.length > 1 ? eq.operators.join('') : eq.operator;
     const missing = missingOf(eq);
-    if (ops === '+' && eq.operands.length === 2 && missing < 0) return eq.operands;
+    if (!variant && ops === '+' && eq.operands.length === 2 && missing < 0) return eq.operands;
     // The answer only travels for a puntoefening, where the tutor prints it as the given part.
-    return missing >= 0 && typeof eq.answer === 'number' ? [ops, eq.operands, missing, eq.answer] : [ops, eq.operands, missing];
+    const answer = missing >= 0 && typeof eq.answer === 'number' ? eq.answer : null;
+    if (variant) return [ops, eq.operands, missing, answer, variant];
+    return answer !== null ? [ops, eq.operands, missing, answer] : [ops, eq.operands, missing];
 }
 
 /** One page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on it has steps. */
@@ -56,7 +73,7 @@ export function encodeTutorPage(blocks: { block: MathBlock; n: number | null; ti
         .filter(({ block }) => (block.exercises?.length ?? 0) > 0)
         .map(({ block, n, title }) => {
             // Placeholders keep each sum on its printed label (a, b, c ...) even when a neighbour has no steps.
-            const items = block.exercises.map(ex => (hasSteps(block, ex) ? itemOut(ex) : 0));
+            const items = block.exercises.map(ex => (hasSteps(block, ex) ? itemOut(ex, variantOf(block, ex)) : 0));
             return items.some(it => it !== 0) ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items] : null;
         })
         .filter(g => g !== null);
@@ -68,7 +85,8 @@ const bad = (why: string): never => { throw new Error(`Deze QR-code kan niet gel
 function itemIn(raw: unknown): Equation | null {
     if (raw === 0) return null;
     if (!Array.isArray(raw)) return bad('oefening');
-    const [ops, operands, missing, answer] = typeof raw[0] === 'number' && raw.length === 2 ? ['+', raw, -1, undefined] : raw;
+    const [ops, operands, missing, answer, variant] = typeof raw[0] === 'number' && raw.length === 2 ? ['+', raw, -1, undefined, undefined] : raw;
+    if (variant !== undefined && (typeof variant !== 'string' || !VARIANT_RE.test(variant))) return bad('strategie');
     if (typeof ops !== 'string' || ops.length === 0 || ![...ops].every(o => OPS.has(o))) return bad('bewerking');
     if (!Array.isArray(operands) || operands.length < 2 || operands.length > 4 || !operands.every(o => typeof o === 'number' && Number.isFinite(o))) return bad('getallen');
     if (ops.length > 1 && ops.length !== operands.length - 1) return bad('bewerking');
@@ -76,10 +94,11 @@ function itemIn(raw: unknown): Equation | null {
     const operator = ops[0] as Equation['operator'];
     const eq: Equation = {
         id: '', operands: operands as number[], operator, isManuallyEdited: false,
-        // Only + needs a computed answer here (the steps build their own); others are never revealed.
-        answer: typeof answer === 'number' ? answer : ops === '+' ? (operands as number[]).reduce((a, b) => a + b, 0) : 0,
+        // The steps build their own lines; the answer is worked out so every operator decodes truthfully.
+        answer: typeof answer === 'number' ? answer : answerOf(ops, operands as number[]),
         ...(ops.length > 1 && { operators: [...ops] as Equation['operator'][] }),
         ...(missing >= 0 && { missingIndex: missing }),
+        ...(typeof variant === 'string' && { variant: variant as Equation['variant'] }),
     };
     return eq;
 }

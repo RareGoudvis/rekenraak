@@ -14,7 +14,7 @@ import type {
 } from '../services/math/constraintTypes';
 import { generateAdditionExercises, generateSubtractionExercises, generateMultiplicationExercises, generateDivisionExercises, generateDivisionExercisesNoted } from '../services/math/mathEngine';
 import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
-import { workedSteps, type StepLine } from '../services/math/workedSteps';
+import { handigSteps, workedSteps, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
 import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
 import { generateFractionExercises, generateFractionExercisesNoted } from '../services/fractions/fractionGenerator';
@@ -112,6 +112,8 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     kiosk?: KioskDescriptor;
     // Worked steps for one exercise (answer key, Oefenmodus, tutor page). Absent or null = no strategy.
     steps?: (ex: unknown, c: Record<string, unknown>) => StepLine[] | null;
+    // Handig rekenen: optional strategies a pupil may view next to the standard steps (never on the answer key).
+    handig?: (ex: unknown, c: Record<string, unknown>) => HandigStrategy[];
 }
 
 // Names each row's constraint family, so a default factory that drops or misspells a key
@@ -119,6 +121,7 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
 // stored heterogeneously, and every consumer looks a type up by its string typeId.
 // One function serves every hoofdrekenen row: the strategy follows the exercise's operator and preset.
 const hrSteps = (ex: unknown, c: Record<string, unknown>) => workedSteps(ex as Equation, c);
+const hrHandig = (ex: unknown, c: Record<string, unknown>) => handigSteps(ex as Equation, c);
 
 const row = <C extends BlockConstraints>(def: ExerciseTypeDef<C>): ExerciseTypeDef => def as ExerciseTypeDef;
 
@@ -509,12 +512,12 @@ const cijferRow = (defaultCount = 4): ExerciseTypeDef => row<CijferConstraints>(
 
 export const REGISTRY: Record<string, ExerciseTypeDef> = {
     // Mental math (hoofdrekenen standaardprocedure) — one typeId per operation.
-    'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: hrSteps }),
-    'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: hrSteps }),
-    'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax, kiosk: HR_KIOSK, steps: hrSteps }),
-    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: divMax, kiosk: HR_KIOSK, steps: hrSteps }),
+    'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
+    'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
+    'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
+    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: divMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
     // Mixed already relaxes per variant inside its own generator, so it brings its own note.
-    'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax, kiosk: HR_KIOSK, steps: hrSteps }),
+    'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
 
     // Cijferen (column arithmetic) — natural + decimal per operation.
     'cijferen-optellen-nat':         cijferRow(),

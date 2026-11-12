@@ -8,7 +8,8 @@ import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kio
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 import { KWART, TIME_WORDS } from '../services/clock/timeWords';
 import { REGISTRY } from '../config/exerciseRegistry';
-import type { StepLine } from '../services/math/workedSteps';
+import type { HandigStrategy, StepLine } from '../services/math/workedSteps';
+import { handigFor } from '../services/stepsAvailability';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -58,6 +59,8 @@ interface OefenState {
     statsFrom: 'exercise' | 'feedback' | 'retry' | 'steps';
     // The worked steps offered after a final fout (owner decision 2026-11-12), null otherwise.
     stepsOffer: StepLine[] | null;
+    // Handig rekenen for the same exercise, offered inside the steps panel.
+    handigOffer: HandigStrategy[];
     // Phase C: what the pupil did ON the card (taps, filled cells, order) for an 'interactive'
     // exercise, and the cell the keypad types into. Reset with every new exercise.
     interaction: InteractionState;
@@ -353,6 +356,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         field: 0,
         lastCorrect: null,
         stepsOffer: null,
+        handigOffer: [],
         statsFrom: 'exercise',
         interaction: EMPTY_INTERACTION,
         activeCell: null,
@@ -372,7 +376,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const unsupported = unsupportedSlots(s);
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
             if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
             // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
             const runs = loadRunsFor(s);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
@@ -401,7 +405,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         next() {
             clearFlash();
-            set({ stepsOffer: null });
+            set({ stepsOffer: null, handigOffer: [] });
             const { sessie: s, run } = get();
             if (!s || !run) return;
             const now = Date.now();
@@ -512,7 +516,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             persist(updated);
             // Only after the final try: steps during a retry would give the answer away. Testmodus never shows them.
             const stepsOffer = correct || s.testMode || s.noSteps ? null : REGISTRY[type.typeId]?.steps?.(cur.exercise, cur.constraints) ?? null;
-            set({ run: updated, lastCorrect: correct, stepsOffer });
+            const handigOffer = stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints) : [];
+            set({ run: updated, lastCorrect: correct, stepsOffer, handigOffer });
             // Testmodus: no juist/fout per exercise, straight on to the next one.
             if (s.testMode) { get().next(); return; }
             set({ phase: 'feedback' });

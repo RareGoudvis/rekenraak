@@ -1,6 +1,6 @@
 import { REGISTRY } from '../config/exerciseRegistry';
 import type { MathBlock } from './math/types';
-import type { StepLine } from './math/workedSteps';
+import type { HandigStrategy, StepLine } from './math/workedSteps';
 
 // The one rule for every place that offers worked steps (answer key, stappenhulp QR, Oefenmodus):
 // a sum has steps only when its type's strategy returns them under that block's own settings,
@@ -8,6 +8,12 @@ import type { StepLine } from './math/workedSteps';
 export function stepsFor(typeId: string, ex: unknown, constraints: unknown): StepLine[] | null {
     if (!ex) return null;
     return REGISTRY[typeId]?.steps?.(ex, (constraints ?? {}) as Record<string, unknown>) ?? null;
+}
+
+// The handig rekenen strategies a pupil may view for this sum (empty when none fits).
+export function handigFor(typeId: string, ex: unknown, constraints: unknown): HandigStrategy[] {
+    if (!ex) return [];
+    return REGISTRY[typeId]?.handig?.(ex, (constraints ?? {}) as Record<string, unknown>) ?? [];
 }
 
 function exercisesOf(block: MathBlock): unknown[] {

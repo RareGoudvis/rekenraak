@@ -123,6 +123,7 @@ export default function Kiosk() {
     const lastCorrect = useOefenStore(s => s.lastCorrect);
     const skipFlash = useOefenStore(s => s.skipFlash);
     const stepsOffer = useOefenStore(s => s.stepsOffer);
+    const handigOffer = useOefenStore(s => s.handigOffer);
     const next = useOefenStore(s => s.next);
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
     useKioskKeys();
@@ -161,7 +162,7 @@ export default function Kiosk() {
                             <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} />
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} />}
-                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} onNext={next} />}
+                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} />}
                     </section>
                 </main>
             )}

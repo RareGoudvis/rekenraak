@@ -81,10 +81,10 @@ describe('sweep: every a + b with a >= 10 and a + b <= 1000', () => {
 
 describe('shapes without a strategy return null', () => {
     it.each([
-        ['vermenigvuldigen', eq(12, 34, { operator: 'x', answer: 408 })],
+        ['a tafel', eq(6, 7, { operator: 'x', answer: 42 })],
         ['aftrekken onder nul', eq(188, 247, { operator: '-', answer: -59 })],
         ['aftrekken: brug op een 0-cijfer (403 − 20)', eq(503, 128, { operator: '-', answer: 375 })],
-        ['gemengd compenseren − variant', eq(475, 29, { operator: '-', answer: 446, variant: '-:compenseren' })],
+        ['gemengd tienvoud variant', eq(46, 10, { operator: 'x', answer: 460, variant: 'x:tienvoud' })],
         ['3 terms', { ...eq(100, 200), operands: [100, 200, 300], answer: 600 }],
         ['puntoefening', eq(475, 368, { missingTerm: 'operand2' })],
         ['puntoefening multi', eq(475, 368, { missingIndex: 1 })],
@@ -94,13 +94,14 @@ describe('shapes without a strategy return null', () => {
         ['first operand below 10', eq(8, 55)],
         ['one non-zero digit', eq(47, 8)],
         ['round tens only', eq(47, 30)],
-        ['gemengd compenseren variant', eq(475, 29, { variant: '+:compenseren' })],
+        ['a variant of another operator', eq(475, 29, { variant: '-:compenseren' })],
     ])('%s', (_name, e) => {
         expect(workedSteps(e as Equation)).toBeNull();
     });
 
-    it('a compenseren or puntoefening block', () => {
-        expect(workedSteps(eq(475, 368), { preset: 'compenseren' })).toBeNull();
+    it('a tienvoud or puntoefening block; compenseren has its own strategy (workedSteps.muldiv.test.ts)', () => {
+        expect(workedSteps(eq(475, 368), { preset: 'tienvoud' })).toBeNull();
+        expect(workedSteps(eq(475, 364), { preset: 'compenseren' })).toBeNull();
         expect(workedSteps(eq(475, 368), { equationType: 'puntoefening' })).toBeNull();
         expect(workedSteps(eq(475, 368), { preset: 'vrij' })).not.toBeNull();
     });
@@ -117,7 +118,9 @@ describe('registry wiring', () => {
         }
         expect(REGISTRY['hr-std-optellen'].steps!(eq(475, 368), {})).not.toBeNull();
         expect(REGISTRY['hr-std-aftrekken'].steps!(eq(475, 368, { operator: '-' }), {})).not.toBeNull();
-        expect(REGISTRY['hr-std-vermenigvuldigen'].steps!(eq(12, 34, { operator: 'x' }), {})).toBeNull();
+        expect(REGISTRY['hr-std-vermenigvuldigen'].steps!(eq(6, 7, { operator: 'x' }), {})).toBeNull();
+        expect(REGISTRY['hr-std-vermenigvuldigen'].steps!(eq(5, 65, { operator: 'x' }), {})).not.toBeNull();
+        expect(REGISTRY['hr-std-delen'].handig!(eq(57, 3, { operator: ':' }), {}).map(h => h.name)).toEqual(['Compenseren']);
     });
 });
 

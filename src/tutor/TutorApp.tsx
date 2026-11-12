@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, CaretRight, QrCode } from '@phosphor-icons/react';
 import { decodeTutor, TUTOR_HASH_PREFIX, type TutorSheet } from '../services/oefenen/tutorPayload';
-import { workedSteps } from '../services/math/workedSteps';
+import { handigSteps, workedSteps } from '../services/math/workedSteps';
 import { formatMathNumber, opGlyph } from '../services/math/formatters';
 import { itemLabel } from '../components/viewer/itemNumbering';
 import type { Equation } from '../services/math/types';
@@ -84,7 +84,7 @@ export default function TutorApp() {
                     <h1>{g.n ? `Opdracht ${g.n} · ` : ''}{label}</h1>
                 </header>
                 <main className="tutor-main">
-                    <StepsView key={`${open.g}-${open.i}`} sum={sumText(current)} lines={workedSteps(current) ?? []} />
+                    <StepsView key={`${open.g}-${open.i}`} sum={sumText(current)} lines={workedSteps(current) ?? []} handig={handigSteps(current)} />
                 </main>
             </div>
         );

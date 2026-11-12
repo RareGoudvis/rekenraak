@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { formatMathNumber } from '../services/math/formatters';
-import { stepText, type StepLine } from '../services/math/workedSteps';
+import { stepText, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
 
 // One sum's worked steps: nothing until the pupil asks, then one Basis line per tap (the newest
 // in blue), with Alle stappen adding the optional in-between lines. SYNC: oefenen StepsPanel.
-export default function StepsView({ sum, lines }: { sum: string; lines: StepLine[] }) {
+// Handig rekenen (compenseren, ontbinden) is an extra view; the standard steps stay the method.
+export default function StepsView({ sum, lines, handig = [] }: { sum: string; lines: StepLine[]; handig?: HandigStrategy[] }) {
     const [revealed, setRevealed] = useState(0);
     const [alle, setAlle] = useState(false);
+    const [showHandig, setShowHandig] = useState(false);
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
     const total = basisIdx.length;
     const upto = revealed > 0 ? basisIdx[Math.min(revealed, total) - 1] : -1;
@@ -35,6 +37,19 @@ export default function StepsView({ sum, lines }: { sum: string; lines: StepLine
             <button type="button" className="tutor-btn" aria-pressed={alle} onClick={() => setAlle(a => !a)}>
                 {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
             </button>
+            {handig.length > 0 && (
+                <button type="button" className="tutor-btn" aria-pressed={showHandig} onClick={() => setShowHandig(h => !h)}>
+                    {showHandig ? 'Handig rekenen: aan' : 'Handig rekenen'}
+                </button>
+            )}
+            {showHandig && handig.map(h => (
+                <div key={h.name} className="tutor-card">
+                    <div className="tutor-sum">{h.name}</div>
+                    <ol className="tutor-lines">
+                        {h.lines.map((l, i) => <li key={i}>= {stepText(l.tokens, formatMathNumber)}</li>)}
+                    </ol>
+                </div>
+            ))}
             {revealed > 0 && <button type="button" className="tutor-btn tutor-btn-quiet" onClick={() => setRevealed(0)}>Opnieuw beginnen</button>}
         </>
     );

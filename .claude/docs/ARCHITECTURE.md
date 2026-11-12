@@ -1055,7 +1055,17 @@ both `onCellMeasure` and the tail measurement it depends on.
 
 ### Worked steps ("stappen", §5 `steps`)
 
-[workedSteps.ts](../../src/services/math/workedSteps.ts) holds one pure function per strategy that turns a sum into `StepLine`s (`tokens`, and `basis` for the lines the Basis level keeps). The answer key, Oefenmodus and the stappenhulp all render these same lines with `stepText`, so they never disagree. Today it covers optellen and aftrekken by rijgen up to 1000. Shapes without a strategy return null.
+[workedSteps.ts](../../src/services/math/workedSteps.ts) holds one pure function per strategy that turns a sum into `StepLine`s (`tokens`, and `basis` for the lines the Basis level keeps). The answer key, Oefenmodus and the stappenhulp all render these same lines with `stepText`, so they never disagree. It covers:
+
+- **+ and −**: rijgen up to 1000. A compenseren preset uses compenseren instead (475 + 368 = 475 + 370 − 2).
+- **×**:
+  - splitsen en verdelen (5 × 65 = 5 × (60 + 5) = …; TE × TE spreads again, Op.stap 13 × 24)
+  - naar analogie met de tafels for round factors (8 × 60 = 8 × 6 T = 48 T)
+  - kommagetal × getal via eenheden (0,6 × 3 = 3 × 6 t)
+  - product ≤ 10 000
+- **: opgaand**: the same three strategies (2340 : 3 = (2100 + 240) : 3 = …).
+
+Tafels, deeltafels, met rest and tienvoud return null. Units are a `unit` token (T H D t h d), and "Alle stappen" works out the final sum only when it needs a carry. `handigSteps` (registry `handig`, `stepsAvailability.handigFor`) adds compenseren and ontbinden as an optional pupil view in Oefenmodus and the stappenhulp, never on the answer key (Op.stap 9 × 13, 57 : 3, 25 × 32, 3000 : 12).
 
 [stepsAvailability.ts](../../src/services/stepsAvailability.ts) is the one rule for where steps are offered. `stepsFor(typeId, ex, constraints)` runs the type's `steps` under that block's own settings, so a compenseren or tienvoud preset never gets rijgen. `blockHasSteps(block)` decides whether an option is shown at all: the answer-key toggle in `HrStdStyleConfig`, the Blad-tab checkbox "Stappenhulp-QR", and (through `oefenBuild.rowMayHaveSteps`, 12 fixed-seed kiosk draws) the Oefenmodus switch "Stappen tonen na een fout".
 
@@ -2623,7 +2633,7 @@ nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new o
 
 After the **final** fout on an exercise whose type has steps (`stepsFor`), the kiosk goes to phase `'steps'` instead of moving on: [StepsPanel.tsx](../../src/oefenen/kiosk/StepsPanel.tsx) offers "Toon de stappen" (one Basis line per tap, "Alle stappen" adds the rest) and "Volgende oefening". Never during a retry (it would give the answer away), never in testmodus, never when the teacher set `noSteps`.
 
-The stappenhulp ([src/tutor/](../../src/tutor/), entry `tutor.html`) is a separate pupil page. The pupil scans a sheet's QR (or opens `#t=<payload>`) and gets a list of that page's sums. Each sum with steps opens its lines one at a time. It never checks work and sends nothing. The last sheet is remembered on the device. Payload v1: `[1, groups]`, with group `[opdracht | 0, title, numbering, items]` and item `[a, b]` (plain a + b), `[ops, operands, missing | -1, answer?]`, or `0` (no steps). It is DEFLATE + base32, capped at 20 000 bytes inflated.
+The stappenhulp ([src/tutor/](../../src/tutor/), entry `tutor.html`) is a separate pupil page. The pupil scans a sheet's QR (or opens `#t=<payload>`) and gets a list of that page's sums. Each sum with steps opens its lines one at a time. It never checks work and sends nothing. The last sheet is remembered on the device. Payload v1: `[1, groups]`, with group `[opdracht | 0, title, numbering, items]` and item `[a, b]` (plain a + b), `[ops, operands, missing | -1, answer?]` (`answer` null, plus a 5th `variant` such as `'+:compenseren'` when the block preset decides the strategy), or `0` (no steps). It is DEFLATE + base32, capped at 20 000 bytes inflated.
 
 ### Harnesses
 

@@ -20,10 +20,10 @@ describe('steps availability', () => {
         expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368)]))).toBe(true);
     });
 
-    it('the preset decides: compenseren and tienvoud blocks have none', () => {
-        for (const preset of ['compenseren', 'tienvoud']) {
-            expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368)], { preset }))).toBe(false);
-        }
+    it('the preset decides: tienvoud has none, compenseren only for sums near a round number', () => {
+        expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368)], { preset: 'tienvoud' }))).toBe(false);
+        expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 364)], { preset: 'compenseren' }))).toBe(false);
+        expect(blockHasSteps(withSums('hr-std-optellen', [eq(140, 99)], { preset: 'compenseren' }))).toBe(true);
     });
 
     it('puntoefeningen, tafels and types without a strategy have none', () => {

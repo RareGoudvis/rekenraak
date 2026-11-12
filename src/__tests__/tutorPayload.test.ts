@@ -34,12 +34,25 @@ describe('tutor payload', () => {
         expect(second).toBeNull();
     });
 
-    it('follows the block preset: a compenseren block sends no sums, so the tutor never shows rijgen for it', () => {
+    it('follows the block preset: a compenseren sum carries its strategy, so the tutor shows compenseren, not rijgen', () => {
         const block = hr([eq(199, 46), eq(475, 368)]);
         const compenseren = { ...block, constraints: { ...block.constraints, preset: 'compenseren' } } as MathBlock;
-        expect(encodeTutorPage([{ block: compenseren, n: 1, title: '' }], hasSteps)).toBeNull();
-        const mixed = decodeTutor(encodeTutorPage([{ block: compenseren, n: 1, title: '' }, { block, n: 2, title: '' }], hasSteps)!);
-        expect(mixed.groups.map(g => g.n)).toEqual([2]);
+        const sheet = decodeTutor(encodeTutorPage([{ block: compenseren, n: 1, title: '' }], hasSteps)!);
+        // 199 + 46 is not near a round number: a placeholder; 475 + 368 = 475 + 370 − 2.
+        const [none, item] = sheet.groups[0].items;
+        expect(none).toBeNull();
+        expect(item!.variant).toBe('+:compenseren');
+        expect(workedSteps(item!)).toEqual(workedSteps(eq(475, 368), { preset: 'compenseren' }));
+    });
+
+    it('× and : sums decode with their real answer', () => {
+        const sheet = decodeTutor(encodeTutorPage([{ block: hr([eq(5, 65, { operator: 'x', answer: 325 }), eq(2340, 3, { operator: ':', answer: 780 })], 'hr-std-gemengd'), n: 1, title: '' }], hasSteps)!);
+        expect(sheet.groups[0].items.map(i => i!.answer)).toEqual([325, 780]);
+        expect(workedSteps(sheet.groups[0].items[0]!)).toEqual(workedSteps(eq(5, 65, { operator: 'x' })));
+    });
+
+    it('rejects an unknown strategy', () => {
+        expect(() => decodeTutor('#t=' + packText(JSON.stringify([1, [[1, 'x', null, [['+', [1, 2], -1, null, 'evil']]]]])))).toThrow(/strategie/);
     });
 
     it('a page without sums that have steps has no payload; a breuk is never carried', () => {

@@ -1,19 +1,22 @@
 import { useState } from 'react';
 import { ListNumbers } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../services/math/formatters';
-import { stepText, type StepLine } from '../../services/math/workedSteps';
+import { stepText, type HandigStrategy, type StepLine } from '../../services/math/workedSteps';
 
 interface Props {
     lines: StepLine[];
+    // Handig rekenen (compenseren, ontbinden): an extra view, the standard steps stay the method.
+    handig?: HandigStrategy[];
     onNext(): void;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead, with Alle stappen adding the optional lines. Volgende moves on either way.
-export default function StepsPanel({ lines, onNext }: Props) {
+export default function StepsPanel({ lines, handig = [], onNext }: Props) {
     const [open, setOpen] = useState(false);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
+    const [showHandig, setShowHandig] = useState(false);
 
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
     const total = basisIdx.length;
@@ -45,6 +48,19 @@ export default function StepsPanel({ lines, onNext }: Props) {
                     <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => setAlle(a => !a)}>
                         {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
                     </button>
+                    {handig.length > 0 && (
+                        <button type="button" className="kiosk-btn" aria-pressed={showHandig} onClick={() => setShowHandig(h => !h)}>
+                            {showHandig ? 'Handig rekenen: aan' : 'Handig rekenen'}
+                        </button>
+                    )}
+                    {showHandig && handig.map(h => (
+                        <div key={h.name} className="kiosk-steps-handig">
+                            <p className="kiosk-steps-lead">{h.name}</p>
+                            <ol className="kiosk-steps-lines">
+                                {h.lines.map((l, i) => <li key={i} className="kiosk-math">= {stepText(l.tokens, formatMathNumber)}</li>)}
+                            </ol>
+                        </div>
+                    ))}
                 </>
             )}
             <button type="button" className="kiosk-btn kiosk-btn-big" onClick={onNext}>Volgende oefening</button>

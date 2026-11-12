@@ -64,8 +64,14 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             {
                 kind: 'nieuw',
                 text: 'Verbetersleutel met tussenstappen bij optellen en aftrekken: kies Basis of Alle bij Opmaak.',
-                example: { leafId: 'hr-std-optellen-nat', constraints: { solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: alleen de uitkomst.', after: 'Nu: 475 + 368 = 475 + 300 + 60 + 8 = ... stap voor stap.' },
+                example: { leafId: 'hr-std-optellen-nat', constraints: { solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: alleen de uitkomst.', after: 'Nu: 475 + 368 = (475 + 300) + 60 + 8 = ... stap voor stap.' },
             },
+            {
+                kind: 'nieuw',
+                text: 'Ook stappen bij vermenigvuldigen en opgaande delingen, zoals in Op.stap: splitsen en verdelen, naar analogie met de tafels, kommagetallen.',
+                example: { leafId: 'hr-std-vermenigvuldigen-nat', constraints: { multiplicationMode: 'tafels', selectedTables: [5], tableLimit: 20, solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: alleen de uitkomst.', after: 'Nu: 5 × 65 = 5 × (60 + 5) = (5 × 60) + (5 × 5) = 300 + 25 = 325.' },
+            },
+            { kind: 'nieuw', text: 'Leerlingen kunnen in Oefenmodus en de stappenhulp ook handig rekenen bekijken: compenseren en ontbinden.' },
             { kind: 'nieuw', text: 'Stappenhulp: zet een QR-code onderaan je blad. Leerlingen scannen hem en zien hoe ze elke som stap voor stap uitrekenen.' },
             { kind: 'nieuw', text: 'Oefenmodus: na een fout kan een leerling de stappen bekijken. Je zet het uit bij het maken van de link.' },
             { kind: 'opgelost', text: 'De vraag om een blok te splitsen verschijnt alleen nog als er echt een deel van het blok past.' },
