@@ -209,6 +209,35 @@ function geometry(inp: HrRowInput, fontScale: number, wrapChain: boolean) {
     return { layout: layoutOut, rowNeedPx, estimateTwoUp };
 }
 
+// Met-rest blanks, one width for the whole block (a blank sized to its own answer would tell the
+// child how many digits to expect): the "( ___ )" help, the quotient and the rest. SYNC: MathBlockRenderer.
+export const MET_REST_HELP_BLANK_PX = 40;
+export const MET_REST_QUOTIENT_BLANK_PX = 40;
+export const MET_REST_REST_BLANK_PX = 30;
+// Air between the rest blank and a kladlijn beside it, so the two blanks never read as one.
+const KLAD_GAP_PX = 16;
+
+export interface MetRestKlad {
+    // 'beside' = after the rest blank on the same row; 'below' = under the sum, from the dividend's x.
+    place: 'beside' | 'below';
+    // Below: one line for both multiples, or one line each when both do not fit side by side.
+    lines: 1 | 2;
+    gapPx: number;
+    minPx: number;
+}
+
+/** Where the met-rest kladlijn goes: beside the sum when the key's "6 × 9 = 54 · 6 × 10 = 60" fits there, else below it. */
+export function metRestKladLayout(l: HrRowLayout, o: { widthPx: number; helpOn: boolean; kladChars: number; multipleChars: number }): MetRestKlad {
+    const helpPx = o.helpOn ? 2 * l.opGlyphPx + MET_REST_HELP_BLANK_PX + 4 + l.answerGap : 0;
+    const rowPx = l.labelColPx + helpPx + l.termBoxPx + l.termUnitGap + l.opGlyphPx + l.opTermGap + l.termBoxPx
+        + l.answerGap + l.charPx + l.eqGap + MET_REST_QUOTIENT_BLANK_PX + 2 * l.eqGap + l.charPx + MET_REST_REST_BLANK_PX;
+    const textPx = (chars: number) => Math.ceil(chars * l.charPx) + 8;
+    if (rowPx + KLAD_GAP_PX + textPx(o.kladChars) <= o.widthPx) return { place: 'beside', lines: 1, gapPx: KLAD_GAP_PX, minPx: textPx(o.kladChars) };
+    const room = o.widthPx - l.labelColPx;
+    if (textPx(o.kladChars) <= room) return { place: 'below', lines: 1, gapPx: 0, minPx: textPx(o.kladChars) };
+    return { place: 'below', lines: 2, gapPx: 0, minPx: Math.min(room, textPx(o.multipleChars)) };
+}
+
 /** The 1-up row width the ladder tests at one font step, wrapped or not. */
 export function hrRowNeedPx(inp: HrRowInput, fontScale: number, wrapChain: boolean): number {
     return geometry(inp, fontScale, wrapChain).rowNeedPx;

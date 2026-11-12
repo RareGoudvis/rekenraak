@@ -40,6 +40,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         operand1Mask = {},
         operand2Mask = {},
         metRestLevel = 1,
+        metRestKladlijn = false,
         divisionLevel = 0,
         divisionLevels,
     } = c;
@@ -116,6 +117,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                 {isDivision && (
                     <button
                         onClick={enterMetRest}
+                        title="Niet-opgaande delingen: de deling gaat niet op, er blijft een rest over (52 : 6 = 8 r 4)."
                         aria-pressed={multiplicationMode === 'met_rest'} style={styles.radioBtn(multiplicationMode === 'met_rest')}
                     >
                         Met rest
@@ -153,6 +155,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
             {/* DELEN MET REST (alleen voor deling) */}
             {isDivision && multiplicationMode === 'met_rest' && (
                 <div style={{ padding: 'var(--sp-4)', backgroundColor: 'var(--bg-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)' }}>
+                    <p style={{ ...styles.hint, marginTop: 0 }}>Niet-opgaande delingen: de deling gaat niet op en er blijft een rest over (52 : 6 = 8 r 4).</p>
                     <SettingLabel text="Selecteer delers:" info="Kies de delers die in de oefeningen met rest mogen voorkomen." />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {MET_REST_TABLES.map(t => (
@@ -211,6 +214,14 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             {blockedMetRestLevels.map(l => `N${l}`).join(' en ')} {blockedMetRestLevels.length > 1 ? 'passen' : 'past'} niet onder het maximum deeltal.
                         </p>
                     )}
+                    <div style={styles.section}>
+                        <div style={styles.onOffRow}>
+                            <SettingLabel text="Kladlijn voor de veelvouden" info="Een lijn naast elke deling. De leerling schrijft er de veelvouden van de deler onder en boven het deeltal (bv. 6 × 9 = 54 · 6 × 10 = 60). Op de correctiesleutel staan ze in het rood." />
+                            <button onClick={() => updateConstraint('metRestKladlijn', !metRestKladlijn)} aria-pressed={metRestKladlijn} style={styles.onOffBtn(metRestKladlijn)}>
+                                {metRestKladlijn ? 'AAN' : 'UIT'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
