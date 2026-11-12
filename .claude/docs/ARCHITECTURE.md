@@ -2634,12 +2634,12 @@ nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new o
 
 `kind.html` is its own entry page. It boots the same kiosk root ([main.tsx](../../src/oefenen/main.tsx)) and needs no hash, so a subdomain can later serve it as its index. The bare `oefenen.html` (no `#oefen=`, no error) shows the same picker. A broken link still gets the error screen, and `load('')` still returns `sessie: null, error: null`.
 
-The picker is [ZelfPicker.tsx](../../src/oefenen/zelf/ZelfPicker.tsx). The pupil picks a leerjaar, then a topic from the Eenvoudig nav, then a card variant (the leerjaar's default range plus the komma and breuk cards), then 3, 5 or 10 oefeningen or 1, 3 or 5 minuten.
+The picker is [ZelfPicker.tsx](../../src/oefenen/zelf/ZelfPicker.tsx). The pupil picks a leerjaar, then a topic from the Eenvoudig nav, then one of at most 6 plain choices (`choicesFor`), then 3, 5 or 10 oefeningen or 1, 3 or 5 minuten. The choices are built from the leerjaar's Op.stap cards. For + and −: Zonder brug, Met brug, Alles door elkaar. For tafels: bands like Tafel van 1 tot 5. Elsewhere: one choice per curriculum heading. A topic with a single choice skips that step. Cards authored for a later leerjaar are never offered.
 
 [zelfSessie.ts](../../src/oefenen/zelf/zelfSessie.ts):
 - `usableVariants` keeps the variants that pass `kioskSupports` and `rowYields`.
-- `buildZelfSessie` makes one `OefenType` from `resolveCard` plus `oefenBuild.withKioskSeed`, with `total` or `timerMin` set and steps on.
-- The session id is `zelf-` + `fnv1a(variant|mode|n)`: the same choice shows the pupil's earlier runs, and it never collides with a teacher's 8-character id.
+- `buildZelfSessie(choice, …)` mixes the choice's variants as several `OefenType`s (at most 20, spread evenly; mode willekeurig) from `resolveCard` plus `oefenBuild.withKioskSeed`, with `total` or `timerMin` set and steps on. The results screen merges rows with the same label for zelf runs.
+- The session id is `zelf-` + `fnv1a(choice|mode|n)`: the same choice shows the pupil's earlier runs, and it never collides with a teacher's 8-character id.
 
 The store opens the session with `openZelf` (no hash). After a zelf run, the end screen offers "Andere oefening".
 

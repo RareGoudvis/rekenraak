@@ -79,6 +79,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'nieuw', text: 'Combinatie en Zelf samenstellen: ook delingen met rest.' },
             { kind: 'nieuw', text: 'Ook stappen bij de tafels: 3 × 6 = 6 + 6 + 6, en bij deeltafels tellen in sprongen (0, 4, 8, 12 ...).' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kiezen zelf hun leerjaar en oefening, ook op een telefoon. De link en QR-code vind je bij Oefenmodus.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen kiest makkelijker: per onderwerp een paar grote knoppen, zoals Zonder brug of Met brug.' },
             { kind: 'gewijzigd', text: 'Op een klein scherm kies je nu zelf: als leerling oefenen of toch verder als leerkracht.' },
             { kind: 'nieuw', text: 'Leerlingen kunnen in Oefenmodus en de stappenhulp ook handig rekenen bekijken: compenseren en ontbinden.' },
             { kind: 'nieuw', text: 'Stappenhulp: zet een QR-code onderaan je blad. Leerlingen scannen hem en zien hoe ze elke som stap voor stap uitrekenen.' },
