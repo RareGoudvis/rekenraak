@@ -954,8 +954,9 @@ html:has(.oefen-body),
 .kiosk-steps-questions li { white-space: normal; }
 .kiosk-steps-questions li + li { margin-top: var(--sp-3); }
 .kiosk-steps-q p { margin: 0; }
-.kiosk-steps-question { font-size: var(--kiosk-text); }
-.kiosk-steps-hint { font-size: var(--kiosk-text); font-weight: 400; color: var(--text-muted); }
+/* Questions and hints are prose: the UI font; only the revealed answer keeps the math font. */
+.kiosk-steps-question { font-size: var(--kiosk-text); font-family: var(--font-ui); }
+.kiosk-steps-hint { font-size: var(--kiosk-text); font-weight: 400; color: var(--text-muted); font-family: var(--font-ui); }
 .kiosk-steps-answer { font-size: var(--kiosk-text-lg); color: var(--accent); }
 @keyframes kiosk-steps-pulse {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }

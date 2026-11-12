@@ -79,6 +79,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'nieuw', text: 'Combinatie en Zelf samenstellen: ook delingen met rest.' },
             { kind: 'nieuw', text: 'Stappen via breuken bij kommagetallen, zoals in Op.stap: 0,72 : 0,8 = 72/100 : 8/10 = 72/100 × 10/8 = ... = 0,9.' },
             { kind: 'gewijzigd', text: 'Zelf oefenen: duidelijkere namen voor kinderen, en procenten staan apart van kommagetallen.' },
+            {
+                kind: 'nieuw',
+                text: 'Breuk van een hoeveelheid: na een fout in Oefenmodus helpen de vier breukvragen, met eerst een tip en dan het antwoord.',
+                example: { leafId: 'breuken-hoeveelheid', constraints: { solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: geen hulp na een fout.', after: 'Nu: Wat is het geheel? In hoeveel delen? Hoeveel is één deel? Hoeveel delen neem je?' },
+            },
             { kind: 'nieuw', text: 'Ook stappen bij de tafels: 3 × 6 = 6 + 6 + 6, en bij deeltafels tellen in sprongen (0, 4, 8, 12 ...).' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kiezen zelf hun leerjaar en oefening, ook op een telefoon. De link en QR-code vind je bij Oefenmodus.' },
             { kind: 'gewijzigd', text: 'Zelf oefenen kiest makkelijker: per onderwerp een paar grote knoppen, zoals Zonder brug of Met brug.' },
