@@ -61,6 +61,13 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Geld teruggeven: de hulp op het blad heet nu Alles ingevuld, Begin en einde ingevuld, Leeg schema of Geen hulp.',
                 example: { leafId: 'geld-teruggeven', before: 'Eerst: Ingevuld, Basis, Structuur, Geen.', after: 'Nu: de namen zeggen wat er op het blad staat.' },
             },
+            {
+                kind: 'nieuw',
+                text: 'Verbetersleutel met tussenstappen bij optellen en aftrekken: kies Basis of Alle bij Opmaak.',
+                example: { leafId: 'hr-std-optellen-nat', constraints: { solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: alleen de uitkomst.', after: 'Nu: 475 + 368 = 475 + 300 + 60 + 8 = ... stap voor stap.' },
+            },
+            { kind: 'nieuw', text: 'Stappenhulp: zet een QR-code onderaan je blad. Leerlingen scannen hem en zien hoe ze elke som stap voor stap uitrekenen.' },
+            { kind: 'nieuw', text: 'Oefenmodus: na een fout kan een leerling de stappen bekijken. Je zet het uit bij het maken van de link.' },
             { kind: 'opgelost', text: 'De vraag om een blok te splitsen verschijnt alleen nog als er echt een deel van het blok past.' },
         ],
     },

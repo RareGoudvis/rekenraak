@@ -293,6 +293,10 @@ changes in the store, change it here too.**
 Print output, the page-break CSS, layout measurement and anything that needs a real
 browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review checklist.
 
+## Worked steps suites
+
+`workedSteps.test.ts` checks the owner's whiteboard examples line by line and that every line evaluates to the answer, plus a null-shape table. `workedSteps.key.test.tsx` checks the rendered answer key, `workedSteps.kiosk.test.ts` the kiosk `steps` phase, `tutorPayload.test.ts` the QR round trip and the preset rule, `tutorApp.test.tsx` the stappenhulp page, and `stepsAvailability.test.ts` the one rule plus the Oefenmodus switch probe.
+
 ## Eenvoudig mode suites
 
 `eenvoudig.cards.test.tsx` walks every card variant (resolveCard unchanged under every base and grade, exactly one exercise, no failure note, viewer renders, every card reachable). `eenvoudig.pane.test.tsx` covers listing, picks equal to `resolveCard`, tabs, locked files and combo add/edit. `quickSettings.test.tsx` fails on a generating typeId without a row. `getallenJumps.legacy.test.ts` pins single-jump output to a golden recorded from the old code; `getallenJumps.test.ts` covers the mixed jumps.
