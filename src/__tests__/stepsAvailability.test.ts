@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest';
+import { blockHasSteps, stepsFor } from '../services/stepsAvailability';
+import { listOefenLeaves, rowMayHaveSteps, seedRowConstraints } from '../components/oefenen/oefenBuild';
+import { makeBlock } from './helpers/makeBlock';
+import type { Equation, MathBlock } from '../services/math/types';
+
+// One rule decides where worked steps are offered: the answer-key toggle, the stappenhulp QR
+// (and its Inspector checkbox) and the Oefenmodus switch all ask it.
+
+const eq = (a: number, b: number, extra: Partial<Equation> = {}): Equation =>
+    ({ id: 'x', operands: [a, b], operator: '+', answer: a + b, isManuallyEdited: false, ...extra });
+const withSums = (typeId: string, exercises: Equation[], constraints: Record<string, unknown> = {}): MathBlock => {
+    const b = makeBlock(typeId);
+    return { ...b, exercises, constraints: { ...b.constraints, ...constraints } } as MathBlock;
+};
+
+describe('steps availability', () => {
+    it('a vrij optellen sum with two place parts has steps', () => {
+        expect(stepsFor('hr-std-optellen', eq(475, 368), {})).not.toBeNull();
+        expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368)]))).toBe(true);
+    });
+
+    it('the preset decides: compenseren and tienvoud blocks have none', () => {
+        for (const preset of ['compenseren', 'tienvoud']) {
+            expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368)], { preset }))).toBe(false);
+        }
+    });
+
+    it('puntoefeningen, tafels and types without a strategy have none', () => {
+        expect(blockHasSteps(withSums('hr-std-optellen', [eq(475, 368, { missingTerm: 'operand2' })]))).toBe(false);
+        expect(blockHasSteps(withSums('hr-std-vermenigvuldigen', [eq(6, 7, { operator: 'x', answer: 42 })]))).toBe(false);
+        expect(blockHasSteps(makeBlock('klok-kloklezen'))).toBe(false);
+    });
+
+    it('the Oefenmodus switch: an optellen row can show steps, a tafel row cannot', () => {
+        const leaves = listOefenLeaves();
+        const row = (id: string) => {
+            const leaf = leaves.find(l => l.id === id)!;
+            expect(leaf, id).toBeTruthy();
+            return { leaf, constraints: seedRowConstraints(leaf, 3) };
+        };
+        expect(rowMayHaveSteps(row('hr-std-optellen-nat'))).toBe(true);
+        expect(rowMayHaveSteps(row('hr-std-vermenigvuldigen-nat'))).toBe(false);
+    });
+});

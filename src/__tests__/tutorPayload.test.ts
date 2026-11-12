@@ -2,41 +2,52 @@ import { describe, expect, it } from 'vitest';
 import { decodeTutor, encodeTutorPage, TUTOR_HASH_PREFIX, TUTOR_URL, tutorUrlFor } from '../services/oefenen/tutorPayload';
 import { packText } from '../services/oefenen/session';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
-import { REGISTRY } from '../config/exerciseRegistry';
+import { stepsFor } from '../services/stepsAvailability';
 import { workedSteps } from '../services/math/workedSteps';
 import { makeBlock } from './helpers/makeBlock';
 import type { Equation, MathBlock } from '../services/math/types';
 
 // Part D: the stappenhulp QR carries one page's hoofdrekenen sums, exactly, and nothing else.
 
-const hasSteps = (typeId: string) => !!REGISTRY[typeId]?.steps;
+// The sheet's own rule: steps under the block's settings (SheetPages passes the same).
+const hasSteps = (block: MathBlock, ex: Equation) => stepsFor(block.typeId, ex, block.constraints) !== null;
 const eq = (a: number, b: number, extra: Partial<Equation> = {}): Equation =>
     ({ id: 'x', operands: [a, b], operator: '+', answer: a + b, isManuallyEdited: false, ...extra });
 const hr = (exercises: Equation[], typeId = 'hr-std-optellen'): MathBlock =>
     ({ ...makeBlock(typeId, { id: typeId }), exercises, itemNumbering: 'letter' });
 
 describe('tutor payload', () => {
-    it('round-trips the sums, numbering and titles; other blocks are left out', () => {
+    it('round-trips the sums with steps on their printed labels; sums and blocks without steps are placeholders or left out', () => {
         const page = [
             { block: hr([eq(475, 368), eq(47, 8)]), n: 1, title: 'Reken uit.' },
             { block: makeBlock('klok-kloklezen', { id: 'klok' }), n: 2, title: 'Hoe laat?' },
-            { block: hr([eq(500, 236, { operator: '-', answer: 264 }), eq(36, 4, { operator: 'x', answer: 9, missingTerm: 'operand2' })], 'hr-std-gemengd'), n: null, title: 'Gemengd' },
+            // 500 − 236 has no rijgen yet (a brug on a 0 digit) and a puntoefening never has steps: no group at all.
+            { block: hr([eq(500, 236, { operator: '-', answer: 264 }), eq(36, 4, { operator: 'x', answer: 9, missingTerm: 'operand2' })], 'hr-std-gemengd'), n: 3, title: 'Gemengd' },
         ];
         const sheet = decodeTutor(TUTOR_HASH_PREFIX + encodeTutorPage(page, hasSteps)!);
-        expect(sheet.groups.map(g => [g.n, g.title, g.numbering, g.items.length])).toEqual([[1, 'Reken uit.', 'letter', 2], [null, 'Gemengd', 'letter', 2]]);
-        const [first] = sheet.groups[0].items;
+        expect(sheet.groups.map(g => [g.n, g.title, g.numbering, g.items.length])).toEqual([[1, 'Reken uit.', 'letter', 2]]);
+        const [first, second] = sheet.groups[0].items;
         expect(first!.operands).toEqual([475, 368]);
         // The decoded sum gives the same steps as the sheet's own.
         expect(workedSteps(first!)).toEqual(workedSteps(eq(475, 368)));
-        const punt = sheet.groups[1].items[1]!;
-        expect([punt.operator, punt.missingIndex, punt.answer]).toEqual(['x', 1, 9]);
+        // 47 + 8 has no steps: a placeholder, so 475 + 368 stays a) and nothing else is listed as b).
+        expect(second).toBeNull();
     });
 
-    it('a page without hoofdrekenen has no payload; a breuk travels as a placeholder', () => {
+    it('follows the block preset: a compenseren block sends no sums, so the tutor never shows rijgen for it', () => {
+        const block = hr([eq(199, 46), eq(475, 368)]);
+        const compenseren = { ...block, constraints: { ...block.constraints, preset: 'compenseren' } } as MathBlock;
+        expect(encodeTutorPage([{ block: compenseren, n: 1, title: '' }], hasSteps)).toBeNull();
+        const mixed = decodeTutor(encodeTutorPage([{ block: compenseren, n: 1, title: '' }, { block, n: 2, title: '' }], hasSteps)!);
+        expect(mixed.groups.map(g => g.n)).toEqual([2]);
+    });
+
+    it('a page without sums that have steps has no payload; a breuk is never carried', () => {
         expect(encodeTutorPage([{ block: makeBlock('klok-kloklezen', { id: 'k' }), n: 1, title: '' }], hasSteps)).toBeNull();
         const breuk = { ...eq(1, 2), operands: [{ numerator: 1, denominator: 2 }, 3] } as unknown as Equation;
-        const sheet = decodeTutor(encodeTutorPage([{ block: hr([breuk]), n: 1, title: '' }], hasSteps)!);
-        expect(sheet.groups[0].items).toEqual([null]);
+        expect(encodeTutorPage([{ block: hr([breuk]), n: 1, title: '' }], hasSteps)).toBeNull();
+        const sheet = decodeTutor(encodeTutorPage([{ block: hr([breuk, eq(475, 368)]), n: 1, title: '' }], hasSteps)!);
+        expect(sheet.groups[0].items[0]).toBeNull();
     });
 
     it('rejects broken, hostile and future payloads with a Dutch message', () => {

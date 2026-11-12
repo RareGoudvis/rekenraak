@@ -5,6 +5,7 @@ import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type KioskRowSetting, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { deadSlots, nextExercise, type Rng } from '../../services/oefenen/scheduler';
+import { stepsFor } from '../../services/stepsAvailability';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
@@ -182,6 +183,34 @@ export function rowYields(row: Pick<BuilderRow, 'leaf' | 'constraints'>, rng?: R
         yieldCache.set(row.constraints, perRow);
     }
     return yields;
+}
+
+const stepsCache = new WeakMap<object, Map<string, boolean>>();
+// Draws per row before "no steps": rijgen covers most sums of a vrij optellen / aftrekken row, so a hit comes early.
+const STEPS_PROBES = 12;
+
+/** The row can show worked steps after a fout: a few fixed-seed kiosk draws through the type's own strategy. */
+export function rowMayHaveSteps(row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean {
+    const cacheKey = `${row.leaf.typeId}|${row.leaf.id}`;
+    const cached = stepsCache.get(row.constraints)?.get(cacheKey);
+    if (cached !== undefined) return cached;
+    const type: OefenType = { typeId: row.leaf.typeId, leafId: row.leaf.id, label: row.leaf.label, constraints: row.constraints, weight: 100 };
+    const probe: OefenSessie = { v: OEFEN_VERSION, id: 'steps-probe', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false };
+    // Fixed seed (an LCG), so the switch never flickers between renders.
+    let seed = 20261112;
+    const rng: Rng = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const seen = new Set<string>();
+    let found = false;
+    for (let i = 0; i < STEPS_PROBES && !found; i++) {
+        const got = nextExercise(probe, type, seen, rng);
+        if (!got) break;
+        seen.add(got.key);
+        found = stepsFor(type.typeId, got.exercise, got.constraints) !== null;
+    }
+    const perRow = stepsCache.get(row.constraints) ?? new Map<string, boolean>();
+    perRow.set(cacheKey, found);
+    stepsCache.set(row.constraints, perRow);
+    return found;
 }
 
 /** Rows whose settings generate nothing: the kiosk would end a pupil's run on them, so Delen waits. */

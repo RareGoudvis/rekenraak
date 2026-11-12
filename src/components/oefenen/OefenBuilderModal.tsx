@@ -17,7 +17,7 @@ import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
     EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowSettingOf, rowsFromSessie, seedRowConstraints,
-    type BuilderRow, type OefenLeaf,
+    rowMayHaveSteps, type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
 interface Props {
@@ -97,6 +97,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         const constraints = constraintsOf(r.key);
         return constraints ? [{ ...r, constraints }] : [];
     });
+    // The steps switch only shows when a chosen row can actually produce a sum with steps.
+    const stepsPossible = buildable.some(rowMayHaveSteps);
     const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts, noSteps: !showSteps });
     // A content edit is a new session, a rename keeps the id (the title is not part of the content).
     const contentKey = sessieContentHash(built);
@@ -200,9 +202,10 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                     </div>
                                 </div>
                                 {/* The kiosk hides a test's results until the end anyway; the teacher's own choice returns when testmodus goes off. */}
-                                {/* Only optellen and aftrekken have worked steps for now (rijgen); other types simply never offer them. */}
-                                <SwitchRow label="Stappen tonen na een fout" checked={showSteps && !testMode} onChange={setShowSteps} disabled={testMode}
-                                    note={testMode ? 'In testmodus is er geen juist/fout, dus ook geen stappen.' : 'Voorlopig enkel bij optellen en aftrekken.'} />
+                                {stepsPossible && (
+                                    <SwitchRow label="Stappen tonen na een fout" checked={showSteps && !testMode} onChange={setShowSteps} disabled={testMode}
+                                        note={testMode ? 'In testmodus is er geen juist/fout, dus ook geen stappen.' : undefined} />
+                                )}
                                 <SwitchRow label="Statistieken pas op het einde" checked={statsLocked || testMode} onChange={setStatsLocked} disabled={testMode}
                                     note={testMode ? 'In testmodus zie je de resultaten pas op het einde.' : undefined} />
                             </div>

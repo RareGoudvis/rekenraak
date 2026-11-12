@@ -4,7 +4,7 @@ import { F } from './fieldStyles';
 import ItemNumberingRow from './ItemNumberingRow';
 import type { MathBlock } from '../../../../services/math/types';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
-import { REGISTRY } from '../../../../config/exerciseRegistry';
+import { blockHasSteps } from '../../../../services/stepsAvailability';
 
 // The Differentiatie rows shared by the four hoofdrekenen leaves, mounted through
 // EXERCISE_UI[typeId].StyleConfig. The + − breuk difficulty (gelijknamig / ongelijknamig) is
@@ -13,8 +13,7 @@ function HrStdStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
     const updateBlockLayout = useWorksheetStore((s) => s.updateBlockLayout);
     // Only offered when some exercise on the block has a strategy (today: optellen by rijgen).
-    const stepsFn = REGISTRY[block.typeId]?.steps;
-    const hasSteps = !!stepsFn && (block.exercises ?? []).some(ex => stepsFn(ex, c as Record<string, unknown>) !== null);
+    const hasSteps = blockHasSteps(block);
     return (
         <>
             {/* ── Tussenstappen in de verbetersleutel ── */}

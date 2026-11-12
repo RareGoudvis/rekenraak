@@ -8,7 +8,9 @@ type ItemNumberingMode = MathBlock['itemNumbering'];
 // operands by hand and generators change between releases.
 //   wire: [1, groups]   group: [opdracht number | 0, title, numbering, items]
 //   item: [a, b] for a plain a + b (most of a page, so it stays short), else
-//         [ops, operands, missing index | -1, answer?], or 0 for a sum the QR cannot carry (a breuk).
+//         [ops, operands, missing index | -1, answer?], or 0 for a sum without worked steps (a breuk,
+//         a compenseren preset, a tafel). That is decided here, where the block's settings are known:
+//         the tutor page only sees bare sums and would otherwise show rijgen for every one.
 
 export const TUTOR_HASH_PREFIX = '#t=';
 // The production stappenhulp; the fallback when the sheet is printed from a non-https origin (a dev server).
@@ -48,11 +50,16 @@ function itemOut(eq: Equation): unknown {
     return missing >= 0 && typeof eq.answer === 'number' ? [ops, eq.operands, missing, eq.answer] : [ops, eq.operands, missing];
 }
 
-/** One page's blocks (with their printed opdracht number) → the QR payload, or null when none carries sums. */
-export function encodeTutorPage(blocks: { block: MathBlock; n: number | null; title: string }[], hasSteps: (typeId: string) => boolean): string | null {
+/** One page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on it has steps. */
+export function encodeTutorPage(blocks: { block: MathBlock; n: number | null; title: string }[], hasSteps: (block: MathBlock, ex: Equation) => boolean): string | null {
     const groups = blocks
-        .filter(({ block }) => hasSteps(block.typeId) && (block.exercises?.length ?? 0) > 0)
-        .map(({ block, n, title }) => [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, block.exercises.map(itemOut)]);
+        .filter(({ block }) => (block.exercises?.length ?? 0) > 0)
+        .map(({ block, n, title }) => {
+            // Placeholders keep each sum on its printed label (a, b, c ...) even when a neighbour has no steps.
+            const items = block.exercises.map(ex => (hasSteps(block, ex) ? itemOut(ex) : 0));
+            return items.some(it => it !== 0) ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items] : null;
+        })
+        .filter(g => g !== null);
     return groups.length ? packText(JSON.stringify([TUTOR_VERSION, groups])) : null;
 }
 

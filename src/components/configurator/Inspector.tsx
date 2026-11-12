@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { blockHasSteps } from '../../services/stepsAvailability';
 import { minWidthUnits, pickerMinWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
 import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth, useIntrinsicEntries } from '../../hooks/useMeasuredHeights';
@@ -73,6 +74,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const headerData = useWorksheetStore((state) => state.header);
     const footerData = useWorksheetStore((state) => state.footer);
     const docSettings = useWorksheetStore((state) => state.docSettings);
+    // The stappenhulp QR is only offered while some sum on the sheet has worked steps.
+    const anySteps = useMemo(() => blocks.some(blockHasSteps), [blocks]);
     const updateHeader = useWorksheetStore((state) => state.updateHeader);
     const updateFooter = useWorksheetStore((state) => state.updateFooter);
     const updateDocSettings = useWorksheetStore((state) => state.updateDocSettings);
@@ -393,11 +396,13 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 <div id="blad-voettekst" style={S.card}>
                     <h4 style={S.cardTitle}>Voettekst</h4>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>De voettekst staat onderaan elke pagina.</p>
+                    {anySteps && (<>
                     <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <input type="checkbox" checked={!!docSettings.tutorQr} onChange={(e) => updateDocSettings({ tutorQr: e.target.checked })} style={S.checkbox} />
                         Stappenhulp-QR onderaan elke pagina
                     </label>
                     <p style={{ ...S.hintText, margin: '0 0 12px' }}>Leerlingen scannen de QR en zien hoe ze elke som van die pagina stap voor stap uitrekenen. Zet dit uit bij een toets: de QR verklapt de antwoorden.</p>
+                    </>)}
                     <label style={S.label}>Voettekst stijl</label>
                     <div className="seg-group" style={{ marginBottom: '12px' }}>
                         {(['geen', 'lijn', 'kader'] as const).map((v) => (
