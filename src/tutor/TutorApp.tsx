@@ -108,7 +108,7 @@ export default function TutorApp() {
         );
     }
 
-    const { groups } = state.sheet;
+    const { groups, grade } = state.sheet;
     const current = open ? groups[open.g]?.items[open.i] : null;
     const currentSteps = itemSteps(current ?? null);
     if (open && current && currentSteps) {
@@ -122,7 +122,7 @@ export default function TutorApp() {
                 </header>
                 <main className="tutor-main">
                     {current.kind === 'sum'
-                        ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq)} />
+                        ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq, undefined, { grade })} />
                         : <CodecCard key={`${open.g}-${open.i}`} item={current} lines={currentSteps} />}
                 </main>
             </div>

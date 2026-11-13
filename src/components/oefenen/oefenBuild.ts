@@ -101,6 +101,8 @@ export interface BuilderSettings {
     attempts?: OefenAttempts;
     // "Stappen tonen na een fout" switched off; absent = on.
     noSteps?: boolean;
+    // The editor's leerjaar, for handig rekenen (ontbinden from leerjaar 6); null / absent = unknown.
+    grade?: number | null;
 }
 
 // Slider 0-50; 0 is the left stop and means no cap (limit undefined).
@@ -153,6 +155,7 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
         // A retry needs the juist/fout feedback testmodus hides, so testmodus ships one try.
         ...(s.attempts === 2 && !s.testMode ? { attempts: 2 as const } : {}),
         ...(s.noSteps ? { noSteps: true as const } : {}),
+        ...(s.grade ? { grade: s.grade } : {}),
     };
     return { sessie, excluded };
 }

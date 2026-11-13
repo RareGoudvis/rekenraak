@@ -10,7 +10,8 @@ export interface TutorCodec<D = unknown> {
     typeIds: readonly string[];
     // The Dutch noun in the "kan niet gelezen worden (…)" message when `in` refuses the data.
     what: string;
-    // Exercise + its block's settings → compact JSON data, or null when this exercise cannot travel.
+    // Exercise + its block's settings → compact JSON data, or null when this exercise cannot travel (or is not this
+    // codec's: on a typeId with several codecs, or a hoofdrekenen typeId, null leaves it to the next one / the sum forms).
     // Fold any setting the steps depend on into the data: the tutor page never sees the block.
     out(ex: unknown, constraints: Record<string, unknown>): unknown;
     // Wire data → the exercise-like data steps, sum and the visual read; null = broken or hostile.

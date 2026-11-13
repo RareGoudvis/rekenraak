@@ -39,6 +39,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const setDraftBlocks = useWorksheetStore((s) => s.setDraftBlocks);
     const clearDraftBlocks = useWorksheetStore((s) => s.clearDraftBlocks);
     const draftBlocks = useWorksheetStore((s) => s.draftBlocks);
+    const grade = useWorksheetStore((s) => s.selectedGrade);
 
     const [rows, setRows] = useState<Row[]>(() => (initial ? rowsFromSessie(initial).map(({ constraints: _c, ...row }) => row) : []));
     const [title, setTitle] = useState(initial?.title ?? '');
@@ -100,7 +101,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     });
     // The steps switch only shows when a chosen row can actually produce a sum with steps.
     const stepsPossible = buildable.some(rowMayHaveSteps);
-    const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts, noSteps: !showSteps });
+    const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts, noSteps: !showSteps, grade });
     // A content edit is a new session, a rename keeps the id (the title is not part of the content).
     const contentKey = sessieContentHash(built);
     let id = idsByContent.get(contentKey);

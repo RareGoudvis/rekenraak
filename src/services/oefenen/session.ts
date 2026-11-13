@@ -45,7 +45,7 @@ export function newSessieId(): string {
 //   session: [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]
 //   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?, exact?]
 // created: whole minutes when createdAt falls on a minute (the builder floors it), else ms.
-// flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked · 4 noSteps.
+// flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked · 4 noSteps · 5–7 leerjaar (0 = unknown).
 // leaf:    index into KIOSK_LEAF_TABLE_V1, else the leafId string.
 // diff:    flat [key, value, key, value…] of the constraints that differ from the leaf's seed
 //          (key = index into KIOSK_KEY_TABLE_V1, else the key string); removed: seed keys absent.
@@ -62,6 +62,9 @@ type WireRow = unknown[];
 type OefenWire = unknown[];
 
 const FLAG_RANDOM = 1, FLAG_REPEAT = 2, FLAG_TEST = 4, FLAG_LOCKED = 8, FLAG_NO_STEPS = 16;
+// The leerjaar rides in bits 5–7, so every link made before it reads as "unknown" with no wire change.
+const GRADE_SHIFT = 5, GRADE_MASK = 7;
+const isGrade = (g: unknown): g is number => Number.isInteger(g) && (g as number) >= 1 && (g as number) <= 6;
 const MINUTE = 60_000;
 // Below this a `created` is minutes: 1e10 minutes is the year ~21000, 1e10 ms is 1970.
 const MINUTES_BELOW = 1e10;
@@ -175,7 +178,8 @@ function rowOut(t: OefenType, slot: number, n: number): WireRow {
 /** The positional wire form (exported for the size tests). */
 export function toWire(s: OefenSessie): OefenWire {
     const flags = (s.mode === 'willekeurig' ? FLAG_RANDOM : 0) | (s.allowRepeatType ? FLAG_REPEAT : 0)
-        | (s.testMode ? FLAG_TEST : 0) | (s.statsLocked ? FLAG_LOCKED : 0) | (s.noSteps ? FLAG_NO_STEPS : 0);
+        | (s.testMode ? FLAG_TEST : 0) | (s.statsLocked ? FLAG_LOCKED : 0) | (s.noSteps ? FLAG_NO_STEPS : 0)
+        | (isGrade(s.grade) ? s.grade << GRADE_SHIFT : 0);
     return trim([
         OEFEN_VERSION, s.id,
         s.createdAt % MINUTE === 0 && s.createdAt / MINUTE < MINUTES_BELOW ? s.createdAt / MINUTE : s.createdAt,
@@ -281,6 +285,7 @@ function fromWire(w: unknown): Record<string, unknown> {
         testMode: !!(flags & FLAG_TEST),
         statsLocked: !!(flags & FLAG_LOCKED),
         ...(flags & FLAG_NO_STEPS ? { noSteps: true } : {}),
+        ...(((flags >> GRADE_SHIFT) & GRADE_MASK) > 0 && { grade: (flags >> GRADE_SHIFT) & GRADE_MASK }),
         types: rows.map((r, i) => rowIn(r, i, rows.length)),
         ...(title != null && { title }),
         ...(timerMin != null && { timerMin }),
@@ -314,7 +319,7 @@ export function parseSessie(raw: unknown): OefenSessie {
     if (typeof raw.v !== 'number') return bad('versie ontbreekt');
     if (raw.v > OEFEN_VERSION) throw new Error(`Deze oefenlink komt uit een nieuwere versie (v${raw.v}). Werk de app bij om ze te openen.`);
     if (raw.v !== OEFEN_VERSION) return bad(`versie ${raw.v}`);
-    const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts, noSteps } = raw;
+    const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts, noSteps, grade } = raw;
     if (typeof id !== 'string' || !ID_RE.test(id)) return bad('id');
     if (title !== undefined && typeof title !== 'string') return bad('titel');
     if (typeof title === 'string' && title.length > MAX_TITLE) return bad('titel te lang');
@@ -327,6 +332,7 @@ export function parseSessie(raw: unknown): OefenSessie {
     if (total !== undefined && !(isPosInt(total) && (total as number) <= MAX_TOTAL)) return bad('totaal');
     if (attempts !== undefined && attempts !== 1 && attempts !== 2) return bad('kansen');
     if (noSteps !== undefined && typeof noSteps !== 'boolean') return bad('stappen');
+    if (grade !== undefined && !isGrade(grade)) return bad('leerjaar');
     return {
         v: OEFEN_VERSION, id, createdAt, mode: mode as OefenMode, allowRepeatType, testMode, statsLocked,
         types: types.map(parseType),
@@ -336,6 +342,7 @@ export function parseSessie(raw: unknown): OefenSessie {
         // Only a real second try is kept: 1, absent and testMode all mean one try.
         ...(attemptsOf({ attempts: attempts as OefenAttempts | undefined, testMode }) === 2 && { attempts: 2 as const }),
         ...(noSteps === true && { noSteps: true as const }),
+        ...(grade !== undefined && { grade: grade as number }),
     };
 }
 

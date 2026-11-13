@@ -31,6 +31,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
   const headerData = useWorksheetStore((state) => state.header);
   const footerData = useWorksheetStore((state) => state.footer);
   const docSettings = useWorksheetStore((state) => state.docSettings);
+  const selectedGrade = useWorksheetStore((state) => state.selectedGrade);
   const showSolutions = useWorksheetStore((state) => state.showSolutions);
   const activeSelectionId = useWorksheetStore((state) => state.activeBlockId);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
@@ -143,8 +144,8 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
               <div className="tutor-qr-foot">
                 <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />
                 <TutorQr
-                  payload={encodeTutorPage(tutorBlocks, tutorHasSteps)}
-                  lean={encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false })}
+                  payload={encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade })}
+                  lean={encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade: selectedGrade })}
                   caption={docSettings.tutorQrCaption !== false}
                 />
               </div>

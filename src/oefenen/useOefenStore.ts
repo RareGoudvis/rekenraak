@@ -566,7 +566,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             persist(updated);
             // Only after the final try: steps during a retry would give the answer away. Testmodus never shows them.
             const stepsOffer = correct || s.testMode || s.noSteps ? null : REGISTRY[type.typeId]?.steps?.(cur.exercise, cur.constraints) ?? null;
-            const handigOffer = stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints) : [];
+            const handigOffer = stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints, s.grade) : [];
             set({ run: updated, lastCorrect: correct, stepsOffer, handigOffer });
             // Testmodus: no juist/fout per exercise, straight on to the next one.
             if (s.testMode) { get().next(); return; }

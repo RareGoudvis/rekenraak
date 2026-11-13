@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REGISTRY } from '../config/exerciseRegistry';
-import { codecById, codecForType, TUTOR_CODECS } from '../services/steps/tutorCodecs';
+import { codecById, codecForType, codecsForType, TUTOR_CODECS } from '../services/steps/tutorCodecs';
 import { STEPS_VISUALS, stepsVisualFor } from '../components/steps/stepsVisuals';
 import { decodeTutor, encodeTutorPage, TUTOR_HASH_PREFIX } from '../services/oefenen/tutorPayload';
 import { packText } from '../services/oefenen/session';
@@ -32,9 +32,9 @@ describe('tutor codec registry', () => {
             expect(c.id).toMatch(/^[a-z0-9]{1,3}$/);
             for (const t of c.typeIds) expect(REGISTRY[t]?.steps, `${c.id} → ${t}`).toBeTruthy();
         }
-        // No typeId is claimed twice.
-        const typeIds = TUTOR_CODECS.flatMap(c => c.typeIds);
-        expect(new Set(typeIds).size).toBe(typeIds.length);
+        // A typeId may carry several codecs (breuken sums ride on hoofdrekenen), but one codec never lists a typeId twice.
+        for (const c of TUTOR_CODECS) expect(new Set(c.typeIds).size, c.id).toBe(c.typeIds.length);
+        expect(codecsForType('hr-std-optellen').map(c => c.id)).toEqual(['bs']);
         expect(codecForType('breuken')?.id).toBe('h');
         expect(codecById('h')).toBe(codecForType('breuken'));
     });

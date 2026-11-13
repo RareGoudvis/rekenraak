@@ -11,10 +11,10 @@ export function stepsFor(typeId: string, ex: unknown, constraints: unknown): Ste
     return REGISTRY[typeId]?.steps?.(ex, (constraints ?? {}) as Record<string, unknown>) ?? null;
 }
 
-// The handig rekenen strategies a pupil may view for this sum (empty when none fits).
-export function handigFor(typeId: string, ex: unknown, constraints: unknown): HandigStrategy[] {
+// The handig rekenen strategies a pupil may view for this sum (empty when none fits); grade = the pupil's leerjaar when known.
+export function handigFor(typeId: string, ex: unknown, constraints: unknown, grade?: number): HandigStrategy[] {
     if (!ex) return [];
-    return REGISTRY[typeId]?.handig?.(ex, (constraints ?? {}) as Record<string, unknown>) ?? [];
+    return REGISTRY[typeId]?.handig?.(ex, (constraints ?? {}) as Record<string, unknown>, { grade }) ?? [];
 }
 
 export function exercisesOf(block: MathBlock): unknown[] {

@@ -121,7 +121,8 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     // Worked steps for one exercise (answer key, Oefenmodus, tutor page). Absent or null = no strategy.
     steps?: (ex: unknown, c: Record<string, unknown>) => StepLine[] | null;
     // Handig rekenen: optional strategies a pupil may view next to the standard steps (never on the answer key).
-    handig?: (ex: unknown, c: Record<string, unknown>) => HandigStrategy[];
+    // `grade` is the pupil's leerjaar when the page knows it (ontbinden is leerjaar 6); absent = unknown.
+    handig?: (ex: unknown, c: Record<string, unknown>, ctx?: { grade?: number }) => HandigStrategy[];
 }
 
 // Names each row's constraint family, so a default factory that drops or misspells a key
@@ -130,7 +131,7 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
 // One function serves every hoofdrekenen row: the strategy follows the exercise's operator and preset.
 const breukSteps = (ex: unknown) => breukHoeveelheidSteps(ex as FractionExercise);
 const hrSteps = (ex: unknown, c: Record<string, unknown>) => workedSteps(ex as Equation, c);
-const hrHandig = (ex: unknown, c: Record<string, unknown>) => handigSteps(ex as Equation, c);
+const hrHandig = (ex: unknown, c: Record<string, unknown>, ctx?: { grade?: number }) => handigSteps(ex as Equation, c, ctx);
 
 const row = <C extends BlockConstraints>(def: ExerciseTypeDef<C>): ExerciseTypeDef => def as ExerciseTypeDef;
 

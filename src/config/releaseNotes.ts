@@ -111,6 +111,8 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'nieuw', text: 'Oefenmodus en stappenhulp: bij getallenassen en getallenrijen zoek je eerst de sprong, daarna vullen de pijlen zich één voor één.' },
             { kind: 'nieuw', text: 'Oefenmodus en stappenhulp: breuken vereenvoudigen en gelijknamig maken met de lijst van delers of veelvouden, ook bij optellen en aftrekken van breuken.' },
             { kind: 'nieuw', text: 'Oefenmodus en stappenhulp: herleidingen met een herleidingstabel die zich stap voor stap invult.' },
+            { kind: 'nieuw', text: 'Stappenhulp: ook breuken optellen en aftrekken staan nu in de QR-code, met de stappen om gelijknamig te maken.' },
+            { kind: 'nieuw', text: 'Handig rekenen in het 6e leerjaar: leerlingen zien ook ontbinden (25 × 32 = 25 × 4 × 8). Het leerjaar dat je kiest, gaat mee in de link en de QR-code.' },
             { kind: 'opgelost', text: 'Stappenhulp: sommen zonder stappen staan er nu gewoon bij, en breuk van een hoeveelheid zit ook in de QR-code.' },
             { kind: 'opgelost', text: 'De vraag om een blok te splitsen verschijnt alleen nog als er echt een deel van het blok past.' },
         ],

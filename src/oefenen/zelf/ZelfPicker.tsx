@@ -115,7 +115,7 @@ export default function ZelfPicker() {
             <p className="zelf-or">of op tijd</p>
             {group('timer', 'Aantal minuten')}
             <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big"
-                onClick={() => { tryFullscreen(); openZelf(buildZelfSessie(choice, mode)); }}>
+                onClick={() => { tryFullscreen(); openZelf(buildZelfSessie(choice, mode, Date.now(), grade ?? undefined)); }}>
                 <Play weight="fill" aria-hidden /> Begin met oefenen
             </button>
         </main>

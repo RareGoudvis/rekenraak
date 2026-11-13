@@ -49,7 +49,7 @@ function spread<T>(list: T[], max: number): T[] {
 }
 
 /** One session for a choice: its variants as equally weighted types; the same choice always has the same id, so earlier runs come back. */
-export function buildZelfSessie(choice: ZelfChoice, mode: ZelfMode, now = Date.now()): OefenSessie {
+export function buildZelfSessie(choice: ZelfChoice, mode: ZelfMode, now = Date.now(), grade?: number): OefenSessie {
     const types = spread(choice.vars, MAX_TYPES).map(toType);
     const several = types.length > 1;
     return {
@@ -63,6 +63,8 @@ export function buildZelfSessie(choice: ZelfChoice, mode: ZelfMode, now = Date.n
         testMode: false,
         statsLocked: false,
         ...(mode.kind === 'count' ? { total: mode.n } : { timerMin: mode.min }),
+        // The picked leerjaar: handig rekenen offers ontbinden from leerjaar 6. Not in the id: the same choice keeps its runs.
+        ...(grade ? { grade } : {}),
     };
 }
 

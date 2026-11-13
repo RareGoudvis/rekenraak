@@ -1,13 +1,13 @@
 import type { Equation, MathBlock } from '../math/types';
 import { packText, unpackText } from './packText';
-import { codecById, codecForType } from '../steps/tutorCodecs';
+import { codecById, codecsForType } from '../steps/tutorCodecs';
 
 type ItemNumberingMode = MathBlock['itemNumbering'];
 
 // The tutor QR (stappenhulp): one page's hoofdrekenen sums, so tutor.html can list them and show
 // their worked steps without reading any print. Exact numbers, never a seed: teachers edit
 // operands by hand and generators change between releases.
-//   wire: [1, groups]   group: [opdracht number | 0, title, numbering, items]
+//   wire: [1, groups, leerjaar?] (leerjaar 1–6 for handig rekenen: ontbinden from 6)   group: [opdracht number | 0, title, numbering, items]
 //   item: [a, b] for a plain a + b (most of a page, so it stays short), [a, b, op] for another plain sum, else
 //         [ops, operands, missing index | -1, answer?, variant?], or ['@', codec id, data] for any other
 //         type (src/services/steps/codecs; breuk van een hoeveelheid used to travel as ['h', t, n, g],
@@ -56,6 +56,8 @@ export interface TutorGroup {
 
 export interface TutorSheet {
     groups: TutorGroup[];
+    // The sheet's leerjaar when the editor knew it; absent = unknown (no ontbinden).
+    grade?: number;
 }
 
 const missingOf = (eq: Equation): number =>
@@ -75,17 +77,18 @@ const LEGACY_HOEVEELHEID = 'h';
 const isSum = (ex: unknown): ex is Equation =>
     Array.isArray((ex as Equation | undefined)?.operands) && (ex as Equation).operands.every(o => typeof o === 'number' && Number.isFinite(o));
 
-// The codec's data for this exercise, or null when it cannot travel; a type without a codec travels as a sum or not at all.
+// The first codec that claims this exercise, as its wire item; null = no codec does (it travels as a sum or not at all).
 function codecOut(typeId: string, ex: unknown, constraints: unknown): unknown {
-    const codec = codecForType(typeId);
-    if (!codec) return null;
-    const data = codec.out(ex, (constraints ?? {}) as Record<string, unknown>);
-    return data === null || data === undefined ? null : [CODEC, codec.id, data];
+    for (const codec of codecsForType(typeId)) {
+        const data = codec.out(ex, (constraints ?? {}) as Record<string, unknown>);
+        if (data !== null && data !== undefined) return [CODEC, codec.id, data];
+    }
+    return null;
 }
 
-// Whether the stappenhulp can show this exercise at all: a type with a codec, else a hoofdrekenen sum.
+// Whether the stappenhulp can show this exercise at all: a codec claims it, else it is a hoofdrekenen sum.
 export function tutorCarries(typeId: string, ex: unknown, constraints: unknown): boolean {
-    return codecForType(typeId) ? codecOut(typeId, ex, constraints) !== null : isSum(ex);
+    return codecOut(typeId, ex, constraints) !== null || isSum(ex);
 }
 
 function sumOut(eq: Equation, variant?: string): unknown {
@@ -127,10 +130,9 @@ function sumFromString(text: string): Equation | null {
 
 function itemOut(block: MathBlock, ex: unknown, steps: boolean, greyed: boolean): { wire: unknown; steps: boolean } {
     if (!steps && !greyed) return { wire: 0, steps: false };
-    if (!codecForType(block.typeId) && isSum(ex) && !steps) return { wire: sumString(ex) ?? [sumOut(ex)], steps: false };
-    const wire = codecForType(block.typeId) ? codecOut(block.typeId, ex, block.constraints) ?? 0
-        : isSum(ex) ? sumOut(ex, variantOf(block, ex))
-        : 0;
+    const viaCodec = codecOut(block.typeId, ex, block.constraints);
+    if (viaCodec === null && isSum(ex) && !steps) return { wire: sumString(ex) ?? [sumOut(ex)], steps: false };
+    const wire = viaCodec ?? (isSum(ex) ? sumOut(ex, variantOf(block, ex)) : 0);
     return { wire: wire !== 0 && !steps ? [wire] : wire, steps: wire !== 0 && steps };
 }
 
@@ -140,7 +142,7 @@ function itemOut(block: MathBlock, ex: unknown, steps: boolean, greyed: boolean)
 export function encodeTutorPage(
     blocks: { block: MathBlock; n: number | null; title: string; exercises?: unknown[] }[],
     hasSteps: (block: MathBlock, ex: unknown) => boolean,
-    { greyed = true }: { greyed?: boolean } = {},
+    { greyed = true, grade }: { greyed?: boolean; grade?: number | null } = {},
 ): string | null {
     const groups = blocks
         .map(({ block, n, title, exercises }) => {
@@ -149,7 +151,8 @@ export function encodeTutorPage(
             return items.some(it => it.steps) ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items.map(it => it.wire)] : null;
         })
         .filter(g => g !== null);
-    return groups.length ? packText(JSON.stringify([TUTOR_VERSION, groups])) : null;
+    const g = grade != null && Number.isInteger(grade) && grade >= 1 && grade <= 6 ? [grade] : [];
+    return groups.length ? packText(JSON.stringify([TUTOR_VERSION, groups, ...g])) : null;
 }
 
 const bad = (why: string): never => { throw new Error(`Deze QR-code kan niet gelezen worden (${why}).`); };
@@ -221,5 +224,7 @@ export function decodeTutor(hash: string): TutorSheet {
         if (numbering !== null && numbering !== 'cijfer' && numbering !== 'letter' && numbering !== 'geen') return bad('nummering');
         return { n: n > 0 ? n : null, title, numbering: (numbering ?? undefined) as ItemNumberingMode, items: items.map(itemIn) };
     });
-    return { groups };
+    const grade = parsed[2];
+    if (grade !== undefined && !(Number.isInteger(grade) && grade >= 1 && grade <= 6)) return bad('leerjaar');
+    return { groups, ...(grade !== undefined && { grade: grade as number }) };
 }

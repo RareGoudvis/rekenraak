@@ -54,6 +54,9 @@ export interface OefenSessie {
     attempts?: OefenAttempts;
     // The teacher turned off "Stappen tonen na een fout". Absent = on, so links made before it offer steps.
     noSteps?: true;
+    // The pupil's leerjaar (1–6) when the teacher or Zelf oefenen knows it; only handig rekenen reads it (ontbinden is
+    // leerjaar 6). Absent = unknown. Not part of the content hash: it never changes what is practised.
+    grade?: number;
 }
 
 export type OefenAttempts = 1 | 2;

@@ -95,6 +95,15 @@ describe('Zelf oefenen sessie', () => {
         expect(buildZelfSessie(big!.c, MODES[0], 0).types).toHaveLength(MAX_TYPES);
     });
 
+    test('the picked leerjaar rides along for handig rekenen, without changing the id', async () => {
+        data = await loadEenvoudigData();
+        const c = allChoices()[0].c;
+        const six = buildZelfSessie(c, MODES[0], 0, 6);
+        expect(six.grade).toBe(6);
+        expect(six.id).toBe(buildZelfSessie(c, MODES[0], 0).id);
+        expect(buildZelfSessie(c, MODES[0], 0).grade).toBeUndefined();
+    });
+
     test('the id is stable per choice and differs between choices', async () => {
         data = await loadEenvoudigData();
         const [a, b] = allChoices().map(x => x.c);
