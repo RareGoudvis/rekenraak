@@ -1,4 +1,4 @@
-import type { AfrondenExercise, Equation, FractionExercise, MathBlock } from '../services/math/types';
+import type { AfrondenExercise, Equation, FractionExercise, GetallenasExercise, MathBlock } from '../services/math/types';
 import type {
     BlockConstraints, AddSubConstraints, MulDivConstraints, CijferConstraints, ClockConstraints,
     FractionConstraints, BreukBewerkConstraints, BreukenRangschikkenConstraints, SplitsenConstraints,
@@ -28,6 +28,7 @@ import { generateOrdenenExercises, generateOrdenenExercisesNoted } from '../serv
 import { generateDeelbaarheidExercises } from '../services/deelbaarheid/deelbaarheidGenerator';
 import { generateGetallenasExercises, generateGetallenasExercisesNoted } from '../services/getallenas/getallenasGenerator';
 import { arrangeJumps } from '../services/getallenas/jumps';
+import { getallenasSteps } from '../services/steps/getallenasSteps';
 import { afrondenSteps } from '../services/steps/afrondenSteps';
 import { generateGetallenrijExercises, generateGetallenrijExercisesNoted } from '../services/getallenrij/getallenrijGenerator';
 import { generateLengteMetenExercises, generateLengteMetenExercisesNoted, generateOmtrekExercises, generateOmtrekExercisesNoted, generateOppervlakteExercises, generateOppervlakteExercisesNoted } from '../services/meten/metenGenerator';
@@ -552,8 +553,8 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'deelbaarheid': row<DeelbaarheidConstraints>({ exerciseField: 'deelbaarheidExercises', generate: generateDeelbaarheidExercises, defaultConstraints: deelbaarheidDefaults, defaultCount: 6, maxPresets: deelbaarheidMax , kiosk: VEELVOUDEN_KIOSK }),
     'getalpatronen': row<PatroonConstraints>({ exerciseField: 'patroonExercises', generate: generatePatroonExercises, generateNoted: generatePatroonExercisesNoted, defaultConstraints: patroonDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.patronen) , kiosk: PATROON_KIOSK }),
     'deelbaarheid-kleuren': row<DeelbaarheidKleurConstraints>({ exerciseField: 'deelbaarheidKleurExercises', generate: generateDeelbaarheidKleurExercises, defaultConstraints: deelbaarheidKleurDefaults, defaultCount: 3, maxPresets: deelbaarheidKleurMax, kiosk: DEELBAARHEID_KLEUR_KIOSK }),
-    'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, arrange: arrangeJumps, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK }),
-    'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, arrange: arrangeJumps, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK }),
+    'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, arrange: arrangeJumps, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK, steps: (ex) => getallenasSteps(ex as GetallenasExercise) }),
+    'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, arrange: arrangeJumps, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK, steps: (ex) => getallenasSteps(ex as GetallenasExercise) }),
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises, generateNoted: generateLengteMetenExercisesNoted, defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: LENGTE_KIOSK }),
     // Real-size figures one per row (up to a 10 cm square, ~450 px with its answer): two fit
     // one A4 page at the default; six ran to 2 093 px (sweep 2026-09-27).

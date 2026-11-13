@@ -1,0 +1,16 @@
+/* Getallenas / getallenrijen steps visual (kiosk steps panel and stappenhulp). Ink follows the card it sits in. */
+.sv-jr { display: block; width: 100%; height: auto; margin: 0 auto var(--sp-3); font-family: var(--font-sheet-math); overflow: visible; }
+.sv-jr text { fill: currentColor; font-size: 20px; }
+.sv-jr .sv-jr-frac { font-size: 15px; }
+.sv-jr-bar { stroke: currentColor; stroke-width: 1.5; }
+.sv-jr-axis { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.sv-jr-box { fill: none; stroke: currentColor; stroke-width: 2; }
+.sv-jr-box.is-blank { stroke-dasharray: 5 4; stroke: var(--text-muted); }
+/* The place the next question asks about. */
+.sv-jr-box.is-next { stroke: var(--accent); stroke-width: 3; stroke-dasharray: none; }
+.sv-jr .sv-jr-filled, .sv-jr .sv-jr-filled text { fill: var(--accent); }
+.sv-jr .sv-jr-new, .sv-jr .sv-jr-new text { fill: var(--accent); font-weight: 700; }
+.sv-jr-new .sv-jr-bar, .sv-jr-filled .sv-jr-bar { stroke: var(--accent); }
+.sv-jr-jump path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sv-jr .sv-jr-jump text { fill: var(--accent); font-size: 16px; font-weight: 700; font-family: var(--font-ui); }
+.sv-jr-jump.is-unknown path { stroke: var(--text-muted); stroke-dasharray: 4 4; }
