@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-13** — MAB level A (owner decisions: ≤ 1000, leerjaar 1–3, toggle default on in the Oefenmodus builder and Zelf oefenen, never on phones): a MAB picture above the hoofdrekenen steps that follows the revealed lines, plus the `applies` guard on steps visuals and `noMab` flag bit 8; gelijknamig maken now names the kleinste gemene veelvoud.
+
 **2026-11-13** — Breuken optellen/aftrekken now travel in the stappenhulp QR (codec `bs`; a typeId may carry several codecs), and the leerjaar rides in the Oefenmodus link (flag bits 5–7) and the tutor payload so handig rekenen offers ontbinden only in leerjaar 6.
 
 **2026-11-13** — Worked-steps round on `rc-oefenen`: a foundation (per-type tutor codecs + steps visuals, lighter stappenhulp bundle), then steps for klok (bloemblaadjes), geld teruggeven, rekenvolgorde, procenten, afronden, getallenas/getallenrijen, breuken vereenvoudigen/gelijknamig and herleidingen (auto-filling tabel), plus + − up to 10 000 and kommagetallen via eenheden; built by four agents in worktrees, merged locally through the gate, words in steps now use the UI font and the tutor heading wraps. One local merge was first committed with `--no-verify` by mistake; it was reset before any push and redone through the full gate.

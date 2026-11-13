@@ -6,6 +6,7 @@ import { OEFEN_VERSION, type KioskRowSetting, type OefenAttempts, type OefenMode
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { deadSlots, nextExercise, type Rng } from '../../services/oefenen/scheduler';
 import { stepsFor } from '../../services/stepsAvailability';
+import { MAB_TYPE_IDS, mabPlan } from '../../services/steps/mabSteps';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
@@ -101,6 +102,8 @@ export interface BuilderSettings {
     attempts?: OefenAttempts;
     // "Stappen tonen na een fout" switched off; absent = on.
     noSteps?: boolean;
+    // "Hulp met MAB" switched off; absent = on.
+    noMab?: boolean;
     // The editor's leerjaar, for handig rekenen (ontbinden from leerjaar 6); null / absent = unknown.
     grade?: number | null;
 }
@@ -156,6 +159,8 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
         ...(s.attempts === 2 && !s.testMode ? { attempts: 2 as const } : {}),
         ...(s.noSteps ? { noSteps: true as const } : {}),
         ...(s.grade ? { grade: s.grade } : {}),
+        // Only where MAB can show at all (leerjaar 1–3, steps on): elsewhere the bit would mean nothing.
+        ...(s.noMab && !s.noSteps && !s.testMode && s.grade && s.grade <= 3 ? { noMab: true as const } : {}),
     };
     return { sessie, excluded };
 }
@@ -196,13 +201,15 @@ const stepsCache = new WeakMap<object, Map<string, boolean>>();
 // Draws per row before "no steps": rijgen covers most sums of a vrij optellen / aftrekken row, so a hit comes early.
 const STEPS_PROBES = 12;
 
-/** The row can show worked steps after a fout: a few fixed-seed kiosk draws through the type's own strategy. */
-export function rowMayHaveSteps(row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean {
-    const cacheKey = `${row.leaf.typeId}|${row.leaf.id}`;
+type ProbeRow = { leaf: Pick<OefenLeaf, 'id' | 'typeId' | 'label'>; constraints: Record<string, unknown> };
+
+// A few fixed-seed kiosk draws of the row: does any exercise pass `test`? Cached per constraints object and tag.
+function probeRow(row: ProbeRow, tag: string, test: (typeId: string, exercise: unknown, constraints: Record<string, unknown>) => boolean): boolean {
+    const cacheKey = `${tag}|${row.leaf.typeId}|${row.leaf.id}`;
     const cached = stepsCache.get(row.constraints)?.get(cacheKey);
     if (cached !== undefined) return cached;
     const type: OefenType = { typeId: row.leaf.typeId, leafId: row.leaf.id, label: row.leaf.label, constraints: row.constraints, weight: 100 };
-    const probe: OefenSessie = { v: OEFEN_VERSION, id: 'steps-probe', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false };
+    const probe: OefenSessie = { v: OEFEN_VERSION, id: 'steps-probe', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: false, statsLocked: false, testMode: false };
     // Fixed seed (an LCG), so the switch never flickers between renders.
     let seed = 20261112;
     const rng: Rng = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
@@ -212,12 +219,25 @@ export function rowMayHaveSteps(row: Pick<BuilderRow, 'leaf' | 'constraints'>): 
         const got = nextExercise(probe, type, seen, rng);
         if (!got) break;
         seen.add(got.key);
-        found = stepsFor(type.typeId, got.exercise, got.constraints) !== null;
+        found = test(type.typeId, got.exercise, got.constraints);
     }
     const perRow = stepsCache.get(row.constraints) ?? new Map<string, boolean>();
     perRow.set(cacheKey, found);
     stepsCache.set(row.constraints, perRow);
     return found;
+}
+
+/** The row can show worked steps after a fout: a few fixed-seed kiosk draws through the type's own strategy. */
+export const rowMayHaveSteps = (row: ProbeRow): boolean =>
+    probeRow(row, 'steps', (typeId, ex, c) => stepsFor(typeId, ex, c) !== null);
+
+/** The row can draw MAB above its steps (whole numbers up to 1000; the leerjaar is the caller's check). */
+export function rowMayHaveMab(row: ProbeRow): boolean {
+    if (!MAB_TYPE_IDS.includes(row.leaf.typeId)) return false;
+    return probeRow(row, 'mab', (typeId, ex, c) => {
+        const lines = stepsFor(typeId, ex, c);
+        return lines !== null && mabPlan(ex, lines) !== null;
+    });
 }
 
 /** Rows whose settings generate nothing: the kiosk would end a pupil's run on them, so Delen waits. */

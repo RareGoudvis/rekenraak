@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft, Play } from '@phosphor-icons/react';
 import { useEenvoudigData } from '../../components/eenvoudig/useEenvoudigData';
 import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { useOefenStore } from '../useOefenStore';
 import { tryFullscreen } from '../kiosk/fullscreen';
-import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
+import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choiceMayHaveMab, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
 
 // The page opened without a link: a pupil picks leerjaar, onderwerp, oefening and how much, and starts alone.
 export default function ZelfPicker() {
@@ -15,6 +15,9 @@ export default function ZelfPicker() {
     const [topicId, setTopicId] = useState<string | null>(null);
     const [choice, setChoice] = useState<ZelfChoice | null>(null);
     const [mode, setMode] = useState<ZelfMode>({ kind: 'count', n: 5 });
+    const [mab, setMab] = useState(true);
+    // MAB above the steps: leerjaar 1–3 and a choice with whole sums up to 1000 (owner, 2026-11-13).
+    const mabPossible = useMemo(() => choice !== null && grade !== null && grade <= 3 && choiceMayHaveMab(choice), [choice, grade]);
 
     const choices = data && grade !== null && topicId !== null ? choicesFor(data, grade, topicId) : [];
     // A topic with one choice skips that step, so Back from "Hoeveel" leaves the topic too.
@@ -114,8 +117,13 @@ export default function ZelfPicker() {
             {group('count', 'Aantal oefeningen')}
             <p className="zelf-or">of op tijd</p>
             {group('timer', 'Aantal minuten')}
+            {mabPossible && (
+                <button type="button" className="kiosk-btn zelf-mab" aria-pressed={mab} onClick={() => setMab(m => !m)}>
+                    {mab ? 'Hulp met MAB-blokjes: aan' : 'Hulp met MAB-blokjes: uit'}
+                </button>
+            )}
             <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big"
-                onClick={() => { tryFullscreen(); openZelf(buildZelfSessie(choice, mode, Date.now(), grade ?? undefined)); }}>
+                onClick={() => { tryFullscreen(); openZelf(buildZelfSessie(choice, mode, Date.now(), grade ?? undefined, mabPossible && !mab)); }}>
                 <Play weight="fill" aria-hidden /> Begin met oefenen
             </button>
         </main>

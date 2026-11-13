@@ -2,7 +2,7 @@ import { kindsOf, listCards, type CardType, type CardVariant, type EenvoudigData
 import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
 import { resolveCard } from '../../config/eenvoudig/resolveCard';
 import type { Leerjaar } from '../../config/gradePresets';
-import { rowYields, withKioskSeed } from '../../components/oefenen/oefenBuild';
+import { rowMayHaveMab, rowYields, withKioskSeed } from '../../components/oefenen/oefenBuild';
 import { kioskLabelOf, kioskSupports } from '../../services/oefenen/kiosk';
 import { childLabel } from './zelfLabels';
 import { MAX_TYPES, fnv1a } from '../../services/oefenen/session';
@@ -49,7 +49,7 @@ function spread<T>(list: T[], max: number): T[] {
 }
 
 /** One session for a choice: its variants as equally weighted types; the same choice always has the same id, so earlier runs come back. */
-export function buildZelfSessie(choice: ZelfChoice, mode: ZelfMode, now = Date.now(), grade?: number): OefenSessie {
+export function buildZelfSessie(choice: ZelfChoice, mode: ZelfMode, now = Date.now(), grade?: number, noMab?: boolean): OefenSessie {
     const types = spread(choice.vars, MAX_TYPES).map(toType);
     const several = types.length > 1;
     return {
@@ -65,7 +65,19 @@ export function buildZelfSessie(choice: ZelfChoice, mode: ZelfMode, now = Date.n
         ...(mode.kind === 'count' ? { total: mode.n } : { timerMin: mode.min }),
         // The picked leerjaar: handig rekenen offers ontbinden from leerjaar 6. Not in the id: the same choice keeps its runs.
         ...(grade ? { grade } : {}),
+        // The pupil's own "Hulp met MAB" choice; only leerjaar 1–3 ever shows MAB.
+        ...(noMab && grade && grade <= 3 ? { noMab: true as const } : {}),
     };
+}
+
+/** Whether the choice can show MAB above its steps (the leerjaar 1–3 check is the caller's). */
+export function choiceMayHaveMab(choice: ZelfChoice): boolean {
+    return choice.vars.some(v => {
+        try {
+            const t = toType(v);
+            return rowMayHaveMab({ leaf: { id: t.leafId, typeId: t.typeId, label: t.label }, constraints: t.constraints });
+        } catch { return false; }
+    });
 }
 
 export interface UsableCard { card: CardType; vars: CardVariant[] }

@@ -1,0 +1,33 @@
+/* MAB level A above the hoofdrekenen steps (kiosk steps panel and stappenhulp). Ink follows the card it sits in. */
+.sv-mab { margin: 0 0 var(--sp-3); display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); }
+.sv-mab-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sv-mab-p rect, .sv-mab-p path { fill: var(--bg-surface); stroke: currentColor; stroke-width: 1.2; stroke-linejoin: round; }
+.sv-mab-cells line { stroke: currentColor; stroke-width: 0.5; opacity: 0.55; }
+/* What this line adds: the accent, like the newest line under it. */
+.sv-mab-p.is-now rect, .sv-mab-p.is-now path { fill: var(--accent-soft); stroke: var(--accent); }
+.sv-mab-p.is-now .sv-mab-cells line { stroke: var(--accent); }
+/* Won by inwisselen: the accent, solid fill. */
+.sv-mab-p.is-gain rect, .sv-mab-p.is-gain path { fill: var(--accent); stroke: var(--accent-strong); }
+.sv-mab-p.is-gain .sv-mab-cells line { stroke: var(--accent-on); }
+/* Still to come: an outline only. */
+.sv-mab-p.is-wait rect, .sv-mab-p.is-wait path { fill: none; stroke: var(--text-muted); stroke-dasharray: 2 2; }
+.sv-mab-p.is-wait .sv-mab-cells { display: none; }
+/* Taken away: faded and crossed out. */
+.sv-mab-p.is-gone { opacity: 0.45; }
+.sv-mab-cross { stroke: var(--danger); stroke-width: 1.6; stroke-linecap: round; }
+/* Opened into ten of the next place down (lenen). */
+.sv-mab-p.is-ghost rect, .sv-mab-p.is-ghost path { fill: none; stroke: var(--text-muted); stroke-dasharray: 3 2; }
+.sv-mab-p.is-ghost .sv-mab-cells { display: none; }
+.sv-mab-ring { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-dasharray: 5 3; }
+.sv-mab-frame { fill: none; stroke: var(--separator); stroke-width: 1.5; }
+.sv-mab-frame.is-dashed { stroke: var(--text-muted); stroke-dasharray: 5 4; }
+.sv-mab-frame.is-hi { stroke: var(--accent); stroke-width: 2.5; fill: var(--accent-soft); }
+.sv-mab-plus { fill: currentColor; font-size: 20px; font-family: var(--font-sheet-math); }
+.sv-mab-cap { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-1) var(--sp-3); font-family: var(--font-ui); font-size: 18px; font-weight: 700; color: var(--accent); }
+/* The kiosk panel scrolls: the picture keeps to part of it and nothing below it gets squeezed. */
+.kiosk-steps .sv-mab-svg { max-height: 36vh; }
+.kiosk-steps:has(.sv-mab) > * { flex-shrink: 0; }
+/* Never on a phone: the pieces get too small to count (owner rule 3). */
+@media (max-width: 599px) {
+  .sv-mab, .steps-visual:has(> .sv-mab) { display: none; }
+}

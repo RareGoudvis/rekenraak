@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import type { StepLine } from '../../services/math/workedSteps';
-import type { StepsVisual } from './stepsVisual';
+import type { StepsVisual, StepsVisualContext } from './stepsVisual';
 
 // The steps visual registry; a type's visual is one file in ./visuals (contract: stepsVisual.ts).
 // Every .ts file in ./visuals exporting `visual` registers itself, so adding a type never edits a shared list.
@@ -13,8 +13,9 @@ const byType = new Map(STEPS_VISUALS.flatMap(v => v.typeIds.map(t => [t, v] as c
 export type RenderStepsVisual = (revealed: number) => ReactNode;
 
 // The slot's renderer for one exercise, or undefined when its type has no visual there.
-export function stepsVisualFor(typeIds: string | readonly string[], data: unknown, lines: StepLine[], where: 'kiosk' | 'tutor'): RenderStepsVisual | undefined {
+export function stepsVisualFor(typeIds: string | readonly string[], data: unknown, lines: StepLine[], where: 'kiosk' | 'tutor', ctx: StepsVisualContext = {}): RenderStepsVisual | undefined {
     const visual = (typeof typeIds === 'string' ? [typeIds] : typeIds).map(t => byType.get(t)).find(Boolean);
     if (!visual || (where === 'kiosk' && visual.kiosk === false)) return undefined;
+    if (visual.applies && !visual.applies(data, lines, ctx)) return undefined;
     return revealed => createElement('div', { className: 'steps-visual' }, createElement(visual.Visual, { data, lines, revealed }));
 }

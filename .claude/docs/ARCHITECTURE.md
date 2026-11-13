@@ -1101,7 +1101,7 @@ Steps for a type are four per-type files and one registry key. No shared steps f
 - `sum(data)` gives the tokens of the exercise as printed. They label the list and head the card.
 - On the wire the codec appears as `['@', id, data]` in payload v1, wrapped once (`[['@', id, data]]`) when the sheet said no steps. An unknown id decodes as a placeholder.
 
-**4. Optional steps visual**: `src/components/steps/visuals/<Name>.tsx` (the component, default export) plus `visuals/<name>.ts`, which exports `visual = defineStepsVisual<D>({ typeIds, Visual, kiosk? })`.
+**4. Optional steps visual**: `src/components/steps/visuals/<Name>.tsx` (the component, default export) plus `visuals/<name>.ts`, which exports `visual = defineStepsVisual<D>({ typeIds, Visual, kiosk?, applies? })`. `applies(data, lines, ctx)` (ctx = `{ grade, noMab }` from the session or the tutor payload) returns false when the visual has nothing to draw, so no empty `.steps-visual` box appears.
 - The component takes `{ data, lines, revealed }`. `data` is the exercise in Oefenmodus and the codec's decoded data in the stappenhulp, so `in` must return the exercise's shape. `lines.slice(0, revealed)` are revealed. In question steps, `revealed` is the number of questions answered.
 - It draws above the steps in the kiosk StepsPanel / QuestionSteps and on the tutor page, inside `.steps-visual`.
 - `kiosk: false` keeps it on the tutor page only, for a card that draws its own solution.
@@ -1132,6 +1132,7 @@ Hoofdrekenen keeps its strategies in `workedSteps.ts`: rijgen up to 10 000, and 
 | typeId | Strategy (`src/services/steps/`) | Codec id | Visual (`src/components/steps/visuals/`) | Notes |
 |---|---|---|---|---|
 | hr-std-* (+ − × :) | `workedSteps.ts` (rijgen, splitsen en verdelen, analogie, via eenheden, met rest) | none (sum item) | none | answer key + kiosk + tutor; handig rekenen only for pupils |
+| hr-std-* (+ − × :) whole numbers ≤ 1000, leerjaar 1–3 | `mabSteps.ts` (the MAB state per revealed line) | none | `MabSteps.tsx` (`mab.ts`, `applies` guard) | MAB level A (owner 2026-11-13): inwisselen at +, lenen at −, groups at ×, verdelen at :; follows the revealed lines. Never on print / answer key, never below 600 px (CSS), none for kommagetallen, breuken (`bs`), puntoefeningen, met rest, deeltafels, compenseren. Kiosk: session `grade` 1–3 and not `noMab` ("Hulp met MAB" in the builder, a toggle in Zelf oefenen, both default on); stappenhulp: payload leerjaar 1–3 (sum items look the visual up via `hr-std-gemengd`) |
 | hr-std-optellen/aftrekken, rational | `breukBewerkSteps.ts` `breukSomSteps` (chained before the whole-number steps) | `bs` | none | the codec claims only sums with a breuk; a typeId may carry several codecs (`codecsForType`, first `out` that is non-null wins) and whole-number sums fall back to the hoofdrekenen forms |
 | breuken (hoeveelheid) | `workedSteps.ts` `breukHoeveelheidSteps` | `h` | `breukHoeveelheid.ts` (tutor only) | breukvragen; the kiosk builds groups itself |
 | klok-kloklezen | `klokSteps.ts` | `kl` | `KlokBloemblaadjes.tsx` | petal clock; digital always clockwise |
@@ -1499,6 +1500,7 @@ src/
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts}
 │   ├── math/workedSteps.ts        # worked steps: StepToken/StepLine, rijgen for + and −, stepsAtLevel, stepText (§9)
 │   ├── stepsAvailability.ts       # stepsFor / blockHasSteps: the one rule for where steps are offered (§9)
+│   ├── steps/mabSteps.ts          # MAB level A: the blocks per revealed hoofdrekenen line (inwisselen / lenen / groups / verdelen), ≤ 1000
 │   ├── steps/                     # per-type worked steps (§9 "Adding worked steps to a type"): <name>Steps.ts strategies (klok, geldTeruggeven, rekenvolgorde, procenten, afronden, getallenas, breukBewerk, herleiding), tutorCodec.ts / tutorCodecs.ts (defineCodec + glob registry), codecs/<name>.ts (ids h kl gt rv pc af ga gr bb hl)
 │   ├── oefenen/tutorPayload.ts    # stappenhulp QR payload v1: encodeTutorPage / decodeTutor (§15)
 │   ├── oefenen/packText.ts        # QR text packing, split out so the tutor bundle does not pull in REGISTRY
@@ -2523,7 +2525,7 @@ Positional arrays, trailing defaults trimmed, `null` = default in a middle slot:
 `row = [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?, exact?]` (`exact` = 1 / 0,
 only written when the teacher set the row's Antwoord choice; absent = the descriptor default).
 `created` in whole minutes when it falls on one; `flags` bits 0 willekeurig · 1 allowRepeatType ·
-2 testMode · 3 statsLocked · 4 noSteps (absent = steps on; `sessieId` only includes it when set, so older links keep their id). Bits 5–7 hold the leerjaar (1–6, 0 = unknown) for handig rekenen; it is not in the content hash, so it never changes a session's id. `leaf` = index into **`KIOSK_LEAF_TABLE_V1`**, else the leafId string.
+2 testMode · 3 statsLocked · 4 noSteps (absent = steps on; `sessieId` only includes it when set, so older links keep their id). Bits 5–7 hold the leerjaar (1–6, 0 = unknown) for handig rekenen and MAB; bit 8 is `noMab` ("Hulp met MAB" switched off; absent = on). Neither is in the content hash, so they never change a session's id. `leaf` = index into **`KIOSK_LEAF_TABLE_V1`**, else the leafId string.
 `diff` = flat `[key, value, …]` of the constraints that differ from the leaf's **frozen seed** in
 [kioskDefaults.ts](../../src/services/oefenen/kioskDefaults.ts) (`KIOSK_DEFAULTS_V1`: per table
 leaf the seeded settings, kiosk label, default instruction and a settings-dependent flag, as of

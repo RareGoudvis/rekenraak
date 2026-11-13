@@ -12,11 +12,19 @@ export interface StepsVisualProps<D = unknown> {
     revealed: number;
 }
 
+// What the page knows about the pupil: the leerjaar (kiosk session, tutor payload) and the MAB toggle.
+export interface StepsVisualContext {
+    grade?: number;
+    noMab?: boolean;
+}
+
 export interface StepsVisual<D = unknown> {
     typeIds: readonly string[];
     Visual: ComponentType<StepsVisualProps<D>>;
     // false: the stappenhulp only, because the Oefenmodus card draws this itself (the descriptor's solution).
     kiosk?: boolean;
+    // false: no visual for this exercise here, so no empty .steps-visual box either (absent = always applies).
+    applies?: (data: D, lines: StepLine[], ctx: StepsVisualContext) => boolean;
 }
 
 export const defineStepsVisual = <D>(visual: StepsVisual<D>): StepsVisual => visual as unknown as StepsVisual;

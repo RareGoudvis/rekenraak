@@ -57,6 +57,8 @@ export interface OefenSessie {
     // The pupil's leerjaar (1–6) when the teacher or Zelf oefenen knows it; only handig rekenen reads it (ontbinden is
     // leerjaar 6). Absent = unknown. Not part of the content hash: it never changes what is practised.
     grade?: number;
+    // The teacher or pupil turned off "Hulp met MAB" (leerjaar 1–3). Absent = on. A view aid, so not in the content hash.
+    noMab?: true;
 }
 
 export type OefenAttempts = 1 | 2;
