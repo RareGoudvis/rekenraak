@@ -22,5 +22,6 @@ export const codec = defineCodec<GeldTeruggevenExercise>({
         return { id: '', priceCents: price, payWithCents: pay, changeCents: pay - price, waypointCents: waypoint, step1Cents: waypoint - price, step2Cents: pay - waypoint, isManuallyEdited: false };
     },
     steps: geldTeruggevenSteps,
-    sum: ex => [{ t: 'word', w: `Prijs € ${geldText(ex.priceCents)}, betaald met € ${geldText(ex.payWithCents)}` }],
+    // Short on purpose: the tutor card heading does not wrap, so a sentence would run off a phone screen.
+    sum: ex => [{ t: 'word', w: `€ ${geldText(ex.payWithCents)}` }, { t: 'op', op: '-' }, { t: 'word', w: `€ ${geldText(ex.priceCents)}` }],
 });
