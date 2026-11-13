@@ -3,6 +3,7 @@ import { currentInput, fractionNext, interactionAnswer, timeWordsNext, typedRead
 import { KWART } from '../../services/clock/timeWords';
 import Keypad from './Keypad';
 import Tray from './Tray';
+import GroupTools from './GroupTools';
 
 // What sits between two fields: the sheet's "r" for delen met rest, ':' between uur and min.
 const SEPARATOR: Record<string, string> = { 'number+rest': 'r', time: ':' };
@@ -70,6 +71,7 @@ export default function AnswerInput() {
         const hints = info.extraKeys.flatMap(k => (k.hint ? [k.hint] : []));
         return (
             <div className="kiosk-answer">
+                {info.groups && <GroupTools />}
                 {info.interact === 'fill-cells'
                     ? <Keypad extras={info.keys} actions={info.extraKeys} onAction={pressExtra} onKey={press} onCheck={answer} canCheck={ready} />
                     : <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!ready}>Controleer</button>}

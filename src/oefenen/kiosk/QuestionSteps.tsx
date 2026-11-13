@@ -5,7 +5,8 @@ import { StepLineView } from '../../components/viewer/StepTokens';
 
 // Question steps (breuk van een hoeveelheid): one question at a time, hint first, the answer on a tap.
 // Questions already answered stay above it, so the pupil reads the whole method at the end.
-export default function QuestionSteps({ lines }: { lines: StepLine[] }) {
+// onReveal(answered): the card beside it fills in the same step (breuk van een hoeveelheid: rows, groups, colour).
+export default function QuestionSteps({ lines, onReveal }: { lines: StepLine[]; onReveal?(answered: number): void }) {
     const [revealed, setRevealed] = useState(0);
     const current = lines[Math.min(revealed, lines.length - 1)];
     const done = revealed >= lines.length - 1 && !lines[lines.length - 1].question;
@@ -28,7 +29,7 @@ export default function QuestionSteps({ lines }: { lines: StepLine[] }) {
             {done
                 ? <p className="kiosk-steps-done">Klaar! Kijk nog eens naar je antwoord.</p>
                 : current.question && (
-                    <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={() => setRevealed(r => r + 1)}>Toon het antwoord</button>
+                    <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={() => { setRevealed(revealed + 1); onReveal?.(revealed + 1); }}>Toon het antwoord</button>
                 )}
         </>
     );
