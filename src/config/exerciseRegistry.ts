@@ -1,4 +1,4 @@
-import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
+import type { ClockExercise, Equation, FractionExercise, MathBlock } from '../services/math/types';
 import type {
     BlockConstraints, AddSubConstraints, MulDivConstraints, CijferConstraints, ClockConstraints,
     FractionConstraints, BreukBewerkConstraints, BreukenRangschikkenConstraints, SplitsenConstraints,
@@ -17,6 +17,7 @@ import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
 import { breukHoeveelheidSteps, handigSteps, workedSteps, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
 import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
+import { klokSteps } from '../services/steps/klokSteps';
 import { generateFractionExercises, generateFractionExercisesNoted } from '../services/fractions/fractionGenerator';
 import { generateBreukBewerkExercises, generateBreukBewerkExercisesNoted } from '../services/fractions/breukBewerkGenerator';
 import { generateBreukenRangschikkenExercises, generateBreukenRangschikkenExercisesNoted } from '../services/ordenen/breukenRangschikkenGenerator';
@@ -533,7 +534,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'cijferen-delen-nat':            cijferRow(),
     'cijferen-delen-dec':            cijferRow(2),
 
-    'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 , kiosk: KLOK_KIOSK }),
+    'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 , kiosk: KLOK_KIOSK, steps: (ex, c) => klokSteps(ex as ClockExercise, c) }),
     'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, generateNoted: generateFractionExercisesNoted, defaultConstraints: fractionDefaults, defaultCount: 6 , kiosk: BREUKEN_KIOSK, steps: breukSteps }),
     'splitsen':       row<SplitsenConstraints>({ exerciseField: 'splitsenExercises', generate: generateSplitsenExercises, defaultConstraints: splitsenDefaults, defaultCount: 5, maxPresets: splitsenMax , kiosk: SPLITSEN_KIOSK }),
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { blockHasSteps, stepsFor } from '../services/stepsAvailability';
+import { REGISTRY } from '../config/exerciseRegistry';
 import { listOefenLeaves, rowMayHaveSteps, seedRowConstraints } from '../components/oefenen/oefenBuild';
 import { makeBlock } from './helpers/makeBlock';
 import type { Equation, MathBlock } from '../services/math/types';
@@ -32,7 +33,7 @@ describe('steps availability', () => {
         expect(blockHasSteps(makeBlock('klok-kloklezen'))).toBe(false);
     });
 
-    it('the Oefenmodus switch: optellen and tafel rows can show steps, a klok row cannot', () => {
+    it('the Oefenmodus switch: optellen, tafel and klok rows can show steps, a type without a strategy cannot', () => {
         const leaves = listOefenLeaves();
         const row = (id: string) => {
             const leaf = leaves.find(l => l.id === id)!;
@@ -41,7 +42,9 @@ describe('steps availability', () => {
         };
         expect(rowMayHaveSteps(row('hr-std-optellen-nat'))).toBe(true);
         expect(rowMayHaveSteps(row('hr-std-vermenigvuldigen-nat'))).toBe(true);
-        const klok = leaves.find(l => l.typeId === 'klok-kloklezen')!;
-        expect(rowMayHaveSteps({ leaf: klok, constraints: seedRowConstraints(klok, 3) })).toBe(false);
+        expect(rowMayHaveSteps(row('klok-analoog-lezen'))).toBe(true);
+        // Any leaf whose type has no steps key, so the case survives other types gaining steps.
+        const none = leaves.find(l => !REGISTRY[l.typeId]?.steps)!;
+        expect(rowMayHaveSteps({ leaf: none, constraints: seedRowConstraints(none, 3) })).toBe(false);
     });
 });
