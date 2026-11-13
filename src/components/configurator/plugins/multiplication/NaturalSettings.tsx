@@ -4,7 +4,7 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
-import { presetLabel, floorToPreset, metRestLevelFits, clipMetRestLevel, MET_REST_LEVEL_MIN_MAX } from '../../../../config/numberRanges';
+import { presetLabel, floorToPreset, metRestLevelFits, clipMetRestLevel, MET_REST_LEVEL_MIN_MAX, TAFEL_LIMITS, TAFEL_FROM, TAFEL_PRODUCT_MAX, effectiveTableFrom } from '../../../../config/numberRanges';
 import { REGISTRY } from '../../../../config/exerciseRegistry';
 import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import { useMaxPresets } from '../../useMaxPresets';
@@ -43,7 +43,13 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         metRestKladlijn = false,
         divisionLevel = 0,
         divisionLevels,
+        tableProductMax = 0,
     } = c;
+    // The three × extras act on 2-factor sums only (3-4 factor chains have their own draw).
+    const mulExtras = !isDivision && (c.termCount ?? 2) <= 2;
+    const tableFrom = effectiveTableFrom(c.tableFrom, tableLimit);
+    // Absent keeps each mode's old order, so the switch shows that: tafels mixed (AAN), andere fixed (UIT).
+    const swapOn = c.swapFactors ?? multiplicationMode === 'tafels';
 
     // Multi-select niveaus: array wins; back-compat seed from the old single `divisionLevel`.
     const selectedLevels: number[] = Array.isArray(divisionLevels)
@@ -142,13 +148,40 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             </button>
                         ))}
                     </div>
-                    <SettingLabel text={isDivision ? 'Quotiënt tot:' : 'Vermenigvuldig tot:'} info={isDivision ? 'Tot welk veelvoud van de tafel je deelt (bv. tot 10× of 20×).' : 'Tot welk veelvoud van de tafel je vermenigvuldigt (bv. tot 10× of 20×).'} />
-                    <PopupSelect
-                        value={tableLimit}
-                        options={[10, 20, 50, 100].map(val => ({ value: val, label: `Tot ${val}×` }))}
-                        onChange={(val) => updateConstraint('tableLimit', val)}
-                        ariaLabel={isDivision ? 'Quotiënt tot' : 'Vermenigvuldig tot'}
-                    />
+                    <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                        <div style={{ flex: '1 1 0' }}>
+                            <SettingLabel text={isDivision ? 'Quotiënt tot:' : 'Vermenigvuldig tot:'} info={isDivision ? 'Tot welk veelvoud van de tafel je deelt (bv. tot 10× of 20×).' : 'Tot welk veelvoud van de tafel je vermenigvuldigt (bv. tot 10× of 20×).'} />
+                            <PopupSelect
+                                value={tableLimit}
+                                options={TAFEL_LIMITS.map(val => ({ value: val, label: `Tot ${val}×` }))}
+                                // A "Vanaf" at or past the new "tot" would be ignored; reset it so it cannot return later.
+                                onChange={(val) => patch(mulExtras && tableFrom >= val ? { tableLimit: val, tableFrom: 1 } : { tableLimit: val })}
+                                ariaLabel={isDivision ? 'Quotiënt tot' : 'Vermenigvuldig tot'}
+                            />
+                        </div>
+                        {mulExtras && (
+                            <div style={{ flex: '1 1 0' }}>
+                                <SettingLabel text="Vanaf:" info="Het kleinste veelvoud. Vanaf 11× tot 20× geeft 6 × 16 of 7 × 13, maar geen gewone tafelsommen." />
+                                <PopupSelect
+                                    value={tableFrom}
+                                    options={TAFEL_FROM.filter(v => v < tableLimit).map(val => ({ value: val, label: `Vanaf ${val}×` }))}
+                                    onChange={(val) => updateConstraint('tableFrom', val)}
+                                    ariaLabel="Vanaf"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    {mulExtras && (
+                        <div style={{ marginTop: 'var(--sp-4)' }}>
+                            <SettingLabel text="Uitkomst tot:" info="Laat sommen met een grotere uitkomst weg (bij tot 100 valt 9 × 16 = 144 weg)." />
+                            <PopupSelect
+                                value={tableProductMax > 0 ? tableProductMax : 0}
+                                options={[{ value: 0, label: 'Geen' }, ...TAFEL_PRODUCT_MAX.map(val => ({ value: val, label: presetLabel(val) }))]}
+                                onChange={(val) => updateConstraint('tableProductMax', val)}
+                                ariaLabel="Uitkomst tot"
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -299,6 +332,18 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                     </div>
                 );
             })()}
+
+            {/* FACTOREN WISSELEN (× tafels en andere) */}
+            {mulExtras && (multiplicationMode === 'tafels' || multiplicationMode === 'andere') && (
+                <div style={{ marginTop: 'var(--sp-4)' }}>
+                    <div style={styles.onOffRow}>
+                        <SettingLabel text="Factoren wisselen" info="AAN: elke som zet een van beide factoren vooraan (79 × 6 of 6 × 79). UIT: een vaste volgorde (bij tafels eerst het veelvoud, dan de tafel: 3 × 7)." />
+                        <button onClick={() => updateConstraint('swapFactors', !swapOn)} aria-pressed={swapOn} style={styles.onOffBtn(swapOn)}>
+                            {swapOn ? 'AAN' : 'UIT'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
