@@ -71,7 +71,7 @@ describe('breuken gelijknamig maken', () => {
         expect(text(breukBewerkSteps(bb('gelijknamig', [{ n: 3, d: 4 }, { n: 5, d: 6 }], [{ n: 9, d: 12 }, { n: 10, d: 12 }])))).toEqual([
             'Wat zijn de veelvouden van 4? → 4, 8, 12',
             'Wat zijn de veelvouden van 6? → 6, 12',
-            'Wat wordt de nieuwe noemer? → 12',
+            'Wat is het kleinste gemene veelvoud van 4 en 6? → 12',
             'Hoe schrijf je de eerste breuk met noemer 12? → 3/4 = 9/12',
             'Hoe schrijf je de tweede breuk met noemer 12? → 5/6 = 10/12',
             '9/12 en 10/12',
@@ -90,12 +90,12 @@ describe('breuken gelijknamig maken', () => {
 describe('breuken optellen en aftrekken', () => {
     it('makes the noemers gelijk via the kgv, adds the tellers, simplifies', () => {
         expect(text(breukSomSteps(som({ n: 3, d: 4 }, '+', { n: 5, d: 6 })))).toEqual([
-            'Veelvouden van 4: 4, 8, 12', 'Veelvouden van 6: 6, 12', 'Nieuwe noemer: 12', '3/4 = 9/12', '5/6 = 10/12', '9/12 + 10/12', '19/12',
+            'Veelvouden van 4: 4, 8, 12', 'Veelvouden van 6: 6, 12', 'kgv = 12', '3/4 = 9/12', '5/6 = 10/12', '9/12 + 10/12', '19/12',
         ]);
         expect(text(breukSomSteps(som({ n: 1, d: 2 }, '-', { n: 1, d: 6 }))).slice(-3)).toEqual(['3/6 − 1/6', '2/6', '1/3']);
         expect(text(breukSomSteps(som({ n: 1, d: 4 }, '+', { n: 1, d: 4 })))).toEqual(['2/4', '1/2']);
-        // Basisstappen (the key's narrow column) leave the lists to Alle.
-        expect(text(stepsAtLevel(breukSomSteps(som({ n: 3, d: 4 }, '+', { n: 5, d: 6 }))!, 'basis'))).toEqual(['3/4 = 9/12', '5/6 = 10/12', '9/12 + 10/12', '19/12']);
+        // Basisstappen (the key's narrow column) leave the lists to Alle, but keep the kgv (owner: gelijknamig = kgv zoeken).
+        expect(text(stepsAtLevel(breukSomSteps(som({ n: 3, d: 4 }, '+', { n: 5, d: 6 }))!, 'basis'))).toEqual(['kgv = 12', '3/4 = 9/12', '5/6 = 10/12', '9/12 + 10/12', '19/12']);
     });
 
     it('no steps for a sum that is only its answer, a gemengd operand or a puntoefening', () => {

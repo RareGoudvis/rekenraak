@@ -19,8 +19,8 @@ const list = (vs: number[]): StepToken[] => vs.flatMap((v, i) => (i ? [{ t: 'sep
 interface Step { kind: string; question: string; hint: string; answer: StepToken[]; statement: StepToken[]; mark: string }
 const asQuestion = (s: Step): StepLine => ({ kind: `breuk.${s.kind}`, basis: true, aside: true, question: s.question, hint: s.hint, tokens: s.answer, compact: s.statement, mark: s.mark });
 // As plain lines (breuken optellen / aftrekken) the lists are the optional Alle lines: the answer key prints
-// steps unwrapped beside the sum, where a long veelvouden row would run past its column.
-const asLine = (s: Step): StepLine => ({ kind: `breuk.${s.kind}`, basis: s.kind === 'schrijf', aside: true, tokens: s.statement, mark: s.mark });
+// steps unwrapped beside the sum, where a long veelvouden row would run past its column. The kgv line stays basis.
+const asLine = (s: Step): StepLine => ({ kind: `breuk.${s.kind}`, basis: s.kind === 'schrijf' || s.kind === 'noemer', aside: true, tokens: s.statement, mark: s.mark });
 const closing = (tokens: StepToken[]): StepLine => ({ kind: 'breuk.klaar', basis: true, aside: true, tokens, mark: 'klaar' });
 
 // Delers lists stay readable up to this teller / noemer; veelvouden lists up to this many entries.
@@ -76,9 +76,15 @@ function gelijknamigSteps(a: Fraction, b: Fraction, L: number, kgv: boolean): St
     return [
         rij(a.d, 'rij0'),
         rij(b.d, 'rij1'),
-        {
+        // Owner (2026-11-13): gelijknamig maken = het kleinste gemene veelvoud zoeken, so the step names it; a teacher's own noemer is just "de nieuwe noemer".
+        kgv ? {
+            kind: 'noemer', mark: 'noemer', question: `Wat is het kleinste gemene veelvoud van ${a.d} en ${b.d}?`,
+            hint: 'Zoek het kleinste getal dat in beide rijen staat. Dat wordt de nieuwe noemer.',
+            // Short as a plain line: the answer key prints it unwrapped in a narrow column; the question names both noemers.
+            answer: [num(L)], statement: [word('kgv'), eq, num(L)],
+        } : {
             kind: 'noemer', mark: 'noemer', question: 'Wat wordt de nieuwe noemer?',
-            hint: kgv ? 'Zoek het kleinste getal dat in beide rijen staat.' : `De opdracht vraagt noemer ${L}. Die staat in beide rijen.`,
+            hint: `De opdracht vraagt noemer ${L}. Die staat in beide rijen.`,
             answer: [num(L)], statement: [word('Nieuwe noemer: '), num(L)],
         },
         rewrite(a, 'eerste', 'schrijf0'),

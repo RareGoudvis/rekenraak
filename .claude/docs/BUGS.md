@@ -79,3 +79,4 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 
+- Breuken optellen (hr-std-optellen-rat, 'multi_step'): the generator serves odd terms such as 8/8 or 8/4 (a whole number written as a breuk) and 6/3, so the kgv steps rewrite 8/8 as 24/24. Repro: leaf hr-std-optellen-rat, fractionDifficulty multi_step, seed 7. 2026-11-13.
