@@ -9,6 +9,7 @@ import type { Equation } from '../services/math/types';
 import Scanner from './Scanner';
 import StepsView from './StepsView';
 import QuestionSteps from '../oefenen/kiosk/QuestionSteps';
+import TutorGroups from './TutorGroups';
 import { StepTokens } from '../components/viewer/StepTokens';
 
 // The stappenhulp (tutor.html): a sheet's QR → a menu of its sums → one sum's worked steps,
@@ -57,6 +58,18 @@ function itemSteps(item: TutorItem | null): StepLine[] | null {
     return item.kind === 'sum' ? workedSteps(item.eq) : breukHoeveelheidSteps(item.ex);
 }
 
+// Breuk van een hoeveelheid: the breukvragen beside the objects, which fill in with every revealed answer.
+function HoeveelheidCard({ item, lines }: { item: Extract<TutorItem, { kind: 'hoeveelheid' }>; lines: StepLine[] }) {
+    const [answered, setAnswered] = useState(0);
+    return (
+        <div className="tutor-card">
+            <div className="tutor-sum">{itemSum(item)}</div>
+            <TutorGroups ex={item.ex} answered={answered} />
+            <QuestionSteps lines={lines} look="tutor" onReveal={setAnswered} />
+        </div>
+    );
+}
+
 export default function TutorApp() {
     const [state, setState] = useState<Loaded>(() => load(window.location.hash));
     const [open, setOpen] = useState<{ g: number; i: number } | null>(null);
@@ -103,12 +116,7 @@ export default function TutorApp() {
                 <main className="tutor-main">
                     {current.kind === 'sum'
                         ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq)} />
-                        : (
-                            <div className="tutor-card" key={`${open.g}-${open.i}`}>
-                                <div className="tutor-sum">{itemSum(current)}</div>
-                                <QuestionSteps lines={currentSteps} look="tutor" />
-                            </div>
-                        )}
+                        : <HoeveelheidCard key={`${open.g}-${open.i}`} item={current} lines={currentSteps} />}
                 </main>
             </div>
         );

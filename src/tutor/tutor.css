@@ -60,3 +60,15 @@ html:has(.tutor-body) { overflow-y: auto; }
 .tutor-q-question { font-family: var(--font-ui); font-size: 17px; line-height: 1.4; }
 .tutor-q-hint { font-family: var(--font-ui); font-size: 16px; line-height: 1.4; font-weight: 400; color: var(--text-muted); }
 .tutor-q-answer { font-size: 22px; color: var(--accent); }
+
+/* Breuk van een hoeveelheid: the objects fill in with the breukvragen. SYNC with the --kiosk-group-* colours in kiosk.css. */
+.tutor-hv { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 16px; }
+.tutor-hv-dot { width: 30px; height: 30px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid var(--tutor-ink); display: inline-flex; align-items: center; justify-content: center; font: 700 13px var(--font-ui); color: var(--tg, var(--tutor-ink)); }
+.tutor-hv-dot.is-grouped { border-color: var(--tg); }
+.tutor-hv-dot.is-chosen { background: var(--tg); color: var(--tutor-paper); }
+.tutor-hv-dot[data-group="0"] { --tg: var(--accent-bewerkingen); }
+.tutor-hv-dot[data-group="1"] { --tg: var(--accent-vraagstukken); }
+.tutor-hv-dot[data-group="2"] { --tg: var(--accent-meetkunde); }
+.tutor-hv-dot[data-group="3"] { --tg: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--tutor-ink)); }
+.tutor-hv-dot[data-group="4"] { --tg: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--accent-metendrekenen)); }
+.tutor-hv-dot[data-group="5"] { --tg: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--tutor-ink)); }

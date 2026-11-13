@@ -16,7 +16,7 @@ describe('breukHoeveelheidSteps', () => {
         expect(lines.map(l => l.question)).toEqual([
             'Wat is het geheel?', 'In hoeveel gelijke delen verdeel je het geheel?', 'Hoeveel is één deel?', 'Hoeveel delen neem je?', undefined,
         ]);
-        expect(lines.map(l => l.hint)).toEqual(["Welk getal staat na 'van'?", 'Kijk naar de noemer.', 'Deel het geheel door de noemer.', 'Kijk naar de teller.', undefined]);
+        expect(lines.map(l => l.hint)).toEqual(['', 'Kijk naar de noemer.', 'Deel het geheel door de noemer.', 'Kijk naar de teller.', undefined]);
         expect(answers(ex(1, 3, 12))).toEqual(['12', '3', '12 : 3 = 4', '1 keer', '1/3 van 12 = 4']);
     });
 

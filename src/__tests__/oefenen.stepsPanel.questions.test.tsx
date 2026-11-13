@@ -15,7 +15,7 @@ describe('StepsPanel question flow', () => {
         render(<StepsPanel lines={breukHoeveelheidSteps(ex(2, 3, 12))!} onNext={() => {}} />);
         fireEvent.click(screen.getByText('Toon de stappen'));
         expect(screen.getByText('Wat is het geheel?')).toBeTruthy();
-        expect(screen.getByText("Welk getal staat na 'van'?")).toBeTruthy();
+        expect(screen.queryByText("Welk getal staat na 'van'?")).toBeNull();
         expect(screen.queryByText('In hoeveel gelijke delen verdeel je het geheel?')).toBeNull();
         expect(screen.queryByText('12')).toBeNull();
 

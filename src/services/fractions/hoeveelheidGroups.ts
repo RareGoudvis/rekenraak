@@ -138,7 +138,8 @@ export function hvNextStep(ex: FractionExercise, state: InteractionState): HvTip
         return { step: 1, question: 'Hoe maak je gelijke groepjes?', hint: `Kijk naar de noemer: zoveel groepjes maak je. Tik op Nieuw groepje en tik dan op de ${word}. Elk groepje krijgt evenveel ${word}.${done}` };
     }
     const r1 = next(ROW_1);
-    if (r1 === 'r0') return { step: 2, question: ROW_QUESTIONS.r0, hint: "Welk getal staat na 'van'?" };
+    // No hint for the geheel: "the number after 'van'" would give it away (owner, 2026-11-13).
+    if (r1 === 'r0') return { step: 2, question: ROW_QUESTIONS.r0, hint: '' };
     if (r1 === 'r1') return { step: 2, question: ROW_QUESTIONS.r1, hint: 'Kijk naar de noemer.' };
     if (r1 === 'r2') return { step: 2, question: ROW_QUESTIONS.r2, hint: `Deel het geheel door de noemer: ${cell('r0')} : ${cell('r1')}.` };
 

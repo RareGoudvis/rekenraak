@@ -600,7 +600,8 @@ export function breukHoeveelheidSteps(ex: FractionExercise | undefined): StepLin
         ({ kind, basis: true, aside: true, question, hint, tokens, ...(compact && { compact }) });
     const word = (w: string): StepToken => ({ t: 'word', w });
     return [
-        ask('whole', 'Wat is het geheel?', "Welk getal staat na 'van'?", [num(g)]),
+        // No hint for the geheel: "the number after 'van'" would give it away (owner, 2026-11-13).
+        ask('whole', 'Wat is het geheel?', '', [num(g)]),
         ask('noemer', 'In hoeveel gelijke delen verdeel je het geheel?', 'Kijk naar de noemer.', [num(n)]),
         ask('one', 'Hoeveel is één deel?', 'Deel het geheel door de noemer.', calc(g, ':', n, part), calc(g, ':', n, part)),
         // One part taken needs no sum: "1 keer" already is the answer.

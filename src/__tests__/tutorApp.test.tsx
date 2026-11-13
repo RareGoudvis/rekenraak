@@ -62,7 +62,7 @@ describe('stappenhulp', () => {
         expect(screen.getByText('Opdracht 4 · Bereken de breuk van de hoeveelheid.')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: /1 op 5 van 20/ }));
         expect(screen.getByText('Wat is het geheel?')).toBeTruthy();
-        expect(screen.getByText("Welk getal staat na 'van'?")).toBeTruthy();
+        expect(screen.queryByText("Welk getal staat na 'van'?")).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Toon het antwoord' }));
         expect(screen.queryByText("Welk getal staat na 'van'?")).toBeNull();
         expect(screen.getByText('In hoeveel gelijke delen verdeel je het geheel?')).toBeTruthy();
