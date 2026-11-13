@@ -6,7 +6,7 @@ import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, groupChosen, groupStarted, groupTapped, groupsCleared, groupsDone, groupsEdited, type InteractionState } from '../components/viewer/ViewerInteractionContext';
-import { hvNudge, hvReview, hvShow, hvSolution, hvTips } from '../services/fractions/hoeveelheidGroups';
+import { hvNextStep, hvNudge, hvReview, hvShow, hvSolution } from '../services/fractions/hoeveelheidGroups';
 import { currentInput, useOefenStore, type KioskCurrent } from '../oefenen/useOefenStore';
 import OefenApp from '../oefenen/OefenApp';
 import { hashOf, resetKiosk, starterSessie } from './helpers/oefenKiosk';
@@ -181,16 +181,49 @@ describe('nudge, review, tips, stats', () => {
         expect(r(work([8, 6, 7, 7], 3, { a: '21', r2: '6' })).marks).toEqual({ r2: 'wrong' });
     });
 
-    test('tips: the breukvragen per row and answer; the objects\' tip uses the pupil\'s own row 1', () => {
-        const q = (spot: Parameters<typeof hvTips>[0], st: InteractionState = EMPTY_INTERACTION) => hvTips(spot, E, st).map(t => t.question);
-        expect(q('row1')).toEqual(['Hoeveel is het geheel?', 'In hoeveel moet je het delen?', 'Hoeveel is één deel?']);
-        expect(q('row2')[0]).toBe('Hoeveel keer moet je dat deel nemen?');
-        expect(q('answer')).toEqual(['Hoeveel is 3/4 van 28?']);
-        const recheck = (st: InteractionState) => hvTips('objects', E, st).at(-1)!.hint;
-        expect(recheck(EMPTY_INTERACTION)).toBe('Vul de eerste rij in. Dan kun je nakijken of elk groepje evenveel bolletjes heeft.');
-        // A wrong row 1 shows the pupil's 6, never the right 7.
-        expect(recheck(work([7, 7, 7, 7], 0, { r0: '28', r1: '4', r2: '6' }))).toBe('Je eerste rij zegt 4 groepjes. Zitten er 6 bolletjes in elk groepje?');
-        expect(hvTips('objects', E, work([7, 7, 7, 7], 0))[0].question).toBe('Hoeveel groepjes kleur je?');
+    test('next step: groups, row 1, groups vs row 1, colour, row 2, answer, Controleer', () => {
+        const at = (st: InteractionState) => hvNextStep(E, st);
+        const row1 = { r0: '28', r1: '4', r2: '7' }, row2 = { r3: '3', r4: '7', r5: '21' };
+        // 1: nothing yet, or groups still being built.
+        expect(at(EMPTY_INTERACTION)).toMatchObject({ step: 1, question: 'Hoe maak je gelijke groepjes?' });
+        expect(at(EMPTY_INTERACTION).hint).toContain('Kijk naar de noemer');
+        expect(at(groupTapped(EMPTY_INTERACTION, o(0))).hint).toContain('Klaar met groepjes');
+        expect(at(groupsEdited(work([7, 7, 7, 7], 0))).step).toBe(1);
+        // 2: row 1, field by field.
+        expect(at(work([7, 7, 7, 7], 0))).toMatchObject({ step: 2, question: 'Hoeveel is het geheel?' });
+        expect(at(work([7, 7, 7, 7], 0, { r0: '28' }))).toMatchObject({ step: 2, question: 'In hoeveel moet je het delen?', hint: 'Kijk naar de noemer.' });
+        expect(at(work([7, 7, 7, 7], 0, { r0: '28', r1: '4' }))).toMatchObject({ step: 2, question: 'Hoeveel is één deel?', hint: 'Deel het geheel door de noemer: 28 : 4.' });
+        // 3: the groups against the pupil's own one deel: a wrong row 1 shows the pupil's 6, never the right 7.
+        expect(at(work([7, 7, 7, 7], 0, { r0: '28', r1: '4', r2: '6' })).hint).toContain('zitten er 6 bolletjes in elk groepje?');
+        expect(at(work([8, 6, 7, 7], 0, row1))).toMatchObject({ step: 3 });
+        expect(at(work([8, 6, 7, 7], 0, row1)).hint).toContain('Kijk je groepjes na: zitten er 7 bolletjes in elk groepje?');
+        expect(at(work([7, 7, 7], 0, row1)).hint).toContain('je eerste rij zegt 4 groepjes');
+        // 4: colour as the teller says.
+        expect(at(work([7, 7, 7, 7], 0, row1))).toMatchObject({ step: 4, question: 'Hoeveel groepjes kleur je?' });
+        expect(at(work([7, 7, 7, 7], 4, row1)).step).toBe(4);
+        // 5: row 2, field by field; its sum uses the pupil's own numbers.
+        expect(at(work([7, 7, 7, 7], 3, row1))).toMatchObject({ step: 5, question: 'Hoeveel keer moet je dat deel nemen?', hint: 'Kijk naar de teller.' });
+        expect(at(work([7, 7, 7, 7], 3, { ...row1, r3: '3', r4: '7' }))).toMatchObject({ step: 5, hint: 'Reken: 3 × 7.' });
+        // 6: the answer; 7: Controleer.
+        expect(at(work([7, 7, 7, 7], 3, { ...row1, ...row2 }))).toMatchObject({ step: 6, question: 'Hoeveel is 3/4 van 28?' });
+        expect(at(work([7, 7, 7, 7], 3, { ...row1, ...row2, a: '21' }))).toEqual({ step: 7, question: 'Klaar?', hint: 'Tik op Controleer.' });
+    });
+
+    test('next step: skipped rows are skipped once the answer is typed; the hints never show a right value', () => {
+        const at = (st: InteractionState) => hvNextStep(E, st);
+        expect(at(work([7, 7, 7, 7], 3, { a: '21' })).step).toBe(7);
+        expect(at(work([7, 7, 7, 7], 3, { a: '21', r0: '28' })).step).toBe(7);
+        expect(at(work([7, 7, 7, 7], 0, { a: '21' })).step).toBe(4);
+        // Without row 1 the groups are checked against the card only.
+        expect(at(work([8, 6, 7, 7], 3, { a: '21' })).hint).toContain('zijn ze allemaal even groot?');
+        expect(at(work([4, 4, 4, 4, 4, 4, 4], 3, { a: '21' })).hint).toContain('de noemer zegt');
+        expect(at(work([6, 6, 6, 6], 3, { a: '21' })).hint).toContain('zitten alle bolletjes in een groepje?');
+        // A wrong typed answer still just says Controleer.
+        expect(at(work([7, 7, 7, 7], 3, { a: '20' })).step).toBe(7);
+        // No hint ever names one deel (7) or the answer (21) the pupil did not type.
+        const states = [EMPTY_INTERACTION, work([7, 7, 7, 7], 0), work([8, 6, 7, 7], 0, { r0: '28', r1: '4', r2: '6' }), work([6, 6, 6, 6], 3, { a: '20' }), work([7, 7, 7, 7], 3, { r0: '28', r1: '4', r2: '6' })];
+        for (const st of states) expect(`${at(st).question} ${at(st).hint}`).not.toMatch(/\b(7|21)\b/);
+        expect(hvNextStep({ ...E, objectShape: 'square' }, EMPTY_INTERACTION).hint).toContain('blokjes');
     });
 
     test('stats show the answer with the groups behind it', () => {
@@ -367,34 +400,30 @@ describe('kiosk card: build groups and colour with taps', () => {
         expect(st().interaction.groups!.members.map(m => m.length)).toEqual([7, 5, 6, 6]);
     });
 
-    test('no hint text in the panel; an "i" shows its breukvragen on a tap and a tap elsewhere closes it', () => {
+    test('one "i" by the rows: its bubble tells the next step, follows the work, and a tap elsewhere closes it', () => {
         st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
         st().start();
         onCard(ex(1, 3, 6));
         const { container } = render(<OefenApp />);
-        fireEvent.click(container.querySelector<HTMLElement>('.kiosk-card [data-kiosk-key="o0"]')!);
-        act(() => st().setInteraction({ ...st().interaction, cells: { r0: '6', r1: '3', r2: '2' } }));
-        expect(screen.queryByText(/Hoeveel is het geheel\?/)).toBeNull();
-        expect(screen.queryByText(/Kijk je groepjes na/)).toBeNull();
-        expect(screen.queryByText(/Zitten er 2 bolletjes/)).toBeNull();
+        expect(container.querySelectorAll('.kiosk-card .kiosk-hv-info')).toHaveLength(1);
         expect(screen.queryByRole('tooltip')).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de eerste rij' }));
-        expect(screen.getByRole('tooltip').textContent).toContain('Hoeveel is het geheel?');
-        expect(screen.getByRole('tooltip').textContent).toContain('Kijk naar de noemer.');
+        const info = () => screen.getByRole('button', { name: 'Wat moet ik nu doen?' });
+        fireEvent.click(info());
+        expect(screen.getByRole('tooltip').textContent).toContain('Hoe maak je gelijke groepjes?');
         fireEvent.pointerDown(document.body);
         expect(screen.queryByRole('tooltip')).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de groepjes' }));
-        expect(screen.getByRole('tooltip').textContent).toContain('Je eerste rij zegt 3 groepjes. Zitten er 2 bolletjes in elk groepje?');
+        act(() => st().setInteraction({ ...hvSolution(ex(1, 3, 6), 2), cells: { r0: '6', r1: '3', r2: '3' } }));
+        expect(container.querySelectorAll('.kiosk-card .kiosk-hv-info')).toHaveLength(1);
+        fireEvent.click(info());
+        expect(screen.getByRole('tooltip').textContent).toContain('zitten er 3 bolletjes in elk groepje?');
         // A tap on the bubble closes it (on click, so the tap never falls through to what it covers).
         fireEvent.pointerDown(screen.getByRole('tooltip'));
         expect(screen.queryByRole('tooltip')).toBeTruthy();
         fireEvent.click(screen.getByRole('tooltip'));
         expect(screen.queryByRole('tooltip')).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de groepjes' }));
-        // A second tap on the same "i" closes it again.
-        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de groepjes' }));
+        // A second tap on the "i" closes it again.
+        fireEvent.click(info());
+        fireEvent.click(info());
         expect(screen.queryByRole('tooltip')).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij het antwoord' }));
-        expect(screen.getByRole('tooltip').textContent).toContain('Hoeveel is 1/3 van 6?');
     });
 });
