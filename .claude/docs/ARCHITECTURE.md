@@ -1127,6 +1127,25 @@ If a new token kind seems needed, ask the supervisor. A word token almost always
 
 Hoofdrekenen keeps its strategies in `workedSteps.ts`: rijgen up to 10 000, and kommagetallen + and − via eenheden (0,6 + 0,8 = 6 t + 8 t = 14 t = 1,4). `handigSteps(eq, c, { grade })` offers Ontbinden only for grade ≥ 6. The stappenhulp code is light: QR packing lives in `packText.ts`, so the tutor bundle no longer pulls in REGISTRY.
 
+**Types with steps (worked-steps round, 2026-11-13).** Codec ids are frozen once released.
+
+| typeId | Strategy (`src/services/steps/`) | Codec id | Visual (`src/components/steps/visuals/`) | Notes |
+|---|---|---|---|---|
+| hr-std-* (+ − × :) | `workedSteps.ts` (rijgen, splitsen en verdelen, analogie, via eenheden, met rest) | none (sum item) | none | answer key + kiosk + tutor; handig rekenen only for pupils |
+| hr-std-optellen/aftrekken, rational | `breukBewerkSteps.ts` (chained before the whole-number steps) | none | none | not on the QR: a codec would take over the hr-std typeIds |
+| breuken (hoeveelheid) | `workedSteps.ts` `breukHoeveelheidSteps` | `h` | `breukHoeveelheid.ts` (tutor only) | breukvragen; the kiosk builds groups itself |
+| klok-kloklezen | `klokSteps.ts` | `kl` | `KlokBloemblaadjes.tsx` | petal clock; digital always clockwise |
+| geld-teruggeven | `geldTeruggevenSteps.ts` | `gt` | none | centen first, then euros |
+| rekenvolgorde | `rekenvolgordeSteps.ts` | `rv` | none | |
+| procenten | `procentenSteps.ts` | `pc` | none | |
+| afronden (simpel) | `afrondenSteps.ts` | `af` | `AfrondenLine.tsx` | target place underlined, deciding digit marked, number line; rooster has no steps |
+| getallenas | `getallenasSteps.ts` | `ga` | `JumpRow.tsx` (line) | jump = difference : sprongen when no two neighbours are known |
+| getallenrijen | `getallenasSteps.ts` | `gr` | `JumpRow.tsx` (vakjes) | per rij and in één rij; decimals use "; " |
+| breuken-bewerken (vereenvoudigen, gelijknamig) | `breukBewerkSteps.ts` | `bb` | `BreukLijsten.tsx` | delers / veelvouden lists as questions |
+| herleidingen | `herleidingSteps.ts` | `hl` | `HerleidingsTabel.tsx` | the tabel fills in per question; oppervlakte 2 boxes per unit, ha/a/ca under their square |
+
+None of the codec types has an answer-key view (no `solutionSteps` there). Light helpers the strategies share with their generators: `src/services/afronden/roundTargets.ts` (targets, `roundTo`) and `src/services/herleidingen/herleidingLadders.ts` (unit ladders); both generators re-export them.
+
 ### Print mechanics
 
 - **[usePrint.ts](../../src/hooks/usePrint.ts)** — `usePrint(beforeFirstPrint?)`: the first
@@ -1480,7 +1499,9 @@ src/
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts}
 │   ├── math/workedSteps.ts        # worked steps: StepToken/StepLine, rijgen for + and −, stepsAtLevel, stepText (§9)
 │   ├── stepsAvailability.ts       # stepsFor / blockHasSteps: the one rule for where steps are offered (§9)
+│   ├── steps/                     # per-type worked steps (§9 "Adding worked steps to a type"): <name>Steps.ts strategies (klok, geldTeruggeven, rekenvolgorde, procenten, afronden, getallenas, breukBewerk, herleiding), tutorCodec.ts / tutorCodecs.ts (defineCodec + glob registry), codecs/<name>.ts (ids h kl gt rv pc af ga gr bb hl)
 │   ├── oefenen/tutorPayload.ts    # stappenhulp QR payload v1: encodeTutorPage / decodeTutor (§15)
+│   ├── oefenen/packText.ts        # QR text packing, split out so the tutor bundle does not pull in REGISTRY
 │   ├── math/answerKeys.ts         # from-scratch answer arithmetic (scaled, evaluateChain, evaluateTokens, gcd); the kiosk descriptors and the test harnesses share it (src/__tests__/helpers/answerKeys.ts re-exports)
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
@@ -1508,8 +1529,10 @@ src/
 │   ├── vergelijken/{vergelijkenGenerator.ts,representations.ts}   # getallen/kiezen/representaties; representations.ts = text helpers
 │   │                                           # (the RepValue component lives in components/viewer/RepValue.tsx)
 │   ├── afronden/afrondenGenerator.ts           # natural+decimal rooster / simpel (targetsFor, roundTo)
+│   ├── afronden/roundTargets.ts                # light: the target table + roundTo, shared with afrondenSteps (re-exported by the generator)
 │   ├── romeinse/romeinseGenerator.ts           # herkennen / schrijven (toRoman, NIVEAU_MAX)
 │   ├── herleidingen/herleidingenGenerator.ts   # metric unit conversions (ladderFor; integer-exact)
+│   ├── herleidingen/herleidingLadders.ts       # light: the unit ladders, shared with herleidingSteps (the generator re-exports ladderFor)
 │   ├── schattend/schattendGenerator.ts         # round-first estimation (reuses afronden helpers)
 │   ├── verbanden/verbandenGenerator.ts         # breuk·decimaal·procent benchmarks (terminating denominators)
 │   ├── procenten/procentenGenerator.ts         # percent nemen / welk-percent (answer-first)
