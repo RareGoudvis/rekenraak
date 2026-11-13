@@ -38,9 +38,9 @@ export interface InteractionState {
 // The pupil builds groups by tapping objects, then colours whole groups. Built in the order made,
 // never sorted, so a group keeps its number (and colour) while the pupil works.
 export interface GroupWork {
-    // Object keys per group; a group can be empty for a moment (all its objects taken out).
+    // Object keys per group; only the active group may be empty (a new one, or all its objects taken out).
     members: string[][];
-    // The group a tap on a free object goes into; null = none started (that tap starts one).
+    // The group a tap on an object goes into; null = none picked (a tap on a free object starts one).
     active: number | null;
     // 'group' = a tap puts an object in (or takes it out of) a group; 'colour' = a tap fills or clears its whole group.
     mode: 'group' | 'colour';
@@ -55,7 +55,23 @@ const groupsOf = (state: InteractionState): GroupWork => state.groups ?? EMPTY_G
 /** The index of the group holding object `key`, or -1. */
 export const groupOf = (work: GroupWork, key: string): number => work.members.findIndex(m => m.includes(key));
 
-/** The state after tapping object `key`: in 'group' mode it joins the active group (a first tap starts group 1) or leaves its group; in 'colour' mode its group is filled or cleared. */
+// Empty groups other than the active one go and the numbers close up (1..n), so the pupil never
+// meets a stray empty "Groepje 5"; active and colour follow their group.
+function compacted(work: GroupWork): GroupWork {
+    const keep = work.members.flatMap((m, g) => (m.length || g === work.active ? [g] : []));
+    if (keep.length === work.members.length) return work;
+    const at = (g: number) => keep.indexOf(g);
+    return {
+        ...work,
+        members: keep.map(g => work.members[g]),
+        active: work.active === null ? null : at(work.active),
+        colored: work.colored.filter(g => keep.includes(g)).map(at),
+    };
+}
+
+const withGroups = (state: InteractionState, work: GroupWork): InteractionState => ({ ...state, groups: compacted(work) });
+
+/** The state after tapping object `key`. 'group' mode: a free object joins the active group (none picked: it starts a new one), an object of the active group leaves it, an object of another group moves to the active group (none picked: its group becomes the active one). 'colour' mode: its group is filled or cleared. */
 export function groupTapped(state: InteractionState, key: string): InteractionState {
     const work = groupsOf(state);
     const at = groupOf(work, key);
@@ -64,28 +80,34 @@ export function groupTapped(state: InteractionState, key: string): InteractionSt
         const colored = work.colored.includes(at) ? work.colored.filter(g => g !== at) : [...work.colored, at];
         return { ...state, groups: { ...work, colored } };
     }
-    if (at >= 0) return { ...state, groups: { ...work, members: work.members.map((m, g) => (g === at ? m.filter(k => k !== key) : m)) } };
+    if (at >= 0 && work.active === null) return withGroups(state, { ...work, active: at });
+    if (at >= 0 && at === work.active) return withGroups(state, { ...work, members: work.members.map((m, g) => (g === at ? m.filter(k => k !== key) : m)) });
     const active = work.active ?? work.members.length;
-    const members = active < work.members.length ? work.members.map((m, g) => (g === active ? [...m, key] : m)) : [...work.members, [key]];
-    return { ...state, groups: { ...work, members, active } };
+    const members = (active < work.members.length ? work.members : [...work.members, []])
+        .map((m, g) => (g === active ? [...m, key] : g === at ? m.filter(k => k !== key) : m));
+    return withGroups(state, { ...work, members, active });
 }
 
-/** "Nieuw groepje": the active group is done and the next taps fill a new one (an empty active group is reused). */
+/** A group chip tapped: that group takes the next taps (an empty group left behind goes). */
+export function groupChosen(state: InteractionState, group: number): InteractionState {
+    const work = groupsOf(state);
+    if (group < 0 || group >= work.members.length) return state;
+    return withGroups(state, { ...work, mode: 'group', active: group });
+}
+
+/** "Nieuw groepje": a new empty group takes the next taps (an empty active group is reused). */
 export function groupStarted(state: InteractionState): InteractionState {
     const work = groupsOf(state);
     if (work.mode === 'group' && work.active !== null && work.members[work.active]?.length === 0) return state;
-    return { ...state, groups: { ...work, mode: 'group', members: [...work.members, []], active: work.members.length } };
+    return withGroups(state, { ...work, mode: 'group', members: [...work.members, []], active: work.members.length });
 }
 
 /** "Klaar met groepjes": empty groups go (their numbers close up), and taps now colour whole groups. */
 export function groupsDone(state: InteractionState): InteractionState {
-    const work = groupsOf(state);
-    const keep = work.members.flatMap((m, g) => (m.length ? [g] : []));
-    const colored = work.colored.filter(g => keep.includes(g)).map(g => keep.indexOf(g));
-    return { ...state, groups: { members: keep.map(g => work.members[g]), active: null, mode: 'colour', colored } };
+    return { ...state, groups: { ...compacted({ ...groupsOf(state), active: null }), mode: 'colour' } };
 }
 
-/** Back from colouring to building: a tap on a free object starts a new group again. */
+/** Back from colouring to building: no group picked until the pupil taps a chip or an object. */
 export function groupsEdited(state: InteractionState): InteractionState {
     return { ...state, groups: { ...groupsOf(state), mode: 'group', active: null } };
 }

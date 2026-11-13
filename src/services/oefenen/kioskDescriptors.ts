@@ -24,7 +24,7 @@ import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { timeWords, timeWordsFields } from '../clock/timeWords';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
-import { HV_ANSWER, HV_CELLS, hvAnswer, hvGiven, hvGuide, hvNudge, hvQuestion, hvReview, hvShow, hvSolution } from '../fractions/hoeveelheidGroups';
+import { HV_ANSWER, HV_CELLS, hvAnswer, hvGiven, hvNudge, hvQuestion, hvReview, hvShow, hvSolution } from '../fractions/hoeveelheidGroups';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
 import { MIXED_VARIANTS, type PlaatswaardeConstraints } from '../math/constraintTypes';
@@ -1045,7 +1045,6 @@ const hoeveelheidInteract: KioskInteract<FractionExercise> = {
     nudge: (given) => hvNudge(given),
     review: (given, ex) => hvReview(given, ex),
     solution: (ex, _c, answered) => hvSolution(ex, answered),
-    guide: (st, ex) => hvGuide(st, ex),
 };
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
