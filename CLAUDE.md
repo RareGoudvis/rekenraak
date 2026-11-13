@@ -155,7 +155,7 @@ the per-typeId table is §7.
 9. Regenerate the public catalogue: `npm run catalogue` against a dev server, commit
    `oefeningen.html` + `public/oefeningen/<leafId>.png`. `catalogue.test.ts` fails the gate
    when the page's leaves differ from `APP_STRUCTURE`; the Stop hook nudges earlier.
-10. Optional worked steps: a `steps(ex, c)` on the REGISTRY row (a strategy in [workedSteps.ts](src/services/math/workedSteps.ts)); everything that offers steps asks [stepsAvailability.ts](src/services/stepsAvailability.ts), never the registry directly.
+10. Optional worked steps: a strategy in `src/services/steps/<name>Steps.ts`, a `steps` key on the REGISTRY row, a tutor codec in `src/services/steps/codecs/` and an optional visual in `src/components/steps/visuals/` (they register themselves; never edit the shared step files). Full recipe: ARCHITECTURE §9 "Adding worked steps to a type".
 11. One row per generating typeId in [quickSettings.ts](src/config/quickSettings.ts) (the Eenvoudig Inspector block; `quickSettings.test.tsx` fails the gate without one). Cards for it in `src/config/eenvoudig/cards.json` are optional: without one the type simply stays in Uitgebreid.
 12. Optional, Oefenmodus: a `kiosk` descriptor in
    [kioskDescriptors.ts](src/services/oefenen/kioskDescriptors.ts) on the REGISTRY row, then

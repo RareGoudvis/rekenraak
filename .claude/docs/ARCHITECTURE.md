@@ -1076,6 +1076,57 @@ both `onCellMeasure` and the tail measurement it depends on.
 - **Answer key:** `constraints.solutionSteps` is `'uit' | 'basis' | 'alle'` (absent = uit). Only with solutions on, a sum with steps gets them under it and the block lays out like Onder elkaar. The pupil's sheet never changes.
 - **Stappenhulp QR:** with `docSettings.tutorQr` and at least one block with steps on the sheet (decided sheet-wide, so footers never differ per page), every page footer reserves a 26 mm QR in a thin frame, with an optional line beside it ("Vast? Scan de code en bekijk de stappen.", `docSettings.tutorQrCaption`, absent = shown; capped at QR version 13 so the dots stay readable when printed) ([TutorQr.tsx](../../src/components/sheet/TutorQr.tsx)). It encodes that page's sums with [tutorPayload.ts](../../src/services/oefenen/tutorPayload.ts) for [tutor.html](../../tutor.html). The decision is made when the QR is made: a sum without steps travels as a `0` placeholder (it keeps its printed label), and a block without any is left out. The QR points to the deploy that printed it (localhost prints production).
 
+### Adding worked steps to a type (foundation, 2026-11-13)
+
+Steps for a type are four per-type files and one registry key. No shared steps file changes.
+
+**1. The strategy** goes in `src/services/steps/<name>Steps.ts`. It is a pure `(ex, c?) → StepLine[] | null`.
+- It imports only types from `workedSteps.ts` (`StepLine`, `StepToken`) and light helpers. It never imports REGISTRY, a generator or a viewer.
+- It returns null when the type has no method for this exercise.
+- Lines use the existing tokens. Add `word` tokens for units and words ("8 u", " keer").
+- Question steps (`question`, `hint`, `aside`, `compact`) use the breukvragen flow.
+- Kinds of your own carry a prefix (`kind: 'klok.uur'`). `StepKind` in workedSteps.ts is never edited.
+- `mark?: number | string` is free per type. Only your visual reads it, for example the digit place to highlight or the jump index. Every text renderer ignores it.
+
+**2. The registry key** goes on the type's own row in `exerciseRegistry.ts`: `steps: (ex, c) => xSteps(ex as X, c)`, plus an optional `handig`. From that one key you get:
+- the answer key (where the type's viewer shows steps)
+- Oefenmodus "Stappen tonen na een fout", through `stepsFor` / `blockHasSteps` / `rowMayHaveSteps`
+- the Stappenhulp-QR checkbox
+
+**3. The tutor codec** goes in `src/services/steps/codecs/<name>.ts` and exports `codec = defineCodec<D>({ id, typeIds, what, out, in, steps, sum })` (contract in `tutorCodec.ts`). It registers itself by file through `import.meta.glob`.
+- `id` is 1 to 3 chars `[a-z0-9]`. It is unique and never changed or reused after release, because printed QRs carry it.
+- `out(ex, constraints)` returns compact JSON, or null when the exercise cannot travel. Fold every setting the steps depend on into the data, because the tutor page never sees the block.
+- `in(wire)` validates everything and returns null when the data is broken. The page then shows "kan niet gelezen worden (`what`)".
+- `steps(data)` must equal `REGISTRY[typeId].steps(ex, c)`. Test it with a round trip: `out` → `JSON` → `in` → `steps`.
+- `sum(data)` gives the tokens of the exercise as printed. They label the list and head the card.
+- On the wire the codec appears as `['@', id, data]` in payload v1, wrapped once (`[['@', id, data]]`) when the sheet said no steps. An unknown id decodes as a placeholder.
+
+**4. Optional steps visual**: `src/components/steps/visuals/<Name>.tsx` (the component, default export) plus `visuals/<name>.ts`, which exports `visual = defineStepsVisual<D>({ typeIds, Visual, kiosk? })`.
+- The component takes `{ data, lines, revealed }`. `data` is the exercise in Oefenmodus and the codec's decoded data in the stappenhulp, so `in` must return the exercise's shape. `lines.slice(0, revealed)` are revealed. In question steps, `revealed` is the number of questions answered.
+- It draws above the steps in the kiosk StepsPanel / QuestionSteps and on the tutor page, inside `.steps-visual`.
+- `kiosk: false` keeps it on the tutor page only, for a card that draws its own solution.
+- It must return null for data it does not handle, such as another subType of the same typeId.
+- It stays light: no REGISTRY, generator or viewer imports. The tutor bundle loads every visual, and a test enforces this.
+- Styles use theme.css tokens. Add a co-located CSS import when the visual shows in both the kiosk and the tutor.
+
+**5. Tests**: put the strategy cases, the codec round trip, and a visual render in your own test file. `stepsFoundation.test.tsx` checks every codec and visual automatically: the ids are unique, every typeId has `steps`, and nothing heavy is imported.
+
+**Never touch:**
+- `workedSteps.ts` (hoofdrekenen strategies, `StepKind`, the token union)
+- `stepsAvailability.ts`
+- `tutorPayload.ts`
+- `tutorCodec.ts` / `tutorCodecs.ts`
+- `stepsVisual.ts` / `stepsVisuals.ts`
+- `StepsPanel.tsx`, `QuestionSteps.tsx`, `Kiosk.tsx`, `useOefenStore.ts`
+- `src/tutor/*` (TutorApp, StepsView)
+- `StepTokens.tsx`
+- `SheetPages.tsx`, `TutorQr.tsx`
+- another type's codec or visual
+
+If a new token kind seems needed, ask the supervisor. A word token almost always does the job.
+
+Hoofdrekenen keeps its strategies in `workedSteps.ts`: rijgen up to 10 000, and kommagetallen + and − via eenheden (0,6 + 0,8 = 6 t + 8 t = 14 t = 1,4). `handigSteps(eq, c, { grade })` offers Ontbinden only for grade ≥ 6. The stappenhulp code is light: QR packing lives in `packText.ts`, so the tutor bundle no longer pulls in REGISTRY.
+
 ### Print mechanics
 
 - **[usePrint.ts](../../src/hooks/usePrint.ts)** — `usePrint(beforeFirstPrint?)`: the first
