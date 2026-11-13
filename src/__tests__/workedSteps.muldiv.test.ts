@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handigSteps, stepText, stepsAtLevel, workedSteps, type StepLine, type StepToken } from '../services/math/workedSteps';
+import { handigSteps, ontbindenDeel, ontbindenMaal, stepText, stepsAtLevel, workedSteps, type StepLine, type StepToken } from '../services/math/workedSteps';
 import type { Equation } from '../services/math/types';
 
 // × and : worked steps in the owner's notation (5 × 65, 2340 : 3) and the Op.stap examples (2.2.GL3–GL6),
@@ -80,13 +80,18 @@ describe('handig rekenen: an optional view, never the standard method', () => {
         ['98 × 12 (GL6.34)', e(98, 'x', 12), 'Compenseren', ['(100 − 2) × 12', '(100 × 12) − (2 × 12)', '1200 − 24', '1176']],
         ['57 : 3 (GL4.12)', e(57, ':', 3), 'Compenseren', ['(60 − 3) : 3', '(60 : 3) − (3 : 3)', '20 − 1', '19']],
         ['62 300 : 7 (GL6.13)', e(62300, ':', 7), 'Compenseren', ['(63000 − 700) : 7', '(63000 : 7) − (700 : 7)', '9000 − 100', '8900']],
-        ['25 × 32 (GL6.35)', e(25, 'x', 32), 'Ontbinden', ['25 × 4 × 8', '100 × 8', '800']],
-        ['3000 : 12 (GL6.36)', e(3000, ':', 12), 'Ontbinden', ['3000 : 3 : 4', '1000 : 4', '250']],
         ['140 + 99 (GL3.40)', e(140, '+', 99), 'Compenseren', ['140 + 100 − 1', '240 − 1', '239']],
     ])('%s', (_name, eq, name, lines) => {
         const found = handigSteps(eq).find(h => h.name === name);
         expect(found, name).toBeTruthy();
         expect(text(found!.lines)).toEqual(lines);
+    });
+
+    it('ontbinden is leerjaar 6: not offered as handig rekenen, the strategy itself stays (GL6.35 / GL6.36)', () => {
+        expect(handigSteps(e(25, 'x', 32)).map(h => h.name)).not.toContain('Ontbinden');
+        expect(handigSteps(e(3000, ':', 12)).map(h => h.name)).not.toContain('Ontbinden');
+        expect(text(ontbindenMaal(25, 32)!)).toEqual(['25 × 4 × 8', '100 × 8', '800']);
+        expect(text(ontbindenDeel(3000, 12)!)).toEqual(['3000 : 3 : 4', '1000 : 4', '250']);
     });
 
     it('a compenseren block makes compenseren its standard method, so it is not offered twice', () => {

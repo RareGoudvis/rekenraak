@@ -54,8 +54,11 @@ function itemSum(item: TutorItem): ReactNode {
 
 // The lines a tappable item opens; null keeps it greyed (the sheet said no steps, or this page knows none).
 function itemSteps(item: TutorItem | null): StepLine[] | null {
-    if (!item?.steps) return null;
-    return item.kind === 'sum' ? workedSteps(item.eq) : breukHoeveelheidSteps(item.ex);
+    if (!item) return null;
+    // A sum is worked out here, not taken from the print: a sheet printed before a strategy existed marked it greyed.
+    if (item.kind === 'sum') return workedSteps(item.eq);
+    if (!item.steps) return null;
+    return breukHoeveelheidSteps(item.ex);
 }
 
 // Breuk van een hoeveelheid: the breukvragen beside the objects, which fill in with every revealed answer.

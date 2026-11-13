@@ -97,7 +97,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'Zelf oefenen kiest makkelijker: per onderwerp een paar grote knoppen, zoals Zonder brug of Met brug.' },
             { kind: 'gewijzigd', text: 'Eenvoudig: brede oefeningen zoals getallenrijen en getallenassen krijgen een bredere kaart, zodat je het voorbeeld goed kan lezen.' },
             { kind: 'gewijzigd', text: 'Op een klein scherm kies je nu zelf: als leerling oefenen of toch verder als leerkracht.' },
-            { kind: 'nieuw', text: 'Leerlingen kunnen in Oefenmodus en de stappenhulp ook handig rekenen bekijken: compenseren en ontbinden.' },
+            { kind: 'nieuw', text: 'Leerlingen kunnen in Oefenmodus en de stappenhulp ook handig rekenen bekijken, zoals compenseren.' },
             { kind: 'nieuw', text: 'Stappenhulp: zet een QR-code onderaan je blad. Leerlingen scannen hem en zien hoe ze elke som stap voor stap uitrekenen.' },
             { kind: 'nieuw', text: 'Oefenmodus: na een fout kan een leerling de stappen bekijken. Je zet het uit bij het maken van de link.' },
             { kind: 'opgelost', text: 'Stappenhulp: sommen zonder stappen staan er nu gewoon bij, en breuk van een hoeveelheid zit ook in de QR-code.' },

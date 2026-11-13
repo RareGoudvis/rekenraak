@@ -491,7 +491,8 @@ function compenserenDeel(a: number, d: number): StepLine[] | null {
 }
 
 // Ontbinden ×: 25 × 32 = 25 × 4 × 8 = 100 × 8 = 800 (Op.stap 2.2.GL6.35).
-function ontbindenMaal(a: number, b: number): StepLine[] | null {
+// Not offered in handigSteps: ontbinden is leerjaar 6 (owner, 2026-11-13) and these pages do not know the pupil's leerjaar.
+export function ontbindenMaal(a: number, b: number): StepLine[] | null {
     if (!Number.isInteger(a) || !Number.isInteger(b) || a * b > MAX_HANDIG) return null;
     for (const first of [true, false]) {
         const x = first ? a : b, y = first ? b : a;
@@ -509,7 +510,7 @@ function ontbindenMaal(a: number, b: number): StepLine[] | null {
 }
 
 // Ontbinden :: 3 000 : 12 = 3 000 : 3 : 4 = 1 000 : 4 = 250 (Op.stap 2.2.GL6.36); the roundest first quotient wins.
-function ontbindenDeel(a: number, d: number): StepLine[] | null {
+export function ontbindenDeel(a: number, d: number): StepLine[] | null {
     if (!Number.isInteger(a) || !Number.isInteger(d) || d < 10 || a > MAX_HANDIG || a % d !== 0) return null;
     let best: [number, number] | null = null;
     for (let f1 = 2; f1 <= 9; f1++) {
@@ -579,8 +580,8 @@ export function handigSteps(eq: Equation, c?: Partial<AddSubConstraints>): Handi
     if (!ab || presetOf(eq, c) === null || eq.remainder !== undefined) return [];
     const [a, b] = ab;
     const found: [HandigStrategy['name'], StepLine[] | null][] =
-        eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ['Ontbinden', ontbindenMaal(a, b)], ['Via breuken', breukenMaal(a, b)]]
-        : eq.operator === ':' ? [['Compenseren', compenserenDeel(a, b)], ['Ontbinden', ontbindenDeel(a, b)], ['Via breuken', breukenDeel(a, b)]]
+        eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ['Via breuken', breukenMaal(a, b)]]
+        : eq.operator === ':' ? [['Compenseren', compenserenDeel(a, b)], ['Via breuken', breukenDeel(a, b)]]
         : Number.isInteger(a) && Number.isInteger(b) ? [['Compenseren', compenserenPlusMin(a, b, eq.operator as '+' | '-')]]
         : [];
     const standard = workedSteps(eq, c);
