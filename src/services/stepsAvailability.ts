@@ -1,5 +1,6 @@
 import { REGISTRY } from '../config/exerciseRegistry';
 import type { MathBlock } from './math/types';
+import { tutorCarries } from './oefenen/tutorPayload';
 import type { HandigStrategy, StepLine } from './math/workedSteps';
 
 // The one rule for every place that offers worked steps (answer key, stappenhulp QR, Oefenmodus):
@@ -16,7 +17,7 @@ export function handigFor(typeId: string, ex: unknown, constraints: unknown): Ha
     return REGISTRY[typeId]?.handig?.(ex, (constraints ?? {}) as Record<string, unknown>) ?? [];
 }
 
-function exercisesOf(block: MathBlock): unknown[] {
+export function exercisesOf(block: MathBlock): unknown[] {
     const field = REGISTRY[block.typeId]?.exerciseField;
     const list = field ? (block as unknown as Record<string, unknown>)[field] : null;
     return Array.isArray(list) ? list : [];
@@ -28,7 +29,8 @@ export function blockHasSteps(block: MathBlock): boolean {
     return exercisesOf(block).some(ex => stepsFor(block.typeId, ex, block.constraints) !== null);
 }
 
-// The stappenhulp page only reads hoofdrekenen sums (`exercises`), so a QR is offered only where one has steps.
+// The stappenhulp page reads hoofdrekenen sums and breuk van een hoeveelheid, so a QR is offered only where one of those has steps.
 export function blockHasTutorSteps(block: MathBlock): boolean {
-    return REGISTRY[block.typeId]?.exerciseField === 'exercises' && blockHasSteps(block);
+    if (!REGISTRY[block.typeId]?.steps) return false;
+    return exercisesOf(block).some(ex => tutorCarries(ex) && stepsFor(block.typeId, ex, block.constraints) !== null);
 }

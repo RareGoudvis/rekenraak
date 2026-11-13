@@ -54,3 +54,9 @@ html:has(.tutor-body) { overflow-y: auto; }
 .tutor-lines li.is-extra { font-weight: 400; color: var(--text-muted); }
 .tutor-done { margin: 0; min-height: 52px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: color-mix(in srgb, var(--tutor-ok) 12%, var(--bg-surface)); color: var(--tutor-ok); font-size: 18px; font-weight: 700; }
 .tutor-video { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--radius-lg); background: #000; }
+/* Breukvragen (breuk van een hoeveelheid): SYNC kiosk.css .kiosk-steps-questions. Prose in the UI font, the answers in the sheet's math font. */
+.tutor-questions li + li { margin-top: var(--sp-3); }
+.tutor-q p { margin: 0; }
+.tutor-q-question { font-family: var(--font-ui); font-size: 17px; line-height: 1.4; }
+.tutor-q-hint { font-family: var(--font-ui); font-size: 16px; line-height: 1.4; font-weight: 400; color: var(--text-muted); }
+.tutor-q-answer { font-size: 22px; color: var(--accent); }
