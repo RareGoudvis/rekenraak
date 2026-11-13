@@ -35,16 +35,16 @@ export interface InteractionState {
     groups?: GroupWork;
 }
 
-// The pupil builds groups by tapping objects, then colours whole groups. Built in the order made,
+// The pupil builds groups by tapping objects, then chooses whole groups ("Groepjes kiezen"). Built in the order made,
 // never sorted, so a group keeps its number (and colour) while the pupil works.
 export interface GroupWork {
     // Object keys per group; only the active group may be empty (a new one, or all its objects taken out).
     members: string[][];
     // The group a tap on an object goes into; null = none picked (a tap on a free object starts one).
     active: number | null;
-    // 'group' = a tap puts an object in (or takes it out of) a group; 'colour' = a tap fills or clears its whole group.
+    // 'group' = a tap puts an object in (or takes it out of) a group; 'colour' = "Groepjes kiezen": a tap chooses or unchooses its whole group.
     mode: 'group' | 'colour';
-    // Indices into `members` that are coloured.
+    // Indices into `members` that are chosen (filled in their colour, only drawn in 'colour' mode).
     colored: number[];
 }
 
@@ -71,7 +71,7 @@ function compacted(work: GroupWork): GroupWork {
 
 const withGroups = (state: InteractionState, work: GroupWork): InteractionState => ({ ...state, groups: compacted(work) });
 
-/** The state after tapping object `key`. 'group' mode: a free object joins the active group (none picked: it starts a new one), an object of the active group leaves it, an object of another group moves to the active group (none picked: its group becomes the active one). 'colour' mode: its group is filled or cleared. */
+/** The state after tapping object `key`. 'group' mode: a free object joins the active group (none picked: it starts a new one), an object of the active group leaves it, an object of another group moves to the active group (none picked: its group becomes the active one). 'colour' mode: its group is chosen or unchosen. */
 export function groupTapped(state: InteractionState, key: string): InteractionState {
     const work = groupsOf(state);
     const at = groupOf(work, key);
@@ -102,17 +102,17 @@ export function groupStarted(state: InteractionState): InteractionState {
     return withGroups(state, { ...work, mode: 'group', members: [...work.members, []], active: work.members.length });
 }
 
-/** "Klaar met groepjes": empty groups go (their numbers close up), and taps now colour whole groups. */
+/** "Groepjes kiezen": empty groups go (their numbers close up), and taps now choose whole groups. */
 export function groupsDone(state: InteractionState): InteractionState {
     return { ...state, groups: { ...compacted({ ...groupsOf(state), active: null }), mode: 'colour' } };
 }
 
-/** Back from colouring to building: no group picked until the pupil taps a chip or an object. */
+/** "Groepjes aanpassen", back from choosing to building (the choice is kept, hidden while grouping): no group picked until the pupil taps a chip or an object. */
 export function groupsEdited(state: InteractionState): InteractionState {
     return { ...state, groups: { ...groupsOf(state), mode: 'group', active: null } };
 }
 
-/** "Opnieuw": every group and colour gone (typed cells stay). */
+/** "Opnieuw": every group and choice gone (typed cells stay). */
 export function groupsCleared(state: InteractionState): InteractionState {
     return { ...state, groups: undefined };
 }
@@ -260,17 +260,18 @@ export interface GroupPartDomProps {
     onKeyDown(e: KeyboardEvent): void;
 }
 
-/** DOM props for one object the pupil groups and colours (breuk van een hoeveelheid); `{}` without a context. `label` is its spoken name. */
+/** DOM props for one object the pupil groups and chooses (breuk van een hoeveelheid); `{}` without a context. `label` is its spoken name. */
 export function groupPartProps(ctx: ViewerInteraction | null, key: string, label: string): GroupPartDomProps | Record<string, never> {
     if (!ctx) return {};
     const work = groupsOf(ctx.state);
     const at = groupOf(work, key);
     const tap = () => ctx.set(groupTapped(ctx.state, key));
-    const colored = at >= 0 && work.colored.includes(at);
+    // While grouping a group is only its outline: the fill would read as chosen.
+    const colored = at >= 0 && work.mode === 'colour' && work.colored.includes(at);
     return {
         role: 'button',
         tabIndex: 0,
-        'aria-label': at < 0 ? label : `${label}, groepje ${at + 1}${colored ? ', gekleurd' : ''}`,
+        'aria-label': at < 0 ? label : `${label}, groepje ${at + 1}${colored ? ', gekozen' : ''}`,
         'data-kiosk-key': key,
         'data-kiosk-obj': 'true',
         ...(at >= 0 && { 'data-kiosk-group': at % GROUP_TINTS }),

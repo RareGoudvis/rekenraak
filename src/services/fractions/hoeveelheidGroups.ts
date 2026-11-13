@@ -3,7 +3,7 @@ import { EMPTY_INTERACTION, type GroupWork, type InteractionState } from '../../
 import { INTERACT_SEP, type KioskReview } from '../oefenen/types';
 
 // Oefenmodus, breuk van een hoeveelheid (3/4 van 28): the pupil groups the card's objects into
-// equal groups, colours the groups the teller asks, and types the answer; two working rows
+// equal groups, chooses the groups the teller asks (they fill in their colour), and types the answer; two working rows
 // (geheel : noemer = één deel, teller × één deel = antwoord) are optional but checked when filled.
 // SYNC: FractionExerciseItem's kiosk group branch draws these keys; BREUKEN_KIOSK checks them.
 
@@ -38,10 +38,10 @@ const sizes = (ex: FractionExercise) => {
 };
 
 // Parts after the cells: the group size when every group is equally big ('' otherwise), the
-// number of groups and of coloured groups. All numbers, so check.ts compares them as cells.
+// number of groups and of chosen groups. All numbers, so check.ts compares them as cells.
 const GROUP_PARTS = 3;
 
-/** The canonical answer: each row cell may stay blank ('|'), the answer, then n groups of g/n with t coloured. */
+/** The canonical answer: each row cell may stay blank ('|'), the answer, then n groups of g/n with t chosen. */
 export function hvAnswer(ex: FractionExercise): string {
     const { g, n, t, p, ans } = sizes(ex);
     return [`${g}|`, `${n}|`, `${p}|`, `${t}|`, `${p}|`, `${ans}|`, String(ans), String(p), String(n), String(t)].join(INTERACT_SEP);
@@ -67,11 +67,17 @@ const groupPart = (given: string) => {
     return { parts, size, count: Number(count) || 0, colored: Number(colored) || 0 };
 };
 
-/** The work still missing before a Controleer counts: groups, then colour. */
-export function hvNudge(given: string): string | undefined {
+/** The breuk as the card names it, "2/4". */
+const breukOf = (ex: FractionExercise) => `${ex.numerator}/${ex.denominator}`;
+
+/** The kiosk card's instruction: both steps, the groups and then the choosing. */
+export const hvInstruction = (ex: FractionExercise): string => `Maak gelijke groepjes. Kies dan de groepjes voor ${breukOf(ex)}.`;
+
+/** The work still missing before a Controleer counts: groups, then the chosen groups. */
+export function hvNudge(given: string, ex: FractionExercise): string | undefined {
     const { count, colored } = groupPart(given);
-    if (count === 0) return 'Maak eerst de groepjes en kleur de delen.';
-    if (colored === 0) return 'Kleur eerst de delen.';
+    if (count === 0) return `Maak eerst de groepjes. Kies dan de groepjes voor ${breukOf(ex)}.`;
+    if (colored === 0) return `Kies nog de groepjes voor ${breukOf(ex)}.`;
     return undefined;
 }
 
@@ -87,17 +93,17 @@ export function hvReview(given: string, ex: FractionExercise): KioskReview {
     });
     const word = hvWord(ex);
     let hint: string | undefined;
-    if (count === 0) hint = 'Maak eerst de groepjes en kleur de delen.';
+    if (count === 0) hint = `Maak eerst de groepjes. Kies dan de groepjes voor ${breukOf(ex)}.`;
     else if (size === '') hint = 'Zijn alle groepjes even groot?';
     else if (count !== n) hint = 'Hoeveel groepjes heb je nodig? Kijk naar de noemer.';
     else if (Number(size) !== p) hint = `Zitten alle ${word} in een groepje?`;
-    else if (colored !== t) hint = 'Hoeveel groepjes moet je kleuren? Kijk naar de teller.';
-    else if (marks[HV_ANSWER] && Object.keys(marks).length === 1) hint = `Tel de gekleurde ${word}.`;
+    else if (colored !== t) hint = 'Hoeveel groepjes moet je kiezen? Kijk naar de teller.';
+    else if (marks[HV_ANSWER] && Object.keys(marks).length === 1) hint = `Tel de ${word} in de gekozen groepjes.`;
     else if (Object.keys(marks).length) hint = Object.keys(marks).length === 1 ? 'Kijk naar het rode vakje.' : 'Kijk naar de rode vakjes.';
     return { ...(hint && { hint }), ...(Object.keys(marks).length && { marks }) };
 }
 
-/** A correct way, filled in as far as `answered` breukvragen go: geheel, delen (the groups appear), één deel, then the colour and row 2. */
+/** A correct way, filled in as far as `answered` breukvragen go: geheel, delen (the groups appear), één deel, then the chosen groups and row 2. */
 export function hvSolution(ex: FractionExercise, answered: number): InteractionState {
     const { g, n, t, p, ans } = sizes(ex);
     const cells: Record<string, string> = {};
@@ -117,7 +123,7 @@ export interface HvTip { step: number; question: string; hint: string }
 const filled = (state: InteractionState, k: string) => (state.cells[k] ?? '').trim();
 const ROW_1 = ['r0', 'r1', 'r2'], ROW_2 = ['r3', 'r4', 'r5'];
 
-/** The next step from what the pupil did so far (1 groups, 2 row 1, 3 groups vs row 1, 4 colour, 5 row 2, 6 answer, 7 Controleer); hints use only the card and the pupil's own numbers. */
+/** The next step from what the pupil did so far (1 groups, 2 row 1, 3 groups vs row 1, 4 choose, 5 row 2, 6 answer, 7 Controleer); hints use only the card and the pupil's own numbers. */
 export function hvNextStep(ex: FractionExercise, state: InteractionState): HvTip {
     const { g, n, t } = sizes(ex);
     const word = hvWord(ex);
@@ -128,7 +134,7 @@ export function hvNextStep(ex: FractionExercise, state: InteractionState): HvTip
     const next = (keys: string[]) => (rowsOpen ? keys.find(k => !cell(k)) : undefined);
 
     if (groups.length === 0 || state.groups?.mode !== 'colour') {
-        const done = groups.length > 0 ? ' Klaar? Tik op Klaar met groepjes.' : '';
+        const done = groups.length > 0 ? ' Klaar? Tik op Groepjes kiezen en kies zoveel groepjes als de teller zegt.' : '';
         return { step: 1, question: 'Hoe maak je gelijke groepjes?', hint: `Kijk naar de noemer: zoveel groepjes maak je. Tik op Nieuw groepje en tik dan op de ${word}. Elk groepje krijgt evenveel ${word}.${done}` };
     }
     const r1 = next(ROW_1);
@@ -146,14 +152,14 @@ export function hvNextStep(ex: FractionExercise, state: InteractionState): HvTip
     if (!cell('r1') && groups.length !== n) return recheck('Kijk je groepjes na: de noemer zegt hoeveel groepjes je maakt.');
     if (groups.reduce((a, m) => a + m.length, 0) !== g) return recheck(`Kijk je groepjes na: zitten alle ${word} in een groepje?`);
 
-    if ((state.groups?.colored.length ?? 0) !== t) return { step: 4, question: 'Hoeveel groepjes kleur je?', hint: 'Kleur zoveel groepjes als de teller zegt. Tik op een groepje om het te kleuren.' };
+    if ((state.groups?.colored.length ?? 0) !== t) return { step: 4, question: 'Hoeveel groepjes kies je?', hint: 'Kies zoveel groepjes als de teller zegt. Tik op een groepje om het te kiezen, nog eens tikken zet het terug.' };
 
     const r2 = next(ROW_2);
     if (r2 === 'r3') return { step: 5, question: ROW_QUESTIONS.r3, hint: 'Kijk naar de teller.' };
     if (r2 === 'r4') return { step: 5, question: ROW_QUESTIONS.r4, hint: 'Dat staat al in je eerste rij.' };
     if (r2 === 'r5') return { step: 5, question: ROW_QUESTIONS.r5, hint: `Reken: ${cell('r3')} × ${cell('r4')}.` };
 
-    if (!cell(HV_ANSWER)) return { step: 6, question: hvQuestion(HV_ANSWER, ex), hint: `Tel de ${word} in de gekleurde groepjes.${cell('r5') ? ' Of kijk naar je tweede rij.' : ''}` };
+    if (!cell(HV_ANSWER)) return { step: 6, question: hvQuestion(HV_ANSWER, ex), hint: `Tel de ${word} in de gekozen groepjes.${cell('r5') ? ' Of kijk naar je tweede rij.' : ''}` };
     return { step: 7, question: 'Klaar?', hint: 'Tik op Controleer.' };
 }
 
@@ -162,5 +168,5 @@ export function hvShow(answer: string): string {
     const { parts, size, count, colored } = groupPart(answer);
     const typed = parts[HV_CELLS.length - 1] ?? '';
     const groups = count === 0 ? 'geen groepjes' : size !== '' ? `${count} groepjes van ${size}` : `${count} groepjes, niet even groot`;
-    return `${typed} (${groups}, ${colored} gekleurd)`;
+    return `${typed} (${groups}, ${colored} gekozen)`;
 }

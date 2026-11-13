@@ -67,8 +67,8 @@ const CASES = [
     { kind: 'tap-multi', id: 'breuken-kleuren-onecht', leafId: 'breuken-kleuren', over: { allowImproper: true } },
     { kind: 'order', leafId: 'getalbegrip-ordenen-nat', over: {} },
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
-    // Breuk van een hoeveelheid: tap the objects into equal groups (Nieuw groepje between them, group 1 finished last via its chip), Klaar, colour, rows + answer.
-    { kind: 'fill-cells', id: 'breuken-hoeveelheid-groepjes', leafId: 'breuken-hoeveelheid', over: {}, header: /^Verdeel in gelijke groepjes en kleur \d+\/\d+\.$/ },
+    // Breuk van een hoeveelheid: tap the objects into equal groups (Nieuw groepje between them, group 1 finished last via its chip), Groepjes kiezen, choose, rows + answer.
+    { kind: 'fill-cells', id: 'breuken-hoeveelheid-groepjes', leafId: 'breuken-hoeveelheid', over: {}, header: /^Maak gelijke groepjes\. Kies dan de groepjes voor \d+\/\d+\.$/ },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
     { kind: 'build', id: 'mab-tekenen', leafId: 'mab-tekenen', over: {} },
     { kind: 'build', id: 'mab-tekenen-9999', leafId: 'mab-tekenen', over: { maxNumber: 9999, operand1Mask: { D: true, H: true, T: true, E: true } } },
@@ -290,7 +290,7 @@ async function enter(page, card, c) {
                     await page.getByRole('button', { name: 'Groepje 1', exact: true }).click();
                     await obj(first[first.length - 1]).click();
                 }
-                await tools.filter({ hasText: /^Klaar met groepjes$/ }).click();
+                await tools.filter({ hasText: /^Groepjes kiezen$/ }).click();
                 for (const g of card.groups.colored) await obj(card.groups.members[g][0]).click();
             }
             for (const [k, v] of Object.entries(card.cells)) {

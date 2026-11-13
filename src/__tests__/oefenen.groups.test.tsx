@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, screen, act } from '@testing-library/react'
 import type { FractionExercise } from '../services/math/types';
 import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import { checkAnswer } from '../services/oefenen/check';
-import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
+import { kioskFor, kioskInputOf, kioskInstructionOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, groupChosen, groupStarted, groupTapped, groupsCleared, groupsDone, groupsEdited, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 import { hvNextStep, hvNudge, hvReview, hvShow, hvSolution } from '../services/fractions/hoeveelheidGroups';
 import { currentInput, useOefenStore, type KioskCurrent } from '../oefenen/useOefenStore';
@@ -12,8 +12,8 @@ import OefenApp from '../oefenen/OefenApp';
 import { hashOf, resetKiosk, starterSessie } from './helpers/oefenKiosk';
 
 // Breuk van een hoeveelheid in the kiosk (owner design 2026-11-13): the pupil builds equal groups by
-// tapping the objects, colours the teller's groups and types the answer; the two working rows are
-// optional but checked when filled; a Controleer without groups or colour gets one nudge first.
+// tapping the objects, chooses the teller's groups (Groepjes kiezen) and types the answer; the two working rows are
+// optional but checked when filled; a Controleer without groups or chosen groups gets one nudge first.
 
 const d = kioskFor('breuken')!;
 const C = { subType: 'hoeveelheid' };
@@ -22,7 +22,7 @@ const ex = (t: number, n: number, g: number): FractionExercise => ({ id: 'h', su
 const E = ex(3, 4, 28);
 const o = (i: number) => `o${i}`;
 
-/** Groups of the given sizes over o0, o1, … (in order), the first `colored` of them coloured. */
+/** Groups of the given sizes over o0, o1, … (in order), the first `colored` of them chosen. */
 function work(sizes: number[], colored: number, cells: Record<string, string> = {}): InteractionState {
     let st: InteractionState = { ...EMPTY_INTERACTION, cells };
     let at = 0;
@@ -122,14 +122,14 @@ describe('group work', () => {
         expect(c.groups!.colored).toEqual([1]);
     });
 
-    test('Klaar drops empty groups; colour mode fills or clears a whole group; editing and Opnieuw', () => {
+    test('Groepjes kiezen drops empty groups; choosing picks or drops a whole group; editing and Opnieuw', () => {
         let st = groupTapped(groupStarted(groupTapped(EMPTY_INTERACTION, o(0))), o(1));
         st = groupStarted(st);
         st = groupsDone(st);
         expect(st.groups).toMatchObject({ members: [[o(0)], [o(1)]], mode: 'colour', active: null });
         st = groupTapped(st, o(1));
         expect(st.groups!.colored).toEqual([1]);
-        // A free object does nothing while colouring.
+        // A free object does nothing while choosing.
         expect(groupTapped(st, o(9))).toBe(st);
         st = groupTapped(st, o(1));
         expect(st.groups!.colored).toEqual([]);
@@ -164,10 +164,10 @@ describe('check', () => {
 });
 
 describe('nudge, review, tips, stats', () => {
-    test('nudge: groups first, then colour; none once both are there', () => {
-        expect(hvNudge(given({ ...EMPTY_INTERACTION, cells: { a: '21' } }))).toBe('Maak eerst de groepjes en kleur de delen.');
-        expect(hvNudge(given(work([7, 7, 7, 7], 0, { a: '21' })))).toBe('Kleur eerst de delen.');
-        expect(hvNudge(given(work([8, 6, 7, 7], 1, { a: '21' })))).toBeUndefined();
+    test('nudge: groups first, then the chosen groups; none once both are there', () => {
+        expect(hvNudge(given({ ...EMPTY_INTERACTION, cells: { a: '21' } }), E)).toBe('Maak eerst de groepjes. Kies dan de groepjes voor 3/4.');
+        expect(hvNudge(given(work([7, 7, 7, 7], 0, { a: '21' })), E)).toBe('Kies nog de groepjes voor 3/4.');
+        expect(hvNudge(given(work([8, 6, 7, 7], 1, { a: '21' })), E)).toBeUndefined();
     });
 
     test('review: one hint in order (sizes, count, all in a group, colour, answer) and every wrong filled cell marked', () => {
@@ -175,19 +175,19 @@ describe('nudge, review, tips, stats', () => {
         expect(r(work([8, 6, 7, 7], 3, { a: '21' })).hint).toBe('Zijn alle groepjes even groot?');
         expect(r(work([4, 4, 4, 4, 4, 4, 4], 3, { a: '21' })).hint).toBe('Hoeveel groepjes heb je nodig? Kijk naar de noemer.');
         expect(r(work([6, 6, 6, 6], 3, { a: '21' })).hint).toBe('Zitten alle bolletjes in een groepje?');
-        expect(r(work([7, 7, 7, 7], 2, { a: '21' })).hint).toBe('Hoeveel groepjes moet je kleuren? Kijk naar de teller.');
-        expect(r(work([7, 7, 7, 7], 3, { a: '20' }))).toEqual({ hint: 'Tel de gekleurde bolletjes.', marks: { a: 'wrong' } });
+        expect(r(work([7, 7, 7, 7], 2, { a: '21' })).hint).toBe('Hoeveel groepjes moet je kiezen? Kijk naar de teller.');
+        expect(r(work([7, 7, 7, 7], 3, { a: '20' }))).toEqual({ hint: 'Tel de bolletjes in de gekozen groepjes.', marks: { a: 'wrong' } });
         expect(r(work([7, 7, 7, 7], 3, { a: '21', r1: '4', r2: '6' }))).toEqual({ hint: 'Kijk naar het rode vakje.', marks: { r2: 'wrong' } });
         expect(r(work([8, 6, 7, 7], 3, { a: '21', r2: '6' })).marks).toEqual({ r2: 'wrong' });
     });
 
-    test('next step: groups, row 1, groups vs row 1, colour, row 2, answer, Controleer', () => {
+    test('next step: groups, row 1, groups vs row 1, choose, row 2, answer, Controleer', () => {
         const at = (st: InteractionState) => hvNextStep(E, st);
         const row1 = { r0: '28', r1: '4', r2: '7' }, row2 = { r3: '3', r4: '7', r5: '21' };
         // 1: nothing yet, or groups still being built.
         expect(at(EMPTY_INTERACTION)).toMatchObject({ step: 1, question: 'Hoe maak je gelijke groepjes?' });
         expect(at(EMPTY_INTERACTION).hint).toContain('Kijk naar de noemer');
-        expect(at(groupTapped(EMPTY_INTERACTION, o(0))).hint).toContain('Klaar met groepjes');
+        expect(at(groupTapped(EMPTY_INTERACTION, o(0))).hint).toContain('Tik op Groepjes kiezen en kies zoveel groepjes als de teller zegt.');
         expect(at(groupsEdited(work([7, 7, 7, 7], 0))).step).toBe(1);
         // 2: row 1, field by field.
         expect(at(work([7, 7, 7, 7], 0))).toMatchObject({ step: 2, question: 'Hoeveel is het geheel?' });
@@ -198,8 +198,9 @@ describe('nudge, review, tips, stats', () => {
         expect(at(work([8, 6, 7, 7], 0, row1))).toMatchObject({ step: 3 });
         expect(at(work([8, 6, 7, 7], 0, row1)).hint).toContain('Kijk je groepjes na: zitten er 7 bolletjes in elk groepje?');
         expect(at(work([7, 7, 7], 0, row1)).hint).toContain('je eerste rij zegt 4 groepjes');
-        // 4: colour as the teller says.
-        expect(at(work([7, 7, 7, 7], 0, row1))).toMatchObject({ step: 4, question: 'Hoeveel groepjes kleur je?' });
+        // 4: choose as many groups as the teller says.
+        expect(at(work([7, 7, 7, 7], 0, row1))).toMatchObject({ step: 4, question: 'Hoeveel groepjes kies je?' });
+        expect(at(work([7, 7, 7, 7], 0, row1)).hint).toContain('Tik op een groepje om het te kiezen');
         expect(at(work([7, 7, 7, 7], 4, row1)).step).toBe(4);
         // 5: row 2, field by field; its sum uses the pupil's own numbers.
         expect(at(work([7, 7, 7, 7], 3, row1))).toMatchObject({ step: 5, question: 'Hoeveel keer moet je dat deel nemen?', hint: 'Kijk naar de teller.' });
@@ -227,11 +228,11 @@ describe('nudge, review, tips, stats', () => {
     });
 
     test('stats show the answer with the groups behind it', () => {
-        expect(hvShow(given(work([8, 6, 7, 7], 3, { a: '21' })))).toBe('21 (4 groepjes, niet even groot, 3 gekleurd)');
-        expect(hvShow(ia.answerOf(E, C))).toBe('21 (4 groepjes van 7, 3 gekleurd)');
+        expect(hvShow(given(work([8, 6, 7, 7], 3, { a: '21' })))).toBe('21 (4 groepjes, niet even groot, 3 gekozen)');
+        expect(hvShow(ia.answerOf(E, C))).toBe('21 (4 groepjes van 7, 3 gekozen)');
     });
 
-    test('solution fills in step by step: geheel, delen (the groups), één deel, then colour and row 2', () => {
+    test('solution fills in step by step: geheel, delen (the groups), één deel, then the chosen groups and row 2', () => {
         expect(hvSolution(E, 0)).toEqual({ ...EMPTY_INTERACTION, cells: {} });
         expect(hvSolution(E, 1).cells).toEqual({ r0: '28' });
         expect(hvSolution(E, 2).groups!.members.map(m => m.length)).toEqual([7, 7, 7, 7]);
@@ -266,7 +267,7 @@ describe('kiosk store', () => {
         st().setInteraction({ ...EMPTY_INTERACTION, cells: { a: '4' } });
         st().answer();
         expect(st().phase).toBe('exercise');
-        expect(st().nudge).toBe('Maak eerst de groepjes en kleur de delen.');
+        expect(st().nudge).toBe('Maak eerst de groepjes. Kies dan de groepjes voor 1/3.');
         expect(madeNow()).toBe(0);
         st().answer();
         expect(st().phase).toBe('feedback');
@@ -322,11 +323,11 @@ describe('kiosk store', () => {
     });
 });
 
-describe('kiosk card: build groups and colour with taps', () => {
+describe('kiosk card: build groups and choose them with taps', () => {
     beforeEach(resetKiosk);
     afterEach(cleanup);
 
-    test('+ Nieuw groepje, taps, Klaar met groepjes, colour, then Controleer is juist', () => {
+    test('+ Nieuw groepje, taps, Groepjes kiezen, choose, then Controleer is juist', () => {
         st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
         st().start();
         onCard(ex(1, 3, 6));
@@ -347,12 +348,35 @@ describe('kiosk card: build groups and colour with taps', () => {
         expect(obj(5).hasAttribute('data-kiosk-group')).toBe(false);
         fireEvent.click(obj(5));
         expect(obj(5).getAttribute('data-kiosk-group')).toBe('2');
-        fireEvent.click(screen.getByRole('button', { name: 'Klaar met groepjes' }));
+        const choose = () => screen.getByRole('button', { name: 'Groepjes kiezen' });
+        // Every object is in a group and none is chosen yet: the button is primary and pulses, not pressed.
+        expect(choose().getAttribute('aria-pressed')).toBe('false');
+        expect(choose().className).toContain('kiosk-btn-primary');
+        expect(choose().className).toContain('kiosk-steps-pulse');
+        fireEvent.click(choose());
+        expect(choose().getAttribute('aria-pressed')).toBe('true');
+        expect(choose().className).toContain('kiosk-steps-pulse');
+        expect(screen.getByRole('button', { name: 'Groepjes aanpassen' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Groepje 1' })).toBeNull();
         fireEvent.click(obj(3));
         expect(obj(2).getAttribute('data-kiosk-colored')).toBe('true');
         expect(obj(3).getAttribute('data-kiosk-colored')).toBe('true');
         expect(obj(0).hasAttribute('data-kiosk-colored')).toBe(false);
+        expect(obj(3).getAttribute('aria-label')).toBe('bolletje 4, groepje 2, gekozen');
+        // One group chosen: the pulse stops.
+        expect(choose().className).not.toContain('kiosk-steps-pulse');
+        // Tap again to unchoose, and once more to choose it back.
+        fireEvent.click(obj(2));
+        expect(obj(2).hasAttribute('data-kiosk-colored')).toBe(false);
+        fireEvent.click(obj(2));
+        expect(obj(3).getAttribute('data-kiosk-colored')).toBe('true');
+        // Groepjes aanpassen: back to grouping, the choice hidden (outlines only) but kept for Groepjes kiezen.
+        fireEvent.click(screen.getByRole('button', { name: 'Groepjes aanpassen' }));
+        expect(choose().getAttribute('aria-pressed')).toBe('false');
+        expect(container.querySelectorAll('.kiosk-card [data-kiosk-colored]')).toHaveLength(0);
+        expect(obj(3).getAttribute('data-kiosk-group')).toBe('1');
+        fireEvent.click(choose());
+        expect(obj(3).getAttribute('data-kiosk-colored')).toBe('true');
         for (const ch of '2') fireEvent.click(screen.getByRole('button', { name: ch }));
         expect(st().interaction.cells.a).toBe('2');
         fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
@@ -366,7 +390,7 @@ describe('kiosk card: build groups and colour with taps', () => {
         const { container } = render(<OefenApp />);
         fireEvent.click(screen.getByRole('button', { name: '2' }));
         fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
-        expect(screen.getByRole('status').textContent).toBe('Maak eerst de groepjes en kleur de delen.');
+        expect(screen.getByRole('status').textContent).toBe('Maak eerst de groepjes. Kies dan de groepjes voor 1/3.');
         fireEvent.click(container.querySelector<HTMLElement>('.kiosk-card [data-kiosk-key="o0"]')!);
         fireEvent.click(screen.getByRole('button', { name: 'Opnieuw' }));
         expect(container.querySelectorAll('.kiosk-card [data-kiosk-group]')).toHaveLength(0);
@@ -425,5 +449,62 @@ describe('kiosk card: build groups and colour with taps', () => {
         fireEvent.click(info());
         fireEvent.click(info());
         expect(screen.queryByRole('tooltip')).toBeNull();
+    });
+});
+
+describe('kiosk card: the choosing step is obvious', () => {
+    beforeEach(resetKiosk);
+    afterEach(cleanup);
+
+    test('the card instruction names both steps', () => {
+        expect(kioskInstructionOf('breuken', ex(2, 4, 28), C, 'Kleur het deel.')).toBe('Maak gelijke groepjes. Kies dan de groepjes voor 2/4.');
+    });
+
+    test('Groepjes kiezen is disabled before any group, primary without pulse while objects are still free', () => {
+        st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
+        st().start();
+        onCard(ex(1, 3, 6));
+        const { container } = render(<OefenApp />);
+        const choose = () => screen.getByRole('button', { name: 'Groepjes kiezen' }) as HTMLButtonElement;
+        expect(choose().disabled).toBe(true);
+        expect(choose().className).not.toContain('kiosk-btn-primary');
+        fireEvent.click(container.querySelector<HTMLElement>('.kiosk-card [data-kiosk-key="o0"]')!);
+        expect(choose().disabled).toBe(false);
+        expect(choose().className).toContain('kiosk-btn-primary');
+        expect(choose().className).not.toContain('kiosk-steps-pulse');
+    });
+
+    test('while grouping a group is only its outline: chosen groups fill only in Groepjes kiezen', () => {
+        st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
+        st().start();
+        onCard(ex(2, 4, 8));
+        st().setInteraction(groupsEdited(work([2, 2, 2, 2], 2)));
+        const { container } = render(<OefenApp />);
+        expect(container.querySelectorAll('.kiosk-card [data-kiosk-group]')).toHaveLength(8);
+        expect(container.querySelectorAll('.kiosk-card [data-kiosk-colored]')).toHaveLength(0);
+        fireEvent.click(screen.getByRole('button', { name: 'Groepjes kiezen' }));
+        expect(container.querySelectorAll('.kiosk-card [data-kiosk-colored]')).toHaveLength(4);
+    });
+
+    test('Controleer with groups but none chosen: the nudge asks for the chosen groups, no attempt', () => {
+        st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
+        st().start();
+        onCard(ex(2, 4, 8));
+        st().setInteraction(work([2, 2, 2, 2], 0, { a: '4' }));
+        render(<OefenApp />);
+        fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
+        expect(screen.getByRole('status').textContent).toBe('Kies nog de groepjes voor 2/4.');
+        expect(madeNow()).toBe(0);
+    });
+
+    test('the solution view: the right groups, the teller groups chosen and drawn filled', () => {
+        st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
+        st().start();
+        const e = ex(2, 4, 8);
+        onCard(e);
+        st().setInteraction(hvSolution(e, Infinity));
+        const { container } = render(<OefenApp />);
+        expect(container.querySelectorAll('.kiosk-card [data-kiosk-group]')).toHaveLength(8);
+        expect(container.querySelectorAll('.kiosk-card [data-kiosk-colored]')).toHaveLength(4);
     });
 });

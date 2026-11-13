@@ -995,10 +995,12 @@ html:has(.oefen-body),
 .kiosk-card-inner [data-kiosk-group="5"],
 .kiosk-group-chip[data-kiosk-group="5"] { --kiosk-g: var(--kiosk-group-5); }
 /* In a group: its own outline and a light tint; coloured: the group's hue filled in. */
-.kiosk-card-inner [data-kiosk-group] .kiosk-obj-shape { stroke: var(--kiosk-g); stroke-width: 3; fill: color-mix(in srgb, var(--kiosk-g) 14%, var(--kiosk-paper)); }
+/* Grouped: only the group's outline and number on plain paper; a fill means chosen (owner, class 2026-11-13). */
+.kiosk-card-inner [data-kiosk-group] .kiosk-obj-shape { stroke: var(--kiosk-g); stroke-width: 3; fill: var(--kiosk-paper); }
 .kiosk-card-inner [data-kiosk-colored] .kiosk-obj-shape { fill: var(--kiosk-g); }
 .kiosk-card-inner .kiosk-obj-num { font: 700 11px var(--font-ui); fill: var(--kiosk-g); text-anchor: middle; dominant-baseline: central; }
-.kiosk-card-inner [data-kiosk-colored] .kiosk-obj-num { fill: var(--accent-on); }
+/* A dark halo of the group's own colour keeps the white number readable on the lighter fills (orange). */
+.kiosk-card-inner [data-kiosk-colored] .kiosk-obj-num { fill: var(--accent-on); stroke: color-mix(in srgb, var(--kiosk-g) 55%, var(--kiosk-ink)); stroke-width: 2px; paint-order: stroke; }
 .kiosk-card-inner .kiosk-hv-row { display: flex; align-items: center; gap: 6px; font-family: var(--font-sheet-math); font-size: 16px; }
 .kiosk-card-inner .kiosk-hv-sign { min-width: 0.7em; text-align: center; }
 /* The working rows with the card's one "i" hung off their right edge, so the rows stay centred on the answer. */
@@ -1044,6 +1046,8 @@ html:has(.oefen-body),
 .kiosk-groups { flex: none; display: flex; flex-direction: column; gap: var(--sp-1); }
 .kiosk-groups-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .kiosk-groups-actions .kiosk-btn { flex: 1 1 auto; padding: 0 var(--sp-2); font-weight: 600; }
+/* "Groepjes kiezen" while choosing: pressed in, so the pupil sees which mode taps are in. */
+.kiosk-groups-actions .kiosk-group-choose[aria-pressed="true"] { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--accent-on); box-shadow: inset 0 2px 4px color-mix(in srgb, var(--kiosk-ink) 35%, transparent); cursor: default; }
 .kiosk-groups button:disabled { opacity: 0.45; cursor: default; }
 .kiosk-groups p { margin: 0; font-family: var(--font-ui); font-size: calc(var(--kiosk-text) * 0.85); line-height: 1.3; }
 /* One chip per group in its own colour: a tap picks the group the next taps fill. */

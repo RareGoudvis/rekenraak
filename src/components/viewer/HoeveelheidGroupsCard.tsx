@@ -20,7 +20,7 @@ const OBJ = 22, PAD = 3;
 const GAP = 8;
 
 // Oefenmodus only (FractionExerciseItem renders it under a fill-cells context): the objects the pupil
-// groups and colours, the two optional working rows and the answer line, with one "i" beside the
+// groups and chooses, the two optional working rows and the answer line, with one "i" beside the
 // rows that tells the next step from the pupil's work so far. SYNC: hoeveelheidGroups.ts keys.
 export default function HoeveelheidGroupsCard({ ex, rowSizes, fraction }: Props) {
     const ix = useViewerInteraction();

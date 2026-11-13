@@ -15,8 +15,8 @@ const PEN_VERB = /\b(omcirkel|kleur|teken|onderstreep|zet een kruisje|kruis aan|
 // Owner call 2: the pupil types on a keypad or keyboard, so the card says "Typ …", never "Schrijf …".
 const WRITE_VERB = /\bschrijf\b/i;
 // Owner call (O22): breuken kleuren says "Kleur 3/6 in.": a tapped part does turn coloured on the card.
-// Kleuren and hoeveelheid colour ON the card (a tap fills a part or a group), so "kleur" is the kiosk verb there too.
-const KLEUR_BREUK = /^(Kleur \d+\/\d+ in|Verdeel in gelijke groepjes en kleur \d+\/\d+)\.$/;
+// Kleuren colours ON the card (a tap fills a part), so "kleur" is the kiosk verb there too.
+const KLEUR_BREUK = /^Kleur \d+\/\d+ in\.$/;
 
 type Shown = { leafId: string; grade: number | null; exercise: unknown; shown: string };
 

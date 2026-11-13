@@ -69,7 +69,7 @@ interface OefenState {
     activeCell: string | null;
     // The last save of the run was refused (quota, private mode): a reload would lose it, so the kiosk says so.
     storageFailed: boolean;
-    // The descriptor's nudge after a Controleer without the work it needs (groups, colour): shown, not counted.
+    // The descriptor's nudge after a Controleer without the work it needs (groups, chosen groups): shown, not counted.
     nudge: string | null;
     // This exercise had its one nudge: the next Controleer without the work counts (as fout).
     nudged: boolean;
@@ -542,7 +542,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (!d) return;
             const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
             const ia = interactive ? interactOfShown(s, cur) : undefined;
-            // Work the exercise needs is missing (no groups, nothing coloured): one friendly line first, no attempt.
+            // Work the exercise needs is missing (no groups, none chosen): one friendly line first, no attempt.
             const nudge = interactive ? ia?.nudge?.(interactive.given, cur.exercise, cur.constraints) : undefined;
             if (nudge && !get().nudged) { set({ nudge, nudged: true }); return; }
             const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
