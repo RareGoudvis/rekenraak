@@ -67,6 +67,8 @@ const CASES = [
     { kind: 'tap-multi', id: 'breuken-kleuren-onecht', leafId: 'breuken-kleuren', over: { allowImproper: true } },
     { kind: 'order', leafId: 'getalbegrip-ordenen-nat', over: {} },
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
+    // Breuk van een hoeveelheid: tap the objects into equal groups (Nieuw groepje between them), Klaar, colour, rows + answer.
+    { kind: 'fill-cells', id: 'breuken-hoeveelheid-groepjes', leafId: 'breuken-hoeveelheid', over: {}, header: /^Verdeel in gelijke groepjes en kleur \d+\/\d+\.$/ },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
     { kind: 'build', id: 'mab-tekenen', leafId: 'mab-tekenen', over: {} },
     { kind: 'build', id: 'mab-tekenen-9999', leafId: 'mab-tekenen', over: { maxNumber: 9999, operand1Mask: { D: true, H: true, T: true, E: true } } },
@@ -135,7 +137,10 @@ async function readCard(page) {
         if (ia.kind === 'fill-cells') {
             // Cijferen from its own numbers (carries too: the kiosk is strict), else the answer's parts.
             const { rightCells } = await import('/src/__tests__/helpers/fillCells.ts');
-            out.cells = rightCells(type.typeId, d, ex, c);
+            // Group work: the descriptor's own solution (its groups and the coloured ones, then its cells).
+            const solved = ia.solution?.(ex, c, Infinity);
+            out.cells = solved?.cells ?? rightCells(type.typeId, d, ex, c);
+            if (solved?.groups) out.groups = solved.groups;
         }
         if (ia.kind === 'build') out.pieces = ia.pieces?.(ex, c) ?? [];
         return out;
@@ -270,6 +275,17 @@ async function enter(page, card, c) {
             if (card.tap.some(k => k === undefined)) throw new Error(`no part gives ${card.want}`);
             for (const k of card.tap) await page.locator(`.kiosk-card [data-kiosk-key="${k}"]`).first().click();
         } else if (card.cells) {
+            if (card.groups) {
+                const tools = page.locator('.kiosk-groups-actions button');
+                const obj = (k) => page.locator(`.kiosk-card [data-kiosk-obj][data-kiosk-key="${k}"]`);
+                for (const [g, members] of card.groups.members.entries()) {
+                    await tools.filter({ hasText: /^Nieuw groepje$/ }).click();
+                    for (const k of members) await obj(k).click();
+                    if (g === 0 && await page.locator('.kiosk-group-chip').innerText() !== 'Groepje 1') throw new Error('no Groepje 1 chip');
+                }
+                await tools.filter({ hasText: /^Klaar met groepjes$/ }).click();
+                for (const g of card.groups.colored) await obj(card.groups.members[g][0]).click();
+            }
             for (const [k, v] of Object.entries(card.cells)) {
                 if (!v) continue;
                 await page.locator(`.kiosk-card input[data-kiosk-cell][data-kiosk-key="${k}"]`).click();

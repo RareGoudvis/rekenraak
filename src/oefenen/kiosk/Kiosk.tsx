@@ -125,6 +125,8 @@ export default function Kiosk() {
     const stepsOffer = useOefenStore(s => s.stepsOffer);
     const handigOffer = useOefenStore(s => s.handigOffer);
     const next = useOefenStore(s => s.next);
+    const feedbackHint = useOefenStore(s => s.feedbackHint);
+    const showSolution = useOefenStore(s => s.showSolution);
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
     useKioskKeys();
     if (!sessie || !run) return null;
@@ -159,10 +161,10 @@ export default function Kiosk() {
                         {shown?.wrongFirst !== undefined && <p className="kiosk-attempt">Kans 2 van 2</p>}
                         <AnswerInput />
                         {phase === 'feedback' && lastCorrect !== null && (
-                            <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} />
+                            <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} hint={lastCorrect ? null : feedbackHint} />
                         )}
-                        {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} />}
-                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} />}
+                        {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} hint={feedbackHint} />}
+                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution} />}
                     </section>
                 </main>
             )}

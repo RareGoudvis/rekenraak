@@ -180,7 +180,9 @@ function enter(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string
             return { right: from({ order: seq }), wrong: check(from({ order: back })) ? null : from({ order: back }) };
         }
         if (ia.kind === 'fill-cells') {
-            const cells = rightCells(typeId, d, ex, c);
+            // Group work too (breuk van een hoeveelheid): the descriptor's full solution is what the pupil makes.
+            const solved = ia.solution?.(ex, c, Infinity);
+            const cells = solved?.cells ?? rightCells(typeId, d, ex, c);
             for (const [k, v] of Object.entries(cells)) {
                 if (sanitizeAnswer(v, keys) !== v) return `fill-cells: cell ${k} = '${v}' not typeable with keys [${keys}]`;
                 const len = ia.cellOf?.(k, ex, c)?.length;
@@ -188,7 +190,7 @@ function enter(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string
             }
             const spoil = Object.keys(cells).find(k => /\d/.test(cells[k]));
             const wrong = spoil ? { ...cells, [spoil]: cells[spoil].replace(/\d(?!.*\d)/, x => String((Number(x) + 1) % 10)) } : null;
-            return { right: from({ cells }), wrong: wrong ? from({ cells: wrong }) : null };
+            return { right: from({ ...solved, cells }), wrong: wrong ? from({ ...solved, cells: wrong }) : null };
         }
         if (ia.kind === 'build') {
             const pieces = ia.pieces?.(ex, c) ?? [];

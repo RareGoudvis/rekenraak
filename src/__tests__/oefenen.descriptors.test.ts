@@ -598,6 +598,7 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
     // The Enter path is never empty: the keypad has a first cell to start in.
     expect(keys.some(k => !ia.cellOf?.(k, ex, c)?.scratch), where).toBe(true);
     expect(ia.show?.(ia.answerOf(ex, c), ex, c) ?? 'x', where).not.toBe('');
+    if (ia.groups) { checkGroupWork(d, ex, c, truth as number, where); return; }
 
     if (typeId.startsWith('cijferen-')) {
         const cx = ex as CijferExercise;
@@ -658,6 +659,25 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
     const wants = ia.answerOf(ex, c).split(INTERACT_SEP);
     const required = keys.find((_, i) => !wants[i].split('|').includes(''))!;
     expect(fill({ ...right, [required]: '' }), where).toBe('');
+}
+
+// Group work (breuk van een hoeveelheid): the answer cell holds the generator's amount; the
+// descriptor's solution (n equal groups, t coloured, rows filled) is juist; empty rows are fine,
+// a wrong row, unequal groups or the wrong colour count are fout.
+function checkGroupWork(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: number, where: string) {
+    const ia = kioskInteractOf(d, c)!;
+    const solved = ia.solution!(ex, c, Infinity);
+    const ok = (st: Partial<typeof solved>) => checkAnswer(d, ex, c, ia.fromState({ ...solved, ...st }, ex, c));
+    expect(Number(solved.cells.a), where).toBe(truth);
+    expect(ok({}), where).toBe(true);
+    expect(ok({ cells: { a: solved.cells.a } }), `${where} rows left empty`).toBe(true);
+    expect(ok({ cells: { ...solved.cells, r2: String(Number(solved.cells.r2) + 1) } }), `${where} wrong row`).toBe(false);
+    expect(ok({ cells: { ...solved.cells, a: String(truth + 1) } }), `${where} wrong answer`).toBe(false);
+    const g = solved.groups!;
+    expect(ok({ groups: { ...g, colored: g.colored.slice(1) } }), `${where} one group too few coloured`).toBe(false);
+    const moved = g.members.map((m, i) => (i === 0 ? m.slice(1) : i === 1 ? [...m, g.members[0][0]] : m));
+    expect(ok({ groups: { ...g, members: moved } }), `${where} unequal groups`).toBe(false);
+    expect(ok({ groups: undefined }), `${where} no groups`).toBe(false);
 }
 
 const gcdOf = (a: number, b: number): number => (b ? gcdOf(b, a % b) : a);

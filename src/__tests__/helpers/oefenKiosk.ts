@@ -27,7 +27,7 @@ export const hashOf = (s: OefenSessie) => `#oefen=${encodeSessie(s)}`;
 
 export function resetKiosk() {
     localStorage.clear();
-    useOefenStore.setState({ sessie: null, error: null, phase: 'start', run: null, shown: null, input: [''], field: 0, lastCorrect: null, stepsOffer: null, statsFrom: 'exercise', interaction: EMPTY_INTERACTION, activeCell: null });
+    useOefenStore.setState({ sessie: null, error: null, phase: 'start', run: null, shown: null, input: [''], field: 0, lastCorrect: null, stepsOffer: null, statsFrom: 'exercise', interaction: EMPTY_INTERACTION, activeCell: null, nudge: null, nudged: false, feedbackHint: null });
 }
 
 /** The accepted answer and input kind of the exercise on the card. */
@@ -63,10 +63,12 @@ export function fillCellsAnswer(right: boolean) {
     const st = useOefenStore.getState();
     const cur = st.shown!;
     const typeId = st.sessie!.types[cur.slot].typeId;
-    const cells = rightCells(typeId, kioskFor(typeId)!, cur.exercise, cur.constraints);
+    // Group work (breuk van een hoeveelheid): the descriptor's full solution, groups and colour included.
+    const solved = kioskInteractOf(kioskFor(typeId)!, cur.constraints)?.solution?.(cur.exercise, cur.constraints, Infinity);
+    const cells = { ...(solved?.cells ?? rightCells(typeId, kioskFor(typeId)!, cur.exercise, cur.constraints)) };
     const spoil = Object.keys(cells).find(k => cells[k])!;
     if (!right) cells[spoil] = cells[spoil].replace(/\d(?!.*\d)/, d => String((Number(d) + 1) % 10));
-    st.setInteraction({ ...EMPTY_INTERACTION, cells });
+    st.setInteraction({ ...EMPTY_INTERACTION, ...solved, cells });
 }
 
 /** Taps the card's parts the way a pupil would (Phase C): the right key(s), or a wrong set. */

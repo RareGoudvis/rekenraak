@@ -23,6 +23,8 @@ export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'retry' | 'steps' |
 // How long each flash stays before the kiosk moves on by itself (Enter or a tap skips it):
 // juist is a glance, fout and the retry get time to sink in.
 export const FLASH_MS = { juist: 700, fout: 1200, retry: 1000 } as const;
+// A fout that carries a hint ("Zijn alle groepjes even groot?") stays this much longer: the pupil reads it.
+export const HINT_MS = 1800;
 
 // The exercise on screen plus the constraints it was generated with: answerOf / display /
 // checkAnswer must get exactly those, and a reload must too, so they travel in the run.
@@ -67,6 +69,12 @@ interface OefenState {
     activeCell: string | null;
     // The last save of the run was refused (quota, private mode): a reload would lose it, so the kiosk says so.
     storageFailed: boolean;
+    // The descriptor's nudge after a Controleer without the work it needs (groups, colour): shown, not counted.
+    nudge: string | null;
+    // This exercise had its one nudge: the next Controleer without the work counts (as fout).
+    nudged: boolean;
+    // The descriptor's review hint for a wrong answer, under the fout / retry flash and in the steps panel.
+    feedbackHint: string | null;
 
     load(hash: string): void;
     // The session is set in as if its link had been opened (load's second half).
@@ -101,6 +109,8 @@ interface OefenState {
     clearBuild(): void;
     // fill-cells: a descriptor action key (keypad or hotkey) on the active cell, e.g. Lenen.
     pressExtra(id: string): void;
+    // Steps panel: the card shows the descriptor's solution, filled in as far as `answered` steps go.
+    showSolution(answered: number): void;
 }
 
 // A test shows nothing about juist/fout until the end, so it hides the results like statsLocked does.
@@ -121,6 +131,8 @@ export interface CurrentInput {
     separator?: string;
     // interactive: how the pupil answers on the card (tap, tap-multi, fill-cells, order, build).
     interact?: InteractionKind;
+    // fill-cells: the pupil also groups and colours the card's objects (the panel's group tools).
+    groups?: boolean;
     // build: the tray's pieces.
     pieces?: KioskPiece[];
     // The descriptor's action keys for this exercise (Lenen), beside the character keys.
@@ -189,6 +201,7 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
         extraKeys: d.extraKeys?.(cur.exercise, cur.constraints) ?? [],
         blankFieldsOk: kind === 'multi-number' && !!d.blankFields?.(cur.exercise, cur.constraints),
         ...(ia && { interact: ia.kind }),
+        ...(ia?.groups && { groups: true }),
         ...(ia?.kind === 'build' && { pieces: ia.pieces?.(cur.exercise, cur.constraints) ?? [] }),
     };
 }
@@ -265,12 +278,19 @@ export const useOefenStore = create<OefenState>()((set, get) => {
     };
 
     // 2 kansen: the second try at the same exercise, fields, taps and cells cleared, back in the first cell.
+    // A reviewed exercise (breuk van een hoeveelheid) keeps the pupil's work: the marks point at what to fix.
     const secondTry = () => {
-        const { sessie: s, shown } = get();
+        const { sessie: s, shown, interaction } = get();
+        const keep = !!(s && shown && interactOfShown(s, shown)?.review);
         set({
-            phase: 'exercise', input: fieldsFor(currentInput(s, shown)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION,
-            activeCell: s && shown ? firstCell(s, shown) : null,
+            phase: 'exercise', input: fieldsFor(currentInput(s, shown)), field: 0, lastCorrect: null, interaction: keep ? interaction : EMPTY_INTERACTION,
+            activeCell: s && shown ? firstCell(s, shown) : null, feedbackHint: null,
         });
+    };
+
+    const interactOfShown = (s: OefenSessie, cur: KioskCurrent) => {
+        const d = kioskFor(s.types[cur.slot]?.typeId ?? '');
+        return d && kioskInputOf(d, cur.exercise, cur.constraints) === 'interactive' ? kioskInteractOf(d, cur.constraints) : undefined;
     };
 
     const persist = (run: OefenRun) => {
@@ -298,7 +318,9 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         if (len !== undefined && value.length > len) value = value.slice(-len);
         const full = grew && len !== undefined && value.length >= len;
         const next = full ? flowAfter(plan, cell) : null;
-        set({ interaction: { ...interaction, cells: { ...interaction.cells, [cell]: value } }, ...(next && { activeCell: next }) });
+        // A cell the check marked wrong is being fixed: its mark goes.
+        const marks = interaction.marks?.[cell] === 'wrong' ? Object.fromEntries(Object.entries(interaction.marks).filter(([k]) => k !== cell)) : interaction.marks;
+        set({ interaction: { ...interaction, cells: { ...interaction.cells, [cell]: value }, ...(marks && { marks }) }, ...(next && { activeCell: next }) });
     };
 
     // fill-cells: a keypad key types into the active cell of the card (the cell owns the value).
@@ -364,6 +386,9 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         interaction: EMPTY_INTERACTION,
         activeCell: null,
         storageFailed: false,
+        nudge: null,
+        nudged: false,
+        feedbackHint: null,
 
         load(hash) {
             // No payload at all is not an error message, just the "open the link" screen.
@@ -383,7 +408,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const unsupported = unsupportedSlots(s);
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
             if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false, nudge: null, nudged: false, feedbackHint: null });
             // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
             const runs = loadRunsFor(s);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
@@ -420,7 +445,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         next() {
             clearFlash();
-            set({ stepsOffer: null, handigOffer: [] });
+            set({ stepsOffer: null, handigOffer: [], nudge: null, nudged: false, feedbackHint: null });
             const { sessie: s, run } = get();
             if (!s || !run) return;
             const now = Date.now();
@@ -516,14 +541,24 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const d = type && kioskFor(type.typeId);
             if (!d) return;
             const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
+            const ia = interactive ? interactOfShown(s, cur) : undefined;
+            // Work the exercise needs is missing (no groups, nothing coloured): one friendly line first, no attempt.
+            const nudge = interactive ? ia?.nudge?.(interactive.given, cur.exercise, cur.constraints) : undefined;
+            if (nudge && !get().nudged) { set({ nudge, nudged: true }); return; }
             const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
+            // A wrong answer the descriptor reviews: a hint and the wrong cells marked (never in testmodus: no feedback there).
+            const review = !correct && !s.testMode && interactive ? ia?.review?.(interactive.given, cur.exercise, cur.constraints) : undefined;
+            const feedbackHint = review?.hint ?? null;
+            if (review?.marks) set({ interaction: { ...get().interaction, marks: { ...get().interaction.marks, ...review.marks } } });
+            set({ nudge: null, feedbackHint });
+            const hintMs = feedbackHint ? HINT_MS : 0;
             // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.
             if (!correct && attemptsOf(s) === 2 && cur.wrongFirst === undefined) {
                 const retry: KioskCurrent = { ...cur, wrongFirst: given };
                 const updated: OefenRun = { ...run, current: retry };
                 persist(updated);
                 set({ run: updated, shown: retry, lastCorrect: false, phase: 'retry' });
-                scheduleFlash(FLASH_MS.retry);
+                scheduleFlash(FLASH_MS.retry + hintMs);
                 return;
             }
             const stats = recordAnswer(run.stats, cur.slot, type.typeId, cur.exercise, given, correct, Math.max(0, now - cur.shownAt), cur.constraints, now, cur.wrongFirst);
@@ -536,7 +571,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // Testmodus: no juist/fout per exercise, straight on to the next one.
             if (s.testMode) { get().next(); return; }
             set({ phase: 'feedback' });
-            scheduleFlash(correct ? FLASH_MS.juist : FLASH_MS.fout);
+            scheduleFlash(correct ? FLASH_MS.juist : FLASH_MS.fout + hintMs);
         },
 
         openStats() {
@@ -627,6 +662,13 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // Past the last cell: check, or (nothing to check yet) back to the first cell.
             if (interactionAnswer(s, cur, get().interaction)?.ready) get().answer();
             else set({ activeCell: plan.flow[0] ?? plan.keys[0] ?? null });
+        },
+
+        showSolution(answered) {
+            const { phase, sessie: s, shown: cur } = get();
+            if (phase !== 'steps' || !s || !cur) return;
+            const solution = interactOfShown(s, cur)?.solution?.(cur.exercise, cur.constraints, answered);
+            if (solution) set({ interaction: solution, activeCell: null });
         },
 
         pressExtra(id) {

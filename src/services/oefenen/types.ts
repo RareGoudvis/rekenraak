@@ -107,6 +107,26 @@ export interface KioskInteract<E = unknown> {
     // build: the kiosk tray, in display order. From the SETTINGS only (allowed coins, the
     // positietabel's places), never the exercise's answer, so the tray does not hint at it.
     pieces?(ex: E, c: Record<string, unknown>): KioskPiece[];
+    // fill-cells: the pupil also groups and colours the card's objects (state.groups); the answer
+    // panel shows the group tools (Nieuw groepje, Klaar met groepjes, Opnieuw) above the keypad.
+    groups?: boolean;
+    // The work still missing before an answer counts (no groups, nothing coloured): the first
+    // Controleer without it only shows this line and is not an attempt; undefined = nothing missing.
+    nudge?(given: string, ex: E, c: Record<string, unknown>): string | undefined;
+    // After a wrong check: one short hint and the cells to mark wrong (key → 'wrong'). A
+    // descriptor with a review keeps the pupil's work for a second try, so the marks point at it.
+    review?(given: string, ex: E, c: Record<string, unknown>): KioskReview;
+    // A correct way, for the card in the steps panel; `answered` = breukvragen answered so far
+    // (Infinity = all), so the card fills in step by step beside the questions.
+    solution?(ex: E, c: Record<string, unknown>, answered: number): InteractionState;
+    // One line of guidance for the answer panel from the pupil's work so far (recheck the groups
+    // once a row is filled); undefined = none.
+    guide?(state: InteractionState, ex: E, c: Record<string, unknown>): string | undefined;
+}
+
+export interface KioskReview {
+    hint?: string;
+    marks?: Record<string, string>;
 }
 
 // One kind of piece in the build tray. Its picture comes from EXERCISE_UI[typeId].TrayPiece
@@ -132,6 +152,8 @@ export interface KioskRowSetting {
 export interface KioskCellSpec {
     length?: number;
     scratch?: boolean;
+    // The question this cell answers, shown in the answer panel while the cell is active.
+    label?: string;
 }
 
 // Keys the on-screen keypad adds to the digits for this block's settings. Derived from the

@@ -24,6 +24,7 @@ import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { timeWords, timeWordsFields } from '../clock/timeWords';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
+import { HV_ANSWER, HV_CELLS, hvAnswer, hvGiven, hvGuide, hvNudge, hvQuestion, hvReview, hvShow, hvSolution } from '../fractions/hoeveelheidGroups';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
 import { MIXED_VARIANTS, type PlaatswaardeConstraints } from '../math/constraintTypes';
@@ -1029,13 +1030,32 @@ const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
 // herkennen's drawn form; an onechte breuk also as a gemengd getal over the same noemer (7/4, 1 3/4; 14/8 only by value).
 const drawnSpellings = (n: number, d: number): string[] =>
     (n > d && n % d !== 0 ? [`${n}/${d}`, `${Math.floor(n / d)} ${n % d}/${d}`] : [`${n}/${d}`]);
+// hoeveelheid (concreet): the pupil makes the groups, colours them and types the answer on the card;
+// the two working rows are optional but checked when filled (owner design 2026-11-13, hoeveelheidGroups.ts).
+const isHoeveelheid = (c: Record<string, unknown>) => fracSub(c) === 'hoeveelheid';
+const hoeveelheidInteract: KioskInteract<FractionExercise> = {
+    kind: 'fill-cells',
+    groups: true,
+    keys: () => HV_CELLS,
+    // The rows are scratch: off the Enter path, so the keypad starts in (and Enter lands on) the answer.
+    cellOf: (key, ex) => ({ scratch: key !== HV_ANSWER, label: hvQuestion(key, ex) }),
+    answerOf: (ex) => hvAnswer(ex),
+    fromState: (st) => hvGiven(st),
+    show: (answer) => hvShow(answer),
+    nudge: (given) => hvNudge(given),
+    review: (given, ex) => hvReview(given, ex),
+    solution: (ex, _c, answered) => hvSolution(ex, answered),
+    guide: (st, ex) => hvGuide(st, ex),
+};
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
-    inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isHerkennen(c) ? 'fraction' : 'number'),
+    inputOf: (_ex, c) => (isKleuren(c) || isHoeveelheid(c) ? 'interactive' : isHerkennen(c) ? 'fraction' : 'number'),
+    interactOf: (c) => (isHoeveelheid(c) ? hoeveelheidInteract : undefined),
     // The fraction only: "tik 3 van de 6 delen" gave the answer away (owner, O22). herkennen counts
     // the drawn form, so its header says so.
     kioskInstruction: (ex, c) => (isKleuren(c) ? `Kleur ${ex.numerator}/${ex.denominator} in.`
-        : isHerkennen(c) ? 'Welk deel is gekleurd? Typ de breuk zoals je ze ziet.' : undefined),
+        : isHerkennen(c) ? 'Welk deel is gekleurd? Typ de breuk zoals je ze ziet.'
+        : isHoeveelheid(c) ? `Verdeel in gelijke groepjes en kleur ${ex.numerator}/${ex.denominator}.` : undefined),
     interact: {
         kind: 'tap-multi',
         // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included);
@@ -1051,6 +1071,7 @@ export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     exactFormDefault: (c) => (isHerkennen(c) ? true : undefined),
     answerOf: (ex, c) => {
         if (isKleuren(c)) return [String(ex.numerator)];
+        if (isHoeveelheid(c)) return [hvAnswer(ex)];
         if (isHerkennen(c)) return drawnSpellings(ex.numerator, ex.denominator);
         return numberSpellings(deelVan(ex));
     },

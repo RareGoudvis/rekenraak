@@ -10,11 +10,15 @@ interface Props {
     // Handig rekenen (compenseren, ontbinden): an extra view, the standard steps stay the method.
     handig?: HandigStrategy[];
     onNext(): void;
+    // The review hint of the wrong answer, kept in view above the offer.
+    hint?: string | null;
+    // The card shows a correct way as far as `answered` questions go (descriptor solution; a no-op without one).
+    onSolution?(answered: number): void;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead, with Alle stappen adding the optional lines. Volgende moves on either way.
-export default function StepsPanel({ lines, handig = [], onNext }: Props) {
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution }: Props) {
     const [open, setOpen] = useState(false);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
@@ -31,12 +35,13 @@ export default function StepsPanel({ lines, handig = [], onNext }: Props) {
         <div className="kiosk-steps">
             {!open ? (
                 <>
+                    {hint && <p className="kiosk-steps-hint-lead">{hint}</p>}
                     <p className="kiosk-steps-lead">Fout. Wil je zien hoe je het uitrekent?</p>
-                    <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big kiosk-steps-pulse" onClick={() => setOpen(true)} autoFocus>
+                    <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big kiosk-steps-pulse" onClick={() => { setOpen(true); onSolution?.(asking ? 0 : Infinity); }} autoFocus>
                         <ListNumbers weight="bold" aria-hidden /> Toon de stappen
                     </button>
                 </>
-            ) : asking ? <QuestionSteps lines={lines} /> : (
+            ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} /> : (
                 <>
                     <ol className="kiosk-steps-lines" aria-live="polite">
                         {shownLines.map(({ l, i }) => (

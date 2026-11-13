@@ -31,6 +31,68 @@ export interface InteractionState {
     marks?: Record<string, string>;
     // drag: the value each handle stands on (handle key → value); absent = nothing dragged yet.
     drag?: Record<string, number>;
+    // groups: the pupil's own groups of the card's objects (breuk van een hoeveelheid); absent = none yet.
+    groups?: GroupWork;
+}
+
+// The pupil builds groups by tapping objects, then colours whole groups. Built in the order made,
+// never sorted, so a group keeps its number (and colour) while the pupil works.
+export interface GroupWork {
+    // Object keys per group; a group can be empty for a moment (all its objects taken out).
+    members: string[][];
+    // The group a tap on a free object goes into; null = none started (that tap starts one).
+    active: number | null;
+    // 'group' = a tap puts an object in (or takes it out of) a group; 'colour' = a tap fills or clears its whole group.
+    mode: 'group' | 'colour';
+    // Indices into `members` that are coloured.
+    colored: number[];
+}
+
+export const EMPTY_GROUPS: GroupWork = { members: [], active: null, mode: 'group', colored: [] };
+
+const groupsOf = (state: InteractionState): GroupWork => state.groups ?? EMPTY_GROUPS;
+
+/** The index of the group holding object `key`, or -1. */
+export const groupOf = (work: GroupWork, key: string): number => work.members.findIndex(m => m.includes(key));
+
+/** The state after tapping object `key`: in 'group' mode it joins the active group (a first tap starts group 1) or leaves its group; in 'colour' mode its group is filled or cleared. */
+export function groupTapped(state: InteractionState, key: string): InteractionState {
+    const work = groupsOf(state);
+    const at = groupOf(work, key);
+    if (work.mode === 'colour') {
+        if (at < 0) return state;
+        const colored = work.colored.includes(at) ? work.colored.filter(g => g !== at) : [...work.colored, at];
+        return { ...state, groups: { ...work, colored } };
+    }
+    if (at >= 0) return { ...state, groups: { ...work, members: work.members.map((m, g) => (g === at ? m.filter(k => k !== key) : m)) } };
+    const active = work.active ?? work.members.length;
+    const members = active < work.members.length ? work.members.map((m, g) => (g === active ? [...m, key] : m)) : [...work.members, [key]];
+    return { ...state, groups: { ...work, members, active } };
+}
+
+/** "Nieuw groepje": the active group is done and the next taps fill a new one (an empty active group is reused). */
+export function groupStarted(state: InteractionState): InteractionState {
+    const work = groupsOf(state);
+    if (work.mode === 'group' && work.active !== null && work.members[work.active]?.length === 0) return state;
+    return { ...state, groups: { ...work, mode: 'group', members: [...work.members, []], active: work.members.length } };
+}
+
+/** "Klaar met groepjes": empty groups go (their numbers close up), and taps now colour whole groups. */
+export function groupsDone(state: InteractionState): InteractionState {
+    const work = groupsOf(state);
+    const keep = work.members.flatMap((m, g) => (m.length ? [g] : []));
+    const colored = work.colored.filter(g => keep.includes(g)).map(g => keep.indexOf(g));
+    return { ...state, groups: { members: keep.map(g => work.members[g]), active: null, mode: 'colour', colored } };
+}
+
+/** Back from colouring to building: a tap on a free object starts a new group again. */
+export function groupsEdited(state: InteractionState): InteractionState {
+    return { ...state, groups: { ...groupsOf(state), mode: 'group', active: null } };
+}
+
+/** "Opnieuw": every group and colour gone (typed cells stay). */
+export function groupsCleared(state: InteractionState): InteractionState {
+    return { ...state, groups: undefined };
 }
 
 export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [], build: [] };
@@ -132,6 +194,8 @@ export interface CellDomProps {
     'data-kiosk-key': string;
     'data-kiosk-cell': 'true';
     'data-kiosk-active'?: 'true';
+    // A checked answer marked this cell wrong (marks[key] = 'wrong'); typing in it clears the mark.
+    'data-kiosk-wrong'?: 'true';
     onChange(e: { target: { value: string } }): void;
     onFocus(): void;
 }
@@ -151,10 +215,51 @@ export function cellProps(ctx: ViewerInteraction | null, key: string, label = 'V
         'data-kiosk-key': key,
         'data-kiosk-cell': 'true',
         ...(ctx.activeCell === key && { 'data-kiosk-active': 'true' as const }),
+        ...(ctx.state.marks?.[key] === 'wrong' && { 'data-kiosk-wrong': 'true' as const }),
         onChange: (e) => (ctx.typeCell
             ? ctx.typeCell(key, e.target.value)
             : ctx.set({ ...ctx.state, cells: { ...ctx.state.cells, [key]: cellText(e.target.value) } })),
         onFocus: () => ctx.focusCell?.(key),
+    };
+}
+
+// Group tints in kiosk.css (--kiosk-group-0 …); past the last one they repeat, the number inside tells groups apart.
+export const GROUP_TINTS = 6;
+
+export interface GroupPartDomProps {
+    role: 'button';
+    tabIndex: number;
+    'aria-label': string;
+    'data-kiosk-key': string;
+    'data-kiosk-obj': 'true';
+    'data-kiosk-group'?: number;
+    'data-kiosk-colored'?: 'true';
+    onClick(): void;
+    onKeyDown(e: KeyboardEvent): void;
+}
+
+/** DOM props for one object the pupil groups and colours (breuk van een hoeveelheid); `{}` without a context. `label` is its spoken name. */
+export function groupPartProps(ctx: ViewerInteraction | null, key: string, label: string): GroupPartDomProps | Record<string, never> {
+    if (!ctx) return {};
+    const work = groupsOf(ctx.state);
+    const at = groupOf(work, key);
+    const tap = () => ctx.set(groupTapped(ctx.state, key));
+    const colored = at >= 0 && work.colored.includes(at);
+    return {
+        role: 'button',
+        tabIndex: 0,
+        'aria-label': at < 0 ? label : `${label}, groepje ${at + 1}${colored ? ', gekleurd' : ''}`,
+        'data-kiosk-key': key,
+        'data-kiosk-obj': 'true',
+        ...(at >= 0 && { 'data-kiosk-group': at % GROUP_TINTS }),
+        ...(colored && { 'data-kiosk-colored': 'true' as const }),
+        onClick: tap,
+        onKeyDown: (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            // As interactionProps: the kiosk's window handler must not read this Enter as Controleer.
+            e.preventDefault();
+            tap();
+        },
     };
 }
 
