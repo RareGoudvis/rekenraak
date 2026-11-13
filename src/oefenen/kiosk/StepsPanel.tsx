@@ -4,6 +4,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { HandigStrategy, StepLine } from '../../services/math/workedSteps';
 import { StepLineView } from '../../components/viewer/StepTokens';
 import QuestionSteps from './QuestionSteps';
+import type { RenderStepsVisual } from '../../components/steps/stepsVisuals';
 
 interface Props {
     lines: StepLine[];
@@ -14,11 +15,13 @@ interface Props {
     hint?: string | null;
     // The card shows a correct way as far as `answered` questions go (descriptor solution; a no-op without one).
     onSolution?(answered: number): void;
+    // The type's steps visual (stepsVisualFor), drawn above the lines as far as they are revealed.
+    visual?: RenderStepsVisual;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead, with Alle stappen adding the optional lines. Volgende moves on either way.
-export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution }: Props) {
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual }: Props) {
     const [open, setOpen] = useState(false);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
@@ -41,8 +44,9 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
                         <ListNumbers weight="bold" aria-hidden /> Toon de stappen
                     </button>
                 </>
-            ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} /> : (
+            ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
                 <>
+                    {visual?.(upto + 1)}
                     <ol className="kiosk-steps-lines" aria-live="polite">
                         {shownLines.map(({ l, i }) => (
                             <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>

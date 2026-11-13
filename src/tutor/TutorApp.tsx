@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, CaretRight, QrCode } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { decodeTutor, TUTOR_HASH_PREFIX, type TutorItem, type TutorSheet } from '../services/oefenen/tutorPayload';
-import { breukHoeveelheidSteps, handigSteps, workedSteps, type StepLine } from '../services/math/workedSteps';
+import { handigSteps, workedSteps, type StepLine } from '../services/math/workedSteps';
 import { formatMathNumber, opGlyph } from '../services/math/formatters';
 import { itemLabel } from '../components/viewer/itemNumbering';
 import type { Equation } from '../services/math/types';
 import Scanner from './Scanner';
 import StepsView from './StepsView';
 import QuestionSteps from '../oefenen/kiosk/QuestionSteps';
-import TutorGroups from './TutorGroups';
 import { StepTokens } from '../components/viewer/StepTokens';
+import { codecById } from '../services/steps/tutorCodecs';
+import { stepsVisualFor } from '../components/steps/stepsVisuals';
 
 // The stappenhulp (tutor.html): a sheet's QR → a menu of its sums → one sum's worked steps,
 // revealed a line at a time. It never checks the pupil's work and sends nothing anywhere.
@@ -45,11 +46,13 @@ function sumText(eq: Equation): string {
     return missing >= 0 ? `${lhs} = ${formatMathNumber(eq.answer as number)}` : lhs;
 }
 
-// The sum as printed: a + b, or t/n van g with the breuk stacked.
+type CodecItem = Extract<TutorItem, { kind: 'codec' }>;
+
+// The sum as printed: a + b, or what the type's codec says (t/n van g with the breuk stacked).
 function itemSum(item: TutorItem): ReactNode {
     if (item.kind === 'sum') return sumText(item.eq);
-    const { numerator: t, denominator: n, total: g } = item.ex;
-    return <StepTokens tokens={[{ t: 'frac', n: t, d: n }, { t: 'word', w: ' van ' }, { t: 'num', v: g ?? 0 }]} fmt={formatMathNumber} />;
+    const codec = codecById(item.codec);
+    return codec ? <StepTokens tokens={codec.sum(item.data)} fmt={formatMathNumber} /> : '—';
 }
 
 // The lines a tappable item opens; null keeps it greyed (the sheet said no steps, or this page knows none).
@@ -57,18 +60,19 @@ function itemSteps(item: TutorItem | null): StepLine[] | null {
     if (!item) return null;
     // A sum is worked out here, not taken from the print: a sheet printed before a strategy existed marked it greyed.
     if (item.kind === 'sum') return workedSteps(item.eq);
+    // A codec type keeps the sheet's own decision: its steps may depend on settings the page never sees.
     if (!item.steps) return null;
-    return breukHoeveelheidSteps(item.ex);
+    return codecById(item.codec)?.steps(item.data) ?? null;
 }
 
-// Breuk van een hoeveelheid: the breukvragen beside the objects, which fill in with every revealed answer.
-function HoeveelheidCard({ item, lines }: { item: Extract<TutorItem, { kind: 'hoeveelheid' }>; lines: StepLine[] }) {
-    const [answered, setAnswered] = useState(0);
+// Any codec type: its steps visual above the lines, question steps (breukvragen) or token steps.
+function CodecCard({ item, lines }: { item: CodecItem; lines: StepLine[] }) {
+    const visual = stepsVisualFor(codecById(item.codec)?.typeIds ?? [], item.data, lines, 'tutor');
+    if (!lines.some(l => l.question)) return <StepsView sum={itemSum(item)} lines={lines} visual={visual} />;
     return (
         <div className="tutor-card">
             <div className="tutor-sum">{itemSum(item)}</div>
-            <TutorGroups ex={item.ex} answered={answered} />
-            <QuestionSteps lines={lines} look="tutor" onReveal={setAnswered} />
+            <QuestionSteps lines={lines} look="tutor" visual={visual} />
         </div>
     );
 }
@@ -119,7 +123,7 @@ export default function TutorApp() {
                 <main className="tutor-main">
                     {current.kind === 'sum'
                         ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq)} />
-                        : <HoeveelheidCard key={`${open.g}-${open.i}`} item={current} lines={currentSteps} />}
+                        : <CodecCard key={`${open.g}-${open.i}`} item={current} lines={currentSteps} />}
                 </main>
             </div>
         );

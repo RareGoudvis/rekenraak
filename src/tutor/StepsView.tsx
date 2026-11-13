@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { formatMathNumber } from '../services/math/formatters';
 import type { HandigStrategy, StepLine } from '../services/math/workedSteps';
 import { StepLineView } from '../components/viewer/StepTokens';
+import type { RenderStepsVisual } from '../components/steps/stepsVisuals';
 
 // One sum's worked steps: nothing until the pupil asks, then one Basis line per tap (the newest
 // in blue), with Alle stappen adding the optional in-between lines. SYNC: oefenen StepsPanel.
 // Handig rekenen (compenseren, ontbinden) is an extra view; the standard steps stay the method.
-export default function StepsView({ sum, lines, handig = [] }: { sum: string; lines: StepLine[]; handig?: HandigStrategy[] }) {
+export default function StepsView({ sum, lines, handig = [], visual }: { sum: ReactNode; lines: StepLine[]; handig?: HandigStrategy[]; visual?: RenderStepsVisual }) {
     const [revealed, setRevealed] = useState(0);
     const [alle, setAlle] = useState(false);
     const [showHandig, setShowHandig] = useState(false);
@@ -20,6 +21,7 @@ export default function StepsView({ sum, lines, handig = [] }: { sum: string; li
         <>
             <div className="tutor-card">
                 <div className="tutor-sum">{sum}</div>
+                {visual?.(upto + 1)}
                 {shown.length > 0 ? (
                     <ol className="tutor-lines" aria-live="polite">
                         {shown.map(({ l, i }) => (
