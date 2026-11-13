@@ -81,6 +81,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'Zelf oefenen: duidelijkere namen voor kinderen, en procenten staan apart van kommagetallen.' },
             { kind: 'nieuw', text: 'Oefenmodus, breuk van een hoeveelheid: leerlingen maken zelf gelijke groepjes, kleuren de juiste delen en kunnen de tussenstappen invullen.' },
             { kind: 'gewijzigd', text: 'Breuk van een hoeveelheid: leerlingen kunnen terug naar een groepje om het aan te vullen, en één i-knop zegt wat ze nu moeten doen.' },
+            { kind: 'gewijzigd', text: 'Breuk van een hoeveelheid: groepjes hebben eerst alleen een rand; met Groepjes kiezen kleur je de juiste groepjes in.' },
             {
                 kind: 'nieuw',
                 text: 'Breuk van een hoeveelheid: na een fout in Oefenmodus helpen de vier breukvragen, met eerst een tip en dan het antwoord.',
