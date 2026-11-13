@@ -147,7 +147,7 @@ describe('kiosk screens', () => {
         expect(screen.queryByText('Kans 2 van 2')).toBeNull();
         act(() => fillAnswer(false));
         fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
-        expect(screen.getByRole('status').textContent).toBe('Fout — probeer nog eens');
+        expect(screen.getByRole('status').textContent).toBe('Fout, probeer nog eens');
         act(() => { vi.advanceTimersByTime(FLASH_MS.retry); });
         expect(screen.queryByRole('status')).toBeNull();
         expect(screen.getByText('Kans 2 van 2')).toBeTruthy();

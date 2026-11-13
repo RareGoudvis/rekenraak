@@ -799,7 +799,7 @@ html:has(.oefen-body),
 /* The answer under a flash is hidden, not just covered: its focus ring and corners would peek
    around the overlay, and the keypad would ghost through the pop-in. */
 .kiosk-panel:has(> .kiosk-feedback) > :not(.kiosk-feedback) { visibility: hidden; }
-/* "Fout — probeer nog eens" is a sentence, not a word: one step down so it fits two lines. */
+/* "Fout, probeer nog eens" is a sentence, not a word: one step down so it fits two lines. */
 .kiosk-feedback.is-retry .kiosk-feedback-text { font-size: var(--kiosk-text-lg); }
 /* The wait running out, so a pupil sees the kiosk will move on without a button. */
 .kiosk-feedback-bar {
