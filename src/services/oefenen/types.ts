@@ -108,7 +108,7 @@ export interface KioskInteract<E = unknown> {
     // positietabel's places), never the exercise's answer, so the tray does not hint at it.
     pieces?(ex: E, c: Record<string, unknown>): KioskPiece[];
     // fill-cells: the pupil also groups and colours the card's objects (state.groups); the answer
-    // panel shows the group tools (Nieuw groepje, Klaar met groepjes, Opnieuw) above the keypad.
+    // panel shows the group tools (group chips, Nieuw groepje, Klaar met groepjes, Opnieuw) above the keypad.
     groups?: boolean;
     // The work still missing before an answer counts (no groups, nothing coloured): the first
     // Controleer without it only shows this line and is not an attempt; undefined = nothing missing.
@@ -119,9 +119,6 @@ export interface KioskInteract<E = unknown> {
     // A correct way, for the card in the steps panel; `answered` = breukvragen answered so far
     // (Infinity = all), so the card fills in step by step beside the questions.
     solution?(ex: E, c: Record<string, unknown>, answered: number): InteractionState;
-    // One line of guidance for the answer panel from the pupil's work so far (recheck the groups
-    // once a row is filled); undefined = none.
-    guide?(state: InteractionState, ex: E, c: Record<string, unknown>): string | undefined;
 }
 
 export interface KioskReview {

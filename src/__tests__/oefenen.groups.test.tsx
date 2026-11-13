@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { render, cleanup, fireEvent, screen } from '@testing-library/react';
+import { render, cleanup, fireEvent, screen, act } from '@testing-library/react';
 import type { FractionExercise } from '../services/math/types';
 import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
-import { EMPTY_INTERACTION, groupStarted, groupTapped, groupsCleared, groupsDone, groupsEdited, type InteractionState } from '../components/viewer/ViewerInteractionContext';
-import { hvGuide, hvNudge, hvReview, hvShow, hvSolution } from '../services/fractions/hoeveelheidGroups';
+import { EMPTY_INTERACTION, groupChosen, groupStarted, groupTapped, groupsCleared, groupsDone, groupsEdited, type InteractionState } from '../components/viewer/ViewerInteractionContext';
+import { hvNudge, hvReview, hvShow, hvSolution, hvTips } from '../services/fractions/hoeveelheidGroups';
 import { currentInput, useOefenStore, type KioskCurrent } from '../oefenen/useOefenStore';
 import OefenApp from '../oefenen/OefenApp';
 import { hashOf, resetKiosk, starterSessie } from './helpers/oefenKiosk';
@@ -70,6 +70,58 @@ describe('group work', () => {
         expect(st.groups!.members).toHaveLength(3);
     });
 
+    test('a chip picks a group: free objects join it, its own objects leave it, others move into it', () => {
+        // The class case: 2/4 van 28, groups 1-4 partly built, then back to group 1 for one more.
+        let st = work([6, 6, 6, 6], 0);
+        st = groupsEdited(st);
+        st = groupChosen(st, 0);
+        expect(st.groups).toMatchObject({ active: 0, mode: 'group' });
+        st = groupTapped(st, o(27));
+        expect(st.groups!.members[0]).toEqual([o(0), o(1), o(2), o(3), o(4), o(5), o(27)]);
+        st = groupTapped(st, o(27));
+        expect(st.groups!.members[0]).toHaveLength(6);
+        // An object of group 2 moves into the active group 1.
+        st = groupTapped(st, o(6));
+        expect(st.groups!.members.map(m => m.length)).toEqual([7, 5, 6, 6]);
+        expect(st.groups!.active).toBe(0);
+        // A chip out of range changes nothing.
+        expect(groupChosen(st, 9)).toBe(st);
+    });
+
+    test('with no group picked, a tap on a grouped object picks its group', () => {
+        let st = groupsEdited(work([2, 2], 0));
+        st = groupTapped(st, o(3));
+        expect(st.groups).toMatchObject({ active: 1, members: [[o(0), o(1)], [o(2), o(3)]] });
+    });
+
+    test('empty groups vanish and the numbers stay 1..n; only the active group may be empty', () => {
+        let st = work([1, 2, 2], 0);
+        st = groupsEdited(st);
+        // Moving group 1's only object into group 3 empties group 1: it goes, 2 and 3 become 1 and 2.
+        st = groupChosen(st, 2);
+        st = groupTapped(st, o(0));
+        expect(st.groups!.members).toEqual([[o(1), o(2)], [o(3), o(4), o(0)]]);
+        expect(st.groups!.active).toBe(1);
+        // A new group stays while it is active and empty; picking another group drops it.
+        st = groupStarted(st);
+        expect(st.groups!.members).toHaveLength(3);
+        st = groupChosen(st, 0);
+        expect(st.groups!.members).toHaveLength(2);
+        // Taking the last object out of the active group keeps it (still active) until the pupil moves on.
+        st = groupStarted(st);
+        st = groupTapped(st, o(5));
+        st = groupTapped(st, o(5));
+        expect(st.groups!.members).toHaveLength(3);
+        st = groupChosen(st, 1);
+        expect(st.groups!.members).toHaveLength(2);
+        // Colour follows its group when the numbers close up.
+        let c = groupsDone(work([1, 2, 2], 0));
+        c = groupTapped(c, o(3));
+        c = groupChosen(c, 2);
+        c = groupTapped(c, o(0));
+        expect(c.groups!.colored).toEqual([1]);
+    });
+
     test('Klaar drops empty groups; colour mode fills or clears a whole group; editing and Opnieuw', () => {
         let st = groupTapped(groupStarted(groupTapped(EMPTY_INTERACTION, o(0))), o(1));
         st = groupStarted(st);
@@ -111,7 +163,7 @@ describe('check', () => {
     });
 });
 
-describe('nudge, review, guide, stats', () => {
+describe('nudge, review, tips, stats', () => {
     test('nudge: groups first, then colour; none once both are there', () => {
         expect(hvNudge(given({ ...EMPTY_INTERACTION, cells: { a: '21' } }))).toBe('Maak eerst de groepjes en kleur de delen.');
         expect(hvNudge(given(work([7, 7, 7, 7], 0, { a: '21' })))).toBe('Kleur eerst de delen.');
@@ -129,10 +181,16 @@ describe('nudge, review, guide, stats', () => {
         expect(r(work([8, 6, 7, 7], 3, { a: '21', r2: '6' })).marks).toEqual({ r2: 'wrong' });
     });
 
-    test('guide: once row 1 is filled, make or recheck the groups (the pupil\'s own numbers)', () => {
-        expect(hvGuide({ ...EMPTY_INTERACTION, cells: { r0: '28', r1: '4', r2: '7' } }, E)).toBe('Maak nu 4 groepjes van 7 bolletjes.');
-        expect(hvGuide(work([7, 7, 7, 7], 0, { r0: '28', r1: '4', r2: '6' }), E)).toBe('Kijk je groepjes na: zitten er 6 bolletjes in elk groepje?');
-        expect(hvGuide(work([7, 7, 7, 7], 0, { r0: '28', r1: '4', r2: '7', r3: '3' }), E)).toBe('Tik op een groepje om het te kleuren.');
+    test('tips: the breukvragen per row and answer; the objects\' tip uses the pupil\'s own row 1', () => {
+        const q = (spot: Parameters<typeof hvTips>[0], st: InteractionState = EMPTY_INTERACTION) => hvTips(spot, E, st).map(t => t.question);
+        expect(q('row1')).toEqual(['Hoeveel is het geheel?', 'In hoeveel moet je het delen?', 'Hoeveel is één deel?']);
+        expect(q('row2')[0]).toBe('Hoeveel keer moet je dat deel nemen?');
+        expect(q('answer')).toEqual(['Hoeveel is 3/4 van 28?']);
+        const recheck = (st: InteractionState) => hvTips('objects', E, st).at(-1)!.hint;
+        expect(recheck(EMPTY_INTERACTION)).toBe('Vul de eerste rij in. Dan kun je nakijken of elk groepje evenveel bolletjes heeft.');
+        // A wrong row 1 shows the pupil's 6, never the right 7.
+        expect(recheck(work([7, 7, 7, 7], 0, { r0: '28', r1: '4', r2: '6' }))).toBe('Je eerste rij zegt 4 groepjes. Zitten er 6 bolletjes in elk groepje?');
+        expect(hvTips('objects', E, work([7, 7, 7, 7], 0))[0].question).toBe('Hoeveel groepjes kleur je?');
     });
 
     test('stats show the answer with the groups behind it', () => {
@@ -235,7 +293,7 @@ describe('kiosk card: build groups and colour with taps', () => {
     beforeEach(resetKiosk);
     afterEach(cleanup);
 
-    test('Nieuw groepje, taps, Klaar met groepjes, colour, then Controleer is juist', () => {
+    test('+ Nieuw groepje, taps, Klaar met groepjes, colour, then Controleer is juist', () => {
         st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
         st().start();
         onCard(ex(1, 3, 6));
@@ -243,13 +301,13 @@ describe('kiosk card: build groups and colour with taps', () => {
         const obj = (i: number) => container.querySelector<HTMLElement>(`.kiosk-card [data-kiosk-obj][data-kiosk-key="o${i}"]`)!;
         expect(container.querySelectorAll('.kiosk-card [data-kiosk-obj]')).toHaveLength(6);
         expect(container.querySelectorAll('.kiosk-card input[data-kiosk-cell]')).toHaveLength(7);
-        fireEvent.click(screen.getByRole('button', { name: 'Nieuw groepje' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ Nieuw groepje' }));
         fireEvent.click(obj(0)); fireEvent.click(obj(1));
         expect(obj(0).getAttribute('data-kiosk-group')).toBe('0');
-        expect(screen.getByText('Groepje 1')).toBeTruthy();
-        fireEvent.click(screen.getByRole('button', { name: 'Nieuw groepje' }));
+        expect(screen.getByRole('button', { name: 'Groepje 1' }).getAttribute('aria-pressed')).toBe('true');
+        fireEvent.click(screen.getByRole('button', { name: '+ Nieuw groepje' }));
         fireEvent.click(obj(2)); fireEvent.click(obj(3));
-        fireEvent.click(screen.getByRole('button', { name: 'Nieuw groepje' }));
+        fireEvent.click(screen.getByRole('button', { name: '+ Nieuw groepje' }));
         fireEvent.click(obj(4)); fireEvent.click(obj(5));
         // A second tap takes an object out again; a third puts it back.
         fireEvent.click(obj(5));
@@ -257,7 +315,7 @@ describe('kiosk card: build groups and colour with taps', () => {
         fireEvent.click(obj(5));
         expect(obj(5).getAttribute('data-kiosk-group')).toBe('2');
         fireEvent.click(screen.getByRole('button', { name: 'Klaar met groepjes' }));
-        expect(screen.getByText('Tik op een groepje om het te kleuren.')).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Groepje 1' })).toBeNull();
         fireEvent.click(obj(3));
         expect(obj(2).getAttribute('data-kiosk-colored')).toBe('true');
         expect(obj(3).getAttribute('data-kiosk-colored')).toBe('true');
@@ -279,5 +337,64 @@ describe('kiosk card: build groups and colour with taps', () => {
         fireEvent.click(container.querySelector<HTMLElement>('.kiosk-card [data-kiosk-key="o0"]')!);
         fireEvent.click(screen.getByRole('button', { name: 'Opnieuw' }));
         expect(container.querySelectorAll('.kiosk-card [data-kiosk-group]')).toHaveLength(0);
+    });
+
+    test('the class case: back to group 1 with its chip and add an object; an empty new group never stays', () => {
+        st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
+        st().start();
+        onCard(ex(2, 4, 28));
+        const { container } = render(<OefenApp />);
+        const obj = (i: number) => container.querySelector<HTMLElement>(`.kiosk-card [data-kiosk-obj][data-kiosk-key="o${i}"]`)!;
+        const chip = (n: number) => screen.queryByRole('button', { name: `Groepje ${n}` });
+        let at = 0;
+        for (let g = 0; g < 4; g++) {
+            fireEvent.click(screen.getByRole('button', { name: '+ Nieuw groepje' }));
+            for (let i = 0; i < 6; i++) fireEvent.click(obj(at++));
+        }
+        // "Groepje 5" started by mistake, then the pupil goes back to group 1: 5 vanishes.
+        fireEvent.click(screen.getByRole('button', { name: '+ Nieuw groepje' }));
+        expect(chip(5)).toBeTruthy();
+        fireEvent.click(chip(1)!);
+        expect(chip(5)).toBeNull();
+        expect(chip(1)!.getAttribute('aria-pressed')).toBe('true');
+        fireEvent.click(obj(24));
+        expect(obj(24).getAttribute('data-kiosk-group')).toBe('0');
+        // A tap on group 2's object moves it into group 1; tapping it again takes it out.
+        fireEvent.click(obj(6));
+        expect(obj(6).getAttribute('data-kiosk-group')).toBe('0');
+        fireEvent.click(obj(6));
+        expect(obj(6).hasAttribute('data-kiosk-group')).toBe(false);
+        expect(st().interaction.groups!.members.map(m => m.length)).toEqual([7, 5, 6, 6]);
+    });
+
+    test('no hint text in the panel; an "i" shows its breukvragen on a tap and a tap elsewhere closes it', () => {
+        st().load(hashOf(starterSessie({ types: [hoeveelheidType()] })));
+        st().start();
+        onCard(ex(1, 3, 6));
+        const { container } = render(<OefenApp />);
+        fireEvent.click(container.querySelector<HTMLElement>('.kiosk-card [data-kiosk-key="o0"]')!);
+        act(() => st().setInteraction({ ...st().interaction, cells: { r0: '6', r1: '3', r2: '2' } }));
+        expect(screen.queryByText(/Hoeveel is het geheel\?/)).toBeNull();
+        expect(screen.queryByText(/Kijk je groepjes na/)).toBeNull();
+        expect(screen.queryByText(/Zitten er 2 bolletjes/)).toBeNull();
+        expect(screen.queryByRole('tooltip')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de eerste rij' }));
+        expect(screen.getByRole('tooltip').textContent).toContain('Hoeveel is het geheel?');
+        expect(screen.getByRole('tooltip').textContent).toContain('Kijk naar de noemer.');
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('tooltip')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de groepjes' }));
+        expect(screen.getByRole('tooltip').textContent).toContain('Je eerste rij zegt 3 groepjes. Zitten er 2 bolletjes in elk groepje?');
+        // A tap on the bubble closes it (on click, so the tap never falls through to what it covers).
+        fireEvent.pointerDown(screen.getByRole('tooltip'));
+        expect(screen.queryByRole('tooltip')).toBeTruthy();
+        fireEvent.click(screen.getByRole('tooltip'));
+        expect(screen.queryByRole('tooltip')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de groepjes' }));
+        // A second tap on the same "i" closes it again.
+        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij de groepjes' }));
+        expect(screen.queryByRole('tooltip')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Hulp bij het antwoord' }));
+        expect(screen.getByRole('tooltip').textContent).toContain('Hoeveel is 1/3 van 6?');
     });
 });

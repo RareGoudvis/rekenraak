@@ -111,19 +111,39 @@ export function hvSolution(ex: FractionExercise, answered: number): InteractionS
     return { ...EMPTY_INTERACTION, cells, groups: { members, active: null, mode: 'colour', colored } };
 }
 
-/** The panel's guidance from the pupil's own work: what a tap does now, and once row 1 is filled, make or recheck the groups. */
-export function hvGuide(state: InteractionState, ex: FractionExercise): string | undefined {
+// One breukvraag with its hint, for the card's "i" bubbles.
+export interface HvTip { question: string; hint: string }
+
+// Where an "i" sits on the card: by the objects, by each working row, by the answer.
+export type HvTipSpot = 'objects' | 'row1' | 'row2' | 'answer';
+
+const filled = (state: InteractionState, k: string) => (state.cells[k] ?? '').trim();
+
+/** The breukvragen and hints behind one "i" on the card; the objects' tip uses the pupil's own row 1 (never the answer). */
+export function hvTips(spot: HvTipSpot, ex: FractionExercise, state: InteractionState): HvTip[] {
     const word = hvWord(ex);
-    const work = state.groups;
-    const made = (work?.members ?? []).some(m => m.length > 0);
-    const [, n, p] = ['r0', 'r1', 'r2'].map(k => (state.cells[k] ?? '').trim());
-    const row1 = ['r0', 'r1', 'r2'].every(k => (state.cells[k] ?? '').trim() !== '');
-    const row2 = ['r3', 'r4', 'r5'].some(k => (state.cells[k] ?? '').trim() !== '');
-    // Only the pupil's own values: the line never tells the answer.
-    if (row1 && !row2) return made ? `Kijk je groepjes na: zitten er ${p} ${word} in elk groepje?` : `Maak nu ${n} groepjes van ${p} ${word}.`;
-    if (work?.mode === 'colour') return 'Tik op een groepje om het te kleuren.';
-    if (work?.active != null) return `Tik op ${word} om ze in dit groepje te zetten. Nog eens tikken haalt er een uit.`;
-    return made ? `Tik op ${word} voor een nieuw groepje.` : `Tik op Nieuw groepje of op ${word} om een groepje te maken.`;
+    if (spot === 'row1') return [
+        { question: ROW_QUESTIONS.r0, hint: "Welk getal staat na 'van'?" },
+        { question: ROW_QUESTIONS.r1, hint: 'Kijk naar de noemer.' },
+        { question: ROW_QUESTIONS.r2, hint: 'Deel het geheel door de noemer.' },
+    ];
+    if (spot === 'row2') return [
+        { question: ROW_QUESTIONS.r3, hint: 'Kijk naar de teller.' },
+        { question: ROW_QUESTIONS.r4, hint: 'Dat staat al in je eerste rij.' },
+        { question: ROW_QUESTIONS.r5, hint: 'Reken: zoveel keer één deel.' },
+    ];
+    if (spot === 'answer') return [{ question: hvQuestion(HV_ANSWER, ex), hint: `Tel de ${word} in de gekleurde groepjes. Of kijk naar je tweede rij.` }];
+    const n = filled(state, 'r1'), p = filled(state, 'r2');
+    // After row 1: a check with the pupil's own numbers, so a wrong row never shows the right one.
+    const recheck: HvTip = n && p
+        ? { question: 'Kloppen je groepjes?', hint: `Je eerste rij zegt ${n} groepjes. Zitten er ${p} ${word} in elk groepje?` }
+        : { question: 'Kloppen je groepjes?', hint: `Vul de eerste rij in. Dan kun je nakijken of elk groepje evenveel ${word} heeft.` };
+    if (state.groups?.mode === 'colour') return [{ question: 'Hoeveel groepjes kleur je?', hint: 'Kijk naar de teller. Tik op een groepje om het te kleuren.' }, recheck];
+    return [
+        { question: 'Hoe maak je gelijke groepjes?', hint: `De noemer zegt hoeveel groepjes je maakt. Elk groepje krijgt evenveel ${word}.` },
+        { question: 'Hoe tik je?', hint: `Kies een groepje met zijn nummer. Tik op ${word} om ze erin te leggen. Nog eens tikken haalt er een uit.` },
+        recheck,
+    ];
 }
 
 /** Stats text of an answer string: the answer, then the groups behind it. */

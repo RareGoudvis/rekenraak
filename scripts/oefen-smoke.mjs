@@ -67,7 +67,7 @@ const CASES = [
     { kind: 'tap-multi', id: 'breuken-kleuren-onecht', leafId: 'breuken-kleuren', over: { allowImproper: true } },
     { kind: 'order', leafId: 'getalbegrip-ordenen-nat', over: {} },
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
-    // Breuk van een hoeveelheid: tap the objects into equal groups (Nieuw groepje between them), Klaar, colour, rows + answer.
+    // Breuk van een hoeveelheid: tap the objects into equal groups (Nieuw groepje between them, group 1 finished last via its chip), Klaar, colour, rows + answer.
     { kind: 'fill-cells', id: 'breuken-hoeveelheid-groepjes', leafId: 'breuken-hoeveelheid', over: {}, header: /^Verdeel in gelijke groepjes en kleur \d+\/\d+\.$/ },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
     { kind: 'build', id: 'mab-tekenen', leafId: 'mab-tekenen', over: {} },
@@ -276,12 +276,19 @@ async function enter(page, card, c) {
             for (const k of card.tap) await page.locator(`.kiosk-card [data-kiosk-key="${k}"]`).first().click();
         } else if (card.cells) {
             if (card.groups) {
-                const tools = page.locator('.kiosk-groups-actions button');
+                const tools = page.locator('.kiosk-groups button');
                 const obj = (k) => page.locator(`.kiosk-card [data-kiosk-obj][data-kiosk-key="${k}"]`);
+                const first = card.groups.members[0];
+                const short = first.length > 1;
+                // Group 1 is left one short, then finished after the others via its chip (the class case: back to an earlier group).
                 for (const [g, members] of card.groups.members.entries()) {
-                    await tools.filter({ hasText: /^Nieuw groepje$/ }).click();
-                    for (const k of members) await obj(k).click();
-                    if (g === 0 && await page.locator('.kiosk-group-chip').innerText() !== 'Groepje 1') throw new Error('no Groepje 1 chip');
+                    await tools.filter({ hasText: /Nieuw groepje$/ }).click();
+                    for (const k of g === 0 && short ? members.slice(0, -1) : members) await obj(k).click();
+                    if (g === 0 && await page.locator('.kiosk-group-chip[aria-pressed="true"]').innerText() !== '1') throw new Error('no active chip 1');
+                }
+                if (short) {
+                    await page.getByRole('button', { name: 'Groepje 1', exact: true }).click();
+                    await obj(first[first.length - 1]).click();
                 }
                 await tools.filter({ hasText: /^Klaar met groepjes$/ }).click();
                 for (const g of card.groups.colored) await obj(card.groups.members[g][0]).click();
