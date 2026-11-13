@@ -1,4 +1,4 @@
-import type { Equation, MathBlock } from '../math/types';
+import type { Equation, FractionExercise, MathBlock } from '../math/types';
 import { packText, unpackText } from './session';
 
 type ItemNumberingMode = MathBlock['itemNumbering'];
@@ -7,10 +7,13 @@ type ItemNumberingMode = MathBlock['itemNumbering'];
 // their worked steps without reading any print. Exact numbers, never a seed: teachers edit
 // operands by hand and generators change between releases.
 //   wire: [1, groups]   group: [opdracht number | 0, title, numbering, items]
-//   item: [a, b] for a plain a + b (most of a page, so it stays short), else
-//         [ops, operands, missing index | -1, answer?], or 0 for a sum without worked steps (a breuk,
-//         a compenseren preset, a tafel). That is decided here, where the block's settings are known:
-//         the tutor page only sees bare sums and would otherwise show rijgen for every one.
+//   item: [a, b] for a plain a + b (most of a page, so it stays short), [a, b, op] for another plain sum, else
+//         [ops, operands, missing index | -1, answer?, variant?], or ['h', t, n, g] for t/n van g
+//         (breuk van een hoeveelheid). A sum without worked steps (a tafel, 983 + 2) is shown, never
+//         opened: a string '983+2' / '36x?=144', or any item wrapped once ([['h', 2, 3, 10]]).
+//         0 = a sum the QR cannot carry (a breuk operand; every no-steps sum before 2026-11-13).
+//         Steps are decided here, where the block's settings are known: the tutor page only sees
+//         bare sums and would otherwise show rijgen for every one.
 
 export const TUTOR_HASH_PREFIX = '#t=';
 // The production stappenhulp; the fallback when the sheet is printed from a non-https origin (a dev server).
@@ -35,11 +38,17 @@ function answerOf(ops: string, operands: number[]): number {
     return Number(fold.toFixed(6));
 }
 
+// steps false: printed on the list, greyed, never opened (the sheet's own rule said no steps).
+export type TutorItem =
+    | { kind: 'sum'; eq: Equation; steps: boolean }
+    | { kind: 'hoeveelheid'; ex: FractionExercise; steps: boolean };
+
 export interface TutorGroup {
     n: number | null;
     title: string;
     numbering: ItemNumberingMode;
-    items: (Equation | null)[];
+    // null: a placeholder that keeps the next sum on its printed label.
+    items: (TutorItem | null)[];
 }
 
 export interface TutorSheet {
@@ -56,25 +65,80 @@ function variantOf(block: MathBlock, eq: Equation): string | undefined {
     return (block.constraints as { preset?: string } | undefined)?.preset === 'compenseren' ? `${eq.operator}:compenseren` : undefined;
 }
 
-function itemOut(eq: Equation, variant?: string): unknown {
-    if (!eq?.operands?.every(o => typeof o === 'number' && Number.isFinite(o))) return 0;
+const HOEVEELHEID = 'h';
+const MAX_HOEVEELHEID = 100_000;
+
+const isSum = (ex: unknown): ex is Equation =>
+    Array.isArray((ex as Equation | undefined)?.operands) && (ex as Equation).operands.every(o => typeof o === 'number' && Number.isFinite(o));
+const isHoeveelheid = (ex: unknown): ex is FractionExercise => {
+    const f = ex as FractionExercise | undefined;
+    return f?.subType === 'hoeveelheid' && [f.numerator, f.denominator, f.total].every(v => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_HOEVEELHEID);
+};
+
+// Whether the stappenhulp can show this exercise at all (a hoofdrekenen sum or a breuk van een hoeveelheid).
+export function tutorCarries(ex: unknown): boolean {
+    return isSum(ex) || isHoeveelheid(ex);
+}
+
+function sumOut(eq: Equation, variant?: string): unknown {
     const ops = eq.operators && eq.operators.length > 1 ? eq.operators.join('') : eq.operator;
     const missing = missingOf(eq);
-    if (!variant && ops === '+' && eq.operands.length === 2 && missing < 0) return eq.operands;
+    if (!variant && eq.operands.length === 2 && missing < 0) return ops === '+' ? eq.operands : [...eq.operands, ops];
     // The answer only travels for a puntoefening, where the tutor prints it as the given part.
     const answer = missing >= 0 && typeof eq.answer === 'number' ? eq.answer : null;
     if (variant) return [ops, eq.operands, missing, answer, variant];
     return answer !== null ? [ops, eq.operands, missing, answer] : [ops, eq.operands, missing];
 }
 
-/** One page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on it has steps. */
-export function encodeTutorPage(blocks: { block: MathBlock; n: number | null; title: string }[], hasSteps: (block: MathBlock, ex: Equation) => boolean): string | null {
+// A no-steps sum as it reads ('428-176', '36x?=144'): the shortest form, and most of such a page is these.
+const NUM = String.raw`\d+(?:\.\d+)?`;
+const SUM_STRING_RE = new RegExp(String.raw`^(?:${NUM}|\?)(?:[-+x:](?:${NUM}|\?)){1,3}(?:=${NUM})?$`);
+const TERM_RE = new RegExp(String.raw`([-+x:])?(${NUM}|\?)`, 'g');
+
+function sumString(eq: Equation): string | null {
+    const ops = eq.operators && eq.operators.length > 1 ? eq.operators : eq.operands.slice(1).map(() => eq.operator);
+    const missing = missingOf(eq);
+    const text = eq.operands.map((o, i) => (i === missing ? '?' : String(o))).reduce((acc, t, i) => `${acc}${ops[i - 1]}${t}`)
+        + (missing >= 0 ? `=${eq.answer}` : '');
+    // Anything the string cannot say exactly (an exponent, a negative number) travels as a wrapped item instead.
+    const back = sumFromString(text);
+    return back && back.operands.every((o, i) => i === missing || o === eq.operands[i]) ? text : null;
+}
+
+function sumFromString(text: string): Equation | null {
+    if (text.length > 40 || !SUM_STRING_RE.test(text)) return null;
+    const [lhs, answer] = text.split('=');
+    const terms = [...lhs.matchAll(TERM_RE)];
+    const open = terms.flatMap((m, i) => (m[2] === '?' ? [i] : []));
+    // Only a puntoefening has an open place, and it always carries its answer.
+    if (open.length > 1 || (open.length === 1) !== (answer !== undefined)) return null;
+    try {
+        return sumIn([terms.slice(1).map(m => m[1]).join(''), terms.map(m => (m[2] === '?' ? 0 : Number(m[2]))), open[0] ?? -1, answer === undefined ? null : Number(answer)]);
+    } catch { return null; }
+}
+
+function itemOut(block: MathBlock, ex: unknown, steps: boolean, greyed: boolean): { wire: unknown; steps: boolean } {
+    if (!steps && !greyed) return { wire: 0, steps: false };
+    if (isSum(ex) && !steps) return { wire: sumString(ex) ?? [sumOut(ex)], steps: false };
+    const wire = isSum(ex) ? sumOut(ex, variantOf(block, ex))
+        : isHoeveelheid(ex) ? [HOEVEELHEID, ex.numerator, ex.denominator, ex.total]
+        : 0;
+    return { wire: wire !== 0 && !steps ? [wire] : wire, steps: wire !== 0 && steps };
+}
+
+/** One page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on it has steps.
+ *  `exercises` is the block's own list (its registry field); absent = the hoofdrekenen `exercises`.
+ *  greyed false leaves the sums without steps out (a 0 each), for a page too full for the QR otherwise. */
+export function encodeTutorPage(
+    blocks: { block: MathBlock; n: number | null; title: string; exercises?: unknown[] }[],
+    hasSteps: (block: MathBlock, ex: unknown) => boolean,
+    { greyed = true }: { greyed?: boolean } = {},
+): string | null {
     const groups = blocks
-        .filter(({ block }) => (block.exercises?.length ?? 0) > 0)
-        .map(({ block, n, title }) => {
+        .map(({ block, n, title, exercises }) => {
             // Placeholders keep each sum on its printed label (a, b, c ...) even when a neighbour has no steps.
-            const items = block.exercises.map(ex => (hasSteps(block, ex) ? itemOut(ex, variantOf(block, ex)) : 0));
-            return items.some(it => it !== 0) ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items] : null;
+            const items = (exercises ?? block.exercises ?? []).map(ex => itemOut(block, ex, hasSteps(block, ex), greyed));
+            return items.some(it => it.steps) ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items.map(it => it.wire)] : null;
         })
         .filter(g => g !== null);
     return groups.length ? packText(JSON.stringify([TUTOR_VERSION, groups])) : null;
@@ -82,10 +146,30 @@ export function encodeTutorPage(blocks: { block: MathBlock; n: number | null; ti
 
 const bad = (why: string): never => { throw new Error(`Deze QR-code kan niet gelezen worden (${why}).`); };
 
-function itemIn(raw: unknown): Equation | null {
+function hoeveelheidIn(raw: unknown[]): FractionExercise {
+    const [, t, n, g] = raw;
+    if (raw.length !== 4 || ![t, n, g].every(v => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_HOEVEELHEID)) return bad('breuk');
+    return { id: '', subType: 'hoeveelheid', numerator: t as number, denominator: n as number, total: g as number, isManuallyEdited: false };
+}
+
+function itemIn(raw: unknown): TutorItem | null {
     if (raw === 0) return null;
+    if (typeof raw === 'string') {
+        const eq = sumFromString(raw);
+        return eq ? { kind: 'sum', eq, steps: false } : bad('oefening');
+    }
     if (!Array.isArray(raw)) return bad('oefening');
-    const [ops, operands, missing, answer, variant] = typeof raw[0] === 'number' && raw.length === 2 ? ['+', raw, -1, undefined, undefined] : raw;
+    // A sum without steps travels wrapped once: the list prints it, greyed.
+    const steps = !(raw.length === 1 && Array.isArray(raw[0]));
+    const inner = steps ? raw : raw[0] as unknown[];
+    if (inner[0] === HOEVEELHEID) return { kind: 'hoeveelheid', ex: hoeveelheidIn(inner), steps };
+    return { kind: 'sum', eq: sumIn(inner), steps };
+}
+
+function sumIn(raw: unknown[]): Equation {
+    // [a, b] is a plain a + b, [a, b, op] any other plain two-number sum (since 2026-11-13).
+    const short = typeof raw[0] === 'number' && (raw.length === 2 || (raw.length === 3 && typeof raw[2] === 'string'));
+    const [ops, operands, missing, answer, variant] = short ? [raw[2] ?? '+', raw.slice(0, 2), -1, undefined, undefined] : raw;
     if (variant !== undefined && (typeof variant !== 'string' || !VARIANT_RE.test(variant))) return bad('strategie');
     if (typeof ops !== 'string' || ops.length === 0 || ![...ops].every(o => OPS.has(o))) return bad('bewerking');
     if (!Array.isArray(operands) || operands.length < 2 || operands.length > 4 || !operands.every(o => typeof o === 'number' && Number.isFinite(o))) return bad('getallen');

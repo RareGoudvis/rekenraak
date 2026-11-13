@@ -11,9 +11,13 @@ import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
 import TutorQr from './TutorQr';
 import { encodeTutorPage } from '../../services/oefenen/tutorPayload';
-import { blockHasTutorSteps, stepsFor } from '../../services/stepsAvailability';
+import { blockHasTutorSteps, exercisesOf, stepsFor } from '../../services/stepsAvailability';
 import EmptySheetHero from './EmptySheetHero';
+import type { MathBlock } from '../../services/math/types';
 import SheetBlock from './SheetBlock';
+
+// The sheet's own rule for the stappenhulp QR: steps under the block's own settings.
+const tutorHasSteps = (block: MathBlock, ex: unknown) => stepsFor(block.typeId, ex, block.constraints) !== null;
 
 // The page stack: one PageSheet per packed page, every cell placed where the packer put it.
 export default function SheetPages({ packedPages, blockOrder, measured, dnd, onOpenSplit }: {
@@ -133,15 +137,19 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           onFitBlock={fitBlockToPage}
           onSplitBlock={(blockId, anchor) => onOpenSplit(blockId, anchor)}
           header={<SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} continuation={pi > 0} />}
-          footer={tutorQr ? (
-            <div className="tutor-qr-foot">
-              <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />
-              <TutorQr payload={encodeTutorPage(
-                page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '' })),
-                (block, ex) => stepsFor(block.typeId, ex, block.constraints) !== null,
-              )} caption={docSettings.tutorQrCaption !== false} />
-            </div>
-          ) : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
+          footer={tutorQr ? (() => {
+            const tutorBlocks = page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises: exercisesOf(block) }));
+            return (
+              <div className="tutor-qr-foot">
+                <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />
+                <TutorQr
+                  payload={encodeTutorPage(tutorBlocks, tutorHasSteps)}
+                  lean={encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false })}
+                  caption={docSettings.tutorQrCaption !== false}
+                />
+              </div>
+            );
+          })() : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
         >
           {blocks.length === 0 && pi === 0 && (
             <EmptySheetHero />

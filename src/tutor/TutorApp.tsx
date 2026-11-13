@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, CaretRight, QrCode } from '@phosphor-icons/react';
-import { decodeTutor, TUTOR_HASH_PREFIX, type TutorSheet } from '../services/oefenen/tutorPayload';
-import { handigSteps, workedSteps } from '../services/math/workedSteps';
+import type { ReactNode } from 'react';
+import { decodeTutor, TUTOR_HASH_PREFIX, type TutorItem, type TutorSheet } from '../services/oefenen/tutorPayload';
+import { breukHoeveelheidSteps, handigSteps, workedSteps, type StepLine } from '../services/math/workedSteps';
 import { formatMathNumber, opGlyph } from '../services/math/formatters';
 import { itemLabel } from '../components/viewer/itemNumbering';
 import type { Equation } from '../services/math/types';
 import Scanner from './Scanner';
 import StepsView from './StepsView';
+import QuestionSteps from '../oefenen/kiosk/QuestionSteps';
+import { StepTokens } from '../components/viewer/StepTokens';
 
 // The stappenhulp (tutor.html): a sheet's QR → a menu of its sums → one sum's worked steps,
 // revealed a line at a time. It never checks the pupil's work and sends nothing anywhere.
@@ -39,6 +42,19 @@ function sumText(eq: Equation): string {
     const terms = eq.operands.map((o, i) => (i === missing ? '…' : formatMathNumber(o as number)));
     const lhs = terms.reduce((acc, t, i) => `${acc} ${opGlyph(ops[i - 1])} ${t}`);
     return missing >= 0 ? `${lhs} = ${formatMathNumber(eq.answer as number)}` : lhs;
+}
+
+// The sum as printed: a + b, or t/n van g with the breuk stacked.
+function itemSum(item: TutorItem): ReactNode {
+    if (item.kind === 'sum') return sumText(item.eq);
+    const { numerator: t, denominator: n, total: g } = item.ex;
+    return <StepTokens tokens={[{ t: 'frac', n: t, d: n }, { t: 'word', w: ' van ' }, { t: 'num', v: g ?? 0 }]} fmt={formatMathNumber} />;
+}
+
+// The lines a tappable item opens; null keeps it greyed (the sheet said no steps, or this page knows none).
+function itemSteps(item: TutorItem | null): StepLine[] | null {
+    if (!item?.steps) return null;
+    return item.kind === 'sum' ? workedSteps(item.eq) : breukHoeveelheidSteps(item.ex);
 }
 
 export default function TutorApp() {
@@ -74,7 +90,8 @@ export default function TutorApp() {
 
     const { groups } = state.sheet;
     const current = open ? groups[open.g]?.items[open.i] : null;
-    if (open && current) {
+    const currentSteps = itemSteps(current ?? null);
+    if (open && current && currentSteps) {
         const g = groups[open.g];
         const label = itemLabel(g.numbering, open.i) ?? `oefening ${open.i + 1}`;
         return (
@@ -84,7 +101,14 @@ export default function TutorApp() {
                     <h1>{g.n ? `Opdracht ${g.n} · ` : ''}{label}</h1>
                 </header>
                 <main className="tutor-main">
-                    <StepsView key={`${open.g}-${open.i}`} sum={sumText(current)} lines={workedSteps(current) ?? []} handig={handigSteps(current)} />
+                    {current.kind === 'sum'
+                        ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq)} />
+                        : (
+                            <div className="tutor-card" key={`${open.g}-${open.i}`}>
+                                <div className="tutor-sum">{itemSum(current)}</div>
+                                <QuestionSteps lines={currentSteps} look="tutor" />
+                            </div>
+                        )}
                 </main>
             </div>
         );
@@ -99,22 +123,22 @@ export default function TutorApp() {
                     <section key={gi} className="tutor-group">
                         <h2>{g.n ? `Opdracht ${g.n}` : 'Opdracht'}{g.title ? ` · ${g.title}` : ''}</h2>
                         <ul className="tutor-list">
-                            {g.items.map((eq, i) => {
+                            {g.items.map((item, i) => {
                                 const label = itemLabel(g.numbering, i) ?? `${i + 1}.`;
-                                const steps = eq ? workedSteps(eq) : null;
+                                const steps = itemSteps(item);
                                 return (
                                     <li key={i}>
                                         {steps ? (
                                             <button type="button" className="tutor-item" onClick={() => setOpen({ g: gi, i })}>
                                                 <span className="tutor-item-label">{label}</span>
-                                                <span className="tutor-item-sum">{sumText(eq!)}</span>
+                                                <span className="tutor-item-sum"><span>{itemSum(item!)}</span></span>
                                                 <CaretRight aria-hidden />
                                             </button>
                                         ) : (
                                             <div className="tutor-item is-off">
                                                 <span className="tutor-item-label">{label}</span>
                                                 <span className="tutor-item-sum">
-                                                    {eq ? sumText(eq) : '—'}
+                                                    {item ? <span>{itemSum(item)}</span> : '—'}
                                                     <small>Hiervoor zijn nog geen stappen</small>
                                                 </span>
                                             </div>

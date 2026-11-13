@@ -111,8 +111,8 @@ describe('met rest, when there are no steps', () => {
 describe('met rest through the stappenhulp QR', () => {
     it('decodes back to the same rest and the same steps', () => {
         const block = { ...makeBlock('hr-std-delen', { id: 'b' }), exercises: [rest(55, 6), rest(235, 3)] } as MathBlock;
-        const hash = encodeTutorPage([{ block, n: 1, title: 'Delen' }], (_b, ex) => workedSteps(ex) !== null)!;
-        const items = decodeTutor(`#t=${hash}`).groups[0].items;
+        const hash = encodeTutorPage([{ block, n: 1, title: 'Delen' }], (_b, ex) => workedSteps(ex as Equation) !== null)!;
+        const items = decodeTutor(`#t=${hash}`).groups[0].items.map(i => (i?.kind === 'sum' ? i.eq : null));
         expect(items.map(e => [e!.answer, e!.remainder])).toEqual([[9, 1], [78, 1]]);
         expect(lines(items[0]!)).toEqual(lines(rest(55, 6)));
     });

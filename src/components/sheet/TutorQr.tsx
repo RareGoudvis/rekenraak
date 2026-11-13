@@ -7,11 +7,17 @@ import { TUTOR_HASH_PREFIX, tutorUrlFor } from '../../services/oefenen/tutorPayl
 const QR_PX = 98;
 const MAX_VERSION = 13;
 
+const matrixFor = (payload: string): boolean[][] | null => {
+    const matrix = qrMatrixOrNull(tutorUrlFor(window.location.origin) + TUTOR_HASH_PREFIX + payload);
+    return matrix && qrVersionOf(matrix) <= MAX_VERSION ? matrix : null;
+};
+
 // The stappenhulp QR in a page's footer. Every page reserves the box, even without sums, so
 // switching pages never changes a footer's height (the packer would chase its own tail).
-export default function TutorQr({ payload, caption = true }: { payload: string | null; caption?: boolean }) {
-    const matrix = useMemo(() => (payload ? qrMatrixOrNull(tutorUrlFor(window.location.origin) + TUTOR_HASH_PREFIX + payload) : null), [payload]);
-    const tooBig = !!payload && (!matrix || qrVersionOf(matrix) > MAX_VERSION);
+// lean: the same page without its no-steps sums, used when the full list does not fit.
+export default function TutorQr({ payload, lean, caption = true }: { payload: string | null; lean?: string | null; caption?: boolean }) {
+    const matrix = useMemo(() => (payload ? matrixFor(payload) ?? (lean ? matrixFor(lean) : null) : null), [payload, lean]);
+    const tooBig = !!payload && !matrix;
     const box = { width: `${QR_PX}px`, height: `${QR_PX}px`, flex: 'none' as const, position: 'relative' as const };
     // The frame (border + caption) is drawn on every page, so all footers keep one height.
     const frame = (inner: React.ReactNode) => (

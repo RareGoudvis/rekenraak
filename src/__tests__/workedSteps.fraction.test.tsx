@@ -42,10 +42,11 @@ describe('breukHoeveelheidSteps', () => {
 describe('availability', () => {
     const block = (e: FractionExercise): MathBlock => ({ ...makeBlock('breuken'), fractionExercises: [e] } as MathBlock);
 
-    it('the registry row offers the steps, the tutor page does not', () => {
+    it('the registry row offers the steps, and so does the stappenhulp QR (only where one divides evenly)', () => {
         expect(stepsFor('breuken', ex(2, 3, 12), {})).not.toBeNull();
         expect(blockHasSteps(block(ex(2, 3, 12)))).toBe(true);
         expect(blockHasSteps(block(ex(1, 3, 10)))).toBe(false);
-        expect(blockHasTutorSteps(block(ex(2, 3, 12)))).toBe(false);
+        expect(blockHasTutorSteps(block(ex(2, 3, 12)))).toBe(true);
+        expect(blockHasTutorSteps(block(ex(1, 3, 10)))).toBe(false);
     });
 });
