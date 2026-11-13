@@ -5,6 +5,7 @@ import TutorApp from '../tutor/TutorApp';
 import { encodeTutorPage, TUTOR_HASH_PREFIX } from '../services/oefenen/tutorPayload';
 import { makeBlock } from './helpers/makeBlock';
 import { stepsFor } from '../services/stepsAvailability';
+import { workedSteps } from '../services/math/workedSteps';
 import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
 // Part E: the stappenhulp page from a sheet's QR hash: menu → one sum → steps on request.
@@ -29,17 +30,17 @@ describe('stappenhulp', () => {
         expect(screen.getByText('Hiervoor zijn nog geen stappen')).toBeTruthy();
     });
 
-    test('a sum shows nothing until asked, then one Basis line per tap, Alle adds the rest', () => {
+    test('a sum shows nothing until asked, then one Basis line per tap; Alle shows the whole solution at once', () => {
         render(<TutorApp />);
         fireEvent.click(screen.getByRole('button', { name: /475 \+ 368/ }));
         expect(screen.queryByRole('listitem')).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Toon de eerste stap' }));
         expect(screen.getAllByRole('listitem').map(li => li.textContent)).toEqual(['= (475 + 300) + 60 + 8']);
         fireEvent.click(screen.getByRole('button', { name: 'Toon de volgende stap' }));
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        // Owner (2026-11-13): Alle after a step is out shows every step, the optional lines included.
         fireEvent.click(screen.getByRole('button', { name: 'Alle stappen: uit' }));
-        expect(screen.getAllByRole('listitem')).toHaveLength(3);
-        fireEvent.click(screen.getByRole('button', { name: 'Toon de volgende stap' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Toon de volgende stap' }));
+        expect(screen.getAllByRole('listitem').length).toBe(workedSteps(eq(475, 368))!.length);
         expect(screen.getByText('Klaar! Vergelijk met jouw blad.')).toBeTruthy();
         expect(screen.getAllByRole('listitem').at(-1)!.textContent).toBe('= 843');
     });

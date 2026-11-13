@@ -5,7 +5,8 @@ import { StepLineView } from '../components/viewer/StepTokens';
 import type { RenderStepsVisual } from '../components/steps/stepsVisuals';
 
 // One sum's worked steps: nothing until the pupil asks, then one Basis line per tap (the newest
-// in blue), with Alle stappen adding the optional in-between lines. SYNC: oefenen StepsPanel.
+// in blue). Alle stappen shows the whole solution at once, the optional in-between lines included
+// (owner, 2026-11-13: "so all steps truly are shown"). SYNC: oefenen StepsPanel.
 // Handig rekenen (compenseren, ontbinden) is an extra view; the standard steps stay the method.
 export default function StepsView({ sum, lines, handig = [], visual }: { sum: ReactNode; lines: StepLine[]; handig?: HandigStrategy[]; visual?: RenderStepsVisual }) {
     const [revealed, setRevealed] = useState(0);
@@ -14,8 +15,10 @@ export default function StepsView({ sum, lines, handig = [], visual }: { sum: Re
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
     const total = basisIdx.length;
     const upto = revealed > 0 ? basisIdx[Math.min(revealed, total) - 1] : -1;
-    const shown = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => i <= upto && (alle || l.basis));
     const done = total > 0 && revealed >= total;
+    // Once every Basis line is out, Alle also shows optional lines after the last one.
+    const last = done ? lines.length - 1 : upto;
+    const shown = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => (alle ? i <= last : i <= upto && l.basis));
 
     return (
         <>
@@ -37,7 +40,7 @@ export default function StepsView({ sum, lines, handig = [], visual }: { sum: Re
                 : <button type="button" className="tutor-btn tutor-btn-primary" onClick={() => setRevealed(r => r + 1)}>
                     {revealed === 0 ? 'Toon de eerste stap' : 'Toon de volgende stap'}
                 </button>}
-            <button type="button" className="tutor-btn" aria-pressed={alle} onClick={() => setAlle(a => !a)}>
+            <button type="button" className="tutor-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
                 {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
             </button>
             {handig.length > 0 && (

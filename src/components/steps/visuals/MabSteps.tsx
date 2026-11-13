@@ -50,7 +50,7 @@ function layoutCluster(c: MabCluster, stableMax: number[]) {
 }
 
 function Piece({ place, state, r }: { place: number; state: MabPieceState; r: Placed }) {
-    const cls = `sv-mab-p is-${state}`;
+    const cls = `sv-mab-p is-${state} is-p${place}`;
     const cells: ReactNode[] = [];
     if (place === 1) for (let j = 1; j < 10; j++) cells.push(<line key={j} x1={r.x} x2={r.x + r.w} y1={r.y + (j * r.h) / 10} y2={r.y + (j * r.h) / 10} />);
     if (place === 2) for (let j = 1; j < 10; j++) {

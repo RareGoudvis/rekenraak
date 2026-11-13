@@ -22,7 +22,7 @@ interface Props {
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
-// think ahead, with Alle stappen adding the optional lines. Volgende moves on either way.
+// think ahead; Alle stappen shows the whole solution at once, optional lines included. Volgende moves on either way. SYNC: tutor StepsView.
 export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual }: Props) {
     const [open, setOpen] = useState(false);
     const [revealed, setRevealed] = useState(1);
@@ -33,8 +33,10 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
     const total = basisIdx.length;
     const upto = basisIdx[Math.min(revealed, total) - 1];
-    const shownLines = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => i <= upto && (alle || l.basis));
     const done = revealed >= total;
+    // Once every Basis line is out, Alle also shows optional lines after the last one.
+    const last = done ? lines.length - 1 : upto;
+    const shownLines = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => (alle ? i <= last : i <= upto && l.basis));
     // Question steps keep their visual beside the questions; only plain lines hand a 'card' visual to the Kiosk.
     const inCard = visual?.slot === 'card' && !asking;
     useEffect(() => { if (inCard) onVisual?.(open ? upto + 1 : null); }, [inCard, open, upto, onVisual]);
@@ -63,7 +65,7 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
                     {done
                         ? <p className="kiosk-steps-done">Klaar! Kijk nog eens naar je antwoord.</p>
                         : <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={() => setRevealed(r => r + 1)}>Toon de volgende stap</button>}
-                    <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => setAlle(a => !a)}>
+                    <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
                         {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
                     </button>
                     {handig.length > 0 && (

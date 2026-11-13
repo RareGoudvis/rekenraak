@@ -109,6 +109,13 @@
     --danger: #C0362B;
     --danger-soft: rgba(192, 54, 43, 0.10);
 
+    /* Gekleurd MAB in the worked steps (owner, 2026-11-13): yellow E, green T, blue H, red D, the class set's colours.
+       Fills only, always under a dark outline. */
+    --mab-e: #FBBF24;
+    --mab-t: #22C55E;
+    --mab-h: #3B82F6;
+    --mab-d: #EF4444;
+
     /* Worksheet ink, not chrome: everything that turns red under "Toon oplossingen".
        Print-safe on inkjet + laser; solutions are also bold (see viewer/solutionStyle.ts)
        so a black-and-white printer still tells answer from exercise. */
