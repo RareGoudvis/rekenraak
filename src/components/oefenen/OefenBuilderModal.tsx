@@ -18,7 +18,7 @@ import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
     EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowSettingOf, rowsFromSessie, seedRowConstraints,
-    rowMayHaveSteps, type BuilderRow, type OefenLeaf,
+    rowMayHaveMab, rowMayHaveSteps, type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
 interface Props {
@@ -49,6 +49,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const [testMode, setTestMode] = useState(initial?.testMode ?? false);
     const [statsLocked, setStatsLocked] = useState(initial?.statsLocked ?? false);
     const [showSteps, setShowSteps] = useState(!initial?.noSteps);
+    const [showMab, setShowMab] = useState(!initial?.noMab);
     // Kept apart from testMode: switching testmodus off again restores the teacher's choice.
     const [attempts, setAttempts] = useState<OefenAttempts>(initial ? (initial.attempts ?? 1) : 1);
     const [shareOf, setShareOf] = useState<OefenSessie | null>(null);
@@ -101,7 +102,9 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     });
     // The steps switch only shows when a chosen row can actually produce a sum with steps.
     const stepsPossible = buildable.some(rowMayHaveSteps);
-    const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts, noSteps: !showSteps, grade });
+    // MAB above the steps is for leerjaar 1–3 only, and only when a row can produce a whole sum up to 1000.
+    const mabPossible = stepsPossible && grade !== null && grade <= 3 && buildable.some(rowMayHaveMab);
+    const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts, noSteps: !showSteps, noMab: !showMab, grade });
     // A content edit is a new session, a rename keeps the id (the title is not part of the content).
     const contentKey = sessieContentHash(built);
     let id = idsByContent.get(contentKey);
@@ -208,6 +211,10 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                 {stepsPossible && (
                                     <SwitchRow label="Stappen tonen na een fout" checked={showSteps && !testMode} onChange={setShowSteps} disabled={testMode}
                                         note={testMode ? 'In testmodus is er geen juist/fout, dus ook geen stappen.' : undefined} />
+                                )}
+                                {mabPossible && (
+                                    <SwitchRow label="Hulp met MAB" checked={showMab && showSteps && !testMode} onChange={setShowMab} disabled={testMode || !showSteps}
+                                        note="MAB-blokjes boven de stappen, voor sommen tot 1000. Niet op een smartphone." />
                                 )}
                                 <SwitchRow label="Statistieken pas op het einde" checked={statsLocked || testMode} onChange={setStatsLocked} disabled={testMode}
                                     note={testMode ? 'In testmodus zie je de resultaten pas op het einde.' : undefined} />
