@@ -87,6 +87,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Breuk van een hoeveelheid: na een fout in Oefenmodus helpen de vier breukvragen, met eerst een tip en dan het antwoord.',
                 example: { leafId: 'breuken-hoeveelheid', constraints: { solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: geen hulp na een fout.', after: 'Nu: Wat is het geheel? In hoeveel delen? Hoeveel is één deel? Hoeveel delen neem je?' },
             },
+            {
+                kind: 'gewijzigd',
+                text: 'Vermenigvuldigen: factoren wisselen (79 × 6 of 6 × 79), en bij de tafels nu ook Vanaf en Uitkomst tot (bv. 6 × 16 tot 100).',
+                example: { leafId: 'hr-std-vermenigvuldigen-nat', constraints: { multiplicationMode: 'tafels', selectedTables: [6, 7], tableLimit: 20, tableFrom: 11, maxProduct: 100, swapFactors: true }, grade: 4, count: 4, height: 170, before: 'Eerst: tot 20 gaf ook 6 × 3.', after: 'Nu: vanaf 11 en uitkomst tot 100: 16 × 6, 7 × 12, 13 × 7.' },
+            },
             { kind: 'nieuw', text: 'Ook stappen bij de tafels: 3 × 6 = 6 + 6 + 6, en bij deeltafels tellen in sprongen (0, 4, 8, 12 ...).' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kiezen zelf hun leerjaar en oefening, ook op een telefoon. De link en QR-code vind je bij Oefenmodus.' },
             { kind: 'gewijzigd', text: 'Zelf oefenen kiest makkelijker: per onderwerp een paar grote knoppen, zoals Zonder brug of Met brug.' },

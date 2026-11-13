@@ -434,6 +434,10 @@ the retry loop and build exactly `n` items directly.
 
 ### Shared cross-generator concepts
 
+- **Vermenigvuldigen options** (`MulDivConstraints`, all optional; absent = the output from before them, same draws):
+  - `swapFactors` puts either factor first per sum. When absent, tafels swap at random as before and Andere keeps its order. When false, tafels write multiplier × tafel (3 × 7).
+  - `tableFrom` (Vanaf, from `TAFEL_FROM` 1/6/11/21/51, only below `tableLimit`) and `maxProduct` (Uitkomst tot, from `TAFEL_PRODUCT_MAX`, 0 = geen) narrow the tafels mode, for example 6 × 16 without plain tafel facts. A pool that is too small gives the short-pool note.
+  - The × Andere max list `hrAndereMul` starts at 100.
 - **Mixed jumps** ([jumps.ts](../../src/services/getallenas/jumps.ts), getallenas + getallenrijen): `constraints.jumps` with 2+ distinct positive numbers switches it on; otherwise the old single-`step` path runs with the same random draws (golden test `getallenJumps.legacy.test.ts`). Rational never mixes. Getallenas and `jumpMode: 'per-rij'`: each line takes one jump in rotation, all at the same tick count (`fitJumps`). `jumpMode: 'in-rij'`: one row repeats the pattern (`fitPattern`: at least jumps+2 cells, the first jumps+1 given; trims cells, then trailing jumps, with a note, never a smaller jump), anchored on the gcd of the jumps, `ex.jumps` set and `ex.step` = gcd. The kiosk `prepare` starts the rotation at a random jump per exercise.
 - **`INTERNAL_SCALE = 1_000_000`** ([mathEngine.ts](../../src/services/math/mathEngine.ts)) —
   all arithmetic is done as scaled integers to avoid JS float rounding, divided
