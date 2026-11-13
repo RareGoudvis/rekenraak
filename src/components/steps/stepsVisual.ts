@@ -25,6 +25,9 @@ export interface StepsVisual<D = unknown> {
     kiosk?: boolean;
     // false: no visual for this exercise here, so no empty .steps-visual box either (absent = always applies).
     applies?: (data: D, lines: StepLine[], ctx: StepsVisualContext) => boolean;
+    // Oefenmodus: 'card' draws it big under the exercise (the card is idle during the steps), the lines stay in the panel.
+    // Absent = 'panel', above the lines. The stappenhulp always draws it above the lines.
+    kioskSlot?: 'panel' | 'card';
 }
 
 export const defineStepsVisual = <D>(visual: StepsVisual<D>): StepsVisual => visual as unknown as StepsVisual;

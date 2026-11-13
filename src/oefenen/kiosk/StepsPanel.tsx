@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ListNumbers } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { HandigStrategy, StepLine } from '../../services/math/workedSteps';
@@ -17,11 +17,13 @@ interface Props {
     onSolution?(answered: number): void;
     // The type's steps visual (stepsVisualFor), drawn above the lines as far as they are revealed.
     visual?: RenderStepsVisual;
+    // A 'card' visual is drawn by the Kiosk under the exercise: it hears how far the lines are revealed (null = none yet).
+    onVisual?(revealed: number | null): void;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead, with Alle stappen adding the optional lines. Volgende moves on either way.
-export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual }: Props) {
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual }: Props) {
     const [open, setOpen] = useState(false);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
@@ -33,6 +35,10 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
     const upto = basisIdx[Math.min(revealed, total) - 1];
     const shownLines = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => i <= upto && (alle || l.basis));
     const done = revealed >= total;
+    // Question steps keep their visual beside the questions; only plain lines hand a 'card' visual to the Kiosk.
+    const inCard = visual?.slot === 'card' && !asking;
+    useEffect(() => { if (inCard) onVisual?.(open ? upto + 1 : null); }, [inCard, open, upto, onVisual]);
+    useEffect(() => () => onVisual?.(null), [onVisual]);
 
     return (
         <div className="kiosk-steps">
@@ -46,7 +52,7 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
                 </>
             ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
                 <>
-                    {visual?.(upto + 1)}
+                    {!inCard && visual?.(upto + 1)}
                     <ol className="kiosk-steps-lines" aria-live="polite">
                         {shownLines.map(({ l, i }) => (
                             <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>

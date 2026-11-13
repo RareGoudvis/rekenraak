@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { mabPlan, type MabPicture, type MabPieceState } from '../services/steps/mabSteps';
@@ -148,11 +149,20 @@ describe('the visual: gated by leerjaar and toggle, drawn per reveal', () => {
         expect(stepsVisualFor('hr-std-optellen', eq(650, '+', 450), workedSteps(eq(650, '+', 450))!, 'kiosk', { grade: 2 })).toBeUndefined();
     });
 
-    it('the kiosk panel draws the pieces above the lines and the caption at an inwisselen', () => {
-        const visual = stepsVisualFor('hr-std-optellen', e, lines, 'kiosk', { grade: 2 });
-        const { container } = render(<StepsPanel lines={lines} onNext={() => {}} visual={visual} />);
+    it('in Oefenmodus the pieces go under the exercise (card slot), following the revealed lines, with the caption at an inwisselen', () => {
+        const visual = stepsVisualFor('hr-std-optellen', e, lines, 'kiosk', { grade: 2 })!;
+        expect(visual.slot).toBe('card');
+        expect(stepsVisualFor('hr-std-gemengd', e, lines, 'tutor', { grade: 2 })!.slot).toBe('panel');
+        // The Kiosk's part: it hears how far the panel is and draws the visual in the card column.
+        function Host() {
+            const [revealed, setRevealed] = useState<number | null>(null);
+            return <><div className="card">{revealed !== null && visual(revealed)}</div><StepsPanel lines={lines} onNext={() => {}} visual={visual} onVisual={setRevealed} /></>;
+        }
+        const { container } = render(<Host />);
+        expect(container.querySelector('.sv-mab')).toBeNull();
         fireEvent.click(screen.getByText('Toon de stappen'));
-        expect(container.querySelector('.steps-visual > .sv-mab') && container.querySelector('.steps-visual + .kiosk-steps-lines')).toBeTruthy();
+        expect(container.querySelector('.card > .steps-visual > .sv-mab')).toBeTruthy();
+        expect(container.querySelector('.kiosk-steps .sv-mab')).toBeNull();
         expect(container.querySelectorAll('.sv-mab-p.is-now')).toHaveLength(3);
         expect(container.querySelector('.sv-mab-cap')).toBeNull();
         fireEvent.click(screen.getByText('Toon de volgende stap'));

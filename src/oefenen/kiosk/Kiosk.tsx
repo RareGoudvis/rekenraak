@@ -129,6 +129,8 @@ export default function Kiosk() {
     const feedbackHint = useOefenStore(s => s.feedbackHint);
     const showSolution = useOefenStore(s => s.showSolution);
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
+    // How far the steps are revealed, for a 'card' visual (MAB) drawn under the exercise; null = not opened yet.
+    const [cardRevealed, setCardRevealed] = useState<number | null>(null);
     useKioskKeys();
     if (!sessie || !run) return null;
 
@@ -144,6 +146,11 @@ export default function Kiosk() {
         ? kioskInstructionOf(type.typeId, shown.exercise, shown.constraints as Record<string, unknown>, leafInstruction)
         : type?.instruction ?? '';
 
+    const stepsVisual = phase === 'steps' && stepsOffer && type && shown
+        ? stepsVisualFor(type.typeId, shown.exercise, stepsOffer, 'kiosk', { grade: sessie.grade, noMab: sessie.noMab })
+        : undefined;
+    const cardVisual = stepsVisual?.slot === 'card' && cardRevealed !== null ? stepsVisual(cardRevealed) : null;
+
     return (
         <div className="oefen-app">
             <TopBar now={now} />
@@ -151,12 +158,13 @@ export default function Kiosk() {
             {phase === 'stats' ? (
                 <main className="kiosk-scroll"><StatsScreen /></main>
             ) : (
-                <main className="kiosk-main">
+                <main className={`kiosk-main${cardVisual ? ' has-card-visual' : ''}`}>
                     <section className="kiosk-card-col" aria-label="Oefening">
                         {shown && type && (
                             <ExerciseCard key={shown.exerciseKey} typeId={type.typeId} exercise={shown.exercise} constraints={shown.constraints}
                                 instruction={instruction} exerciseKey={shown.exerciseKey} />
                         )}
+                        {cardVisual}
                     </section>
                     <section className="kiosk-panel" aria-label="Antwoord">
                         {shown?.wrongFirst !== undefined && <p className="kiosk-attempt">Kans 2 van 2</p>}
@@ -166,7 +174,7 @@ export default function Kiosk() {
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} hint={feedbackHint} />}
                         {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution}
-                            visual={type && shown ? stepsVisualFor(type.typeId, shown.exercise, stepsOffer, 'kiosk', { grade: sessie.grade, noMab: sessie.noMab }) : undefined} />}
+                            visual={stepsVisual} onVisual={setCardRevealed} />}
                     </section>
                 </main>
             )}

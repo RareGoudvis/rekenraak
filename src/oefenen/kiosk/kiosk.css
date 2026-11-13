@@ -1135,3 +1135,30 @@ html:has(.oefen-body),
 .zelf-choice.is-picked { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 .zelf-or { margin: 0; color: var(--text-muted); }
 .zelf-amount { max-width: 720px; }
+
+/* A 'card' steps visual (MAB) under the exercise while the steps are open: the card is idle then, so the blocks get
+   about three times the room of the side panel. Tablets and laptops only: a phone never shows MAB (mab.css). */
+@media (min-width: 600px) and (min-height: 500px) {
+  .kiosk-card-col > .steps-visual {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--sp-4);
+    background: var(--kiosk-paper);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+  }
+  .kiosk-card-col > .steps-visual > * { width: 100%; margin: 0; }
+  .kiosk-card-col .sv-mab-svg { max-height: 48vh; max-width: calc(var(--mab-w, 240px) * 2.4); }
+  .has-card-visual .kiosk-card-col { flex-direction: column; gap: var(--sp-3); }
+  .has-card-visual .kiosk-card { flex: 0 1 auto; }
+}
+@media (orientation: landscape) and (min-width: 600px) and (min-height: 500px) {
+  .kiosk-main.has-card-visual { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+/* Below that the MAB is hidden, so its card box goes too. */
+@media (max-width: 599px), (max-height: 499px) {
+  .kiosk-card-col > .steps-visual:has(> .sv-mab) { display: none; }
+}

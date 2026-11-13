@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { Equation } from '../../../services/math/types';
 import { mabPlan, type MabCluster, type MabPicture, type MabPieceState } from '../../../services/steps/mabSteps';
 import type { StepsVisualProps } from '../stepsVisual';
@@ -118,7 +118,7 @@ function Picture({ pic, stableMax }: { pic: MabPicture; stableMax: number[] }) {
     });
     const height = Math.max(y - ROW_GAP, 1);
     return (
-        <svg className="sv-mab-svg" viewBox={`-4 -4 ${width + 8} ${height + 8}`} style={{ maxWidth: `${Math.round((width + 8) * 1.6)}px` }} aria-hidden>
+        <svg className="sv-mab-svg" viewBox={`-4 -4 ${width + 8} ${height + 8}`} style={{ '--mab-w': `${width + 8}px` } as CSSProperties} aria-hidden>
             {out}
         </svg>
     );
