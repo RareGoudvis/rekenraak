@@ -111,39 +111,50 @@ export function hvSolution(ex: FractionExercise, answered: number): InteractionS
     return { ...EMPTY_INTERACTION, cells, groups: { members, active: null, mode: 'colour', colored } };
 }
 
-// One breukvraag with its hint, for the card's "i" bubbles.
-export interface HvTip { question: string; hint: string }
-
-// Where an "i" sits on the card: by the objects, by each working row, by the answer.
-export type HvTipSpot = 'objects' | 'row1' | 'row2' | 'answer';
+// The card's one "i": the next step in the owner's order, with its breukvraag and hint.
+export interface HvTip { step: number; question: string; hint: string }
 
 const filled = (state: InteractionState, k: string) => (state.cells[k] ?? '').trim();
+const ROW_1 = ['r0', 'r1', 'r2'], ROW_2 = ['r3', 'r4', 'r5'];
 
-/** The breukvragen and hints behind one "i" on the card; the objects' tip uses the pupil's own row 1 (never the answer). */
-export function hvTips(spot: HvTipSpot, ex: FractionExercise, state: InteractionState): HvTip[] {
+/** The next step from what the pupil did so far (1 groups, 2 row 1, 3 groups vs row 1, 4 colour, 5 row 2, 6 answer, 7 Controleer); hints use only the card and the pupil's own numbers. */
+export function hvNextStep(ex: FractionExercise, state: InteractionState): HvTip {
+    const { g, n, t } = sizes(ex);
     const word = hvWord(ex);
-    if (spot === 'row1') return [
-        { question: ROW_QUESTIONS.r0, hint: "Welk getal staat na 'van'?" },
-        { question: ROW_QUESTIONS.r1, hint: 'Kijk naar de noemer.' },
-        { question: ROW_QUESTIONS.r2, hint: 'Deel het geheel door de noemer.' },
-    ];
-    if (spot === 'row2') return [
-        { question: ROW_QUESTIONS.r3, hint: 'Kijk naar de teller.' },
-        { question: ROW_QUESTIONS.r4, hint: 'Dat staat al in je eerste rij.' },
-        { question: ROW_QUESTIONS.r5, hint: 'Reken: zoveel keer één deel.' },
-    ];
-    if (spot === 'answer') return [{ question: hvQuestion(HV_ANSWER, ex), hint: `Tel de ${word} in de gekleurde groepjes. Of kijk naar je tweede rij.` }];
-    const n = filled(state, 'r1'), p = filled(state, 'r2');
-    // After row 1: a check with the pupil's own numbers, so a wrong row never shows the right one.
-    const recheck: HvTip = n && p
-        ? { question: 'Kloppen je groepjes?', hint: `Je eerste rij zegt ${n} groepjes. Zitten er ${p} ${word} in elk groepje?` }
-        : { question: 'Kloppen je groepjes?', hint: `Vul de eerste rij in. Dan kun je nakijken of elk groepje evenveel ${word} heeft.` };
-    if (state.groups?.mode === 'colour') return [{ question: 'Hoeveel groepjes kleur je?', hint: 'Kijk naar de teller. Tik op een groepje om het te kleuren.' }, recheck];
-    return [
-        { question: 'Hoe maak je gelijke groepjes?', hint: `De noemer zegt hoeveel groepjes je maakt. Elk groepje krijgt evenveel ${word}.` },
-        { question: 'Hoe tik je?', hint: `Kies een groepje met zijn nummer. Tik op ${word} om ze erin te leggen. Nog eens tikken haalt er een uit.` },
-        recheck,
-    ];
+    const cell = (k: string) => filled(state, k);
+    const groups = (state.groups?.members ?? []).filter(m => m.length > 0);
+    // The rows are optional: once the answer is typed, an unfinished row no longer counts as the next step.
+    const rowsOpen = !cell(HV_ANSWER);
+    const next = (keys: string[]) => (rowsOpen ? keys.find(k => !cell(k)) : undefined);
+
+    if (groups.length === 0 || state.groups?.mode !== 'colour') {
+        const done = groups.length > 0 ? ' Klaar? Tik op Klaar met groepjes.' : '';
+        return { step: 1, question: 'Hoe maak je gelijke groepjes?', hint: `Kijk naar de noemer: zoveel groepjes maak je. Tik op Nieuw groepje en tik dan op de ${word}. Elk groepje krijgt evenveel ${word}.${done}` };
+    }
+    const r1 = next(ROW_1);
+    if (r1 === 'r0') return { step: 2, question: ROW_QUESTIONS.r0, hint: "Welk getal staat na 'van'?" };
+    if (r1 === 'r1') return { step: 2, question: ROW_QUESTIONS.r1, hint: 'Kijk naar de noemer.' };
+    if (r1 === 'r2') return { step: 2, question: ROW_QUESTIONS.r2, hint: `Deel het geheel door de noemer: ${cell('r0')} : ${cell('r1')}.` };
+
+    // The groups against the pupil's own row 1 (never the right one-deel), else against the card.
+    const fix = ' Tik op Groepjes aanpassen om ze te veranderen.';
+    const recheck = (hint: string): HvTip => ({ step: 3, question: 'Kloppen je groepjes?', hint: hint + fix });
+    const ownCount = Number(cell('r1').replace(',', '.')), ownPart = Number(cell('r2').replace(',', '.'));
+    if (cell('r2') && groups.some(m => m.length !== ownPart)) return recheck(`Kijk je groepjes na: zitten er ${cell('r2')} ${word} in elk groepje?`);
+    if (!cell('r2') && groups.some(m => m.length !== groups[0].length)) return recheck('Kijk je groepjes na: zijn ze allemaal even groot?');
+    if (cell('r1') && groups.length !== ownCount) return recheck(`Kijk je groepjes na: je eerste rij zegt ${cell('r1')} groepjes.`);
+    if (!cell('r1') && groups.length !== n) return recheck('Kijk je groepjes na: de noemer zegt hoeveel groepjes je maakt.');
+    if (groups.reduce((a, m) => a + m.length, 0) !== g) return recheck(`Kijk je groepjes na: zitten alle ${word} in een groepje?`);
+
+    if ((state.groups?.colored.length ?? 0) !== t) return { step: 4, question: 'Hoeveel groepjes kleur je?', hint: 'Kleur zoveel groepjes als de teller zegt. Tik op een groepje om het te kleuren.' };
+
+    const r2 = next(ROW_2);
+    if (r2 === 'r3') return { step: 5, question: ROW_QUESTIONS.r3, hint: 'Kijk naar de teller.' };
+    if (r2 === 'r4') return { step: 5, question: ROW_QUESTIONS.r4, hint: 'Dat staat al in je eerste rij.' };
+    if (r2 === 'r5') return { step: 5, question: ROW_QUESTIONS.r5, hint: `Reken: ${cell('r3')} × ${cell('r4')}.` };
+
+    if (!cell(HV_ANSWER)) return { step: 6, question: hvQuestion(HV_ANSWER, ex), hint: `Tel de ${word} in de gekleurde groepjes.${cell('r5') ? ' Of kijk naar je tweede rij.' : ''}` };
+    return { step: 7, question: 'Klaar?', hint: 'Tik op Controleer.' };
 }
 
 /** Stats text of an answer string: the answer, then the groups behind it. */
