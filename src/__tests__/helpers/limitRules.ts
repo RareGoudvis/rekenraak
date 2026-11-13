@@ -10,6 +10,7 @@ import type {
 import type { MixedVariantId } from '../../services/math/constraintTypes';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { GRADE_PRESETS, type Leerjaar } from '../../config/gradePresets';
+import { effectiveTableFrom } from '../../config/numberRanges';
 import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
 import { effectiveBlockFor } from '../../services/math/mixedGenerator';
 import { ladderFor } from '../../services/herleidingen/herleidingenGenerator';
@@ -135,6 +136,19 @@ function checkHr(e: Equation, c: C, mode: HrMode, ctx: CheckContext, push: Push)
         // shared "Maximum uitkomst" holds for every variant (L2).
         const capped = mode.gemengd || (preset !== 'tienvoud' && (nt === 'decimal' || multMode === 'andere'));
         if (capped && over(ans, max)) push('answer>max', ans, max, ex);
+        // Tafels (2 factors): one factor a chosen tafel, the other a multiplier from "Vanaf" to "tot",
+        // the product under "Uitkomst tot", and with Factoren wisselen UIT always multiplier × tafel.
+        if (multMode === 'tafels' && nt === 'natural' && preset !== 'tienvoud' && ops.length === 2) {
+            const tables = (c.selectedTables as number[] | undefined) ?? [];
+            const tl = n(c.tableLimit, 10);
+            const from = effectiveTableFrom(c.tableFrom, tl);
+            const isFact = (m: number, t: number) => tables.includes(t) && m >= from && m <= tl;
+            const [a, b] = ops;
+            if (!isFact(a, b) && !isFact(b, a)) push('tafel-multiplier', `${a} × ${b}`, `${from}..${tl} × [${tables.join(',')}]`, ex);
+            const cap = typeof c.tableProductMax === 'number' && c.tableProductMax > 0 ? c.tableProductMax : null;
+            if (cap !== null && over(ans, cap)) push('answer>tableProductMax', ans, cap, ex);
+            if (c.swapFactors === false && !isFact(a, b)) push('swap-off-order', `${a} × ${b}`, 'veelvoud × tafel', ex);
+        }
     } else {
         if (multMode === 'met_rest' && nt !== 'decimal' && preset !== 'tienvoud') {
             if (over(dividend, max)) push('dividend>max', dividend, max, ex);
@@ -160,6 +174,10 @@ function checkHr(e: Equation, c: C, mode: HrMode, ctx: CheckContext, push: Push)
 
 const hrSpec = (op: HrMode['op']): TypeSpec<Equation> => ({
     extract: extractEq,
+    // A pool too small for the count (tafels with Vanaf + Uitkomst tot) comes WITH the "Slechts N" note.
+    block: (items, ctx, push) => {
+        if (items.length < ctx.requested && !ctx.note) push('count-short', items.length, ctx.requested, '(no note)');
+    },
     item: (e, ctx, push) => checkHr(e, ctx.c, { op, gemengd: false }, ctx, push),
 });
 
