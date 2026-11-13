@@ -79,11 +79,22 @@ describe('sweep: every a + b with a >= 10 and a + b <= 1000', () => {
     });
 });
 
+describe('aftrekken: a brug on a 0 digit, from the round number in one step (owner, 2026-11-13)', () => {
+    const sub = (a: number, b: number) => eq(a, b, { operator: '-', answer: a - b });
+    it.each<[number, number, string[]]>([
+        [350, 152, ['(350 − 100) − 50 − 2', '(250 − 50) − 2', '200 − 2', '198']],
+        [900, 415, ['(900 − 400) − 10 − 5', '500 − 10 − 5', '490 − 5', '485']],
+        [708, 699, ['(708 − 600) − 90 − 9', '108 − 90 − 9', '(18 − 8) − 1', '9']],
+        [503, 128, ['(503 − 100) − 20 − 8', '403 − 20 − 8', '(383 − 3) − 5', '375']],
+    ])('%i − %i', (a, b, basis) => {
+        expect(text(stepsAtLevel(workedSteps(sub(a, b))!, 'basis'))).toEqual(basis);
+    });
+});
+
 describe('shapes without a strategy return null', () => {
     it.each([
         ['times one', eq(1, 7, { operator: 'x', answer: 7 })],
         ['aftrekken onder nul', eq(188, 247, { operator: '-', answer: -59 })],
-        ['aftrekken: brug op een 0-cijfer (403 − 20)', eq(503, 128, { operator: '-', answer: 375 })],
         ['gemengd tienvoud variant', eq(46, 10, { operator: 'x', answer: 460, variant: 'x:tienvoud' })],
         ['3 terms', { ...eq(100, 200), operands: [100, 200, 300], answer: 600 }],
         ['puntoefening', eq(475, 368, { missingTerm: 'operand2' })],
@@ -150,7 +161,7 @@ describe('rijgen aftrekken: the owner\'s whiteboard (2026-11-12)', () => {
         expect(text(stepsAtLevel(workedSteps(sub(a as number, b as number))!, 'basis'))).toEqual(basis);
     });
 
-    it('sweep: every a − b with 10 <= a <= 1000 keeps the invariants, or is null for a 0-digit brug', () => {
+    it('sweep: every a − b with 10 <= a <= 1000 keeps the invariants (a 0-digit brug included since 2026-11-13)', () => {
         let max = 0, nulls = 0;
         for (let a = 10; a <= 1000; a++) {
             for (let b = 1; b <= a; b++) {
@@ -171,6 +182,6 @@ describe('rijgen aftrekken: the owner\'s whiteboard (2026-11-12)', () => {
             }
         }
         expect(max).toBe(8);
-        expect(nulls).toBeGreaterThan(0);
+        expect(nulls).toBe(0);
     });
 });

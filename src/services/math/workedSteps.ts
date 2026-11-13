@@ -89,8 +89,8 @@ function placeParts(b: number): number[] {
 // 'brug' when it crosses a round number at its own place: optellen when that digit plus the
 // part's digit passes 10 (exactly 10 is a normal move), aftrekken when the part's digit is
 // bigger than that digit (equal is a normal move). A brug splits into a fill to the round
-// number plus the rest. Returns null for an aftrekken brug on a 0 digit (403 − 20): there is
-// nothing to take off first, and the owner has not said how he writes that yet.
+// number plus the rest. An aftrekken brug on a 0 digit (200 − 2, 403 − 20) has nothing to take off
+// first, so the owner takes that part off in one step from the round number (2026-11-13).
 function rijgen(a: number, b: number, op: RijOp): StepLine[] | null {
     const parts = placeParts(b);
     const sign = op === '+' ? 1 : -1;
@@ -102,7 +102,12 @@ function rijgen(a: number, b: number, op: RijOp): StepLine[] | null {
         const place = 10 ** (String(p).length - 1);
         const digit = Math.floor(v / place) % 10;
         const brug = op === '+' ? digit + p / place > 10 : p / place > digit;
-        if (op === '-' && brug && digit === 0) return null;
+        if (op === '-' && brug && digit === 0) {
+            // Owner: from the round number in one step (350 − 152 = … = 200 − 2 = 198), no split.
+            lines.push({ kind: k === 0 ? 'first' : 'move', basis: true, tokens: chain(op, v, p, rest, k === 0) });
+            v -= p;
+            continue;
+        }
         // The owner's aftrekken board writes a brug move without its bracket (147 − 80 − 8); optellen keeps it.
         lines.push({ kind: k === 0 ? 'first' : 'move', basis: k === 0 || !brug, tokens: chain(op, v, p, rest, !(op === '-' && brug && k > 0)) });
         if (brug) {

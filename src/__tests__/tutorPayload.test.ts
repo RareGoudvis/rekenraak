@@ -26,11 +26,11 @@ describe('tutor payload', () => {
         const page = [
             { block: hr([eq(475, 368), eq(47, 8)]), n: 1, title: 'Reken uit.' },
             { block: makeBlock('klok-kloklezen', { id: 'klok' }), n: 2, title: 'Hoe laat?' },
-            // 500 − 236 has no rijgen yet (a brug on a 0 digit) and a puntoefening never has steps: no group at all.
+            // A puntoefening never has steps; 500 − 236 (a brug on a 0 digit) does since 2026-11-13.
             { block: hr([eq(500, 236, { operator: '-', answer: 264 }), eq(36, 4, { operator: 'x', answer: 9, missingTerm: 'operand2' })], 'hr-std-gemengd'), n: 3, title: 'Gemengd' },
         ];
         const sheet = decodeTutor(TUTOR_HASH_PREFIX + encodeTutorPage(page, hasSteps)!);
-        expect(sheet.groups.map(g => [g.n, g.title, g.numbering, g.items.length])).toEqual([[1, 'Reken uit.', 'letter', 2]]);
+        expect(sheet.groups.map(g => [g.n, g.title, g.numbering, g.items.length])).toEqual([[1, 'Reken uit.', 'letter', 2], [3, 'Gemengd', 'letter', 2]]);
         const [first, second] = sheet.groups[0].items;
         expect(sumOf(first).operands).toEqual([475, 368]);
         expect(first!.steps).toBe(true);
