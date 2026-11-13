@@ -100,8 +100,9 @@ describe('shapes without a strategy return null', () => {
         ['puntoefening', eq(475, 368, { missingTerm: 'operand2' })],
         ['puntoefening multi', eq(475, 368, { missingIndex: 1 })],
         ['met rest', eq(475, 368, { remainder: 1 })],
-        ['decimal', eq(4.5, 36.8)],
-        ['answer above 1000', eq(675, 438)],
+        ['three decimals', eq(0.125, 0.4)],
+        ['answer above 10 000', eq(9675, 4438)],
+        ['decimal too big for eenheden', eq(36.8, 4.5)],
         ['first operand below 10', eq(8, 55)],
         ['one non-zero digit', eq(47, 8)],
         ['round tens only', eq(47, 30)],
@@ -183,5 +184,60 @@ describe('rijgen aftrekken: the owner\'s whiteboard (2026-11-12)', () => {
         }
         expect(max).toBe(8);
         expect(nulls).toBe(0);
+    });
+});
+
+describe('rijgen above 1000 (owner, 2026-11-13)', () => {
+    it('line for line, brug through the thousands', () => {
+        expect(text(workedSteps(eq(4750, 3680))!)).toEqual([
+            '(4750 + 3000) + 600 + 80', '(7750 + 600) + 80', '(7750 + 300) + 300 + 80', '8050 + 300 + 80', '8350 + 80', '(8350 + 50) + 30', '8400 + 30', '8430',
+        ]);
+        expect(text(stepsAtLevel(workedSteps(eq(1475, 368))!, 'basis'))).toEqual(['(1475 + 300) + 60 + 8', '(1775 + 30) + 30 + 8', '(1835 + 5) + 3', '1843']);
+    });
+    it('aftrekken, incl. the one-step brug on a 0 digit', () => {
+        expect(text(workedSteps(sub(8203, 1456))!)[0]).toBe('(8203 − 1000) − 400 − 50 − 6');
+        expect(text(workedSteps(sub(9800, 405))!)).toEqual(['(9800 − 400) − 5', '9400 − 5', '9395']);
+    });
+    it('sweeps keep the invariants up to 10 000', () => {
+        for (let a = 1001; a <= 10000; a += 37) {
+            for (let b = 11; b <= 9999; b += 211) {
+                if (a + b <= 10000) for (const l of rijgenOptellen(a, b)) if (evalLine(l) !== a + b) throw new Error(`${a} + ${b}: ${stepText(l.tokens)}`);
+                if (b <= a) for (const l of rijgenAftrekken(a, b)!) if (evalLine(l) !== a - b) throw new Error(`${a} − ${b}: ${stepText(l.tokens)}`);
+            }
+        }
+    });
+});
+
+describe('kommagetallen + and − via eenheden (owner, 2026-11-13)', () => {
+    const fmt = (n: number) => String(n).replace('.', ',');
+    const it2 = (a: number, o: '+' | '-', b: number) => workedSteps(eq(a, b, { operator: o }))?.map(l => stepText(l.tokens, fmt));
+    it('line for line', () => {
+        expect(it2(0.6, '+', 0.8)).toEqual(['6 t + 8 t', '14 t', '1,4']);
+        expect(it2(0.25, '+', 0.5)).toEqual(['25 h + 50 h', '75 h', '0,75']);
+        expect(it2(1.2, '-', 0.5)).toEqual(['12 t − 5 t', '7 t', '0,7']);
+        expect(it2(2, '+', 0.5)).toEqual(['20 t + 5 t', '25 t', '2,5']);
+    });
+    it('null outside the mental range', () => {
+        expect(it2(0.5, '-', 0.8)).toBeUndefined();
+        expect(it2(0.125, '+', 0.5)).toBeUndefined();
+        expect(it2(36.8, '+', 4.5)).toBeUndefined();
+    });
+    it('every line evaluates to the answer', () => {
+        const val = (l: StepLine) => {
+            const nums = l.tokens.filter(t => t.t === 'num').map(t => (t as { v: number }).v);
+            const sc = l.tokens.some(t => t.t === 'unit') ? 1 : 0;
+            return { nums, sc };
+        };
+        for (const dp of [1, 2]) for (let x = 1; x <= 150; x += 7) for (let y = 1; y <= 150; y += 11) for (const o of ['+', '-'] as const) {
+            const a = x / 10 ** dp, b = y / 10 ** dp;
+            const ls = workedSteps(eq(Number(a.toFixed(dp)), Number(b.toFixed(dp)), { operator: o }));
+            if (!ls) { expect((o === '-' && y > x) || (Number.isInteger(a) && Number.isInteger(b))).toBe(true); continue; }
+            // A line's unit scale follows the finer operand, so check against the values, not x and y.
+            const want = o === '+' ? a + b : a - b;
+            expect(ls[2].tokens[0]).toMatchObject({ t: 'num' });
+            expect(val(ls[2]).nums[0]).toBeCloseTo(want, 9);
+            const u = (ls[1].tokens[1] as { u: 't' | 'h' }).u === 't' ? 10 : 100;
+            expect(val(ls[1]).nums[0] / u).toBeCloseTo(want, 9);
+        }
     });
 });

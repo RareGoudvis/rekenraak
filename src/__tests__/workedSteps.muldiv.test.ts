@@ -90,6 +90,10 @@ describe('handig rekenen: an optional view, never the standard method', () => {
     it('ontbinden is leerjaar 6: not offered as handig rekenen, the strategy itself stays (GL6.35 / GL6.36)', () => {
         expect(handigSteps(e(25, 'x', 32)).map(h => h.name)).not.toContain('Ontbinden');
         expect(handigSteps(e(3000, ':', 12)).map(h => h.name)).not.toContain('Ontbinden');
+        expect(handigSteps(e(25, 'x', 32), undefined, { grade: 5 }).map(h => h.name)).not.toContain('Ontbinden');
+        const m6 = handigSteps(e(25, 'x', 32), undefined, { grade: 6 }).find(h => h.name === 'Ontbinden');
+        expect(text(m6!.lines)).toEqual(['25 × 4 × 8', '100 × 8', '800']);
+        expect(text(handigSteps(e(3000, ':', 12), undefined, { grade: 6 }).find(h => h.name === 'Ontbinden')!.lines)).toEqual(['3000 : 3 : 4', '1000 : 4', '250']);
         expect(text(ontbindenMaal(25, 32)!)).toEqual(['25 × 4 × 8', '100 × 8', '800']);
         expect(text(ontbindenDeel(3000, 12)!)).toEqual(['3000 : 3 : 4', '1000 : 4', '250']);
     });

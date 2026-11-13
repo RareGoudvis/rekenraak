@@ -55,9 +55,8 @@ export interface StepLine {
 
 export type StepLevel = 'basis' | 'alle';
 
-// The didactic ceiling of this brief (leerjaar 1-3): above 1000 a brug over the hundreds
-// appears, which has no owner example yet.
-const MAX_ANSWER = 1000;
+// Rijgen runs up to the duizendtallen (owner, 2026-11-13); above that a pupil is cijferen.
+const MAX_ANSWER = 10_000;
 
 const num = (v: number): StepToken => ({ t: 'num', v });
 type RijOp = '+' | '-';
@@ -289,6 +288,18 @@ function eenhedenDeel(a: number, d: number): StepLine[] | null {
     return [line('units', true, [num(m), u, op(':'), num(d)]), line('units', true, [num(m / d), u]), line('answer', true, [num(roundTo(m / d / 10 ** dp, dp))])];
 }
 
+// Kommagetal ± kommagetal via eenheden (0,6 + 0,8 = 6 t + 8 t = 14 t = 1,4): both in the smaller unit.
+// Mental sums only: at most 2 decimals and each operand at most 199 of that unit (4,5 + 3,8; 36,8 is rijgen territory).
+function eenhedenPlusMin(a: number, b: number, o: RijOp): StepLine[] | null {
+    const dp = Math.max(decimalsOf(a), decimalsOf(b));
+    if (dp < 1 || dp > 2 || a < 0 || b < 0) return null;
+    const ma = Math.round(a * 10 ** dp), mb = Math.round(b * 10 ** dp);
+    if (ma > 199 || mb > 199 || (o === '-' && mb > ma)) return null;
+    const u: StepToken = { t: 'unit', u: DEC_UNIT[dp] };
+    const r = o === '+' ? ma + mb : ma - mb;
+    return [line('units', true, [num(ma), u, op(o), num(mb), u]), line('units', true, [num(r), u]), line('answer', true, [num(roundTo(r / 10 ** dp, dp))])];
+}
+
 // Delen met rest by counting in jumps of the deler (owner, 2026-11-12: "26 : 5 → 0 5 10 15 20 25"; Op.stap
 // 2.2.GL3.32): 26 : 5 → 0, 5, 10, 15, 20, 25, 26 = 25 + 1, = 5 rest 1.
 function tafelRest(a: number, d: number, q: number, r: number): StepLine[] {
@@ -491,7 +502,7 @@ function compenserenDeel(a: number, d: number): StepLine[] | null {
 }
 
 // Ontbinden ×: 25 × 32 = 25 × 4 × 8 = 100 × 8 = 800 (Op.stap 2.2.GL6.35).
-// Not offered in handigSteps: ontbinden is leerjaar 6 (owner, 2026-11-13) and these pages do not know the pupil's leerjaar.
+// handigSteps offers it only for grade >= 6 (owner, 2026-11-13).
 export function ontbindenMaal(a: number, b: number): StepLine[] | null {
     if (!Number.isInteger(a) || !Number.isInteger(b) || a * b > MAX_HANDIG) return null;
     for (const first of [true, false]) {
@@ -557,7 +568,7 @@ export function workedSteps(eq: Equation, c?: Partial<AddSubConstraints>): StepL
     if (eq.operator === 'x') return preset && preset !== 'vrij' ? null : maalSteps(a, b);
     if (eq.operator === ':') return preset && preset !== 'vrij' ? null : deelSteps(a, b);
     if (eq.operator !== '+' && eq.operator !== '-') return null;
-    if (!Number.isInteger(a) || !Number.isInteger(b)) return null;
+    if (!Number.isInteger(a) || !Number.isInteger(b)) return preset && preset !== 'vrij' ? null : eenhedenPlusMin(a, b, eq.operator);
     if (preset === 'compenseren') return compenserenPlusMin(a, b, eq.operator);
     if (preset && preset !== 'vrij') return null;
     if (a < 10 || b < 1) return null;
@@ -574,14 +585,16 @@ export interface HandigStrategy {
 
 // Handig rekenen (owner, 2026-11-12): an optional view for the pupil next to the standard method, never
 // on the answer key. Worked out from the sum itself; a strategy equal to the standard steps is left out.
-export function handigSteps(eq: Equation, c?: Partial<AddSubConstraints>): HandigStrategy[] {
+export function handigSteps(eq: Equation, c?: Partial<AddSubConstraints>, ctx?: { grade?: number }): HandigStrategy[] {
     const ab = plainOperands(eq, c);
     // Compenseren and ontbinden are written for opgaande delingen only.
     if (!ab || presetOf(eq, c) === null || eq.remainder !== undefined) return [];
     const [a, b] = ab;
+    // Ontbinden is leerjaar 6; callers that do not know the grade never get it.
+    const ontbinden = (ctx?.grade ?? 0) >= 6;
     const found: [HandigStrategy['name'], StepLine[] | null][] =
-        eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ['Via breuken', breukenMaal(a, b)]]
-        : eq.operator === ':' ? [['Compenseren', compenserenDeel(a, b)], ['Via breuken', breukenDeel(a, b)]]
+        eq.operator === 'x' ? [['Compenseren', compenserenMaal(a, b)], ...(ontbinden ? [['Ontbinden', ontbindenMaal(a, b)] as [HandigStrategy['name'], StepLine[] | null]] : []), ['Via breuken', breukenMaal(a, b)]]
+        : eq.operator === ':' ? [['Compenseren', compenserenDeel(a, b)], ...(ontbinden ? [['Ontbinden', ontbindenDeel(a, b)] as [HandigStrategy['name'], StepLine[] | null]] : []), ['Via breuken', breukenDeel(a, b)]]
         : Number.isInteger(a) && Number.isInteger(b) ? [['Compenseren', compenserenPlusMin(a, b, eq.operator as '+' | '-')]]
         : [];
     const standard = workedSteps(eq, c);
