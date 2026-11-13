@@ -104,6 +104,15 @@ export type MulDivConstraints = AddSubConstraints & {
     multiplicationMode?: 'tafels' | 'vrij' | 'met_rest' | 'andere';
     selectedTables?: number[];
     tableLimit?: number;
+    // × tafels "Vanaf": the lowest multiplier (11 with tableLimit 20 → 6 × 16, never 6 × 7); counts
+    // only below tableLimit (effectiveTableFrom); absent = 1.
+    tableFrom?: number;
+    // × tafels "Uitkomst tot": products above it are left out (9 × 16 = 144 at 100); absent / 0 ("Geen") = no cap.
+    tableProductMax?: number;
+    // × "Factoren wisselen" (tafels + natural andere): true = each sum puts either factor first at random,
+    // false = a fixed order (tafels: multiplier × tafel; andere: the drawn order). Absent = today's
+    // behaviour per mode: tafels random (shows AAN), andere fixed (shows UIT).
+    swapFactors?: boolean;
     fractionMultMode?: string;
     fractionOrderMode?: string;
     divisionLevel?: number;

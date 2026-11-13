@@ -17,7 +17,7 @@
 // exercisesPerRow, gridCellSize, tableCellW/H, …) and per-block layout fields that
 // live on MathBlock rather than in constraints.
 
-import { RANGES, HERLEIDINGEN_ENKEL } from './numberRanges';
+import { RANGES, HERLEIDINGEN_ENKEL, TAFEL_LIMITS, TAFEL_FROM, TAFEL_PRODUCT_MAX } from './numberRanges';
 
 export type OptionSpace = Record<string, unknown[]>;
 
@@ -85,7 +85,7 @@ const hrMulDiv: OptionSpace = {
     // MultiplicationConfig + multiplication/NaturalSettings
     multiplicationMode: ['tafels', 'met_rest', 'andere'],
     selectedTables: [[2, 3, 4, 5, 10], [7], [0, 1, 2, 11, 12, 25, 50, 75]],
-    tableLimit: [10, 20, 50, 100],
+    tableLimit: [...TAFEL_LIMITS],
     fractionMultMode: ['natural_fraction', 'fraction_fraction', 'decimal_fraction'],
     fractionOrderMode: ['AB', 'BA', 'beide'],
     preset: ['vrij', 'tienvoud'],
@@ -122,6 +122,9 @@ const hrMixed: OptionSpace = {
         { x: { selectedTables: [7] } },
         { '+': { maxGetal: 20 }, ':': { tableLimit: 5 } },
         { x: { multiplicationMode: 'andere' }, ':': { multiplicationMode: 'met_rest', selectedTables: [7], metRestLevel: 3, metRestKladlijn: true } },
+        // The × tab's tafels extras (Vanaf, Uitkomst tot, Factoren wisselen) under the shared max.
+        { x: { selectedTables: [6, 7], tableLimit: 20, tableFrom: 11, tableProductMax: 100, swapFactors: false } },
+        { x: { multiplicationMode: 'andere', swapFactors: true } },
     ],
 };
 
@@ -570,7 +573,15 @@ export const CONSTRAINT_SPACE: Record<string, OptionSpace> = {
     'hr-std-optellen': hrAddSub,
     'hr-std-aftrekken': hrAddSub,
     // multiplication/DecimalSettings 'Kommagetal × kommagetal' (× only).
-    'hr-std-vermenigvuldigen': { ...hrMulDiv, decimalTimesDecimal: [false, true] },
+    // multiplication/NaturalSettings: × alone offers 100 in 'andere', and the tafels extras
+    // Vanaf / Uitkomst tot (0 = "Geen") / Factoren wisselen.
+    'hr-std-vermenigvuldigen': {
+        ...hrMulDiv, decimalTimesDecimal: [false, true],
+        maxGetal: union(RANGES.hrAndereMul, RANGES.decimal, RANGES.hrTienvoud),
+        tableFrom: [...TAFEL_FROM],
+        tableProductMax: [0, ...TAFEL_PRODUCT_MAX],
+        swapFactors: [false, true],
+    },
     'hr-std-delen': hrMulDiv,
     'hr-std-gemengd': hrMixed,
 

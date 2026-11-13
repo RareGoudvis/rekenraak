@@ -35,7 +35,7 @@ describe('useMaxPresets without a scope', () => {
         ['hr-std-optellen', { numberType: 'decimal' }, RANGES.decimal],
         ['hr-std-optellen', { numberType: 'rational' }, null],
         ['hr-std-vermenigvuldigen', { numberType: 'natural', multiplicationMode: 'tafels' }, null],
-        ['hr-std-vermenigvuldigen', { numberType: 'natural', multiplicationMode: 'andere' }, RANGES.hrAndere],
+        ['hr-std-vermenigvuldigen', { numberType: 'natural', multiplicationMode: 'andere' }, RANGES.hrAndereMul],
         ['hr-std-delen', { numberType: 'natural', preset: 'tienvoud' }, RANGES.hrTienvoud],
         ['hr-std-gemengd', { numberType: 'decimal' }, RANGES.decimal],
         ['cijferen-delen-dec', { numberType: 'decimal' }, RANGES.cijferDecimal],
@@ -81,7 +81,7 @@ describe('useMaxPresets inside a gemengd variant tab', () => {
     test('a × tab follows its own override bag', () => {
         expect(listFor(gemengd(), tab('x'))).toBeNull();   // tafels: no max picker
         const andere = gemengd({ perVariant: { x: { multiplicationMode: 'andere' } } });
-        expect(listFor(andere, tab('x'))?.presets).toEqual(RANGES.hrAndere);
+        expect(listFor(andere, tab('x'))?.presets).toEqual(RANGES.hrAndereMul);
     });
 
     test('the shared getaltype reaches every tab', () => {

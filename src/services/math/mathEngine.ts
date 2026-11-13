@@ -1,6 +1,6 @@
 import type { MathBlock, Equation, Fraction } from './types';
 import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constraintTypes';
-import { RANGES, clipMetRestLevel } from '../../config/numberRanges';
+import { RANGES, clipMetRestLevel, effectiveTableFrom } from '../../config/numberRanges';
 import { generateWithRelaxation, relaxationNote } from './relax';
 
 // ============================================================================
@@ -852,17 +852,28 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
     // Sub-scenario B1: Tafels automatiseren
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
         if (selectedTables.length === 0) return [];
-        // capToMax (gemengd): only tables and multipliers whose product fits under the shared max.
-        const tables = constraints.capToMax ? selectedTables.filter((t: number) => t <= maxGetal) : selectedTables;
+        const lo = effectiveTableFrom(constraints.tableFrom, tableLimit);
+        const productCap = typeof constraints.tableProductMax === 'number' && constraints.tableProductMax > 0 ? constraints.tableProductMax : null;
+        // capToMax (gemengd) and "Uitkomst tot" bound the multiplier so every draw already fits.
+        const hiFor = (t: number): number => {
+            let hi = constraints.capToMax && t > 0 ? Math.min(tableLimit, Math.floor(maxGetal / t)) : tableLimit;
+            if (productCap !== null && t > 0) hi = Math.min(hi, Math.floor(productCap / t));
+            return hi;
+        };
+        const capped = constraints.capToMax ? selectedTables.filter((t: number) => t <= maxGetal) : selectedTables;
+        // A tafel whose smallest product (t × Vanaf) is past a cap has no sum left; absent options keep every table.
+        const tables = lo > 1 || productCap !== null ? capped.filter((t: number) => hiFor(t) >= lo) : capped;
         if (tables.length === 0) return [];
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
             const baseTable = tables[randInt(0, tables.length - 1)];
-            const multiplier = randInt(1, constraints.capToMax && baseTable > 0 ? Math.min(tableLimit, Math.floor(maxGetal / baseTable)) : tableLimit);
+            const multiplier = randInt(lo, hiFor(baseTable));
 
             let a = baseTable, b = multiplier;
-            if (Math.random() > 0.5) { a = multiplier; b = baseTable; }
+            // Factoren wisselen UIT: "multiplier × tafel", the Flemish tafel order (3 × 7 in de tafel van 7).
+            if (constraints.swapFactors === false) { a = multiplier; b = baseTable; }
+            else if (Math.random() > 0.5) { a = multiplier; b = baseTable; }
 
             if (excludeOne && (a === 1 || b === 1)) continue;
 
@@ -935,12 +946,14 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
                 intB = randInt(1, Math.floor((intMaxGetal * INTERNAL_SCALE) / intA));
             }
 
-            const a = Math.round((intA / INTERNAL_SCALE) * displayScale) / displayScale;
-            const b = Math.round((intB / INTERNAL_SCALE) * displayScale) / displayScale;
+            let a = Math.round((intA / INTERNAL_SCALE) * displayScale) / displayScale;
+            let b = Math.round((intB / INTERNAL_SCALE) * displayScale) / displayScale;
 
             if (a * b > maxGetal || a <= 0 || b <= 0) continue;
             if (excludeOne && (a === 1 || b === 1)) continue;
 
+            // Factoren wisselen AAN (natural 'andere' only; absent keeps today's order and draws), before the per-position max.
+            if (constraints.swapFactors === true && numberType === 'natural' && Math.random() < 0.5) [a, b] = [b, a];
             if (breaksOperandMax(constraints, [a, b])) continue;
             const comboId = `${a}*${b}`;
             if (usedCombinations.has(comboId)) continue;

@@ -40,6 +40,9 @@ export const RANGES = {
     hrNatural: NAT_STEPS,
     // Hoofdrekenen × / : in 'andere' mode (free sums with masks and division levels).
     hrAndere: NAT_STEPS.filter(v => v >= 1_000),
+    // Hoofdrekenen × 'andere' alone also offers 100 (owner request 2026-11-13: 4 × 23 within 100);
+    // delen 'andere' keeps hrAndere.
+    hrAndereMul: NAT_STEPS.filter(v => v >= 100),
     // ×/: 'Met 10, 100, 1000': the factor does the work, the base number stays small.
     hrTienvoud: HR_TIENVOUD,
     // : 'Met rest': the deeltal follows the grade (owner rule). N1/N2 stay two-digit, so 100 is
@@ -98,6 +101,16 @@ export function clipMetRestLevel(level: number, max: number): number {
     while (l > 1 && !metRestLevelFits(l, max)) l--;
     return l;
 }
+
+// Tafels mode (× and :): "Vermenigvuldig tot" / "Quotiënt tot", the highest multiplier.
+export const TAFEL_LIMITS: readonly number[] = [10, 20, 50, 100];
+// × tafels "Vanaf": the lowest multiplier (6 = the harder half of a tafel, 11/21/51 = past a lower "tot").
+export const TAFEL_FROM: readonly number[] = [1, 6, 11, 21, 51];
+// × tafels "Uitkomst tot": products above it are left out; absent = no cap ("Geen").
+export const TAFEL_PRODUCT_MAX: readonly number[] = [100, 200, 500, 1_000];
+// A "Vanaf" only counts below the chosen "tot" (a lowered "tot" leaves a stale one behind); else 1.
+export const effectiveTableFrom = (from: unknown, limit: number): number =>
+    typeof from === 'number' && Number.isInteger(from) && from > 1 && from < limit ? from : 1;
 
 // Steps a getallenas / getallenrij may fall back to when its span overruns a seeded max: the
 // presets both configs offer. SYNC: STEP_PRESETS / DECIMAL_STEPS in GetallenasConfig.tsx and

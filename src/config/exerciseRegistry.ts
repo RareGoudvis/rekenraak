@@ -434,15 +434,18 @@ const mulDivMax: MaxPresetsFn = (c) => {
     if (nt === 'rational') return null;
     if (c.preset === 'tienvoud') return maxGetal(RANGES.hrTienvoud);
     if (nt === 'decimal') return maxGetal(RANGES.decimal);
-    if (nt === 'natural' && (c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndere);
+    if (nt === 'natural' && (c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndereMul);
     return null;
 };
 
-// DivisionConfig adds met rest (natural only): its deeltal max follows the leerjaar.
-const divMax: MaxPresetsFn = (c) =>
-    c.preset !== 'tienvoud' && numberTypeOf(c) === 'natural' && c.multiplicationMode === 'met_rest'
-        ? maxGetal(RANGES.hrMetRest)
-        : mulDivMax(c);
+// DivisionConfig adds met rest (natural only): its deeltal max follows the leerjaar; its
+// 'andere' list starts at 1000 (the × list's 100 is a × request only).
+const divMax: MaxPresetsFn = (c) => {
+    if (c.preset === 'tienvoud' || numberTypeOf(c) !== 'natural') return mulDivMax(c);
+    if (c.multiplicationMode === 'met_rest') return maxGetal(RANGES.hrMetRest);
+    if ((c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndere);
+    return mulDivMax(c);
+};
 
 // GemengdConfig: one shared picker, decimal list or the natural one for every other type.
 const mixedMax: MaxPresetsFn = (c) =>
