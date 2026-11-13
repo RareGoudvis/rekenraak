@@ -73,6 +73,8 @@ export interface DocSettings {
     // A QR in every page's footer holding that page's hoofdrekenen sums, for the stappenhulp
     // (tutor.html). Optional → back-compat: absent = off, so old sheets and toetsen stay as they were.
     tutorQr?: boolean;
+    // The short line beside the QR that tells pupils what it is for. Absent = shown.
+    tutorQrCaption?: boolean;
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
     // Vertical rule in the gutter between blocks that share a row. showDividers is the

@@ -402,6 +402,12 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             <Switch checked={!!docSettings.tutorQr} onChange={(v) => updateDocSettings({ tutorQr: v })} aria-label="Stappenhulp-QR onderaan elke pagina" />
                         </div>
                         <p style={{ ...S.hintText, margin: '0 0 12px' }}>Leerlingen scannen de QR en zien hoe ze elke som van die pagina stap voor stap uitrekenen. Zet dit uit bij een toets: de QR verklapt de antwoorden.</p>
+                        {docSettings.tutorQr && (
+                            <div style={S.switchRow}>
+                                <span style={S.switchText}>Uitleg naast de QR-code</span>
+                                <Switch checked={docSettings.tutorQrCaption !== false} onChange={(v) => updateDocSettings({ tutorQrCaption: v })} aria-label="Uitleg naast de QR-code" />
+                            </div>
+                        )}
                     </>)}
                     <label style={S.label}>Voettekst stijl</label>
                     <div className="seg-group" style={{ marginBottom: '12px' }}>

@@ -71,7 +71,7 @@ describe('tutor payload', () => {
         expect(() => decodeTutor('#t=' + packText(' '.repeat(50_000)))).toThrow(/beschadigd/);
     });
 
-    it('a full page of 50 sums up to 1000 fits the 30 mm QR (version 15 at most)', () => {
+    it('a full page of 50 sums up to 1000 fits the 26 mm QR (version 13 at most)', () => {
         let seed = 7;
         const rnd = (n: number) => { seed = (seed * 1103515245 + 12345) % 2 ** 31; return seed % n; };
         const sums = Array.from({ length: 50 }, () => { const a = 10 + rnd(500); return eq(a, 1 + rnd(1000 - a)); });
@@ -80,7 +80,7 @@ describe('tutor payload', () => {
             { block: hr(sums.slice(25)), n: 2, title: 'Reken uit.' },
         ], hasSteps)!;
         const matrix = qrMatrixOrNull(TUTOR_URL + TUTOR_HASH_PREFIX + payload)!;
-        expect(qrVersionOf(matrix)).toBeLessThanOrEqual(15);
+        expect(qrVersionOf(matrix)).toBeLessThanOrEqual(13);
     });
 
     it('the QR points at the tutor next to the editor that printed it (https only)', () => {

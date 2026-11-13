@@ -139,7 +139,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
               <TutorQr payload={encodeTutorPage(
                 page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '' })),
                 (block, ex) => stepsFor(block.typeId, ex, block.constraints) !== null,
-              )} />
+              )} caption={docSettings.tutorQrCaption !== false} />
             </div>
           ) : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
         >

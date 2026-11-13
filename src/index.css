@@ -982,6 +982,9 @@ button.ez-pill:hover { background: var(--bg-active); }
 /* Stappenhulp QR (docSettings.tutorQr): the footer text keeps its row, the QR sits at the right. */
 .tutor-qr-foot { display: flex; align-items: flex-end; gap: 12px; }
 .tutor-qr-foot > .print-tfoot-inner { flex: 1 1 auto; min-width: 0; }
+/* The QR in its own thin frame, with an optional line that says what it is for. */
+.tutor-qr-box { display: flex; align-items: center; gap: 6px; flex: none; padding: 3px; border: 1px solid currentColor; border-radius: 6px; }
+.tutor-qr-caption { width: 124px; font-family: var(--font-sheet-footer); font-size: calc(var(--sheet-size-text) * 0.7); line-height: 1.25; text-align: right; }
 .tutor-qr-note {
   position: absolute; inset: 0; display: flex; align-items: center; text-align: center;
   font-family: var(--font-ui); font-size: 10px; color: var(--danger);
