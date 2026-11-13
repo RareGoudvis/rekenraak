@@ -95,6 +95,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'nieuw', text: 'Leerlingen kunnen in Oefenmodus en de stappenhulp ook handig rekenen bekijken: compenseren en ontbinden.' },
             { kind: 'nieuw', text: 'Stappenhulp: zet een QR-code onderaan je blad. Leerlingen scannen hem en zien hoe ze elke som stap voor stap uitrekenen.' },
             { kind: 'nieuw', text: 'Oefenmodus: na een fout kan een leerling de stappen bekijken. Je zet het uit bij het maken van de link.' },
+            { kind: 'opgelost', text: 'Stappenhulp: sommen zonder stappen staan er nu gewoon bij, en breuk van een hoeveelheid zit ook in de QR-code.' },
             { kind: 'opgelost', text: 'De vraag om een blok te splitsen verschijnt alleen nog als er echt een deel van het blok past.' },
         ],
     },
