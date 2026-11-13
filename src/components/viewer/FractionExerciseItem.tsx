@@ -7,6 +7,7 @@ import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { useSheetSizePx, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
 import KioskAnswerSlot from './KioskAnswerSlot';
+import HoeveelheidGroupsCard from './HoeveelheidGroupsCard';
 import { breukHoeveelheidSteps, stepText } from '../../services/math/workedSteps';
 import { formatMathNumber } from '../../services/math/formatters';
 
@@ -53,7 +54,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const c = block.constraints as FractionConstraints;
     const answerFormat: string = c.answerFormat || 'fraction-questions';
     const sheetSizePx = useSheetSizePx('math');
-    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the parts to colour (kleuren only).
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the parts to colour (kleuren) or groups and colours the objects (hoeveelheid).
     const ix = useViewerInteraction();
     // Oefenmodus card: a hoeveelheid asks only the final amount, so its working rows stay on paper.
     const scaffold = useShowScaffold();
@@ -279,6 +280,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             </div>
         );
 
+        // Oefenmodus: the pupil groups, colours and types on the card itself (hoeveelheidGroups.ts).
+        if (ix?.kind === 'fill-cells') return <HoeveelheidGroupsCard ex={ex} rowSizes={rowSizes} fraction={fracLabel} />;
         if (!scaffold) return <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>{gridWrap}{questionLine}</div>;
 
         if (answerFormat === 'met-hulp') {
