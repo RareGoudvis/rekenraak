@@ -2659,7 +2659,7 @@ In Oefenmodus this leaf is answered on the card ([HoeveelheidGroupsCard.tsx](../
 - Two working rows are optional, `geheel : noemer = één deel` and `teller × één deel = …`. A filled row is checked fully, and a wrong field makes the attempt fout and is marked red.
 - The answer "t/n van g = [ ]" is required.
 
-**Grouping and colouring are always required.** Controleer without them gives one nudge, which does not count. Unequal groups or the wrong number of coloured groups count as fout, with a short hint such as "Zijn alle groepjes even groot?". Hints appear only on request: an ⓘ beside the circles, each working row and the answer opens a bubble with that step's breukvraag and hint (`hvTips`). The circles' ⓘ includes the check that every group holds the one-deel amount.
+**Grouping and colouring are always required.** Controleer without them gives one nudge, which does not count. Unequal groups or the wrong number of coloured groups count as fout, with a short hint such as "Zijn alle groepjes even groot?". Hints appear only on request. One ⓘ beside the working rows opens a bubble with the next step, worked out from what the pupil has done (`hvNextStep`). The order is: make groups, then row 1, then check the groups against the pupil's own één deel, then colour, then row 2, then the answer, then "Klaar? Tik op Controleer." Skipped rows are skipped in the hints too, and a hint never shows a correct value.
 
 After a final fout the steps panel fills in a correct grouping, colouring and rows step by step, next to the breukvragen. This never happens in testmodus or when steps are off.
 
