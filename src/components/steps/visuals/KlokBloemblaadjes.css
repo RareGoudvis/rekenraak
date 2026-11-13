@@ -1,0 +1,20 @@
+/* The klok steps visual (KlokBloemblaadjes.tsx): the kiosk steps panel and the stappenhulp page alike. */
+.klok-bb { display: block; width: min(250px, 72vw); height: auto; margin: 0 auto 8px; }
+.klok-bb-face { fill: var(--bg-surface); stroke: var(--text-main); stroke-width: 2.5; }
+.klok-bb-tick { stroke: var(--text-main); stroke-width: 1; }
+.klok-bb-tick.is-hour { stroke-width: 2; }
+.klok-bb-num { font: 700 17px var(--font-ui); fill: var(--text-main); text-anchor: middle; dominant-baseline: central; }
+.klok-bb-num.is-24 { font-size: 10px; font-weight: 400; fill: var(--text-muted); }
+.klok-bb-petal { fill: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--bg-surface)); stroke: var(--accent-bewerkingen); stroke-width: 1.5; }
+.klok-bb-dot { fill: var(--accent-bewerkingen); }
+.klok-bb-count { font: 700 15px var(--font-ui); fill: var(--accent-strong); text-anchor: middle; dominant-baseline: central; }
+.klok-bb-hand { stroke: var(--text-main); stroke-linecap: round; }
+.klok-bb-hand.is-kleine { stroke-width: 6; }
+.klok-bb-hand.is-grote { stroke-width: 3.5; }
+.klok-bb-hand.is-kleine.is-hot { stroke: var(--accent-vraagstukken); stroke-width: 8; }
+.klok-bb-hand.is-grote.is-hot { stroke: var(--accent-bewerkingen); stroke-width: 5; }
+.klok-bb-pin { fill: var(--text-main); }
+/* Kiosk: the panel scrolls as answers are revealed; the clock stays in view so the petals show up beside the count. */
+.kiosk-steps > .steps-visual:has(.klok-bb) { position: sticky; top: calc(-1 * var(--sp-4)); z-index: 1; margin: calc(-1 * var(--sp-4)) 0 0; padding-top: var(--sp-2); background: var(--bg-surface); }
+/* The klok answers are words ("tussen 3 en 4"), prose: the UI font, not the math font of a sum. */
+.steps-visual:has(.klok-bb) ~ ol :is(.kiosk-steps-answer, .tutor-q-answer) { font-family: var(--font-ui); }
