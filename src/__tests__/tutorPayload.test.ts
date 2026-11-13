@@ -66,10 +66,10 @@ describe('tutor payload', () => {
         const payload = encodeTutorPage([{ block, n: 4, title: 'Bereken de breuk van de hoeveelheid.', exercises }], hasSteps)!;
         const [g] = decodeTutor(TUTOR_HASH_PREFIX + payload).groups;
         expect(g.title).toBe('Bereken de breuk van de hoeveelheid.');
-        expect(g.items.map(i => (i ? [i.kind, i.steps] : null))).toEqual([['hoeveelheid', true], ['hoeveelheid', true], ['hoeveelheid', false], null]);
+        expect(g.items.map(i => (i?.kind === 'codec' ? [i.codec, i.steps] : null))).toEqual([['h', true], ['h', true], ['h', false], null]);
         const first = g.items[0]!;
-        if (first.kind !== 'hoeveelheid') throw new Error('kind');
-        expect(breukHoeveelheidSteps(first.ex)).toEqual(breukHoeveelheidSteps(frac(1, 5, 20)));
+        if (first.kind !== 'codec') throw new Error('kind');
+        expect(breukHoeveelheidSteps(first.data as FractionExercise)).toEqual(breukHoeveelheidSteps(frac(1, 5, 20)));
         // Only no-steps breuken on a page: no QR content at all.
         expect(encodeTutorPage([{ block, n: 1, title: '', exercises: [frac(2, 3, 10)] }], hasSteps)).toBeNull();
         expect(() => decodeTutor('#t=' + packText(JSON.stringify([1, [[1, 'x', null, [['h', 1, 'a', 3]]]]])))).toThrow(/breuk/);

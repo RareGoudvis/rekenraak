@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { StepLine } from '../../services/math/workedSteps';
 import { StepLineView } from '../../components/viewer/StepTokens';
+import type { RenderStepsVisual } from '../../components/steps/stepsVisuals';
 
 // The kiosk and the stappenhulp (tutor.html) run this one component, so their breukvragen never disagree; only the classes differ.
 const LOOKS = {
@@ -18,7 +19,8 @@ const LOOKS = {
 // Question steps (breuk van een hoeveelheid): one question at a time, hint first, the answer on a tap.
 // Questions already answered stay above it, so the pupil reads the whole method at the end.
 // onReveal(answered): the card beside it fills in the same step (breuk van een hoeveelheid: rows, groups, colour).
-export default function QuestionSteps({ lines, onReveal, look = 'kiosk' }: { lines: StepLine[]; onReveal?(answered: number): void; look?: keyof typeof LOOKS }) {
+// visual: the type's steps visual, drawn above the questions as far as they are answered.
+export default function QuestionSteps({ lines, onReveal, look = 'kiosk', visual }: { lines: StepLine[]; onReveal?(answered: number): void; look?: keyof typeof LOOKS; visual?: RenderStepsVisual }) {
     const [revealed, setRevealed] = useState(0);
     const cls = LOOKS[look];
     const current = lines[Math.min(revealed, lines.length - 1)];
@@ -27,6 +29,7 @@ export default function QuestionSteps({ lines, onReveal, look = 'kiosk' }: { lin
 
     return (
         <>
+            {visual?.(revealed)}
             <ol className={cls.list} aria-live="polite">
                 {visible.map((l, i) => {
                     const answered = i < revealed || !l.question;

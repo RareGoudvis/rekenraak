@@ -12,6 +12,7 @@ import FeedbackOverlay from './FeedbackOverlay';
 import StepsPanel from './StepsPanel';
 import StatsScreen from './StatsScreen';
 import StorageBanner from './StorageBanner';
+import { stepsVisualFor } from '../../components/steps/stepsVisuals';
 
 // Physical keyboard (Chromebook / tablet keyboard): digits and the type's extra keys type,
 // Backspace deletes, Enter is Controleer (and skips a juist/fout flash), < = > pick for vergelijken.
@@ -164,7 +165,8 @@ export default function Kiosk() {
                             <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} hint={lastCorrect ? null : feedbackHint} />
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} hint={feedbackHint} />}
-                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution} />}
+                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution}
+                            visual={type && shown ? stepsVisualFor(type.typeId, shown.exercise, stepsOffer, 'kiosk') : undefined} />}
                     </section>
                 </main>
             )}

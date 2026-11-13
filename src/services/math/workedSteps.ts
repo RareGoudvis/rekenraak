@@ -42,7 +42,8 @@ export type StepKind = 'first' | 'move' | 'split' | 'fill' | 'answer' | 'parts' 
 // line is a side calculation ("6 × 9 = 54 en 6 × 10 = 60") that stands on its own, without that "=".
 // `basis` = shown at the Basisstappen level; Alle shows every line.
 export interface StepLine {
-    kind: StepKind;
+    // A type outside hoofdrekenen names its own kinds with a prefix ('klok.uur'), so it never edits StepKind.
+    kind: StepKind | `${string}.${string}`;
     basis: boolean;
     tokens: StepToken[];
     aside?: true;
@@ -51,6 +52,8 @@ export interface StepLine {
     hint?: string;
     // The same step as a bare calculation, without its question: what the answer key prints ("12 : 3 = 4").
     compact?: StepToken[];
+    // A per-type marker the type's steps visual reads for this line (which digit to highlight, which jump); every text renderer ignores it.
+    mark?: number | string;
 }
 
 export type StepLevel = 'basis' | 'alle';

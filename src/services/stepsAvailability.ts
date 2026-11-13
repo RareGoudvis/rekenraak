@@ -29,8 +29,8 @@ export function blockHasSteps(block: MathBlock): boolean {
     return exercisesOf(block).some(ex => stepsFor(block.typeId, ex, block.constraints) !== null);
 }
 
-// The stappenhulp page reads hoofdrekenen sums and breuk van een hoeveelheid, so a QR is offered only where one of those has steps.
+// The stappenhulp page reads hoofdrekenen sums and every type with a tutor codec, so a QR is offered only where one of those has steps.
 export function blockHasTutorSteps(block: MathBlock): boolean {
     if (!REGISTRY[block.typeId]?.steps) return false;
-    return exercisesOf(block).some(ex => tutorCarries(ex) && stepsFor(block.typeId, ex, block.constraints) !== null);
+    return exercisesOf(block).some(ex => tutorCarries(block.typeId, ex, block.constraints) && stepsFor(block.typeId, ex, block.constraints) !== null);
 }

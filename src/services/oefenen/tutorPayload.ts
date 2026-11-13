@@ -1,5 +1,6 @@
-import type { Equation, FractionExercise, MathBlock } from '../math/types';
-import { packText, unpackText } from './session';
+import type { Equation, MathBlock } from '../math/types';
+import { packText, unpackText } from './packText';
+import { codecById, codecForType } from '../steps/tutorCodecs';
 
 type ItemNumberingMode = MathBlock['itemNumbering'];
 
@@ -8,9 +9,10 @@ type ItemNumberingMode = MathBlock['itemNumbering'];
 // operands by hand and generators change between releases.
 //   wire: [1, groups]   group: [opdracht number | 0, title, numbering, items]
 //   item: [a, b] for a plain a + b (most of a page, so it stays short), [a, b, op] for another plain sum, else
-//         [ops, operands, missing index | -1, answer?, variant?], or ['h', t, n, g] for t/n van g
-//         (breuk van een hoeveelheid). A sum without worked steps (a tafel, 983 + 2) is shown, never
-//         opened: a string '983+2' / '36x?=144', or any item wrapped once ([['h', 2, 3, 10]]).
+//         [ops, operands, missing index | -1, answer?, variant?], or ['@', codec id, data] for any other
+//         type (src/services/steps/codecs; breuk van een hoeveelheid used to travel as ['h', t, n, g],
+//         still decoded). A sum without worked steps (a tafel, 983 + 2) is shown, never
+//         opened: a string '983+2' / '36x?=144', or any item wrapped once ([['@', 'h', [2, 3, 10]]]).
 //         0 = a sum the QR cannot carry (a breuk operand; every no-steps sum before 2026-11-13).
 //         Steps are decided here, where the block's settings are known: the tutor page only sees
 //         bare sums and would otherwise show rijgen for every one.
@@ -41,7 +43,8 @@ function answerOf(ops: string, operands: number[]): number {
 // steps false: printed on the list, greyed, never opened (the sheet's own rule said no steps).
 export type TutorItem =
     | { kind: 'sum'; eq: Equation; steps: boolean }
-    | { kind: 'hoeveelheid'; ex: FractionExercise; steps: boolean };
+    // Any other type: `codec` is its TutorCodec id, `data` what that codec's `in` gave.
+    | { kind: 'codec'; codec: string; data: unknown; steps: boolean };
 
 export interface TutorGroup {
     n: number | null;
@@ -65,19 +68,24 @@ function variantOf(block: MathBlock, eq: Equation): string | undefined {
     return (block.constraints as { preset?: string } | undefined)?.preset === 'compenseren' ? `${eq.operator}:compenseren` : undefined;
 }
 
-const HOEVEELHEID = 'h';
-const MAX_HOEVEELHEID = 100_000;
+const CODEC = '@';
+// The breuk van een hoeveelheid form before the codecs: ['h', t, n, g] = ['@', 'h', [t, n, g]].
+const LEGACY_HOEVEELHEID = 'h';
 
 const isSum = (ex: unknown): ex is Equation =>
     Array.isArray((ex as Equation | undefined)?.operands) && (ex as Equation).operands.every(o => typeof o === 'number' && Number.isFinite(o));
-const isHoeveelheid = (ex: unknown): ex is FractionExercise => {
-    const f = ex as FractionExercise | undefined;
-    return f?.subType === 'hoeveelheid' && [f.numerator, f.denominator, f.total].every(v => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_HOEVEELHEID);
-};
 
-// Whether the stappenhulp can show this exercise at all (a hoofdrekenen sum or a breuk van een hoeveelheid).
-export function tutorCarries(ex: unknown): boolean {
-    return isSum(ex) || isHoeveelheid(ex);
+// The codec's data for this exercise, or null when it cannot travel; a type without a codec travels as a sum or not at all.
+function codecOut(typeId: string, ex: unknown, constraints: unknown): unknown {
+    const codec = codecForType(typeId);
+    if (!codec) return null;
+    const data = codec.out(ex, (constraints ?? {}) as Record<string, unknown>);
+    return data === null || data === undefined ? null : [CODEC, codec.id, data];
+}
+
+// Whether the stappenhulp can show this exercise at all: a type with a codec, else a hoofdrekenen sum.
+export function tutorCarries(typeId: string, ex: unknown, constraints: unknown): boolean {
+    return codecForType(typeId) ? codecOut(typeId, ex, constraints) !== null : isSum(ex);
 }
 
 function sumOut(eq: Equation, variant?: string): unknown {
@@ -119,9 +127,9 @@ function sumFromString(text: string): Equation | null {
 
 function itemOut(block: MathBlock, ex: unknown, steps: boolean, greyed: boolean): { wire: unknown; steps: boolean } {
     if (!steps && !greyed) return { wire: 0, steps: false };
-    if (isSum(ex) && !steps) return { wire: sumString(ex) ?? [sumOut(ex)], steps: false };
-    const wire = isSum(ex) ? sumOut(ex, variantOf(block, ex))
-        : isHoeveelheid(ex) ? [HOEVEELHEID, ex.numerator, ex.denominator, ex.total]
+    if (!codecForType(block.typeId) && isSum(ex) && !steps) return { wire: sumString(ex) ?? [sumOut(ex)], steps: false };
+    const wire = codecForType(block.typeId) ? codecOut(block.typeId, ex, block.constraints) ?? 0
+        : isSum(ex) ? sumOut(ex, variantOf(block, ex))
         : 0;
     return { wire: wire !== 0 && !steps ? [wire] : wire, steps: wire !== 0 && steps };
 }
@@ -146,10 +154,12 @@ export function encodeTutorPage(
 
 const bad = (why: string): never => { throw new Error(`Deze QR-code kan niet gelezen worden (${why}).`); };
 
-function hoeveelheidIn(raw: unknown[]): FractionExercise {
-    const [, t, n, g] = raw;
-    if (raw.length !== 4 || ![t, n, g].every(v => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_HOEVEELHEID)) return bad('breuk');
-    return { id: '', subType: 'hoeveelheid', numerator: t as number, denominator: n as number, total: g as number, isManuallyEdited: false };
+// A codec item; an id this page does not know (a QR from a newer release) keeps its place as a placeholder.
+function codecIn(id: unknown, wire: unknown, steps: boolean): TutorItem | null {
+    const codec = typeof id === 'string' ? codecById(id) : undefined;
+    if (!codec) return null;
+    const data = codec.in(wire);
+    return data === null ? bad(codec.what) : { kind: 'codec', codec: codec.id, data, steps };
 }
 
 function itemIn(raw: unknown): TutorItem | null {
@@ -162,7 +172,8 @@ function itemIn(raw: unknown): TutorItem | null {
     // A sum without steps travels wrapped once: the list prints it, greyed.
     const steps = !(raw.length === 1 && Array.isArray(raw[0]));
     const inner = steps ? raw : raw[0] as unknown[];
-    if (inner[0] === HOEVEELHEID) return { kind: 'hoeveelheid', ex: hoeveelheidIn(inner), steps };
+    if (inner[0] === CODEC) return inner.length === 3 ? codecIn(inner[1], inner[2], steps) : bad('oefening');
+    if (inner[0] === LEGACY_HOEVEELHEID) return codecIn(LEGACY_HOEVEELHEID, inner.slice(1), steps);
     return { kind: 'sum', eq: sumIn(inner), steps };
 }
 
