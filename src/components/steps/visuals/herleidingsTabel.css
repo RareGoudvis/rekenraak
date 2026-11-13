@@ -1,0 +1,16 @@
+/* Herleiden: the herleidingstabel filling in step by step. Kiosk steps panel and stappenhulp card alike. */
+.steps-herl { padding: var(--sp-2); border-radius: var(--radius-md); background: var(--kiosk-paper, var(--tutor-paper, var(--bg-surface))); color: var(--kiosk-ink, var(--tutor-ink, var(--text-main))); }
+.steps-herl table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.steps-herl th { text-align: center; font-family: var(--font-ui); font-size: 13px; font-weight: 700; padding: 4px 0; border: 1.5px solid currentColor; line-height: 1.15; }
+.steps-herl th small { display: block; font-weight: 400; color: var(--text-muted); }
+.steps-herl th.is-target { background: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+.steps-herl th.is-target small { color: inherit; }
+.steps-herl td { height: 36px; padding: 0; text-align: center; font-family: var(--font-sheet-math); font-size: 19px; border: 1.5px solid currentColor; position: relative; }
+/* Oppervlakte: two boxes per unit; the thin line splits a unit, the thick one ends it. */
+.steps-herl td.is-inner { border-right-width: 0.5px; border-right-style: dashed; }
+.steps-herl td.is-zero { color: var(--accent); }
+.steps-herl td.is-read { background: color-mix(in srgb, var(--accent) 16%, transparent); font-weight: 700; }
+.steps-herl td.is-read[data-read="1"] { background: color-mix(in srgb, var(--accent-meetkunde) 22%, transparent); }
+.steps-herl td.is-read[data-read="2"] { background: color-mix(in srgb, var(--accent-vraagstukken) 22%, transparent); }
+.steps-herl td.is-comma::after { content: ','; position: absolute; right: -4px; bottom: 2px; font-weight: 700; color: var(--accent); }
+.steps-herl tr.steps-herl-arrows td { height: 24px; border: 0; font-family: var(--font-ui); font-size: 18px; font-weight: 700; color: var(--accent); }
