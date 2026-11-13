@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-13** — Breuken optellen/aftrekken now travel in the stappenhulp QR (codec `bs`; a typeId may carry several codecs), and the leerjaar rides in the Oefenmodus link (flag bits 5–7) and the tutor payload so handig rekenen offers ontbinden only in leerjaar 6.
+
 **2026-11-13** — Worked-steps round on `rc-oefenen`: a foundation (per-type tutor codecs + steps visuals, lighter stappenhulp bundle), then steps for klok (bloemblaadjes), geld teruggeven, rekenvolgorde, procenten, afronden, getallenas/getallenrijen, breuken vereenvoudigen/gelijknamig and herleidingen (auto-filling tabel), plus + − up to 10 000 and kommagetallen via eenheden; built by four agents in worktrees, merged locally through the gate, words in steps now use the UI font and the tutor heading wraps. One local merge was first committed with `--no-verify` by mistake; it was reset before any push and redone through the full gate.
 
 **2026-11-13** — Oefenmodus breuk van een hoeveelheid became hands-on: pupils build equal groups, colour the teller groups and may fill two checked working rows, with a nudge when the grouping is missing and a step-by-step solution after a final fout. Also the visual-audit fixes (step lines wrap, Zonder brug, procent split) and the owner bug list in BUGS.md.
