@@ -1,5 +1,5 @@
 import type { Equation, MathBlock } from '../math/types';
-import { packText, unpackText } from './session';
+import { packText, unpackText } from './packText';
 import { codecById, codecForType } from '../steps/tutorCodecs';
 
 type ItemNumberingMode = MathBlock['itemNumbering'];
@@ -10,7 +10,7 @@ type ItemNumberingMode = MathBlock['itemNumbering'];
 //   wire: [1, groups]   group: [opdracht number | 0, title, numbering, items]
 //   item: [a, b] for a plain a + b (most of a page, so it stays short), [a, b, op] for another plain sum, else
 //         [ops, operands, missing index | -1, answer?, variant?], or ['@', codec id, data] for any other
-//         type (src/services/steps/codecs; before 2026-11-14 breuk van een hoeveelheid was ['h', t, n, g],
+//         type (src/services/steps/codecs; breuk van een hoeveelheid used to travel as ['h', t, n, g],
 //         still decoded). A sum without worked steps (a tafel, 983 + 2) is shown, never
 //         opened: a string '983+2' / '36x?=144', or any item wrapped once ([['@', 'h', [2, 3, 10]]]).
 //         0 = a sum the QR cannot carry (a breuk operand; every no-steps sum before 2026-11-13).
