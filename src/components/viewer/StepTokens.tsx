@@ -9,15 +9,23 @@ const FRAC: CSSProperties = { display: 'inline-flex', flexDirection: 'column', a
 const TELLER: CSSProperties = { borderBottom: '0.1em solid currentColor', padding: '0 0.2em', minWidth: '1.2em', textAlign: 'center' };
 const NOEMER: CSSProperties = { padding: '0 0.2em', minWidth: '1.2em', textAlign: 'center' };
 
-const hasFraction = (tokens: StepToken[]) => tokens.some(t => t.t === 'frac');
+const hasSpecial = (tokens: StepToken[]) => tokens.some(t => t.t === 'frac' || t.t === 'word');
 
-// A step line's tokens with every breuk stacked; without one it is the plain string, so those lines render as before.
+// A step line's tokens with every breuk stacked and every word in a `.step-word` span (the kiosk and tutor set it in
+// the UI font); a line with neither is the plain string, so hoofdrekenen lines render as before.
 export function StepTokens({ tokens, fmt }: { tokens: StepToken[]; fmt: Fmt }): ReactNode {
-    if (!hasFraction(tokens)) return stepText(tokens, fmt);
+    if (!hasSpecial(tokens)) return stepText(tokens, fmt);
     const out: ReactNode[] = [];
     let run: StepToken[] = [];
     const flush = () => { if (run.length) out.push(stepText(run, fmt)); run = []; };
     tokens.forEach((t, i) => {
+        if (t.t === 'word') {
+            flush();
+            // The word's own spaces stay outside the span: a space inside it is lost from the accessible name ("van20").
+            const [, lead, w, trail] = /^(\s*)([\s\S]*?)(\s*)$/.exec(t.w)!;
+            out.push(lead, <span key={i} className="step-word">{w}</span>, trail);
+            return;
+        }
         if (t.t !== 'frac') { run.push(t); return; }
         flush();
         out.push(
@@ -33,6 +41,6 @@ export function StepTokens({ tokens, fmt }: { tokens: StepToken[]; fmt: Fmt }): 
 
 // One line as the pupil reads it ("= …", or an aside on its own); SYNC: stepLineText.
 export function StepLineView({ line, fmt }: { line: StepLine; fmt: Fmt }): ReactNode {
-    if (!hasFraction(line.tokens)) return stepLineText(line, fmt);
+    if (!hasSpecial(line.tokens)) return stepLineText(line, fmt);
     return <>{line.aside ? null : '= '}<StepTokens tokens={line.tokens} fmt={fmt} /></>;
 }

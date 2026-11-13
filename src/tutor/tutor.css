@@ -46,7 +46,10 @@ html:has(.tutor-body) { overflow-y: auto; }
 .tutor-item-sum { flex: 1; display: flex; flex-direction: column; font-family: var(--font-sheet-math); font-size: 20px; }
 .tutor-item-sum small { font-family: var(--font-ui); font-size: 13px; }
 .tutor-card { background: var(--tutor-paper); color: var(--tutor-ink); border-radius: var(--radius-lg); box-shadow: var(--shadow-2); padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); }
-.tutor-sum { font-family: var(--font-sheet-math); font-size: 32px; white-space: nowrap; }
+/* A long heading (2 ha 5 a 7 ca = ? m²) wraps at its spaces instead of running off a phone. */
+.tutor-sum { font-family: var(--font-sheet-math); font-size: 32px; white-space: normal; overflow-wrap: anywhere; }
+/* Words in a step read as text, not as a sum. SYNC: kiosk.css */
+.step-word { font-family: var(--font-ui); }
 .tutor-lines { list-style: none; margin: 0; padding: var(--sp-3) 0 0; border-top: 1px solid var(--separator); font-family: var(--font-sheet-math); font-size: 18px; line-height: 1.7; }
 /* Long step lines wrap at their spaces instead of running off a phone. */
 .tutor-lines li { white-space: normal; overflow-wrap: anywhere; font-weight: 700; }

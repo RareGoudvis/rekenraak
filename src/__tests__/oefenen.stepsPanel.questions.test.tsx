@@ -27,7 +27,8 @@ describe('StepsPanel question flow', () => {
 
         for (let i = 0; i < 3; i++) fireEvent.click(screen.getByText('Toon het antwoord'));
         expect(screen.getByText('12 : 3 = 4')).toBeTruthy();
-        expect(screen.getByText('2 keer, 2 × 4 = 8')).toBeTruthy();
+        // The word "keer" sits in its own .step-word span, so match the element's whole text.
+        expect(screen.getByText((_, el) => el?.textContent === '2 keer, 2 × 4 = 8' && !Array.from(el.children).some(c => c.textContent === '2 keer, 2 × 4 = 8'))).toBeTruthy();
         expect(screen.queryByText('Toon het antwoord')).toBeNull();
         expect(screen.getByText(/Klaar!/)).toBeTruthy();
     });

@@ -957,6 +957,8 @@ html:has(.oefen-body),
 .kiosk-steps-lines li { white-space: normal; overflow-wrap: anywhere; font-weight: 700; }
 /* The line just revealed, so the pupil sees where to look; optional lines stay quieter. */
 .kiosk-steps-lines li.is-new { color: var(--accent); }
+/* Words in a step ("naar boven", "onder ha") read as text, not as a sum: the UI font beside the math numbers. SYNC: tutor.css */
+.step-word { font-family: var(--font-ui); }
 .kiosk-steps-lines li.is-extra { font-weight: 400; color: var(--text-muted); }
 .kiosk-steps-done { margin: 0; font-size: var(--kiosk-text); font-weight: 700; color: var(--kiosk-ok); }
 /* Question steps: the question, its hint, then the answer once the pupil taps. */

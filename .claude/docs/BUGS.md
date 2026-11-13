@@ -61,7 +61,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 
-- Stappenhulp: `.tutor-sum` is `white-space: nowrap` at 32 px, so a long codec sum runs past the phone card (herleidingen `2 ha 5 a 7 ca = ? m²`, or a 7-digit mg value, at 390 px). Repro: tutor.html with that herleiding, 390×844. Fix direction: let `.tutor-sum` wrap or shrink (src/tutor/tutor.css, off-limits to the steps agents). 2026-11-13.
 
 ## Tooling
 
