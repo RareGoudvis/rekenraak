@@ -1,0 +1,9 @@
+/* Breuken vereenvoudigen / gelijknamig maken: the delers or veelvouden rows, what both share marked.
+   Shown in the kiosk steps panel and on the stappenhulp card; ink and paper follow whichever one hosts it. */
+.steps-lijsten { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); border-radius: var(--radius-md); background: var(--kiosk-paper, var(--tutor-paper, var(--bg-surface))); color: var(--kiosk-ink, var(--tutor-ink, var(--text-main))); }
+.steps-lijst { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.steps-lijst-label { font-family: var(--font-ui); font-size: 15px; font-weight: 700; margin-right: var(--sp-1); }
+.steps-lijst-chip { min-width: 34px; height: 34px; padding: 0 6px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--separator); border-radius: var(--radius-sm); font-family: var(--font-sheet-math); font-size: 17px; }
+.steps-lijst-chip.is-empty { border-style: dashed; color: transparent; }
+.steps-lijst-chip.is-common { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.steps-lijst-chip.is-pick { border-color: var(--accent); background: var(--accent); color: var(--accent-on); font-weight: 700; }

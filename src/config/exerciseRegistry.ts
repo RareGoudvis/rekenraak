@@ -1,4 +1,4 @@
-import type { ClockExercise, Equation, FractionExercise, GeldTeruggevenExercise, MathBlock, ProcentExercise, RekenvolgordeExercise } from '../services/math/types';
+import type { BreukBewerkExercise, ClockExercise, Equation, FractionExercise, GeldTeruggevenExercise, HerleidingExercise, MathBlock, ProcentExercise, RekenvolgordeExercise } from '../services/math/types';
 import type {
     BlockConstraints, AddSubConstraints, MulDivConstraints, CijferConstraints, ClockConstraints,
     FractionConstraints, BreukBewerkConstraints, BreukenRangschikkenConstraints, SplitsenConstraints,
@@ -18,6 +18,8 @@ import { geldTeruggevenSteps } from '../services/steps/geldTeruggevenSteps';
 import { procentenSteps } from '../services/steps/procentenSteps';
 import { rekenvolgordeSteps } from '../services/steps/rekenvolgordeSteps';
 import { breukHoeveelheidSteps, handigSteps, workedSteps, type HandigStrategy, type StepLine } from '../services/math/workedSteps';
+import { breukBewerkSteps, breukSomSteps } from '../services/steps/breukBewerkSteps';
+import { herleidingSteps } from '../services/steps/herleidingSteps';
 import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
 import { klokSteps } from '../services/steps/klokSteps';
@@ -520,8 +522,8 @@ const cijferRow = (defaultCount = 4): ExerciseTypeDef => row<CijferConstraints>(
 
 export const REGISTRY: Record<string, ExerciseTypeDef> = {
     // Mental math (hoofdrekenen standaardprocedure) — one typeId per operation.
-    'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
-    'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
+    'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: (ex, c) => breukSomSteps(ex as Equation) ?? hrSteps(ex, c), handig: hrHandig }),
+    'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax, kiosk: HR_KIOSK, steps: (ex, c) => breukSomSteps(ex as Equation) ?? hrSteps(ex, c), handig: hrHandig }),
     'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
     'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: divMax, kiosk: HR_KIOSK, steps: hrSteps, handig: hrHandig }),
     // Mixed already relaxes per variant inside its own generator, so it brings its own note.
@@ -550,7 +552,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'mab-tekenen':   row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax, kiosk: MAB_TEKENEN_KIOSK }),
 
     'ordenen':      row<OrdenenConstraints>({ exerciseField: 'ordenenExercises',      generate: generateOrdenenExercises, generateNoted: generateOrdenenExercisesNoted, defaultConstraints: ordenenDefaults,      defaultCount: 6, maxPresets: nonRationalMax(RANGES.ordenen) , kiosk: ORDENEN_KIOSK }),
-    'breuken-bewerken':      row<BreukBewerkConstraints>({ exerciseField: 'breukBewerkExercises', generate: generateBreukBewerkExercises, generateNoted: generateBreukBewerkExercisesNoted,        defaultConstraints: breukBewerkDefaults,        defaultCount: 8 , kiosk: BREUK_BEWERK_KIOSK }),
+    'breuken-bewerken':      row<BreukBewerkConstraints>({ exerciseField: 'breukBewerkExercises', generate: generateBreukBewerkExercises, generateNoted: generateBreukBewerkExercisesNoted,        defaultConstraints: breukBewerkDefaults,        defaultCount: 8 , kiosk: BREUK_BEWERK_KIOSK, steps: (ex) => breukBewerkSteps(ex as BreukBewerkExercise) }),
     'breuken-rangschikken':  row<BreukenRangschikkenConstraints>({ exerciseField: 'ordenenExercises',     generate: generateBreukenRangschikkenExercises, generateNoted: generateBreukenRangschikkenExercisesNoted, defaultConstraints: breukenRangschikkenDefaults, defaultCount: 6 , kiosk: ORDENEN_KIOSK }),
     'deelbaarheid': row<DeelbaarheidConstraints>({ exerciseField: 'deelbaarheidExercises', generate: generateDeelbaarheidExercises, defaultConstraints: deelbaarheidDefaults, defaultCount: 6, maxPresets: deelbaarheidMax , kiosk: VEELVOUDEN_KIOSK }),
     'getalpatronen': row<PatroonConstraints>({ exerciseField: 'patroonExercises', generate: generatePatroonExercises, generateNoted: generatePatroonExercisesNoted, defaultConstraints: patroonDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.patronen) , kiosk: PATROON_KIOSK }),
@@ -567,7 +569,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'vergelijken':  row<VergelijkenConstraints>({ exerciseField: 'vergelijkenExercises',  ...notingShortfall(generateVergelijkenExercises),  defaultConstraints: vergelijkenDefaults,  defaultCount: 6, maxPresets: vergelijkenMax, kiosk: VERGELIJKEN_KIOSK }),
     'afronden':     row<AfrondenConstraints>({ exerciseField: 'afrondenExercises',     ...notingShortfall(generateAfrondenExercises),     defaultConstraints: afrondenDefaults,     defaultCount: 6, maxPresets: afrondenMax, kiosk: AFRONDEN_KIOSK }),
     'romeinse-cijfers': row<RomeinseConstraints>({ exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 , kiosk: ROMEINSE_KIOSK }),
-    'herleidingen': row<HerleidingenConstraints>({ exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, generateNoted: generateHerleidingExercisesNoted, defaultConstraints: herleidingenDefaults, defaultCount: 8 , kiosk: HERLEIDINGEN_KIOSK }),
+    'herleidingen': row<HerleidingenConstraints>({ exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, generateNoted: generateHerleidingExercisesNoted, defaultConstraints: herleidingenDefaults, defaultCount: 8 , kiosk: HERLEIDINGEN_KIOSK, steps: (ex) => herleidingSteps(ex as HerleidingExercise) }),
 
     // Schattend rekenen (compenseren + tienvoud are hr-std presets, not types).
     'schattend': row<SchattendConstraints>({ exerciseField: 'schattendExercises', generate: generateSchattendExercises, generateNoted: generateSchattendNoted, defaultConstraints: schattendDefaults, defaultCount: 8, maxPresets: schattendMax , kiosk: SCHATTEND_KIOSK }),
