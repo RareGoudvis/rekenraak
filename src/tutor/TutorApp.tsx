@@ -46,6 +46,9 @@ function sumText(eq: Equation): string {
     return missing >= 0 ? `${lhs} = ${formatMathNumber(eq.answer as number)}` : lhs;
 }
 
+// A sum item carries no typeId; gemengd holds every operator, so its visual (MAB, leerjaar 1–3) is the hoofdrekenen one.
+const SUM_TYPE_ID = 'hr-std-gemengd';
+
 type CodecItem = Extract<TutorItem, { kind: 'codec' }>;
 
 // The sum as printed: a + b, or what the type's codec says (t/n van g with the breuk stacked).
@@ -122,7 +125,8 @@ export default function TutorApp() {
                 </header>
                 <main className="tutor-main">
                     {current.kind === 'sum'
-                        ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq, undefined, { grade })} />
+                        ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq, undefined, { grade })}
+                            visual={stepsVisualFor(SUM_TYPE_ID, current.eq, currentSteps, 'tutor', { grade })} />
                         : <CodecCard key={`${open.g}-${open.i}`} item={current} lines={currentSteps} />}
                 </main>
             </div>

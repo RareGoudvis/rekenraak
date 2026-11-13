@@ -53,7 +53,11 @@ describe('tutor codec registry', () => {
         for (const v of STEPS_VISUALS) for (const t of v.typeIds) expect(REGISTRY[t]?.steps, t).toBeTruthy();
         const lines = breukHoeveelheidSteps(frac(1, 5, 20))!;
         expect(stepsVisualFor('breuken', frac(1, 5, 20), lines, 'kiosk')).toBeUndefined();
-        expect(stepsVisualFor('hr-std-optellen', {}, lines, 'tutor')).toBeUndefined();
+        // Hoofdrekenen has the MAB visual (leerjaar 1–3); its applies() refuses what it cannot draw, so no empty box.
+        expect(stepsVisualFor('hr-std-optellen', {}, lines, 'tutor', { grade: 2 })).toBeUndefined();
+        const sum: Equation = { id: 'x', operands: [475, 368], operator: '+', answer: 843, isManuallyEdited: false };
+        expect(stepsVisualFor('hr-std-optellen', sum, workedSteps(sum)!, 'tutor', { grade: 2 })).toBeDefined();
+        expect(stepsVisualFor('hr-std-optellen', sum, workedSteps(sum)!, 'tutor')).toBeUndefined();
         const draw = stepsVisualFor('breuken', frac(1, 5, 20), lines, 'tutor')!;
         const { container } = render(<>{draw(2)}</>);
         // Two answers revealed (geheel, noemer): 20 objects in 5 numbered outline groups, none chosen yet.

@@ -166,7 +166,7 @@ export default function Kiosk() {
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} hint={feedbackHint} />}
                         {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution}
-                            visual={type && shown ? stepsVisualFor(type.typeId, shown.exercise, stepsOffer, 'kiosk') : undefined} />}
+                            visual={type && shown ? stepsVisualFor(type.typeId, shown.exercise, stepsOffer, 'kiosk', { grade: sessie.grade, noMab: sessie.noMab }) : undefined} />}
                     </section>
                 </main>
             )}
