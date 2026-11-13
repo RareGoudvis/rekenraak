@@ -2655,15 +2655,15 @@ Teachers find the link in the Oefenmodus builder ([ZelfLinkCard.tsx](../../src/c
 
 In Oefenmodus this leaf is answered on the card ([HoeveelheidGroupsCard.tsx](../../src/components/viewer/HoeveelheidGroupsCard.tsx), logic in [hoeveelheidGroups.ts](../../src/services/fractions/hoeveelheidGroups.ts), panel buttons in `GroupTools.tsx`):
 
-- The pupil builds each group by hand. "Nieuw groepje" starts a group, a tap puts a circle in or takes it out, and each group gets a numbered colour. Then the pupil taps groups to colour them. "Groepjes aanpassen" and "Opnieuw" let them change or restart.
+- The pupil builds each group by hand. Group chips in the panel ("1 2 3 …" in their colours, plus "+ Nieuw groepje") pick the active group. A tap on a free circle adds it to that group, a tap on one of its own circles takes it out, and a tap on another group's circle moves it in. Empty groups vanish once the pupil moves on, so the numbers stay 1..n. Then the pupil taps groups to colour them. "Groepjes aanpassen" and "Opnieuw" let them change or restart.
 - Two working rows are optional, `geheel : noemer = één deel` and `teller × één deel = …`. A filled row is checked fully, and a wrong field makes the attempt fout and is marked red.
 - The answer "t/n van g = [ ]" is required.
 
-**Grouping and colouring are always required.** Controleer without them gives one nudge, which does not count. Unequal groups or the wrong number of coloured groups count as fout, with a short hint such as "Zijn alle groepjes even groot?". After row 1 the panel asks the pupil to check their groups again, using their own numbers.
+**Grouping and colouring are always required.** Controleer without them gives one nudge, which does not count. Unequal groups or the wrong number of coloured groups count as fout, with a short hint such as "Zijn alle groepjes even groot?". Hints appear only on request: an ⓘ beside the circles, each working row and the answer opens a bubble with that step's breukvraag and hint (`hvTips`). The circles' ⓘ includes the check that every group holds the one-deel amount.
 
 After a final fout the steps panel fills in a correct grouping, colouring and rows step by step, next to the breukvragen. This never happens in testmodus or when steps are off.
 
-The descriptor fields are `groups`, `nudge`, `review`, `solution` and `guide`, plus a per-cell question. The interaction state gains `groups`; `groupPartProps` marks the parts only under ViewerInteractionContext, so the printed sheet is unchanged.
+The descriptor fields are `groups`, `nudge`, `review` and `solution`, plus a per-cell question. The interaction state gains `groups`; `groupPartProps` marks the parts only under ViewerInteractionContext, so the printed sheet is unchanged.
 
 ### Steps after a fout and the stappenhulp
 
