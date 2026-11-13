@@ -107,10 +107,10 @@ export interface KioskInteract<E = unknown> {
     // build: the kiosk tray, in display order. From the SETTINGS only (allowed coins, the
     // positietabel's places), never the exercise's answer, so the tray does not hint at it.
     pieces?(ex: E, c: Record<string, unknown>): KioskPiece[];
-    // fill-cells: the pupil also groups and colours the card's objects (state.groups); the answer
-    // panel shows the group tools (group chips, Nieuw groepje, Klaar met groepjes, Opnieuw) above the keypad.
+    // fill-cells: the pupil also groups the card's objects and chooses groups (state.groups); the answer
+    // panel shows the group tools (group chips, Nieuw groepje, Groepjes kiezen, Opnieuw) above the keypad.
     groups?: boolean;
-    // The work still missing before an answer counts (no groups, nothing coloured): the first
+    // The work still missing before an answer counts (no groups, none chosen): the first
     // Controleer without it only shows this line and is not an attempt; undefined = nothing missing.
     nudge?(given: string, ex: E, c: Record<string, unknown>): string | undefined;
     // After a wrong check: one short hint and the cells to mark wrong (key → 'wrong'). A

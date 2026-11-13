@@ -3,8 +3,8 @@ import { kioskFor, kioskInteractOf } from '../../services/oefenen/kiosk';
 import { useOefenStore } from '../useOefenStore';
 
 // The answer panel's group tools (interact.groups, breuk van een hoeveelheid): a chip per group to
-// pick the one the taps fill, a new group, finish grouping, back to grouping, start over; under
-// them only the nudge (hints wait behind the card's "i" buttons until the pupil asks).
+// pick the one the taps fill, a new group, "Groepjes kiezen" (taps then choose whole groups), back to
+// grouping, start over; under them only the nudge (hints wait behind the card's "i" until the pupil asks).
 export default function GroupTools() {
     const sessie = useOefenStore(s => s.sessie);
     const shown = useOefenStore(s => s.shown);
@@ -20,13 +20,19 @@ export default function GroupTools() {
     const activeEmpty = work.active !== null && (work.members[work.active]?.length ?? 0) === 0;
     const set = useOefenStore.getState().setInteraction;
     const off = phase !== 'exercise';
+    const choosing = work.mode === 'colour';
+    const total = (shown.exercise as { total?: number }).total ?? 0;
+    const allGrouped = total > 0 && work.members.reduce((a, m) => a + m.length, 0) >= total;
+    // Choosing is required but pupils missed it (owner, class 2026-11-13): the button pulses once
+    // every object is grouped (or while choosing) until a first group is chosen.
+    const pulse = !off && made && work.colored.length === 0 && (choosing || allGrouped);
     // The nudge stays until the work it asks for is there.
     const given = ia.fromState(interaction, shown.exercise, shown.constraints);
     const stillMissing = nudge !== null && (given === '' || !!ia.nudge?.(given, shown.exercise, shown.constraints));
 
     return (
         <div className="kiosk-groups">
-            {work.mode === 'group' && (
+            {!choosing && (
                 <div className="kiosk-groups-chips" role="group" aria-label="Groepjes">
                     {work.members.map((_, g) => (
                         <button
@@ -44,9 +50,14 @@ export default function GroupTools() {
                 </div>
             )}
             <div className="kiosk-groups-actions">
-                {work.mode === 'group'
-                    ? <button type="button" className="kiosk-btn kiosk-btn-primary" disabled={off || !made} onClick={() => set(groupsDone(interaction))}>Klaar met groepjes</button>
-                    : <button type="button" className="kiosk-btn" disabled={off} onClick={() => set(groupsEdited(interaction))}>Groepjes aanpassen</button>}
+                <button
+                    type="button"
+                    className={`kiosk-btn kiosk-group-choose${made ? ' kiosk-btn-primary' : ''}${pulse ? ' kiosk-steps-pulse' : ''}`}
+                    aria-pressed={choosing}
+                    disabled={off || !made}
+                    onClick={() => { if (!choosing) set(groupsDone(interaction)); }}
+                >Groepjes kiezen</button>
+                {choosing && <button type="button" className="kiosk-btn" disabled={off} onClick={() => set(groupsEdited(interaction))}>Groepjes aanpassen</button>}
                 <button type="button" className="kiosk-btn" disabled={off || work.members.length === 0} onClick={() => set(groupsCleared(interaction))}>Opnieuw</button>
             </div>
             {stillMissing && <p className="kiosk-nudge" role="status">{nudge}</p>}
