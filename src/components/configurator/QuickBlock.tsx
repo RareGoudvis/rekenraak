@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { QUICK_SETTINGS, type QuickPills, type QuickSpec } from '../../config/quickSettings';
+import { offeredOptions } from '../../config/quickOptions';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { loadEenvoudigData } from '../../config/eenvoudig/cards';
 import type { MathBlock } from '../../services/math/types';
@@ -44,13 +45,17 @@ function FullConfig({ block }: { block: MathBlock }) {
 function PillsRow({ block, spec }: { block: MathBlock; spec: QuickPills }) {
     const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
     const c = (block.constraints ?? {}) as Record<string, unknown>;
-    if (spec.when && !spec.when(c)) return null;
+    // Probes the generator once per pill: only when the block changes, not on every render.
+    const shown = !spec.when || spec.when(c);
+    const options = useMemo(() => (shown ? offeredOptions(block, spec) : []), [shown, block, spec]);
+    // Hidden by its own rule, or one pill left: no choice to offer.
+    if (options.length < 2) return null;
     const current = c[spec.key] ?? spec.fallback;
     return (
         <div className="qb-row">
             <div className="qb-q">{spec.label}</div>
             <div className="qb-opts" role="group" aria-label={spec.label}>
-                {spec.options.map((o) => (
+                {options.map((o) => (
                     <button
                         key={o.label} type="button"
                         aria-pressed={sameValue(current, o.value)}
