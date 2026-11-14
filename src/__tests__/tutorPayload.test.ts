@@ -24,7 +24,7 @@ const hr = (exercises: Equation[], typeId = 'hr-std-optellen'): MathBlock =>
 describe('tutor payload', () => {
     it('round-trips the sums with steps on their printed labels; a sum without steps is carried greyed, a block without any is left out', () => {
         const page = [
-            { block: hr([eq(475, 368), eq(47, 8)]), n: 1, title: 'Reken uit.' },
+            { block: hr([eq(475, 368), eq(3, 4)]), n: 1, title: 'Reken uit.' },
             { block: makeBlock('klok-kloklezen', { id: 'klok' }), n: 2, title: 'Hoe laat?' },
             // A puntoefening never has steps; 500 − 236 (a brug on a 0 digit) does since 2026-11-13.
             { block: hr([eq(500, 236, { operator: '-', answer: 264 }), eq(36, 4, { operator: 'x', answer: 9, missingTerm: 'operand2' })], 'hr-std-gemengd'), n: 3, title: 'Gemengd' },
@@ -36,8 +36,17 @@ describe('tutor payload', () => {
         expect(first!.steps).toBe(true);
         // The decoded sum gives the same steps as the sheet's own.
         expect(workedSteps(sumOf(first))).toEqual(workedSteps(eq(475, 368)));
-        // 47 + 8 has no steps: listed as b) with its numbers, never opened.
-        expect(second).toMatchObject({ kind: 'sum', steps: false, eq: { operands: [47, 8], answer: 55 } });
+        // 3 + 4 is a fact without steps: listed as b) with its numbers, never opened.
+        expect(second).toMatchObject({ kind: 'sum', steps: false, eq: { operands: [3, 4], answer: 7 } });
+    });
+
+    it('small sums with one part carry their steps and decode to the same lines (2026-11-14)', () => {
+        const sums = [eq(8, 5), eq(49, 5), eq(53, 7, { operator: '-', answer: 46 }), eq(14, 3), eq(47, 30), eq(85, 40, { operator: '-', answer: 45 })];
+        const sheet = decodeTutor(TUTOR_HASH_PREFIX + encodeTutorPage([{ block: hr(sums, 'hr-std-gemengd'), n: 1, title: '' }], hasSteps)!);
+        const items = sheet.groups[0].items;
+        expect(items.map(i => i!.steps)).toEqual(sums.map(() => true));
+        items.forEach((item, i) => expect(workedSteps(sumOf(item))).toEqual(workedSteps(sums[i])));
+        expect(workedSteps(sumOf(items[0]))!.length).toBe(3);
     });
 
     it('follows the block preset: a compenseren sum carries its strategy, so the tutor shows compenseren, not rijgen', () => {

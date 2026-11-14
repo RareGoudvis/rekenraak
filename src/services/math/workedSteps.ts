@@ -303,6 +303,36 @@ function eenhedenPlusMin(a: number, b: number, o: RijOp): StepLine[] | null {
     return [line('units', true, [num(ma), u, op(o), num(mb), u]), line('units', true, [num(r), u]), line('answer', true, [num(roundTo(r / 10 ** dp, dp))])];
 }
 
+// One place-value part (owner, 2026-11-14). A brug splits it to the round number as rijgen does
+// (8 + 5 = (8 + 2) + 3, 53 − 7 = (53 − 3) − 4); without one the pupil works at that place only
+// (14 + 3 = 10 + (4 + 3), 47 + 30 = (40 + 30) + 7). A fact or a sum the steps would only repeat gets null.
+function eenDeel(a: number, b: number, o: RijOp): StepLine[] | null {
+    const place = 10 ** (String(b).length - 1);
+    const d = b / place;
+    if (a < place) return null;
+    const digit = Math.floor(a / place) % 10;
+    const ans = o === '+' ? a + b : a - b;
+    if (o === '+' ? digit + d > 10 : d > digit) {
+        // − on a 0 digit (50 − 7, 10 − 4): rijgen takes it off in one step, which is the sum itself.
+        if (digit === 0) return null;
+        const fill = (o === '+' ? 10 - digit : digit) * place;
+        const v = o === '+' ? a + fill : a - fill;
+        return [line('split', true, chain(o, a, fill, [b - fill])), line('fill', false, [num(v), op(o), num(b - fill)]), line('answer', true, [num(ans)])];
+    }
+    // E + E and E − E without a brug are facts (3 + 4, 5 + 5).
+    if (a < 10) return null;
+    if (place === 1) {
+        const top = a - digit;
+        // 40 + 5 and 47 − 7 have nothing to work out.
+        if (digit === 0 || (o === '-' && digit === b)) return null;
+        return [line('parts', true, [num(top), op('+'), ...bracket(digit, o, b)]), line('values', false, [num(top), op('+'), num(o === '+' ? digit + b : digit - b)]), line('answer', true, [num(ans)])];
+    }
+    const low = a % place, top = a - low;
+    // 40 + 30 is a fact at its place; 45 − 40 would read (40 − 40) + 5.
+    if (low === 0 || (o === '-' && top === b)) return null;
+    return [line('parts', true, [...bracket(top, o, b), op('+'), num(low)]), line('values', false, [num(o === '+' ? top + b : top - b), op('+'), num(low)]), line('answer', true, [num(ans)])];
+}
+
 // Delen met rest by counting in jumps of the deler (owner, 2026-11-12: "26 : 5 → 0 5 10 15 20 25"; Op.stap
 // 2.2.GL3.32): 26 : 5 → 0, 5, 10, 15, 20, 25, 26 = 25 + 1, = 5 rest 1.
 function tafelRest(a: number, d: number, q: number, r: number): StepLine[] {
@@ -574,10 +604,12 @@ export function workedSteps(eq: Equation, c?: Partial<AddSubConstraints>): StepL
     if (!Number.isInteger(a) || !Number.isInteger(b)) return preset && preset !== 'vrij' ? null : eenhedenPlusMin(a, b, eq.operator);
     if (preset === 'compenseren') return compenserenPlusMin(a, b, eq.operator);
     if (preset && preset !== 'vrij') return null;
-    if (a < 10 || b < 1) return null;
+    if (a < 1 || b < 1) return null;
     if (eq.operator === '+' ? a + b > MAX_ANSWER : a > MAX_ANSWER || b > a) return null;
-    // One non-zero digit (47 + 8, 47 − 30): the first line would only repeat the sum. Open question.
-    if (placeParts(b).length < 2) return null;
+    // One non-zero digit (8 + 5, 47 + 8, 47 − 30): rijgen's first line would only repeat the sum.
+    if (placeParts(b).length < 2) return eenDeel(a, b, eq.operator);
+    // E + TE (8 + 55): a pupil swaps the terms first; no strategy is written for that yet.
+    if (a < 10) return null;
     return eq.operator === '+' ? rijgenOptellen(a, b) : rijgenAftrekken(a, b);
 }
 

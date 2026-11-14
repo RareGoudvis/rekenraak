@@ -104,8 +104,12 @@ describe('shapes without a strategy return null', () => {
         ['answer above 10 000', eq(9675, 4438)],
         ['decimal too big for eenheden', eq(36.8, 4.5)],
         ['first operand below 10', eq(8, 55)],
-        ['one non-zero digit', eq(47, 8)],
-        ['round tens only', eq(47, 30)],
+        ['a fact: E + E without a brug', eq(3, 4)],
+        ['a fact: E − E', eq(9, 4, { operator: '-', answer: 5 })],
+        ['5 + 5 lands on a tiental', eq(5, 5)],
+        ['10 − 4: a tiental on a 0 digit', eq(10, 4, { operator: '-', answer: 6 })],
+        ['tiental + E', eq(40, 5)],
+        ['T + T', eq(40, 30)],
         ['a variant of another operator', eq(475, 29, { variant: '-:compenseren' })],
     ])('%s', (_name, e) => {
         expect(workedSteps(e as Equation)).toBeNull();
@@ -230,8 +234,10 @@ describe('kommagetallen + and − via eenheden (owner, 2026-11-13)', () => {
         };
         for (const dp of [1, 2]) for (let x = 1; x <= 150; x += 7) for (let y = 1; y <= 150; y += 11) for (const o of ['+', '-'] as const) {
             const a = x / 10 ** dp, b = y / 10 ** dp;
+            // Two whole numbers (12 + 10) go by the whole-number strategies.
+            if (Number.isInteger(a) && Number.isInteger(b)) continue;
             const ls = workedSteps(eq(Number(a.toFixed(dp)), Number(b.toFixed(dp)), { operator: o }));
-            if (!ls) { expect((o === '-' && y > x) || (Number.isInteger(a) && Number.isInteger(b))).toBe(true); continue; }
+            if (!ls) { expect(o === '-' && y > x).toBe(true); continue; }
             // A line's unit scale follows the finer operand, so check against the values, not x and y.
             const want = o === '+' ? a + b : a - b;
             expect(ls[2].tokens[0]).toMatchObject({ t: 'num' });
@@ -239,5 +245,82 @@ describe('kommagetallen + and − via eenheden (owner, 2026-11-13)', () => {
             const u = (ls[1].tokens[1] as { u: 't' | 'h' }).u === 't' ? 10 : 100;
             expect(val(ls[1]).nums[0] / u).toBeCloseTo(want, 9);
         }
+    });
+});
+
+// Small sums (owner, 2026-11-14): one place-value part, so the first rijgen line would only repeat the sum.
+describe('one place-value part: brug to the tiental, else work at that place', () => {
+    const steps = (a: number, o: '+' | '-', b: number) => workedSteps(eq(a, b, { operator: o, answer: o === '+' ? a + b : a - b }));
+    it.each<[number, '+' | '-', number, string[], boolean[]]>([
+        [8, '+', 5, ['(8 + 2) + 3', '10 + 3', '13'], [true, false, true]],
+        [49, '+', 5, ['(49 + 1) + 4', '50 + 4', '54'], [true, false, true]],
+        [67, '+', 8, ['(67 + 3) + 5', '70 + 5', '75'], [true, false, true]],
+        [13, '-', 5, ['(13 − 3) − 2', '10 − 2', '8'], [true, false, true]],
+        [53, '-', 7, ['(53 − 3) − 4', '50 − 4', '46'], [true, false, true]],
+        [14, '+', 3, ['10 + (4 + 3)', '10 + 7', '17'], [true, false, true]],
+        [17, '-', 5, ['10 + (7 − 5)', '10 + 2', '12'], [true, false, true]],
+        [64, '+', 5, ['60 + (4 + 5)', '60 + 9', '69'], [true, false, true]],
+        [264, '+', 5, ['260 + (4 + 5)', '260 + 9', '269'], [true, false, true]],
+        [47, '+', 3, ['40 + (7 + 3)', '40 + 10', '50'], [true, false, true]],
+        [47, '+', 30, ['(40 + 30) + 7', '70 + 7', '77'], [true, false, true]],
+        [85, '-', 40, ['(80 − 40) + 5', '40 + 5', '45'], [true, false, true]],
+        [247, '+', 30, ['(240 + 30) + 7', '270 + 7', '277'], [true, false, true]],
+        [87, '+', 30, ['(87 + 20) + 10', '107 + 10', '117'], [true, false, true]],
+        [125, '-', 40, ['(125 − 20) − 20', '105 − 20', '85'], [true, false, true]],
+        [280, '+', 30, ['(280 + 20) + 10', '300 + 10', '310'], [true, false, true]],
+    ])('%i %s %i', (a, o, b, want, basis) => {
+        const lines = steps(a, o, b)!;
+        expect(text(lines)).toEqual(want);
+        expect(lines.map(l => l.basis)).toEqual(basis);
+    });
+
+    it('no steps where they would only repeat the sum or a fact', () => {
+        for (const [a, o, b] of [[3, '+', 4], [5, '+', 5], [7, '+', 3], [9, '-', 4], [10, '-', 4], [50, '-', 7], [100, '-', 5], [40, '+', 5], [47, '-', 7], [45, '-', 40], [80, '-', 40], [12, '+', 300], [7, '+', 30]] as const) {
+            expect(steps(a, o, b), `${a} ${o} ${b}`).toBeNull();
+        }
+    });
+
+    it('sweep: every + and − up to 1000 with one part keeps the invariants', () => {
+        let count = 0;
+        for (let a = 1; a <= 1000; a++) {
+            for (const b of [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(d => [d, d * 10, d * 100])) {
+                for (const o of ['+', '-'] as const) {
+                    if (o === '+' ? a + b > 1000 : b > a) continue;
+                    const lines = steps(a, o, b);
+                    if (!lines) continue;
+                    count++;
+                    const want = o === '+' ? a + b : a - b;
+                    for (const l of lines) {
+                        if (evalLine(l) !== want) throw new Error(`${a} ${o} ${b}: "${stepText(l.tokens)}" is not ${want}`);
+                        const first = l.tokens[0], last = l.tokens[l.tokens.length - 1];
+                        if (first.t === 'open' && last.t === 'close') throw new Error(`${a} ${o} ${b}: a bracket spans the whole line`);
+                    }
+                    const end = lines[lines.length - 1];
+                    if (lines.length !== 3 || end.kind !== 'answer' || end.tokens.length !== 1 || !lines[0].basis || !end.basis || lines[1].basis) throw new Error(`${a} ${o} ${b}: bad shape`);
+                    // The brug lands on a round number at the part's place (49 + 1 = 50).
+                    if (lines[0].kind === 'split') {
+                        const place = 10 ** (String(b).length - 1), v = lines[1].tokens[0];
+                        if (v.t !== 'num' || Math.floor(v.v / place) % 10 !== 0) throw new Error(`${a} ${o} ${b}: fill misses the round number`);
+                    }
+                }
+            }
+        }
+        expect(count).toBeGreaterThan(8000);
+    });
+
+    it('sweep: every small sum up to 100 either has no steps or lines that all equal the answer', () => {
+        for (let a = 0; a <= 100; a++) for (let b = 0; b <= 100; b++) for (const o of ['+', '-'] as const) {
+            if (o === '+' ? a + b > 100 : b > a) continue;
+            const lines = steps(a, o, b);
+            const want = o === '+' ? a + b : a - b;
+            if (lines) for (const l of lines) if (evalLine(l) !== want) throw new Error(`${a} ${o} ${b}: "${stepText(l.tokens)}"`);
+            // E + E and E − E without a brug never get steps.
+            if (a < 10 && b < 10 && (o === '-' || a + b <= 10)) expect(lines, `${a} ${o} ${b}`).toBeNull();
+        }
+    });
+
+    it('a sum that already had steps keeps them: two parts still go by rijgen', () => {
+        expect(text(steps(47, '+', 38)!)[0]).toBe('(47 + 30) + 8');
+        expect(text(steps(53, '-', 27)!)[0]).toBe('(53 − 20) − 7');
     });
 });
