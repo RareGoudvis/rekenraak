@@ -84,7 +84,8 @@ function HelpPanel() {
                             visual={visual} onVisual={onVisual} />
                     ) : (
                         <div className="kiosk-steps">
-                            <p className="kiosk-steps-lead">{question.facts ? helpTip(question.facts) : question.help?.tip}</p>
+                            {/* A pack's tip already stands beside its picture. */}
+                            {!question.help && <p className="kiosk-steps-lead">{question.facts ? helpTip(question.facts) : null}</p>}
                             <button type="button" className="kiosk-btn kiosk-btn-big" onClick={() => closeHelp()} autoFocus>Verder spelen</button>
                         </div>
                     )}

@@ -17,5 +17,8 @@ export const viewFor = (choices: readonly string[] | null, views: readonly SpelC
 /** The accessible name of a choice. */
 export const choiceLabel = (value: string, view?: SpelChoiceView) => view?.label ?? formatMathNumber(Number(value));
 
+/** The skin root's extra class when breuk pictures stand on the targets: they get bigger targets (≥ 120 px pictures). */
+export const pictureClass = (views: readonly SpelChoiceView[] | null | undefined) => (views?.some(v => v.visual?.kind === 'breuk') ? ' has-breuk' : '');
+
 /** The sign's extra class: a picture question lays out as a row. */
 export const signClass = (question: { visual?: SpelVisual } | null) => (question?.visual ? ' spel-sign-has-pic' : '');

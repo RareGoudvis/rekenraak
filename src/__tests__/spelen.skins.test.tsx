@@ -44,8 +44,10 @@ describe('Spelen skins', () => {
                 progress: progressWith({ goal: meta.round.goal ? { count: 0, target: meta.round.goal } : null, msLeft: meta.timed ? 60_000 : null }),
             });
             const { unmount } = render(<Suspense fallback={null}><Skin {...p} /></Suspense>);
-            if (meta.input === 'keypad') expect(await screen.findByRole('group', { name: 'Cijfers' })).toBeTruthy();
-            else expect(await screen.findByRole('group', { name: 'Kies het antwoord' })).toBeTruthy();
+            // A cold lazy chunk can take over a second when the whole suite runs in parallel (gate flake 2026-11-14).
+            const wait = { timeout: 5000 };
+            if (meta.input === 'keypad') expect(await screen.findByRole('group', { name: 'Cijfers' }, wait)).toBeTruthy();
+            else expect(await screen.findByRole('group', { name: 'Kies het antwoord' }, wait)).toBeTruthy();
             expect(screen.getAllByText('7 + 5 = ?').length).toBeGreaterThan(0);
             unmount();
         }

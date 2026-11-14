@@ -267,3 +267,7 @@
   text-align: center;
   white-space: normal;
 }
+
+/* Breuk pictures held up by the moles: bigger moles so a pizza of tienden reads (≥ 120 px). */
+.ml-root.has-breuk { --ml-w: clamp(64px, min(19vw, 25vh), 210px); }
+.ml-root.has-breuk .ml-num.is-picture { width: calc(var(--ml-w) * .74); height: calc(var(--ml-w) * .74); }

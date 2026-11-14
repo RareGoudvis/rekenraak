@@ -343,3 +343,8 @@
   text-align: center;
   white-space: normal;
 }
+
+/* Breuk pictures on the parcels: bigger parcels so a pizza of tienden reads (≥ 120 px). */
+/* 15vw: the belt spaces the parcels by a share of its length (belt.ts gap), so wider parcels would touch. */
+.pk-root.has-breuk { --pk-w: clamp(60px, min(15vw, 26vh), 200px); }
+.pk-root.has-breuk .pk-num.is-picture { width: calc(var(--pk-w) * .8); height: calc(var(--pk-w) * .8); }

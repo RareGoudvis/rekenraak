@@ -7,10 +7,11 @@ import { choicesOf, mulberry32, seedOf, type SumFacts } from './distractors';
 import { NUMBER_CONTENT, PICTURE_CONTENT, type SpelContent } from './accepts';
 import type { AnswerKind } from './skins/types';
 import type { KioskAnswer } from '../../services/oefenen/types';
-import type { SpelChoiceView, SpelHelp, SpelVisual } from './content/pack';
+import type { SpelChoiceView, SpelHelp, SpelPackBoard, SpelVisual } from './content/pack';
 import { packFor } from './content/packs';
 
-// What a game may ask (owner 2026-11-14): hoofdrekenen + − and the maal- en deeltafels with natural numbers, leerjaar 1–3.
+// What a game may ask (owner 2026-11-14): hoofdrekenen + − and the maal- en deeltafels with natural numbers, leerjaar 1–3;
+// content packs (the klok, the breuken to leerjaar 4) beside them.
 // Keyed by leaf: the same typeId also serves decimals and breuken, which have no game yet.
 export const SPEL_LEAVES: Readonly<Record<string, SumFacts['op']>> = {
     'hr-std-optellen-nat': '+',
@@ -21,21 +22,46 @@ export const SPEL_LEAVES: Readonly<Record<string, SumFacts['op']>> = {
 
 // Deling met rest has two answers (quotiënt and rest): no game takes a pair yet.
 const playableNumber = (v: ZelfChoice['vars'][number]) => v.leafId in SPEL_LEAVES && v.ov?.multiplicationMode !== 'met_rest';
-// Or a content pack's leaf (content/packs.ts: the klok).
-const playableVariant = (v: ZelfChoice['vars'][number]) => playableNumber(v) || !!packFor(v.leafId);
+// Or a content pack's leaf whose card settings the pack plays (content/packs.ts: the klok, the breuken).
+const packPlays = (v: ZelfChoice['vars'][number]) => { const p = packFor(v.leafId); return !!p && (p.plays?.(v) ?? true); };
+const playableVariant = (v: ZelfChoice['vars'][number]) => playableNumber(v) || packPlays(v);
 
 export const SPEL_MAX_GRADE = 3;
 
-/** Whether a Zelf oefenen choice can be played as a game: every variant a leaf above (no met rest), at leerjaar 1–3. */
-export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
-    return grade <= SPEL_MAX_GRADE && choice.vars.length > 0 && choice.vars.every(playableVariant);
+// A pack may play further than the sums (the breuken: leerjaar 4).
+const playsAt = (v: ZelfChoice['vars'][number], grade: number) => playableVariant(v) && grade <= (packFor(v.leafId)?.maxGrade ?? SPEL_MAX_GRADE);
+
+/**
+ * The variants a game plays of a Zelf oefenen choice: all of them when every one plays at this leerjaar, else
+ * the part a `partial` pack plays (Breuken vergelijken without its getallenas card); board = only those that fill
+ * that board round (numbers fill every board). [] = no game.
+ */
+export function spelVarsOf(choice: ZelfChoice, grade: number, board?: SpelPackBoard): ZelfChoice['vars'] {
+    let vars = choice.vars.length > 0 && choice.vars.every(v => playsAt(v, grade)) ? choice.vars : [];
+    if (!vars.length) {
+        const part = choice.vars.filter(v => packFor(v.leafId)?.partial && playsAt(v, grade));
+        if (new Set(part.map(v => packFor(v.leafId))).size === 1) vars = part;
+    }
+    if (board) vars = vars.filter(v => playableNumber(v) || (packFor(v.leafId)?.boardsOf?.(v) ?? []).includes(board));
+    return vars;
 }
 
-/** What a playable choice asks of a game (the picker filters on it): whole numbers with their operations, or picture choices once a pack plays a variant. */
-export const spelContentOf = (choice: ZelfChoice, grade: number): SpelContent | null =>
-    (!choiceCanPlay(choice, grade) ? null
-        : choice.vars.every(playableNumber) ? { ...NUMBER_CONTENT, ops: [...new Set(choice.vars.map(v => SPEL_LEAVES[v.leafId]))] }
-        : PICTURE_CONTENT);
+/** The choice as a game plays it (spelVarsOf). */
+export const spelChoiceOf = (choice: ZelfChoice, grade: number, board?: SpelPackBoard): ZelfChoice => ({ ...choice, vars: spelVarsOf(choice, grade, board) });
+
+/** Whether a Zelf oefenen choice can be played as a game: its variants are SPEL_LEAVES (no met rest) at leerjaar 1–3, or a pack's (spelVarsOf). */
+export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
+    return spelVarsOf(choice, grade).length > 0;
+}
+
+/** What a playable choice asks of a game (the picker filters on it): whole numbers with their operations, or picture choices once a pack plays a variant (with the board rounds its cards fill). */
+export function spelContentOf(choice: ZelfChoice, grade: number): SpelContent | null {
+    const vars = spelVarsOf(choice, grade);
+    if (!vars.length) return null;
+    if (vars.every(playableNumber)) return { ...NUMBER_CONTENT, ops: [...new Set(vars.map(v => SPEL_LEAVES[v.leafId]))] };
+    const boards = [...new Set(vars.flatMap(v => packFor(v.leafId)?.boardsOf?.(v) ?? []))];
+    return boards.length ? { ...PICTURE_CONTENT, boards } : PICTURE_CONTENT;
+}
 
 // One question of a game: the exercise exactly as the kiosk made it, plus what the skins show.
 export interface SpelQuestion {
@@ -58,6 +84,9 @@ export interface SpelQuestion {
     views?: SpelChoiceView[];
     kioskAnswers?: KioskAnswer[];
     help?: SpelHelp;
+    // Board rounds (content/pack.ts): a memory pair's two cards, and the value that makes two answers one.
+    pair?: { sum: SpelChoiceView; answer: SpelChoiceView };
+    same?: string;
 }
 
 /** The game question for a made exercise (a pack's, or a plain whole-number + − × : sum), or null when it has none (the session draws again). */

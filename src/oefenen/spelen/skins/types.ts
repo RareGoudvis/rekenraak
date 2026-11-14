@@ -4,7 +4,7 @@ import type { SoundCue, SkinSounds } from '../sound';
 import type { SpelOutcome } from '../events';
 import type { SpelFrom } from '../useSpelStore';
 import type { BoardRound, SpelBoard } from '../board/board';
-import type { SpelChoiceView, SpelVisual } from '../content/pack';
+import type { SpelChoiceView, SpelPackBoard, SpelVisual } from '../content/pack';
 
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
 // answer, keeps score and runs the clock; the skin draws the question and hands back a given answer.
@@ -24,6 +24,8 @@ export interface SkinAccepts {
     ops?: readonly ('+' | '-' | 'x' | ':')[];
     // The skin draws picture questions and picture / phrase choices (SpelSign, SpelChoiceFace): content packs like the klok.
     pictures?: boolean;
+    // A board skin with pictures: picture content must fill this board round (SpelContent.boards).
+    board?: SpelPackBoard;
 }
 
 export interface SkinMeta {

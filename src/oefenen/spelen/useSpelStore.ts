@@ -11,7 +11,7 @@ import { buildZelfSessie, type ZelfChoice } from '../zelf/zelfSessie';
 import { useOefenStore } from '../useOefenStore';
 import { createSpelEvents, type SpelEvents, type SpelOutcome } from './events';
 import { reviewOf } from './review';
-import { spelQuestionOf, type SpelQuestion } from './spelQuestion';
+import { spelChoiceOf, spelQuestionOf, type SpelQuestion } from './spelQuestion';
 import type { SkinMeta, SkinProgress, SkinResult } from './skins/types';
 import { boardOpenHelp, boardPickIn, nextBoardOf, type SpelBoard } from './board/session';
 
@@ -117,8 +117,10 @@ export function outcomeOf(st: Pick<SpelState, 'meta' | 'climb'>, failed: boolean
 
 /** The game's session: the choice's Zelf oefenen types unchanged (a game never changes what is asked), its round from the skin. */
 export const spelSessieOf = (o: SpelStart): OefenSessie => {
-    const base = buildZelfSessie(o.choice, { kind: 'count', n: 10 }, o.now ?? Date.now(), o.grade);
     const { questions, seconds, cap, board } = o.meta.round;
+    // The part of the choice a game plays (spelVarsOf): a board round only the cards that fill that board.
+    const played = spelChoiceOf(o.choice, o.grade, board?.kind);
+    const base = buildZelfSessie(played.vars.length ? played : o.choice, { kind: 'count', n: 10 }, o.now ?? Date.now(), o.grade);
     // A board round counts what it asked (a honeycomb's sums to find vary).
     const s: OefenSessie = { ...base, id: `zelf-${fnv1a(`spel|${o.choice.key}|${o.meta.id}`)}`, total: seconds || cap || board ? undefined : questions ?? 20 };
     delete s.timerMin;

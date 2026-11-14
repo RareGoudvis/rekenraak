@@ -1,4 +1,5 @@
 import type { AnswerKind, SkinAccepts, SkinMeta } from './skins/types';
+import type { SpelPackBoard } from './content/pack';
 
 // Which games fit the chosen content. Pure: the picker shows only the skins that accept it, the rest stay
 // out of sight (never "binnenkort"). Today every playable card is whole-number + and −, so nothing is hidden.
@@ -14,6 +15,8 @@ export interface SpelContent {
     ops?: readonly ('+' | '-' | 'x' | ':')[];
     // The question and its choices are pictures or phrases (a content pack: the klok): only a skin that draws <SpelVisual>.
     pictures?: boolean;
+    // Picture content only: the board rounds its cards fill (the breuken: memory pairs, the equivalence comb); absent = none.
+    boards?: readonly SpelPackBoard[];
 }
 
 // Whole-number + and − (SPEL_LEAVES): the only content games have today.
@@ -29,6 +32,8 @@ export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean
     if (accepts.digits && !content.digitsOnly) return false;
     if (accepts.ops && content.ops && !content.ops.every(op => accepts.ops!.includes(op))) return false;
     if (content.pictures && !accepts.pictures) return false;
+    // A board skin plays picture content only when its cards fill that board (the klok fills none).
+    if (content.pictures && accepts.board && !content.boards?.includes(accepts.board)) return false;
     return true;
 }
 

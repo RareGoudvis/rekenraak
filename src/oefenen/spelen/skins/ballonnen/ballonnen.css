@@ -270,3 +270,9 @@
   text-align: center;
   white-space: normal;
 }
+
+/* Breuk pictures on the balloons: a bigger balloon so a pizza of tienden reads (≥ 120 px). */
+@media (min-height: 421px) {
+  .bal-sky.has-breuk { --bal-w: clamp(64px, min(17vw, 24vh), 190px); }
+}
+.bal-sky.has-breuk .bal-num.is-picture { width: calc(var(--bal-w) * .8); height: calc(var(--bal-w) * .8); }
