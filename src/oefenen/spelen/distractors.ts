@@ -1,4 +1,4 @@
-// Wrong options for a choice game (Ballonnen): typical slips on a + or − sum, never the answer.
+// Wrong options for a choice game (Ballonnen): typical slips on a + − × : sum, never the answer.
 // Pure and seeded: the same sum and seed always give the same options in the same order.
 
 export type Rng = () => number;
@@ -8,7 +8,7 @@ export interface SumFacts {
     answer: number;
     // The two terms of the sum, left to right.
     operands: readonly number[];
-    op: '+' | '-';
+    op: '+' | '-' | 'x' | ':';
 }
 
 export function mulberry32(seed: number): Rng {
@@ -51,6 +51,10 @@ function digitSwap(n: number): number | null {
 // The mistake families, each a list of candidates; one family per option first, so three options show three kinds of slip.
 function families({ answer: a, operands, op }: SumFacts): number[][] {
     const [x = 0, y = 0] = operands;
+    // Tafels (owner 2026-11-14): a neighbouring row of the tafel (7 × 8 read as 6 × 8 or 7 × 7), the sum for the
+    // product, ±1; for delen one jump too many or too few and the deler itself written as the answer.
+    if (op === 'x') return [[x * (y + 1), x * (y - 1), (x + 1) * y, (x - 1) * y], [x + y], [a + 1, a - 1], [a + 10, a - 10]];
+    if (op === ':') return [[a + 1, a - 1], [y], [a + 2, a - 2], [a * 10]];
     // + read as − (and back): the pupil did the other operation.
     const other = op === '+' ? Math.abs(x - y) : x + y;
     const swap = digitSwap(a);

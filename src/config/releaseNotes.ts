@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Spelen kan nu ook met de maal- en deeltafels, met hulp in sprongen: 7, 14, 21, …' },
             { kind: 'nieuw', text: 'Drie nieuwe spellen: Pakjesband, Eieren zoeken en Mollen meppen. Seizoensspellen staan bovenaan bij "Nu extra leuk".' },
             { kind: 'nieuw', text: 'Oefenmodus en Zelf oefenen in een nieuw, rustig jasje: kies alles op één scherm, probeer een som opnieuw na de stappen en kijk je foutjes na.' },
             { kind: 'nieuw', text: 'Spelen: nieuw Bom en Bever, Zombies met overlevers en barricades. Kies vooraf tijd, doel of Normaal/Moeilijk.' },

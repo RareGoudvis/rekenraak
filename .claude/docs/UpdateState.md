@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — The maal- en deeltafels join Spelen (leerjaar 1–3; deling met rest stays out): tafel distractors (a neighbouring row, the sum, ±1; for delen one jump off or the deler) and a help tip with the jumps ("Tel in sprongen van 7: 7, 14, 21, …").
+
 **2026-11-14** — Spelen round 3A: skins declare the content they accept (`meta.accepts`: number / choice / pair; GamePicker hides what does not fit, the Zelf picker passes `spelContentOf`), a "Nu extra leuk" seasonal shelf (seasons.ts, Brussels date, Easter computed; `?spelDatum=` in dev only), and Pakjesband (Sinterklaas), Eieren zoeken (Pasen) and Mollen meppen.
 
 **2026-11-14** — Pupil pages restyled to the approved mockup (sky, sticker cards, Nunito, no red; kiosk.css `--kid-*` tokens, KidBackdrop): one Keuze screen in Zelf oefenen (choice, Oefenen/Spelen, hoeveel), "Nog eens proberen" after the steps (the same sum, uncounted) and Nakijken on the Zelf end screen; teacher links get the same look.

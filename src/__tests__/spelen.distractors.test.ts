@@ -71,14 +71,15 @@ describe('distractors', () => {
         expect(sums).toBeGreaterThan(500);
     });
 
-    test('only hoofdrekenen + and − with natural numbers at leerjaar 1 to 3 can be played', async () => {
+    test('hoofdrekenen + − and the tafels with natural numbers at leerjaar 1 to 3 can be played, cijferen not', async () => {
         const data = await loadEenvoudigData();
         const playable = (g: 1 | 2 | 3 | 4, t: string) => choicesFor(data, g, t).filter(c => choiceCanPlay(c, g)).length;
         expect(playable(2, 'Hoofdrekenen · Optellen')).toBeGreaterThan(0);
         expect(playable(1, 'Hoofdrekenen · Aftrekken')).toBeGreaterThan(0);
         expect(playable(3, 'Cijferen · Optellen')).toBe(0);
         expect(playable(4, 'Hoofdrekenen · Optellen')).toBe(0);
+        // Owner 2026-11-14: the maal- en deeltafels joined the games.
         const tafels = [...usableVariants(data, 2).keys()].find(t => /tafels$/.test(t));
-        if (tafels) expect(playable(2, tafels)).toBe(0);
+        if (tafels) expect(playable(2, tafels)).toBeGreaterThan(0);
     });
 });

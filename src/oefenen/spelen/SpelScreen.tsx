@@ -7,6 +7,7 @@ import { mabOnlyFor } from '../../services/stepsAvailability';
 import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
+import type { SumFacts } from './distractors';
 import SpelEnd from './SpelEnd';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
@@ -76,7 +77,7 @@ function HelpPanel() {
                             visual={visual} onVisual={onVisual} />
                     ) : (
                         <div className="kiosk-steps">
-                            <p className="kiosk-steps-lead">{question.facts.op === '+' ? 'Begin bij het grootste getal en tel verder.' : 'Begin bij het eerste getal en tel terug.'}</p>
+                            <p className="kiosk-steps-lead">{helpTip(question.facts)}</p>
                             <button type="button" className="kiosk-btn kiosk-btn-big" onClick={() => closeHelp()} autoFocus>Verder spelen</button>
                         </div>
                     )}
@@ -161,4 +162,16 @@ export default function SpelScreen() {
             </main>
         </div>
     );
+}
+
+// The help without worked steps: count on or back for + / −; for the tafels the jumps of the tafel, up to the answer
+// (that is the help: 7 × 6 = six jumps of 7). Keeps to ten jumps so a big product does not flood the panel.
+function helpTip(f: SumFacts): string {
+    const [x = 0, y = 0] = f.operands;
+    const jumps = (step: number, n: number) => Array.from({ length: n }, (_, i) => (i + 1) * step).join(', ');
+    if (f.op === 'x' && y >= 1 && y <= 10) return `Tel in sprongen van ${x}: ${jumps(x, y)}.`;
+    if (f.op === ':' && y >= 1 && f.answer >= 1 && f.answer <= 10) return `Spring in sprongen van ${y} tot ${x}: ${jumps(y, f.answer)}. Tel je sprongen.`;
+    if (f.op === 'x') return 'Zoek de tafel en tel in sprongen.';
+    if (f.op === ':') return 'Welke tafel helpt? Tel in sprongen van de deler.';
+    return f.op === '+' ? 'Begin bij het grootste getal en tel verder.' : 'Begin bij het eerste getal en tel terug.';
 }

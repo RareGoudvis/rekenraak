@@ -7,18 +7,23 @@ import { choicesOf, mulberry32, seedOf, type SumFacts } from './distractors';
 import { NUMBER_CONTENT, type SpelContent } from './accepts';
 import type { AnswerKind } from './skins/types';
 
-// What a game may ask (prototype, owner 2026-11-14): hoofdrekenen + and − with natural numbers, leerjaar 1–3.
+// What a game may ask (owner 2026-11-14): hoofdrekenen + − and the maal- en deeltafels with natural numbers, leerjaar 1–3.
 // Keyed by leaf: the same typeId also serves decimals and breuken, which have no game yet.
 export const SPEL_LEAVES: Readonly<Record<string, SumFacts['op']>> = {
     'hr-std-optellen-nat': '+',
     'hr-std-aftrekken-nat': '-',
+    'hr-std-vermenigvuldigen-nat': 'x',
+    'hr-std-delen-nat': ':',
 };
+
+// Deling met rest has two answers (quotiënt and rest): no game takes a pair yet.
+const playableVariant = (v: ZelfChoice['vars'][number]) => v.leafId in SPEL_LEAVES && v.ov?.multiplicationMode !== 'met_rest';
 
 export const SPEL_MAX_GRADE = 3;
 
-/** Whether a Zelf oefenen choice can be played as a game: every variant a + / − leaf above, at leerjaar 1–3. */
+/** Whether a Zelf oefenen choice can be played as a game: every variant a leaf above (no met rest), at leerjaar 1–3. */
 export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
-    return grade <= SPEL_MAX_GRADE && choice.vars.length > 0 && choice.vars.every(v => v.leafId in SPEL_LEAVES);
+    return grade <= SPEL_MAX_GRADE && choice.vars.length > 0 && choice.vars.every(playableVariant);
 }
 
 /** What a playable choice asks of a game (the picker filters on it): today always a whole number. */
@@ -41,7 +46,7 @@ export interface SpelQuestion {
     choices: string[];
 }
 
-/** The game question for a made exercise, or null when it is not a plain whole-number + / − sum (the session draws again). */
+/** The game question for a made exercise, or null when it is not a plain whole-number + − × : sum (the session draws again). */
 export function spelQuestionOf(type: OefenType, slot: number, made: OefenExercise, choiceCount = 4): SpelQuestion | null {
     const op = SPEL_LEAVES[type.leafId];
     const d = kioskFor(type.typeId);
