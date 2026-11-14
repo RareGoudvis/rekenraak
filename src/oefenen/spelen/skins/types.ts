@@ -51,8 +51,10 @@ export interface SkinMeta {
     canFail?: boolean;
     // The end screen's title when the round was won ("Ontmanteld!").
     winTitle?: string;
-    // 2 = a game for two pupils on one screen (Touwtrekken): the picker says "2 spelers".
-    players?: 2;
+    // canFail skins: the end screen's title after the early end; absent = "Oei! Nog eens?".
+    failTitle?: string;
+    // 2 = a game for two pupils on one screen (Touwtrekken): the picker says "2 spelers"; '1-2' = either (Kasteel).
+    players?: 2 | '1-2';
     // Which content the skin can play (accepts.ts).
     accepts: SkinAccepts;
     // input 'choice': how many options the session hands over (the answer included); absent = 4.
@@ -65,8 +67,9 @@ export type Season = 'sinterklaas' | 'kerst' | 'valentijn' | 'pasen' | 'lente';
 
 // What a skin hands back when its own finish ends the round (Race), for the end screen.
 export interface SkinResult {
-    title: string;
-    lead: string;
+    // Absent = the end screen's usual title and lead (Kasteel's win reads as a won round).
+    title?: string;
+    lead?: string;
     detail?: string;
     // Shown as a two-tap "Wis mijn scores" on the end screen.
     wipe?: () => void;
@@ -86,7 +89,11 @@ export interface SkinOption {
     label: string;
     choices: SkinOptionChoice[];
     default: string;
+    // Shown only while another option has this value (Kasteel: Normaal / Moeilijk only for 1 speler).
+    when?: SkinOptionIs;
 }
+
+export interface SkinOptionIs { id: string; value: string }
 
 // Option id → picked value ({ tijd: '3', doel: '20' }).
 export type SkinChoices = Record<string, string>;
@@ -189,6 +196,8 @@ export interface SkinEntry {
     Component?: LazyExoticComponent<ComponentType<SkinProps>>;
     // Instead of Component: the whole game screen, shell included.
     Screen?: LazyExoticComponent<ComponentType<SkinScreenProps>>;
+    // With both: the Screen only when this option was picked (Kasteel: 2 spelers), else the Component.
+    screenWhen?: SkinOptionIs;
     // Optional picture above the end screen's numbers (same chunk as the skin).
     Ending?: LazyExoticComponent<ComponentType<SkinEndingProps>>;
 }

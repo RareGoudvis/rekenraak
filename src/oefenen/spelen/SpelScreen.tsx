@@ -98,11 +98,12 @@ function HelpPanel() {
 export default function SpelScreen() {
     const st = useSpelStore();
     const reducedMotion = useReducedMotion();
-    const now = useGameClock(!!st.meta?.timed && st.phase !== 'end');
     const entry = st.meta ? skinById(st.meta.id) : null;
+    // A game with its own session and screen (Touwtrekken, Kasteel for 2); the round above only holds its choice.
+    const own = !!entry?.Screen && (!entry.screenWhen || st.meta?.chosen?.[entry.screenWhen.id] === entry.screenWhen.value);
+    const now = useGameClock(!!st.meta?.timed && st.phase !== 'end' && !own);
     useSpelSounds(st.events, st.meta?.sounds);
-    // A game with its own session and screen (Touwtrekken); the round above only holds its choice.
-    if (entry?.Screen && st.meta && st.from) {
+    if (own && entry?.Screen && st.meta && st.from) {
         const Screen = entry.Screen;
         return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
     }

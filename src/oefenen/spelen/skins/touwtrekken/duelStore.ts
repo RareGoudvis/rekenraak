@@ -24,6 +24,11 @@ export const DUEL = {
 } as const;
 const MAX_DRAWS = 12;
 
+// What wins a duel: the rope (Touwtrekken), or `target` right answers first (Kasteel: the other castle's lives),
+// and the time limit. Absent at setup = the rope.
+export interface DuelRule { seconds: number; target?: number }
+const ROPE: DuelRule = { seconds: DUEL.seconds };
+
 export interface DuelFeedback { given: string; expected: string; correct: boolean }
 
 export interface DuelSide {
@@ -76,10 +81,11 @@ interface DuelState {
     rope: number;
     endsAt: number | null;
     winner: Side | 'draw' | null;
+    rule: DuelRule;
     events: DuelEvents;
 
     // The pre-start screen for this choice (Samen tegelijk / Om beurten).
-    setup(o: { meta: SkinMeta; from: SpelFrom }): void;
+    setup(o: { meta: SkinMeta; from: SpelFrom; rule?: DuelRule }): void;
     start(mode: DuelMode, now?: number): void;
     answer(side: Side, given: string, now?: number): void;
     tick(now?: number): void;
@@ -112,6 +118,17 @@ export function winnerOf(rope: number, timeUp: boolean): Side | 'draw' | null {
     if (!timeUp) return null;
     return rope < 0 ? 'left' : rope > 0 ? 'right' : 'draw';
 }
+
+/** A race to `target` right answers: the first side there wins; at the time limit the side ahead, or a draw. */
+export function targetWinnerOf(left: number, right: number, target: number, timeUp: boolean): Side | 'draw' | null {
+    if (left >= target) return 'left';
+    if (right >= target) return 'right';
+    if (!timeUp) return null;
+    return left > right ? 'left' : right > left ? 'right' : 'draw';
+}
+
+const winnerFor = (st: Pick<DuelState, 'rule' | 'rope' | 'sides'>, timeUp: boolean) =>
+    st.rule.target ? targetWinnerOf(st.sides.left.score, st.sides.right.score, st.rule.target, timeUp) : winnerOf(st.rope, timeUp);
 
 export const useDuelStore = create<DuelState>()((set, get) => {
     const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -152,19 +169,19 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         const rope = get().rope + (side === 'left' ? -1 : 1);
         set({ rope });
         get().events.emit('pull', { side, rope });
-        const w = winnerOf(rope, false);
+        const w = winnerFor(get(), false);
         if (w) { finish(w); return true; }
         return false;
     };
 
     return {
         phase: 'setup', mode: 'samen', meta: null, from: null, sessie: null,
-        sides: { left: emptySide(), right: emptySide() }, shared: [], rope: 0, endsAt: null, winner: null,
+        sides: { left: emptySide(), right: emptySide() }, shared: [], rope: 0, endsAt: null, winner: null, rule: ROPE,
         events: createDuelEvents(),
 
-        setup({ meta, from }) {
+        setup({ meta, from, rule = ROPE }) {
             clearAll();
-            set({ phase: 'setup', meta, from, sessie: null, sides: { left: emptySide(), right: emptySide() }, shared: [], rope: 0, endsAt: null, winner: null });
+            set({ phase: 'setup', meta, from, rule, sessie: null, sides: { left: emptySide(), right: emptySide() }, shared: [], rope: 0, endsAt: null, winner: null });
         },
 
         start(mode, now = Date.now()) {
@@ -173,7 +190,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
             clearAll();
             set({
                 phase: 'play', mode, sessie: spelSessieOf({ ...from, meta, now }),
-                sides: { left: emptySide(), right: emptySide() }, shared: [], rope: 0, endsAt: now + DUEL.seconds * 1000, winner: null,
+                sides: { left: emptySide(), right: emptySide() }, shared: [], rope: 0, endsAt: now + get().rule.seconds * 1000, winner: null,
             });
             if (mode === 'beurt') nextShared(now);
             else for (const side of SIDES) nextOwn(side, now);
@@ -217,16 +234,16 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         },
 
         tick(now = Date.now()) {
-            const { phase, endsAt, rope } = get();
+            const { phase, endsAt } = get();
             if (phase !== 'play' || endsAt === null || now < endsAt) return;
-            finish(winnerOf(rope, true)!);
+            finish(winnerFor(get(), true)!);
         },
 
         again(now = Date.now()) { get().start(get().mode, now); },
 
         toSetup() {
-            const { meta, from } = get();
-            if (meta && from) get().setup({ meta, from });
+            const { meta, from, rule } = get();
+            if (meta && from) get().setup({ meta, from, rule });
         },
 
         stop() {
