@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Heart, Hexagon, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
+import { ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -96,6 +97,29 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('../board/honingraat/Honingraat')),
     },
     {
+        // A funny animal under 4 × 4 tiles: each right answer flips one away (random order), 16 show it all. A mistake
+        // never puts one back (goalKeep); 30 questions at most. Never the same picture twice in a row (prent/pick.ts).
+        meta: {
+            id: 'prent', label: 'Verborgen prent', input: 'keypad', timed: false, round: { questions: 30, goal: 16, goalKeep: true },
+            winTitle: 'Daar is de prent!', accepts: KEYPAD_NUMBER, sounds: { correct: 'pop', wrong: 'plop', win: 'cheer' },
+        },
+        icon: ImageSquare,
+        Component: lazy(() => import('./prent/Prent')),
+        Ending: lazy(() => import('./prent/Prent').then(m => ({ default: m.PrentEnding }))),
+    },
+    {
+        // Each right answer reveals the last digit of its answer; four make the lock's code, typed on the same keypad.
+        // Three chests end the round (the skin's onFinish); a wrong sum or code costs nothing. 60 questions at most, unseen.
+        // Chest open = the skin's 'win' cue, a wrong code = its 'lost' cue (the session never ends this round as won or lost).
+        meta: {
+            id: 'schatkist', label: 'Schatkist', input: 'keypad', timed: false, round: { cap: 60 }, accepts: { kinds: ['number'], digits: true },
+            sounds: { correct: 'snip', wrong: 'plop', win: 'jingle', lost: 'boing' },
+        },
+        icon: TreasureChest,
+        Component: lazy(() => import('./schatkist/Schatkist')),
+        Ending: lazy(() => import('./schatkist/Schatkist').then(m => ({ default: m.SchatkistEnding }))),
+    },
+    {
         // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
         // belt's end is a miss (pakjesband/belt.ts: about 12 s per sum).
         meta: {
@@ -104,6 +128,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: Gift,
         Component: lazy(() => import('./pakjesband/Pakjesband')),
+    },
+    {
+        // Kerst: a bare fir tree; each right answer hangs the next bauble or garland, the 15th is the star on top.
+        // A mistake never takes one off (goalKeep); 30 questions at most. The finished tree lights up.
+        meta: {
+            id: 'kerstboom', label: 'Kerstboom versieren', input: 'keypad', timed: false, round: { questions: 30, goal: 15, goalKeep: true }, season: 'kerst',
+            winTitle: 'De boom is klaar!', accepts: KEYPAD_NUMBER, sounds: { correct: 'sparkle', wrong: 'plop', win: 'jingle' },
+        },
+        icon: TreeEvergreen,
+        Component: lazy(() => import('./kerstboom/Kerstboom')),
+        Ending: lazy(() => import('./kerstboom/Kerstboom').then(m => ({ default: m.KerstboomEnding }))),
     },
     {
         // Pasen: nine eggs in the grass, the answer and eight distractors (choiceCount). Untimed. Number only:

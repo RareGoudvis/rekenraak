@@ -1,0 +1,144 @@
+/* Kerstboom versieren. Flat fills under a thick dark outline (spelen.css tokens). Transforms and opacity only;
+   nothing moves under reduced motion and everything holds still under "Hoe los ik dit op?". */
+.kb-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--kb-wall);
+  overflow: hidden;
+  overflow: clip;
+}
+.kb-root,
+.kb-ending {
+  --kb-wall: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--kiosk-paper));
+  --kb-floor: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper));
+  --kb-night: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--spel-ink));
+  --kb-tree: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--spel-ink));
+  --kb-wood: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
+  --kb-gold: var(--spel-star);
+  --kb-ball-0: var(--spel-fill-0);
+  --kb-ball-1: var(--spel-fill-1);
+  --kb-ball-2: var(--spel-fill-2);
+  --kb-ball-3: var(--spel-fill-4);
+  background: var(--kb-wall);
+}
+.kb-ending .kb-svg { padding: var(--sp-2) 0 0; }
+
+/* The world does not clip: the wall and floor run on under the keypad (the root clips). */
+.kb-world { position: relative; min-width: 0; min-height: 0; }
+.kb-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+.kb-wall { fill: var(--kb-wall); }
+.kb-floor { fill: var(--kb-floor); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-rug { fill: color-mix(in srgb, var(--spel-fill-0) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+
+.kb-window rect:first-child { fill: var(--kb-night); stroke: var(--spel-ink); stroke-width: 4px; }
+.kb-moon { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kb-snow { fill: var(--kiosk-paper); }
+.kb-frame { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.kb-sill { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+
+.kb-trunk { fill: var(--kb-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-pot, .kb-pot-rim { fill: var(--spel-fill-0); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
+.kb-tier { fill: var(--kb-tree); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+
+.kb-hook { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.kb-cap { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.kb-ball { stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-linecap: round; }
+
+.kb-tinsel path { fill: none; stroke-linecap: round; }
+.kb-tinsel-edge { stroke: var(--spel-ink); stroke-width: 11px; }
+.kb-tinsel-gold { stroke: var(--kb-gold); stroke-width: 6px; }
+.kb-tinsel-glint { stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-dasharray: 1 5; }
+
+.kb-star path { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
+.kb-star { transform-origin: 160px 40px; }
+
+.kb-present rect { stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-ribbon, .kb-bow { fill: none; stroke: var(--kb-gold); stroke-width: 4px; stroke-linecap: round; }
+.kb-presents { animation: kb-pop 500ms var(--ease-spring) both; transform-origin: 160px 330px; }
+
+/* ── New decorations: a bauble swings in on its hook, a garland is drawn along, the star pops. ── */
+.kb-bauble.is-new { animation: kb-swing 900ms var(--ease-out) both; }
+@keyframes kb-swing {
+  0% { transform: translateY(-40px) rotate(0); opacity: 0; }
+  30% { transform: translateY(0) rotate(14deg); opacity: 1; }
+  55% { transform: rotate(-8deg); }
+  78% { transform: rotate(4deg); }
+  100% { transform: rotate(0); }
+}
+.kb-tinsel.is-new path { stroke-dasharray: 100 100; animation: kb-draw 700ms var(--ease-out) both; }
+.kb-tinsel.is-new .kb-tinsel-glint { stroke-dasharray: 1 5; animation: none; }
+@keyframes kb-draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.kb-star.is-new { animation: kb-pop 600ms var(--ease-spring) both; }
+@keyframes kb-pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ── The finished tree: a warm glow and twinkling fairy lights. ── */
+.kb-glow { fill: var(--kb-gold); opacity: .18; }
+.kb-light { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 1.5px; animation: kb-twinkle 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -230ms); }
+.kb-light:nth-child(3n) { fill: var(--kiosk-paper); }
+.kb-light:nth-child(3n + 1) { fill: color-mix(in srgb, var(--spel-fill-0) 60%, var(--kiosk-paper)); }
+@keyframes kb-twinkle { from { opacity: .35; } to { opacity: 1; } }
+
+/* A mistake: the tree sways a little (two copies so the next one restarts it); nothing falls off. */
+.kb-tree { transform-origin: 160px 304px; }
+.kb-root.is-sway-0 .kb-tree { animation: kb-sway-0 800ms ease-in-out; }
+.kb-root.is-sway-1 .kb-tree { animation: kb-sway-1 800ms ease-in-out; }
+@keyframes kb-sway-0 { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-1.6deg); } 60% { transform: rotate(1.1deg); } }
+@keyframes kb-sway-1 { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-1.6deg); } 60% { transform: rotate(1.1deg); } }
+
+/* ── The sum and the keypad ───────────────────────────────────────────────── */
+.kb-panel {
+  position: relative;
+  z-index: 1;
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.kb-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.kb-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: kb-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes kb-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+.kb-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .kb-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .kb-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .kb-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .kb-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .kb-panel { gap: var(--sp-2); }
+}
+
+.kb-root.is-paused * { animation-play-state: paused; }
+
+.kb-root.is-still *,
+.kb-ending.is-still * { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .kb-root *, .kb-ending * { animation: none; }
+}

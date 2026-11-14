@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Nieuwe spellen: Kerstboom versieren, Verborgen prent met 8 grappige dieren, en Schatkist: elk juist antwoord geeft een cijfer van de code.' },
             { kind: 'nieuw', text: 'Twee nieuwe spellen: Hartjes koppelen (zoek som en antwoord) en Honingraat (vind alle sommen die 20 zijn).' },
             { kind: 'nieuw', text: 'De stappenhulp-QR is kleiner en je kiest zelf de tekst ernaast. Onderaan links: Oefenmodus en Zelf oefenen naast elkaar.' },
             { kind: 'nieuw', text: 'Spelen kan nu ook met de maal- en deeltafels, met hulp in sprongen: 7, 14, 21, …' },

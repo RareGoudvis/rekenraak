@@ -8,13 +8,17 @@ interface Props {
     questionKey: string;
     // Outside the play phase the keys do nothing.
     disabled?: boolean;
+    // A shorter field (Schatkist's 4-digit lock); absent = MAX_DIGITS.
+    maxDigits?: number;
+    // Told the field's value as it changes (Schatkist shows it in the lock).
+    onType?(value: string): void;
 }
 
 // Game answers stay short: a leerjaar 1–3 sum has at most 4 digits.
 const MAX_DIGITS = 6;
 
 // For keypad skins (Pinguïntoren, Zombies): the kiosk keypad plus a physical keyboard (digits, Backspace, Enter).
-export default function SpelKeypad({ onAnswer, questionKey, disabled = false }: Props) {
+export default function SpelKeypad({ onAnswer, questionKey, disabled = false, maxDigits = MAX_DIGITS, onType }: Props) {
     const [typed, setTyped] = useState({ key: questionKey, value: '' });
     const value = typed.key === questionKey ? typed.value : '';
 
@@ -23,7 +27,7 @@ export default function SpelKeypad({ onAnswer, questionKey, disabled = false }: 
         setTyped(t => {
             const v = t.key === questionKey ? t.value : '';
             if (k === 'back') return { key: questionKey, value: v.slice(0, -1) };
-            return /^\d$/.test(k) && v.length < MAX_DIGITS ? { key: questionKey, value: v + k } : t;
+            return /^\d$/.test(k) && v.length < maxDigits ? { key: questionKey, value: v + k } : t;
         });
     };
     const submit = () => { if (!disabled && value !== '') onAnswer(value); };
@@ -31,6 +35,9 @@ export default function SpelKeypad({ onAnswer, questionKey, disabled = false }: 
     // The window listener is set once; it calls the latest handlers through this ref.
     const handlers = useRef({ press, submit });
     useLayoutEffect(() => { handlers.current = { press, submit }; });
+    const typedTo = useRef(onType);
+    useLayoutEffect(() => { typedTo.current = onType; });
+    useEffect(() => { typedTo.current?.(value); }, [value]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {

@@ -1,0 +1,161 @@
+/* Schatkist. Flat fills under a thick dark outline (spelen.css tokens). Transforms and opacity only; nothing moves
+   under reduced motion and everything holds still under "Hoe los ik dit op?". */
+.sk-root,
+.sk-ending {
+  --sk-sea: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper));
+  --sk-sand: color-mix(in srgb, var(--mab-e) 40%, var(--kiosk-paper));
+  --sk-wood: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --sk-gold: var(--spel-star);
+  --sk-leaf: var(--accent-metendrekenen);
+  --sk-paper: color-mix(in srgb, var(--mab-e) 22%, var(--kiosk-paper));
+  background: var(--spel-sky);
+}
+.sk-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* ── The island and the chest ─────────────────────────────────────────────── */
+.sk-world { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.sk-scene { position: relative; flex: 1; min-height: 0; }
+.sk-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sk-root .sk-scene { overflow: visible; }
+
+.sk-sea { fill: var(--sk-sea); stroke: var(--spel-ink); stroke-width: 3px; }
+.sk-wave { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; stroke-linecap: round; }
+.sk-sun { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 3px; }
+.sk-sand { fill: var(--sk-sand); stroke: var(--spel-ink); stroke-width: 4px; }
+.sk-trunk { fill: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
+.sk-leaf { fill: var(--sk-leaf); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
+.sk-nut { fill: var(--sk-wood); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+.sk-chest-shadow { fill: var(--spel-ink); opacity: .18; }
+.sk-wood { fill: var(--sk-wood); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+.sk-band { fill: none; stroke: var(--sk-gold); stroke-width: 8px; }
+.sk-inside { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+.sk-plate { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 4px; }
+.sk-window { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.sk-window-num { fill: var(--spel-ink); font-family: var(--font-sheet-math); font-size: 22px; font-weight: 800; }
+.sk-coin circle { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 3px; }
+.sk-coin .sk-coin-ring { fill: none; stroke-width: 2px; }
+.sk-glint { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+
+/* The lock shakes on a wrong code (two copies so the next one restarts it). */
+.sk-lock { transform-origin: 200px 196px; }
+.sk-lock.is-shake-0 { animation: sk-shake-0 520ms ease-in-out; }
+.sk-lock.is-shake-1 { animation: sk-shake-1 520ms ease-in-out; }
+@keyframes sk-shake-0 { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+@keyframes sk-shake-1 { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+
+/* The chest opens: the lid pops back, coins jump up one after the other and settle, a glint. */
+.sk-chest.is-open > .sk-wood:nth-child(2) { animation: sk-lid 380ms var(--ease-spring) both; transform-origin: 200px 152px; }
+@keyframes sk-lid { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+.sk-coin { animation: sk-coin 900ms var(--ease-out) both; animation-delay: calc(var(--i) * 60ms); }
+@keyframes sk-coin {
+  0% { transform: translateY(40px); opacity: 0; }
+  45% { transform: translateY(-46px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.sk-glint { transform-box: fill-box; transform-origin: center; animation: sk-glint 1.2s ease-in-out infinite alternate; }
+@keyframes sk-glint { from { transform: scale(.6) rotate(0); } to { transform: scale(1.1) rotate(45deg); } }
+
+/* ── The parchment: chest number, the last reveal, the code so far ──────────── */
+.sk-parchment {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: min(calc(100% - 2 * var(--sp-4)), 520px);
+  margin: var(--sp-3) var(--sp-4) 0;
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--sk-paper);
+  box-shadow: 0 5px 0 var(--spel-ink);
+  text-align: center;
+}
+.sk-chests { margin: 0; font-size: var(--kiosk-text); font-weight: 800; color: var(--text-muted); }
+.sk-note { margin: var(--sp-1) 0 var(--sp-2); min-height: 2.6em; display: flex; align-items: center; justify-content: center; font-size: var(--kiosk-text-lg); font-weight: 700; line-height: 1.25; }
+.sk-note b { font-weight: 800; }
+.sk-digits { display: flex; justify-content: center; gap: var(--sp-2); }
+.sk-digit {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 64px;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  font-size: 40px;
+  font-weight: 800;
+}
+.sk-digit.is-empty { background: color-mix(in srgb, var(--spel-ink) 8%, var(--sk-paper)); border-style: dashed; }
+.sk-digit.is-new { animation: sk-digit 600ms var(--ease-spring) both; background: var(--kiosk-ok-soft); color: var(--kiosk-ok); }
+@keyframes sk-digit { from { transform: scale(.4) rotate(-12deg); } to { transform: scale(1) rotate(0); } }
+/* A wrong code: the digits light up again (two copies so the next one restarts it). */
+.sk-parchment.is-look-0 .sk-digit { animation: sk-look-0 900ms ease-in-out; }
+.sk-parchment.is-look-1 .sk-digit { animation: sk-look-1 900ms ease-in-out; }
+@keyframes sk-look-0 { 0%, 100% { transform: scale(1); background: var(--kiosk-paper); } 40% { transform: scale(1.12); background: var(--kid-pick); } }
+@keyframes sk-look-1 { 0%, 100% { transform: scale(1); background: var(--kiosk-paper); } 40% { transform: scale(1.12); background: var(--kid-pick); } }
+
+/* ── The sum (or "Typ de code") and the keypad ─────────────────────────────── */
+.sk-panel {
+  position: relative;
+  z-index: 1;
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.sk-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.sk-sign.is-code { font-weight: 800; background: var(--sk-paper); }
+.sk-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: sk-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes sk-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+.sk-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+/* While the pupil types the code or the coins jump, "Hoe los ik dit op?" has no sum to explain: out of the way. */
+.spel-app:has(.sk-root.is-code, .sk-root.is-open) .spel-help-btn { visibility: hidden; }
+
+@media (orientation: portrait) {
+  .sk-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .sk-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .sk-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .sk-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .sk-panel { gap: var(--sp-2); }
+  .sk-note { min-height: 0; font-size: var(--kiosk-text); }
+  .sk-digit { width: 44px; height: 50px; font-size: 30px; }
+}
+
+.sk-root.is-paused * { animation-play-state: paused; }
+.sk-root.is-still *,
+.sk-ending.is-still * { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .sk-root *, .sk-ending * { animation: none; }
+}
