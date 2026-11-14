@@ -389,7 +389,7 @@ async function runZelfCase([w, h], page0) {
     try {
         await page.goto(`${URL}/${page0}`);
         await page.getByRole('heading', { name: 'Welk leerjaar?' }).waitFor({ timeout: 5000 });
-        for (const [i, step] of [['Welk leerjaar?', null], ['Wat wil je oefenen?', '2']].entries()) {
+        for (const [i, step] of [['Welk leerjaar?', null], ['Wat wil je oefenen?', 'Leerjaar 2']].entries()) {
             if (step[1]) await page.getByRole('button', { name: step[1], exact: true }).click();
             await page.getByRole('heading', { name: step[0] }).waitFor({ timeout: 5000 });
             const name = `${base.leafId}-w${w}-s${i}.png`;

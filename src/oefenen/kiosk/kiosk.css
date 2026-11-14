@@ -26,6 +26,42 @@
   --kiosk-group-3: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--kiosk-ink));
   --kiosk-group-4: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--accent-metendrekenen));
   --kiosk-group-5: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-ink));
+  /* The pupil look (owner-approved mockup 2026-11-14, "relaxed, in the style of the games"): a sky,
+     white sticker cards and buttons with a thick ink outline and a solid drop shadow, Nunito text.
+     Never red: a wrong answer is grey and struck through, a warning is amber. */
+  --kid-font: 'Nunito', var(--font-ui);
+  --kid-sky: #D4EAFF;
+  --kid-hill: #7BD88F;
+  --kid-ink: var(--text-main);
+  --kid-card: #FFFFFF;
+  --kid-key: #F4F8FF;
+  /* Secondary text on white and on the sky (≥ 7:1 on both). */
+  --kid-muted: #3B4A5C;
+  /* Selected tile and the answer box; the ring marks what is picked. */
+  --kid-pick: #FFF6D6;
+  --kid-ring: var(--mab-e);
+  /* Start / Klaar / Controleer: ink text on green (≈ 8:1). */
+  --kid-go: #22C55E;
+  --kid-ok-ink: #15803D;
+  /* A wrong answer, struck through: grey, never red (≈ 4.9:1 on its box). */
+  --kid-strike: #6B6B73;
+  --kid-strike-bg: #F1F1F3;
+  /* Amber for "look here" (a low timer, a cell to fix, a broken link): ≥ 4.5:1 on white. */
+  --kid-warn: #B45309;
+  --kid-line: 3px;
+  --kid-radius: 24px;
+  --kid-radius-sm: 18px;
+  --kid-radius-lg: 28px;
+  --kid-drop: 0 6px 0 var(--kid-ink);
+  --kid-drop-sm: 0 4px 0 var(--kid-ink);
+  --kid-drop-lg: 0 7px 0 var(--kid-ink);
+  /* Leerjaar badges and topic groups. */
+  --kid-tint-1: #FDE68A;
+  --kid-tint-2: #BBF7D0;
+  --kid-tint-3: #BFDBFE;
+  --kid-tint-4: #FED7AA;
+  --kid-tint-5: #E9D5FF;
+  --kid-tint-6: #FBCFE8;
 }
 
 /* theme.css pins html/body/#root to 100vh, which on phones includes the hidden URL bar. */
@@ -37,18 +73,62 @@ html:has(.oefen-body),
 }
 
 .oefen-app {
+  position: relative;
+  isolation: isolate;
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text);
-  color: var(--text-main);
-  background: var(--bg-base);
+  font-weight: 700;
+  color: var(--kid-ink);
+  background: var(--kid-sky);
   /* No double-tap zoom on the keypad; pinch-zoom stays available (a11y). */
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ── Sky backdrop (KidBackdrop): static SVG behind the screen, never animated ── */
+.kid-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.kid-backdrop ~ * { position: relative; z-index: 1; }
+.kid-backdrop svg { position: absolute; display: block; overflow: visible; }
+.kid-cloud { width: clamp(96px, 13vw, 150px); height: auto; }
+.kid-cloud path { fill: var(--kid-card); stroke: var(--kid-ink); stroke-width: 3; }
+.kid-cloud-l { left: 4%; top: clamp(72px, 13vh, 120px); }
+.kid-cloud-r { right: 5%; top: clamp(18px, 6vh, 56px); }
+.kid-hill { left: 0; bottom: 0; width: 100%; height: clamp(36px, 8vh, 80px); }
+.kid-hill path { fill: var(--kid-hill); stroke: var(--kid-ink); stroke-width: 3; }
+.kid-balloons { right: 3%; bottom: clamp(30px, 7vh, 70px); width: clamp(90px, 11vw, 140px); height: auto; }
+.kid-balloons path { fill: none; stroke: var(--kid-ink); stroke-width: 2.5; }
+.kid-balloons ellipse { stroke: var(--kid-ink); stroke-width: 3; }
+.kid-balloons .kb-0 { fill: var(--mab-e); }
+.kid-balloons .kb-1 { fill: var(--mab-e2); }
+.kid-balloons .kb-2 { fill: var(--mab-t); }
+.kid-confetti { left: 0; top: 0; width: 100%; height: clamp(160px, 40vh, 340px); }
+.kid-confetti * { stroke: var(--kid-ink); stroke-width: 2; }
+.kid-confetti .kc-0 { fill: var(--mab-e); }
+.kid-confetti .kc-1 { fill: var(--mab-e2); }
+.kid-confetti .kc-2 { fill: var(--mab-t); }
+.kid-confetti .kc-3 { fill: var(--mab-h); }
+/* Small screens: the hill alone, the clouds and balloons would sit under the content. */
+@media (max-width: 699px), (max-height: 560px) {
+  .kid-backdrop :is(.kid-cloud, .kid-balloons, .kid-confetti) { display: none; }
+}
+
+/* ── Focus: an outline ring, so a sticker keeps its drop shadow (index.css swaps box-shadow) ── */
+.oefen-app :is(button, input, [tabindex]):not(.kiosk-card-inner *):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: var(--kid-sh, none);
 }
 
 /* ── Start / error ─────────────────────────────────────────────────────────── */
@@ -68,22 +148,46 @@ html:has(.oefen-body),
 
 .oefen-title {
   margin: 0;
-  font-size: var(--kiosk-text-xl);
-  font-weight: 700;
-  line-height: 1.15;
+  font-size: clamp(30px, 4.6vmin + 12px, 56px);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
 }
 
 .oefen-lead {
   margin: 0;
   font-size: var(--kiosk-text-lg);
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--kid-muted);
 }
 
+/* "RekenRaak · Zelf oefenen": a white pill with the R badge. */
 .kiosk-start-brand {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 18px 6px 8px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-card);
   font-size: var(--kiosk-text);
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 800;
+  color: var(--kid-ink);
+}
+.kiosk-start-brand::before {
+  content: 'R';
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--kid-ring);
+  font-family: var(--font-sheet-math);
+  font-size: 15px;
 }
 
 .kiosk-start-types {
@@ -99,13 +203,19 @@ html:has(.oefen-body),
 .kiosk-start-types li {
   padding: var(--sp-1) var(--sp-3);
   border-radius: var(--radius-pill);
-  background: var(--bg-surface);
-  border: 1px solid var(--separator);
+  background: var(--kid-card);
+  border: 2.5px solid var(--kid-ink);
+  font-weight: 800;
 }
 
 .kiosk-start-note {
   margin: 0;
-  color: var(--text-muted);
+  padding: 10px 20px;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 16px;
+  background: var(--kid-card);
+  color: var(--kid-muted);
+  font-weight: 700;
 }
 
 .kiosk-start .kiosk-btn-big { margin-top: var(--sp-2); }
@@ -113,70 +223,112 @@ html:has(.oefen-body),
 .kiosk-error-icon {
   width: 56px;
   height: 56px;
-  color: var(--danger);
+  color: var(--kid-warn);
 }
 
-/* ── Buttons ───────────────────────────────────────────────────────────────── */
+/* ── Buttons: white stickers (ink outline, solid drop); press = sink into the drop ── */
 .kiosk-btn {
+  --kid-sh: var(--kid-drop-sm);
   min-height: var(--kiosk-tap);
   padding: 0 var(--sp-4);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--separator);
-  background: var(--bg-surface);
-  color: var(--text-main);
+  border-radius: 16px;
+  border: var(--kid-line) solid var(--kid-ink);
+  background: var(--kid-card);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
   font: inherit;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out);
 }
-.kiosk-btn:active { background: var(--bg-active); }
-.kiosk-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
-.kiosk-btn-primary:active { background: var(--accent-strong); }
-.kiosk-btn-quiet { background: transparent; border-color: transparent; }
-.kiosk-btn-quiet:active { background: var(--bg-hover); }
-.kiosk-btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
-.kiosk-btn-danger.is-armed,
-.kiosk-btn-danger:active { background: var(--danger); color: var(--accent-on); }
+.kiosk-btn:active:not(:disabled) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.kiosk-btn:disabled { opacity: 0.45; cursor: default; }
+.kiosk-btn-primary { background: var(--kid-go); }
+/* Help actions (Toon de stappen, Nakijken): the state blue, white text. */
+.kiosk-btn-help { background: var(--accent); color: var(--accent-on); }
+.kiosk-btn-quiet { border-radius: var(--radius-pill); }
+/* Never red (no red in Oefenen): the armed confirm of Stoppen / Wissen is ink, so it reads as serious. */
+.kiosk-btn-danger.is-armed { background: var(--kid-ink); color: var(--kid-card); }
 .kiosk-btn-big {
-  min-height: 56px;
+  --kid-sh: var(--kid-drop);
+  min-height: 64px;
   padding: 0 var(--sp-8);
+  border-radius: 22px;
   font-size: var(--kiosk-text-lg);
+  font-weight: 900;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .kiosk-btn, .kiosk-key, .kiosk-choice, .kiosk-check-wide, .zelf-choice, .kiosk-tray-piece { transition: transform 0.08s ease-out; }
 }
 
-/* ── Top bar ───────────────────────────────────────────────────────────────── */
+/* ── Top bar: pills on the sky ─────────────────────────────────────────────── */
 .kiosk-topbar {
   flex: none;
-  height: var(--kiosk-bar-h);
+  height: clamp(56px, 9vmin, 76px);
   display: grid;
   /* The buttons never shrink under their text: a crowded bar takes the room from the title. */
-  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   gap: var(--sp-3);
-  padding: 0 var(--sp-3);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--separator);
+  padding: 0 clamp(8px, 2.4vw, 28px);
+}
+.kiosk-topbar-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
 }
 .kiosk-topbar-title {
-  font-weight: 600;
+  min-width: 0;
+  font-weight: 800;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.kiosk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 4px 16px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-card);
+  white-space: nowrap;
 }
 .kiosk-progress {
   font-family: var(--font-sheet-math);
   font-size: var(--kiosk-text-lg);
   font-weight: 700;
 }
+.kiosk-dots { display: inline-flex; align-items: center; gap: 6px; }
+.kiosk-dot {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--kid-card);
+}
+.kiosk-dot.is-done { background: var(--kid-go); }
+.kiosk-dot.is-now { background: var(--kid-ring); }
+.kiosk-stars-count {
+  font-size: var(--kiosk-text-lg);
+  font-weight: 900;
+}
+.kiosk-stars-count svg { width: 24px; height: 24px; flex: none; }
+.kiosk-star { fill: var(--kid-ring); stroke: var(--kid-ink); stroke-width: 2; stroke-linejoin: round; }
+.kiosk-star.is-empty { fill: var(--kid-card); }
 .kiosk-topbar-right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--sp-2);
 }
+/* A phone or a small tablet: the dots give way to the "4 / 10" text alone. */
+@media (max-width: 760px) { .kiosk-dots { display: none; } }
 /* Stoppen and its two-tap confirm (StopButton): one unit, so the armed pair never splits across a wrap. */
 .kiosk-stop {
   display: inline-flex;
@@ -185,32 +337,35 @@ html:has(.oefen-body),
 }
 .kiosk-stop .kiosk-btn { white-space: nowrap; }
 /* While Stoppen asks "Ja, stoppen?" the top bar holds only that question (a phone in landscape has no room for more). */
-.kiosk-topbar-right:has(.kiosk-stop.is-armed) .kiosk-stats-btn { display: none; }
+.kiosk-topbar:has(.kiosk-stop.is-armed) .kiosk-stats-btn { display: none; }
 .kiosk-timer {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
   font-family: var(--font-sheet-math);
   font-size: var(--kiosk-text-lg);
-  font-weight: 600;
+  font-weight: 700;
 }
-.kiosk-timer.is-low { color: var(--danger); }
+/* The last minute: the pill turns yellow with the ring, calm, not alarm red. */
+.kiosk-timer.is-low { background: var(--kid-pick); box-shadow: 0 0 0 3px var(--kid-ring); }
 
 /* Slim and permanent: the run is not being saved on this device. */
 .kiosk-storage-banner {
   flex: none;
+  align-self: center;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  margin: 0;
-  padding: var(--sp-1) var(--sp-3);
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-weight: 600;
+  margin: 0 var(--sp-3) var(--sp-1);
+  padding: var(--sp-1) var(--sp-4);
+  border: 2.5px solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-pick);
+  color: var(--kid-ink);
+  font-weight: 800;
 }
 .kiosk-stats .kiosk-storage-banner {
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--sp-3);
+  margin: 0 0 var(--sp-3);
 }
 
 /* ── Exercise + answer ─────────────────────────────────────────────────────── */
@@ -219,16 +374,20 @@ html:has(.oefen-body),
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: var(--sp-3);
-  padding: var(--sp-3);
+  /* Room under the cards for their drop shadow and the hill. */
+  gap: clamp(12px, 2.4vmin, 28px);
+  padding: var(--sp-2) clamp(10px, 3vw, 48px) clamp(16px, 4vh, 40px);
 }
 
 .kiosk-card-col {
   min-height: 0;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2vmin, 20px);
 }
 
+/* The sum on a big white sticker card. */
 .kiosk-card {
   flex: 1;
   min-width: 0;
@@ -236,19 +395,43 @@ html:has(.oefen-body),
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--kiosk-paper);
+  padding: clamp(10px, 2.4vmin, 26px) clamp(12px, 2.6vmin, 30px);
+  background: var(--kid-card);
   color: var(--kiosk-ink);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-1);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-lg);
+  box-shadow: var(--kid-drop-lg);
 }
 
 .kiosk-instruction {
   margin: 0;
-  font-family: var(--font-sheet-text);
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text-lg);
-  font-weight: 500;
+  font-weight: 800;
+  color: var(--kid-muted);
 }
+
+/* The penguin's calm how-to line under the card (tablets and laptops). */
+.kiosk-hint {
+  flex: none;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-card);
+  color: var(--kid-muted);
+  font-size: var(--kiosk-text);
+  font-weight: 700;
+}
+.kiosk-hint svg { width: 40px; height: 40px; flex: none; }
+.kp-body { fill: var(--accent-strong); stroke: var(--kid-ink); stroke-width: 2.5; }
+.kp-belly { fill: var(--kid-card); }
+.kp-eye { fill: var(--kid-ink); }
+.kp-beak { fill: var(--kid-ring); stroke: var(--kid-ink); stroke-width: 1.5; }
+@media (max-width: 899px), (max-height: 700px) { .kiosk-hint { display: none; } }
 
 .kiosk-card-body {
   flex: 1;
@@ -279,6 +462,9 @@ html:has(.oefen-body),
   /* The pupil card stays exact black: viewers inherit their ink now, and the kiosk
      chrome around the card is --text-main. */
   color: #000;
+  /* The viewer draws as on the sheet: the app's UI face and weight, not the pupil chrome's Nunito 700. */
+  font-family: var(--font-ui);
+  font-weight: 400;
   pointer-events: none;
   /* SYNC: the sheet's inherited size (body 16px). Viewers size some boxes in plain em (the
      even-oneven rooster columns); inheriting --kiosk-text instead made those device-dependent
@@ -426,12 +612,18 @@ html:has(.oefen-body),
   font-style: italic;
 }
 
+/* The answer side is one white sticker card: fields, keypad, Controleer (feedback and steps cover it). */
 .kiosk-panel {
   position: relative;
   min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  padding: clamp(8px, 1.8vmin, 18px);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-lg);
+  background: var(--kid-card);
+  box-shadow: var(--kid-drop-lg);
 }
 
 .kiosk-answer {
@@ -456,26 +648,28 @@ html:has(.oefen-body),
   width: 100%;
   height: var(--kiosk-field-h);
   padding: 0 var(--sp-2);
-  border: 2px solid var(--separator);
-  border-radius: var(--radius-sm);
-  background: var(--kiosk-paper);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-pick);
   color: var(--kiosk-ink);
   font-family: var(--font-sheet-math);
   font-size: var(--kiosk-text-xl);
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
   user-select: text;
   -webkit-user-select: text;
 }
 .kiosk-field::placeholder {
-  font-family: var(--font-ui);
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text);
-  font-weight: 400;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--kid-muted);
 }
-.kiosk-field:focus { outline: none; border-color: var(--accent); }
+/* The box being typed in wears the focus ring, also while a keypad key holds the focus (is-active). */
+.oefen-app .kiosk-field:focus,
+.oefen-app .kiosk-field.is-active { outline: 3px solid var(--accent); outline-offset: 3px; box-shadow: none; }
 /* A word (MMXIV, cm) is read in the UI face, not the sheet's digits. */
-.kiosk-field.is-text { font-family: var(--font-ui); }
+.kiosk-field.is-text { font-family: var(--kid-font); }
 /* A field keeps the flex slot itself unless it carries a caption above it. */
 .kiosk-field-bare { display: contents; }
 .kiosk-field-wrap {
@@ -488,10 +682,10 @@ html:has(.oefen-body),
 /* In the caption column the field keeps its own height (its row flex: 1 would collapse it). */
 .kiosk-field-wrap .kiosk-field { flex: none; }
 .kiosk-field-cap {
-  font-family: var(--font-ui);
+  font-family: var(--kid-font);
   font-size: calc(var(--kiosk-text) * 0.8);
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 800;
+  color: var(--kid-muted);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -515,9 +709,10 @@ html:has(.oefen-body),
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   /* Keys stop growing at a comfortable thumb size; a Chromebook does not get 150 px keys. */
-  grid-template-rows: repeat(4, minmax(var(--kiosk-tap), 88px));
+  grid-template-rows: repeat(4, minmax(var(--kiosk-tap), 80px));
   align-content: center;
-  gap: var(--sp-2);
+  /* Row gap leaves room for each key's drop. */
+  gap: clamp(8px, 1.4vmin, 12px);
 }
 
 .kiosk-key {
@@ -526,41 +721,45 @@ html:has(.oefen-body),
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-1);
-  color: var(--text-main);
+  --kid-sh: var(--kid-drop-sm);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: clamp(12px, 2vmin, 18px);
+  background: var(--kid-key);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
   font-family: var(--font-sheet-math);
-  font-size: var(--kiosk-text-lg);
-  font-weight: 600;
+  font-size: var(--kiosk-text-xl);
+  font-weight: 700;
   cursor: pointer;
 }
-.kiosk-key:active { background: var(--bg-active); }
-/* A word key ('spatie') in the UI face so it fits a one-wide key on a landscape phone. */
-.kiosk-key-word { font-family: var(--font-ui); font-size: var(--kiosk-text); font-weight: 500; }
+.kiosk-key:active:not(:disabled),
+.kiosk-choice:active,
+.kiosk-check-wide:active:not(:disabled),
+.kiosk-tray-piece:active:not(:disabled) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
+/* A word key ('spatie') in the text face so it fits a one-wide key on a landscape phone. */
+.kiosk-key-word { font-family: var(--kid-font); font-size: var(--kiosk-text); font-weight: 800; }
 .kiosk-key-back,
 .kiosk-key-extra { grid-column: 4; }
 .kiosk-key-zero { grid-row: 4; grid-column: 1 / span 2; }
 .kiosk-key-check {
   grid-row: 4;
   grid-column: 3 / span 2;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-on);
-  font-family: var(--font-ui);
-  font-size: var(--kiosk-text);
+  background: var(--kid-go);
+  font-family: var(--kid-font);
+  /* The word fits a two-wide key on a phone and on a 1024 px tablet. */
+  font-size: clamp(16px, 2vmin + 8px, 26px);
+  font-weight: 900;
 }
-.kiosk-key-check:active { background: var(--accent-strong); }
 .kiosk-key-check:disabled,
-.kiosk-check-wide:disabled { opacity: 0.45; cursor: default; }
+.kiosk-check-wide:disabled { opacity: 0.45; cursor: default; --kid-sh: none; }
 /* A static how-to line for an action key (Lenen) under the keypad. */
 .kiosk-keypad-hint {
   flex: none;
   margin: 0;
-  color: var(--text-muted);
-  font-family: var(--font-ui);
+  color: var(--kid-muted);
+  font-family: var(--kid-font);
   font-size: calc(var(--kiosk-text) * 0.8);
+  font-weight: 700;
   text-align: center;
 }
 
@@ -570,15 +769,16 @@ html:has(.oefen-body),
   max-height: 200px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-2);
+  gap: clamp(8px, 1.4vmin, 12px);
 }
 .kiosk-choice {
+  --kid-sh: var(--kid-drop-sm);
   min-height: var(--kiosk-tap);
-  border: 2px solid var(--separator);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-1);
-  color: var(--text-main);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-key);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
   font-family: var(--font-sheet-math);
   font-size: calc(var(--kiosk-text-xl) * 1.3);
   font-weight: 700;
@@ -598,17 +798,17 @@ html:has(.oefen-body),
 .kiosk-choices.is-words { max-height: none; grid-auto-rows: minmax(var(--kiosk-tap), 1fr); }
 .kiosk-choices.is-words .kiosk-choice {
   padding: 0 var(--sp-1);
-  font-family: var(--font-ui);
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text);
-  font-weight: 600;
+  font-weight: 800;
   overflow-wrap: break-word;
   hyphens: auto;
 }
-/* 5-6 short choices: a 3x2 grid whose buttons stop at the keypad key height (88 px) and read at keypad size. */
+/* 5-6 short choices: a 3x2 grid whose buttons stop at the keypad key height (80 px) and read at keypad size. */
 .kiosk-choices.is-grid {
   flex: none;
   max-height: none;
-  grid-auto-rows: minmax(var(--kiosk-tap), 88px);
+  grid-auto-rows: minmax(var(--kiosk-tap), 80px);
 }
 .kiosk-choices.is-grid .kiosk-choice {
   padding: 0 var(--sp-1);
@@ -625,8 +825,6 @@ html:has(.oefen-body),
   gap: var(--sp-1);
 }
 .kiosk-fraction .kiosk-field { flex: none; text-align: center; }
-/* The field the keypad types into, also while a keypad key holds the focus. */
-.kiosk-fraction .kiosk-field.is-active { border-color: var(--accent); }
 /* Onechte breuken: the geheel field beside the stacked breuk, centred on its bar like a written 1 3/4. */
 .kiosk-fraction-mixed {
   flex: none;
@@ -636,7 +834,6 @@ html:has(.oefen-body),
   gap: var(--sp-2);
 }
 .kiosk-fraction-mixed > .kiosk-field-bare > .kiosk-field { flex: none; width: 5em; text-align: center; }
-.kiosk-fraction-mixed .kiosk-field.is-active { border-color: var(--accent); }
 .kiosk-fraction-bar {
   height: 4px;
   border-radius: 2px;
@@ -652,36 +849,38 @@ html:has(.oefen-body),
 .kiosk-choice.kiosk-tw-chip {
   min-height: max(var(--kiosk-tap), 52px);
   padding: 0 var(--sp-1);
-  font-family: var(--font-ui);
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text-lg);
-  font-weight: 600;
+  font-weight: 800;
 }
 .kiosk-tw-phrase { justify-content: center; }
 /* Both fields one width ("kwart" fits the minutes), so picking a word or kwart never shifts the row. */
 .kiosk-tw-phrase .kiosk-field { flex: 0 1 calc(var(--kiosk-text-xl) * 3); }
-.kiosk-tw-phrase .kiosk-field.is-active { border-color: var(--accent); }
-.kiosk-tw-phrase .kiosk-field.is-word { font-family: var(--font-ui); font-size: var(--kiosk-text-lg); }
+.kiosk-tw-phrase .kiosk-field.is-word { font-family: var(--kid-font); font-size: var(--kiosk-text-lg); }
 .kiosk-tw-word {
-  font-family: var(--font-ui);
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text-lg);
-  font-weight: 600;
+  font-weight: 800;
   white-space: nowrap;
 }
-.kiosk-key:disabled { opacity: 0.45; cursor: default; }
+.kiosk-key:disabled { opacity: 0.45; cursor: default; --kid-sh: none; }
+/* Picked: the yellow sticker with its ring. */
 .kiosk-choice.is-picked {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  --kid-sh: 0 0 0 4px var(--kid-ring), var(--kid-drop-sm);
+  background: var(--kid-pick);
 }
 .kiosk-check-wide {
+  --kid-sh: var(--kid-drop-sm);
   flex: none;
-  min-height: max(var(--kiosk-tap), 56px);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--accent-on);
+  min-height: max(var(--kiosk-tap), 64px);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-go);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
   font: inherit;
-  font-weight: 600;
+  font-size: var(--kiosk-text-lg);
+  font-weight: 900;
   cursor: pointer;
 }
 
@@ -697,7 +896,7 @@ html:has(.oefen-body),
   grid-auto-rows: minmax(calc(2 * var(--kiosk-tap) + var(--sp-1)), calc(clamp(72px, 14vmin, 120px) + var(--kiosk-tap)));
   /* safe: a tray taller than the panel starts at its top instead of centring its first row out of reach. */
   align-content: safe center;
-  gap: var(--sp-2);
+  gap: clamp(8px, 1.4vmin, 12px);
   /* A long money tray on a landscape phone scrolls rather than squeezing tiles under 44 px. */
   overflow-y: auto;
 }
@@ -712,21 +911,21 @@ html:has(.oefen-body),
   justify-content: center;
   gap: 2px;
   padding: var(--sp-1);
-  border: 2px solid var(--separator);
-  border-radius: var(--radius-md);
-  background: var(--kiosk-paper);
-  box-shadow: var(--shadow-1);
+  --kid-sh: var(--kid-drop-sm);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-card);
+  box-shadow: var(--kid-sh);
   color: var(--kiosk-ink);
-  font-family: var(--font-ui);
+  font-family: var(--kid-font);
   font-size: var(--kiosk-text);
   cursor: pointer;
   overflow: hidden;
   /* size, not inline-size: the grid sizes the tile from the panel, the figure follows the tile. */
   container-type: size;
 }
-.kiosk-tray-piece:active { background: var(--bg-active); }
-.kiosk-tray-piece.is-laid { border-color: var(--accent); }
-.kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; }
+.kiosk-tray-piece.is-laid { --kid-sh: 0 0 0 4px var(--kid-ring), var(--kid-drop-sm); background: var(--kid-pick); }
+.kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; --kid-sh: none; }
 /* The sheet's coin / block figures are em of --sheet-size-math: a bill (56 px at 13pt) fills
    about 80% of the tile's width and a coin (2.65 em) 70% of its height (the badge takes the
    rest), capped so a Chromebook's big tiles do not draw 150 px coins. */
@@ -741,9 +940,9 @@ html:has(.oefen-body),
   flex: none;
   padding: 1px var(--sp-2);
   border-radius: var(--radius-pill);
-  background: var(--bg-active);
-  color: var(--text-muted);
-  font: 600 var(--text-sm)/1.2 var(--font-ui);
+  background: var(--kid-key);
+  color: var(--kid-muted);
+  font: 800 var(--text-sm)/1.2 var(--kid-font);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   pointer-events: none;
@@ -758,14 +957,14 @@ html:has(.oefen-body),
 .kiosk-tray-btn {
   min-width: 0;
   min-height: var(--kiosk-tap);
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 14px;
+  background: var(--kid-key);
   color: var(--kiosk-ink);
-  font: 700 var(--kiosk-text)/1 var(--font-ui);
+  font: 900 var(--kiosk-text)/1 var(--kid-font);
   cursor: pointer;
 }
-.kiosk-tray-btn:active { background: var(--bg-active); }
+.kiosk-tray-btn:active:not(:disabled) { background: var(--kid-pick); }
 .kiosk-tray-btn:disabled { opacity: 0.4; cursor: default; }
 .kiosk-tray-actions {
   flex: none;
@@ -774,7 +973,6 @@ html:has(.oefen-body),
   gap: var(--sp-2);
 }
 .kiosk-tray-actions .kiosk-btn { min-height: max(var(--kiosk-tap), 56px); padding: 0 var(--sp-2); }
-.kiosk-tray-actions .kiosk-btn:disabled { opacity: 0.45; cursor: default; }
 
 /* ── Feedback (covers the answer panel; the exercise stays visible) ───────── */
 /* A flash: it ends by itself after --flash-ms (FLASH_MS in useOefenStore); a tap skips it. */
@@ -790,15 +988,18 @@ html:has(.oefen-body),
   align-items: center;
   justify-content: center;
   gap: var(--sp-3);
-  border-radius: var(--radius-md);
-  border: 2px solid currentColor;
+  /* Covers the panel card edge to edge, outline included: the card turns into the verdict. */
+  margin: calc(-1 * var(--kid-line));
+  border-radius: var(--kid-radius-lg);
+  border: var(--kid-line) solid var(--kid-ink);
   animation: kiosk-pop var(--dur) var(--ease-out);
 }
 .kiosk-feedback.is-ok { background: var(--kiosk-ok-soft); color: var(--kiosk-ok); }
-/* Opaque (--danger-soft is a see-through tint): the keypad must not show through. */
-.kiosk-feedback.is-wrong { background: color-mix(in srgb, var(--danger) 10%, var(--bg-surface)); color: var(--danger); }
+/* A fout is the calm yellow of "kijk even mee", ink text: never red in Oefenen. Opaque, so the keypad never shows through. */
+.kiosk-feedback.is-wrong { background: var(--kid-pick); color: var(--kid-ink); }
 .kiosk-feedback-icon svg { width: clamp(48px, 14vmin, 96px); height: clamp(48px, 14vmin, 96px); }
-.kiosk-feedback-text { font-size: var(--kiosk-text-xl); font-weight: 700; }
+.kiosk-feedback.is-wrong .kiosk-feedback-icon { color: var(--kid-ink); }
+.kiosk-feedback-text { font-size: var(--kiosk-text-xl); font-weight: 900; }
 /* The answer under a flash is hidden, not just covered: its focus ring and corners would peek
    around the overlay, and the keypad would ghost through the pop-in. */
 .kiosk-panel:has(> .kiosk-feedback) > :not(.kiosk-feedback) { visibility: hidden; }
@@ -817,15 +1018,15 @@ html:has(.oefen-body),
   animation: kiosk-drain var(--flash-ms, 1s) linear forwards;
 }
 @keyframes kiosk-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
-@media (prefers-reduced-motion: reduce) { .kiosk-feedback-bar { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .kiosk-feedback-bar, .kiosk-feedback { animation: none; } }
 
 /* 2 kansen: a quiet note above the answer while the pupil is on the second try. */
 .kiosk-attempt {
   flex: none;
   margin: 0 0 var(--sp-1);
   font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 800;
+  color: var(--kid-muted);
   text-align: center;
 }
 @keyframes kiosk-pop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
@@ -835,7 +1036,7 @@ html:has(.oefen-body),
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--sp-4);
+  padding: var(--sp-4) var(--sp-4) clamp(48px, 10vh, 96px);
   user-select: text;
   -webkit-user-select: text;
 }
@@ -846,6 +1047,37 @@ html:has(.oefen-body),
   flex-direction: column;
   gap: var(--sp-4);
 }
+/* The end screen's top: stars, the cheer, the score line, three counters (Klaar mockup). */
+.kiosk-end-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  text-align: center;
+}
+.kiosk-end-stars { display: flex; align-items: flex-end; gap: 10px; }
+.kiosk-end-stars svg { width: clamp(52px, 9vmin, 74px); height: auto; }
+.kiosk-end-stars svg:nth-child(2) { width: clamp(68px, 12vmin, 96px); }
+.kiosk-end-hero .kiosk-stats-title { font-size: clamp(34px, 5vmin + 12px, 56px); font-weight: 900; }
+.kiosk-counters {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(10px, 2vmin, 18px);
+}
+.kiosk-counter {
+  min-width: clamp(110px, 18vw, 180px);
+  padding: 12px 14px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: 22px;
+  background: var(--kid-card);
+  box-shadow: 0 5px 0 var(--kid-ink);
+  text-align: center;
+}
+.kiosk-counter dt { font-size: var(--kiosk-text); font-weight: 800; color: var(--kid-muted); }
+.kiosk-counter dd { margin: 0; font-family: var(--font-sheet-math); font-size: clamp(30px, 5vmin, 44px); font-weight: 700; }
+.kiosk-counter.is-ok dd { color: var(--kid-ok-ink); }
 .kiosk-stats-head {
   display: flex;
   flex-wrap: wrap;
@@ -853,33 +1085,42 @@ html:has(.oefen-body),
   justify-content: space-between;
   gap: var(--sp-3);
 }
-.kiosk-stats-title { margin: 0; font-size: var(--kiosk-text-xl); font-weight: 700; }
-.kiosk-stats-total { margin: 0; font-size: var(--kiosk-text-lg); color: var(--text-muted); }
-.kiosk-stats-sub { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; }
+.kiosk-stats-title { margin: 0; font-size: var(--kiosk-text-xl); font-weight: 900; }
+.kiosk-stats-total { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 800; color: var(--kid-muted); }
+.kiosk-stats-sub { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 900; }
 
+/* separate + spacing 0: a collapsed table cannot round its corners. */
 .kiosk-table {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--bg-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-1);
+  border-collapse: separate;
+  border-spacing: 0;
+  border: var(--kid-line) solid var(--kid-ink);
+  background: var(--kid-card);
+  border-radius: 22px;
+  box-shadow: 0 5px 0 var(--kid-ink);
   overflow: hidden;
 }
 .kiosk-table th,
 .kiosk-table td {
   padding: var(--sp-2) var(--sp-3);
-  border-bottom: 1px solid var(--separator);
+  border-bottom: 2px solid var(--kid-key);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .kiosk-table th:first-child,
 .kiosk-table td:first-child { text-align: left; white-space: normal; }
 .kiosk-table td { white-space: nowrap; }
-.kiosk-table thead th { font-weight: 600; color: var(--text-muted); }
+.kiosk-table thead th { font-weight: 800; color: var(--kid-muted); }
 .kiosk-table tbody tr:last-child > * { border-bottom: none; }
-.kiosk-table tbody th { font-weight: 600; }
+.kiosk-table tbody th { font-weight: 800; }
 .kiosk-math { font-family: var(--font-sheet-math); }
-.kiosk-errors td.is-given { color: var(--danger); }
+/* The pupil's wrong answer: grey and struck through, never red. */
+.kiosk-errors td.is-given,
+.kiosk-struck {
+  color: var(--kid-strike);
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+}
 
 .kiosk-runs {
   list-style: none;
@@ -894,7 +1135,7 @@ html:has(.oefen-body),
   justify-content: space-between;
   text-align: left;
 }
-.kiosk-run-score { font-weight: 400; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.kiosk-run-score { font-weight: 700; color: var(--kid-muted); font-variant-numeric: tabular-nums; }
 
 .kiosk-stats-head-btns {
   display: flex;
@@ -905,7 +1146,9 @@ html:has(.oefen-body),
 .kiosk-stats-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2);
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-3);
   padding-bottom: var(--sp-4);
 }
 
@@ -921,10 +1164,11 @@ html:has(.oefen-body),
 /* Narrow phones: the title gives way to progress, timer and the Stats button. */
 @media (max-width: 520px) {
   .kiosk-topbar-title { display: none; }
-  .kiosk-topbar { grid-template-columns: auto minmax(0, 1fr); }
+  .kiosk-topbar { gap: var(--sp-2); }
+  .kiosk-pill { padding: 4px 10px; }
   /* Zelf oefenen: Terug naar begin says just Terug and Resultaten keeps its icon, so the bar fits at 360 px. */
   .kiosk-back-long { display: none; }
-  .kiosk-topbar-right:has(.kiosk-back-long) .kiosk-stats-text { display: none; }
+  .kiosk-topbar:has(.kiosk-back-long) .kiosk-stats-text { display: none; }
   .kiosk-table { font-size: var(--text-lg); }
   /* With 2 kansen the per-type table has seven columns: smaller headers keep it within a phone. */
   .kiosk-table thead th { font-size: var(--text-sm); }
@@ -941,23 +1185,52 @@ html:has(.oefen-body),
   position: absolute;
   inset: 0;
   overflow-y: auto;
-  padding: var(--sp-4);
+  padding: clamp(12px, 2.2vmin, 22px);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  background: var(--bg-surface);
+  border-radius: var(--kid-radius-lg);
+  background: var(--kid-card);
 }
 .kiosk-panel:has(> .kiosk-steps) > :not(.kiosk-steps) { visibility: hidden; }
-.kiosk-steps-lead { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; color: var(--danger); }
+.kiosk-steps-lead { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 900; color: var(--kid-ink); }
+/* "Bijna! Kijk even mee." and the wrong answer struck through, above the steps. */
+.kiosk-steps-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
+.kiosk-steps-cheer {
+  margin: 0;
+  padding: 6px 18px;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-pick);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 900;
+}
+.kiosk-steps-given {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  color: var(--kid-muted);
+  font-weight: 800;
+}
+.kiosk-steps-given .kiosk-struck {
+  padding: 0 10px;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 12px;
+  background: var(--kid-strike-bg);
+  font-size: var(--kiosk-text-lg);
+}
 .kiosk-steps-lines {
   list-style: none;
   margin: 0;
   padding: var(--sp-3) var(--sp-4);
-  background: var(--kiosk-paper);
+  background: var(--kid-key);
   color: var(--kiosk-ink);
-  border-radius: var(--radius-md);
-  font-size: var(--kiosk-text-lg);
-  line-height: 1.6;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  /* Big, but a line like "= (39 + 50) + 2" stays on one line in the side panel. */
+  font-size: clamp(22px, 2.6vw, 34px);
+  line-height: 1.45;
 }
 /* Long lines (2 + 2 + 2 …, jumps, three-term chains) wrap at their spaces instead of running off a phone. */
 .kiosk-steps-lines li { white-space: normal; overflow-wrap: anywhere; font-weight: 700; }
@@ -965,19 +1238,21 @@ html:has(.oefen-body),
 .kiosk-steps-lines li.is-new { color: var(--accent); }
 /* Words in a step ("naar boven", "onder ha") read as text, not as a sum: the UI font beside the math numbers. SYNC: tutor.css */
 .step-word { font-family: var(--font-ui); }
-.kiosk-steps-lines li.is-extra { font-weight: 400; color: var(--text-muted); }
-.kiosk-steps-done { margin: 0; font-size: var(--kiosk-text); font-weight: 700; color: var(--kiosk-ok); }
+.kiosk-steps-lines li.is-extra { font-weight: 400; color: var(--kid-muted); }
+.kiosk-steps-done { margin: 0; font-size: var(--kiosk-text); font-weight: 800; color: var(--kid-ok-ink); }
+/* Volgende oefening under Nog eens proberen: a small sticker, the big choices sit above it. */
+.kiosk-steps-next { align-self: center; padding: 0 var(--sp-6); }
 /* Question steps: the question, its hint, then the answer once the pupil taps. */
 .kiosk-steps-questions li { white-space: normal; }
 .kiosk-steps-questions li + li { margin-top: var(--sp-3); }
 .kiosk-steps-q p { margin: 0; }
 /* Questions and hints are prose: the UI font; only the revealed answer keeps the math font. */
-.kiosk-steps-question { font-size: var(--kiosk-text); font-family: var(--font-ui); }
-.kiosk-steps-hint { font-size: var(--kiosk-text); font-weight: 400; color: var(--text-muted); font-family: var(--font-ui); }
+.kiosk-steps-question { font-size: var(--kiosk-text); font-family: var(--kid-font); font-weight: 800; }
+.kiosk-steps-hint { font-size: var(--kiosk-text); font-weight: 700; color: var(--kid-muted); font-family: var(--kid-font); }
 .kiosk-steps-answer { font-size: var(--kiosk-text-lg); color: var(--accent); }
 @keyframes kiosk-steps-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
-  50% { box-shadow: 0 0 0 10px transparent; }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), var(--kid-drop); }
+  50% { box-shadow: 0 0 0 10px transparent, var(--kid-drop); }
 }
 .kiosk-steps-pulse { animation: kiosk-steps-pulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .kiosk-steps-pulse { animation: none; } }
@@ -1048,16 +1323,17 @@ html:has(.oefen-body),
 /* 35 card px tall: a phone card (scale ~1.17) still draws it at the 40 px minimum without scrolling. */
 .kiosk-card-inner .kiosk-cell.is-hv { width: 2.6em; height: 2.2em; }
 /* A checked cell that was wrong; typing in it takes the mark away. */
-.kiosk-card-inner .kiosk-cell[data-kiosk-wrong] { border: 2px solid var(--danger); background: var(--danger-soft); color: var(--danger); }
+/* Amber, not red: no red in Oefenen. */
+.kiosk-card-inner .kiosk-cell[data-kiosk-wrong] { border: 2px solid var(--kid-warn); background: var(--kid-pick); color: var(--kid-warn); }
 
 /* Panel: the group tools above the keypad. */
 .kiosk-groups { flex: none; display: flex; flex-direction: column; gap: var(--sp-1); }
 .kiosk-groups-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.kiosk-groups-actions .kiosk-btn { flex: 1 1 auto; padding: 0 var(--sp-2); font-weight: 600; }
+.kiosk-groups-actions .kiosk-btn { flex: 1 1 auto; padding: 0 var(--sp-2); }
 /* "Groepjes kiezen" while choosing: pressed in, so the pupil sees which mode taps are in. */
-.kiosk-groups-actions .kiosk-group-choose[aria-pressed="true"] { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--accent-on); box-shadow: inset 0 2px 4px color-mix(in srgb, var(--kiosk-ink) 35%, transparent); cursor: default; }
+.kiosk-groups-actions .kiosk-group-choose[aria-pressed="true"] { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--accent-on); --kid-sh: inset 0 2px 4px color-mix(in srgb, var(--kiosk-ink) 35%, transparent); transform: translateY(3px); cursor: default; }
 .kiosk-groups button:disabled { opacity: 0.45; cursor: default; }
-.kiosk-groups p { margin: 0; font-family: var(--font-ui); font-size: calc(var(--kiosk-text) * 0.85); line-height: 1.3; }
+.kiosk-groups p { margin: 0; font-family: var(--kid-font); font-size: calc(var(--kiosk-text) * 0.85); line-height: 1.3; }
 /* One chip per group in its own colour: a tap picks the group the next taps fill. */
 .kiosk-groups-chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .kiosk-group-chip {
@@ -1065,82 +1341,194 @@ html:has(.oefen-body),
   min-height: var(--kiosk-tap);
   padding: 0 var(--sp-1);
   border-radius: var(--radius-pill);
-  border: 2px solid var(--kiosk-g);
-  background: color-mix(in srgb, var(--kiosk-g) 14%, var(--bg-surface));
-  color: var(--text-main);
-  font: 700 var(--kiosk-text) var(--font-ui);
+  border: var(--kid-line) solid var(--kiosk-g);
+  background: color-mix(in srgb, var(--kiosk-g) 14%, var(--kid-card));
+  color: var(--kid-ink);
+  font: 900 var(--kiosk-text) var(--kid-font);
   cursor: pointer;
   touch-action: manipulation;
 }
 .kiosk-group-chip[aria-pressed="true"] { background: var(--kiosk-g); color: var(--accent-on); box-shadow: 0 0 0 3px color-mix(in srgb, var(--kiosk-g) 35%, transparent); }
-.kiosk-groups-chips .kiosk-group-new { flex: 1 1 auto; min-height: var(--kiosk-tap); padding: 0 var(--sp-2); font-weight: 600; }
+.kiosk-groups-chips .kiosk-group-new { flex: 1 1 auto; min-height: var(--kiosk-tap); padding: 0 var(--sp-2); }
 .kiosk-nudge {
   padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  font-weight: 700;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 14px;
+  background: var(--kid-pick);
+  color: var(--kid-ink);
+  font-weight: 800;
 }
 /* The bubble behind a card "i" (on <body>, screen px): the step's breukvragen in prose. */
 .kiosk-tip {
   z-index: 50;
   max-width: min(320px, calc(100vw - 16px));
   padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  color: var(--text-main);
-  box-shadow: var(--shadow-2);
-  font-family: var(--font-ui);
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 14px;
+  background: var(--kid-card);
+  color: var(--kid-ink);
+  box-shadow: var(--kid-drop-sm);
+  font-family: var(--kid-font);
+  font-weight: 700;
   font-size: calc(var(--kiosk-text) * 0.85);
   line-height: 1.35;
 }
 .kiosk-tip p { margin: 0; }
 .kiosk-tip p + p { margin-top: var(--sp-1); }
-.kiosk-feedback-hint { margin-top: var(--sp-2); font-family: var(--font-ui); font-size: var(--kiosk-text); font-weight: 600; color: var(--text-main); }
-.kiosk-steps-hint-lead { margin: 0; font-family: var(--font-ui); font-size: var(--kiosk-text); font-weight: 600; }
+.kiosk-feedback-hint { margin-top: var(--sp-2); font-family: var(--kid-font); font-size: var(--kiosk-text); font-weight: 800; color: var(--kid-ink); }
+.kiosk-steps-hint-lead { margin: 0; font-family: var(--kid-font); font-size: var(--kiosk-text); font-weight: 800; }
 
-/* ── Zelf oefenen (picker on the bare page) ────────────────────────────────── */
-.zelf { justify-content: flex-start; }
-.zelf-back { align-self: flex-start; }
-.zelf-section { width: min(100%, 960px); display: flex; flex-direction: column; gap: var(--sp-2); }
+/* ── Zelf oefenen (picker on the bare page): sticker tiles on the sky ───────── */
+.zelf { justify-content: flex-start; padding-bottom: clamp(56px, 12vh, 110px); }
+.zelf-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.zelf-grade-chip { font-size: var(--kiosk-text); font-weight: 800; padding-left: 6px; }
+.zelf-head { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.zelf-sub { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; color: var(--kid-muted); }
+/* A round badge: a leerjaar number or a topic glyph in its group's tint (--tint). */
+.zelf-badge {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--tint, var(--kid-tint-3));
+  color: var(--kid-ink);
+  font-family: var(--font-sheet-math);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+.zelf-badge.is-sm { width: 32px; height: 32px; border-width: 2.5px; font-size: 16px; }
+.zelf-badge.is-md { width: 42px; height: 42px; border-width: 2.5px; font-size: 22px; }
+.zelf-badge.is-lg { width: 60px; height: 60px; font-size: 32px; }
+/* Glyphs of three letters (123, TE) sit smaller in the same circle. */
+.zelf-badge.is-long { font-size: 14px; }
+.zelf-badge.is-md.is-wide { font-size: 17px; }
+.zelf-badge svg { width: 70%; height: 70%; overflow: visible; }
+.zi-line { fill: none; stroke: var(--kid-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.zi-paper { fill: var(--kid-card); stroke: var(--kid-ink); stroke-width: 2; stroke-linejoin: round; }
+.zi-gold { fill: var(--kid-ring); stroke: var(--kid-ink); stroke-width: 2; stroke-linejoin: round; }
+.zi-text { fill: var(--kid-ink); font: 900 13px var(--kid-font); text-anchor: middle; }
+.zelf-section { width: min(100%, 1100px); display: flex; flex-direction: column; gap: 10px; }
+/* The group name: a tinted pill above its tiles. */
 .zelf-section-title {
+  align-self: flex-start;
   margin: 0;
-  font-size: var(--kiosk-text);
-  font-weight: 600;
-  color: var(--text-muted);
-  text-align: left;
+  padding: 3px 14px;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--tint, var(--kid-card));
+  font-size: calc(var(--kiosk-text) * 0.85);
+  font-weight: 900;
+  color: var(--kid-ink);
 }
 .zelf-grid {
-  width: min(100%, 960px);
+  width: min(100%, 1100px);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sp-2);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  /* The row gap holds each tile's drop shadow. */
+  gap: 16px;
 }
-.zelf-grid-grades { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 640px; }
+.zelf-grid-grades { width: min(100%, 720px); grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .zelf-choice {
-  min-height: max(var(--kiosk-tap), 64px);
-  padding: var(--sp-2) var(--sp-3);
-  border: 2px solid var(--separator);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-1);
-  color: var(--text-main);
+  --kid-sh: 0 5px 0 var(--kid-ink);
+  min-height: max(var(--kiosk-tap), 76px);
+  padding: var(--sp-2) 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: 20px;
+  background: var(--kid-card);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
   font: inherit;
-  font-size: var(--kiosk-text);
-  font-weight: 600;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
+  font-size: clamp(16px, 0.8vw + 9px, 19px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: left;
+  /* Whole words: a long one (plaatswaarde) breaks only when it cannot fit a line by itself. */
+  overflow-wrap: break-word;
   cursor: pointer;
 }
-.zelf-grid-choices { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); max-width: 720px; }
-.zelf-choice-big { font-size: var(--kiosk-text-lg); min-height: 88px; }
-.zelf-choice-num { font-size: var(--kiosk-text-xl); min-height: 88px; }
-@media (hover: hover) { .zelf-choice:hover { background: var(--bg-hover); } }
-.zelf-choice:active { background: var(--bg-active); }
-.zelf-choice.is-picked { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
-.zelf-or { margin: 0; color: var(--text-muted); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) { .zelf-choice:hover:not(.is-picked) { transform: translateY(-2px); } }
+.zelf-choice:active { transform: translateY(3px); --kid-sh: 0 2px 0 var(--kid-ink); }
+.zelf-choice.is-picked,
+.zelf-choice[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--kid-ring), 0 6px 0 var(--kid-ink); background: var(--kid-pick); }
+.zelf-grade { min-height: clamp(76px, 13vh, 108px); padding: 0 clamp(12px, 2vw, 22px); gap: clamp(10px, 1.4vw, 16px); border-radius: var(--kid-radius); font-size: clamp(18px, 1.2vw + 8px, 24px); --kid-sh: var(--kid-drop); }
+.zelf-grade .zelf-badge { width: clamp(48px, 7vmin, 64px); height: clamp(48px, 7vmin, 64px); }
+/* A phone: two leerjaren per row, so "Leerjaar 4" keeps its line. */
+@media (max-width: 560px) { .zelf-grid-grades { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+.zelf-choice-big { min-height: 88px; justify-content: center; text-align: center; font-size: var(--kiosk-text-lg); font-weight: 900; }
+/* Touwtrekken's two-mode choice still uses the old number tile name. */
+.zelf-choice-num { font-size: var(--kiosk-text-xl); min-height: 88px; justify-content: center; }
+.zelf-or { margin: 0; color: var(--kid-muted); }
 .zelf-amount { max-width: 720px; }
+
+/* The one Keuze screen: numbered steps (welke oefening, oefenen of spelen, hoeveel). */
+.zelf-steps { width: min(100%, 960px); display: flex; flex-direction: column; gap: clamp(16px, 3vh, 26px); }
+.zelf-step { display: flex; flex-direction: column; gap: 10px; }
+.zelf-step-title { margin: 0; display: flex; align-items: center; gap: 10px; font-size: var(--kiosk-text-lg); font-weight: 900; text-align: left; }
+.zelf-step-num {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--kid-card);
+  font-family: var(--font-sheet-math);
+  font-size: 16px;
+}
+.zelf-step .zelf-grid { width: 100%; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.zelf-step .zelf-choice { justify-content: center; text-align: center; min-height: 84px; font-size: var(--kiosk-text-lg); font-weight: 900; }
+/* Oefenen / Spelen: a drawn icon, the name and a one-line why. */
+.zelf-modes { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; }
+.zelf-modes .zelf-choice { justify-content: flex-start; text-align: left; min-height: 104px; padding: 0 22px; gap: 18px; border-radius: var(--kid-radius); --kid-sh: var(--kid-drop); }
+.zelf-modes .zelf-choice.is-picked,
+.zelf-modes .zelf-choice[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--kid-ring), var(--kid-drop); }
+.zelf-mode-icon { width: 64px; height: 64px; flex: none; }
+.zelf-mode-text { display: flex; flex-direction: column; gap: 2px; }
+.zelf-mode-name { font-size: var(--kiosk-text-xl); font-weight: 900; }
+.zelf-mode-why { font-size: var(--kiosk-text); font-weight: 700; color: var(--kid-muted); }
+.zm-paper { fill: var(--kid-card); stroke: var(--kid-ink); stroke-width: 3; }
+.zm-sheet { fill: var(--kid-tint-1); stroke: var(--kid-ink); stroke-width: 3; }
+.zm-line { fill: none; stroke: var(--kid-ink); stroke-width: 3; stroke-linecap: round; }
+.zm-string { fill: none; stroke: var(--kid-ink); stroke-width: 2; }
+.zm-b0 { fill: var(--mab-e); stroke: var(--kid-ink); stroke-width: 2.5; }
+.zm-b1 { fill: var(--mab-h); stroke: var(--kid-ink); stroke-width: 2.5; }
+/* Hoeveel: the counts and minutes as small stickers, Start beside them. */
+.zelf-amounts { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 20px; }
+.zelf-amount-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.zelf-step .zelf-amount-row .zelf-choice {
+  --kid-sh: var(--kid-drop-sm);
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 16px;
+  font-size: var(--kiosk-text);
+  font-weight: 800;
+}
+.zelf-step .zelf-amount-row .zelf-choice[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--kid-ring), var(--kid-drop-sm); }
+.zelf-amount-or { align-self: center; color: var(--kid-muted); font-weight: 800; }
+/* Counts on one line, "of op tijd" and the minutes on the next. */
+.zelf-amount-row.is-stack { flex-direction: column; align-items: flex-start; }
+.zelf-amount-time { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* Hulp met MAB-blokjes: a switch-like sticker with its state in words. */
+.zelf-mab { align-self: flex-start; }
+.zelf-mab[aria-pressed="true"] { background: var(--kid-pick); }
+.zelf-go { margin-left: auto; }
+.zelf-later { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 800; color: var(--kid-muted); }
 
 /* A 'card' steps visual (MAB) under the exercise while the steps are open: the card is idle then, so the blocks get
    about three times the room of the side panel. Tablets and laptops only: a phone never shows MAB (mab.css). */
@@ -1152,13 +1540,13 @@ html:has(.oefen-body),
     align-items: center;
     justify-content: center;
     padding: var(--sp-4);
-    background: var(--kiosk-paper);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-1);
+    background: var(--kid-card);
+    border: var(--kid-line) solid var(--kid-ink);
+    border-radius: var(--kid-radius-lg);
+    box-shadow: var(--kid-drop-lg);
   }
   .kiosk-card-col > .steps-visual > * { width: 100%; margin: 0; }
   .kiosk-card-col .sv-mab-svg { max-height: 48vh; max-width: calc(var(--mab-w, 240px) * 3.4); }
-  .has-card-visual .kiosk-card-col { flex-direction: column; gap: var(--sp-3); }
   .has-card-visual .kiosk-card { flex: 0 1 auto; }
 }
 @media (orientation: landscape) and (min-width: 600px) and (min-height: 500px) {

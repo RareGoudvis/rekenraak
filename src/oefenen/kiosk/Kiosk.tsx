@@ -12,6 +12,9 @@ import FeedbackOverlay from './FeedbackOverlay';
 import StepsPanel from './StepsPanel';
 import StatsScreen from './StatsScreen';
 import StorageBanner from './StorageBanner';
+import KidBackdrop from './KidBackdrop';
+import type { CurrentInput } from '../useOefenStore';
+import type { OefenStats } from '../../services/oefenen/types';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
 import { setThousandsSeparator } from '../../services/math/formatters';
 
@@ -108,6 +111,36 @@ function useKioskKeys() {
     }, []);
 }
 
+// The penguin's line under the card: what to do here, in the pupil's words.
+function hintOf(info: CurrentInput | null, timed: boolean): string | null {
+    if (!info) return null;
+    const what = info.kind === 'choice' ? 'Tik je antwoord aan'
+        : info.kind === 'time-words' ? 'Kies een woord, typ de tijd'
+        : info.kind !== 'interactive' ? 'Typ je antwoord'
+        : info.interact === 'build' ? 'Leg je antwoord met de stukken'
+        : info.interact === 'fill-cells' ? 'Vul de vakjes in'
+        : 'Tik je antwoord aan op de kaart';
+    return `${what} en tik op Controleer.${timed ? '' : ' Rustig, er is geen klok.'}`;
+}
+
+// The pupil's last counted wrong answer, as the stats wrote it down (the steps panel strikes it through).
+function lastGiven(stats: OefenStats): string | null {
+    let at = -1, given: string | null = null;
+    for (const t of Object.values(stats.perType)) for (const e of t.errors) if (e.at >= at) { at = e.at; given = e.secondTry ? null : (e.second ?? e.given); }
+    return given;
+}
+
+// A calm penguin, as in the games (kiosk.css .kp-*).
+const PENGUIN = (
+    <svg viewBox="0 0 40 40" aria-hidden>
+        <ellipse className="kp-body" cx="20" cy="22" rx="14" ry="16" />
+        <ellipse className="kp-belly" cx="20" cy="25" rx="9" ry="11" />
+        <circle className="kp-eye" cx="16.5" cy="19" r="1.8" />
+        <circle className="kp-eye" cx="23.5" cy="19" r="1.8" />
+        <path className="kp-beak" d="M17.5 22 l2.5 3 2.5 -3 z" />
+    </svg>
+);
+
 // 1 s tick for the countdown; the store locks the run when its end time passes.
 function useClock(active: boolean): number {
     const [now, setNow] = useState(() => Date.now());
@@ -133,6 +166,7 @@ export default function Kiosk() {
     const next = useOefenStore(s => s.next);
     const feedbackHint = useOefenStore(s => s.feedbackHint);
     const showSolution = useOefenStore(s => s.showSolution);
+    const tryAgain = useOefenStore(s => s.tryAgain);
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
     // How far the steps are revealed, for a 'card' visual (MAB) drawn under the exercise; null = not opened yet.
     const [cardRevealed, setCardRevealed] = useState<number | null>(null);
@@ -155,9 +189,13 @@ export default function Kiosk() {
         ? stepsVisualFor(type.typeId, shown.exercise, stepsOffer, 'kiosk', { grade: sessie.grade, noMab: sessie.noMab })
         : undefined;
     const cardVisual = stepsVisual?.slot === 'card' && cardRevealed !== null ? stepsVisual(cardRevealed) : null;
+    const hint = phase === 'exercise' && !cardVisual ? hintOf(currentInput(sessie, shown), run.timerEndsAt !== undefined) : null;
+    // Nog eens proberen shows the steps again: the struck answer is the counted one, not the practice try.
+    const given = phase === 'steps' && !shown?.practice ? lastGiven(run.stats) : null;
 
     return (
         <div className="oefen-app">
+            <KidBackdrop clouds={false} />
             <TopBar now={now} />
             <StorageBanner />
             {phase === 'stats' ? (
@@ -170,6 +208,7 @@ export default function Kiosk() {
                                 instruction={instruction} exerciseKey={shown.exerciseKey} />
                         )}
                         {cardVisual}
+                        {hint && <p className="kiosk-hint">{PENGUIN}{hint}</p>}
                     </section>
                     <section className="kiosk-panel" aria-label="Antwoord">
                         {shown?.wrongFirst !== undefined && <p className="kiosk-attempt">Kans 2 van 2</p>}
@@ -178,8 +217,8 @@ export default function Kiosk() {
                             <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} hint={lastCorrect ? null : feedbackHint} />
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} hint={feedbackHint} />}
-                        {phase === 'steps' && stepsOffer && <StepsPanel key={shown?.exerciseKey} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution}
-                            visual={stepsVisual} onVisual={setCardRevealed} />}
+                        {phase === 'steps' && stepsOffer && <StepsPanel key={`${shown?.exerciseKey}-${shown?.shownAt}`} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution}
+                            visual={stepsVisual} onVisual={setCardRevealed} given={given} onRetry={tryAgain} />}
                     </section>
                 </main>
             )}

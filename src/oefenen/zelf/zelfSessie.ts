@@ -226,3 +226,11 @@ export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string
     }
     return out;
 }
+
+/** Nakijken on the end screen: the same content, its round = exactly the `n` missed exercises (the store holds them). SYNC: spelen/review.ts */
+export function reviewSessieOf(s: OefenSessie, n: number): OefenSessie {
+    const rest: OefenSessie = { ...s };
+    // A review is counted, never timed.
+    delete rest.timerMin;
+    return { ...rest, id: `${ID_PREFIX}${fnv1a(`nakijken|${s.id}`)}`, title: 'Nakijken', total: n, mode: 'afwisselen', allowRepeatType: true };
+}

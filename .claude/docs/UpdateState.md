@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Pupil pages restyled to the approved mockup (sky, sticker cards, Nunito, no red; kiosk.css `--kid-*` tokens, KidBackdrop): one Keuze screen in Zelf oefenen (choice, Oefenen/Spelen, hoeveel), "Nog eens proberen" after the steps (the same sum, uncounted) and Nakijken on the Zelf end screen; teacher links get the same look.
+
 **2026-11-14** — Spelen round 2: Bom (3 or 5 min, 10/20/50 juist to defuse, a harmless PUF! when time runs out) and Bever (a dam against rising water, Normaal/Moeilijk), Zombies reworked to survivors behind barricades; a pre-start options screen (remembered per device), a friendly early end for Bever and Zombies only (`canFail`, outcome done/won/lost/failed), end-screen pictures per skin; the end line names met hulp.
 
 **2026-11-14** — Spelen: Race (beat your own best time against a ghost car, best per card in localStorage, "Wis mijn scores") and Touwtrekken (two pupils on one board, Samen tegelijk or Om beurten, its own duel store and screen via `SkinEntry.Screen`); both with sound (SoundToggle shared).

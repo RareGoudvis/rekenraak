@@ -8,7 +8,7 @@ import { SKINS } from '../oefenen/spelen/skins/registry';
 import { resetKiosk } from './helpers/oefenKiosk';
 import { SOUND_KEY, setSoundOn } from '../oefenen/spelen/sound';
 
-// The page flow: a + / − card at leerjaar 1–3 asks Oefenen or Spelen; Spelen shows the game tiles,
+// The page flow: a + / − card at leerjaar 1–3 also offers Spelen on the choice screen; Kies een spel shows the game tiles,
 // Ballonnen plays 20 questions, the end screen offers Nakijken, Opnieuw spelen and Ander spel.
 
 const sp = () => useSpelStore.getState();
@@ -28,7 +28,7 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); setSoundOn(false); });
 
 async function toGames(grade: string, section: string, name: string, choice: RegExp) {
     render(<OefenApp />);
-    click(grade);
+    click(`Leerjaar ${grade}`);
     await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
     topic(section, name);
     click(choice);
@@ -46,9 +46,9 @@ describe('Spelen flow', () => {
     test('Oefenen of spelen? only for + and − at leerjaar 1 to 3', async () => {
         await toGames('2', 'Hoofdrekenen', 'Optellen', /Met brug/);
         expect(screen.getByRole('heading', { name: 'Oefenen of spelen?' })).toBeTruthy();
-        // Terug goes back to the choices.
+        // The choice, Oefenen of spelen and Hoeveel share one screen: Terug goes back to the topics.
         click(/Terug/);
-        expect(screen.getByRole('heading', { name: 'Optellen' })).toBeTruthy();
+        expect(screen.getByRole('heading', { name: 'Wat wil je oefenen?' })).toBeTruthy();
         cleanup();
         await toGames('4', 'Hoofdrekenen', 'Optellen', /Met brug/);
         expect(screen.getByRole('heading', { name: 'Hoeveel wil je doen?' })).toBeTruthy();
@@ -60,6 +60,7 @@ describe('Spelen flow', () => {
     test('Spelen: the tiles, then Ballonnen; 20 answers with some wrong and one help; end screen; Nakijken runs the mistakes', async () => {
         await toGames('2', 'Hoofdrekenen', 'Optellen', /Met brug/);
         click('Spelen');
+        click('Kies een spel');
         expect(screen.getByRole('heading', { name: 'Kies een spel' })).toBeTruthy();
         expect((screen.getByRole('button', { name: 'Pinguïntoren' }) as HTMLButtonElement).disabled).toBe(false);
         expect((screen.getByRole('button', { name: 'Zombies, op tijd' }) as HTMLButtonElement).disabled).toBe(false);
@@ -99,6 +100,7 @@ describe('Spelen flow', () => {
     test('Pinguïntoren: typed answers build the tower; a mistake takes a block off; 20 blocks end on De toren is af!', async () => {
         await toGames('1', 'Hoofdrekenen', 'Optellen', /Zonder brug/);
         click('Spelen');
+        click('Kies een spel');
         click('Pinguïntoren');
         await screen.findByRole('group', { name: 'Cijfers' });
         // The lazy skin's effects (the keypad's key listener) run before the first key.
@@ -120,6 +122,7 @@ describe('Spelen flow', () => {
     test('Zombies: the sum on the front sign, typed answers, a zombie at the door is a mistake shown as geen; the clock ends it', async () => {
         await toGames('2', 'Hoofdrekenen', 'Aftrekken', /Met brug/);
         click('Spelen');
+        click('Kies een spel');
         click('Zombies, op tijd');
         // The pre-start screen: Normaal is already picked, one tap on Start.
         expect(screen.getByRole('button', { name: 'Normaal' }).getAttribute('aria-pressed')).toBe('true');
@@ -147,6 +150,7 @@ describe('Spelen flow', () => {
     test('Ander spel goes back to the tiles of the same choice; keys 1 to 4 pick a balloon', async () => {
         await toGames('1', 'Hoofdrekenen', 'Aftrekken', /Zonder brug/);
         click('Spelen');
+        click('Kies een spel');
         click('Ballonnen');
         await screen.findByRole('group', { name: 'Kies het antwoord' });
         // The speaker in the game bar: off by default, remembered per device.
