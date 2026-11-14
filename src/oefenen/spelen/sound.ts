@@ -5,19 +5,20 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit', 'zwoesj', 'blok'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
 // how the round ended (win / lost / fail), and the skin's own moments (props.sound: barricade, caught).
 // Board games: flip = a card turns, nomatch = two cards that are no pair turn back (never a mistake sound).
 // whistle = a referee's whistle (Voetbal: kick-off, half time).
-export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught' | 'flip' | 'nomatch' | 'whistle';
+// Kasteel: launch = a catapult fires by itself (the computer's clock), hit = a stone knocks blocks off a wall.
+export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught' | 'flip' | 'nomatch' | 'whistle' | 'launch' | 'hit';
 // null = that cue stays silent (the skin voices the moment itself).
 export type SkinSounds = Partial<Record<SoundCue, SpelSound | null>>;
 const DEFAULT_CUES: Record<SoundCue, SpelSound> = {
     correct: 'pop', wrong: 'plop', miss: 'plop', win: 'jingle', lost: 'boing', fail: 'boing', barricade: 'krak', caught: 'boing',
-    flip: 'flip', nomatch: 'plop', whistle: 'fluit',
+    flip: 'flip', nomatch: 'plop', whistle: 'fluit', launch: 'zwoesj', hit: 'blok',
 };
 // A small sparkle every this many in a row.
 export const SPARKLE_EVERY = 5;
@@ -234,6 +235,14 @@ const RECIPES: Record<SpelSound, Recipe> = {
     fluit: (ac, d, t) => {
         tone(ac, d, t, { f0: 2100, dur: 0.14, vol: 0.08, wobble: [30, 70] });
         tone(ac, d, t, { f0: 2100, at: 0.2, dur: 0.3, vol: 0.08, wobble: [30, 70] });
+    },
+    // Kasteel: a catapult throws, a soft rising swish of air.
+    zwoesj: (ac, d, t) => { noise(ac, d, t, { dur: 0.32, vol: 0.2, filter: 'bandpass', f0: 500, f1: 1800, q: 0.8 }); tone(ac, d, t, { f0: 200, f1: 320, dur: 0.18, vol: 0.06 }); },
+    // Kasteel: a stone knocks a block off the wall, a low bonk and a little rubble after it.
+    blok: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 170, f1: 85, dur: 0.16, vol: 0.34 });
+        noise(ac, d, t, { dur: 0.08, vol: 0.18, filter: 'lowpass', f0: 800 });
+        noise(ac, d, t, { at: 0.12, dur: 0.22, vol: 0.12, filter: 'bandpass', f0: 1200, f1: 500, q: 0.9 });
     },
 };
 

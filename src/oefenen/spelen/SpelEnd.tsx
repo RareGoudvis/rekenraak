@@ -26,11 +26,10 @@ export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boo
     const goal = meta?.round.goal;
     // A goal round's question count is only a cap: count what was asked.
     const total = goal ? history.length : sessie?.total ?? history.length;
-    const title = result ? result.title
-        : outcome === 'failed' ? 'Oei! Nog eens?'
+    const title = result?.title ?? (outcome === 'failed' ? meta?.failTitle ?? 'Oei! Nog eens?'
         : outcome === 'lost' && goal ? `Bijna! ${climb} van ${goal}`
         : outcome === 'won' && meta?.winTitle ? meta.winTitle
-        : timed ? 'De tijd is om!' : goal && climb >= goal ? 'De toren is af!' : 'Klaar!';
+        : timed ? 'De tijd is om!' : goal && climb >= goal ? 'De toren is af!' : 'Klaar!');
     const Ending = meta ? skinById(meta.id)?.Ending : undefined;
     return (
         <main className="oefen-center spel-end">
@@ -40,7 +39,7 @@ export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boo
                 </Suspense>
             )}
             <h1 className="oefen-title">{title}</h1>
-            <p className="oefen-lead">{result ? result.lead : `${timed ? `${score} juist` : `${score} van ${total} juist`}${helped > 0 ? `, ${helped} met hulp` : ''}`}</p>
+            <p className="oefen-lead">{result?.lead ?? `${timed ? `${score} juist` : `${score} van ${total} juist`}${helped > 0 ? `, ${helped} met hulp` : ''}`}</p>
             {/* A skin's own line (Race: the gap to your own record on this device). */}
             {result?.detail && <p className="spel-end-record">{wiped ? 'Je scores zijn gewist.' : result.detail}</p>}
             <dl className="spel-end-stats">

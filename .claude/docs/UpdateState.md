@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Kasteel (Spelen): a catapult duel against the computer (Normaal or Moeilijk; it fires every 15 / 10 s and on your mistakes) or between two pupils (Touwtrekken's duel store), 10 / 20 / 30 lives with life bars, castles that crack, lean, topple and collapse; tuning in kasteel/siege.ts.
+
 **2026-11-14** — Spelen polish: Bever is a wide dam across a stream (log layers on a mud core, pond left, trickle right) with a burst ending; Race scenery spans every screen width; Zombies' front sum sign hangs higher and the "?" signs are smaller, so they never overlap.
 
 **2026-11-14** — Voetbal (Spelen): polar bears against friendly black bears, a 3 or 5 minute match in two halves (a "Rust!" hold), four right answers are passes, the fifth sum is a 10 s shot on goal (onMiss); a skin may hold the session clock (`hold()`, onHold) and report its own end lines (`report()`).

@@ -18,7 +18,7 @@ export default function SpelOptions({ meta, onStart, onBack }: Props) {
     return (
         <section className="spel-options" aria-labelledby="spel-options-title">
             <h2 id="spel-options-title" className="spel-options-title">{meta.label}</h2>
-            {meta.options?.map(o => (
+            {meta.options?.filter(o => !o.when || chosen[o.when.id] === o.when.value).map(o => (
                 <div key={o.id} className="spel-option">
                     <p className="spel-option-label" id={`spel-opt-${o.id}`}>{o.label}</p>
                     <div role="group" aria-labelledby={`spel-opt-${o.id}`} className="zelf-grid spel-option-choices">

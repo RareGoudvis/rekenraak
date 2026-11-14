@@ -21,11 +21,11 @@ function GameTile({ tile: { meta, icon: Icon, Component, Screen }, onPick, tag }
     const ready = !!(Component || Screen);
     return (
         <button type="button" className={`spel-tile${ready ? '' : ' is-soon'}`} disabled={!ready} onClick={() => onPick(meta)}
-            aria-label={`${meta.label}${meta.timed ? ', op tijd' : ''}${meta.players === 2 ? ', 2 spelers' : ''}${ready ? '' : ', binnenkort'}`}>
+            aria-label={`${meta.label}${meta.timed ? ', op tijd' : ''}${meta.players === 2 ? ', 2 spelers' : meta.players === '1-2' ? ', 1 of 2 spelers' : ''}${ready ? '' : ', binnenkort'}`}>
             <Icon className="spel-tile-icon" weight="duotone" aria-hidden />
             <span className="spel-tile-label">{meta.label}</span>
             {meta.timed && <span className="spel-tile-timed"><Timer weight="bold" aria-hidden /> op tijd</span>}
-            {meta.players === 2 && <span className="spel-tile-timed"><Users weight="bold" aria-hidden /> 2 spelers</span>}
+            {meta.players && <span className="spel-tile-timed"><Users weight="bold" aria-hidden /> {meta.players === 2 ? '2 spelers' : '1 of 2 spelers'}</span>}
             {tag && <span className="spel-tile-season">{tag}</span>}
             {!ready && <span className="spel-tile-soon">binnenkort</span>}
         </button>
