@@ -1,13 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
-import type { SkinProps } from '../types';
+import type { SkinEndingProps, SkinProps } from '../types';
 import { ZOMBIE, joinAt, stepCloser, walk, zombieSpeed } from './walk';
+import { DEFENCE, defenceAfter, hitOf, zombieLevelOf, type ZombieLevel } from './defence';
 import './zombies.css';
 
 // Zombies: silly round zombies shuffle in from the right, the front one holding the sum on a sign. A right
-// answer flops it over in a puff of smoke; a wrong one brings it a step closer. At the door it only bumps
-// (a boing) and that sum counts as a mistake: no game over, the round ends on the clock.
+// answer flops it over in a puff of smoke; a wrong one brings it a step closer. At the barricade it bumps
+// (a boing) and that sum counts as a mistake: a small barricade breaks (Normaal), else one survivor is
+// caught and turns into a silly green zombie. All caught = the friendly early end; survivors left at the end cheer.
 // One small rAF loop moves them (positions live outside React); everything else is CSS.
 
 type Mood = 'walk' | 'flop' | 'boing';
@@ -53,19 +55,92 @@ function ZombieArt() {
     );
 }
 
-function House() {
+// A survivor: a round little person. Caught = the same one as a silly green zombie (googly eyes, arms out).
+type Pose = 'stand' | 'cheer' | 'zombie';
+const HAIR = [
+    'M10 22 Q12 6 30 6 Q48 6 50 22 Q40 14 30 16 Q20 14 10 22 Z',
+    'M9 24 Q10 4 30 5 Q50 4 51 24 L46 18 L40 22 L34 16 L28 22 L22 16 L16 22 Z',
+    'M12 20 Q14 4 32 6 Q48 8 48 20 Q44 12 36 12 Q34 20 24 14 Q18 14 12 20 Z',
+];
+
+export function SurvivorArt({ i, pose }: { i: number; pose: Pose }) {
+    const z = pose === 'zombie';
+    const arms = pose === 'cheer' ? 'M16 52 L6 30 M44 52 L54 30' : z ? 'M18 52 L56 46 M20 62 L58 60' : 'M16 52 L10 72 M44 52 L50 72';
     return (
-        <svg className="zb-house-art" viewBox="0 0 120 150" aria-hidden>
-            <rect className="zb-chimney" x="80" y="12" width="14" height="32" />
-            <path className="zb-roof" d="M4 64 L60 16 L116 64 Z" />
-            <rect className="zb-wall" x="12" y="60" width="96" height="88" />
-            <rect className="zb-window" x="22" y="76" width="30" height="28" rx="3" />
-            <path className="zb-window-bar" d="M37 76 L37 104 M22 90 L52 90" />
-            <g className="zb-door">
-                <rect className="zb-door-leaf" x="66" y="90" width="32" height="58" rx="3" />
-                <circle className="zb-knob" cx="73" cy="120" r="3" />
-            </g>
+        <svg className="zb-sv-art" viewBox="0 0 60 100" aria-hidden>
+            <rect className="zb-pants" x="18" y="74" width="10" height="20" rx="4" />
+            <rect className="zb-pants" x="32" y="74" width="10" height="20" rx="4" />
+            <path className="zb-sv-arm-line" d={arms} />
+            <path className={z ? 'zb-sv-arm is-green' : 'zb-sv-arm'} d={arms} />
+            <rect className="zb-sv-shirt" x="13" y="44" width="34" height="36" rx="12" />
+            <circle className={z ? 'zb-skin' : 'zb-sv-skin'} cx="30" cy="26" r="19" />
+            <path className="zb-sv-hair" d={HAIR[i % HAIR.length]} />
+            {z ? (
+                <>
+                    <circle className="zb-eye" cx="22" cy="26" r="7" />
+                    <circle className="zb-eye" cx="39" cy="24" r="5.5" />
+                    <circle className="zb-pupil" cx="20" cy="28" r="3" />
+                    <circle className="zb-pupil" cx="41" cy="22" r="2.4" />
+                    <path className="zb-mouth" d="M22 37 Q30 42 38 35" />
+                </>
+            ) : (
+                <>
+                    <circle className="zb-pupil" cx="23" cy="26" r="2.6" />
+                    <circle className="zb-pupil" cx="37" cy="26" r="2.6" />
+                    <path className={pose === 'cheer' ? 'zb-sv-open' : 'zb-mouth'} d={pose === 'cheer' ? 'M22 33 Q30 44 38 33 Z' : 'M23 34 Q30 39 37 34'} />
+                </>
+            )}
         </svg>
+    );
+}
+
+// The small barricades in front of the group, left to right: a crate, a fence, a crate (the right one breaks first).
+function Barricade({ kind }: { kind: 'crate' | 'fence' }) {
+    return kind === 'crate' ? (
+        <svg className="zb-bar-art" viewBox="0 0 44 44" aria-hidden>
+            <rect className="zb-wood" x="3" y="3" width="38" height="38" rx="3" />
+            <path className="zb-wood-line" d="M3 3 L41 41 M3 14 L41 14 M3 30 L41 30" />
+        </svg>
+    ) : (
+        <svg className="zb-bar-art" viewBox="0 0 52 44" aria-hidden>
+            <rect className="zb-wood" x="2" y="14" width="48" height="8" rx="2" />
+            <rect className="zb-wood" x="2" y="30" width="48" height="8" rx="2" />
+            {[6, 22, 38].map(x => <path key={x} className="zb-wood" d={`M${x} 42 L${x} 8 L${x + 4} 2 L${x + 8} 8 L${x + 8} 42 Z`} />)}
+        </svg>
+    );
+}
+
+const BARRICADES = ['crate', 'fence', 'crate'] as const;
+
+function Camp({ level, hits, reducedMotion }: { level: ZombieLevel; hits: number; reducedMotion: boolean }) {
+    const { survivors: total, barricades: bars } = DEFENCE[level];
+    const d = defenceAfter(level, hits);
+    return (
+        <div className="zb-camp">
+            <div className="zb-crew">
+                {Array.from({ length: total }, (_, k) => {
+                    // The one nearest the barricade is caught first.
+                    const caught = total - 1 - k < d.caught;
+                    return (
+                        <span key={k} className={`zb-sv${caught ? ' is-caught' : ''}`} style={{ '--k': k } as CSSProperties} data-survivor={caught ? 'caught' : 'safe'}>
+                            <span className="zb-sv-body"><SurvivorArt i={k} pose={caught ? 'zombie' : 'stand'} /></span>
+                        </span>
+                    );
+                })}
+            </div>
+            {bars > 0 && (
+                <div className="zb-barricades">
+                    {BARRICADES.slice(0, bars).map((kind, b) => {
+                        const broken = b >= d.barricades;
+                        return (
+                            <span key={b} className={`zb-bar${broken ? ' is-broken' : ''}${broken && reducedMotion ? ' is-gone' : ''}`} data-barricade={broken ? 'broken' : 'up'}>
+                                <Barricade kind={kind} />
+                            </span>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -79,7 +154,8 @@ function Star({ i }: { i: number }) {
     );
 }
 
-export default function Zombies({ question, phase, feedback, onAnswer, onMiss, progress, events, reducedMotion }: SkinProps) {
+export default function Zombies({ question, phase, feedback, onAnswer, onMiss, onFail, sound, progress, options, events, reducedMotion }: SkinProps) {
+    const level = zombieLevelOf(options);
     const [line, setLine] = useState<Zombie[]>(START);
     // A new question: the zombie that flopped or bumped leaves, a newcomer joins at the back.
     const [seenKey, setSeenKey] = useState(question?.key);
@@ -97,8 +173,8 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, p
     // Positions in % of the street, outside React: the loop writes them straight to the lanes.
     const xs = useRef(new Map<number, number>());
     const lanes = useRef(new Map<number, HTMLDivElement>());
-    const live = useRef({ phase, streak: progress.streak, onMiss, line });
-    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, line }; });
+    const live = useRef({ phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line });
+    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line }; });
 
     const attach = (id: number, el: HTMLDivElement | null) => {
         if (!el) { lanes.current.delete(id); return; }
@@ -143,9 +219,13 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, p
             if (step.atDoor) {
                 const front = walking[0].id;
                 // Stop at once; the session's wrong flash follows from onMiss.
-                live.current = { ...st, phase: 'wrong', line: st.line.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)) };
+                live.current = { ...st, phase: 'wrong', misses: st.misses + 1, line: st.line.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)) };
                 setLine(l => l.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)));
+                const hit = hitOf(st.level, st.misses + 1);
                 st.onMiss();
+                // The last survivor: the end screen voices it (the fail cue).
+                if (hit === 'last') st.onFail();
+                else st.sound(hit === 'barricade' ? 'barricade' : 'caught');
             }
         };
         raf = requestAnimationFrame(frame);
@@ -155,14 +235,13 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, p
     if (!question) return <div className="zb-root" />;
     const flash = phase === 'right' || phase === 'wrong';
     const [lhs] = question.text.split('?');
-    const bump = line[0]?.mood === 'boing';
 
     return (
-        <div className={`zb-root${phase === 'play' ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`zb-root is-${level}${phase === 'play' ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
             <div className="zb-street">
                 <span className="zb-moon" aria-hidden />
                 <div className="zb-ground" aria-hidden />
-                <div className={`zb-house${bump ? ' is-bumped' : ''}`}><House /></div>
+                <Camp level={level} hits={progress.misses} reducedMotion={reducedMotion} />
                 <div className="zb-track">
                     {line.map((z, i) => {
                         const front = i === 0;
@@ -196,6 +275,29 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, p
             </div>
             <div className="zb-controls">
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
+            </div>
+        </div>
+    );
+}
+
+// The end screen: the survivors left cheer (they made it to the end); the caught ones dance as silly zombies.
+export function ZombiesEnding({ outcome, progress, options, reducedMotion }: SkinEndingProps) {
+    const level = zombieLevelOf(options);
+    const total = DEFENCE[level].survivors;
+    const caught = outcome === 'failed' ? total : defenceAfter(level, progress.misses).caught;
+    return (
+        <div className={`spel-ending zb-ending${reducedMotion ? ' is-still' : ''}`}>
+            <span className="zb-moon" aria-hidden />
+            <div className="zb-ground" aria-hidden />
+            <div className="zb-party">
+                {Array.from({ length: total }, (_, k) => {
+                    const z = total - 1 - k < caught;
+                    return (
+                        <span key={k} className={`zb-sv ${z ? 'is-dance' : 'is-cheer'}`} style={{ '--k': k } as CSSProperties} data-survivor={z ? 'caught' : 'safe'}>
+                            <span className="zb-sv-body"><SurvivorArt i={k} pose={z ? 'zombie' : 'cheer'} /></span>
+                        </span>
+                    );
+                })}
             </div>
         </div>
     );

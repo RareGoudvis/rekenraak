@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, screen, fireEvent } from '@testing-library/react';
+import { Suspense } from 'react';
+import { render, cleanup, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import { loadEenvoudigData } from '../config/eenvoudig/cards';
 import { choicesFor, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore } from '../oefenen/useOefenStore';
@@ -16,10 +17,12 @@ import Bom, { BomEnding } from '../oefenen/spelen/skins/bom/Bom';
 import { clockText, fuseLeft, fusePoint, isHurry } from '../oefenen/spelen/skins/bom/fuse';
 import Bever, { BeverEnding } from '../oefenen/spelen/skins/bever/Bever';
 import { BEVER, damBreaks, damHeight, waterLevel, type BeverLevel } from '../oefenen/spelen/skins/bever/water';
+import Zombies, { ZombiesEnding } from '../oefenen/spelen/skins/zombies/Zombies';
+import { DEFENCE, defenceAfter, hitOf } from '../oefenen/spelen/skins/zombies/defence';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Spelen round 2: the pre-start options screen (remembered per skin), the friendly early end (canFail skins
-// only), Bom (N right before the clock) and the Bever water model.
+// only), Bom (N right before the clock), the Bever water model and the Zombies' barricades and survivors.
 
 let choice: ZelfChoice;
 const sp = () => useSpelStore.getState();
@@ -324,5 +327,83 @@ describe('Bever', () => {
         expect(container.querySelector('.bv-hat')).not.toBeNull();
         rerender(<BeverEnding outcome="failed" progress={p} options={{}} reducedMotion={false} />);
         expect(container.querySelector('.bv-log')).not.toBeNull();
+    });
+});
+
+describe('Zombies: survivors behind barricades', () => {
+    test('Normaal: three barricades first, then five survivors; Moeilijk: three survivors, no barricades', () => {
+        expect(DEFENCE).toEqual({ normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 } });
+        expect([1, 2, 3, 4, 5, 6, 7, 8].map(h => hitOf('normaal', h))).toEqual(['barricade', 'barricade', 'barricade', 'caught', 'caught', 'caught', 'caught', 'last']);
+        expect([1, 2, 3].map(h => hitOf('moeilijk', h))).toEqual(['caught', 'caught', 'last']);
+        expect(defenceAfter('normaal', 4)).toEqual({ barricades: 0, survivors: 4, caught: 1 });
+        expect(defenceAfter('normaal', 20)).toEqual({ barricades: 0, survivors: 0, caught: 5 });
+    });
+
+    describe('the skin', () => {
+        beforeEach(() => { vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] }); });
+        const wait = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+
+        test('the camp shows what still stands; a catch turns a survivor into a silly zombie', () => {
+            const at = (misses: number, niveau = 'normaal') => propsWith({ options: { niveau }, progress: progressWith({ msLeft: 180_000, misses }) });
+            const { container, rerender } = render(<Zombies {...at(0)} />);
+            const count = (sel: string) => container.querySelectorAll(sel).length;
+            expect(count('[data-barricade=up]')).toBe(3);
+            expect(count('[data-survivor=safe]')).toBe(5);
+            rerender(<Zombies {...at(2)} />);
+            expect(count('[data-barricade=up]')).toBe(1);
+            expect(count('.zb-bar.is-broken')).toBe(2);
+            rerender(<Zombies {...at(4)} />);
+            expect(count('[data-barricade=up]')).toBe(0);
+            expect(count('[data-survivor=caught]')).toBe(1);
+            // The one nearest the barricade, drawn as a zombie with googly eyes.
+            expect(container.querySelector('.zb-crew > .zb-sv:last-child')!.getAttribute('data-survivor')).toBe('caught');
+            expect(container.querySelector('.zb-sv.is-caught .zb-eye')).not.toBeNull();
+            cleanup();
+            const m = render(<Zombies {...at(0, 'moeilijk')} />);
+            expect(m.container.querySelectorAll('[data-barricade]')).toHaveLength(0);
+            expect(m.container.querySelectorAll('[data-survivor=safe]')).toHaveLength(3);
+        });
+
+        test('Moeilijk: a catch voices itself; the last survivor caught ends the round early', () => {
+            const onMiss = vi.fn();
+            const onFail = vi.fn();
+            const sound = vi.fn();
+            const props = (misses: number) => propsWith({ onMiss, onFail, sound, options: { niveau: 'moeilijk' }, progress: progressWith({ msLeft: 180_000, misses }) });
+            const first = render(<Zombies {...props(0)} />);
+            wait(30_000);
+            expect(onMiss).toHaveBeenCalledTimes(1);
+            expect(sound).toHaveBeenCalledWith('caught');
+            expect(onFail).not.toHaveBeenCalled();
+            first.unmount();
+            render(<Zombies {...props(2)} />);
+            wait(30_000);
+            expect(onMiss).toHaveBeenCalledTimes(2);
+            expect(onFail).toHaveBeenCalledTimes(1);
+            expect(sound).toHaveBeenCalledTimes(1);
+        });
+
+        test('the session: zombies through count as misses; all caught = failed; survivors at the end = won', () => {
+            const zombies = resolveMeta(meta('zombies'), { niveau: 'moeilijk' });
+            sp().start(startWith(zombies));
+            for (let i = 0; i < 3; i++) { sp().miss(); sp().next(); }
+            expect(sp().misses).toBe(3);
+            expect(sp().mistakes).toHaveLength(3);
+            sp().fail();
+            expect(sp().outcome).toBe('failed');
+        });
+    });
+
+    test('the endings: survivors cheer, the caught ones dance as zombies', async () => {
+        const { container, rerender } = render(<ZombiesEnding outcome="won" progress={progressWith({ misses: 4 })} options={{ niveau: 'normaal' }} reducedMotion={false} />);
+        expect(container.querySelectorAll('[data-survivor=safe]')).toHaveLength(4);
+        expect(container.querySelectorAll('.zb-sv.is-dance')).toHaveLength(1);
+        rerender(<ZombiesEnding outcome="failed" progress={progressWith({ misses: 3 })} options={{ niveau: 'moeilijk' }} reducedMotion />);
+        expect(container.querySelectorAll('[data-survivor=safe]')).toHaveLength(0);
+        expect(container.querySelector('.zb-ending.is-still')).not.toBeNull();
+        // The end screen loads the skin's Ending lazily.
+        const Ending = skinById('zombies')!.Ending!;
+        cleanup();
+        render(<Suspense fallback={null}><Ending outcome="won" progress={progressWith()} options={{}} reducedMotion={false} /></Suspense>);
+        await waitFor(() => expect(document.querySelector('.zb-party')).not.toBeNull());
     });
 });

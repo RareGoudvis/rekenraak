@@ -20,10 +20,15 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('./ballonnen/Ballonnen')),
     },
     {
-        // About 3 minutes; the zombies speed up with the streak (progress.streak).
-        meta: { id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, sounds: { correct: 'poef', wrong: 'plop', miss: 'boing' } },
+        // About 3 minutes; the zombies speed up with the streak (progress.streak). Survivors behind barricades
+        // (zombies/defence.ts); all caught = the early end. The skin voices a barricade or a catch itself (miss: null).
+        meta: {
+            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [NIVEAU],
+            sounds: { correct: 'poef', wrong: 'plop', miss: null, barricade: 'krak', caught: 'wahwah', win: 'cheer', fail: 'wahwah' },
+        },
         icon: Ghost,
         Component: lazy(() => import('./zombies/Zombies')),
+        Ending: lazy(() => import('./zombies/Zombies').then(m => ({ default: m.ZombiesEnding }))),
     },
     {
         // N right before the clock runs out; a mistake costs only time (goalKeep). The pupil picks tijd and doel.

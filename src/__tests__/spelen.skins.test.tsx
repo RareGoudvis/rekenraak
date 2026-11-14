@@ -180,14 +180,17 @@ describe('Spelen skins', () => {
             expect(container.querySelector('.zb-sign.is-front')!.textContent).toBe('9 + 5 = ?');
         });
 
-        test('at the door it bumps (boing) and the sum counts as a miss, once; nothing ends early', () => {
+        test('at the barricade it bumps (boing) and the sum counts as a miss, once; the first one only breaks a barricade', () => {
             const events = createSpelEvents();
             const onMiss = vi.fn();
-            const { container } = render(<Zombies {...at(events, { onMiss })} />);
+            const onFail = vi.fn();
+            const sound = vi.fn();
+            const { container } = render(<Zombies {...at(events, { onMiss, onFail, sound })} />);
             wait(30_000);
             expect(onMiss).toHaveBeenCalledTimes(1);
+            expect(sound).toHaveBeenCalledWith('barricade');
+            expect(onFail).not.toHaveBeenCalled();
             expect(container.querySelector('[data-zombie=front] .zb-zombie.is-boing')).not.toBeNull();
-            expect(container.querySelector('.zb-house.is-bumped')).not.toBeNull();
             expect(frontX(container)).toBe(0);
         });
 
