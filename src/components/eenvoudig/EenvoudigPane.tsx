@@ -1,5 +1,5 @@
-import { LEERJAREN } from '../../config/gradePresets';
-import { COMBO_TOPIC_ID, EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
+import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
+import { COMBO_TOPIC_ID, EENVOUDIG_NAV, type EenvoudigTopic } from '../../config/eenvoudig/nav';
 import { listCards } from '../../config/eenvoudig/cards';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useEenvoudigUi } from './useEenvoudigUi';
@@ -32,6 +32,54 @@ const chevronStyle = (on: boolean): React.CSSProperties => ({
 });
 const labelStyle: React.CSSProperties = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 };
 
+export interface NavSection { name: string; accent: string; topics: { t: EenvoudigTopic; count: number }[] }
+
+interface NavProps {
+    grade: Leerjaar;
+    onGrade: (g: Leerjaar) => void;
+    sections: NavSection[];
+    openId: string | null;
+    onToggle: (topicId: string) => void;
+    // The guided tour points at the editor's list only.
+    tour?: boolean;
+}
+
+// The leerjaar row and the topic list; the caller decides which topics show and what opens.
+export function EenvoudigNav({ grade, onGrade, sections, openId, onToggle, tour }: NavProps) {
+    return (
+        <div className="ez-pane">
+            <div className="ez-grades">
+                <span>Leerjaar</span>
+                <div className="seg-group" role="group" aria-label="Leerjaar kiezen">
+                    {LEERJAREN.map(g => (
+                        <button key={g} type="button" className="seg-btn" aria-pressed={g === grade} onClick={() => onGrade(g)}>{g}</button>
+                    ))}
+                </div>
+            </div>
+            <hr className="ez-rule" />
+            <div className="ez-nav" data-tour={tour ? 'sidebar-nav' : undefined}>
+                {sections.map(s => (
+                    <div key={s.name} style={{ marginBottom: 'var(--sp-3)' }}>
+                        <div style={headStyle(s.accent)}><span>{s.name}</span></div>
+                        <div style={groupStyle(s.accent)}>
+                            {s.topics.map(({ t, count }) => {
+                                const on = openId === t.id;
+                                return (
+                                    <button key={t.id} type="button" className="sidebar-row" aria-pressed={on} style={rowStyle(on)} onClick={() => onToggle(t.id)}>
+                                        <span style={labelStyle}>{t.label}</span>
+                                        {t.hasCards && <span style={badgeStyle}>{count}</span>}
+                                        <span style={chevronStyle(on)}>{'›'}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function EenvoudigPane() {
     const data = useEenvoudigData();
     const { grade, setGrade, resetPicks } = useEenvoudigUi();
@@ -53,36 +101,5 @@ export default function EenvoudigPane() {
             .filter(x => x.count > 0),
     })).filter(s => s.topics.length > 0) : [];
 
-    return (
-        <div className="ez-pane">
-            <div className="ez-grades">
-                <span>Leerjaar</span>
-                <div className="seg-group" role="group" aria-label="Leerjaar kiezen">
-                    {LEERJAREN.map(g => (
-                        <button key={g} type="button" className="seg-btn" aria-pressed={g === grade} onClick={() => setGrade(g)}>{g}</button>
-                    ))}
-                </div>
-            </div>
-            <hr className="ez-rule" />
-            <div className="ez-nav" data-tour="sidebar-nav">
-                {sections.map(s => (
-                    <div key={s.name} style={{ marginBottom: 'var(--sp-3)' }}>
-                        <div style={headStyle(s.accent)}><span>{s.name}</span></div>
-                        <div style={groupStyle(s.accent)}>
-                            {s.topics.map(({ t, count }) => {
-                                const on = openId === t.id;
-                                return (
-                                    <button key={t.id} type="button" className="sidebar-row" aria-pressed={on} style={rowStyle(on)} onClick={() => toggleTopic(t.id)}>
-                                        <span style={labelStyle}>{t.label}</span>
-                                        {t.hasCards && <span style={badgeStyle}>{count}</span>}
-                                        <span style={chevronStyle(on)}>{'›'}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    return <EenvoudigNav grade={grade} onGrade={setGrade} sections={sections} openId={openId} onToggle={toggleTopic} tour />;
 }

@@ -13,6 +13,11 @@ import StepsPanel from './StepsPanel';
 import StatsScreen from './StatsScreen';
 import StorageBanner from './StorageBanner';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
+import { setThousandsSeparator } from '../../services/math/formatters';
+
+// Only the pupil page loads this module (the teacher's workspace loads ExerciseCard alone), so the sheet
+// and the editor keep their plain space; U+202F = narrow no-break space.
+setThousandsSeparator(' ');
 
 // Physical keyboard (Chromebook / tablet keyboard): digits and the type's extra keys type,
 // Backspace deletes, Enter is Controleer (and skips a juist/fout flash), < = > pick for vergelijken.

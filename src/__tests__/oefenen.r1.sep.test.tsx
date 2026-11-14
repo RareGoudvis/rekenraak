@@ -7,8 +7,8 @@ import { flattenLeaves } from '../config/appstructure';
 import { BlockWidthProvider } from '../components/viewer/BlockWidthContext';
 import { formatMathNumber } from '../services/math/formatters';
 import { makeBlock } from './helpers/makeBlock';
-// Loading the card module is what the pupil page does; it must narrow the thousands gap.
-import '../oefenen/kiosk/ExerciseCard';
+// Loading the kiosk module is what the pupil page does; it must narrow the thousands gap.
+import '../oefenen/kiosk/Kiosk';
 
 afterEach(cleanup);
 

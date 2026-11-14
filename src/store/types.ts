@@ -4,6 +4,7 @@ import type { BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import type { InstructionFn } from '../config/appstructure';
 import type { MixedVariantId } from '../services/math/constraintTypes';
+import type { OefenSessie } from '../services/oefenen/types';
 
 // The leaf's own default opdracht-titel, passed down from wherever a block is added
 // (sidebar click, mass-add, a curriculum lock, the dev hook) — see appstructure.ts's
@@ -142,7 +143,7 @@ export interface DocSettings {
 
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are
 // full-screen overlays (libraries + whiteboard/bordmodus). UI-only — never persisted/serialised.
-export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek' | 'whiteboard';
+export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek' | 'whiteboard' | 'oefenmodus';
 // Autosave status surfaced in the top bar. UI-only.
 // 'error' = the last write was refused (quota full / storage unavailable): the sheet is
 // only in memory, so the top bar must stop claiming it is safe.
@@ -250,9 +251,13 @@ export interface UiSlice {
     setInspectorScope: (scope: InspectorScope) => void;
     // Switches to `scope` too, so a caller that opens a section never lands on the other scope.
     setInspectorSection: <K extends InspectorScope>(scope: K, section: NonNullable<InspectorSections[K]>) => void;
-    // Oefenmodus builder dialog: lifted out of the sidebar so the upgrade modal can open it too. Transient UI state.
-    oefenBuilderOpen: boolean;
-    setOefenBuilderOpen: (open: boolean) => void;
+    // Oefenmodus workspace (view 'oefenmodus'): the saved session it opened with (null = a new one),
+    // the view "terug" returns to, and a counter that remounts it on every open. Transient UI state.
+    oefenInitial: OefenSessie | null;
+    oefenReturn: 'editor' | 'mijn-bladen';
+    oefenOpenSeq: number;
+    openOefenmodus: (initial?: OefenSessie | null) => void;
+    closeOefenmodus: () => void;
     setShowSolutions: (show: boolean) => void;
     setView: (view: WorksheetView) => void;
     setSidebarPreview: (on: boolean) => void;
