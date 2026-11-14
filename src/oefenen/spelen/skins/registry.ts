@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Log, type Icon } from '@phosphor-icons/react';
+import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
@@ -91,6 +91,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: Egg,
         Component: lazy(() => import('./eieren/Eieren')),
+    },
+    {
+        // Two minutes; the moles pop up a little quicker with the streak (mollen/moles.ts).
+        meta: { id: 'mollen', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_CHOICE, sounds: { correct: 'bonk', wrong: 'plop' } },
+        icon: Hammer,
+        Component: lazy(() => import('./mollen/Mollen')),
     },
 ];
 
