@@ -1,6 +1,12 @@
 import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, FlagPennant, Ghost, Log, type Icon } from '@phosphor-icons/react';
-import type { SkinEntry, SkinOption } from './types';
+import type { SkinAccepts, SkinEntry, SkinOption } from './types';
+
+// Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
+// keypad gets a second field; until then they say number only.
+const KEYPAD_NUMBER: SkinAccepts = { kinds: ['number'] };
+// Tap skins show the options on their targets: session distractors for a number, or the exercise's own choices.
+const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 4 };
 
 // Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
@@ -10,12 +16,12 @@ const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'nor
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends.
-        meta: { id: 'pinguintoren', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: 'splash' } },
+        meta: { id: 'pinguintoren', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: 'splash' }, accepts: KEYPAD_NUMBER },
         icon: Bird,
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
     },
     {
-        meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' } },
+        meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: TAP_CHOICE },
         icon: Balloon,
         Component: lazy(() => import('./ballonnen/Ballonnen')),
     },
@@ -23,7 +29,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // About 3 minutes; the zombies speed up with the streak (progress.streak). Survivors behind barricades
         // (zombies/defence.ts); all caught = the early end. The skin voices a barricade or a catch itself (miss: null).
         meta: {
-            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [NIVEAU],
+            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [NIVEAU], accepts: KEYPAD_NUMBER,
             sounds: { correct: 'poef', wrong: 'plop', miss: null, barricade: 'krak', caught: 'wahwah', win: 'cheer', fail: 'wahwah' },
         },
         icon: Ghost,
@@ -33,7 +39,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // N right before the clock runs out; a mistake costs only time (goalKeep). The pupil picks tijd and doel.
         meta: {
-            id: 'bom', label: 'Bom', input: 'keypad', timed: true, round: { seconds: 180, goal: 10, goalKeep: true }, winTitle: 'Ontmanteld!',
+            id: 'bom', label: 'Bom', input: 'keypad', timed: true, round: { seconds: 180, goal: 10, goalKeep: true }, winTitle: 'Ontmanteld!', accepts: KEYPAD_NUMBER,
             options: [
                 { id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] },
                 { id: 'doel', label: 'Hoeveel juist?', default: '10', choices: [10, 20, 50].map(n => ({ value: String(n), label: `${n} juist`, round: { goal: n } })) },
@@ -47,7 +53,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // 3 minutes; the water rises with the clock and a wave per mistake (bever/water.ts). Over the dam = the early end.
         meta: {
-            id: 'bever', label: 'Bever', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'De dam houdt!', options: [NIVEAU],
+            id: 'bever', label: 'Bever', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'De dam houdt!', options: [NIVEAU], accepts: KEYPAD_NUMBER,
             sounds: { correct: 'plok', wrong: 'whoosh', win: 'cheer', fail: 'blub' },
         },
         icon: Log,
@@ -56,13 +62,13 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // To the finish (Race's own end, onFinish); no countdown: the time is the score. 60 questions at most, unseen.
-        meta: { id: 'race', label: 'Race', input: 'keypad', timed: false, round: { cap: 60 }, sounds: { correct: 'pop', wrong: 'plop' } },
+        meta: { id: 'race', label: 'Race', input: 'keypad', timed: false, round: { cap: 60 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: KEYPAD_NUMBER },
         icon: CarProfile,
         Component: lazy(() => import('./race/Race')),
     },
     {
         // Two pupils on one screen: its own session and screen (two question streams, no Nakijken).
-        meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {} },
+        meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {}, accepts: KEYPAD_NUMBER },
         icon: FlagPennant,
         Screen: lazy(() => import('./touwtrekken/Touwtrekken')),
     },

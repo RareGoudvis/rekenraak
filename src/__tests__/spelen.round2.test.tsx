@@ -113,7 +113,7 @@ describe('Pre-start options', () => {
 
 describe('The friendly early end', () => {
     // A stand-in canFail skin, so the session rule is tested apart from Bever and Zombies.
-    const CAN_FAIL: SkinMeta = { id: 'proef', label: 'Proef', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gehouden!' };
+    const CAN_FAIL: SkinMeta = { id: 'proef', label: 'Proef', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gehouden!', accepts: { kinds: ['number'] } };
 
     test('a canFail skin ends the round as failed; the end screen says Oei! Nog eens? with the mistakes and Nakijken', () => {
         sp().start(startWith(CAN_FAIL));
