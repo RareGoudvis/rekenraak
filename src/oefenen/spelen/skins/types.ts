@@ -7,6 +7,19 @@ import type { SpelFrom } from '../useSpelStore';
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
 // answer, keeps score and runs the clock; the skin draws the question and hands back a given answer.
 
+// What a game answer looks like: a number (typed or tapped), one of the exercise's own choices
+// (< = >, a clock), or a pair (quotient + rest). Content and skins both say which they have / take.
+export type AnswerKind = 'number' | 'choice' | 'pair';
+
+// The content a skin can play; the picker hides every skin that does not take the chosen content.
+export interface SkinAccepts {
+    kinds: readonly AnswerKind[];
+    // The longest answer the skin's targets can show (an egg, a mole); absent = any length.
+    maxAnswerChars?: number;
+    // The skin works digit by digit (a code lock): only content whose answers are plain digits.
+    digits?: boolean;
+}
+
 export interface SkinMeta {
     id: string;
     // The tile's name in the game picker ("Ballonnen").
@@ -32,7 +45,15 @@ export interface SkinMeta {
     winTitle?: string;
     // 2 = a game for two pupils on one screen (Touwtrekken): the picker says "2 spelers".
     players?: 2;
+    // Which content the skin can play (accepts.ts).
+    accepts: SkinAccepts;
+    // input 'choice': how many options the session hands over (the answer included); absent = 4.
+    choiceCount?: number;
+    // A seasonal game: also shown on the picker's "Nu extra leuk" shelf in its season (seasons.ts).
+    season?: Season;
 }
+
+export type Season = 'sinterklaas' | 'kerst' | 'valentijn' | 'pasen' | 'lente';
 
 // What a skin hands back when its own finish ends the round (Race), for the end screen.
 export interface SkinResult {

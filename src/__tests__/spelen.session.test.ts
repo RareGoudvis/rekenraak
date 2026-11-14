@@ -13,9 +13,9 @@ import { stepsFor } from '../services/stepsAvailability';
 // The Spelen session: one try per question, a wrong answer is logged, "Hoe los ik dit op?" pauses
 // and counts as met hulp, and Nakijken replays exactly the logged mistakes in the Oefenen kiosk.
 
-const BALLONNEN: SkinMeta = { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 } };
-const TIMED: SkinMeta = { id: 'klok', label: 'Op tijd', input: 'keypad', timed: true, round: { seconds: 60 } };
-const TOWER: SkinMeta = { id: 'toren', label: 'Toren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 } };
+const BALLONNEN: SkinMeta = { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, accepts: { kinds: ['number', 'choice'] } };
+const TIMED: SkinMeta = { id: 'klok', label: 'Op tijd', input: 'keypad', timed: true, round: { seconds: 60 }, accepts: { kinds: ['number'] } };
+const TOWER: SkinMeta = { id: 'toren', label: 'Toren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, accepts: { kinds: ['number'] } };
 
 let data: EenvoudigData;
 let choice: ZelfChoice;

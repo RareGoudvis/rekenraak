@@ -7,7 +7,7 @@ import { useOefenStore } from '../useOefenStore';
 import { tryFullscreen } from '../kiosk/fullscreen';
 import KidBackdrop from '../kiosk/KidBackdrop';
 import { useSpelStore } from '../spelen/useSpelStore';
-import { choiceCanPlay } from '../spelen/spelQuestion';
+import { choiceCanPlay, spelContentOf } from '../spelen/spelQuestion';
 import GamePicker from '../spelen/GamePicker';
 import { SECTION_TINT, topicIcon } from './topicIcons';
 import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choiceMayHaveMab, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
@@ -159,7 +159,7 @@ export default function ZelfPicker() {
                     {bar}
                     <h1 className="oefen-title">Kies een spel</h1>
                     <p className="oefen-lead">{topicLabel}: {choice.label}</p>
-                    <GamePicker onPick={meta => { tryFullscreen(); useSpelStore.getState().start({ choice, grade, topicId, meta }); }} />
+                    <GamePicker content={spelContentOf(choice, grade) ?? undefined} onPick={meta => { tryFullscreen(); useSpelStore.getState().start({ choice, grade, topicId, meta }); }} />
                 </main>
             </>
         );

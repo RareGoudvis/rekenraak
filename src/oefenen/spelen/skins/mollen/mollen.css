@@ -1,0 +1,245 @@
+/* Mollen meppen skin. A garden with six holes: flat fills under a thick dark outline (spelen.css tokens).
+   A mole comes up and goes down with a CSS transition (the skin only toggles is-up); nothing slides under
+   prefers-reduced-motion. */
+.ml-root {
+  /* One mole's width; a hole is a little wider. Two rows of three under the sign. */
+  --ml-w: clamp(64px, min(15vw, 19vh), 168px);
+  --ml-fur: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+  --ml-belly: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--kiosk-paper));
+  --ml-snout: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--kiosk-paper));
+  --ml-dirt: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  --ml-dirt-light: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-paper));
+  --ml-pace: 1;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  overflow: clip;
+  background: var(--spel-sky);
+}
+.ml-grass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 22%;
+  border-top: var(--spel-line) solid var(--spel-ink);
+  background: var(--spel-grass);
+}
+
+/* ── The sum ──────────────────────────────────────────────────────────────── */
+.ml-top { position: relative; z-index: 3; display: flex; justify-content: center; padding: var(--sp-3) var(--sp-3) 0; }
+.ml-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.ml-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: ml-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes ml-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+/* ── The holes ────────────────────────────────────────────────────────────── */
+.ml-field {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--ml-w) * 1.6));
+  grid-auto-rows: calc(var(--ml-w) * 1.45);
+  row-gap: var(--sp-2);
+}
+.ml-hole { position: relative; }
+/* The dark pit behind the mole, and the dirt rim in front of its feet. */
+.ml-pit,
+.ml-rim {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(var(--ml-w) * 1.4);
+  height: calc(var(--ml-w) * .42);
+  margin-left: calc(var(--ml-w) * -.7);
+  border-radius: 50%;
+}
+.ml-pit { background: var(--spel-ink); bottom: calc(var(--ml-w) * .08); }
+.ml-rim {
+  z-index: 2;
+  height: calc(var(--ml-w) * .26);
+  border: var(--spel-line) solid var(--spel-ink);
+  background: var(--ml-dirt-light);
+  pointer-events: none;
+}
+/* The mole rises out of the pit: clipped at the pit's middle. */
+.ml-clip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--ml-w) * .16);
+  width: calc(var(--ml-w) * 1.2);
+  height: calc(var(--ml-w) * 1.35);
+  margin-left: calc(var(--ml-w) * -.6);
+  overflow: hidden;
+  overflow: clip;
+  z-index: 1;
+}
+.ml-mole {
+  position: absolute;
+  left: calc(var(--ml-w) * .1);
+  bottom: 0;
+  width: var(--ml-w);
+  height: calc(var(--ml-w) * 1.1);
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  transform: translateY(105%);
+  transition: transform calc(180ms / var(--ml-pace)) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.ml-hole.is-up .ml-mole { transform: translateY(0); transition-timing-function: var(--ease-spring); }
+.ml-mole:disabled { cursor: default; }
+.ml-mole:focus-visible { outline: none; }
+.ml-mole:focus-visible .ml-fur { stroke-width: 7; }
+.ml-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ml-fur { fill: var(--ml-fur); stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
+.ml-belly { fill: var(--ml-belly); }
+.ml-eye { fill: var(--spel-ink); }
+.ml-glint { fill: var(--kiosk-paper); }
+.ml-snout { fill: var(--ml-snout); stroke: var(--spel-ink); stroke-width: 3; }
+.ml-nose { fill: var(--spel-ink); }
+.ml-tooth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.ml-paw { fill: var(--ml-snout); stroke: var(--spel-ink); stroke-width: 3; }
+
+.ml-num {
+  position: absolute;
+  top: 76%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 54%;
+  padding: 1px calc(var(--ml-w) * .06);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: calc(var(--ml-w) * .24);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.ml-key {
+  position: absolute;
+  z-index: 3;
+  right: 4%;
+  bottom: 0;
+  display: none;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+@media (hover: hover) and (pointer: fine) { .ml-key { display: inline-flex; } }
+
+/* Right: the toy hammer taps down, the mole squashes and sees stars. */
+.ml-hammer {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: calc(var(--ml-w) * -.25);
+  width: calc(var(--ml-w) * .95);
+  transform-origin: 90% 45%;
+  animation: ml-hammer 420ms var(--ease-out) both;
+  pointer-events: none;
+  overflow: visible;
+}
+@keyframes ml-hammer {
+  0% { transform: translateX(-10%) rotate(-55deg); }
+  45% { transform: translateX(-40%) rotate(8deg); }
+  70% { transform: translateX(-40%) rotate(-4deg); }
+  100% { transform: translateX(-40%) rotate(-30deg); opacity: .0; }
+}
+.ml-head { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 4; }
+.ml-band { stroke: var(--spel-star); stroke-width: 6; }
+.ml-handle { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 4; }
+.ml-hole.is-bonked .ml-mole { animation: ml-squash 520ms var(--ease-out) 120ms both; transform-origin: 50% 100%; }
+@keyframes ml-squash {
+  0% { transform: scale(1, 1); }
+  30% { transform: scale(1.12, .8); }
+  100% { transform: scale(1, .94); }
+}
+.ml-dizzy { position: absolute; z-index: 4; left: 50%; top: calc(var(--ml-w) * .12); width: 0; height: 0; }
+.ml-orbit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: ml-orbit 900ms linear 200ms infinite both;
+  animation-delay: calc(200ms + var(--i) * -300ms);
+}
+.ml-star { display: block; width: calc(var(--ml-w) * .22); margin: calc(var(--ml-w) * -.11); fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+@keyframes ml-orbit {
+  from { transform: rotate(0deg) translateX(calc(var(--ml-w) * .38)) rotate(0deg) scaleY(.6); }
+  to { transform: rotate(360deg) translateX(calc(var(--ml-w) * .38)) rotate(-360deg) scaleY(.6); }
+}
+
+/* Wrong: the mole shakes its head and stays; no red. */
+.ml-hole.is-nope .ml-art { animation: ml-nope 520ms ease-in-out both; transform-origin: 50% 100%; }
+@keyframes ml-nope {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-7deg); }
+  50% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+}
+/* The mole with the answer lights up while the sign shows it. */
+.ml-hole.is-answer .ml-clip { overflow: visible; }
+.ml-hole.is-answer .ml-mole::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 6px solid var(--kiosk-ok);
+  border-radius: 46% 46% 12% 12%;
+  animation: ml-ring 800ms ease-in-out 2 alternate both;
+}
+@keyframes ml-ring { from { transform: scale(1); } to { transform: scale(1.06); } }
+.ml-hole.is-answer .ml-num { color: var(--kiosk-ok); }
+
+/* "Hoe los ik dit op?": everything waits. */
+.ml-root.is-paused *,
+.ml-root.is-paused *::after { animation-play-state: paused; }
+
+@media (orientation: portrait) {
+  .ml-root { --ml-w: clamp(64px, min(24vw, 14vh), 168px); }
+  .ml-field { grid-template-columns: repeat(2, calc(var(--ml-w) * 1.6)); }
+}
+@media (max-height: 420px) {
+  .ml-root { --ml-w: clamp(44px, 16vh, 80px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ml-mole { transition: none; }
+  .ml-sign-answer, .ml-hole.is-bonked .ml-mole, .ml-hole.is-nope .ml-art, .ml-hole.is-answer .ml-mole::after { animation: none; }
+}
+.ml-root.is-still .ml-mole { transition: none; }
+.ml-root.is-still .ml-sign-answer,
+.ml-root.is-still .ml-hole.is-bonked .ml-mole,
+.ml-root.is-still .ml-hole.is-nope .ml-art,
+.ml-root.is-still .ml-hole.is-answer .ml-mole::after { animation: none; }

@@ -1,0 +1,255 @@
+/* Eieren zoeken skin. A spring garden: flat fills under a thick dark outline (spelen.css tokens), CSS only,
+   nothing moves under prefers-reduced-motion. */
+.egg-root {
+  /* One egg's width; its height is 1.25 ×. Three rows of eggs in tufts under the sign. */
+  --egg-w: clamp(54px, min(12vw, 14.5vh), 128px);
+  --egg-fill-0: color-mix(in srgb, var(--accent-getallenkennis) 40%, var(--kiosk-paper));
+  --egg-fill-1: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper));
+  --egg-fill-2: color-mix(in srgb, var(--mab-e) 60%, var(--kiosk-paper));
+  --egg-fill-3: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--kiosk-paper));
+  --egg-fill-4: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper));
+  --egg-fill-5: color-mix(in srgb, var(--accent-metendrekenen) 45%, var(--kiosk-paper));
+  --egg-tuft: color-mix(in srgb, var(--accent-metendrekenen) 85%, var(--spel-ink));
+  --egg-chick: var(--mab-e);
+  --egg-beak: var(--accent-vraagstukken);
+  --egg-wicker: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-paper));
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-3);
+  overflow: hidden;
+  overflow: clip;
+  background: var(--spel-sky);
+}
+.egg-sun {
+  position: absolute;
+  top: 5%;
+  right: 5%;
+  width: clamp(44px, 9vmin, 84px);
+  aspect-ratio: 1;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--spel-star) 35%, transparent);
+}
+.egg-grass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 24%;
+  border-top: var(--spel-line) solid var(--spel-ink);
+  border-radius: 50% 50% 0 0 / 24px 24px 0 0;
+  background: var(--spel-grass);
+}
+
+/* ── The sum ──────────────────────────────────────────────────────────────── */
+.egg-top {
+  position: relative;
+  z-index: 2;
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  padding-top: var(--sp-3);
+}
+.egg-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.egg-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: egg-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes egg-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+/* ── The eggs ─────────────────────────────────────────────────────────────── */
+.egg-field {
+  position: relative;
+  z-index: 1;
+  justify-self: center;
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--egg-w) * 1.55));
+  grid-auto-rows: calc(var(--egg-w) * 1.45);
+  align-items: end;
+  justify-items: center;
+}
+.egg-spot { position: relative; width: calc(var(--egg-w) * 1.4); display: flex; justify-content: center; }
+.egg {
+  position: relative;
+  display: block;
+  width: var(--egg-w);
+  height: calc(var(--egg-w) * 1.25);
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  margin-bottom: calc(var(--egg-w) * .12);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  transform-origin: 50% 95%;
+  animation: egg-in 320ms var(--ease-spring) both;
+  animation-delay: calc(var(--i) * 25ms);
+  -webkit-tap-highlight-color: transparent;
+}
+@keyframes egg-in { from { opacity: 0; transform: scale(.6); } }
+.egg:disabled { cursor: default; }
+.egg:focus-visible { outline: none; }
+.egg:focus-visible .egg-shell { stroke-width: 7; }
+.egg-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.egg-shell { fill: var(--fill); stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
+.egg-decor { fill: none; stroke: var(--kiosk-paper); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.egg-dot { fill: var(--kiosk-paper); }
+.egg-shine { fill: var(--kiosk-paper); opacity: .6; }
+
+.egg-num {
+  position: absolute;
+  top: 56%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 56%;
+  padding: 1px calc(var(--egg-w) * .06);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: calc(var(--egg-w) * .27);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.egg-key {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  display: none;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+@media (hover: hover) and (pointer: fine) { .egg-key { display: inline-flex; } }
+
+/* The tuft stands in front of the egg's foot. */
+.egg-tuft {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(var(--egg-w) * .38);
+  fill: var(--egg-tuft);
+  stroke: var(--spel-ink);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* Right: the top shell flies off and a chick pops up. */
+.egg-spot.is-open .egg-shell-top { transform-box: fill-box; transform-origin: 0% 100%; animation: egg-lid 520ms var(--ease-out) forwards; }
+@keyframes egg-lid { to { transform: translate(-18%, -60%) rotate(-40deg); opacity: 0; } }
+.egg-chick { position: absolute; overflow: visible; }
+.egg-chick.is-out { left: 8%; width: 84%; top: 4%; animation: egg-chick 520ms var(--ease-spring) 80ms both; }
+@keyframes egg-chick { from { transform: translateY(45%) scale(.6); } to { transform: translateY(0) scale(1); } }
+.egg-chick-body { fill: var(--egg-chick); stroke: var(--spel-ink); stroke-width: 3; }
+.egg-chick-wing { fill: var(--egg-chick); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.egg-chick-tuft { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
+.egg-chick-eye { fill: var(--spel-ink); }
+.egg-chick-beak { fill: var(--egg-beak); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+
+/* Wrong: the egg wobbles and stays; no red. */
+.egg-spot.is-wobble .egg { animation: egg-wobble 640ms ease-in-out both; }
+@keyframes egg-wobble {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-12deg); }
+  45% { transform: rotate(10deg); }
+  70% { transform: rotate(-6deg); }
+  88% { transform: rotate(3deg); }
+}
+
+/* The egg with the answer lights up with a ring while the sign shows it. */
+.egg-spot.is-answer .egg::after {
+  content: '';
+  position: absolute;
+  inset: -10px -12px;
+  border: 6px solid var(--kiosk-ok);
+  border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
+  animation: egg-ring 800ms ease-in-out 2 alternate both;
+}
+@keyframes egg-ring { from { transform: scale(1); } to { transform: scale(1.07); } }
+.egg-spot.is-answer .egg-num { color: var(--kiosk-ok); }
+.egg-spot.is-rest .egg { opacity: .5; transition: opacity var(--dur-slow) var(--ease-out); }
+
+/* ── The basket ───────────────────────────────────────────────────────────── */
+.egg-basket {
+  position: relative;
+  z-index: 1;
+  width: clamp(150px, 23vw, 280px);
+  align-self: end;
+  margin-bottom: var(--sp-4);
+}
+.egg-basket-art { position: relative; display: block; width: 100%; overflow: visible; }
+.egg-basket-handle { fill: none; stroke: var(--spel-ink); stroke-width: 10; stroke-linecap: round; }
+.egg-basket-body { fill: var(--egg-wicker); stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
+.egg-basket-weave { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 40%, var(--egg-wicker)); stroke-width: 3; }
+/* The chicks peek over the rim, five a row, the newest pops in. */
+.egg-basket-chicks {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  /* The first row stands just inside the rim (29 % from the top of the basket). */
+  bottom: calc(71% - 10px);
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: center;
+}
+.egg-basket-chick { width: 20%; margin-top: -8%; }
+.egg-basket-chick .egg-chick { position: static; display: block; width: 100%; }
+.egg-basket-chick:last-child { animation: egg-chick 420ms var(--ease-spring) 300ms both; }
+
+/* "Hoe los ik dit op?": everything waits. */
+.egg-root.is-paused *,
+.egg-root.is-paused *::after { animation-play-state: paused; }
+
+/* A phone or tablet upright: the basket under the eggs. */
+@media (orientation: portrait) {
+  .egg-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; --egg-w: clamp(54px, min(18vw, 12vh), 128px); }
+  .egg-basket { justify-self: center; width: clamp(120px, 30vw, 220px); }
+}
+@media (max-height: 420px) {
+  .egg-root { --egg-w: clamp(36px, 13vh, 64px); }
+  .egg-basket { width: clamp(110px, 18vw, 170px); }
+  .egg-sun { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .egg, .egg-sign-answer, .egg-chick.is-out, .egg-spot.is-wobble .egg, .egg-spot.is-answer .egg::after, .egg-basket-chick:last-child { animation: none; }
+  .egg-spot.is-open .egg-shell-top { animation: none; opacity: 0; }
+}
+.egg-root.is-still .egg,
+.egg-root.is-still .egg-sign-answer,
+.egg-root.is-still .egg-chick.is-out,
+.egg-root.is-still .egg-spot.is-wobble .egg,
+.egg-root.is-still .egg-spot.is-answer .egg::after,
+.egg-root.is-still .egg-basket-chick:last-child { animation: none; }
+.egg-root.is-still .egg-spot.is-open .egg-shell-top { animation: none; opacity: 0; }
