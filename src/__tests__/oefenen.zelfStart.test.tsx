@@ -1,16 +1,23 @@
 // @vitest-environment jsdom
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, screen, fireEvent, within } from '@testing-library/react';
+import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
+import { render, cleanup, screen, fireEvent, within, act } from '@testing-library/react';
 import OefenApp from '../oefenen/OefenApp';
-import GameStrip from '../oefenen/zelf/GameStrip';
 import { gameBlurb, GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
+import { GameThumb } from '../oefenen/zelf/SpeelMeteenRow';
+import { SPEEL_METEEN, resolveSpeelMeteen, speelMeteenFor, speelMeteenPreview } from '../oefenen/zelf/speelMeteen';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
-import { SKINS } from '../oefenen/spelen/skins/registry';
+import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
+import { skinsFor } from '../oefenen/spelen/accepts';
+import { choiceCanPlay, spelContentOf } from '../oefenen/spelen/spelQuestion';
+import { useSpelStore } from '../oefenen/spelen/useSpelStore';
+import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards';
+import type { Leerjaar } from '../config/gradePresets';
 import KidBackdrop from '../oefenen/kiosk/KidBackdrop';
 import { sceneOf } from '../oefenen/kiosk/backdrops';
 import { resetKiosk } from './helpers/oefenKiosk';
 
-const strip = () => screen.getByRole('region', { name: 'Je kan ook spelen!' });
+const JULY = new Date(Date.UTC(2026, 6, 1, 12));
+const SINTERKLAAS = new Date(Date.UTC(2026, 10, 20, 12));
 
 beforeEach(() => {
     resetKiosk();
@@ -44,61 +51,158 @@ describe('Zelf oefenen start: leerjaar bar', () => {
     });
 });
 
-describe('Zelf oefenen start: game strip', () => {
-    test('lists every game in the registry, with its badges', async () => {
-        render(<GameStrip today={new Date(Date.UTC(2026, 6, 1, 12))} />);
-        const names = within(strip()).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(names).toHaveLength(SKINS.length);
-        for (const s of SKINS) expect(names.some(n => n?.startsWith(s.meta.label))).toBe(true);
-        expect(names).toContain('Zombies, op tijd');
-        expect(names).toContain('Touwtrekken, 2 spelers');
-        // No leerjaar names here: the tests and the smoke click "Leerjaar n".
-        expect(names.some(n => /Leerjaar/.test(n ?? ''))).toBe(false);
+describe('Speel meteen: the config', () => {
+    let data: EenvoudigData;
+    beforeAll(async () => { data = await loadEenvoudigData(); });
+
+    test('every line resolves at its leerjaar to a Zelf choice its game accepts', () => {
+        for (const [g, list] of Object.entries(SPEEL_METEEN)) {
+            const grade = Number(g) as Leerjaar;
+            for (const e of list!) {
+                const hit = resolveSpeelMeteen(data, grade, e);
+                expect({ grade, title: e.title, ok: !!hit }).toEqual({ grade, title: e.title, ok: true });
+                // The same check the game picker makes on that choice.
+                expect(skinsFor(SKINS, spelContentOf(hit!.choice, grade)!).map(s => s.meta.id)).toContain(e.skin);
+                expect(choiceCanPlay(hit!.choice, grade)).toBe(true);
+            }
+        }
     });
 
-    test('an in-season game comes first with "nu!"', () => {
-        render(<GameStrip today={new Date(Date.UTC(2026, 10, 20, 12))} />);
-        const first = within(strip()).getAllByRole('button')[0];
-        expect(first.getAttribute('aria-label')).toBe('Pakjesband, nu extra leuk');
-        expect(first.textContent).toContain('nu!');
+    test('8 to 12 tiles per playable leerjaar, a game at most twice, calm and timed mixed, plain titles', () => {
+        for (const grade of [1, 2, 3, 4] as const) {
+            const list = SPEEL_METEEN[grade]!;
+            expect(list.length).toBeGreaterThanOrEqual(8);
+            expect(list.length).toBeLessThanOrEqual(12);
+            const per = new Map<string, number>();
+            for (const e of list) per.set(e.skin, (per.get(e.skin) ?? 0) + 1);
+            expect(Math.max(...per.values())).toBeLessThanOrEqual(2);
+            const timed = list.filter(e => skinById(e.skin)!.meta.timed).length;
+            expect(timed).toBeGreaterThanOrEqual(2);
+            expect(list.length - timed).toBeGreaterThanOrEqual(2);
+            expect(new Set(list.map(e => e.title)).size).toBe(list.length);
+            for (const e of list) {
+                expect(e.title).not.toMatch(/—|Leerjaar/);
+                expect(e.title.length).toBeLessThanOrEqual(48);
+            }
+        }
+        // Nothing plays above leerjaar 4 yet: no row there.
+        expect(SPEEL_METEEN[5]).toBeUndefined();
     });
 
-    test('a tap opens a sheet with what you do and how to get there; Oké and Escape close it', () => {
-        const onWish = vi.fn();
-        render(<GameStrip onWish={onWish} />);
-        fireEvent.click(within(strip()).getByRole('button', { name: /^Ballonnen/ }));
-        const sheet = screen.getByRole('dialog', { name: 'Ballonnen' });
-        expect(sheet.textContent).toContain(GAME_BLURB.ballonnen);
-        expect(sheet.textContent).toContain('Kies je leerjaar bovenaan, kies wat je oefent en tik dan op Spelen.');
-        expect(document.activeElement?.textContent).toBe('Oké!');
-        fireEvent.click(within(sheet).getByRole('button', { name: 'Oké!' }));
-        expect(screen.queryByRole('dialog')).toBeNull();
-        expect(onWish).toHaveBeenCalledWith('ballonnen');
-        fireEvent.click(within(strip()).getByRole('button', { name: /^Bom/ }));
-        expect(screen.getByRole('dialog', { name: 'Bom' }).textContent).toContain('op tijd');
-        fireEvent.keyDown(window, { key: 'Escape' });
-        expect(screen.queryByRole('dialog')).toBeNull();
+    test('a line that names no real choice, or content its game cannot play, drops out', () => {
+        const bad = [
+            { skin: 'ballonnen', topic: 'Hoofdrekenen · Optellen', choice: 'bestaat niet', title: 'x' },
+            { skin: 'nieuwspel', topic: 'Hoofdrekenen · Optellen', choice: 'met', title: 'y' },
+            // Zombies has a keypad: no clock faces.
+            { skin: 'zombies', topic: 'Klok en kalender', choice: 'Klok lezen', title: 'z' },
+        ];
+        for (const e of bad) expect(resolveSpeelMeteen(data, 2, e)).toBeNull();
+        expect(speelMeteenFor(data, 2, JULY, bad)).toEqual([]);
+        // By key or by label: the same choice.
+        const byKey = resolveSpeelMeteen(data, 2, { skin: 'ballonnen', topic: 'Hoofdrekenen · Optellen', choice: 'met', title: 'k' });
+        const byLabel = resolveSpeelMeteen(data, 2, { skin: 'ballonnen', topic: 'Hoofdrekenen · Optellen', choice: 'Met brug', title: 'l' });
+        expect(byKey!.choice.key).toBe(byLabel!.choice.key);
     });
 
-    test('a game without a line of its own falls back to its name', () => {
-        expect(gameBlurb('nieuwspel', 'Nieuw spel')).toBe('Nieuw spel');
-        const fake = { ...SKINS[0], meta: { ...SKINS[0].meta, id: 'nieuwspel', label: 'Nieuw spel' } };
-        render(<GameStrip games={[fake]} />);
-        fireEvent.click(within(strip()).getByRole('button', { name: 'Nieuw spel' }));
-        const sheet = screen.getByRole('dialog', { name: 'Nieuw spel' });
-        expect(sheet.textContent).toContain('Een nieuw spel om te ontdekken.');
+    test('in season a seasonal game jumps to the front with nu!; out of season the config order stands', () => {
+        const july = speelMeteenFor(data, 3, JULY);
+        expect(july.map(t => t.entry)).toEqual(SPEEL_METEEN[3]);
+        expect(july.some(t => t.nu)).toBe(false);
+        const nov = speelMeteenFor(data, 3, SINTERKLAAS);
+        expect(nov[0]).toMatchObject({ nu: true, entry: { skin: 'pakjesband' } });
+        expect(nov.filter(t => t.nu).map(t => t.skin.meta.id)).toEqual(['pakjesband']);
+        // The rest keep their order.
+        expect(nov.slice(1).map(t => t.entry)).toEqual(SPEEL_METEEN[3]!.filter(e => e.skin !== 'pakjesband'));
+        expect(speelMeteenPreview(SINTERKLAAS)[0].skin.meta.id).toBe('pakjesband');
+    });
+});
+
+describe('Speel meteen: the row', () => {
+    const row = () => screen.getByRole('region', { name: 'Speel meteen' });
+    const tile = (name: string | RegExp) => within(row()).getByRole('button', { name });
+    beforeEach(() => {
+        useSpelStore.getState().otherGame();
+        useSpelStore.getState().takePickerAt();
+        window.matchMedia ??= ((q: string) => ({ matches: false, media: q, addEventListener: () => { }, removeEventListener: () => { } })) as unknown as typeof window.matchMedia;
     });
 
-    test('every line is short, Dutch-plain and without an em dash', () => {
+    test('no leerjaar yet: the games dimmed and out of reach under the glowing bar', async () => {
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        expect(screen.getByRole('heading', { name: 'Kies je leerjaar' })).toBeTruthy();
+        expect(row().className).toContain('is-dim');
+        const buttons = within(row()).getAllByRole('button') as HTMLButtonElement[];
+        expect(buttons.length).toBeGreaterThan(5);
+        expect(buttons.every(b => b.disabled)).toBe(true);
+        fireEvent.click(screen.getByRole('button', { name: 'Leerjaar 3' }));
+        expect(row().className).not.toContain('is-dim');
+        expect(tile(/^Kasteel: tafels door elkaar/)).toBeTruthy();
+        // Nothing plays at leerjaar 5: no row.
+        fireEvent.click(screen.getByRole('button', { name: 'Leerjaar 5' }));
+        expect(screen.queryByRole('region', { name: 'Speel meteen' })).toBeNull();
+    });
+
+    test('a tap starts that game with that oefening; Ander spel opens the game tiles of that choice', async () => {
+        localStorage.setItem(GRADE_KEY, '2');
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        expect(tile('Voetbal: + met brug, op tijd').getAttribute('title')).toBe(GAME_BLURB.voetbal);
+        fireEvent.click(tile('Ballonnen prikken: maaltafels'));
+        const st = useSpelStore.getState();
+        expect(st.phase).toBe('play');
+        expect(st.meta!.id).toBe('ballonnen');
+        expect(st.from).toMatchObject({ grade: 2, topicId: 'Hoofdrekenen · Maaltafels', choice: { key: '2|Hoofdrekenen · Maaltafels|alles' } });
+        expect(st.question!.text).toMatch(/×/);
+        act(() => useSpelStore.getState().otherGame());
+        expect(await screen.findByRole('heading', { name: 'Kies een spel' })).toBeTruthy();
+        expect(screen.getByText('Maaltafels: Alles door elkaar')).toBeTruthy();
+    });
+
+    test('a game with options shows its options screen first', async () => {
+        localStorage.setItem(GRADE_KEY, '3');
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        fireEvent.click(tile(/^Voetbal: × 10 en × 100/));
+        expect(useSpelStore.getState().phase).toBe('idle');
+        expect(screen.getByRole('heading', { name: 'Voetbal' })).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: '5 minuten' }));
+        fireEvent.click(screen.getByRole('button', { name: /Start/ }));
+        const st = useSpelStore.getState();
+        expect(st.meta).toMatchObject({ id: 'voetbal', round: { seconds: 300 } });
+        expect(st.from!.choice.label).toBe('Keer 10 en 100');
+        act(() => useSpelStore.getState().otherGame());
+        cleanup();
+        useSpelStore.getState().takePickerAt();
+        // Ander spel on the options screen: back to the tiles.
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        fireEvent.click(tile(/^Kasteel: tafels door elkaar/));
+        fireEvent.click(screen.getByRole('button', { name: /Ander spel/ }));
+        expect(row()).toBeTruthy();
+    });
+
+    test('the thumbnail; a missing picture leaves the icon on its colour', () => {
+        const { container } = render(<GameThumb skin={skinById('zombies')!} />);
+        const img = container.querySelector('img')!;
+        expect(img.getAttribute('src')).toMatch(/spelen\/thumbs\/zombies\.webp$/);
+        expect(container.querySelector('.zelf-play-thumb svg')).not.toBeNull();
+        fireEvent.error(img);
+        expect(container.querySelector('img')).toBeNull();
+        expect(container.querySelector('.zelf-play-thumb svg')).not.toBeNull();
+    });
+
+    test('every game line is short and without an em dash', () => {
         for (const line of Object.values(GAME_BLURB)) {
             expect(line.length).toBeLessThanOrEqual(80);
             expect(line).not.toMatch(/—/);
         }
+        expect(gameBlurb('nieuwspel', 'Nieuw spel')).toBe('Nieuw spel');
+        for (const s of SKINS) expect(GAME_BLURB[s.meta.id], s.meta.id).toBeTruthy();
     });
 });
 
 describe('Zelf oefenen start: bundle', () => {
-    // The strip shows labels and icons only: no game component may load with the start page.
+    // The row shows labels, icons and thumbnails only: no game component may load with the start page.
     const sources = import.meta.glob('../oefenen/zelf/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
     test('the zelf files never import a skin component, only the registry', () => {
