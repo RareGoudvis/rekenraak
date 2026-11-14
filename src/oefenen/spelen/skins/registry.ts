@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
-import { ImageSquare, TreeEvergreen } from '@phosphor-icons/react';
+import { ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -83,6 +83,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: ImageSquare,
         Component: lazy(() => import('./prent/Prent')),
         Ending: lazy(() => import('./prent/Prent').then(m => ({ default: m.PrentEnding }))),
+    },
+    {
+        // Each right answer reveals the last digit of its answer; four make the lock's code, typed on the same keypad.
+        // Three chests end the round (the skin's onFinish); a wrong sum or code costs nothing. 60 questions at most, unseen.
+        // Chest open = the skin's 'win' cue, a wrong code = its 'lost' cue (the session never ends this round as won or lost).
+        meta: {
+            id: 'schatkist', label: 'Schatkist', input: 'keypad', timed: false, round: { cap: 60 }, accepts: { kinds: ['number'], digits: true },
+            sounds: { correct: 'snip', wrong: 'plop', win: 'jingle', lost: 'boing' },
+        },
+        icon: TreasureChest,
+        Component: lazy(() => import('./schatkist/Schatkist')),
+        Ending: lazy(() => import('./schatkist/Schatkist').then(m => ({ default: m.SchatkistEnding }))),
     },
     {
         // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
