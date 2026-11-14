@@ -10,4 +10,5 @@ export const visual = defineStepsVisual<Equation>({
     applies: (data, lines, ctx) => mabAllowed(ctx) && mabPlan(data, lines) !== null,
     // Owner (2026-11-13): the blocks were too small in the side panel; under the sum they get about three times the room.
     kioskSlot: 'card',
+    stages: data => mabPlan(data, [])?.stages.length ?? 0,
 });

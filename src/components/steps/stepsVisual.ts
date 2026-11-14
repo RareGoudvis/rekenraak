@@ -28,6 +28,8 @@ export interface StepsVisual<D = unknown> {
     // Oefenmodus: 'card' draws it big under the exercise (the card is idle during the steps), the lines stay in the panel.
     // Absent = 'panel', above the lines. The stappenhulp always draws it above the lines.
     kioskSlot?: 'panel' | 'card';
+    // A picture that also stands alone when the sum has no lines (MAB for 3 + 4): its number of taps after the first view.
+    stages?: (data: D) => number;
 }
 
 export const defineStepsVisual = <D>(visual: StepsVisual<D>): StepsVisual => visual as unknown as StepsVisual;

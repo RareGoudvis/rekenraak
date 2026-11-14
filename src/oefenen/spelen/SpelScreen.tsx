@@ -3,6 +3,7 @@ import { ArrowUUpLeft, Lifebuoy, Star, Timer } from '@phosphor-icons/react';
 import TwoTapButton from '../kiosk/TwoTapButton';
 import StepsPanel from '../kiosk/StepsPanel';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
+import { mabOnlyFor } from '../../services/stepsAvailability';
 import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
@@ -54,19 +55,22 @@ function HelpPanel() {
     }, [closeHelp]);
     if (!question || !help || !sessie) return null;
     const typeId = sessie.types[question.slot].typeId;
-    const visual = help.lines ? stepsVisualFor(typeId, question.exercise, help.lines, 'kiosk', { grade: sessie.grade, noMab: sessie.noMab }) : undefined;
+    const ctx = { grade: sessie.grade, noMab: sessie.noMab };
+    // A fact without steps (3 + 4) gets the MAB picture alone where MAB applies, before the counting tip.
+    const lines = help.lines ?? mabOnlyFor(typeId, question.exercise, question.constraints, ctx);
+    const visual = lines ? stepsVisualFor(typeId, question.exercise, lines, 'kiosk', ctx) : undefined;
     const cardVisual = visual?.slot === 'card' && cardRevealed !== null ? visual(cardRevealed) : null;
     return (
         <div className="spel-help" role="dialog" aria-modal="true" aria-labelledby="spel-help-title">
-            <div className={`spel-help-card${help.lines ? '' : ' is-tip'}`}>
+            <div className={`spel-help-card${lines ? '' : ' is-tip'}`}>
                 <section className="spel-help-sum">
                     <h2 id="spel-help-title" className="spel-help-title">Zo los je het op</h2>
                     <p className="spel-help-question kiosk-math">{question.text}</p>
                     {cardVisual}
                 </section>
                 <section className="spel-help-steps">
-                    {help.lines ? (
-                        <StepsPanel lines={help.lines} handig={help.handig} onNext={() => closeHelp()} startOpen nextLabel="Verder spelen"
+                    {lines ? (
+                        <StepsPanel lines={lines} handig={help.handig} onNext={() => closeHelp()} startOpen nextLabel="Verder spelen"
                             visual={visual} onVisual={onVisual} />
                     ) : (
                         <div className="kiosk-steps">

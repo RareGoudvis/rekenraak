@@ -2,6 +2,7 @@ import { REGISTRY } from '../config/exerciseRegistry';
 import type { MathBlock } from './math/types';
 import { tutorCarries } from './oefenen/tutorPayload';
 import type { HandigStrategy, StepLine } from './math/workedSteps';
+import { MAB_TYPE_IDS, mabAllowed, mabFitsScreen, mabOnlyApplies } from './steps/mabSteps';
 
 // The one rule for every place that offers worked steps (answer key, stappenhulp QR, Oefenmodus):
 // a sum has steps only when its type's strategy returns them under that block's own settings,
@@ -9,6 +10,17 @@ import type { HandigStrategy, StepLine } from './math/workedSteps';
 export function stepsFor(typeId: string, ex: unknown, constraints: unknown): StepLine[] | null {
     if (!ex) return null;
     return REGISTRY[typeId]?.steps?.(ex, (constraints ?? {}) as Record<string, unknown>) ?? null;
+}
+
+// A sum without steps that MAB can still show (3 + 4, 7 − 3 in leerjaar 1–3, MAB on, not on a phone): [] = the picture
+// alone (StepsPanel, StepsView); null = no help. Never on the answer key, which reads stepsFor.
+export function mabOnlyFor(typeId: string, ex: unknown, constraints: unknown, ctx: { grade?: number; noMab?: boolean }): StepLine[] | null {
+    return MAB_TYPE_IDS.includes(typeId) && mabAllowed(ctx) && mabFitsScreen() && mabOnlyApplies(ex, constraints) ? [] : null;
+}
+
+// What the pupil gets after a fout or on "Hoe los ik dit op?": the steps, else the MAB picture alone, else nothing.
+export function stepsOrMabFor(typeId: string, ex: unknown, constraints: unknown, ctx: { grade?: number; noMab?: boolean }): StepLine[] | null {
+    return stepsFor(typeId, ex, constraints) ?? mabOnlyFor(typeId, ex, constraints, ctx);
 }
 
 // The handig rekenen strategies a pupil may view for this sum (empty when none fits); grade = the pupil's leerjaar when known.

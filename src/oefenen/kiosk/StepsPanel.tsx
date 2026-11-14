@@ -33,16 +33,19 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
     const [showHandig, setShowHandig] = useState(false);
 
     const asking = lines.some(l => l.question);
+    // No lines, only a picture (MAB for 3 + 4): each tap shows its next stage; revealed 1 = the first view.
+    const pictureOnly = lines.length === 0 && !!visual?.stages;
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
-    const total = basisIdx.length;
+    const total = pictureOnly ? visual!.stages! + 1 : basisIdx.length;
     const upto = basisIdx[Math.min(revealed, total) - 1];
     const done = revealed >= total;
+    const stage = pictureOnly ? Math.min(revealed, total) - 1 : upto + 1;
     // Once every Basis line is out, Alle also shows optional lines after the last one.
     const last = done ? lines.length - 1 : upto;
     const shownLines = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => (alle ? i <= last : i <= upto && l.basis));
     // Question steps keep their visual beside the questions; only plain lines hand a 'card' visual to the Kiosk.
     const inCard = visual?.slot === 'card' && !asking;
-    useEffect(() => { if (inCard) onVisual?.(open ? upto + 1 : null); }, [inCard, open, upto, onVisual]);
+    useEffect(() => { if (inCard) onVisual?.(open ? stage : null); }, [inCard, open, stage, onVisual]);
     useEffect(() => () => onVisual?.(null), [onVisual]);
 
     return (
@@ -50,27 +53,34 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
             {!open ? (
                 <>
                     {hint && <p className="kiosk-steps-hint-lead">{hint}</p>}
-                    <p className="kiosk-steps-lead">Fout. Wil je zien hoe je het uitrekent?</p>
+                    <p className="kiosk-steps-lead">{pictureOnly ? 'Fout. Wil je het zien met blokjes?' : 'Fout. Wil je zien hoe je het uitrekent?'}</p>
                     <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big kiosk-steps-pulse" onClick={() => { setOpen(true); onSolution?.(asking ? 0 : Infinity); }} autoFocus>
-                        <ListNumbers weight="bold" aria-hidden /> Toon de stappen
+                        <ListNumbers weight="bold" aria-hidden /> {pictureOnly ? 'Toon de blokjes' : 'Toon de stappen'}
                     </button>
                 </>
             ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
                 <>
-                    {!inCard && visual?.(upto + 1)}
-                    <ol className="kiosk-steps-lines" aria-live="polite">
-                        {shownLines.map(({ l, i }) => (
-                            <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>
-                                <StepLineView line={l} fmt={formatMathNumber} />
-                            </li>
-                        ))}
-                    </ol>
+                    {!inCard && visual?.(stage)}
+                    {!pictureOnly && (
+                        <ol className="kiosk-steps-lines" aria-live="polite">
+                            {shownLines.map(({ l, i }) => (
+                                <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>
+                                    <StepLineView line={l} fmt={formatMathNumber} />
+                                </li>
+                            ))}
+                        </ol>
+                    )}
                     {done
                         ? <p className="kiosk-steps-done">Klaar! Kijk nog eens naar je antwoord.</p>
                         : <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={() => setRevealed(r => r + 1)}>Toon de volgende stap</button>}
-                    <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
-                        {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
-                    </button>
+                    {/* The picture has no optional lines to switch on, so Alle stappen just jumps to the end. */}
+                    {pictureOnly
+                        ? !done && <button type="button" className="kiosk-btn" onClick={() => setRevealed(total)}>Alle stappen</button>
+                        : (
+                            <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
+                                {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
+                            </button>
+                        )}
                     {handig.length > 0 && (
                         <button type="button" className="kiosk-btn" aria-pressed={showHandig} onClick={() => setShowHandig(h => !h)}>
                             {showHandig ? 'Handig rekenen: aan' : 'Handig rekenen'}
