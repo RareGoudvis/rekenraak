@@ -12,8 +12,9 @@ export interface SkinMeta {
     input: 'choice' | 'keypad';
     // Timed skins get a clock icon in the picker and progress.msLeft.
     timed: boolean;
-    // The round: a number of questions, or seconds (timed skins).
-    round: { questions?: number; seconds?: number };
+    // The round: a number of questions, or seconds (timed skins). goal = a climb (Pinguïntoren): a right
+    // answer adds one, a mistake takes one off (never below 0); the round ends at goal, questions is then the cap.
+    round: { questions?: number; seconds?: number; goal?: number };
 }
 
 // The game phase a skin sees: play = waiting for an answer; right / wrong = the short flash after one;
@@ -38,6 +39,8 @@ export interface SkinProgress {
     bestStreak: number;
     // Timed rounds: what is left (frozen while paused); null when untimed.
     msLeft: number | null;
+    // Goal rounds (round.goal): how high the climb is now; null otherwise.
+    goal: { count: number; target: number } | null;
 }
 
 export interface SkinProps {
@@ -51,6 +54,8 @@ export interface SkinProps {
     onAnswer(given: string): void;
     // Opens "Hoe los ik dit op?" (the shell also has the button; a skin may add its own).
     onHelp(): void;
+    // The skin's own deadline for this question ran out (a zombie at the door): a mistake without an answer.
+    onMiss(): void;
     progress: SkinProgress;
     // correct / wrong / help / streak / timeUp / end, for effects.
     events: SpelEvents;

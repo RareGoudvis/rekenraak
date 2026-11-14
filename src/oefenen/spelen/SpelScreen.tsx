@@ -102,9 +102,16 @@ export default function SpelScreen() {
                     confirm="Ja, stoppen"
                     onConfirm={st.otherGame}
                 />
-                <span className="kiosk-progress spel-progress" aria-label={progress.total !== null ? `Vraag ${at} van ${progress.total}` : `Vraag ${at}`}>
-                    {progress.total !== null ? `${at} / ${progress.total}` : at}
-                </span>
+                {progress.goal ? (
+                    // A goal round counts toward the goal, not the question cap.
+                    <span className="kiosk-progress spel-progress" aria-label={`${progress.goal.count} van ${progress.goal.target}`}>
+                        {`${progress.goal.count} / ${progress.goal.target}`}
+                    </span>
+                ) : (
+                    <span className="kiosk-progress spel-progress" aria-label={progress.total !== null ? `Vraag ${at} van ${progress.total}` : `Vraag ${at}`}>
+                        {progress.total !== null ? `${at} / ${progress.total}` : at}
+                    </span>
+                )}
                 <span className="kiosk-topbar-right">
                     {progress.msLeft !== null && (
                         <span className="kiosk-timer" role="timer" aria-label={`Nog ${formatClock(progress.msLeft)}`}>
@@ -126,6 +133,7 @@ export default function SpelScreen() {
                         feedback={st.feedback}
                         onAnswer={st.answer}
                         onHelp={() => st.openHelp()}
+                        onMiss={() => st.miss()}
                         progress={progress}
                         events={st.events}
                         reducedMotion={reducedMotion}

@@ -45,6 +45,8 @@ interface SpelState {
     // Questions on which "Hoe los ik dit op?" was opened: counted as met hulp, not as juist or fout.
     helped: number;
     helpedNow: boolean;
+    // Goal rounds (meta.round.goal): the climb, +1 per right answer (met hulp too), −1 per mistake, never below 0.
+    climb: number;
     mistakes: SpelMistake[];
     // The steps for the question on screen while paused; null lines = this sum has none.
     help: { lines: StepLine[] | null; handig: HandigStrategy[] } | null;
@@ -59,6 +61,8 @@ interface SpelState {
     start(o: SpelStart): void;
     next(now?: number): void;
     answer(given: string, now?: number): void;
+    // The skin's deadline for this question ran out (a zombie at the door): a mistake with no answer.
+    miss(now?: number): void;
     openHelp(now?: number): void;
     closeHelp(now?: number): void;
     tick(now?: number): void;
@@ -71,8 +75,10 @@ interface SpelState {
 }
 
 /** What the skins read as progress. */
-export function progressOf(st: Pick<SpelState, 'history' | 'sessie' | 'score' | 'streak' | 'bestStreak' | 'endsAt' | 'pausedLeft'>, now = Date.now()): SkinProgress {
+export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | 'score' | 'streak' | 'bestStreak' | 'climb' | 'endsAt' | 'pausedLeft'>, now = Date.now()): SkinProgress {
+    const target = st.meta?.round.goal;
     return {
+        goal: target ? { count: st.climb, target } : null,
         answered: st.history.length, total: st.sessie?.total ?? null, score: st.score, streak: st.streak, bestStreak: st.bestStreak,
         msLeft: st.pausedLeft ?? (st.endsAt !== null ? Math.max(0, st.endsAt - now) : null),
     };
@@ -89,7 +95,7 @@ export const spelSessieOf = (o: SpelStart): OefenSessie => {
 
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
-    helped: 0, helpedNow: false, mistakes: [], help: null, endsAt: null, pausedLeft: null, shownAt: 0,
+    helped: 0, helpedNow: false, climb: 0, mistakes: [], help: null, endsAt: null, pausedLeft: null, shownAt: 0,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
@@ -106,6 +112,31 @@ export const useSpelStore = create<SpelState>()((set, get) => {
     const timeUp = (now: number) => {
         const { endsAt, pausedLeft } = get();
         return pausedLeft === null && endsAt !== null && now >= endsAt;
+    };
+
+    // One answer (or a miss) on the question on screen: log it, score it, flash, then the next question by itself.
+    const settle = (given: string, correct: boolean, now: number) => {
+        const st = get();
+        const { sessie: s, question: q, events } = st;
+        if (!s || !q) return;
+        if (timeUp(now)) { events.emit('timeUp', {}); end(); return; }
+        const history = [...st.history, { slot: q.slot, typeId: s.types[q.slot].typeId, exerciseKey: q.key, correct, ms: Math.max(0, now - st.shownAt) }];
+        // Met hulp: neither a point nor a mistake, and the streak neither grows nor breaks.
+        const counts = !st.helpedNow;
+        const streak = !counts ? st.streak : correct ? st.streak + 1 : 0;
+        // The climb: met hulp still builds (asking is fine), only a counted mistake takes a block off.
+        const climb = correct ? st.climb + 1 : counts ? Math.max(0, st.climb - 1) : st.climb;
+        set({
+            history, streak, bestStreak: Math.max(st.bestStreak, streak), climb,
+            score: st.score + (counts && correct ? 1 : 0),
+            mistakes: counts && !correct ? [...st.mistakes, { question: q, given }] : st.mistakes,
+            feedback: { given, expected: q.answer, correct },
+            phase: correct ? 'right' : 'wrong',
+        });
+        if (correct) events.emit('correct', { given, streak });
+        else events.emit('wrong', { given, expected: q.answer });
+        if (counts) events.emit('streak', { count: streak });
+        flashTimer = setTimeout(() => { flashTimer = null; if (get().question === q) get().next(); }, correct ? SPEL_FLASH_MS.right : SPEL_FLASH_MS.wrong);
     };
 
     return {
@@ -127,6 +158,8 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             if (!s || phase === 'idle' || phase === 'end' || phase === 'help') return;
             if (timeUp(now)) { get().events.emit('timeUp', {}); end(); return; }
             if (s.total !== undefined && history.length >= s.total) { end(); return; }
+            const goal = get().meta?.round.goal;
+            if (goal && get().climb >= goal) { end(); return; }
             const seen = new Set(history.map(h => h.exerciseKey));
             const madeBy = madePerSlot(s, history);
             let question: SpelQuestion | null = null;
@@ -140,30 +173,18 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         },
 
         answer(given, now = Date.now()) {
-            const { phase, sessie: s, question: q, events } = get();
+            const { phase, sessie: s, question: q } = get();
             if (phase !== 'play' || !s || !q) return;
-            if (timeUp(now)) { events.emit('timeUp', {}); end(); return; }
             const type = s.types[q.slot];
             const d = kioskFor(type.typeId);
             if (!d || given.trim() === '') return;
-            const correct = checkAnswer(d, q.exercise, q.constraints, given.trim(), type.exactForm);
-            const st = get();
-            const history = [...st.history, { slot: q.slot, typeId: type.typeId, exerciseKey: q.key, correct, ms: Math.max(0, now - st.shownAt) }];
-            // Met hulp: neither a point nor a mistake, and the streak neither grows nor breaks.
-            const counts = !st.helpedNow;
-            const streak = !counts ? st.streak : correct ? st.streak + 1 : 0;
-            set({
-                history, streak, bestStreak: Math.max(st.bestStreak, streak),
-                score: st.score + (counts && correct ? 1 : 0),
-                mistakes: counts && !correct ? [...st.mistakes, { question: q, given: given.trim() }] : st.mistakes,
-                feedback: { given: given.trim(), expected: q.answer, correct },
-                phase: correct ? 'right' : 'wrong',
-            });
-            if (correct) events.emit('correct', { given: given.trim(), streak });
-            else events.emit('wrong', { given: given.trim(), expected: q.answer });
-            if (counts) events.emit('streak', { count: streak });
-            const shownThen = q;
-            flashTimer = setTimeout(() => { flashTimer = null; if (get().question === shownThen) get().next(); }, correct ? SPEL_FLASH_MS.right : SPEL_FLASH_MS.wrong);
+            settle(given.trim(), checkAnswer(d, q.exercise, q.constraints, given.trim(), type.exactForm), now);
+        },
+
+        miss(now = Date.now()) {
+            const { phase, sessie: s, question: q } = get();
+            if (phase !== 'play' || !s || !q) return;
+            settle('', false, now);
         },
 
         openHelp(now = Date.now()) {

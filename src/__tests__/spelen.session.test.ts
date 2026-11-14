@@ -3,7 +3,7 @@ import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vi
 import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards';
 import { buildZelfSessie, choicesFor, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore } from '../oefenen/useOefenStore';
-import { spelSessieOf, useSpelStore, type SpelStart } from '../oefenen/spelen/useSpelStore';
+import { progressOf, spelSessieOf, useSpelStore, type SpelStart } from '../oefenen/spelen/useSpelStore';
 import type { SkinMeta } from '../oefenen/spelen/skins/types';
 import type { SpelEventName } from '../oefenen/spelen/events';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -14,6 +14,7 @@ import { stepsFor } from '../services/stepsAvailability';
 
 const BALLONNEN: SkinMeta = { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 } };
 const TIMED: SkinMeta = { id: 'klok', label: 'Op tijd', input: 'keypad', timed: true, round: { seconds: 60 } };
+const TOWER: SkinMeta = { id: 'toren', label: 'Toren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 } };
 
 let data: EenvoudigData;
 let choice: ZelfChoice;
@@ -140,6 +141,73 @@ describe('Spelen session', () => {
         sp().tick(t0 + 150_000);
         expect(sp().phase).toBe('end');
         expect(log.map(e => e.name)).toEqual(['help', 'timeUp', 'end']);
+    });
+
+    test('a goal round climbs to 20; a mistake takes one off, never below 0; met hulp still builds', () => {
+        sp().start(startWith(TOWER));
+        const climb = () => progressOf(sp()).goal;
+        expect(climb()).toEqual({ count: 0, target: 20 });
+        // A mistake on an empty floe stays at 0.
+        sp().answer(wrongOf(sp().question!.answer)); sp().next();
+        expect(sp().climb).toBe(0);
+        sp().answer(sp().question!.answer); sp().next();
+        sp().answer(sp().question!.answer); sp().next();
+        expect(sp().climb).toBe(2);
+        sp().answer(wrongOf(sp().question!.answer)); sp().next();
+        expect(sp().climb).toBe(1);
+        // Met hulp: a right answer still stacks a block, a wrong one drops none.
+        sp().openHelp(); sp().closeHelp();
+        sp().answer(sp().question!.answer); sp().next();
+        sp().openHelp(); sp().closeHelp();
+        sp().answer(wrongOf(sp().question!.answer)); sp().next();
+        expect(sp().climb).toBe(2);
+        while (sp().phase === 'play') { sp().answer(sp().question!.answer); sp().next(); }
+        // 20 blocks end the round, well before the cap of 30.
+        expect(sp().phase).toBe('end');
+        expect(sp().climb).toBe(20);
+        expect(sp().history).toHaveLength(6 + 18);
+    });
+
+    test('a goal round: 30 questions are the cap, so a round of mistakes still ends', () => {
+        sp().start(startWith(TOWER));
+        for (let i = 0; i < 30; i++) {
+            expect(sp().phase).toBe('play');
+            sp().answer(i % 3 ? wrongOf(sp().question!.answer) : sp().question!.answer);
+            sp().next();
+        }
+        expect(sp().phase).toBe('end');
+        expect(sp().history).toHaveLength(30);
+        expect(sp().climb).toBe(0);
+        // Untimed rounds without a goal have no climb in their progress.
+        sp().start(startWith(BALLONNEN));
+        expect(progressOf(sp()).goal).toBeNull();
+    });
+
+    test('a miss (the skin deadline ran out): a mistake without an answer, a block off, nothing while paused or met hulp', () => {
+        sp().start(startWith(TOWER));
+        sp().answer(sp().question!.answer); sp().next();
+        const q = sp().question!;
+        sp().openHelp();
+        sp().miss();
+        expect(sp().phase).toBe('help');
+        sp().closeHelp();
+        // Met hulp: logged, but no mistake and no block off.
+        sp().miss();
+        expect(sp().phase).toBe('wrong');
+        expect(sp().mistakes).toHaveLength(0);
+        expect(sp().climb).toBe(1);
+        sp().next();
+        const q2 = sp().question!;
+        expect(q2.key).not.toBe(q.key);
+        sp().miss();
+        expect(sp().feedback).toEqual({ given: '', expected: q2.answer, correct: false });
+        expect(sp().mistakes).toEqual([{ question: q2, given: '' }]);
+        expect(sp().climb).toBe(0);
+        expect(sp().history.map(h => h.correct)).toEqual([true, false, false]);
+        expect(log.filter(e => e.name === 'wrong').map(e => e.payload)).toEqual([{ given: '', expected: q.answer }, { given: '', expected: q2.answer }]);
+        // One per question: a second miss during the flash does nothing.
+        sp().miss();
+        expect(sp().history).toHaveLength(3);
     });
 
     test('Nakijken replays exactly the mistakes, same numbers, in the Oefenen kiosk with steps after a fout', () => {
