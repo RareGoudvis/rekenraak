@@ -1,0 +1,376 @@
+/* Zeehondjes voeren skin. An icy sea: flat fills under a thick dark outline (spelen.css tokens), CSS only,
+   transforms and opacity only (light on old laptops), nothing flies or claps under reduced motion. */
+.zh-root {
+  /* One seal's width; with its sign it stands about 1.6 × as tall. Big targets for the youngest. */
+  --zh-w: clamp(120px, min(20.5vw, 30vh), 230px);
+  --zh-sea: color-mix(in srgb, var(--accent-bewerkingen) 42%, var(--kiosk-paper));
+  --zh-sea-deep: color-mix(in srgb, var(--accent-bewerkingen) 58%, var(--kiosk-paper));
+  --zh-ice: color-mix(in srgb, var(--accent-bewerkingen) 7%, var(--kiosk-paper));
+  --zh-ice-shade: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--kiosk-paper));
+  --zh-seal-0: color-mix(in srgb, var(--spel-ink) 30%, var(--kiosk-paper));
+  --zh-seal-1: color-mix(in srgb, var(--spel-ink) 26%, color-mix(in srgb, var(--accent-bewerkingen) 14%, var(--kiosk-paper)));
+  --zh-seal-2: color-mix(in srgb, var(--spel-ink) 26%, color-mix(in srgb, var(--accent-vraagstukken) 16%, var(--kiosk-paper)));
+  --zh-seal-3: color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper));
+  --zh-fish: color-mix(in srgb, var(--accent-vraagstukken) 80%, var(--kiosk-paper));
+  --zh-bucket: var(--mab-e);
+  --zh-cheek: var(--kid-tint-6);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  justify-items: center;
+  overflow: hidden;
+  overflow: clip;
+  background: var(--zh-sea);
+}
+.zh-root.has-pictures { --zh-w: clamp(120px, min(20.5vw, 26vh), 230px); }
+
+/* ── The sea ──────────────────────────────────────────────────────────────── */
+.zh-sea {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--spel-sky) 0 24%, var(--zh-sea) 24%);
+}
+.zh-sea::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 24%;
+  border-top: 3px solid var(--spel-ink);
+}
+.zh-berg {
+  position: absolute;
+  left: 3%;
+  top: calc(24% - clamp(40px, 9vh, 80px));
+  width: clamp(120px, 22vw, 260px);
+  height: clamp(40px, 9vh, 80px);
+  fill: var(--zh-ice);
+  stroke: var(--spel-ink);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.zh-berg path { vector-effect: non-scaling-stroke; }
+.zh-berg.is-far { left: auto; right: 4%; width: clamp(100px, 18vw, 220px); fill: var(--zh-ice-shade); }
+
+/* ── The sum ──────────────────────────────────────────────────────────────── */
+.zh-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding-top: var(--sp-3);
+}
+.zh-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  box-shadow: var(--kid-drop-sm);
+}
+.zh-sign.spel-sign-has-pic { padding: var(--sp-2) var(--sp-4); font-size: clamp(24px, 5vmin, 44px); }
+.zh-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: zh-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes zh-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+/* ── The seals ────────────────────────────────────────────────────────────── */
+.zh-pod {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  display: grid;
+  grid-template-columns: repeat(4, calc(var(--zh-w) * 1.06));
+  align-items: end;
+  justify-items: center;
+  column-gap: clamp(4px, 1.5vw, 24px);
+  padding-bottom: var(--sp-2);
+}
+.zh-spot { position: relative; display: flex; justify-content: center; }
+.zh-bob {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: zh-bob 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.3s);
+}
+@keyframes zh-bob { 50% { transform: translateY(-4px); } }
+
+.zh-seal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--zh-w);
+  min-width: var(--spel-tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  animation: zh-in 360ms var(--ease-spring) both;
+  animation-delay: calc(var(--i) * 40ms);
+  -webkit-tap-highlight-color: transparent;
+}
+@keyframes zh-in { from { opacity: 0; transform: translateY(14%) scale(.9); } }
+.zh-seal:disabled { cursor: default; }
+.zh-seal:focus-visible { outline: none; }
+.zh-seal:focus-visible .zh-board { box-shadow: 0 0 0 4px var(--kiosk-paper), 0 0 0 8px var(--accent); }
+
+/* The sign on a pole behind the seal. */
+.zh-board-wrap { position: relative; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 100%; }
+.zh-board {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--zh-w) * .8);
+  height: calc(var(--zh-w) * .46);
+  padding: 0 calc(var(--zh-w) * .05);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  box-shadow: var(--kid-drop-sm);
+  font-size: calc(var(--zh-w) * .23);
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.zh-pole {
+  width: calc(var(--zh-w) * .06);
+  height: calc(var(--zh-w) * .16);
+  margin-top: -2px;
+  border: 3px solid var(--spel-ink);
+  border-top: 0;
+  background: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+}
+/* Content packs (SpelChoiceFace): a clock face fills a square sign (≥ 100 px); a phrase wraps on two lines. */
+.zh-board.is-picture {
+  width: calc(var(--zh-w) * .78);
+  height: calc(var(--zh-w) * .78);
+  min-width: 0;
+  padding: calc(var(--zh-w) * .04);
+  font-size: calc(var(--zh-w) * .18);
+}
+.zh-board.is-picture > svg { width: 100%; height: 100%; }
+.zh-board.is-short { font-size: calc(var(--zh-w) * .19); }
+.zh-board.is-words {
+  width: calc(var(--zh-w) * .96);
+  min-width: 0;
+  height: auto;
+  min-height: calc(var(--zh-w) * .46);
+  padding: 4px 6px;
+  font-family: var(--kid-font);
+  font-size: calc(var(--zh-w) * .16);
+  font-weight: 800;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+}
+
+.zh-body-wrap { position: relative; display: block; width: 100%; margin-top: calc(var(--zh-w) * -.1); }
+.zh-art { position: relative; display: block; width: 100%; height: auto; overflow: visible; }
+.zh-body, .zh-skull { fill: var(--fill); stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
+.zh-tail, .zh-flip { fill: color-mix(in srgb, var(--fill) 80%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.zh-belly { fill: color-mix(in srgb, var(--fill) 35%, var(--kiosk-paper)); }
+.zh-cheek { fill: var(--zh-cheek); }
+.zh-eye, .zh-nose { fill: var(--spel-ink); }
+.zh-glint { fill: var(--kiosk-paper); }
+.zh-muzzle { fill: color-mix(in srgb, var(--fill) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.zh-whisker, .zh-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; }
+.zh-head, .zh-face, .zh-flip { transform-box: fill-box; }
+.zh-head { transform-origin: 50% 90%; }
+.zh-flip-l { transform-origin: 85% 10%; }
+.zh-flip-r { transform-origin: 15% 10%; }
+.zh-seal:focus-visible .zh-body { stroke-width: 6; }
+
+.zh-mouth-at { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; transform: translate(-50%, -50%); }
+
+.zh-floe {
+  position: relative;
+  display: block;
+  width: calc(var(--zh-w) * 1.06);
+  height: calc(var(--zh-w) * .26);
+  margin-top: calc(var(--zh-w) * -.14);
+  overflow: visible;
+}
+.zh-floe-ice { fill: var(--zh-ice); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.zh-floe-shine { fill: none; stroke: var(--zh-ice-shade); stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+.zh-key {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
+  display: none;
+  min-width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-family: var(--kid-font);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+@media (hover: hover) and (pointer: fine) { .zh-key { display: inline-flex; } }
+
+/* Right: the seal bounces and claps its flippers as the fish lands (the flash lasts 700 ms). */
+.zh-spot.is-fed .zh-art { animation: zh-hop 520ms var(--ease-out) 320ms both; }
+@keyframes zh-hop { 40% { transform: translateY(-7%); } }
+.zh-spot.is-fed .zh-flip-l { animation: zh-clap-l 380ms ease-in-out 340ms both; }
+.zh-spot.is-fed .zh-flip-r { animation: zh-clap-r 380ms ease-in-out 340ms both; }
+@keyframes zh-clap-l { 25%, 75% { transform: rotate(62deg); } 50% { transform: rotate(14deg); } }
+@keyframes zh-clap-r { 25%, 75% { transform: rotate(-62deg); } 50% { transform: rotate(-14deg); } }
+.zh-spot.is-fed .zh-board { box-shadow: 0 0 0 5px var(--kiosk-ok); }
+.zh-bubbles { position: absolute; left: 0; right: 0; bottom: 6%; height: 0; }
+.zh-bubble {
+  position: absolute;
+  left: calc(22% + var(--b) * 26%);
+  bottom: 0;
+  width: calc(var(--zh-w) * (.07 + var(--b) * .02));
+  aspect-ratio: 1;
+  border: 2px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--zh-ice);
+  opacity: 0;
+  animation: zh-bubble 560ms var(--ease-out) both;
+  animation-delay: calc(300ms + var(--b) * 70ms);
+}
+@keyframes zh-bubble { 0% { opacity: 0; transform: translateY(0) scale(.5); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(calc(var(--zh-w) * -.5)) scale(1); } }
+/* Reduced motion: the fish is simply at the seal's mouth. */
+.zh-fed-fish { position: absolute; left: 50%; top: 50%; width: calc(var(--zh-w) * .38); transform: translate(-30%, -40%) rotate(-14deg); }
+
+/* Wrong: the seal shakes its head and looks away; no red. */
+.zh-spot.is-nope .zh-head { animation: zh-nope 900ms ease-in-out both; }
+@keyframes zh-nope {
+  12% { transform: rotate(-12deg); }
+  28% { transform: rotate(12deg); }
+  44% { transform: rotate(-10deg); }
+  60% { transform: rotate(8deg); }
+  100% { transform: rotate(-16deg) translateX(-8%); }
+}
+.zh-spot.is-nope .zh-face { animation: zh-away 900ms ease-in-out both; }
+@keyframes zh-away { 60% { transform: translateX(0); } 100% { transform: translateX(-24%); } }
+.zh-spot.is-nope .zh-board { opacity: .6; transition: opacity var(--dur-slow) var(--ease-out); }
+
+/* The seal with the answer waves its sign while the big sign shows it. */
+.zh-spot.is-answer .zh-board-wrap { animation: zh-wave 640ms ease-in-out 200ms 2 both; }
+@keyframes zh-wave { 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
+.zh-spot.is-answer .zh-board { box-shadow: 0 0 0 5px var(--kiosk-ok); color: var(--kiosk-ok); }
+/* Group opacity on the whole seal + floe: the floe never shows through a dimmed seal. */
+.zh-spot.is-rest .zh-bob { opacity: .55; transition: opacity var(--dur-slow) var(--ease-out); }
+
+/* ── The fish in the air: one throw, measured at the tap ──────────────────── */
+.zh-fly {
+  --fw: calc(var(--zh-w) * .36);
+  position: absolute;
+  z-index: 6;
+  width: var(--fw);
+  margin: calc(var(--fw) * -.25) 0 0 calc(var(--fw) * -.5);
+  pointer-events: none;
+  animation: zh-fly-x 440ms linear both, zh-eaten 80ms linear 440ms forwards;
+}
+.zh-fly-y { display: block; animation: zh-fly-y 440ms both; }
+.zh-fly .zh-fish { display: block; width: 100%; transform: scaleX(var(--face)); }
+@keyframes zh-fly-x { to { transform: translateX(var(--dx)); } }
+@keyframes zh-fly-y {
+  0% { transform: translateY(0) rotate(calc(var(--face) * 30deg)); animation-timing-function: cubic-bezier(.3, .7, .6, 1); }
+  50% { transform: translateY(var(--arc)) rotate(0deg); animation-timing-function: cubic-bezier(.4, 0, .7, .3); }
+  100% { transform: translateY(var(--dy)) rotate(calc(var(--face) * -30deg)); }
+}
+@keyframes zh-eaten { to { opacity: 0; } }
+
+.zh-fish { overflow: visible; }
+.zh-fish-body, .zh-fish-tail { fill: var(--zh-fish); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.zh-fish-fin { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.zh-fish-eye { fill: var(--spel-ink); }
+
+/* ── The bucket on the pupil's side ───────────────────────────────────────── */
+.zh-shore {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-2) 0 var(--sp-3);
+  border-top: var(--spel-line) solid var(--spel-ink);
+  border-radius: 50% 50% 0 0 / 18px 18px 0 0;
+  background: var(--zh-ice);
+}
+.zh-bucket { --zh-b: clamp(96px, 11vw, 140px); position: relative; width: var(--zh-b); margin-top: calc(var(--zh-b) * -.45); }
+.zh-bucket-out { position: absolute; left: 50%; top: 22%; width: 8px; height: 8px; transform: translate(-50%, -50%); }
+.zh-bucket-art { position: relative; display: block; width: 100%; overflow: visible; }
+.zh-bucket-handle { fill: none; stroke: var(--spel-ink); stroke-width: 6; stroke-linecap: round; }
+.zh-bucket-body { fill: var(--zh-bucket); stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
+.zh-bucket-band { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 35%, var(--zh-bucket)); stroke-width: 4; }
+.zh-bucket-rim { fill: color-mix(in srgb, var(--spel-ink) 70%, var(--zh-bucket)); stroke: var(--spel-ink); stroke-width: 3; }
+/* Fish heads peek over the rim, the last one in leaves first. */
+.zh-bucket-fish { position: absolute; left: 6%; right: 6%; top: -6%; display: flex; justify-content: center; align-items: flex-end; }
+.zh-bucket-tail { width: 34%; margin: 0 -7%; transform: rotate(calc(60deg + var(--k) * 15deg)); transform-origin: 90% 50%; }
+.zh-bucket-tail .zh-fish { display: block; width: 100%; }
+.zh-count {
+  position: absolute;
+  left: calc(100% + var(--sp-2));
+  bottom: 10%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px 2px 6px;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  box-shadow: var(--kid-drop-sm);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.zh-count-fish { width: 30px; }
+
+/* "Hoe los ik dit op?": everything waits. */
+.zh-root.is-paused *,
+.zh-root.is-paused *::after { animation-play-state: paused; }
+
+/* A phone or tablet upright: two seals a row. */
+@media (orientation: portrait) {
+  .zh-root, .zh-root.has-pictures { --zh-w: clamp(110px, min(34vw, 19vh), 210px); }
+  .zh-pod { grid-template-columns: repeat(2, calc(var(--zh-w) * 1.2)); row-gap: var(--sp-3); }
+}
+@media (max-height: 460px) and (orientation: landscape) {
+  .zh-root, .zh-root.has-pictures { --zh-w: clamp(64px, 24vh, 120px); }
+  .zh-berg { display: none; }
+  .zh-top { padding-top: var(--sp-1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zh-bob, .zh-seal, .zh-sign-answer, .zh-spot.is-fed .zh-art, .zh-spot.is-fed .zh-flip, .zh-spot.is-nope .zh-head,
+  .zh-spot.is-nope .zh-face, .zh-spot.is-answer .zh-board-wrap { animation: none; }
+}
+.zh-root.is-still .zh-bob,
+.zh-root.is-still .zh-seal,
+.zh-root.is-still .zh-sign-answer,
+.zh-root.is-still .zh-spot.is-fed .zh-art,
+.zh-root.is-still .zh-spot.is-fed .zh-flip,
+.zh-root.is-still .zh-spot.is-nope .zh-head,
+.zh-root.is-still .zh-spot.is-nope .zh-face,
+.zh-root.is-still .zh-spot.is-answer .zh-board-wrap { animation: none; }
+/* Still, the wrong seal has looked away. */
+.zh-root.is-still .zh-spot.is-nope .zh-face { transform: translateX(-24%); }
+.zh-root.is-still .zh-spot.is-nope .zh-head { transform: rotate(-16deg); }

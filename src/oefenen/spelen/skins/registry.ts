@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Heart, Hexagon, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 import { ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
+import { Fish } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -27,6 +28,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: TAP_PICTURES },
         icon: Balloon,
         Component: lazy(() => import('./ballonnen/Ballonnen')),
+    },
+    {
+        // Calm, for the youngest: four seals on ice floes hold up the options; the right one gets a fish (15 sums,
+        // untimed). Answers up to 5 characters and pack pictures (a clock face on the sign).
+        meta: {
+            id: 'zeehond', label: 'Zeehondjes voeren', input: 'choice', timed: false, round: { questions: 15 },
+            accepts: { kinds: ['number', 'choice'], pictures: true, maxAnswerChars: 5 }, sounds: { correct: 'ork', wrong: 'plons' },
+        },
+        icon: Fish,
+        Component: lazy(() => import('./zeehond/Zeehond')),
     },
     {
         // About 3 minutes; the zombies speed up with the streak (progress.streak). Survivors behind barricades
