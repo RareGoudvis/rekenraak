@@ -402,14 +402,14 @@ async function shotsZelf() {
     await step('zelf', async () => {
         await p.goto(`${BASE}/kind.html`);
         await settle(p, 1200);
-        await p.getByRole('button', { name: '2', exact: true }).click();
+        await p.getByRole('button', { name: 'Leerjaar 2', exact: true }).click();
         await settle(p, 500);
         await shot(p, 'zelf-onderwerp');
         await p.getByRole('button', { name: 'Optellen', exact: true }).click();
         await settle(p, 500);
         await p.getByRole('button', { name: /Met brug/ }).first().click();
         await settle(p, 500);
-        // + and − at leerjaar 1–3 ask Oefenen or Spelen first (beta).
+        // The choice, Oefenen of spelen and Hoeveel share one screen (+ and − at leerjaar 1–3 offer Spelen).
         await p.getByRole('button', { name: 'Oefenen', exact: true }).click();
         await settle(p, 300);
         await p.getByRole('button', { name: '5 oefeningen' }).click();

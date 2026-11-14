@@ -29,18 +29,18 @@ describe('Zelf oefenen picker', () => {
 
     test('leerjaar, onderwerp, oefening, hoeveel: starts a counted run; Andere oefening returns to the picker', async () => {
         render(<OefenApp />);
-        click('2');
+        click('Leerjaar 2');
         expect(await screen.findByRole('heading', { name: 'Wat wil je oefenen?' })).toBeTruthy();
         // Back goes one step up and the topic list is still there afterwards.
         click(/Terug/);
         expect(screen.getByRole('heading', { name: 'Welk leerjaar?' })).toBeTruthy();
-        click('2');
+        click('Leerjaar 2');
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         const variants = screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''));
         expect(variants.length).toBeGreaterThan(0);
         fireEvent.click(variants[0]);
-        // + and − at leerjaar 1–3 ask Oefenen or Spelen first.
+        // One screen after the choice: Oefenen or Spelen (+ and − at leerjaar 1–3, Oefenen picked) and how much.
         click('Oefenen');
         expect(screen.getByRole('heading', { name: 'Hoeveel wil je doen?' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
@@ -55,7 +55,7 @@ describe('Zelf oefenen picker', () => {
 
     test('a timed choice sets the timer and no total', async () => {
         render(<OefenApp />);
-        click('1');
+        click('Leerjaar 1');
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
@@ -68,7 +68,7 @@ describe('Zelf oefenen picker', () => {
 
     test('the end screen of a zelf run offers Andere oefening', async () => {
         render(<OefenApp />);
-        click('1');
+        click('Leerjaar 1');
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
