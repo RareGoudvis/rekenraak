@@ -14,10 +14,12 @@ import GamePicker from '../oefenen/spelen/GamePicker';
 import SpelEnd from '../oefenen/spelen/SpelEnd';
 import Bom, { BomEnding } from '../oefenen/spelen/skins/bom/Bom';
 import { clockText, fuseLeft, fusePoint, isHurry } from '../oefenen/spelen/skins/bom/fuse';
+import Bever, { BeverEnding } from '../oefenen/spelen/skins/bever/Bever';
+import { BEVER, damBreaks, damHeight, waterLevel, type BeverLevel } from '../oefenen/spelen/skins/bever/water';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Spelen round 2: the pre-start options screen (remembered per skin), the friendly early end (canFail skins
-// only) and Bom (N right before the clock).
+// only), Bom (N right before the clock) and the Bever water model.
 
 let choice: ZelfChoice;
 const sp = () => useSpelStore.getState();
@@ -228,5 +230,99 @@ describe('Bom', () => {
         rerender(<BomEnding outcome="lost" progress={progressWith()} options={{}} reducedMotion />);
         expect(screen.getByText('PUF!')).toBeTruthy();
         expect(container.querySelector('.bom-cloud')).not.toBeNull();
+    });
+});
+
+describe('Bever', () => {
+    test('Normaal or Moeilijk before the start, remembered apart from the other skins', () => {
+        expect(resolveMeta(meta('bever'), { niveau: 'moeilijk' })).toMatchObject({ round: { seconds: 180 }, chosen: { niveau: 'moeilijk' } });
+        expect(meta('bever').canFail).toBe(true);
+        localStorage.setItem(OPTIONS_KEY, JSON.stringify({ bom: { tijd: '5', doel: '20' }, bever: { niveau: 'heel moeilijk' } }));
+        expect(loadChoices(meta('bever'))).toEqual({ niveau: 'normaal' });
+        render(<GamePicker onPick={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Bever, op tijd' }));
+        expect(screen.getByRole('button', { name: 'Normaal' }).getAttribute('aria-pressed')).toBe('true');
+        fireEvent.click(screen.getByRole('button', { name: 'Moeilijk' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+        expect(loadChoices(meta('bever'))).toEqual({ niveau: 'moeilijk' });
+        expect(loadChoices(meta('bom'))).toEqual({ tijd: '5', doel: '20' });
+    });
+
+    test('held till the clock: De dam houdt!', () => {
+        const t0 = 1_000_000;
+        sp().start(startWith(resolveMeta(meta('bever')), t0));
+        sp().tick(t0 + 180_000);
+        render(<SpelEnd />);
+        expect(screen.getByRole('heading', { name: 'De dam houdt!' })).toBeTruthy();
+    });
+
+    // A simulated L2 pupil: one answer every minS–maxS seconds, pRight right; seeded, so the numbers are stable.
+    function mulberry32(seed: number) {
+        return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    }
+    function holds(level: BeverLevel, rnd: () => number, minS = 6, maxS = 8, pRight = 0.8): boolean {
+        let t = 0; let right = 0; let mistakes = 0;
+        for (;;) {
+            t += minS + (maxS - minS) * rnd();
+            // The water is highest just before an answer lands.
+            if (damBreaks(waterLevel(level, Math.min(t, 180) * 1000, mistakes), damHeight(right))) return false;
+            if (t > 180) return true;
+            if (rnd() < pRight) right++;
+            else if (damBreaks(waterLevel(level, t * 1000, ++mistakes), damHeight(right))) return false;
+        }
+    }
+    const holdRate = (level: BeverLevel, minS?: number, maxS?: number, pRight?: number) => {
+        const rnd = mulberry32(42);
+        let held = 0;
+        for (let i = 0; i < 1000; i++) if (holds(level, rnd, minS, maxS, pRight)) held++;
+        return held / 1000;
+    };
+
+    test('the tuning: an average L2 pupil holds the dam on Normaal; Moeilijk is tight', () => {
+        expect(holdRate('normaal')).toBeGreaterThanOrEqual(0.92);
+        const hard = holdRate('moeilijk');
+        expect(hard).toBeGreaterThan(0.3);
+        expect(hard).toBeLessThan(0.75);
+        // A quick, sure pupil holds even Moeilijk; Moeilijk: a mistake raises the water much more and it rises faster.
+        expect(holdRate('moeilijk', 4, 6, 0.9)).toBeGreaterThan(0.85);
+        expect(BEVER.levels.moeilijk.wave).toBeGreaterThanOrEqual(2 * BEVER.levels.normaal.wave);
+        expect(BEVER.levels.moeilijk.rise).toBeGreaterThan(BEVER.levels.normaal.rise);
+        expect(waterLevel('normaal', 0, 0)).toBeLessThan(damHeight(0));
+    });
+
+    test('the skin: a stick per right answer; water over the dam calls the early end once, never under help', () => {
+        const onFail = vi.fn();
+        const at = (over: Partial<SkinProgress>, p: Partial<SkinProps> = {}) => propsWith({ onFail, progress: progressWith({ msLeft: 120_000, msTotal: 180_000, ...over }), ...p });
+        const { container, rerender } = render(<Bever {...at({ right: 3 })} />);
+        expect(container.querySelectorAll('.bv-dam .bv-stick')).toHaveLength(BEVER.dam0 + 3);
+        rerender(<Bever {...at({ right: 4 }, { phase: 'right', feedback: { given: '12', expected: '12', correct: true } })} />);
+        expect(container.querySelectorAll('.bv-dam .bv-stick')).toHaveLength(BEVER.dam0 + 4);
+        expect(container.querySelector('.bv-stick.is-new')).not.toBeNull();
+        expect(onFail).not.toHaveBeenCalled();
+        // Many mistakes: the water is over the dam. Under help nothing happens; back in play, the dam breaks.
+        rerender(<Bever {...at({ right: 4, mistakes: 12 }, { phase: 'help' })} />);
+        expect(onFail).not.toHaveBeenCalled();
+        rerender(<Bever {...at({ right: 4, mistakes: 12 }, { phase: 'wrong', feedback: { given: '1', expected: '12', correct: false } })} />);
+        expect(onFail).toHaveBeenCalledTimes(1);
+        expect(container.querySelector('.bv-wave')).not.toBeNull();
+        rerender(<Bever {...at({ right: 4, mistakes: 13 })} />);
+        expect(onFail).toHaveBeenCalledTimes(1);
+    });
+
+    test('the level comes from the options; the endings: a party, or the beaver on its log', () => {
+        expect(waterLevel('moeilijk', 60_000, 2)).toBeGreaterThan(waterLevel('normaal', 60_000, 2));
+        const onFail = vi.fn();
+        // Same time and mistakes: on Moeilijk the water is over, on Normaal it is not.
+        const p = progressWith({ msLeft: 120_000, msTotal: 180_000, right: 2, mistakes: 3 });
+        render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'normaal' } })} />);
+        expect(onFail).not.toHaveBeenCalled();
+        cleanup();
+        render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'moeilijk' } })} />);
+        expect(onFail).toHaveBeenCalledTimes(1);
+        cleanup();
+        const { container, rerender } = render(<BeverEnding outcome="won" progress={p} options={{}} reducedMotion={false} />);
+        expect(container.querySelector('.bv-hat')).not.toBeNull();
+        rerender(<BeverEnding outcome="failed" progress={p} options={{}} reducedMotion={false} />);
+        expect(container.querySelector('.bv-log')).not.toBeNull();
     });
 });

@@ -1,6 +1,9 @@
 import { lazy } from 'react';
-import { Balloon, Bird, Bomb, Ghost, type Icon } from '@phosphor-icons/react';
-import type { SkinEntry } from './types';
+import { Balloon, Bird, Bomb, Ghost, Log, type Icon } from '@phosphor-icons/react';
+import type { SkinEntry, SkinOption } from './types';
+
+// Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
+const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
 
 // The game picker's tiles, in order. A new skin = one entry here + its component file; the
 // session, the shell and the picker never change. No Component = shown as "binnenkort".
@@ -35,6 +38,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: Bomb,
         Component: lazy(() => import('./bom/Bom')),
         Ending: lazy(() => import('./bom/Bom').then(m => ({ default: m.BomEnding }))),
+    },
+    {
+        // 3 minutes; the water rises with the clock and a wave per mistake (bever/water.ts). Over the dam = the early end.
+        meta: {
+            id: 'bever', label: 'Bever', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'De dam houdt!', options: [NIVEAU],
+            sounds: { correct: 'plok', wrong: 'whoosh', win: 'cheer', fail: 'blub' },
+        },
+        icon: Log,
+        Component: lazy(() => import('./bever/Bever')),
+        Ending: lazy(() => import('./bever/Bever').then(m => ({ default: m.BeverEnding }))),
     },
 ];
 
