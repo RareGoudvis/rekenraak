@@ -1,5 +1,6 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { SpelEvents } from '../events';
+import type { SkinSounds } from '../sound';
 
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
 // answer, keeps score and runs the clock; the skin draws the question and hands back a given answer.
@@ -15,6 +16,8 @@ export interface SkinMeta {
     // The round: a number of questions, or seconds (timed skins). goal = a climb (Pinguïntoren): a right
     // answer adds one, a mistake takes one off (never below 0); the round ends at goal, questions is then the cap.
     round: { questions?: number; seconds?: number; goal?: number };
+    // Its sounds for a right answer, a wrong one and its own deadline (sound.ts); absent = the defaults.
+    sounds?: SkinSounds;
 }
 
 // The game phase a skin sees: play = waiting for an answer; right / wrong = the short flash after one;
