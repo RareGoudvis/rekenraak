@@ -5,18 +5,19 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'tok', 'plof', 'fluit'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
 // how the round ended (win / lost / fail), and the skin's own moments (props.sound: barricade, caught).
 // Board games: flip = a card turns, nomatch = two cards that are no pair turn back (never a mistake sound).
-export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught' | 'flip' | 'nomatch';
+// whistle = a referee's whistle (Voetbal: kick-off, half time).
+export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught' | 'flip' | 'nomatch' | 'whistle';
 // null = that cue stays silent (the skin voices the moment itself).
 export type SkinSounds = Partial<Record<SoundCue, SpelSound | null>>;
 const DEFAULT_CUES: Record<SoundCue, SpelSound> = {
     correct: 'pop', wrong: 'plop', miss: 'plop', win: 'jingle', lost: 'boing', fail: 'boing', barricade: 'krak', caught: 'boing',
-    flip: 'flip', nomatch: 'plop',
+    flip: 'flip', nomatch: 'plop', whistle: 'fluit',
 };
 // A small sparkle every this many in a row.
 export const SPARKLE_EVERY = 5;
@@ -217,6 +218,15 @@ const RECIPES: Record<SpelSound, Recipe> = {
         tone(ac, d, t, { type: 'triangle', f0: 240, f1: 120, dur: 0.12, vol: 0.32 });
         noise(ac, d, t, { dur: 0.05, vol: 0.12, filter: 'lowpass', f0: 900 });
         tone(ac, d, t, { f0: 1100, f1: 1500, at: 0.07, dur: 0.14, vol: 0.1, wobble: [30, 60] });
+    },
+    // Voetbal pass: a soft leather "tok" on the ball.
+    tok: (ac, d, t) => { tone(ac, d, t, { type: 'triangle', f0: 190, f1: 95, dur: 0.09, vol: 0.34 }); noise(ac, d, t, { dur: 0.03, vol: 0.12, filter: 'bandpass', f0: 1300, q: 0.9 }); },
+    // Voetbal save: the ball lands in the keeper's big gloves, a muffled "plof".
+    plof: (ac, d, t) => { noise(ac, d, t, { dur: 0.16, vol: 0.28, filter: 'lowpass', f0: 650, f1: 220 }); tone(ac, d, t, { f0: 150, f1: 85, dur: 0.13, vol: 0.24 }); },
+    // Voetbal kick-off and half time: a short, quiet referee's trill (two pips).
+    fluit: (ac, d, t) => {
+        tone(ac, d, t, { f0: 2100, dur: 0.14, vol: 0.08, wobble: [30, 70] });
+        tone(ac, d, t, { f0: 2100, at: 0.2, dur: 0.3, vol: 0.08, wobble: [30, 70] });
     },
 };
 

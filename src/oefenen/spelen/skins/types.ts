@@ -165,6 +165,10 @@ export interface SkinProps {
     runKey?: string;
     // The skin's own goal ended the round (Race: the finish line).
     onFinish?(result: SkinResult): void;
+    // The end screen's lines for when the round ends, kept up to date by the skin (Voetbal: the goals).
+    onReport?(result: SkinResult): void;
+    // The skin's own pause (Voetbal's half time): the round's clock stops until onHold(false).
+    onHold?(on: boolean): void;
 }
 
 // A game that brings its own session and screen (Touwtrekken: two players, two question streams).

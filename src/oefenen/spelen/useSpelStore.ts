@@ -64,8 +64,10 @@ interface SpelState {
     shownAt: number;
     // Set by leave / otherGame: the picker opens on the game tiles of this choice.
     pickerAt: SpelFrom | null;
-    // Set when the skin's own finish ended the round (Race).
+    // Set when the skin's own finish ended the round (Race), or the end lines a skin reported (Voetbal).
     result: SkinResult | null;
+    // A skin's own pause (Voetbal's half time): the clock stands still as under help; the skin holds its input.
+    held: boolean;
     // Board rounds (meta.round.board): the sums on screen; question = the one picked last (for the help).
     board: SpelBoard | null;
     events: SpelEvents;
@@ -82,6 +84,10 @@ interface SpelState {
     tick(now?: number): void;
     // The skin's own goal was reached (Race's finish line): the round ends with its result.
     finish(result: SkinResult): void;
+    // The skin's end lines for when the round ends (Voetbal: the goals); the round goes on.
+    report(result: SkinResult): void;
+    // The skin's own pause on (true) or off: the clock stops, the round and its answers wait on the skin.
+    hold(on: boolean, now?: number): void;
     restart(): void;
     // Back to the picker on this choice's game tiles (Ander spel, Terug mid-round).
     otherGame(): void;
@@ -128,7 +134,7 @@ export const spelSessieOf = (o: SpelStart): OefenSessie => {
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
     helped: 0, helpedNow: false, climb: 0, mistakes: [], misses: 0, outcome: null as SpelOutcome | null, help: null, endsAt: null, pausedLeft: null, shownAt: 0, result: null,
-    board: null as SpelBoard | null,
+    held: false, board: null as SpelBoard | null,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
@@ -241,7 +247,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         },
 
         openHelp(now = Date.now()) {
-            const { phase, sessie: s, question: q, endsAt, helpedNow, helped, events } = get();
+            const { phase, sessie: s, question: q, endsAt, pausedLeft, helpedNow, helped, events } = get();
             if (phase !== 'play' || !s || !q) return;
             const typeId = s.types[q.slot].typeId;
             // A board counts met hulp per open sum; help on a sum already settled only explains it.
@@ -250,16 +256,17 @@ export const useSpelStore = create<SpelState>()((set, get) => {
                 phase: 'help', helpedNow: true, helped: onBoard ? helped + (onBoard.counts ? 1 : 0) : helpedNow ? helped : helped + 1,
                 ...(onBoard && { board: onBoard.board }),
                 help: { lines: stepsFor(typeId, q.exercise, q.constraints), handig: handigFor(typeId, q.exercise, q.constraints, s.grade) },
-                // The clock stops with the round.
-                pausedLeft: endsAt !== null ? Math.max(0, endsAt - now) : null,
+                // The clock stops with the round (already stopped under a skin's hold).
+                pausedLeft: pausedLeft ?? (endsAt !== null ? Math.max(0, endsAt - now) : null),
             });
             events.emit('help', {});
         },
 
         closeHelp(now = Date.now()) {
-            const { phase, pausedLeft } = get();
+            const { phase, pausedLeft, held } = get();
             if (phase !== 'help') return;
-            set({ phase: 'play', help: null, pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }), shownAt: now });
+            // Under a skin's hold the clock waits for the hold to end.
+            set({ phase: 'play', help: null, ...(!held && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }), shownAt: now });
         },
 
         tick(now = Date.now()) {
@@ -272,6 +279,19 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             if (phase !== 'play' && phase !== 'right' && phase !== 'wrong') return;
             set({ result });
             end();
+        },
+
+        report(result) {
+            const { phase } = get();
+            if (phase !== 'idle' && phase !== 'end') set({ result });
+        },
+
+        hold(on, now = Date.now()) {
+            const { phase, held, endsAt, pausedLeft } = get();
+            if (on === held || phase === 'idle' || phase === 'end') return;
+            if (on) set({ held: true, pausedLeft: pausedLeft ?? (endsAt !== null ? Math.max(0, endsAt - now) : null) });
+            // Under help the clock stays stopped until the help closes.
+            else set({ held: false, ...(phase !== 'help' && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }) });
         },
 
         restart() {
