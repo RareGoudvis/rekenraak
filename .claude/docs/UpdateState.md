@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Spelen: Race (beat your own best time against a ghost car, best per card in localStorage, "Wis mijn scores") and Touwtrekken (two pupils on one board, Samen tegelijk or Om beurten, its own duel store and screen via `SkinEntry.Screen`); both with sound (SoundToggle shared).
+
 **2026-11-14** — Spelen polish: Ballonnen float up and wrap round to the bottom (≥ 3 readable, frozen under help, still under reduced motion); soft synthesised game sounds (Web Audio, src/oefenen/spelen/sound.ts, one line per skin in its registry entry) behind a speaker toggle, off by default.
 
 **2026-11-14** — MAB steps picture (owner): E cubes in a kwadraatbeeld (pairs column by column, 2 × 5 per ten) and the second term's cubes of a + sum in a second colour (`--mab-e2`, `MabCluster.second`); small pictures drawn larger; the Spelen help ends on "Klaar! Nu weet je hoe het moet."

@@ -1,6 +1,7 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { SpelEvents } from '../events';
 import type { SkinSounds } from '../sound';
+import type { SpelFrom } from '../useSpelStore';
 
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
 // answer, keeps score and runs the clock; the skin draws the question and hands back a given answer.
@@ -15,9 +16,21 @@ export interface SkinMeta {
     timed: boolean;
     // The round: a number of questions, or seconds (timed skins). goal = a climb (Pinguïntoren): a right
     // answer adds one, a mistake takes one off (never below 0); the round ends at goal, questions is then the cap.
-    round: { questions?: number; seconds?: number; goal?: number };
+    // cap = a limit the pupil never sees (Race ends at its finish): the bar counts without a total.
+    round: { questions?: number; seconds?: number; goal?: number; cap?: number };
     // Its sounds for a right answer, a wrong one and its own deadline (sound.ts); absent = the defaults.
     sounds?: SkinSounds;
+    // 2 = a game for two pupils on one screen (Touwtrekken): the picker says "2 spelers".
+    players?: 2;
+}
+
+// What a skin hands back when its own finish ends the round (Race), for the end screen.
+export interface SkinResult {
+    title: string;
+    lead: string;
+    detail?: string;
+    // Shown as a two-tap "Wis mijn scores" on the end screen.
+    wipe?: () => void;
 }
 
 // The game phase a skin sees: play = waiting for an answer; right / wrong = the short flash after one;
@@ -64,10 +77,24 @@ export interface SkinProps {
     events: SpelEvents;
     // prefers-reduced-motion: skip rising, floating and bursts.
     reducedMotion: boolean;
+    // Stable per card + game: the key for a skin's own records on this device (Race's best time).
+    runKey?: string;
+    // The skin's own goal ended the round (Race: the finish line).
+    onFinish?(result: SkinResult): void;
+}
+
+// A game that brings its own session and screen (Touwtrekken: two players, two question streams).
+export interface SkinScreenProps {
+    meta: SkinMeta;
+    from: SpelFrom;
+    // Back to the game tiles of this choice.
+    onExit(): void;
 }
 
 export interface SkinEntry {
     meta: SkinMeta;
     // Absent = "binnenkort" in the picker. Lazy: each skin is its own chunk.
     Component?: LazyExoticComponent<ComponentType<SkinProps>>;
+    // Instead of Component: the whole game screen, shell included.
+    Screen?: LazyExoticComponent<ComponentType<SkinScreenProps>>;
 }

@@ -1,0 +1,294 @@
+/* Race skin. Flat fills under a thick dark outline (spelen.css tokens). The scene layers move by
+   transform only (Race.tsx writes them per frame); under reduced motion nothing scrolls. */
+.rc-root {
+  --rc-car-fill: var(--spel-fill-0);
+  --rc-road: color-mix(in srgb, var(--spel-ink) 62%, var(--kiosk-paper));
+  --rc-hill: color-mix(in srgb, var(--accent-metendrekenen) 40%, var(--kiosk-paper));
+  --rc-leaves: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--spel-ink));
+  --rc-trunk: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
+  --rc-car: clamp(150px, 24vmin, 300px);
+  --rc-at: 14%;
+  /* Side by side the scene runs on under the keypad; this keeps the meter and clock clear of it. */
+  --rc-panel-w: min(46vw, 440px);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--spel-sky);
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* ── The scene ────────────────────────────────────────────────────────────── */
+.rc-world { position: relative; grid-area: 1 / 1 / -1 / -1; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
+.rc-sky { position: absolute; inset: 0; }
+.rc-sun {
+  position: absolute;
+  top: 18%;
+  right: calc(var(--rc-panel-w) + 10%);
+  width: 64px;
+  height: 64px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+}
+.rc-cloud {
+  position: absolute;
+  width: 110px;
+  height: 36px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--spel-cloud);
+}
+.rc-cloud.is-a { top: 24%; left: 10%; }
+.rc-cloud.is-b { top: 34%; left: 48%; width: 80px; height: 28px; opacity: .85; }
+
+.rc-strip { position: absolute; left: 0; bottom: 0; display: flex; will-change: transform; }
+.rc-hills { position: absolute; left: 0; right: 0; bottom: 34%; height: 22%; }
+.rc-hills .rc-strip { top: 0; }
+.rc-hill-tile { flex: none; width: 800px; height: 100%; }
+.rc-hill { fill: var(--rc-hill); }
+.rc-hill-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; vector-effect: non-scaling-stroke; }
+.rc-trees { position: absolute; left: 0; right: 0; bottom: 34%; height: 90px; }
+.rc-tree-tile { flex: none; width: 600px; height: 90px; overflow: visible; }
+.rc-trunk { fill: var(--rc-trunk); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-leaves, .rc-bush { fill: var(--rc-leaves); stroke: var(--spel-ink); stroke-width: 3px; }
+
+/* The road: grass verge on top, the dashed middle line scrolls under the cars. */
+.rc-road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34%;
+  background: var(--rc-road);
+  border-top: 14px solid var(--spel-grass);
+  box-shadow: inset 0 3px 0 var(--spel-ink), 0 -3px 0 var(--spel-ink);
+}
+.rc-lines {
+  position: absolute;
+  left: 0;
+  top: 46%;
+  width: calc(100% + 80px);
+  height: 8px;
+  background: repeating-linear-gradient(90deg, var(--kiosk-paper) 0 44px, transparent 44px 80px);
+  will-change: transform;
+}
+/* The finish: a checkered band across the road, at the car's nose when x = length. */
+.rc-finish {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--rc-at) + var(--rc-car));
+  width: 28px;
+  border-inline: 3px solid var(--spel-ink);
+  background: repeating-conic-gradient(var(--spel-ink) 0 25%, var(--kiosk-paper) 0 50%) 0 0 / 14px 14px;
+  will-change: transform;
+}
+
+.rc-car {
+  position: absolute;
+  left: var(--rc-at);
+  bottom: 8%;
+  width: var(--rc-car);
+  will-change: transform;
+}
+/* The ghost drives in the far lane, see-through and grey: the pupil's own best run. */
+.rc-car.is-ghost { bottom: 56%; width: calc(var(--rc-car) * .82); opacity: .5; }
+.rc-car-art { display: block; width: 100%; height: auto; overflow: visible; }
+.rc-car-body { fill: var(--rc-car-fill); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+.rc-car-window { fill: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-driver { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-car-stripe { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; stroke-linecap: round; }
+.rc-car-light { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-tyre { fill: var(--spel-ink); }
+.rc-hub { fill: var(--kiosk-paper); }
+.rc-spoke { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; }
+.rc-car-art.is-ghost .rc-car-body { fill: var(--spel-cloud); stroke-dasharray: 8 5; }
+.rc-car-art.is-ghost .rc-driver { fill: var(--spel-cloud); }
+
+.rc-wheel { animation: rc-spin 420ms linear infinite; }
+.rc-car.is-me.is-boost .rc-wheel,
+.rc-car.is-me.is-turbo .rc-wheel { animation-duration: 160ms; }
+.rc-car.is-me.is-brake .rc-wheel { animation-play-state: paused; }
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+
+/* A bump on the road: the body bounces a little while it drives. */
+.rc-car.is-me .rc-car-art { animation: rc-bounce 600ms ease-in-out infinite alternate; }
+@keyframes rc-bounce { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+.rc-car.is-me.is-brake .rc-car-art { animation: rc-brake 500ms var(--ease-out) both; }
+@keyframes rc-brake {
+  0% { transform: rotate(0); }
+  40% { transform: rotate(4deg) translateX(4px); }
+  100% { transform: rotate(0); }
+}
+
+/* Turbo: a flickering flame out of the back. */
+.rc-flame { position: absolute; right: 96%; bottom: 22%; width: 44%; height: auto; overflow: visible; }
+.rc-flame-out { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-flame-in { fill: var(--spel-star); }
+.rc-flame { transform-origin: right center; animation: rc-flicker 140ms ease-in-out infinite alternate; }
+@keyframes rc-flicker { from { transform: scaleX(.8); } to { transform: scaleX(1.1); } }
+
+/* A boost: speed lines; a brake: a little dust cloud at the front wheel. */
+.rc-speed {
+  position: absolute;
+  right: 100%;
+  top: 30%;
+  width: 70%;
+  height: 40%;
+  background: repeating-linear-gradient(180deg, var(--kiosk-paper) 0 4px, transparent 4px 14px);
+  border-radius: 4px;
+  animation: rc-speed 900ms var(--ease-out) forwards;
+}
+@keyframes rc-speed { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-40px); } }
+.rc-skid {
+  position: absolute;
+  left: 72%;
+  bottom: -6%;
+  width: 34%;
+  aspect-ratio: 2;
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--spel-cloud);
+  animation: rc-skid 1000ms var(--ease-out) forwards;
+}
+@keyframes rc-skid { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.3) translateY(-10px); } }
+
+/* ── Progress, clock, badges ──────────────────────────────────────────────── */
+.rc-meter {
+  position: absolute;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  right: calc(var(--rc-panel-w) + var(--sp-3));
+  height: 28px;
+}
+.rc-meter-track {
+  position: absolute;
+  inset: 8px 0;
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--kiosk-paper);
+}
+.rc-meter-flag {
+  position: absolute;
+  right: -4px;
+  top: -2px;
+  width: 24px;
+  height: 32px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 4px;
+  background: repeating-conic-gradient(var(--spel-ink) 0 25%, var(--kiosk-paper) 0 50%) 0 0 / 12px 12px;
+}
+.rc-meter-dot {
+  --p: 0;
+  position: absolute;
+  top: 0;
+  left: calc(var(--p) * (100% - 28px));
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--rc-car-fill);
+}
+.rc-meter-dot.is-ghost { background: var(--spel-cloud); opacity: .7; }
+.rc-clock {
+  position: absolute;
+  top: calc(var(--sp-3) + 40px);
+  right: calc(var(--rc-panel-w) + var(--sp-3));
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  color: var(--spel-ink);
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.rc-badge {
+  position: absolute;
+  top: 26%;
+  left: calc((100% - var(--rc-panel-w)) / 2);
+  margin: 0;
+  padding: var(--sp-1) var(--sp-4);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--accent-vraagstukken);
+  color: var(--spel-ink);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 800;
+  transform: translateX(-50%);
+  animation: rc-pop var(--dur-slow) var(--ease-spring) both;
+}
+.rc-badge.is-finish { background: var(--spel-star); }
+@keyframes rc-pop { from { transform: translateX(-50%) scale(.6); } to { transform: translateX(-50%) scale(1); } }
+
+/* ── The sum and the keypad ───────────────────────────────────────────────── */
+.rc-panel {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  width: var(--rc-panel-w);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.rc-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.rc-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: rc-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes rc-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+.rc-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .rc-root { --rc-panel-w: 0px; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .rc-world { grid-area: 1 / 1; }
+  .rc-panel { grid-column: 1; grid-row: 2; }
+  .rc-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .rc-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .rc-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .rc-panel { gap: var(--sp-2); }
+}
+
+/* "Hoe los ik dit op?": everything holds still. */
+.rc-root.is-paused * { animation-play-state: paused; }
+
+/* Reduced motion: a still scene; the bar on top shows the race. */
+.rc-root.is-still .rc-finish,
+.rc-root.is-still .rc-car.is-ghost { display: none; }
+.rc-root.is-still .rc-meter { height: 40px; }
+.rc-root.is-still .rc-clock { top: calc(var(--sp-3) + 52px); }
+.rc-root.is-still .rc-meter-track { inset: 10px 0; }
+.rc-root.is-still .rc-meter-dot { width: 40px; height: 40px; left: calc(var(--p) * (100% - 40px)); }
+.rc-root.is-still .rc-wheel,
+.rc-root.is-still .rc-car-art,
+.rc-root.is-still .rc-flame,
+.rc-root.is-still .rc-badge,
+.rc-root.is-still .rc-sign-answer { animation: none; }

@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { ArrowUUpLeft, Lifebuoy, SpeakerHigh, SpeakerSlash, Star, Timer } from '@phosphor-icons/react';
+import { ArrowUUpLeft, Lifebuoy, Star, Timer } from '@phosphor-icons/react';
 import TwoTapButton from '../kiosk/TwoTapButton';
 import StepsPanel from '../kiosk/StepsPanel';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
@@ -8,7 +8,8 @@ import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
 import SpelEnd from './SpelEnd';
-import { setSoundOn, useSoundOn, useSpelSounds } from './sound';
+import { useSpelSounds } from './sound';
+import SoundToggle from './SoundToggle';
 import './spelen.css';
 
 
@@ -85,18 +86,6 @@ function HelpPanel() {
     );
 }
 
-// The speaker in the game bar: off by default, kept per device.
-function SoundToggle() {
-    const on = useSoundOn();
-    return (
-        <button type="button" className="kiosk-btn spel-sound-btn" aria-pressed={on} aria-label={on ? 'Geluid aan' : 'Geluid uit'}
-            // After a tap or click the focus leaves, so the next Enter answers the sum instead of toggling again.
-            onClick={e => { setSoundOn(!on); if (e.detail > 0) e.currentTarget.blur(); }}>
-            {on ? <SpeakerHigh weight="fill" aria-hidden /> : <SpeakerSlash aria-hidden />}
-        </button>
-    );
-}
-
 // The game shell: top bar (Terug, progress, score, Hoe los ik dit op?), the skin, the help panel, the end screen.
 export default function SpelScreen() {
     const st = useSpelStore();
@@ -104,6 +93,11 @@ export default function SpelScreen() {
     const now = useGameClock(!!st.meta?.timed && st.phase !== 'end');
     const entry = st.meta ? skinById(st.meta.id) : null;
     useSpelSounds(st.events, st.meta?.sounds);
+    // A game with its own session and screen (Touwtrekken); the round above only holds its choice.
+    if (entry?.Screen && st.meta && st.from) {
+        const Screen = entry.Screen;
+        return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
+    }
     if (st.phase === 'end') return <div className="oefen-app"><SpelEnd /></div>;
     if (!st.meta || !entry?.Component) return null;
     const Skin = entry.Component;
@@ -156,6 +150,8 @@ export default function SpelScreen() {
                         progress={progress}
                         events={st.events}
                         reducedMotion={reducedMotion}
+                        runKey={st.from ? `${st.meta.id}:${st.from.choice.key}` : undefined}
+                        onFinish={st.finish}
                     />
                 </Suspense>
                 {phase === 'help' && <HelpPanel />}

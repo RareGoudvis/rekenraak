@@ -1,4 +1,6 @@
-import { ArrowCounterClockwise, CheckCircle, GameController, Star } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { ArrowCounterClockwise, CheckCircle, GameController, Star, Trash } from '@phosphor-icons/react';
+import TwoTapButton from '../kiosk/TwoTapButton';
 import { formatMathNumber } from '../../services/math/formatters';
 import { useSpelStore } from './useSpelStore';
 
@@ -7,16 +9,19 @@ const num = (v: string) => v === '' ? 'geen' : formatMathNumber(Number(v));
 
 // After a round: the numbers, the mistakes, and Nakijken (the mistakes again, Oefenen-style) as the big button.
 export default function SpelEnd() {
-    const { meta, sessie, history, score, bestStreak, helped, mistakes, climb, nakijken, restart, otherGame } = useSpelStore();
+    const { meta, sessie, history, score, bestStreak, helped, mistakes, climb, result, nakijken, restart, otherGame } = useSpelStore();
+    const [wiped, setWiped] = useState(false);
     const timed = !!meta?.timed;
     const goal = meta?.round.goal;
     // A goal round's question count is only a cap: count what was asked.
     const total = goal ? history.length : sessie?.total ?? history.length;
-    const title = timed ? 'De tijd is om!' : goal && climb >= goal ? 'De toren is af!' : 'Klaar!';
+    const title = result ? result.title : timed ? 'De tijd is om!' : goal && climb >= goal ? 'De toren is af!' : 'Klaar!';
     return (
         <main className="oefen-center spel-end">
             <h1 className="oefen-title">{title}</h1>
-            <p className="oefen-lead">{timed ? `${score} juist` : `${score} van ${total} juist`}</p>
+            <p className="oefen-lead">{result ? result.lead : timed ? `${score} juist` : `${score} van ${total} juist`}</p>
+            {/* A skin's own line (Race: the gap to your own record on this device). */}
+            {result?.detail && <p className="spel-end-record">{wiped ? 'Je scores zijn gewist.' : result.detail}</p>}
             <dl className="spel-end-stats">
                 <div><dt>Juist</dt><dd><Star weight="fill" aria-hidden /> {score}</dd></div>
                 <div><dt>Langste reeks</dt><dd>{bestStreak}</dd></div>
@@ -53,6 +58,10 @@ export default function SpelEnd() {
                 <button type="button" className="kiosk-btn" onClick={otherGame}>
                     <GameController aria-hidden /> Ander spel
                 </button>
+                {result?.wipe && !wiped && (
+                    <TwoTapButton label={<><Trash aria-hidden /> <span>Wis mijn scores</span></>} groupLabel="Mijn scores op dit toestel wissen"
+                        confirm="Ja, wissen" onConfirm={() => { result.wipe?.(); setWiped(true); }} />
+                )}
             </div>
         </main>
     );
