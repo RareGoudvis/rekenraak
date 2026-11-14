@@ -12,6 +12,7 @@ import type { OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
 import { LEERJAREN, leafAllowedForGrade } from '../config/gradePresets';
 import { APP_STRUCTURE } from '../config/appstructure';
+import { gradeShown, leafBtn as addBtn, pickGrade, queryLeafBtn, searchTree, shownLeafIds, showUitgebreid } from './helpers/oefenSidebar';
 
 // The raw sidebar node of a leaf: what the sidebar's leerjaar filter reads.
 const leafNode = (id: string) => APP_STRUCTURE.flatMap(d => d.subdomains.flatMap(s => s.types.flatMap(t => [t, ...(t.children ?? [])]))).find(l => l.id === id)!;
@@ -55,13 +56,6 @@ const sessieSection = (title: string) => { scopeSessie(); if (inspector().queryB
 // Select a row by clicking its card (the selected row's settings show in the inspector).
 const selectRow = (label: string) => fireEvent.click(within(screen.getByRole('region', { name: label })).getAllByRole('button')[0]);
 const rowSection = (title: string) => { if (inspector().queryByRole('button', { name: new RegExp(`^${title}`), expanded: true }) === null) openSection(title); };
-// Several leaves share a label ("Natuurlijke getallen" under hoofdrekenen and cijferen):
-// the buttons follow the list order, so the leaf's rank among its namesakes picks its button.
-const addBtn = (id: string) => {
-    const { label } = leaf(id);
-    const rank = listOefenLeaves().filter(l => l.label === label).findIndex(l => l.id === id);
-    return screen.getAllByRole('button', { name: (name: string) => name.replace(/\d+×$/, '') === label })[rank];
-};
 const settings: BuilderSettings = { id: 'sess1', createdAt: 1, title: ' Tafels ', mode: 'willekeurig', allowRepeatType: true, timerMin: 15, testMode: true, statsLocked: true };
 
 describe('normaliseWeights', () => {
@@ -469,39 +463,37 @@ describe('Oefenmodus workspace pre-flight (no exercises)', () => {
 });
 
 describe('Oefenmodus workspace catalogue search + leerjaar (O17)', () => {
-    const labels = () => screen.getAllByTitle('Toevoegen aan de sessie').map(b => b.textContent?.replace(/\d+×$/, ''));
-    const search = () => screen.getByPlaceholderText('Zoek oefening…');
-    const chip = (name: string) => within(screen.getByRole('group', { name: 'Leerjaar' })).getByRole('button', { name });
     afterEach(() => { useWorksheetStore.setState({ selectedGrade: null }); });
 
-    test('search narrows the list case-insensitively, also on the leaf group; no hit says so', () => {
+    test('search narrows the tree case-insensitively, also on the leaf group; no hit says so', () => {
         render(<OefenWorkspace onClose={() => { }} />);
-        const all = labels().length;
-        fireEvent.change(search(), { target: { value: 'PERCENT' } });
-        expect(labels()).toContain(leaf('procenten-nemen').label);
-        expect(labels()).not.toContain(leaf('breuken-vereenvoudigen').label);
-        expect(labels().length).toBeLessThan(all);
+        const all = shownLeafIds().length;
+        searchTree('PERCENT');
+        expect(shownLeafIds()).toContain('procenten-nemen');
+        expect(shownLeafIds()).not.toContain('breuken-vereenvoudigen');
+        expect(shownLeafIds().length).toBeLessThan(all);
         // "Analoge klok" is the parent of "Lezen": the sidebar finds its children by it too.
-        fireEvent.change(search(), { target: { value: 'analoge klok' } });
-        expect(labels()).toContain(leaf('klok-analoog-lezen').label);
-        fireEvent.change(search(), { target: { value: 'zzqq' } });
-        expect(screen.queryAllByTitle('Toevoegen aan de sessie')).toHaveLength(0);
+        searchTree('analoge klok');
+        expect(shownLeafIds()).toContain('klok-analoog-lezen');
+        searchTree('zzqq');
+        expect(shownLeafIds()).toHaveLength(0);
         expect(screen.getByText('Geen oefening gevonden voor "zzqq".')).toBeTruthy();
-        fireEvent.change(search(), { target: { value: '' } });
-        expect(labels().length).toBe(all);
+        searchTree('');
+        expect(shownLeafIds().length).toBe(all);
     });
 
-    test('leerjaar chips: L4 hides a L5 leaf, L5 and Alle show it; the sidebar leerjaar is the start value', () => {
+    test('leerjaar: L4 hides a L5 leaf, L5 and Alle show it; the sidebar leerjaar is the start value', () => {
         useWorksheetStore.setState({ selectedGrade: 4 });
         render(<OefenWorkspace onClose={() => { }} />);
-        expect(chip('L4').getAttribute('aria-pressed')).toBe('true');
-        expect(labels()).not.toContain(leaf('procenten-nemen').label);
-        fireEvent.click(chip('L5'));
-        expect(labels()).toContain(leaf('procenten-nemen').label);
-        fireEvent.click(chip('L1'));
-        const l1 = labels().length;
-        fireEvent.click(chip('Alle'));
-        expect(labels().length).toBeGreaterThan(l1);
+        showUitgebreid();
+        expect(gradeShown()).toContain('L4');
+        expect(queryLeafBtn('procenten-nemen')).toBeNull();
+        pickGrade('L5');
+        expect(queryLeafBtn('procenten-nemen')).not.toBeNull();
+        pickGrade('L1');
+        const l1 = shownLeafIds().length;
+        pickGrade('Alle');
+        expect(shownLeafIds().length).toBeGreaterThan(l1);
         // The builder's own filter never moves the sidebar's leerjaar.
         expect(useWorksheetStore.getState().selectedGrade).toBe(4);
     });
@@ -613,7 +605,7 @@ describe('exactForm control (O8 builder half)', () => {
 });
 
 describe('builder stays within the link bounds (item 8)', () => {
-    test('20 rows: every add button is off with a note; removing one turns them back on', () => {
+    test('20 rows: a catalogue click adds nothing and a note says why; removing one makes room again', () => {
         // Reopened with 20 types: one render instead of 20 adds, each re-rendering every row.
         const type = { typeId: 'procenten', leafId: 'procenten-nemen', label: 'Percent', constraints: { ...leaf('procenten-nemen').constraints }, weight: 5 };
         const full: OefenSessie = { v: 1, id: 'full', title: 'Vol', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false, types: Array.from({ length: 20 }, () => ({ ...type })) };

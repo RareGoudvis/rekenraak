@@ -6,6 +6,7 @@ import { listOefenLeaves } from '../components/oefenen/oefenBuild';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { decodeSessie } from '../services/oefenen/session';
+import { leafBtn as addBtn } from './helpers/oefenSidebar';
 
 // One session id per content in the builder: pupils' runs are stored per id with per-slot stats,
 // so a composer that ships other content must ship it under another id; reverting finds the old one.
@@ -29,12 +30,6 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); useWorksheetStore.getState().clearDraftBlocks(); });
 
 const footerBtn = (name: string) => within(screen.getByRole('banner')).getByRole('button', { name }) as HTMLButtonElement;
-const addBtn = (id: string) => {
-    const leaves = listOefenLeaves();
-    const { label } = leaves.find(l => l.id === id)!;
-    const rank = leaves.filter(l => l.label === label).findIndex(l => l.id === id);
-    return screen.getAllByRole('button', { name: (name: string) => name.replace(/\d+×$/, '') === label })[rank];
-};
 const removeOnly = () => fireEvent.click(screen.getByRole('button', { name: 'Verwijderen' }));
 // The limit sits in the selected row's Hoeveel section; the (only) procenten card is selected first.
 const setLimit = (v: number) => {

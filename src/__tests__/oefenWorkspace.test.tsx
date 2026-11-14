@@ -15,6 +15,7 @@ import { decodeSessie } from '../services/oefenen/session';
 import { saveOefenSessie } from '../services/persistence';
 import type { OefenSessie } from '../services/oefenen/types';
 import { useWorksheetStore } from '../store/useWorksheetStore';
+import { leafBtn as addBtn } from './helpers/oefenSidebar';
 
 class VisibleObserver {
     private cb: IntersectionObserverCallback;
@@ -36,11 +37,6 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); useWorksheetStore.getState().clearDraftBlocks(); useWorksheetStore.setState({ view: 'editor' }); });
 
 const label = (id: string) => listOefenLeaves().find(l => l.id === id)!.label;
-const addBtn = (id: string) => {
-    const leaves = listOefenLeaves();
-    const rank = leaves.filter(l => l.label === label(id)).findIndex(l => l.id === id);
-    return screen.getAllByRole('button', { name: (n: string) => n.replace(/\d+×$/, '') === label(id) })[rank];
-};
 const bar = () => within(screen.getByRole('banner'));
 const inspector = () => within(screen.getByRole('complementary', { name: 'Instellingen' }));
 const card = (name: string) => within(screen.getByRole('region', { name }));
