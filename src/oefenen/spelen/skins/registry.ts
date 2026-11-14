@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Heart, Log, type Icon } from '@phosphor-icons/react';
+import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Heart, Hexagon, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
@@ -83,6 +83,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: Heart,
         Component: lazy(() => import('../board/hartjes/Hartjes')),
+    },
+    {
+        // Lente: a honeycomb of 13 sums, find every one that makes the target (3–5), 3 honeycombs. A wrong cell is a
+        // mistake at once. Cards whose answers rarely repeat (tot 1000) get "groter dan" a round number instead.
+        meta: {
+            id: 'honingraat', label: 'Honingraat', input: 'board', timed: false, season: 'lente',
+            round: { board: { kind: 'target', boards: 3, size: 13, strikes: 1 } }, accepts: { kinds: ['number'] },
+            sounds: { correct: 'drup', wrong: 'bzz' },
+        },
+        icon: Hexagon,
+        Component: lazy(() => import('../board/honingraat/Honingraat')),
     },
     {
         // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the

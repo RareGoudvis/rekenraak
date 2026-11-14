@@ -1,0 +1,171 @@
+/* Honingraat skin (Lente). Sticker look: flat fills under a thick dark outline (spelen.css tokens), the
+   cells placed by Honingraat.tsx in cell widths (--x, --y), CSS only, still under prefers-reduced-motion. */
+.hx-root {
+  /* One cell's width; a pointy-top hexagon is 1.155 × as tall. Five across, three rows at 1024 × 768. */
+  --hx-w: clamp(64px, min(16.5vw, 20vh), 190px);
+  --hx-wax: color-mix(in srgb, var(--mab-e) 22%, var(--kiosk-paper));
+  --hx-honey: var(--mab-e);
+  --hx-honey-dark: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--mab-e));
+  --hx-missed: var(--kid-strike-bg, var(--bg-surface-2));
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  overflow: hidden;
+  overflow: clip;
+  background: linear-gradient(var(--spel-sky) 0 62%, var(--spel-grass) 62% 100%);
+}
+.hx-sun {
+  position: absolute;
+  top: 4%;
+  left: 4%;
+  width: clamp(40px, 8vmin, 76px);
+  aspect-ratio: 1;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--spel-star) 35%, transparent);
+}
+
+/* ── The sign and the cells to find ───────────────────────────────────────── */
+.hx-top { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2) var(--sp-4); }
+.hx-sign {
+  margin: 0;
+  padding: var(--sp-1) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  box-shadow: 0 4px 0 var(--spel-ink);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 800;
+}
+.hx-sign-n {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--hx-honey);
+  font-size: 1.15em;
+}
+.hx-count { display: inline-flex; gap: 4px; }
+.hx-pip { width: 22px; height: 26px; fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 9; }
+.hx-pip.is-on { fill: var(--hx-honey); animation: hx-pop 360ms var(--ease-spring) both; }
+@keyframes hx-pop { from { transform: scale(.4); } }
+
+/* ── The comb ─────────────────────────────────────────────────────────────── */
+.hx-comb-wrap { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.hx-comb {
+  position: relative;
+  width: calc(var(--hx-cols) * var(--hx-w));
+  height: calc(var(--hx-rows-h) * var(--hx-w));
+}
+.hx-cell {
+  position: absolute;
+  left: calc((var(--x) - .5) * var(--hx-w));
+  top: calc(var(--y) * var(--hx-w) - var(--hx-w) * .5774);
+  width: var(--hx-w);
+  height: calc(var(--hx-w) * 1.1547);
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  /* Only the hexagon takes the tap, so neighbours never steal one. */
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  animation: hx-in 320ms var(--ease-spring) both;
+  animation-delay: calc(var(--i) * 20ms);
+  -webkit-tap-highlight-color: transparent;
+}
+@keyframes hx-in { from { opacity: 0; transform: scale(.6); } }
+.hx-cell:disabled { cursor: default; }
+.hx-cell:focus-visible { outline: none; }
+.hx-cell:focus-visible .hx-rim { stroke-width: 8; }
+.hx-cell:not(:disabled):active .hx-hex { transform: scale(.95); }
+.hx-hex { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hx-wax { fill: var(--hx-wax); }
+.hx-rim { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linejoin: round; }
+.hx-honey { fill: var(--hx-honey); transform: translateY(100%); }
+.hx-shine { fill: var(--kiosk-paper); opacity: 0; }
+.hx-sum {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--hx-w) * .17);
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.hx-comb.is-long .hx-sum { font-size: calc(var(--hx-w) * .13); }
+
+/* Right: honey rises in the cell. */
+.hx-cell.is-honey .hx-honey { transform: translateY(0); transition: transform 700ms var(--ease-out) 380ms; }
+.hx-cell.is-honey .hx-shine { opacity: .55; transition: opacity 200ms linear 1000ms; }
+
+/* Wrong: a soft bzz shake, then the cell rests with its own answer under the sum. No red. */
+.hx-cell.is-missed .hx-wax { fill: var(--hx-missed); }
+.hx-cell.is-missed .hx-sum { top: 40%; color: var(--kid-strike, var(--text-muted)); }
+.hx-own { position: absolute; top: 64%; left: 50%; transform: translate(-50%, -50%); font-size: calc(var(--hx-w) * .14); font-weight: 700; color: var(--kid-strike, var(--text-muted)); white-space: nowrap; }
+.hx-cell.is-bzz { animation: hx-bzz 460ms ease-in-out both; }
+@keyframes hx-bzz {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-7px) rotate(-2deg); }
+  35% { transform: translateX(6px) rotate(2deg); }
+  55% { transform: translateX(-5px); }
+  75% { transform: translateX(3px); }
+}
+
+/* A full comb glows a moment before the next one. */
+.hx-comb.is-cleared .hx-cell.is-honey .hx-rim { stroke: var(--hx-honey-dark); }
+
+/* ── The bee ──────────────────────────────────────────────────────────────── */
+.hx-bee {
+  position: absolute;
+  z-index: 3;
+  /* Perched on the cell's upper right corner, clear of the sum. */
+  left: calc((var(--bx) + .36) * var(--hx-w));
+  top: calc((var(--by) - .5) * var(--hx-w));
+  width: calc(var(--hx-w) * .42);
+  transform: translate(-50%, -50%);
+  transition: left 650ms var(--ease-out), top 650ms var(--ease-out);
+  pointer-events: none;
+}
+.hx-bee-art { display: block; width: 100%; overflow: visible; animation: hx-hover 1.4s ease-in-out infinite alternate; }
+@keyframes hx-hover { from { transform: translateY(-4px); } to { transform: translateY(4px); } }
+.hx-wing { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; opacity: .92; transform-box: fill-box; transform-origin: 50% 100%; animation: hx-flap 140ms linear infinite alternate; }
+@keyframes hx-flap { from { transform: scale(1, 1); } to { transform: scale(1, .7); } }
+.hx-bee-body { fill: var(--hx-honey); stroke: var(--spel-ink); stroke-width: 3.5; }
+.hx-bee-stripe { fill: none; stroke: var(--spel-ink); stroke-width: 6; stroke-linecap: round; }
+.hx-bee-sting { fill: var(--spel-ink); }
+.hx-bee-eye { fill: var(--spel-ink); }
+.hx-bee-smile, .hx-bee-feeler { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+
+/* "Hoe los ik dit op?": everything waits. */
+.hx-root.is-paused *,
+.hx-root.is-paused *::after { animation-play-state: paused; }
+
+@media (orientation: portrait) {
+  .hx-root { --hx-w: clamp(56px, min(18vw, 13vh), 150px); }
+}
+@media (max-height: 460px) {
+  .hx-root { --hx-w: clamp(48px, 21vh, 96px); gap: var(--sp-1); padding-top: var(--sp-2); }
+  .hx-sun { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hx-cell, .hx-cell.is-bzz, .hx-pip.is-on, .hx-bee-art, .hx-wing { animation: none; }
+  .hx-bee, .hx-cell.is-honey .hx-honey, .hx-cell.is-honey .hx-shine { transition: none; }
+}
+.hx-root.is-still .hx-cell,
+.hx-root.is-still .hx-cell.is-bzz,
+.hx-root.is-still .hx-pip.is-on,
+.hx-root.is-still .hx-bee-art,
+.hx-root.is-still .hx-wing { animation: none; }
+.hx-root.is-still .hx-bee,
+.hx-root.is-still .hx-cell.is-honey .hx-honey,
+.hx-root.is-still .hx-cell.is-honey .hx-shine { transition: none; }
