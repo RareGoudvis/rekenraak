@@ -13,6 +13,7 @@ import { createSpelEvents, type SpelEvents, type SpelOutcome } from './events';
 import { reviewOf } from './review';
 import { spelQuestionOf, type SpelQuestion } from './spelQuestion';
 import type { SkinMeta, SkinProgress, SkinResult } from './skins/types';
+import { boardOpenHelp, boardPickIn, nextBoardOf, type SpelBoard } from './board/session';
 
 // The Spelen session: a round of one Zelf oefenen choice behind a game skin. Runtime only: never in a
 // link, a session hash or the device stats. One try per question, no steps during play, no lives
@@ -22,6 +23,8 @@ export type SpelPhase = 'idle' | 'play' | 'right' | 'wrong' | 'help' | 'end';
 
 // right = the pop, wrong = long enough to read the right answer; then the next question comes by itself.
 export const SPEL_FLASH_MS = { right: 700, wrong: 1600 } as const;
+// A cleared board (board rounds) stays this long before the next one.
+export const SPEL_BOARD_PAUSE_MS = 1600;
 // Draws until a plain + / − sum turns up (every playable leaf yields one; this only bounds a bad card).
 const MAX_DRAWS = 12;
 
@@ -63,6 +66,8 @@ interface SpelState {
     pickerAt: SpelFrom | null;
     // Set when the skin's own finish ended the round (Race).
     result: SkinResult | null;
+    // Board rounds (meta.round.board): the sums on screen; question = the one picked last (for the help).
+    board: SpelBoard | null;
     events: SpelEvents;
 
     start(o: SpelStart): void;
@@ -83,10 +88,13 @@ interface SpelState {
     // Nakijken: the mistakes as a review round in the Oefenen kiosk.
     nakijken(): void;
     takePickerAt(): SpelFrom | null;
+    // Board rounds: a pick on one sum (the session checks it), and the sum the pupil looked at.
+    boardPick(cell: number, given: string, strike?: boolean, now?: number): void;
+    boardFocus(cell: number): void;
 }
 
 /** What the skins read as progress. */
-export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | 'score' | 'streak' | 'bestStreak' | 'climb' | 'endsAt' | 'pausedLeft' | 'mistakes' | 'misses'>, now = Date.now()): SkinProgress {
+export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | 'score' | 'streak' | 'bestStreak' | 'climb' | 'endsAt' | 'pausedLeft' | 'mistakes' | 'misses'> & Partial<Pick<SpelState, 'board'>>, now = Date.now()): SkinProgress {
     const target = st.meta?.round.goal;
     const seconds = st.meta?.round.seconds;
     return {
@@ -95,6 +103,7 @@ export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | '
         msLeft: st.pausedLeft ?? (st.endsAt !== null ? Math.max(0, st.endsAt - now) : null),
         right: st.history.filter(h => h.correct).length, mistakes: st.mistakes.length, misses: st.misses,
         msTotal: seconds ? seconds * 1000 : null,
+        board: st.meta?.round.board ? { index: st.board?.index ?? 0, total: st.meta.round.board.boards } : null,
     };
 }
 
@@ -109,8 +118,9 @@ export function outcomeOf(st: Pick<SpelState, 'meta' | 'climb'>, failed: boolean
 /** The game's session: the choice's Zelf oefenen types unchanged (a game never changes what is asked), its round from the skin. */
 export const spelSessieOf = (o: SpelStart): OefenSessie => {
     const base = buildZelfSessie(o.choice, { kind: 'count', n: 10 }, o.now ?? Date.now(), o.grade);
-    const { questions, seconds, cap } = o.meta.round;
-    const s: OefenSessie = { ...base, id: `zelf-${fnv1a(`spel|${o.choice.key}|${o.meta.id}`)}`, total: seconds || cap ? undefined : questions ?? 20 };
+    const { questions, seconds, cap, board } = o.meta.round;
+    // A board round counts what it asked (a honeycomb's sums to find vary).
+    const s: OefenSessie = { ...base, id: `zelf-${fnv1a(`spel|${o.choice.key}|${o.meta.id}`)}`, total: seconds || cap || board ? undefined : questions ?? 20 };
     delete s.timerMin;
     return s;
 };
@@ -118,6 +128,7 @@ export const spelSessieOf = (o: SpelStart): OefenSessie => {
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
     helped: 0, helpedNow: false, climb: 0, mistakes: [], misses: 0, outcome: null as SpelOutcome | null, help: null, endsAt: null, pausedLeft: null, shownAt: 0, result: null,
+    board: null as SpelBoard | null,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
@@ -181,6 +192,13 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             const { sessie: s, history, phase } = get();
             if (!s || phase === 'idle' || phase === 'end' || phase === 'help') return;
             if (timeUp(now)) { get().events.emit('timeUp', {}); end(); return; }
+            const boardRound = get().meta?.round.board;
+            if (boardRound) {
+                const board = nextBoardOf(s, boardRound, get().board, history, get().meta?.choiceCount);
+                if (!board) { end(); return; }
+                set({ board, question: null, phase: 'play', feedback: null, helpedNow: false, help: null, shownAt: now });
+                return;
+            }
             if (s.total !== undefined && history.length >= s.total) { end(); return; }
             const cap = get().meta?.round.cap;
             if (cap && history.length >= cap) { end(); return; }
@@ -224,8 +242,11 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             const { phase, sessie: s, question: q, endsAt, helpedNow, helped, events } = get();
             if (phase !== 'play' || !s || !q) return;
             const typeId = s.types[q.slot].typeId;
+            // A board counts met hulp per open sum; help on a sum already settled only explains it.
+            const onBoard = get().board ? boardOpenHelp(get().board!) : null;
             set({
-                phase: 'help', helpedNow: true, helped: helpedNow ? helped : helped + 1,
+                phase: 'help', helpedNow: true, helped: onBoard ? helped + (onBoard.counts ? 1 : 0) : helpedNow ? helped : helped + 1,
+                ...(onBoard && { board: onBoard.board }),
                 help: { lines: stepsFor(typeId, q.exercise, q.constraints), handig: handigFor(typeId, q.exercise, q.constraints, s.grade) },
                 // The clock stops with the round.
                 pausedLeft: endsAt !== null ? Math.max(0, endsAt - now) : null,
@@ -275,6 +296,38 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             const at = get().pickerAt;
             if (at) set({ pickerAt: null });
             return at;
+        },
+
+        boardPick(cell, given, strike = true, now = Date.now()) {
+            const st = get();
+            const round = st.meta?.round.board;
+            if (st.phase !== 'play' || !st.sessie || !st.board || !round) return;
+            const out = boardPickIn(st.sessie, st.board, round, cell, given.trim(), strike, now - st.shownAt);
+            if (!out) return;
+            const { board, entry, mistake, correct, cleared } = out;
+            // Met hulp, as in a normal round: no point, no mistake, the streak waits.
+            const counts = !st.board.cells[cell].helped;
+            const streak = !entry || !counts ? st.streak : correct ? st.streak + 1 : 0;
+            set({
+                board, question: board.cells[cell].question, helpedNow: board.cells[cell].helped, shownAt: now,
+                history: entry ? [...st.history, entry] : st.history,
+                score: st.score + (entry && correct && counts ? 1 : 0),
+                streak, bestStreak: Math.max(st.bestStreak, streak),
+                mistakes: mistake ? [...st.mistakes, mistake] : st.mistakes,
+                ...(cleared && { phase: 'right' as SpelPhase }),
+            });
+            if (correct) st.events.emit('correct', { given, streak });
+            else if (mistake) st.events.emit('wrong', { given, expected: board.cells[cell].question.answer });
+            if (entry && counts) st.events.emit('streak', { count: streak });
+            // A cleared board stays a moment (the last pair sparkles, the bee lands), then the next one.
+            if (cleared) flashTimer = setTimeout(() => { flashTimer = null; if (get().board === board) get().next(); }, SPEL_BOARD_PAUSE_MS);
+        },
+
+        boardFocus(cell) {
+            const { phase, board } = get();
+            const c = board?.cells[cell];
+            if (phase !== 'play' || !board || !c) return;
+            set({ board: { ...board, focus: cell }, question: c.question, helpedNow: c.helped });
         },
     };
 });

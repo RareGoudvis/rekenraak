@@ -3,6 +3,7 @@ import type { SpelEvents } from '../events';
 import type { SoundCue, SkinSounds } from '../sound';
 import type { SpelOutcome } from '../events';
 import type { SpelFrom } from '../useSpelStore';
+import type { BoardRound, SpelBoard } from '../board/board';
 
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
 // answer, keeps score and runs the clock; the skin draws the question and hands back a given answer.
@@ -24,15 +25,17 @@ export interface SkinMeta {
     id: string;
     // The tile's name in the game picker ("Ballonnen").
     label: string;
-    // choice = the session hands the skin four options (choices); keypad = the skin shows <SpelKeypad>.
-    input: 'choice' | 'keypad';
+    // choice = the session hands the skin four options (choices); keypad = the skin shows <SpelKeypad>;
+    // board = several sums at once (props.board, round.board).
+    input: 'choice' | 'keypad' | 'board';
     // Timed skins get a clock icon in the picker and progress.msLeft.
     timed: boolean;
     // The round: a number of questions, or seconds (timed skins). goal = a climb (Pinguïntoren): a right
     // answer adds one, a mistake takes one off (never below 0); the round ends at goal, questions is then the cap.
     // cap = a limit the pupil never sees (Race ends at its finish): the bar counts without a total.
     // goalKeep: a mistake never takes one off the climb (Bom: a wrong answer only costs time).
-    round: { questions?: number; seconds?: number; goal?: number; cap?: number; goalKeep?: boolean };
+    // board: a round of boards, each several sums at once (board/board.ts); the round ends after the last board.
+    round: { questions?: number; seconds?: number; goal?: number; cap?: number; goalKeep?: boolean; board?: BoardRound };
     // Its sounds per cue (sound.ts): session cues and the skin's own (props.sound); absent = the defaults.
     sounds?: SkinSounds;
     // A pre-start screen with these choices (big buttons, a default preselected); absent = no screen.
@@ -114,12 +117,21 @@ export interface SkinProgress {
     misses: number;
     // Timed rounds: the round's length; null when untimed.
     msTotal: number | null;
+    // Board rounds: which board is on screen (0-based) of how many; absent otherwise.
+    board?: { index: number; total: number } | null;
 }
 
 export interface SkinProps {
     question: SkinQuestion | null;
     // input 'choice' only: the answer and three distractors, in display order (plain digits, "12").
     choices: string[] | null;
+    // input 'board' only: the sums on screen and their state (the session checks every pick).
+    board?: SpelBoard | null;
+    // A pick on one sum of the board: given = the answer it was paired with (a card, the target). strike
+    // false = a wrong pick that never counts (memory: an answer card turned first). The session checks.
+    onBoardPick?(cell: number, given: string, strike?: boolean): void;
+    // The pupil looked at this sum (turned its card): "Hoe los ik dit op?" explains it.
+    onBoardFocus?(cell: number): void;
     phase: SkinPhase;
     // Set during right / wrong: what was given and the right answer (a wrong flash shows it).
     feedback: { given: string; expected: string; correct: boolean } | null;

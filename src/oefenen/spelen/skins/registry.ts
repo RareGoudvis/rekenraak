@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Log, type Icon } from '@phosphor-icons/react';
+import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Heart, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
@@ -71,6 +71,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {}, accepts: KEYPAD_NUMBER },
         icon: FlagPennant,
         Screen: lazy(() => import('./touwtrekken/Touwtrekken')),
+    },
+    {
+        // Valentijn: memory with 6 sums and their answers on 12 hearts, 2 boards. A sum card turned first and then
+        // a wrong answer, twice for the same sum, logs that sum once (board/session.ts). Answers up to 5 characters
+        // ("3/8", "08:15") fit a card once the packs come.
+        meta: {
+            id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn',
+            round: { board: { kind: 'pairs', boards: 2, size: 6, strikes: 2 } }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5 },
+            sounds: { correct: 'ting', wrong: 'plop', flip: 'flip', nomatch: 'plop' },
+        },
+        icon: Heart,
+        Component: lazy(() => import('../board/hartjes/Hartjes')),
     },
     {
         // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
