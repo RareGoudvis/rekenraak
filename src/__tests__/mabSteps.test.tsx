@@ -82,6 +82,34 @@ describe('mabPlan: − rijgen with lenen', () => {
     });
 });
 
+describe('mabPlan: small sums with one part (2026-11-14)', () => {
+    it('8 + 5 = (8 + 2) + 3: two E make the ten, ten E become one T; the answer shows 10 + 3', () => {
+        const { lines, plan } = planOf(eq(8, '+', 5));
+        expect(count(plan!.initial, 'wait', 0)).toBe(5);
+        const [split, answer] = basisStages(lines, plan!.stages);
+        expect(count(split!, 'now', 0)).toBe(2);
+        expect(split!.captions).toEqual(['10 E wordt 1 T']);
+        expect(count(answer!, 'now', 0)).toBe(3);
+    });
+
+    it('53 − 7 = (53 − 3) − 4: three E off, then one T opened for the four', () => {
+        const { lines, plan } = planOf(eq(53, '-', 7));
+        const [split, answer] = basisStages(lines, plan!.stages);
+        expect(count(split!, 'gone', 0)).toBe(3);
+        expect(answer!.captions).toEqual(['1 T wordt 10 E']);
+    });
+
+    it('14 + 3 and 85 − 40 without a brug: b on or off at its own place, then the result', () => {
+        const plus = planOf(eq(14, '+', 3));
+        expect(count(plus.plan!.stages[0]!, 'now', 0)).toBe(3);
+        expect(plus.plan!.stages[2]!.clusters[0].pieces.map(p => p.length)).toEqual([7, 1, 0, 0]);
+        const minus = planOf(eq(85, '-', 40));
+        expect(count(minus.plan!.stages[0]!, 'gone', 1)).toBe(4);
+        expect(minus.plan!.stages[2]!.clusters[0].pieces.map(p => p.length)).toEqual([5, 4, 0, 0]);
+        expect(planOf(eq(47, '+', 3)).plan!.stages[0]!.captions).toEqual(['10 E wordt 1 T']);
+    });
+});
+
 describe('mabPlan: × as groups, : as sharing', () => {
     it('5 × 65: five groups of 6 T and 5 E, then the pieces gathered with their inwisselen, then the answer', () => {
         const { lines, plan } = planOf(eq(5, 'x', 65));

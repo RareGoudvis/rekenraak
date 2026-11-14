@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — workedSteps covers one-part sums (strategy `eenDeel`: brug to the tiental, else work at that place: 8 + 5 = (8 + 2) + 3, 14 + 3 = 10 + (4 + 3)); facts, 10 − 4 and E + TE stay without steps; mabSteps draws the new lines. For the Spelen help button in leerjaar 1–2.
+
 **2026-11-14** — Brug labels (owner call): leerjaar 1 T + T and T − T tot 20 split into Zonder brug (default) / Brug bij E; 21 card variants whose sums do cross relabelled "Met en zonder brug" in cards.json; five that only land on a round number keep "Geen brug nodig" (eenvoudig.brugLabels.test.ts).
 
 **2026-11-14** — Quick pills offer only values the card can make (quickOptions.ts: no empty blocks such as HTE − TE "tot 100", triangle / L-figuur by rooster vs berekenen, rounding pills per number type with a new Tienden pill); the Romeinse "tot 2 500" card stays under 2500 (optional `maxGetal` cap).

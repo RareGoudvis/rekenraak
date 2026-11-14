@@ -17,7 +17,7 @@ const hasSteps = (block: MathBlock, ex: unknown) => stepsFor(block.typeId, ex, b
 
 beforeEach(() => {
     localStorage.clear();
-    const payload = encodeTutorPage([{ block: { ...makeBlock('hr-std-optellen', { id: 'o' }), exercises: [eq(475, 368), eq(47, 8)], itemNumbering: 'letter' }, n: 1, title: 'Reken uit.' }], () => true)!;
+    const payload = encodeTutorPage([{ block: { ...makeBlock('hr-std-optellen', { id: 'o' }), exercises: [eq(475, 368), eq(3, 4)], itemNumbering: 'letter' }, n: 1, title: 'Reken uit.' }], () => true)!;
     window.location.hash = TUTOR_HASH_PREFIX + payload;
 });
 afterEach(() => { cleanup(); window.location.hash = ''; });
@@ -46,12 +46,12 @@ describe('stappenhulp', () => {
     });
 
     test('a sum without steps is printed greyed with its numbers and cannot be opened', () => {
-        const block = { ...makeBlock('hr-std-optellen', { id: 'o' }), exercises: [eq(117, 646), eq(983, 2)], itemNumbering: 'letter' } as MathBlock;
+        const block = { ...makeBlock('hr-std-optellen', { id: 'o' }), exercises: [eq(117, 646), eq(3, 4)], itemNumbering: 'letter' } as MathBlock;
         window.location.hash = TUTOR_HASH_PREFIX + encodeTutorPage([{ block, n: 1, title: 'Reken uit.' }], hasSteps)!;
         render(<TutorApp />);
         expect(screen.getByRole('button', { name: /117 \+ 646/ })).toBeTruthy();
-        expect(screen.queryByRole('button', { name: /983/ })).toBeNull();
-        const off = screen.getByText('983 + 2').closest('.tutor-item')!;
+        expect(screen.queryByRole('button', { name: /3 \+ 4/ })).toBeNull();
+        const off = screen.getByText('3 + 4').closest('.tutor-item')!;
         expect(off.classList.contains('is-off')).toBe(true);
         expect(off.textContent).toContain('Hiervoor zijn nog geen stappen');
     });

@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Tussenstappen nu ook voor kleine sommen: 8 + 5 = (8 + 2) + 3, 53 − 7 = (53 − 3) − 4, 14 + 3 = 10 + (4 + 3).' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kunnen tijdens het oefenen terug naar het begin (twee keer tikken). Wat ze al maakten blijft bewaard.' },
             { kind: 'gewijzigd', text: 'De kaart Zelf oefenen in Oefenmodus is compacter; de QR-code opent in een apart venster.' },
             { kind: 'gewijzigd', text: 'Oplossingen tonen is nu een oogje bovenaan. Oefeningen toevoegen staat in het Menu. Bordmodus open je met de knop Whiteboard.' },
