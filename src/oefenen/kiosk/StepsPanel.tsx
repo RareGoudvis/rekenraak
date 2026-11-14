@@ -19,12 +19,15 @@ interface Props {
     visual?: RenderStepsVisual;
     // A 'card' visual is drawn by the Kiosk under the exercise: it hears how far the lines are revealed (null = none yet).
     onVisual?(revealed: number | null): void;
+    // Spelen's "Hoe los ik dit op?": the pupil asked, so the lines show at once and the last button resumes the game.
+    startOpen?: boolean;
+    nextLabel?: string;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead; Alle stappen shows the whole solution at once, optional lines included. Volgende moves on either way. SYNC: tutor StepsView.
-export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual }: Props) {
-    const [open, setOpen] = useState(false);
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening' }: Props) {
+    const [open, setOpen] = useState(startOpen);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
     const [showHandig, setShowHandig] = useState(false);
@@ -83,7 +86,7 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
                     ))}
                 </>
             )}
-            <button type="button" className="kiosk-btn kiosk-btn-big" onClick={onNext}>Volgende oefening</button>
+            <button type="button" className="kiosk-btn kiosk-btn-big" onClick={onNext}>{nextLabel}</button>
         </div>
     );
 }

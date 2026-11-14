@@ -1,19 +1,28 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, Play } from '@phosphor-icons/react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, GameController, Pencil, Play } from '@phosphor-icons/react';
 import { useEenvoudigData } from '../../components/eenvoudig/useEenvoudigData';
 import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { useOefenStore } from '../useOefenStore';
 import { tryFullscreen } from '../kiosk/fullscreen';
+import { useSpelStore } from '../spelen/useSpelStore';
+import { choiceCanPlay } from '../spelen/spelQuestion';
+import GamePicker from '../spelen/GamePicker';
 import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choiceMayHaveMab, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
 
 // The page opened without a link: a pupil picks leerjaar, onderwerp, oefening and how much, and starts alone.
 export default function ZelfPicker() {
     const data = useEenvoudigData();
     const openZelf = useOefenStore(s => s.openZelf);
-    const [grade, setGrade] = useState<Leerjaar | null>(null);
-    const [topicId, setTopicId] = useState<string | null>(null);
-    const [choice, setChoice] = useState<ZelfChoice | null>(null);
+    // Back from a game (Ander spel, Terug): straight to the game tiles of the same choice.
+    const [from] = useState(() => useSpelStore.getState().pickerAt);
+    useEffect(() => { useSpelStore.getState().takePickerAt(); }, []);
+    const [grade, setGrade] = useState<Leerjaar | null>(from?.grade ?? null);
+    const [topicId, setTopicId] = useState<string | null>(from?.topicId ?? null);
+    const [choice, setChoice] = useState<ZelfChoice | null>(from?.choice ?? null);
+    // A + / − choice at leerjaar 1–3 asks Oefenen or Spelen first (prototype, beta only).
+    const [play, setPlay] = useState<'oefenen' | 'spelen' | null>(from ? 'spelen' : null);
+    const canPlay = choice !== null && grade !== null && choiceCanPlay(choice, grade);
     const [mode, setMode] = useState<ZelfMode>({ kind: 'count', n: 5 });
     const [mab, setMab] = useState(true);
     // MAB above the steps: leerjaar 1–3 and a choice with whole sums up to 1000 (owner, 2026-11-13).
@@ -22,7 +31,8 @@ export default function ZelfPicker() {
     const choices = data && grade !== null && topicId !== null ? choicesFor(data, grade, topicId) : [];
     // A topic with one choice skips that step, so Back from "Hoeveel" leaves the topic too.
     const back = () => {
-        if (choice) { setChoice(null); if (choices.length <= 1) setTopicId(null); }
+        if (play) setPlay(null);
+        else if (choice) { setChoice(null); if (choices.length <= 1) setTopicId(null); }
         else if (topicId) setTopicId(null);
         else setGrade(null);
     };
@@ -90,6 +100,35 @@ export default function ZelfPicker() {
                         <button key={c.key} type="button" className="zelf-choice zelf-choice-big" onClick={() => setChoice(c)}>{c.label}</button>
                     ))}
                 </div>
+            </main>
+        );
+    }
+
+    if (canPlay && play === null) {
+        return (
+            <main className="oefen-center zelf">
+                {backBtn}
+                <h1 className="oefen-title">Oefenen of spelen?</h1>
+                <p className="oefen-lead">{topicLabel}: {choice.label}</p>
+                <div className="zelf-grid zelf-grid-choices spel-modes">
+                    <button type="button" className="zelf-choice zelf-choice-big spel-mode" onClick={() => setPlay('oefenen')}>
+                        <Pencil weight="duotone" aria-hidden /> Oefenen
+                    </button>
+                    <button type="button" className="zelf-choice zelf-choice-big spel-mode" onClick={() => setPlay('spelen')}>
+                        <GameController weight="duotone" aria-hidden /> Spelen
+                    </button>
+                </div>
+            </main>
+        );
+    }
+
+    if (canPlay && play === 'spelen') {
+        return (
+            <main className="oefen-center zelf">
+                {backBtn}
+                <h1 className="oefen-title">Kies een spel</h1>
+                <p className="oefen-lead">{topicLabel}: {choice.label}</p>
+                <GamePicker onPick={meta => { tryFullscreen(); useSpelStore.getState().start({ choice, grade, topicId, meta }); }} />
             </main>
         );
     }

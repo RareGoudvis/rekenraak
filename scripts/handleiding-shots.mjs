@@ -409,6 +409,9 @@ async function shotsZelf() {
         await settle(p, 500);
         await p.getByRole('button', { name: /Met brug/ }).first().click();
         await settle(p, 500);
+        // + and − at leerjaar 1–3 ask Oefenen or Spelen first (beta).
+        await p.getByRole('button', { name: 'Oefenen', exact: true }).click();
+        await settle(p, 300);
         await p.getByRole('button', { name: '5 oefeningen' }).click();
         await settle(p, 300);
         await shot(p, 'zelf-hoeveel');
