@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { MagnifyingGlass } from '@phosphor-icons/react';
+import { MagnifyingGlass, Warning } from '@phosphor-icons/react';
+import { MAX_TYPES } from '../../services/oefenen/session';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
@@ -21,9 +22,13 @@ import { useEenvoudigUi } from '../eenvoudig/useEenvoudigUi';
 import { listOefenLeaves, withKioskSeed, type OefenLeaf } from './oefenBuild';
 
 interface Props {
-    onAdd(leafId: string, constraints?: Record<string, unknown>, label?: string): void;
-    // How often the leaf is already in the session (the count badge).
+    onAdd(leafId: string, constraints?: Record<string, unknown>, label?: string, cardVar?: string): void;
+    // How often the leaf is already in the session (the tree's count badge).
     isAdded?(leafId: string): number;
+    // How often an Eenvoudig card (any of its variants) is already in the session (the card's badge).
+    cardCount?(varIds: readonly string[]): number;
+    // The session holds MAX_TYPES rows: a click adds nothing, so say so where the teacher is clicking.
+    full?: boolean;
 }
 
 type Tab = 'eenvoudig' | 'oefeningen';
@@ -60,7 +65,7 @@ function kioskTree(ids: Set<string>): Domain[] {
 const oefenTitle = (label: string) => `${label} toevoegen aan de sessie`;
 
 // Oefenmodus's left catalogue: the editor's sidebar (Eenvoudig cards, Uitgebreid tree) showing only what the kiosk can practise.
-export default function OefenSidebar({ onAdd, isAdded }: Props) {
+export default function OefenSidebar({ onAdd, isAdded, cardCount, full = false }: Props) {
     const [tab, setTab] = useState<Tab>(() => (useWorksheetStore.getState().sidebarTab === 'oefeningen' ? 'oefeningen' : 'eenvoudig'));
 
     // Uitgebreid: starts at the editor's leerjaar but never writes it back (the sheet's grade is not the session's).
@@ -105,11 +110,11 @@ export default function OefenSidebar({ onAdd, isAdded }: Props) {
         onPick: (v) => {
             const r = resolveCard(v);
             // A card is its own leerjaar preset (resolveCard); the kiosk's start goes on top, as in Zelf oefenen.
-            onAdd(r.leafId, withKioskSeed(r.typeId, r.constraints), r.label);
+            onAdd(r.leafId, withKioskSeed(r.typeId, r.constraints), r.label, v.id);
             setTopic(null);
         },
-        // The rows of the leaf a click on the card adds (its first variant's).
-        badgeOf: isAdded ? (card) => isAdded(card.vars[0].leafId) : undefined,
+        // The rows this card added, not every row of its leaf: cards that share a leaf keep their own count.
+        badgeOf: cardCount ? (card) => cardCount(card.vars.map(v => v.id)) : undefined,
     };
 
     const pickTab = (next: Tab) => { setTopic(null); setTab(next); };
@@ -122,6 +127,12 @@ export default function OefenSidebar({ onAdd, isAdded }: Props) {
                     <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => pickTab('oefeningen')}>Uitgebreid</button>
                 </div>
             </div>
+            {full && (
+                <p style={fullNote} role="status">
+                    <Warning size={15} weight="bold" aria-hidden="true" style={{ flexShrink: 0 }} />
+                    <span>De sessie is vol ({MAX_TYPES} soorten). Verwijder er eerst een om iets anders toe te voegen.</span>
+                </p>
+            )}
             {tab === 'eenvoudig' ? (
                 data
                     ? <EenvoudigNav grade={ezGrade} onGrade={g => { setTopic(null); setEzGrade(g); }} sections={sections} openId={drawerOpen ? topic : null} onToggle={toggleTopic} />
@@ -160,4 +171,11 @@ const addedBadge: React.CSSProperties = {
     flexShrink: 0, padding: '0 6px', minWidth: '20px', textAlign: 'center',
     borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--accent-soft)',
     color: 'var(--accent)', fontSize: 'var(--text-xs)', fontWeight: 600, lineHeight: '17px',
+};
+
+// Full session: in the danger tint (as GenerationNote), above the catalogue, so a click that adds nothing is never silent.
+const fullNote: React.CSSProperties = {
+    display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-2)', margin: '0 var(--sp-3) var(--sp-2)',
+    padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--danger)', background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: 'var(--text-sm)', fontWeight: 600, lineHeight: 1.35,
 };

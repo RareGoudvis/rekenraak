@@ -36,8 +36,8 @@ export default function OefenWorkspace({ initial, onClose, backLabel = 'Werkblad
 
     const select = (key: string) => { setSelected(key); setScope('row'); };
     const resample = (key: string) => setSeeds(s => ({ ...s, [key]: (s[key] ?? 0) + 1 }));
-    const add = (leafId: string, constraints?: Record<string, unknown>, label?: string) => {
-        const key = b.addLeaf(leafId, constraints, label);
+    const add = (leafId: string, constraints?: Record<string, unknown>, label?: string, cardVar?: string) => {
+        const key = b.addLeaf(leafId, constraints, label, cardVar);
         if (key) select(key);
     };
     const remove = (key: string) => {
@@ -86,7 +86,7 @@ export default function OefenWorkspace({ initial, onClose, backLabel = 'Werkblad
             </header>
 
             <div style={S.body}>
-                <OefenSidebar onAdd={add} isAdded={b.countOf} />
+                <OefenSidebar onAdd={add} isAdded={b.countOf} cardCount={b.countOfCard} full={b.full} />
 
                 <main style={S.viewer} aria-label="Sessie">
                     <BetaStrip module="oefenmodus" />

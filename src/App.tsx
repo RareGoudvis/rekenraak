@@ -191,7 +191,9 @@ export default function App() {
     {onboarding.welcomeOpen && <WelcomeModal onClose={onboarding.closeWelcome} onStartTour={onboarding.startTourFromWelcome} />}
     {upgradeVisible && !onboarding.welcomeOpen && <UpgradeModal onClose={closeUpgrade} onOpenReleaseNotes={onboarding.openReleaseNotes} />}
     {onboarding.tourOpen && <TourOverlay onClose={onboarding.closeTour} />}
-    <div className="print-root" style={styles.appShell}>
+    {/* inert while a full-screen view (Mijn bladen, Bibliotheek, Whiteboard, Oefenmodus) covers it: the editor stays
+        mounted for its scroll and state, but its buttons must not stay in the Tab order or the screen reader's tree. */}
+    <div className="print-root" style={styles.appShell} inert={view !== 'editor'}>
       <div className="print-body-row" style={styles.appBody}>
       {/* LEFT — the exercise palette, running the FULL height of the window. Its own tab
           strip sits at the top, level with the top bar, so the three columns read as three

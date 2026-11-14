@@ -1859,7 +1859,8 @@ under `src/board/`. Touchpoints with the main app are exactly five:
    `'whiteboard'`; `uiSlice` starts at `initialView()` and routes `setView` (below).
 2. **App mount** — [App.tsx](../../src/App.tsx) renders `<WhiteboardView/>` as a full-screen
    overlay when `view === 'whiteboard'` (like the library views: the editor stays mounted
-   underneath, so switching back loses nothing).
+   underneath, so switching back loses nothing). Under every full-screen view the editor's
+   `.print-root` is `inert`, so its buttons leave the Tab order and the accessibility tree.
 3. **Sidebar-foot button** — "Bordmodus" (Chalkboard icon) in the mode row directly above the
    wordmark ([sidebar.tsx](../../src/components/layout/sidebar.tsx)), beside Oefenmodus, both with the
    secondary IconButton chrome and the centred `BetaCaption` line under them; nothing in

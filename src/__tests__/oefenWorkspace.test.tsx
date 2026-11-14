@@ -222,4 +222,39 @@ describe('useOefenBuilder.addLeaf (the sidebar contract)', () => {
         expect(useWorksheetStore.getState().draftBlocks[1].constraints).toMatchObject({ maxGetal: 20 });
         expect(result.current.addLeaf('not-a-leaf')).toBeNull();
     });
+
+    test('a card counts its own rows; the leaf counts them all; the card id stays out of the link', () => {
+        const { result } = renderHook(() => useOefenBuilder());
+        const linkBefore = () => JSON.stringify(result.current.sessie.types);
+        act(() => { result.current.addLeaf('hr-std-optellen-nat', { maxGetal: 100 }, 'Optellen tot 100', 'var-a'); });
+        act(() => { result.current.addLeaf('hr-std-optellen-nat', { maxGetal: 1000 }, 'Optellen tot 1000', 'var-b'); });
+        act(() => { result.current.addLeaf('hr-std-optellen-nat'); });
+        act(() => { result.current.duplicateRow(result.current.rows[0].key); });
+        expect(result.current.countOf('hr-std-optellen-nat')).toBe(4);
+        expect(result.current.countOfCard(['var-a'])).toBe(2);
+        expect(result.current.countOfCard(['var-b', 'var-c'])).toBe(1);
+        expect(result.current.countOfCard(['var-c'])).toBe(0);
+        expect(linkBefore()).not.toContain('var-');
+    });
+
+    test('full at 20 rows: addLeaf refuses and full is set (the sidebar shows its notice)', () => {
+        const { result } = renderHook(() => useOefenBuilder());
+        for (let i = 0; i < 20; i++) act(() => { result.current.addLeaf('hr-std-optellen-nat'); });
+        expect(result.current.full).toBe(true);
+        let key: string | null = 'x';
+        act(() => { key = result.current.addLeaf('hr-std-optellen-nat'); });
+        expect(key).toBeNull();
+        expect(result.current.rows).toHaveLength(20);
+    });
+});
+
+describe('a full session in the workspace', () => {
+    test('the workspace has the full-session notice in its sidebar at 20 rows', () => {
+        useWorksheetStore.setState({ view: 'oefenmodus' });
+        render(<OefenmodusView />);
+        const add = () => fireEvent.click(addBtn('hr-std-optellen-nat'));
+        for (let i = 0; i < 20; i++) add();
+        const side = within(document.querySelector('aside.oefen-sidebar') as HTMLElement);
+        expect(side.getByRole('status').textContent).toMatch(/De sessie is vol/);
+    });
 });

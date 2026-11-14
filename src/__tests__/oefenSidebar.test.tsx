@@ -12,7 +12,7 @@ import { resolveCard } from '../config/eenvoudig/resolveCard';
 import { kioskSupports } from '../services/oefenen/kiosk';
 import { usableVariants } from '../oefenen/zelf/zelfSessie';
 
-type Add = [string, Record<string, unknown> | undefined, string | undefined];
+type Add = [string, Record<string, unknown> | undefined, string | undefined, string | undefined];
 
 let data: EenvoudigData;
 beforeAll(async () => { data = await loadEenvoudigData(); });
@@ -32,9 +32,9 @@ const subRows = () => [...aside().querySelectorAll('button.sidebar-row')].filter
 const leafButtons = () => [...aside().querySelectorAll('button.sidebar-leaf')] as HTMLElement[];
 const kioskIds = () => new Set(listOefenLeaves().filter(l => kioskSupports(l.typeId, l.constraints)).map(l => l.id));
 
-function renderSidebar(isAdded?: (id: string) => number) {
+function renderSidebar(isAdded?: (id: string) => number, cardCount?: (ids: readonly string[]) => number, full?: boolean) {
     const onAdd = vi.fn<(...a: Add) => void>();
-    render(<OefenSidebar onAdd={onAdd} isAdded={isAdded} />);
+    render(<OefenSidebar onAdd={onAdd} isAdded={isAdded} cardCount={cardCount} full={full} />);
     return onAdd;
 }
 
@@ -136,7 +136,7 @@ describe('Eenvoudig', () => {
         const payloads = new Set(onAdd.mock.calls.map(c => JSON.stringify(c)));
         const fromUsable = new Set([...usableIds].map(id => {
             const r = resolveCard(variantsById.get(id)!);
-            return JSON.stringify([r.leafId, withKioskSeed(r.typeId, r.constraints), r.label]);
+            return JSON.stringify([r.leafId, withKioskSeed(r.typeId, r.constraints), r.label, id]);
         }));
         for (const p of payloads) expect(fromUsable.has(p)).toBe(true);
     });
@@ -151,16 +151,32 @@ describe('Eenvoudig', () => {
         const v = listed.vars.find(x => usableIds.has(x.id))!;
         fireEvent.click(card);
         const r = resolveCard(v);
-        expect(onAdd.mock.calls[0]).toEqual([r.leafId, withKioskSeed(r.typeId, r.constraints), r.label]);
+        expect(onAdd.mock.calls[0]).toEqual([r.leafId, withKioskSeed(r.typeId, r.constraints), r.label, v.id]);
         expect(r.constraints).not.toEqual({});
         expect(document.querySelector('.ez-drawer')).toBeNull();
     });
 
-    test('a card shows how many rows its leaf has', async () => {
-        renderSidebar(id => (id === 'hr-std-optellen-nat' ? 2 : 0));
+    test('a card counts the rows it added itself, not every row of its leaf', async () => {
+        const optellen = listCards(data, 'Hoofdrekenen · Optellen', { grade: 3 });
+        const first = optellen[0];
+        // Another card on the same leaf: before 2026-11-14 it showed the first card's count too.
+        const sibling = optellen.find(c => c !== first && c.vars[0].leafId === first.vars[0].leafId);
+        const isAdded = vi.fn((id: string) => (id === first.vars[0].leafId ? 2 : 0));
+        renderSidebar(isAdded, ids => (ids.includes(first.vars[0].id) ? 2 : 0));
         await waitFor(() => expect(navRows().length).toBeGreaterThan(0));
         const drawer = await openTopic('Optellen');
         const heads = [...drawer.querySelectorAll('.ez-tc-h')].map(h => h.textContent ?? '');
-        expect(heads.some(h => h.endsWith('2×'))).toBe(true);
+        expect(heads.filter(h => h.endsWith('2×'))).toHaveLength(1);
+        if (sibling) expect(heads.find(h => h.startsWith(sibling.name))?.endsWith('2×')).toBe(false);
+    });
+
+    test('a full session says so above the catalogue', async () => {
+        renderSidebar(undefined, undefined, true);
+        await waitFor(() => expect(navRows().length).toBeGreaterThan(0));
+        expect(within(aside()).getByRole('status').textContent).toMatch(/De sessie is vol \(20 soorten\)/);
+        cleanup();
+        renderSidebar();
+        await waitFor(() => expect(navRows().length).toBeGreaterThan(0));
+        expect(within(aside()).queryByRole('status')).toBeNull();
     });
 });

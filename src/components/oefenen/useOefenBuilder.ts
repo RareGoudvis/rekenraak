@@ -14,7 +14,8 @@ import {
 
 // Row = what the builder owns per slot; the row's constraints live in the store's draft block.
 // `cardLabel`: the Eenvoudig card it came from, shown in the workspace only (never in the link).
-export type OefenRow = Omit<BuilderRow, 'constraints'> & { cardLabel?: string };
+// `cardVar`: that card variant's id, so a card's badge counts its own rows and not every row of the leaf.
+export type OefenRow = Omit<BuilderRow, 'constraints'> & { cardLabel?: string; cardVar?: string };
 
 // SYNC: session.ts MAX_LABEL, the longest row label a link carries.
 const MAX_CARD_LABEL = 80;
@@ -68,7 +69,7 @@ export function useOefenBuilder(initial?: OefenSessie) {
     const full = rows.length >= MAX_TYPES;
 
     /** Adds a row for a sidebar leaf; returns its key, or null when the session is full or the leaf is not kiosk-capable. */
-    const addLeaf = (leafId: string, constraints?: Record<string, unknown>, cardLabel?: string): string | null => {
+    const addLeaf = (leafId: string, constraints?: Record<string, unknown>, cardLabel?: string, cardVar?: string): string | null => {
         const leaf = leafById.get(leafId);
         if (!leaf || rows.length >= MAX_TYPES) return null;
         const key = `r${nextKey.current++}`;
@@ -79,7 +80,7 @@ export function useOefenBuilder(initial?: OefenSessie) {
         st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, start, draftIdOf(key))]);
         // The card's full name is for the workspace only and cut like Zelf oefenen cuts it; the link keeps the leaf's kiosk label.
         const shown = cardLabel?.trim().slice(0, MAX_CARD_LABEL);
-        setRows(rs => [...rs, { key, leaf, weight: 50, ...(shown ? { cardLabel: shown } : {}) }]);
+        setRows(rs => [...rs, { key, leaf, weight: 50, ...(shown ? { cardLabel: shown } : {}), ...(cardVar ? { cardVar } : {}) }]);
         return key;
     };
     const removeRow = (key: string) => {
@@ -123,7 +124,7 @@ export function useOefenBuilder(initial?: OefenSessie) {
     // Rows whose draft block has not landed in the store yet (first render after add) are skipped.
     const buildable: BuilderRow[] = rows.flatMap(r => {
         const constraints = constraintsOf(r.key);
-        const { cardLabel: _l, ...row } = r;
+        const { cardLabel: _l, cardVar: _v, ...row } = r;
         return constraints ? [{ ...row, constraints }] : [];
     });
     // The steps switch only shows when a chosen row can actually produce a sum with steps.
@@ -181,6 +182,8 @@ export function useOefenBuilder(initial?: OefenSessie) {
         addLeaf, removeRow, patchRow, moveRow, duplicateRow, setRowConstraint, draftOf, constraintsOf,
         sessie, percents, percentOf, dead, excluded, canShip, canShare, unsupportedOnly, endless, stepsPossible, mabPossible,
         countOf: (leafId: string) => rows.filter(r => r.leaf.id === leafId).length,
+        // An Eenvoudig card's badge: rows added from one of its variants (a reopened saved session has no card ids, so 0).
+        countOfCard: (varIds: readonly string[]) => rows.filter(r => r.cardVar !== undefined && varIds.includes(r.cardVar)).length,
         save,
     };
 }
