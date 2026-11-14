@@ -27,8 +27,6 @@ export default function SplitsenConfig({ block }: Props) {
         operand2Mask = {},
         fixedTotal = null,
         layout = 'basic',
-        rowsPerBox = 4,
-        rowHeight = 28,
         mathDirection = 'decompose',
         mathOrder = 'volgorde',
     } = c;
@@ -154,32 +152,6 @@ export default function SplitsenConfig({ block }: Props) {
                 </>
             )}
 
-            {/* ROWS PER BOX — only for basic */}
-            {currentLayout === 'basic' && (
-                <div style={styles.section}>
-                    <SettingLabel text={`Rijen per box: ${rowsPerBox}`} info="Aantal splitsrijen per oefenvak." />
-                    <input
-                        type="range" min="2" max="8" step="1"
-                        value={rowsPerBox}
-                        onChange={(e) => set('rowsPerBox', Number(e.target.value))}
-                        style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
-                    />
-                </div>
-            )}
-
-            {/* ROW HEIGHT — only for basic */}
-            {currentLayout === 'basic' && (
-                <div style={styles.section}>
-                    <SettingLabel text={`Rijhoogte: ${rowHeight}px`} info="Hoogte van elke splitsrij in pixels (meer schrijfruimte)." />
-                    <input
-                        type="range" min="22" max="70" step="2"
-                        value={rowHeight}
-                        onChange={(e) => set('rowHeight', Number(e.target.value))}
-                        style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
-                    />
-                </div>
-            )}
-
             {/* MAXIMUM GETAL */}
             {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat gesplitst mag worden." />
@@ -280,8 +252,42 @@ const clearBtnStyle: React.CSSProperties = {
     borderRadius: '4px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px',
 };
 
-// ── Geavanceerd: type the split numbers by hand instead of generating them.
+// ── Differentiatie: the writing space of the Rooster layout (how many rows per box, how tall).
+// Mounted by Inspector through EXERCISE_UI['splitsen'].StyleConfig.
+export function SplitsenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<SplitsenConstraints>(block);
+    const { layout = 'basic', rowsPerBox = 4, rowHeight = 28 } = c;
+    // Both rows exist for the Rooster (basic) layout only.
+    if ((typeof layout === 'string' ? layout : 'basic') !== 'basic') return null;
+    return (
+        <>
+            {/* ROWS PER BOX */}
+            <div style={{ ...styles.section, marginTop: '12px' }}>
+                <SettingLabel text={`Rijen per box: ${rowsPerBox}`} info="Aantal splitsrijen per oefenvak." />
+                <input
+                    type="range" min="2" max="8" step="1"
+                    value={rowsPerBox}
+                    onChange={(e) => patch({ rowsPerBox: Number(e.target.value) })}
+                    style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
+                />
+            </div>
+
+            {/* ROW HEIGHT */}
+            <div style={styles.section}>
+                <SettingLabel text={`Rijhoogte: ${rowHeight}px`} info="Hoogte van elke splitsrij in pixels (meer schrijfruimte)." />
+                <input
+                    type="range" min="22" max="70" step="2"
+                    value={rowHeight}
+                    onChange={(e) => patch({ rowHeight: Number(e.target.value) })}
+                    style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
+                />
+            </div>
+        </>
+    );
+}
+
 // Mounted by Inspector through EXERCISE_UI['splitsen'].AdvancedConfig.
+// ── Geavanceerd: type the split numbers by hand instead of generating them.
 export function SplitsenAdvancedConfig({ block }: Props) {
     const patchExercise = useWorksheetStore((s) => s.patchExercise);
     const exercises = block.splitsenExercises || [];

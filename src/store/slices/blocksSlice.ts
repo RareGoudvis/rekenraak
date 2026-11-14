@@ -80,8 +80,8 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
 
         const newBlocks = [...state.blocks, newBlock];
         // Same rule as setActiveSelection: a fresh block opens its own settings, otherwise a
-        // teacher who added it from the Blad tab sees nothing change on the right.
-        return { ...commitBlocks(state, newBlocks), activeBlockId: newBlock.id, inspectorTab: 'oefening' };
+        // teacher who added it from Heel het blad sees nothing change on the right.
+        return { ...commitBlocks(state, newBlocks), activeBlockId: newBlock.id, inspectorScope: 'block' };
     }),
 
     removeBlock: (id) => set((state) => {

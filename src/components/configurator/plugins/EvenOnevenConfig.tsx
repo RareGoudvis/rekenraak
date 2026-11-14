@@ -12,7 +12,7 @@ interface Props { block: MathBlock; }
 export default function EvenOnevenConfig({ block }: Props) {
     const [c, patch] = useConstraints<EvenOnevenConstraints>(block);
     const range = useMaxPresets(block);
-    const { subType = 'rooster', maxGetal = 100, target = 'even', perRow = 10 } = c;
+    const { subType = 'rooster', maxGetal = 100, target = 'even' } = c;
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<EvenOnevenConstraints>);
@@ -39,14 +39,7 @@ export default function EvenOnevenConfig({ block }: Props) {
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>}
-                    <div style={styles.section}>
-                        <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij in het rooster staan." />
-                        <input type="range" min="5" max="14" step="1" value={perRow}
-                            onChange={(e) => set('perRow', Number(e.target.value))}
-                            style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-                    </div>
-                </>
+                    </div>}                </>
             ) : (
                 <div style={styles.section}>
                     <p style={styles.hint}>
@@ -54,6 +47,22 @@ export default function EvenOnevenConfig({ block }: Props) {
                     </p>
                 </div>
             )}
+        </div>
+    );
+}
+
+// ── Differentiatie: how wide the rooster is.
+// Mounted by Inspector through EXERCISE_UI['even-oneven'].StyleConfig.
+export function EvenOnevenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<EvenOnevenConstraints>(block);
+    const { subType = 'rooster', perRow = 10 } = c;
+    if (subType !== 'rooster') return null;
+    return (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij in het rooster staan." />
+            <input type="range" min="5" max="14" step="1" value={perRow}
+                onChange={(e) => patch({ perRow: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
         </div>
     );
 }

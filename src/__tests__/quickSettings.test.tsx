@@ -40,18 +40,21 @@ describe('Inspector quick block', () => {
     afterEach(cleanup);
     beforeEach(() => {
         useWorksheetStore.getState().clearBlocks();
-        useWorksheetStore.setState({ curriculum: null, sidebarTab: 'eenvoudig' });
+        useWorksheetStore.setState({ curriculum: null, sidebarTab: 'eenvoudig', inspectorScope: 'block', inspectorSections: { block: null, blad: 'koptekst' } });
         useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen');
         useWorksheetStore.setState({ activeBlockId: useWorksheetStore.getState().blocks[0].id });
     });
 
-    test('shows in Eenvoudig with the rest folded away', () => {
+    test('shows in Eenvoudig as the open first section, the rest folded away', () => {
         render(<Inspector />);
         expect(screen.getByTestId('quick-block')).toBeTruthy();
-        expect(screen.getByText(/Alle instellingen/)).toBeTruthy();
-        expect(screen.queryByText('Opdrachtblok')).toBeNull();
-        fireEvent.click(screen.getByText(/Alle instellingen/));
-        expect(screen.getByRole('button', { name: /Opmaak/ })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /Snel aanpassen/ }).getAttribute('aria-expanded')).toBe('true');
+        const look = screen.getByRole('button', { name: /Hoe staat het op het blad/ });
+        expect(look.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.queryByText('Breedte op de pagina')).toBeNull();
+        fireEvent.click(look);
+        expect(screen.getByText('Breedte op de pagina')).toBeTruthy();
+        expect(screen.queryByTestId('quick-block')).toBeNull();
     });
 
     test('vormleer shows its whole settings panel in the quick block', () => {
@@ -66,16 +69,20 @@ describe('Inspector quick block', () => {
 
     test('always offers the number of exercises, and changing it changes the block', () => {
         render(<Inspector />);
-        const slider = screen.getByLabelText(/Aantal oefeningen/) as HTMLInputElement;
-        fireEvent.change(slider, { target: { value: '14' } });
-        expect(useWorksheetStore.getState().blocks[0].numberOfExercises).toBe(14);
+        const before = useWorksheetStore.getState().blocks[0].numberOfExercises || 10;
+        fireEvent.click(screen.getByRole('button', { name: 'Meer oefeningen' }));
+        expect(useWorksheetStore.getState().blocks[0].numberOfExercises).toBe(before + 1);
+        fireEvent.click(screen.getByRole('button', { name: 'Minder oefeningen' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Minder oefeningen' }));
+        expect(useWorksheetStore.getState().blocks[0].numberOfExercises).toBe(before - 1);
     });
 
     test.each(['oefeningen', 'overzicht'] as const)('is absent on the %s tab', (tab) => {
         useWorksheetStore.setState({ sidebarTab: tab });
         render(<Inspector />);
         expect(screen.queryByTestId('quick-block')).toBeNull();
-        expect(screen.queryByText(/Alle instellingen/)).toBeNull();
+        expect(screen.queryByRole('button', { name: /Snel aanpassen/ })).toBeNull();
+        expect(screen.getByRole('button', { name: /Wat oefenen ze/ }).getAttribute('aria-expanded')).toBe('true');
     });
 
     test('is absent under a locked curriculum', () => {

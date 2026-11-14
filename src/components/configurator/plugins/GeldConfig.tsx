@@ -12,11 +12,9 @@ import type { GeldConstraints } from '../../../services/math/constraintTypes';
 export default function GeldConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<GeldConstraints>(block);
     const range = useMaxPresets(block);
-    const isHerkennen = block.typeId === 'geld-herkennen';
 
     const set = (key: keyof GeldConstraints, val: unknown) => patch({ [key]: val } as Partial<GeldConstraints>);
     const maxGetal: number = c.maxGetal ?? 10;
-    const geldLayout: string = c.geldLayout ?? 'samen';
     const allowedDenominations: number[] = c.allowedDenominations ?? DENOMINATION_CATALOGUE.map(d => d.valueCents);
 
     const toggleDenom = (valueCents: number) => {
@@ -73,22 +71,11 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                     ))}
                 </div>
             </div>
-
-            {/* ── Geldlayout (herkennen only) ── */}
-            {isHerkennen && (
-                <div style={S.section}>
-                    <SettingLabel text="Geldlayout" info="Toont het geld samen of gescheiden per soort." />
-                    <div style={S.buttonGroup}>
-                        <button aria-pressed={geldLayout !== 'gescheiden'} style={S.radioBtn(geldLayout !== 'gescheiden')} onClick={() => set('geldLayout', 'samen')}>Samen</button>
-                        <button aria-pressed={geldLayout === 'gescheiden'} style={S.radioBtn(geldLayout === 'gescheiden')} onClick={() => set('geldLayout', 'gescheiden')}>Gescheiden</button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
 
-// ── Differentiatie: money notation + the answer/draw box (herkennen + tekenen).
+// ── Differentiatie: money notation + the answer/draw box (herkennen + tekenen) + how herkennen lays out the money.
 // Mounted by Inspector through EXERCISE_UI[typeId].StyleConfig.
 export function GeldStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<GeldConstraints>(block);
@@ -98,6 +85,7 @@ export function GeldStyleConfig({ block }: { block: MathBlock }) {
     const gShowVoorbeelden: boolean = c.showVoorbeelden ?? false;
     const gVoorbeeldTypes: number[] = c.voorbeeldTypes ?? [];
     const gAllowedDenominations: number[] = c.allowedDenominations ?? [];
+    const geldLayout: string = c.geldLayout ?? 'samen';
 
     const toggleVoorbeeld = (valueCents: number) => {
         const next = gVoorbeeldTypes.includes(valueCents)
@@ -158,6 +146,17 @@ export function GeldStyleConfig({ block }: { block: MathBlock }) {
                             </span>
                         );
                     })}
+                </div>
+            )}
+
+            {/* ── Geldlayout (herkennen only) ── */}
+            {isGeldHerkennen && (
+                <div style={{ ...S.section, marginTop: '12px' }}>
+                    <SettingLabel text="Geldlayout" info="Toont het geld samen of gescheiden per soort." />
+                    <div style={S.buttonGroup}>
+                        <button aria-pressed={geldLayout !== 'gescheiden'} style={S.radioBtn(geldLayout !== 'gescheiden')} onClick={() => patch({ geldLayout: 'samen' })}>Samen</button>
+                        <button aria-pressed={geldLayout === 'gescheiden'} style={S.radioBtn(geldLayout === 'gescheiden')} onClick={() => patch({ geldLayout: 'gescheiden' })}>Gescheiden</button>
+                    </div>
                 </div>
             )}
         </>

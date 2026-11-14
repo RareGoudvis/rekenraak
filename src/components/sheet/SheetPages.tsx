@@ -35,30 +35,28 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
   const showSolutions = useWorksheetStore((state) => state.showSolutions);
   const activeSelectionId = useWorksheetStore((state) => state.activeBlockId);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
-  const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
-  const setBladSection = useWorksheetStore((state) => state.setBladSection);
+  const setInspectorSection = useWorksheetStore((state) => state.setInspectorSection);
   const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
 
   // Clicking the header or footer ON the sheet opens its settings: select the document,
-  // switch to Blad, and open the sub-tab for the part that was clicked.
+  // switch to Heel het blad, and open the section for the part that was clicked.
   const openBladCard = useCallback((card: 'koptekst' | 'voettekst') => {
     setActiveSelection('document');
-    setInspectorTab('blad');
-    setBladSection(card);
-  }, [setActiveSelection, setInspectorTab, setBladSection]);
+    setInspectorSection('blad', card);
+  }, [setActiveSelection, setInspectorSection]);
 
   // These callbacks read the live block list instead of closing over `blocks`, so they
   // stay stable and the memoised SheetBlock is not re-rendered by every block edit.
   // The oversize banner's "Verklein dit blok": turn the switch on AND take the teacher to
   // it, so the sheet's fix and the Inspector's switch are visibly the same setting.
-  // setActiveSelection resets the tab to 'oefening', so the tab is set after it.
+  // setActiveSelection only picks the scope, so the section is opened after it.
   const fitBlockToPage = useCallback((blockId: string) => {
     const block = useWorksheetStore.getState().blocks.find(b => b.id === blockId);
     if (!block) return;
     updateBlockSettings(blockId, { constraints: { ...block.constraints, fitToPage: true } });
     setActiveSelection(blockId);
-    setInspectorTab('weergave');
-  }, [updateBlockSettings, setActiveSelection, setInspectorTab]);
+    setInspectorSection('block', 'ruimte');
+  }, [updateBlockSettings, setActiveSelection, setInspectorSection]);
 
   // The horizontal twin of fitBlockToPage: a cell whose content is wider than its column
   // ("Verklein om te passen") gets the same fix as the width picker's own switch.
@@ -67,8 +65,8 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
     if (!block) return;
     updateBlockSettings(blockId, { constraints: { ...block.constraints, fitToWidth: true } });
     setActiveSelection(blockId);
-    setInspectorTab('weergave');
-  }, [updateBlockSettings, setActiveSelection, setInspectorTab]);
+    setInspectorSection('block', 'ruimte');
+  }, [updateBlockSettings, setActiveSelection, setInspectorSection]);
 
   // "Verbreed": one width tier up (1 -> 2 -> 4), offered only below the widest tier.
   const widenBlock = useCallback((blockId: string) => {

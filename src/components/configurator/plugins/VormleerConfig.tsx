@@ -49,7 +49,6 @@ export default function VormleerConfig({ block }: Props) {
     const rightAngleStyle: string = c.rightAngleStyle ?? 'vierkantje';
     const showBoog: boolean = c.showBoog ?? true;
     const raster: boolean = c.raster ?? true;
-    const perRow: number = c.exercisesPerRow ?? 3;
     const niveau: number = c.niveau ?? 1;
     const showHulplijn: boolean = c.showHulplijn ?? false;
     const allowHorizontaal: boolean = c.allowHorizontaal ?? false;
@@ -198,20 +197,30 @@ export default function VormleerConfig({ block }: Props) {
                     <button onClick={() => set('raster', !raster)} aria-pressed={!!raster} style={styles.onOffBtn(raster)}>{raster ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
+        </div>
+    );
+}
 
-            {/* Punt/lijn/rechte has no per-rij control: a scenario's width is set by its
-                sentence, so the grid follows the block width instead of a fixed count. */}
-            {!isTekenen && !isMeten && mode !== 'eigenschappen' && kind !== 'punt-lijn' && (
-                <div style={styles.section}>
-                    <SettingLabel text="Figuren per rij:" info="Hoeveel tekeningen naast elkaar staan." />
-                    <PopupSelect
-                        value={perRow}
-                        options={[2, 3, 4].map(v => ({ value: v, label: String(v) }))}
-                        onChange={(v) => set('exercisesPerRow', v)}
-                        ariaLabel="Per rij"
-                    />
-                </div>
-            )}
+// ── Differentiatie: how many drawings stand side by side.
+// Mounted by Inspector through EXERCISE_UI[typeId].StyleConfig.
+export function VormleerStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<VormleerConstraints>(block);
+    const kind: string = c.kind ?? 'punt-lijn';
+    const mode: string = c.mode ?? 'herkennen';
+    const perRow: number = c.exercisesPerRow ?? 3;
+    const isMeten = kind === 'hoek' && mode === 'meten';
+    // Punt/lijn/rechte has no per-rij control: a scenario's width is set by its
+    // sentence, so the grid follows the block width instead of a fixed count.
+    if (mode === 'tekenen' || isMeten || mode === 'eigenschappen' || kind === 'punt-lijn') return null;
+    return (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text="Figuren per rij:" info="Hoeveel tekeningen naast elkaar staan." />
+            <PopupSelect
+                value={perRow}
+                options={[2, 3, 4].map(v => ({ value: v, label: String(v) }))}
+                onChange={(v) => patch({ exercisesPerRow: v })}
+                ariaLabel="Per rij"
+            />
         </div>
     );
 }
