@@ -30,6 +30,8 @@ function Bee() {
 
 function Sign({ target, cleared }: { target: BoardTarget; cleared: boolean }) {
     if (cleared) return <p className="hx-sign" aria-live="polite">Alle honing is binnen!</p>;
+    // A pack's comb (the breuken): its own words before the target.
+    if (target.kind === 'pack') return <p className="hx-sign" aria-live="polite">{target.lead} <span className="hx-sign-n kiosk-math">{target.n}</span></p>;
     const n = <span className="hx-sign-n kiosk-math">{formatMathNumber(target.n)}</span>;
     return <p className="hx-sign" aria-live="polite">{target.kind === 'eq' ? <>Zoek alle sommen die {n} zijn</> : <>Zoek alle sommen groter dan {n}</>}</p>;
 }
@@ -79,8 +81,10 @@ function Comb({ board, phase, onBoardPick, reducedMotion }: Pick<SkinProps, 'pha
                     {board.cells.map((c, i) => {
                         const { x, y } = layout.cells[i];
                         const sum = faceText(sumFace(c.question));
+                        // A breuk that does not simplify (4/9) has no other answer to show.
+                        const own = faceText(answerFace(c.question));
                         const state = c.state === 'solved' ? ' is-honey' : c.state === 'missed' ? ' is-missed' : '';
-                        const label = c.state === 'solved' ? `${sum}, honing` : c.state === 'missed' ? `${sum} is ${faceText(answerFace(c.question))}` : sum;
+                        const label = c.state === 'solved' ? `${sum}, honing` : c.state === 'missed' && own !== sum ? `${sum} is ${own}` : sum;
                         return (
                             <button key={`${board.key}-${i}`} type="button" className={`hx-cell${state}${bzz === i ? ' is-bzz' : ''}`}
                                 style={{ '--x': x, '--y': y, '--i': i } as CSSProperties} disabled={phase !== 'play' || c.state !== 'open'}
@@ -95,7 +99,7 @@ function Comb({ board, phase, onBoardPick, reducedMotion }: Pick<SkinProps, 'pha
                                     <polygon className="hx-rim" points={HEX} />
                                 </svg>
                                 <span className="hx-sum kiosk-math" aria-hidden>{sum}</span>
-                                {c.state === 'missed' && <span className="hx-own kiosk-math" aria-hidden>= {faceText(answerFace(c.question))}</span>}
+                                {c.state === 'missed' && own !== sum && <span className="hx-own kiosk-math" aria-hidden>= {own}</span>}
                             </button>
                         );
                     })}

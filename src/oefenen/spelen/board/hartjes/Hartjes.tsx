@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import type { SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
 import { answerFace, sumFace, type BoardFace, type SpelBoard } from '../board';
+import { SpelVisual } from '../../SpelVisual';
 import './hartjes.css';
 
 // Hartjes koppelen (Valentijn): memory. Each sum and its answer lie face down on two hearts; tap two to
@@ -30,10 +31,10 @@ function shuffled(n: number, key: string): number[] {
 
 const faceText = (face: BoardFace) => (face.kind === 'text' ? face.text : face.label);
 
-// Text today; a picture face (breuk, klok) draws from its own table once the packs come, its label meanwhile.
+// A sum or answer as text, or a pack's picture (a breuk as a pizza) through the shared <SpelVisual>.
 function Face({ face }: { face: BoardFace }) {
-    const text = faceText(face);
-    return <span className="hj-text kiosk-math">{text}</span>;
+    if (face.kind === 'picture') return <span className={`hj-pic is-${face.visual.kind}`}><SpelVisual visual={face.visual} /></span>;
+    return <span className="hj-text kiosk-math">{face.text}</span>;
 }
 
 function Sparkle() {
@@ -121,12 +122,14 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
 
     const found = board.cells.filter(c => c.state === 'solved').length;
     const cleared = found === board.cells.length;
-    // One size for every sum on the board: the longest decides.
-    const long = board.cells.some(c => faceText(sumFace(c.question)).length > 7);
+    // One size for every sum on the board: the longest decides (a picture has no length).
+    const long = board.cells.some(c => { const f = sumFace(c.question); return f.kind === 'text' && f.text.length > 7; });
+    // A pack's pairs (a pizza and its breuk, a breuk and its vereenvoudigde breuk) are no sum and answer.
+    const pairs = board.cells.some(c => c.question.pair);
     return (
         <>
             <div className="hj-top">
-                <p className="hj-sign" aria-live="polite">{cleared ? 'Alle hartjes gevonden!' : 'Zoek de som en haar antwoord'}</p>
+                <p className="hj-sign" aria-live="polite">{cleared ? 'Alle hartjes gevonden!' : pairs ? 'Zoek wat bij elkaar hoort' : 'Zoek de som en haar antwoord'}</p>
                 <span className="hj-count" role="img" aria-label={`${found} van ${board.cells.length} paren`}>
                     {board.cells.map((c, i) => (
                         <svg key={i} className={`hj-dot${c.state === 'solved' ? ' is-on' : ''}`} viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>
@@ -147,7 +150,7 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
 
 export default function Hartjes({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion }: SkinProps) {
     return (
-        <div className={`hj-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`hj-root${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
             <svg className="hj-deco" viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>
             {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} reducedMotion={reducedMotion} />}
         </div>

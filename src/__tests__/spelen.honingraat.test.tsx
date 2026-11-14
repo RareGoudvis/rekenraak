@@ -8,7 +8,7 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { SPEL_BOARD_PAUSE_MS, useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { skinAccepts, skinsFor, NUMBER_CONTENT } from '../oefenen/spelen/accepts';
-import { meetsTarget } from '../oefenen/spelen/board/board';
+import { meetsTarget, type NumberTarget } from '../oefenen/spelen/board/board';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
 import { combLayout, combRows } from '../oefenen/spelen/board/honingraat/comb';
 import { mulberry32 } from '../oefenen/spelen/distractors';
@@ -50,7 +50,8 @@ describe('honeycomb generation', () => {
                     const s = { ...buildZelfSessie(c, { kind: 'count', n: 10 }, 0, g), total: undefined };
                     for (let seed = 0; seed < 3; seed++) {
                         const comb = nextBoardOf(s, TARGET, null, [], undefined, mulberry32(seed))!;
-                        const t = comb.target!;
+                        // Number cards get the number comb (a pack's comb has its own suite).
+                        const t = comb.target as NumberTarget;
                         expect(comb.cells, c.label).toHaveLength(TARGET.size);
                         const hits = comb.cells.filter(x => x.match);
                         expect(hits.length).toBeGreaterThanOrEqual(3);
@@ -81,8 +82,8 @@ describe('honeycomb generation', () => {
         expect(at[4].x).toBe(0.5);
     });
 
-    test('Honingraat sits in the registry, in Lente, and takes whole numbers only', () => {
-        expect(HONING()).toMatchObject({ input: 'board', timed: false, season: 'lente', accepts: { kinds: ['number'] } });
+    test('Honingraat sits in the registry, in Lente, and takes whole + − numbers and the breuken comb', () => {
+        expect(HONING()).toMatchObject({ input: 'board', timed: false, season: 'lente', accepts: { kinds: ['number', 'choice'], ops: ['+', '-'], pictures: true, board: 'target' } });
         expect(skinsFor(SKINS, NUMBER_CONTENT).map(s => s.meta.id)).toContain('honingraat');
     });
 });

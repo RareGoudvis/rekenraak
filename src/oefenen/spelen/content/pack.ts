@@ -2,6 +2,8 @@ import type { KioskAnswer, OefenType } from '../../../services/oefenen/types';
 import type { OefenExercise } from '../../../services/oefenen/scheduler';
 import type { CardVariant } from '../../../config/eenvoudig/cards';
 import type { BreukKind } from './breuken/breukGeometry';
+import type { SpelQuestion } from '../spelQuestion';
+import type { PackTarget } from '../board/board';
 
 // Content packs: non-number game content (the klok, the breuken). A pack turns a made kiosk exercise
 // into a 'choice' question with pictures; the session, Nakijken and the kiosk check stay the kiosk's own.
@@ -68,4 +70,7 @@ export interface SpelPack {
     partial?: boolean;
     // The board rounds a variant fills; absent = none (a board skin never gets it).
     boardsOf?(v: CardVariant): readonly SpelPackBoard[];
+    // Its own target board (Honingraat), built around one drawn question of the card (its slot and settings):
+    // the cells as questions of that card, the ones to find marked. Absent = the number boards.
+    targetBoard?(type: OefenType, sample: SpelQuestion, size: number, index: number, rng: () => number): { cells: { question: SpelQuestion; match: boolean }[]; target: PackTarget } | null;
 }

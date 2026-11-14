@@ -3,6 +3,7 @@ import type { OefenHistoryEntry, OefenSessie } from '../../../services/oefenen/t
 import { formatMathNumber } from '../../../services/math/formatters';
 import { spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import type { Rng } from '../distractors';
+import type { SpelChoiceView, SpelVisual } from '../content/pack';
 
 // Board rounds (Hartjes koppelen, Honingraat): several sums on screen at once. The session draws a board
 // up front from the card's own generator, the pupil picks, the session checks each pick per sum, so a
@@ -24,11 +25,13 @@ export interface BoardRound {
 
 // What the pupil is looking for on a target board: answer = n, or answer > n (the fallback when a card's
 // answers rarely repeat, as in tot 100 and tot 1000).
-export interface BoardTarget { kind: 'eq' | 'gt'; n: number }
+export interface NumberTarget { kind: 'eq' | 'gt'; n: number }
+// A pack's own comb (the breuken: "gelijk aan 1/2"): the sign reads lead + n, a wrong cell claims `claim`.
+export interface PackTarget { kind: 'pack'; lead: string; n: string; claim: string }
+export type BoardTarget = NumberTarget | PackTarget;
 
-// What a card or cell shows: plain text today; a picture id (breuk "3/8", klok "08:15") for later packs,
-// with its label as the readable fallback.
-export type BoardFace = { kind: 'text'; text: string } | { kind: 'picture'; picture: string; label: string };
+// What a card or cell shows: text, or a pack's picture (a breuk as a pizza) with its label as the readable name.
+export type BoardFace = { kind: 'text'; text: string } | { kind: 'picture'; visual: SpelVisual; label: string };
 
 export type CellState = 'open' | 'solved' | 'missed';
 
@@ -98,14 +101,18 @@ export function pairsBoard(pool: readonly SpelQuestion[], size: number, rng: Rng
     const out: BoardCell[] = [];
     for (const q of shuffle(pool, rng)) {
         if (out.length >= size) break;
-        if (answers.has(q.answer)) continue;
-        answers.add(q.answer);
+        // A pack question plays memory only with its own two cards; its equal values count as one answer
+        // (a pizza of 2/4 and the breuk 1/2 are never both on a board).
+        if (q.kind === 'choice' && !q.pair) continue;
+        const same = q.same ?? q.answer;
+        if (answers.has(same)) continue;
+        answers.add(same);
         out.push(cellOf(q));
     }
     return out;
 }
 
-// Board rounds play number content only (a picture pack never reaches a board skin: accepts.pictures), so
+// The number boards (targetBoardEq / Gt) get number content only (a pack's comb is its own, session.ts), so
 // facts is there; the typed answer is the fallback.
 const answerOf = (q: SpelQuestion): number => q.facts?.answer ?? Number(q.answer);
 
@@ -116,7 +123,7 @@ function nearness(answer: number, target: number): number {
 }
 
 /** A target board: 3–5 sums with the target answer and the nearest other sums around them, shuffled; null when the pool has no such group. */
-export function targetBoardEq(pool: readonly SpelQuestion[], size: number, rng: Rng): { cells: BoardCell[]; target: BoardTarget } | null {
+export function targetBoardEq(pool: readonly SpelQuestion[], size: number, rng: Rng): { cells: BoardCell[]; target: NumberTarget } | null {
     const groups = new Map<number, SpelQuestion[]>();
     for (const q of pool) groups.set(answerOf(q), [...(groups.get(answerOf(q)) ?? []), q]);
     const rest = size - TARGET_MATCHES.min;
@@ -133,7 +140,7 @@ export function targetBoardEq(pool: readonly SpelQuestion[], size: number, rng: 
 }
 
 /** The fallback: "groter dan" a round number, 3–5 sums above it and the nearest ones below it (never on it). */
-export function targetBoardGt(pool: readonly SpelQuestion[], size: number, rng: Rng): { cells: BoardCell[]; target: BoardTarget } | null {
+export function targetBoardGt(pool: readonly SpelQuestion[], size: number, rng: Rng): { cells: BoardCell[]; target: NumberTarget } | null {
     const answers = pool.map(q => answerOf(q));
     const top = Math.max(0, ...answers);
     // Round numbers: tens, hundreds on a big card.
@@ -167,20 +174,30 @@ export function buildBoard(round: BoardRound, pool: readonly SpelQuestion[], ind
     return built ? { key, index, ...built, focus: null } : null;
 }
 
+/** A pack's own comb (content/pack.ts targetBoard): its cells shuffled, the ones to find marked. */
+export function packBoard(cells: readonly { question: SpelQuestion; match: boolean }[], target: PackTarget, index: number, rng: Rng): SpelBoard | null {
+    if (cells.filter(c => c.match).length < TARGET_MATCHES.min) return null;
+    return { key: `b${index}-${cells[0].question.key}`, index, cells: shuffle(cells, rng).map(c => cellOf(c.question, c.match)), target, focus: null };
+}
+
 /** Whether a picked cell is one to find on this target. */
-export const meetsTarget = (answer: number, t: BoardTarget): boolean => (t.kind === 'eq' ? answer === t.n : answer > t.n);
+export const meetsTarget = (answer: number, t: NumberTarget): boolean => (t.kind === 'eq' ? answer === t.n : answer > t.n);
 
 /** The board is cleared: every sum paired (pairs), every sum to find filled (target). */
 export const boardCleared = (b: SpelBoard): boolean => b.cells.every(c => c.state === 'solved' || (b.target !== null && !c.match));
 
 /** What the pupil claims by tapping a target cell, as the end screen's "Jouw antwoord". */
-export const targetClaim = (t: BoardTarget): string => (t.kind === 'eq' ? String(t.n) : `meer dan ${formatMathNumber(t.n)}`);
+export const targetClaim = (t: BoardTarget): string => (t.kind === 'pack' ? t.claim : t.kind === 'eq' ? String(t.n) : `meer dan ${formatMathNumber(t.n)}`);
 
 // "8 + 5 = ?" → "8 + 5": the sum alone on a card or cell.
 const sumText = (q: SpelQuestion) => q.text.replace(/\s*=\s*\?\s*$/, '').trim();
 
+// A pack's card (content/pack.ts pair): its picture, or its text.
+const viewFace = (v: SpelChoiceView): BoardFace => (v.visual ? { kind: 'picture', visual: v.visual, label: v.label } : { kind: 'text', text: v.text ?? v.label });
+
 /** The sum side of a cell. */
-export const sumFace = (q: SpelQuestion): BoardFace => ({ kind: 'text', text: sumText(q) });
+export const sumFace = (q: SpelQuestion): BoardFace => (q.pair ? viewFace(q.pair.sum) : { kind: 'text', text: sumText(q) });
 
 /** The answer side of a cell (memory's answer card). */
-export const answerFace = (q: SpelQuestion): BoardFace => ({ kind: 'text', text: /^\d+$/.test(q.answer) ? formatMathNumber(Number(q.answer)) : q.answer });
+export const answerFace = (q: SpelQuestion): BoardFace => (q.pair ? viewFace(q.pair.answer)
+    : { kind: 'text', text: /^\d+$/.test(q.answer) ? formatMathNumber(Number(q.answer)) : q.answer });

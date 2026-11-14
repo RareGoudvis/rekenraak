@@ -8,6 +8,7 @@ import type { SpelChoiceView, SpelPack, SpelPackBoard, SpelPackQuestion, SpelVis
 import { BREUK_MAX_D, BREUK_MIN_D, breukAriaLabel, type BreukKind } from './breukGeometry';
 import { breukDistractors, breukText, kindFor, sameValue, type Breuk } from './breukQuestions';
 import { BREUK_TIPS } from './breukHelp';
+import { breukComb } from './breukComb';
 
 // The breuken as game content (owner 2026-11-14). Every question is a made kiosk exercise of the card, shown as
 // choices; the kiosk still checks the pick and Nakijken replays the exercise.
@@ -285,5 +286,7 @@ export const BREUK_PACK: SpelPack = {
     partial: true,
     plays: v => breukSpelOfVariant(v).length > 0,
     boardsOf: v => breukBoardsOf(breukSpelOfVariant(v)),
+    // Honingraat: the equivalence comb, for Gelijkwaardige breuken only.
+    targetBoard: (type, sample, size, index, rng) => (breukSpelOf(type.leafId, sample.constraints).includes('vereenvoudig') ? breukComb(type, sample, size, index, rng) : null),
     question: (type, made, choiceCount) => breukPackQuestion(type.leafId, type.typeId, made.exercise, made.constraints, made.key, choiceCount),
 };

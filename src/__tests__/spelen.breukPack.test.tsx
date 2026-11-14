@@ -14,11 +14,15 @@ import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import GamePicker from '../oefenen/spelen/GamePicker';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { useOefenStore } from '../oefenen/useOefenStore';
+import { nextBoardOf, boardPickIn } from '../oefenen/spelen/board/session';
+import { answerFace, sumFace } from '../oefenen/spelen/board/board';
 import { breukSpelOf, breukSpelOfVariant, gelijknamigDistractors, simplifyDistractors, BREUK_LEAVES, PICTURE_OPTION_MAX_D, type BreukSpel } from '../oefenen/spelen/content/breuken/breukPack';
+import { combBreuken, COMB_TARGETS } from '../oefenen/spelen/content/breuken/breukComb';
 import { sameValue, type Breuk } from '../oefenen/spelen/content/breuken/breukQuestions';
 import { SpelVisual } from '../oefenen/spelen/SpelVisual';
 import { createSpelEvents } from '../oefenen/spelen/events';
 import type { SkinProps } from '../oefenen/spelen/skins/types';
+import Hartjes from '../oefenen/spelen/board/hartjes/Hartjes';
 import type { OefenSessie } from '../services/oefenen/types';
 import { resetKiosk } from './helpers/oefenKiosk';
 
@@ -103,15 +107,16 @@ describe('Spelen at leerjaar 4: only the breuken', () => {
         expect(sums.every(c => !choiceCanPlay(c, 4))).toBe(true);
     });
 
-    test('the picker: the picture games, no keypad game', () => {
+    test('the picker: picture games for herkennen, plus Hartjes; Gelijkwaardige breuken also Honingraat; no keypad game', () => {
         const ids = (c: ZelfChoice, g: number) => skinsFor(SKINS, spelContentOf(c, g)!).map(s => s.meta.id);
-        expect(ids(byLabel(3, 'Breuk in een figuur'), 3)).toEqual(['ballonnen', 'pakjesband', 'mollen']);
-        expect(ids(byLabel(4, 'Breuken vergelijken'), 4)).toEqual(['ballonnen', 'pakjesband', 'mollen']);
+        expect(ids(byLabel(3, 'Breuk in een figuur'), 3)).toEqual(['ballonnen', 'hartjes', 'pakjesband', 'mollen']);
+        expect(ids(byLabel(4, 'Breuken vergelijken'), 4)).toEqual(['ballonnen', 'hartjes', 'honingraat', 'pakjesband', 'mollen']);
         expect(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4)).toEqual({ ...PICTURE_CONTENT, boards: ['pairs', 'target'] });
+        // The klok fills no board: Hartjes and Honingraat stay out.
         expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'pakjesband', 'mollen']);
         render(<GamePicker onPick={vi.fn()} content={spelContentOf(byLabel(4, 'Breuken vergelijken'), 4)!} today={new Date(2026, 6, 1)} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Pakjesband', 'Mollen meppen, op tijd']);
+        expect(shown).toEqual(['Ballonnen', 'Hartjes koppelen', 'Honingraat', 'Pakjesband', 'Mollen meppen, op tijd']);
     });
 
     test('a board round plays only the cards that fill it', () => {
@@ -209,6 +214,85 @@ describe('the question types', () => {
             expect(ex.display.map(f => `${f.n}/${f.d}`)).toEqual(q.text.split(' ? '));
         }
         expect(signs).toEqual(new Set(['<', '=', '>']));
+    });
+});
+
+describe('Hartjes koppelen with breuken', () => {
+    test('herkennen pairs a picture with its breuk; vereenvoudigen a breuk with its lowest form; never two equal values on a board', () => {
+        const round = skinById('hartjes')!.meta.round.board!;
+        for (const [g, label] of [[2, 'Welk deel is gekleurd?'], [3, 'Breuk in een figuur'], [4, 'Breuken vergelijken'], [4, 'Alles door elkaar']] as const) {
+            const s = { ...buildZelfSessie(spelChoiceOf(byLabel(g, label), g, 'pairs'), { kind: 'count', n: 10 }, 0, g), total: undefined };
+            for (let seed = 0; seed < 4; seed++) {
+                const b = nextBoardOf(s, round, null, [], undefined, mulberry32(seed))!;
+                expect(b.cells.length, label).toBeGreaterThanOrEqual(g === 2 ? 5 : 6);
+                const values = b.cells.map(c => c.question.same!);
+                expect(new Set(values).size).toBe(values.length);
+                for (const c of b.cells) {
+                    const sum = sumFace(c.question), ans = answerFace(c.question);
+                    expect(ans).toEqual({ kind: 'text', text: c.question.answer });
+                    if (c.question.text.includes('gekleurd')) expect(sum.kind).toBe('picture');
+                    else expect(sum).toMatchObject({ kind: 'text' });
+                    expect(c.question.answer.length).toBeLessThanOrEqual(5);
+                }
+                // The session checks a pick in the kiosk's form: its own breuk is right, another one is a strike.
+                const out = boardPickIn(s, b, round, 0, b.cells[0].question.answer, true, 0)!;
+                expect(out.correct).toBe(true);
+                const wrong = boardPickIn(s, b, round, 1, b.cells[0].question.answer, true, 0)!;
+                expect(wrong.correct).toBe(false);
+            }
+        }
+    });
+
+    test('the hearts draw the picture card through SpelVisual', () => {
+        vi.spyOn(console, 'error').mockImplementation(() => { });
+        const round = skinById('hartjes')!.meta.round.board!;
+        const s = { ...buildZelfSessie(spelChoiceOf(byLabel(3, 'Breuk in een figuur'), 3, 'pairs'), { kind: 'count', n: 10 }, 0, 3), total: undefined };
+        const board = nextBoardOf(s, round, null, [], undefined, mulberry32(3))!;
+        const props = {
+            board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound: vi.fn(), reducedMotion: true,
+        } as unknown as SkinProps;
+        const { container } = render(<Suspense fallback={null}><Hartjes {...props} /></Suspense>);
+        expect(container.querySelectorAll('.hj-pic .breuk-pic')).toHaveLength(board.cells.length);
+        expect(screen.getByText('Zoek wat bij elkaar hoort')).toBeTruthy();
+    });
+});
+
+describe('Honingraat with breuken', () => {
+    test('the comb: 3–5 breuken equal to the target (never the target itself), near misses never equal', () => {
+        for (const target of COMB_TARGETS) for (let seed = 0; seed < 40; seed++) {
+            const cells = combBreuken(target, 13, mulberry32(seed));
+            expect(cells).toHaveLength(13);
+            const hits = cells.filter(c => c.match);
+            expect(hits.length).toBeGreaterThanOrEqual(3);
+            expect(hits.length).toBeLessThanOrEqual(5);
+            for (const c of cells) {
+                expect(c.match).toBe(sameValue(c.breuk, target));
+                expect(c.breuk.d).not.toBe(c.match ? target.d : -1);
+                expect(c.breuk.d).toBeLessThanOrEqual(12);
+            }
+            expect(new Set(cells.map(c => `${c.breuk.n}/${c.breuk.d}`)).size).toBe(13);
+        }
+    });
+
+    test('three combs (1/2, 1/3, 2/3) of the card\'s own vereenvoudigen questions; a wrong cell is a mistake Nakijken asks again', () => {
+        resetKiosk();
+        useOefenStore.setState({ fixed: null });
+        const sp = () => useSpelStore.getState();
+        sp().otherGame();
+        sp().start({ choice: byLabel(4, 'Breuken vergelijken'), grade: 4, topicId: 'Breuken', meta: skinById('honingraat')!.meta, now: 1_000_000 });
+        const b = sp().board!;
+        expect(b.target).toEqual({ kind: 'pack', lead: 'Zoek alle breuken die gelijk zijn aan', n: '1/2', claim: 'gelijk aan 1/2' });
+        expect(b.cells).toHaveLength(13);
+        expect(new Set(b.cells.map(c => sp().sessie!.types[c.question.slot].leafId))).toEqual(new Set(['breuken-vereenvoudigen']));
+        const miss = b.cells.findIndex(c => !c.match);
+        sp().boardPick(miss, '');
+        expect(sp().mistakes).toHaveLength(1);
+        expect(sp().mistakes[0].given).toBe('gelijk aan 1/2');
+        const q = sp().mistakes[0].question;
+        const d = kioskFor('breuken-bewerken')!;
+        expect(checkAnswer(d, q.exercise, q.constraints, q.answer)).toBe(true);
+        const next = nextBoardOf(sp().sessie!, skinById('honingraat')!.meta.round.board!, b, sp().history, undefined, mulberry32(2))!;
+        expect(next.target).toMatchObject({ n: '1/3' });
     });
 });
 
