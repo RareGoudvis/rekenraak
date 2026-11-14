@@ -77,7 +77,7 @@ describe('ReleaseNotesModal', () => {
         render(<HelpModal onClose={onClose} onShowReleaseNotes={() => { }} />);
         const dialog = screen.getByRole('dialog');
         expect(dialog.contains(document.activeElement)).toBe(true);
-        const buttons = [...dialog.querySelectorAll('button')];
+        const buttons = [...dialog.querySelectorAll<HTMLElement>('a[href], button')];
         buttons[buttons.length - 1].focus();
         fireEvent.keyDown(dialog, { key: 'Tab' });
         expect(document.activeElement).toBe(buttons[0]);
