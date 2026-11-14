@@ -100,6 +100,9 @@ export interface DocSettings {
     // Optional → back-compat: absent = true (old/shared sheets keep the safer default).
     uniqueExercises?: boolean;
     numberBlocks: boolean;
+    // Sheet-wide worked steps in the answer key; a block's own constraints.solutionSteps wins
+    // (services/stepsAvailability effectiveSolutionSteps). Optional → back-compat: absent = 'uit'.
+    solutionStepsAll?: 'uit' | 'basis' | 'alle';
     // Opdracht-titel fill by sidebar domain (config/domainOf.ts); a titelCustom.background wins.
     // Optional → back-compat: absent = off.
     domainColors?: boolean;

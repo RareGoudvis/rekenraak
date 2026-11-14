@@ -17,6 +17,7 @@ import KioskAnswerSlot from './KioskAnswerSlot';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { stepsAtLevel, stepLineText, type StepLine } from '../../services/math/workedSteps';
 import { StepTokens } from './StepTokens';
+import { effectiveSolutionSteps } from '../../services/stepsAvailability';
 
 // A working row with a stacked breuk: two 0.8em digit lines plus the bar need about 1.4 rows of room.
 const FRAC_ROW_H = `calc(${ANSWER_ROW_H} * 1.4)`;
@@ -139,6 +140,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // The math token in px, so the column widths follow the Lettergrootte slider.
     const sheetPx = useSheetSizePx('math');
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
+    const solutionStepsAll = useWorksheetStore((state) => state.docSettings.solutionStepsAll);
 
     if (!block.exercises || block.exercises.length === 0) {
         return <div className="no-print" style={styles.emptyStateText}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -149,7 +151,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const c = block.constraints as MulDivConstraints;
     const isPunt = c.equationType === 'puntoefening';
     // Answer key with worked steps: only with solutions on, and only for sums that have a strategy.
-    const stepLevel = showSolutions ? (c.solutionSteps ?? 'uit') : 'uit';
+    const stepLevel = showSolutions ? effectiveSolutionSteps(block, { solutionStepsAll }) : 'uit';
     const stepsFn = REGISTRY[block.typeId]?.steps;
     const stepsOf = (ex: Equation): StepLine[] | null => {
         if (stepLevel === 'uit' || !stepsFn) return null;
