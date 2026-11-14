@@ -90,6 +90,11 @@ export default function SpelScreen() {
     const reducedMotion = useReducedMotion();
     const now = useGameClock(!!st.meta?.timed && st.phase !== 'end');
     const entry = st.meta ? skinById(st.meta.id) : null;
+    // A game with its own session and screen (Touwtrekken); the round above only holds its choice.
+    if (entry?.Screen && st.meta && st.from) {
+        const Screen = entry.Screen;
+        return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
+    }
     if (st.phase === 'end') return <div className="oefen-app"><SpelEnd /></div>;
     if (!st.meta || !entry?.Component) return null;
     const Skin = entry.Component;

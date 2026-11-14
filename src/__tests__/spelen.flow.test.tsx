@@ -35,8 +35,8 @@ async function toGames(grade: string, section: string, name: string, choice: Reg
 
 describe('Spelen flow', () => {
     test('the registry: the tiles, Zombies timed', () => {
-        expect(SKINS.map(s => s.meta.label)).toEqual(['Pinguïntoren', 'Ballonnen', 'Zombies', 'Race']);
-        expect(SKINS.every(s => s.Component)).toBe(true);
+        expect(SKINS.map(s => s.meta.label)).toEqual(['Pinguïntoren', 'Ballonnen', 'Zombies', 'Race', 'Touwtrekken']);
+        expect(SKINS.every(s => s.Component || s.Screen)).toBe(true);
         expect(SKINS.find(s => s.meta.id === 'zombies')!.meta.timed).toBe(true);
         expect(SKINS.find(s => s.meta.id === 'pinguintoren')!.meta).toMatchObject({ input: 'keypad', timed: false, round: { questions: 30, goal: 20 } });
         expect(SKINS.find(s => s.meta.id === 'ballonnen')!.meta).toMatchObject({ input: 'choice', round: { questions: 20 } });

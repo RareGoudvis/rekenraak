@@ -33,8 +33,9 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe('Spelen skins', () => {
     test('every registry entry renders its skin (lazy) with the sum and its input', async () => {
-        expect(SKINS.every(s => s.Component)).toBe(true);
-        for (const { meta, Component } of SKINS) {
+        expect(SKINS.every(s => s.Component || s.Screen)).toBe(true);
+        // A Screen game (Touwtrekken) has its own suite.
+        for (const { meta, Component } of SKINS.filter(s => s.Component)) {
             const Skin = Component!;
             const p = propsWith({
                 choices: meta.input === 'choice' ? ['12', '11', '13', '22'] : null,

@@ -1,9 +1,9 @@
 import { lazy } from 'react';
-import { Balloon, Bird, CarProfile, Ghost, type Icon } from '@phosphor-icons/react';
+import { Balloon, Bird, CarProfile, FlagPennant, Ghost, type Icon } from '@phosphor-icons/react';
 import type { SkinEntry } from './types';
 
 // The game picker's tiles, in order. A new skin = one entry here + its component file; the
-// session, the shell and the picker never change. No Component = shown as "binnenkort".
+// session, the shell and the picker never change. No Component (or Screen) = shown as "binnenkort".
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends.
@@ -27,6 +27,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'race', label: 'Race', input: 'keypad', timed: false, round: { cap: 60 } },
         icon: CarProfile,
         Component: lazy(() => import('./race/Race')),
+    },
+    {
+        // Two pupils on one screen: its own session and screen (two question streams, no Nakijken).
+        meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {} },
+        icon: FlagPennant,
+        Screen: lazy(() => import('./touwtrekken/Touwtrekken')),
     },
 ];
 

@@ -1,0 +1,226 @@
+/* Touwtrekken: two halves for two pupils, the rope across the top. Flat fills under a thick dark outline
+   (spelen.css tokens); the rope moves by a transform transition. touch-action none: two hands on the
+   board at once must never pinch-zoom or scroll the page. */
+.tt-app {
+  --tt-left: var(--spel-fill-1);
+  --tt-right: var(--spel-fill-5);
+  --tt-fur: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Pre-start ────────────────────────────────────────────────────────────── */
+.tt-setup { touch-action: manipulation; }
+.tt-mode-sub { font-size: var(--kiosk-text); font-weight: 500; color: var(--text-muted); }
+.tt-setup-note { margin: 0; color: var(--text-muted); }
+
+/* ── Stage: the rope on top, two halves below ─────────────────────────────── */
+.tt-stage {
+  display: grid;
+  grid-template-rows: minmax(120px, 34%) minmax(0, 1fr);
+  background: var(--spel-sky);
+}
+.tt-world { position: relative; min-height: 0; }
+.tt-mode-name { font-size: var(--kiosk-text-lg); font-weight: 700; white-space: nowrap; }
+.tt-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tt-grass { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 3px; }
+.tt-mid { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-dasharray: 6 6; opacity: .6; }
+.tt-mark-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.tt-mark-flag { stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.tt-mark.is-left .tt-mark-flag { fill: var(--tt-left); }
+.tt-mark.is-right .tt-mark-flag { fill: var(--tt-right); }
+
+.tt-pull { transition: transform 450ms var(--ease-spring); }
+.tt-rope { fill: none; stroke: var(--spel-ink); stroke-width: 10px; stroke-linecap: round; }
+.tt-rope-twist { fill: none; stroke: var(--spel-star); stroke-width: 5px; stroke-dasharray: 10 8; stroke-linecap: round; }
+.tt-flag { fill: var(--spel-fill-0); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+
+.tt-bear.is-left { --tt-team: var(--tt-left); }
+.tt-bear.is-right { --tt-team: var(--tt-right); }
+.tt-leg { fill: var(--tt-fur); stroke: var(--spel-ink); stroke-width: 3px; }
+.tt-shoe { fill: var(--spel-ink); }
+.tt-shirt { fill: var(--tt-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tt-fur { fill: var(--tt-fur); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tt-muzzle { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tt-dot { fill: var(--spel-ink); }
+.tt-smile { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linecap: round; }
+.tt-arm { fill: none; stroke: var(--spel-ink); stroke-width: 12px; stroke-linecap: round; }
+.tt-hand { fill: var(--tt-fur); stroke: var(--spel-ink); stroke-width: 3px; }
+.tt-bear-art { stroke-linejoin: round; }
+
+/* A pull: the bear leans back and heaves; the winner jumps. Feet stay as the pivot. */
+.tt-bear-move { transform-origin: 0 0; }
+.tt-bear-move.is-heave { animation: tt-heave 500ms var(--ease-out); }
+@keyframes tt-heave {
+  0% { transform: rotate(0); }
+  40% { transform: rotate(-14deg) translateX(-6px); }
+  100% { transform: rotate(-4deg); }
+}
+.tt-bear-move.is-cheer { animation: tt-cheer 700ms ease-in-out infinite alternate; }
+@keyframes tt-cheer { from { transform: translateY(0); } to { transform: translateY(-26px) rotate(-6deg); } }
+
+/* ── The halves ───────────────────────────────────────────────────────────── */
+.tt-halves {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2) var(--sp-2);
+  background: var(--spel-grass);
+  border-top: 3px solid var(--spel-ink);
+}
+.tt-half {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  margin-top: var(--sp-2);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--tt-team) 18%, var(--bg-surface));
+}
+.tt-half.is-got { background: color-mix(in srgb, var(--tt-team) 34%, var(--bg-surface)); }
+.tt-team {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 800;
+}
+.tt-team-name {
+  padding: 0 var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--tt-team);
+  color: var(--spel-ink);
+}
+.tt-team-score { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-sheet-math); }
+.tt-team-score svg { color: var(--spel-star); }
+.tt-sign {
+  margin: 0;
+  padding: var(--sp-1) var(--sp-4);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  max-width: 100%;
+  font-size: clamp(20px, 5vmin, 56px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.tt-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+.tt-note { margin: 0; min-height: 1.4em; font-size: var(--kiosk-text-lg); font-weight: 700; white-space: pre; }
+
+/* One player's keypad: the field beside a 3 × 4 grid, keys at least --spel-tap. */
+.tt-keypad {
+  min-height: 0;
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--sp-2);
+  touch-action: none;
+}
+.tt-field {
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--kiosk-field-h);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 700;
+}
+.tt-keys {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--spel-tap), 1fr));
+  grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr));
+  gap: var(--sp-1);
+}
+.tt-key {
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font: inherit;
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: none;
+}
+.tt-key:active { transform: translateY(2px); }
+.tt-key.is-ok { background: var(--tt-team); color: var(--spel-ink); }
+.tt-key:disabled { opacity: .45; cursor: default; }
+.tt-key svg { width: 1.1em; height: 1.1em; }
+.tt-keypad.is-off .tt-key { opacity: .45; }
+
+/* ── End ──────────────────────────────────────────────────────────────────── */
+.tt-end {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-4);
+  z-index: 4;
+  width: min(calc(100% - 2 * var(--sp-3)), 640px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-3);
+  transform: translateX(-50%);
+  touch-action: manipulation;
+}
+.tt-end .oefen-title { margin: 0; }
+.tt-end-scores { margin: 0; display: flex; gap: var(--sp-4); }
+.tt-end-scores > div {
+  min-width: 120px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.tt-end-scores .is-left { background: color-mix(in srgb, var(--tt-left) 25%, var(--bg-surface)); }
+.tt-end-scores .is-right { background: color-mix(in srgb, var(--tt-right) 25%, var(--bg-surface)); }
+.tt-end-scores dt { font-weight: 800; }
+.tt-end-scores dd { margin: 0; display: flex; align-items: center; justify-content: center; gap: var(--sp-1); font-family: var(--font-sheet-math); font-size: var(--kiosk-text-xl); font-weight: 700; }
+.tt-end-scores dd svg { color: var(--spel-star); }
+.tt-app.is-ended .tt-halves { opacity: .35; }
+
+/* Upright screens: the field above the keys. */
+@media (orientation: portrait), (max-width: 760px) {
+  .tt-keypad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .tt-sign { padding: var(--sp-1) var(--sp-2); }
+  .tt-team { gap: var(--sp-1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-pull { transition: none; }
+  .tt-bear-move.is-heave,
+  .tt-bear-move.is-cheer { animation: none; }
+}
