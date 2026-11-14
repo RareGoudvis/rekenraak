@@ -1,12 +1,14 @@
 /* MAB level A above the hoofdrekenen steps (kiosk steps panel and stappenhulp). Ink follows the card it sits in. */
 .sv-mab { margin: 0 0 var(--sp-3); display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); }
-/* --mab-w = the drawing's width in viewBox units (MabSteps): a few pieces never blow up to the full panel width. */
-.sv-mab-svg { display: block; width: 100%; height: auto; overflow: visible; max-width: calc(var(--mab-w, 240px) * 1.6); }
+/* --mab-w = the drawing's width in viewBox units (MabSteps): a few pieces never blow up to the full panel width; 2.6× so 3 + 4 is big enough to count (owner 2026-11-14). */
+.sv-mab-svg { display: block; width: 100%; height: auto; overflow: visible; max-width: calc(var(--mab-w, 240px) * 2.6); max-height: 50vh; }
 /* Gekleurd MAB: each place its own fill (theme --mab-*), a dark outline so yellow still reads on white. */
 .sv-mab-p { --mab-fill: var(--mab-e); }
 .sv-mab-p.is-p1 { --mab-fill: var(--mab-t); }
 .sv-mab-p.is-p2 { --mab-fill: var(--mab-h); }
 .sv-mab-p.is-p3 { --mab-fill: var(--mab-d); }
+/* The second term's cubes of a + sum (3 + 4: three yellow, four in the second colour). */
+.sv-mab-p.is-b { --mab-fill: var(--mab-e2); }
 .sv-mab-p rect, .sv-mab-p path { fill: var(--mab-fill); stroke: var(--text-main); stroke-width: 1.2; stroke-linejoin: round; }
 .sv-mab-cells line { stroke: var(--text-main); stroke-width: 0.5; opacity: 0.35; }
 /* What this line adds, and what inwisselen won: a heavy outline (the fill already says the place, so no accent fill). */

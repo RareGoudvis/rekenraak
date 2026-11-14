@@ -22,11 +22,13 @@ interface Props {
     // Spelen's "Hoe los ik dit op?": the pupil asked, so the lines show at once and the last button resumes the game.
     startOpen?: boolean;
     nextLabel?: string;
+    // The line when every step is shown; Spelen's help has no answer yet to look back at.
+    doneText?: string;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead; Alle stappen shows the whole solution at once, optional lines included. Volgende moves on either way. SYNC: tutor StepsView.
-export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening' }: Props) {
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening', doneText = 'Klaar! Kijk nog eens naar je antwoord.' }: Props) {
     const [open, setOpen] = useState(startOpen);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
@@ -71,7 +73,7 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
                         </ol>
                     )}
                     {done
-                        ? <p className="kiosk-steps-done">Klaar! Kijk nog eens naar je antwoord.</p>
+                        ? <p className="kiosk-steps-done">{doneText}</p>
                         : <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={() => setRevealed(r => r + 1)}>Toon de volgende stap</button>}
                     {/* The picture has no optional lines to switch on, so Alle stappen just jumps to the end. */}
                     {pictureOnly

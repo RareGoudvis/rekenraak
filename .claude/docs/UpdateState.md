@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — MAB steps picture (owner): E cubes in a kwadraatbeeld (pairs column by column, 2 × 5 per ten) and the second term's cubes of a + sum in a second colour (`--mab-e2`, `MabCluster.second`); small pictures drawn larger; the Spelen help ends on "Klaar! Nu weet je hoe het moet."
+
 **2026-11-14** — Small + and − sums without worked steps (3 + 4, 7 − 3) show the MAB picture by itself, stage by stage (an empty line list = picture only; visual `stages`), in Oefenmodus, Nakijken, the Spelen help and the stappenhulp, leerjaar 1–3, never on phones or the printed key.
 
 **2026-11-14** — Spelen prototype (owner brief "Oefenen & Spelen", scope + and − at leerjaar 1–3): Zelf oefenen asks Oefenen or Spelen; useSpelStore with events, met hulp, mistake log and a Nakijken review round; seeded distractors; skin registry with Ballonnen, Pinguïntoren and Zombies drawn in code SVG; beta only, no sound. Plan in PLAN-spelen.local.md.

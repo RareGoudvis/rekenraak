@@ -115,6 +115,8 @@
     --mab-t: #22C55E;
     --mab-h: #3B82F6;
     --mab-d: #EF4444;
+    /* The second term's E cubes in the steps picture (owner 2026-11-14): apart from all four place colours. */
+    --mab-e2: #A855F7;
 
     /* Worksheet ink, not chrome: everything that turns red under "Toon oplossingen".
        Print-safe on inkjet + laser; solutions are also bold (see viewer/solutionStyle.ts)

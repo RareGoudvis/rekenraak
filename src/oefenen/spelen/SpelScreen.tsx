@@ -70,7 +70,7 @@ function HelpPanel() {
                 </section>
                 <section className="spel-help-steps">
                     {lines ? (
-                        <StepsPanel lines={lines} handig={help.handig} onNext={() => closeHelp()} startOpen nextLabel="Verder spelen"
+                        <StepsPanel lines={lines} handig={help.handig} onNext={() => closeHelp()} startOpen nextLabel="Verder spelen" doneText="Klaar! Nu weet je hoe het moet."
                             visual={visual} onVisual={onVisual} />
                     ) : (
                         <div className="kiosk-steps">

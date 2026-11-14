@@ -22,9 +22,21 @@ const FIVE_GAP = 5;
 const specOf = (place: number, stable?: boolean): Spec => (stable && place < 2 ? { ...SPECS[place], per: 5, fives: false } : SPECS[place]);
 const xIn = (s: Spec, k: number) => k * (s.w + s.gap) + (s.fives && k >= 5 ? FIVE_GAP : 0);
 const COL_GAP = 10, PAD = 7, CLUSTER_GAP = 14, PLUS_W = 18, ROW_GAP = 12, MAX_ROW_W = 360, EMPTY_FRAME = 44;
+// E cubes in a kwadraatbeeld (owner 2026-11-14): pairs column by column, 1 3 5 7 9 over 2 4 6 8 10, one 2 × 5 block per ten.
+const TEN_GAP = 6;
+const cubeAt = (s: Spec, k: number) => {
+    const ten = Math.floor(k / 10), j = k % 10;
+    return { x: Math.floor(j / 2) * (s.w + s.gap), y: ten * (2 * (s.h + s.gap) - s.gap + TEN_GAP) + (j % 2) * (s.h + s.gap) };
+};
 
-const colSize = (s: Spec, count: number) => {
+const colSize = (s: Spec, count: number, place = -1) => {
     if (count <= 0) return { w: 0, h: 0 };
+    if (place === 0) {
+        // Widest at the first ten's last column; lowest piece = the bottom row of the last ten (one row while it holds one cube).
+        let bottom = 0;
+        for (let k = 0; k < count; k++) bottom = Math.max(bottom, cubeAt(s, k).y);
+        return { w: cubeAt(s, Math.min(count, 10) - 1).x + s.w, h: bottom + s.h };
+    }
     return { w: xIn(s, Math.min(count, s.per) - 1) + s.w, h: Math.ceil(count / s.per) * (s.h + s.gap) - s.gap };
 };
 
@@ -34,23 +46,26 @@ interface Placed { x: number; y: number; w: number; h: number }
 function layoutCluster(c: MabCluster, stableMax: number[]) {
     // Stable: each column as wide as it ever gets, so the pieces never shift sideways; the height follows today's pieces.
     const specs = [0, 1, 2, 3].map(p => specOf(p, c.stable));
-    const widths = c.pieces.map((p, i) => colSize(specs[i], c.stable ? stableMax[i] : p.length).w);
+    const widths = c.pieces.map((p, i) => colSize(specs[i], c.stable ? stableMax[i] : p.length, i).w);
     const pad = c.frame ? PAD : 0;
     let x = pad, h = 0;
     const at: Placed[][] = [[], [], [], []];
     for (const place of [3, 2, 1, 0]) {
         if (widths[place] === 0) continue;
         const s = specs[place];
-        at[place] = c.pieces[place].map((_, i) => ({ x: x + xIn(s, i % s.per), y: pad + Math.floor(i / s.per) * (s.h + s.gap), w: s.w, h: s.h }));
+        at[place] = c.pieces[place].map((_, i) => {
+            const k = place === 0 ? cubeAt(s, i) : { x: xIn(s, i % s.per), y: Math.floor(i / s.per) * (s.h + s.gap) };
+            return { x: x + k.x, y: pad + k.y, w: s.w, h: s.h };
+        });
         x += widths[place] + COL_GAP;
-        h = Math.max(h, colSize(s, c.pieces[place].length).h);
+        h = Math.max(h, colSize(s, c.pieces[place].length, place).h);
     }
     const w = x === pad ? EMPTY_FRAME : x - COL_GAP + pad;
     return { at, w, h: h === 0 ? EMPTY_FRAME : h + 2 * pad };
 }
 
-function Piece({ place, state, r }: { place: number; state: MabPieceState; r: Placed }) {
-    const cls = `sv-mab-p is-${state} is-p${place}`;
+function Piece({ place, state, r, second }: { place: number; state: MabPieceState; r: Placed; second?: boolean }) {
+    const cls = `sv-mab-p is-${state} is-p${place}${second ? ' is-b' : ''}`;
     const cells: ReactNode[] = [];
     if (place === 1) for (let j = 1; j < 10; j++) cells.push(<line key={j} x1={r.x} x2={r.x + r.w} y1={r.y + (j * r.h) / 10} y2={r.y + (j * r.h) / 10} />);
     if (place === 2) for (let j = 1; j < 10; j++) {
@@ -103,7 +118,7 @@ function Picture({ pic, stableMax }: { pic: MabPicture; stableMax: number[] }) {
                 <g key={key} transform={`translate(${cx} ${cy})`}>
                     {it.c.plus && <text x={-PLUS_W / 2 - CLUSTER_GAP / 2} y={it.h / 2 + 6} textAnchor="middle" className="sv-mab-plus">+</text>}
                     {it.c.frame && <rect x={0} y={0} width={it.w} height={it.h} rx={8} className={`sv-mab-frame is-${it.c.frame}`} />}
-                    {it.c.pieces.map((list, place) => list.map((state, i) => <Piece key={`${place}-${i}`} place={place} state={state} r={it.at[place][i]} />))}
+                    {it.c.pieces.map((list, place) => list.map((state, i) => <Piece key={`${place}-${i}`} place={place} state={state} r={it.at[place][i]} second={it.c.second?.[place]?.[i]} />))}
                     {(it.c.rings ?? []).map(({ place, from }) => {
                         const box = it.at[place].slice(from, from + 10);
                         if (!box.length) return null;

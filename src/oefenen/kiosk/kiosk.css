@@ -1157,7 +1157,7 @@ html:has(.oefen-body),
     box-shadow: var(--shadow-1);
   }
   .kiosk-card-col > .steps-visual > * { width: 100%; margin: 0; }
-  .kiosk-card-col .sv-mab-svg { max-height: 48vh; max-width: calc(var(--mab-w, 240px) * 2.4); }
+  .kiosk-card-col .sv-mab-svg { max-height: 48vh; max-width: calc(var(--mab-w, 240px) * 3.4); }
   .has-card-visual .kiosk-card-col { flex-direction: column; gap: var(--sp-3); }
   .has-card-visual .kiosk-card { flex: 0 1 auto; }
 }

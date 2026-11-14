@@ -28,6 +28,8 @@ export interface MabCluster {
     newRow?: boolean;
     // The +/− mat keeps its columns in place from stage to stage.
     stable?: boolean;
+    // Per place, per piece: true = it comes from the second term of a + sum (drawn in the second colour, owner 2026-11-14).
+    second?: boolean[][];
 }
 
 export interface MabPicture { clusters: MabCluster[]; captions: string[] }
@@ -72,7 +74,9 @@ function plusStage(have: number, now: number | null, wait: number[]): MabPicture
         }
     }
     const pieces = counts.map(([h, nw, w], p) => [...repeat('have', h), ...repeat('gain', gain[p]), ...repeat('now', nw), ...repeat('wait', w)]);
-    return { clusters: [{ pieces, stable: true, ...(rings.length && { rings }) }], captions };
+    // E pieces still being added (this line's part and the parts to come) are the second term's: the second colour.
+    const second = pieces.map((list, p) => list.map(s => p === 0 && (s === 'now' || s === 'wait')));
+    return { clusters: [{ pieces, second, stable: true, ...(rings.length && { rings }) }], captions };
 }
 
 function minusStage(have: number, take: number | null): MabPicture {
@@ -253,9 +257,14 @@ export function mabOnlyPlan(data: unknown): MabPlan | null {
     if (!okNum(answer)) return null;
     if (eq.operator === '+') {
         // The second term joins (heavy outline); a full ten is exchanged in a stage of its own.
-        const joined: MabPicture = { clusters: [{ pieces: [0, 1, 2, 3].map(p => [...repeat('have', digit(a, p)), ...repeat('now', digit(b, p))]), stable: true }], captions: [] };
+        const pieces = [0, 1, 2, 3].map(p => [...repeat('have', digit(a, p)), ...repeat('now', digit(b, p))]);
+        const second = pieces.map((list, p) => list.map((_, i) => p === 0 && i >= digit(a, 0)));
+        const joined: MabPicture = { clusters: [{ pieces, second, stable: true }], captions: [] };
         const exchange = plusStage(a, b, []);
-        return { initial: matPicture(a), stages: [joined, ...(exchange.captions.length ? [exchange] : []), matPicture(answer)] };
+        // No exchange (3 + 4): the answer keeps both colours, so the 3 and the 4 stay visible inside the 7.
+        const together: MabPicture = exchange.captions.length ? matPicture(answer)
+            : { clusters: [{ pieces: pieces.map(list => list.map(() => 'have' as MabPieceState)), second, stable: true }], captions: [] };
+        return { initial: matPicture(a), stages: [joined, ...(exchange.captions.length ? [exchange] : []), together] };
     }
     const take = minusStage(a, b);
     // Lenen first (the piece opened, nothing crossed out yet), then the pieces taken away.
