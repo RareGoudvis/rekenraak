@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Balloon, Bird, Bomb, CarProfile, FlagPennant, Ghost, Gift, Log, type Icon } from '@phosphor-icons/react';
+import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
@@ -81,6 +81,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: Gift,
         Component: lazy(() => import('./pakjesband/Pakjesband')),
+    },
+    {
+        // Pasen: nine eggs in the grass, the answer and eight distractors (choiceCount). Untimed. Number only:
+        // an exercise's own choices are too few for nine eggs.
+        meta: {
+            id: 'eieren', label: 'Eieren zoeken', input: 'choice', choiceCount: 9, timed: false, round: { questions: 15 }, season: 'pasen',
+            accepts: { kinds: ['number'], maxAnswerChars: 4 }, sounds: { correct: 'piep', wrong: 'plop' },
+        },
+        icon: Egg,
+        Component: lazy(() => import('./eieren/Eieren')),
     },
 ];
 
