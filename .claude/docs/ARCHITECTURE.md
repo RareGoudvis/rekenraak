@@ -1374,6 +1374,7 @@ src/
 ├── main.tsx                     # React entry (index.html and bord.html both load it)
 ├── bootEntry.ts                 # isBordPage() (<html data-boot="bord">), initialView(), leaveBordPage() → '/' (§14)
 ├── oefenen/zelf/{ZelfPicker.tsx,zelfSessie.ts}   # Zelf oefenen: the pupil picker behind kind.html / bare oefenen.html (§15)
+├── oefenen/spelen/                # Spelen (beta prototype, §15): useSpelStore (round, events, met hulp, mistake log), distractors, spelQuestion, review (Nakijken = openReview fixed list), GamePicker, SpelScreen, SpelEnd, SpelKeypad, skins/ (types, registry, ballonnen, pinguintoren, zombies; lazy)
 ├── tutor/                       # stappenhulp behind tutor.html: TutorApp (sheet → sums → steps), Scanner (camera QR), StepsView (§15)
 ├── oefenen/                     # Oefenmodus pupil kiosk: its own React root behind oefenen.html, never imports App or the worksheet store (§15)
 │   ├── main.tsx                 # entry: decodes location.hash into the store BEFORE the first paint, imports index.css + kiosk/kiosk.css
@@ -2730,6 +2731,8 @@ The picker is [ZelfPicker.tsx](../../src/oefenen/zelf/ZelfPicker.tsx). The pupil
 The store opens the session with `openZelf` (no hash). After a zelf run, the end screen offers "Andere oefening". During any zelf run the top bar has "Terug naar begin" (`TwoTapButton`, shared with Stoppen; "Terug" on phones): `leaveZelf()` finishes the run (kept in the device stats) and opens the picker. The teacher's builder shows the kind.html link in `ZelfLinkCard` (compact; the QR opens in a dialog).
 
 The labels come from `ZELF_LABELS` (src/oefenen/zelf/zelfLabels.ts): a child-friendly name per Op.stap heading ("niet-opgaande deling" becomes "Delen met rest"). A test fails when the picker can show a heading without a row. Kommagetallen and procenten are always separate choices.
+
+**Spelen (beta prototype, owner 2026-11-14):** for an optellen / aftrekken card at leerjaar 1–3 (the `SPEL_LEAVES` table, hoofdrekenen only) the picker asks Oefenen or Spelen; Spelen skips count/time and shows the game picker. A game run lives in [useSpelStore.ts](../../src/oefenen/spelen/useSpelStore.ts), runtime only (never in a link, not stored): one try per question, a wrong answer flashes the right one and is logged, "Hoe los ik dit op?" pauses the round and timer and shows the steps (that question counts as met hulp: no point, no mistake). Skins are presentation only, one lazy component + one `SKINS` entry each ([skins/types.ts](../../src/oefenen/spelen/skins/types.ts): question, choices, phase, feedback, progress, events, onAnswer/onHelp/onMiss); meta gives input (choice / keypad), timed and the round (questions, seconds, or a goal with a question cap). Ballonnen: 4 choices from `distractors.ts` (seeded: ±1, ±10, the other operation, a digit swap). Pinguïntoren: keypad, 20 blocks, cap 30 questions, a mistake drops a block. Zombies: keypad, 3 minutes, speed with the streak, a zombie at the door is a miss. The end screen's Nakijken replays exactly the mistakes in the normal kiosk view (`openReview`, a fixed exercise list). No sound.
 
 Teachers find the link in the Oefenmodus builder ([ZelfLinkCard.tsx](../../src/components/oefenen/ZelfLinkCard.tsx): the link, a copy button and a QR).
 

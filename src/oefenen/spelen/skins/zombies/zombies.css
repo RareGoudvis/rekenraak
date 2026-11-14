@@ -1,0 +1,241 @@
+/* Zombies skin. Silly, not scary: round green zombies, googly eyes, flat fills under a thick dark outline.
+   The rAF loop only sets each lane's translateX; every other movement is a CSS transform here. */
+.zb-root {
+  --zb-w: clamp(84px, 21vmin, 190px);
+  --zb-house-w: calc(var(--zb-w) * 1.25);
+  /* Where the feet stand, from the street's bottom edge. */
+  --zb-floor: clamp(18px, 6%, 44px);
+  --zb-skin: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--mab-e));
+  --zb-pants: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
+  --zb-sky: color-mix(in srgb, var(--accent-meetkunde) 16%, var(--kiosk-paper));
+  --zb-wall: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--kiosk-paper));
+  --zb-roof: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--accent-vraagstukken));
+  --zb-door: color-mix(in srgb, var(--accent-bewerkingen) 75%, var(--kiosk-paper));
+  --zb-smoke: color-mix(in srgb, var(--text-muted) 25%, var(--kiosk-paper));
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--zb-sky);
+}
+
+/* ── The street ───────────────────────────────────────────────────────────── */
+.zb-street { position: relative; min-height: 0; overflow: hidden; overflow: clip; }
+.zb-moon {
+  position: absolute;
+  top: 8%;
+  right: 6%;
+  width: clamp(40px, 8vmin, 72px);
+  aspect-ratio: 1;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+}
+.zb-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--zb-floor) + 14px);
+  border-top: var(--spel-line) solid var(--spel-ink);
+  background: var(--spel-grass);
+}
+
+.zb-house { position: absolute; left: var(--sp-2); bottom: calc(var(--zb-floor) - 2px); width: var(--zb-house-w); }
+.zb-house-art { display: block; width: 100%; height: auto; overflow: visible; }
+.zb-house-art * { stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.zb-chimney { fill: var(--zb-roof); }
+.zb-roof { fill: var(--zb-roof); }
+.zb-wall { fill: var(--zb-wall); }
+.zb-window { fill: var(--spel-star); }
+.zb-window-bar { fill: none; stroke-width: 2.5; }
+.zb-door-leaf { fill: var(--zb-door); }
+.zb-knob { fill: var(--spel-star); stroke-width: 2; }
+/* A bump: the door shakes on its hinge. */
+.zb-door { transform-box: fill-box; transform-origin: left bottom; }
+.zb-house.is-bumped .zb-door { animation: zb-door 600ms ease-in-out; }
+@keyframes zb-door {
+  0%, 100% { transform: none; }
+  25% { transform: skewY(-6deg) scaleX(.92); }
+  55% { transform: skewY(4deg); }
+  80% { transform: skewY(-2deg); }
+}
+
+/* The walk: x = 0 is just right of the door, 100 = the right edge (lanes are as wide as the track). */
+.zb-track {
+  position: absolute;
+  left: calc(var(--zb-house-w) + var(--sp-2));
+  right: var(--zb-w);
+  bottom: var(--zb-floor);
+  height: 0;
+}
+.zb-lane { position: absolute; left: 0; bottom: 0; width: 100%; height: 0; }
+/* Between answers the loop stands still: a wrong answer's step glides. */
+.zb-root:not(.is-moving) .zb-lane { transition: transform 450ms var(--ease-out); }
+
+.zb-zombie { position: absolute; left: 0; bottom: 0; width: var(--zb-w); }
+.zb-body { position: relative; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 100%; }
+.zb-art { display: block; width: 100%; height: auto; overflow: visible; }
+.zb-art * { stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.zb-skin { fill: var(--zb-skin); }
+.zb-shirt { fill: var(--zb-shirt); }
+.zb-pants { fill: var(--zb-pants); }
+.zb-shoe { fill: var(--spel-ink); }
+.zb-hair { fill: none; stroke-width: 3; }
+.zb-eye { fill: var(--kiosk-paper); stroke-width: 3; }
+.zb-pupil { fill: var(--spel-ink); stroke: none; }
+.zb-mouth { fill: none; }
+.zb-tooth { fill: var(--kiosk-paper); stroke-width: 2; }
+.zb-arm-line { fill: none; stroke-width: 15; }
+.zb-arm-skin { fill: none; stroke: var(--zb-skin); stroke-width: 8; }
+
+/* The sign on its pole, above the head. Only the front one carries the sum. */
+.zb-sign {
+  margin: 0;
+  padding: 2px var(--sp-3);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(22px, calc(var(--zb-w) * .26), 40px);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.zb-sign:not(.is-front) { min-width: calc(var(--zb-w) * .5); text-align: center; color: var(--text-muted); }
+.zb-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-1);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+.zb-pole {
+  width: 6px;
+  height: calc(var(--zb-w) * .14);
+  margin-bottom: calc(var(--zb-w) * -.08);
+  border: 2px solid var(--spel-ink);
+  background: var(--zb-wall);
+}
+
+/* Shuffling: a tilt and the legs in turn, only while the zombies walk. */
+.zb-root.is-moving .zb-zombie.is-walk .zb-art { animation: zb-shuffle 900ms ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.zb-root.is-moving .zb-leg-a { animation: zb-leg 450ms ease-in-out infinite alternate; }
+.zb-root.is-moving .zb-leg-b { animation: zb-leg 450ms ease-in-out infinite alternate-reverse; }
+@keyframes zb-shuffle { from { transform: rotate(-4deg); } to { transform: rotate(3deg) translateY(-2%); } }
+@keyframes zb-leg { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+
+/* A wrong answer: a gentle wobble (two copies so the next one restarts). */
+.zb-zombie.is-wobble-0 .zb-body { animation: zb-wobble-0 650ms ease-in-out; }
+.zb-zombie.is-wobble-1 .zb-body { animation: zb-wobble-1 650ms ease-in-out; }
+@keyframes zb-wobble-0 {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-7deg); }
+  55% { transform: rotate(5deg); }
+  80% { transform: rotate(-2deg); }
+}
+@keyframes zb-wobble-1 {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-7deg); }
+  55% { transform: rotate(5deg); }
+  80% { transform: rotate(-2deg); }
+}
+
+/* Right: it flops over backwards into a puff of smoke; the sign shows the answer, then floats off. */
+.zb-zombie.is-flop .zb-art { transform-origin: 50% 100%; animation: zb-flop 650ms var(--ease-out) forwards; }
+.zb-zombie.is-flop .zb-sign,
+.zb-zombie.is-flop .zb-pole { animation: zb-sign-off 600ms ease-in 250ms forwards; }
+@keyframes zb-sign-off { to { transform: translateY(-30%); opacity: 0; } }
+@keyframes zb-flop {
+  0% { transform: rotate(0); opacity: 1; }
+  45% { transform: rotate(80deg) translateY(4%); opacity: 1; }
+  100% { transform: rotate(90deg) translateY(8%); opacity: 0; }
+}
+.zb-smoke { position: absolute; left: 50%; bottom: 35%; width: 0; height: 0; }
+.zb-puff {
+  position: absolute;
+  left: calc(var(--zb-w) * -.16);
+  top: calc(var(--zb-w) * -.16);
+  width: calc(var(--zb-w) * .32);
+  height: calc(var(--zb-w) * .32);
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--zb-smoke);
+  opacity: 0;
+  animation: zb-puff 700ms var(--ease-out) 120ms both;
+}
+@keyframes zb-puff {
+  from { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(.4); }
+  to { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--zb-w) * -.5)) scale(1.3); }
+}
+
+/* At the door: a squashy bump, a hop back and stars round the head. */
+.zb-zombie.is-boing .zb-body { animation: zb-boing 700ms var(--ease-out) forwards; }
+@keyframes zb-boing {
+  0% { transform: none; }
+  30% { transform: translateX(-6%) scale(.86, 1.08); }
+  60% { transform: translateX(18%) translateY(-10%); }
+  100% { transform: translateX(22%); }
+}
+/* Three stars circle the head on a flat ellipse (a sideways and an up-down swing, a quarter apart). */
+.zb-dizzy { position: absolute; left: 50%; bottom: calc(var(--zb-w) * 1.2); width: 0; height: 0; }
+.zb-orbit {
+  position: absolute;
+  animation: zb-orbit-x 1.4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.93s);
+}
+.zb-star {
+  position: absolute;
+  left: calc(var(--zb-w) * -.09);
+  top: calc(var(--zb-w) * -.09);
+  width: calc(var(--zb-w) * .18);
+  fill: var(--spel-star);
+  stroke: var(--spel-ink);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  animation: zb-orbit-y 1.4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.93s - 0.7s);
+}
+@keyframes zb-orbit-x { from { transform: translateX(calc(var(--zb-w) * -.32)); } to { transform: translateX(calc(var(--zb-w) * .32)); } }
+@keyframes zb-orbit-y { from { transform: translateY(calc(var(--zb-w) * -.07)); } to { transform: translateY(calc(var(--zb-w) * .07)); } }
+
+/* ── The keypad ───────────────────────────────────────────────────────────── */
+.zb-controls {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  border-top: var(--spel-line) solid var(--spel-ink);
+  background: var(--bg-surface);
+}
+.zb-controls .spel-keypad { width: min(100%, 380px); }
+.zb-controls .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 56px)); }
+/* Landscape: the typed answer beside the keypad, so the street keeps its height. */
+@media (orientation: landscape) {
+  .zb-controls .spel-keypad { flex-direction: row; align-items: center; width: min(100%, 680px); gap: var(--sp-3); }
+  .zb-controls .spel-keypad-field { flex: 1 1 0; min-width: 0; }
+  .zb-controls .kiosk-keypad { flex: 0 0 min(340px, 60%); }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .zb-controls { padding: var(--sp-1) var(--sp-3); }
+  .zb-controls .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); gap: var(--sp-1); }
+}
+
+/* A phone upright: a smaller house leaves the zombies more street. */
+@media (orientation: portrait) and (max-width: 600px) {
+  .zb-root { --zb-house-w: calc(var(--zb-w) * .9); }
+}
+
+/* "Hoe los ik dit op?": all movement holds (the loop stops too). */
+.zb-root.is-paused * { animation-play-state: paused; }
+
+.zb-root.is-still .zb-lane { transition: none; }
+.zb-root.is-still .zb-art,
+.zb-root.is-still .zb-leg-a,
+.zb-root.is-still .zb-leg-b,
+.zb-root.is-still .zb-zombie .zb-body,
+.zb-root.is-still .zb-zombie .zb-art,
+.zb-root.is-still .zb-zombie .zb-sign,
+.zb-root.is-still .zb-zombie .zb-pole,
+.zb-root.is-still .zb-door { animation: none; }
+.zb-root.is-still .zb-zombie.is-flop .zb-body { animation: zb-fade 300ms linear 300ms forwards; }
+@keyframes zb-fade { to { opacity: 0; } }

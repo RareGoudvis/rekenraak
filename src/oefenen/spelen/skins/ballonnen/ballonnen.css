@@ -1,0 +1,254 @@
+/* Ballonnen skin. Flat fills under a thick dark outline (spelen.css tokens), transforms and opacity only
+   (old school laptops), and nothing moves under prefers-reduced-motion. */
+.bal-sky {
+  /* One balloon's width: four fit side by side on a phone, and the whole balloon fits the stage height. */
+  --bal-w: clamp(64px, min(19vw, 24vh), 176px);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overflow: clip;
+  background: var(--spel-sky);
+}
+
+.bal-cloud {
+  position: absolute;
+  width: clamp(80px, 14vw, 180px);
+  fill: var(--spel-cloud);
+  stroke: var(--spel-ink);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  animation: bal-drift 14s ease-in-out infinite alternate;
+}
+.bal-cloud-a { top: 6%; left: 4%; }
+.bal-cloud-b { top: 16%; right: 6%; width: clamp(64px, 10vw, 140px); animation-duration: 18s; animation-delay: -6s; }
+.bal-cloud-c { top: 40%; left: 42%; width: clamp(56px, 8vw, 110px); animation-duration: 22s; animation-delay: -11s; opacity: .8; }
+@keyframes bal-drift { from { transform: translateX(-24px); } to { transform: translateX(24px); } }
+
+.bal-hills {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 16%;
+  fill: var(--spel-grass);
+  stroke: var(--spel-ink);
+  stroke-width: var(--spel-line);
+  vector-effect: non-scaling-stroke;
+}
+.bal-hills path { vector-effect: non-scaling-stroke; }
+
+/* ── The sum ──────────────────────────────────────────────────────────────── */
+.bal-top {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) 0;
+}
+.bal-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.bal-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: bal-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes bal-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+.bal-ribbon {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-4);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--spel-star);
+  color: var(--spel-ink);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 700;
+  animation: bal-grow var(--dur-slow) var(--ease-spring) both;
+}
+
+/* ── Balloons ─────────────────────────────────────────────────────────────── */
+.bal-row {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(8px, 3vw, 44px);
+  padding: 0 var(--sp-3) 7vh;
+}
+/* Two balloons a little higher than the others, so the row looks like a bunch, not a fence. */
+.bal-slot:nth-child(even) { margin-bottom: calc(var(--bal-w) * .28); }
+
+.bal-rise { animation: bal-rise 2.6s var(--ease-out) both; animation-delay: calc(var(--i) * 160ms); }
+@keyframes bal-rise { from { transform: translateY(80vh); } to { transform: translateY(0); } }
+
+.bal-bob { position: relative; animation: bal-bob 3.2s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.8s); }
+@keyframes bal-bob {
+  from { transform: translateY(0) rotate(-2deg); }
+  to { transform: translateY(-10px) rotate(2deg); }
+}
+
+.bal {
+  position: relative;
+  display: block;
+  width: var(--bal-w);
+  height: calc(var(--bal-w) * 1.6);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bal:disabled { cursor: default; }
+.bal:focus-visible { outline: none; }
+.bal:focus-visible .bal-body { stroke-width: 7; }
+
+.bal-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bal-body { fill: var(--fill); stroke: var(--spel-ink); stroke-width: var(--spel-line); }
+.bal-knot { fill: var(--fill); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.bal-string { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
+.bal-shine { fill: var(--kiosk-paper); opacity: .55; }
+
+/* The number on a white patch: readable on every balloon colour. */
+.bal-num {
+  position: absolute;
+  top: 33.75%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 46%;
+  padding: 2px calc(var(--bal-w) * .06);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: calc(var(--bal-w) * .22);
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+/* Keys 1–4: a small hint at the string's end, only where a keyboard is likely. */
+.bal-key {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 40%);
+  display: none;
+  min-width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+@media (hover: hover) and (pointer: fine) { .bal-key { display: inline-flex; } }
+
+/* Right: the balloon pops and bursts into bits of its colour. */
+.bal-slot.is-popped .bal-art,
+.bal-slot.is-popped .bal-num,
+.bal-slot.is-popped .bal-key { animation: bal-pop 240ms var(--ease-out) forwards; }
+@keyframes bal-pop { to { transform: scale(1.35); opacity: 0; } }
+/* The number's own centring translate stays under the pop. */
+.bal-slot.is-popped .bal-num { animation-name: bal-pop-num; }
+@keyframes bal-pop-num { to { transform: translate(-50%, -50%) scale(1.35); opacity: 0; } }
+
+.bal-burst { position: absolute; top: 33.75%; left: 50%; width: 0; height: 0; }
+.bal-bit {
+  position: absolute;
+  left: calc(var(--bal-w) * -.06);
+  top: calc(var(--bal-w) * -.06);
+  width: calc(var(--bal-w) * .12);
+  height: calc(var(--bal-w) * .12);
+  border: 2px solid var(--spel-ink);
+  border-radius: 3px;
+  background: var(--fill);
+  opacity: 0;
+  animation: bal-bit 560ms var(--ease-out) both;
+}
+.bal-bit:nth-child(odd) { border-radius: 50%; background: var(--spel-star); }
+@keyframes bal-bit {
+  from { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1); }
+  to { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--bal-w) * -.95)) scale(.4); }
+}
+
+/* Wrong: the picked balloon floats gently away; no red, no shake. */
+.bal-slot.is-away .bal { animation: bal-away 2.4s ease-in forwards; }
+@keyframes bal-away {
+  to { transform: translate(calc((var(--i) - 1.5) * 24px), -90vh) rotate(-12deg); }
+}
+
+/* The right balloon lights up with a ring while the sign shows the answer. */
+.bal-ring {
+  position: absolute;
+  left: 2%;
+  top: -0.5%;
+  width: 96%;
+  height: 65%;
+  border: 6px solid var(--kiosk-ok);
+  border-radius: 50%;
+  animation: bal-ring 800ms ease-in-out 2 alternate both;
+}
+@keyframes bal-ring { from { transform: scale(1); } to { transform: scale(1.08); } }
+.bal-slot.is-answer .bal-num { color: var(--kiosk-ok); }
+
+.bal-slot.is-rest .bal { opacity: .45; transition: opacity var(--dur-slow) var(--ease-out); }
+
+/* A landscape phone: the sign and the balloons share very little height. */
+@media (max-height: 420px) {
+  .bal-sky { --bal-w: clamp(56px, 22vh, 120px); }
+  .bal-row { padding-bottom: 4vh; }
+  .bal-cloud-c { display: none; }
+}
+
+/* A phone upright: two rows of two, so each balloon gets twice the width. */
+@media (orientation: portrait) and (max-width: 600px) {
+  .bal-sky { --bal-w: clamp(64px, min(34vw, 20vh), 150px); }
+  .bal-row {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+    align-content: end;
+    column-gap: 12vw;
+    row-gap: var(--sp-2);
+  }
+  .bal-slot:nth-child(even) { margin-bottom: 0; margin-top: calc(var(--bal-w) * .3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bal-cloud, .bal-rise, .bal-bob, .bal-ring, .bal-sign-answer, .bal-ribbon { animation: none; }
+  .bal-slot.is-popped .bal-art,
+  .bal-slot.is-popped .bal-num,
+  .bal-slot.is-popped .bal-key,
+  .bal-slot.is-away .bal { animation: bal-fade 300ms linear forwards; }
+}
+@keyframes bal-fade { to { opacity: 0; } }

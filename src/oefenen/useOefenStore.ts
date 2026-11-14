@@ -31,6 +31,9 @@ export const HINT_MS = 1800;
 // checkAnswer must get exactly those, and a reload must too, so they travel in the run.
 export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown> };
 
+// A review round (Spelen › Nakijken): these exact exercises in this order instead of the scheduler's draws.
+export type KioskFixed = Pick<KioskCurrent, 'slot' | 'exercise' | 'exerciseKey' | 'constraints'>;
+
 // An old link whose every type this device can no longer check: re-sharing it would not help, a new one does.
 export const UNSUPPORTED_ONLY = 'Deze oefeningen kunnen niet op het toestel. Vraag je leerkracht om een nieuwe link.';
 
@@ -76,11 +79,15 @@ interface OefenState {
     nudged: boolean;
     // The descriptor's review hint for a wrong answer, under the fout / retry flash and in the steps panel.
     feedbackHint: string | null;
+    // A review round's exercise list (openReview), null for every other run.
+    fixed: KioskFixed[] | null;
 
     load(hash: string): void;
     // The session is set in as if its link had been opened (load's second half).
     open(s: OefenSessie): void;
     openZelf(s: OefenSessie): void;
+    // Runs exactly `items` (a game's mistakes) as a zelf run, starting at once; `s.total` must be items.length.
+    openReview(s: OefenSessie, items: KioskFixed[]): void;
     start(): void;
     // The next exercise (or the end screen): what a feedback flash does when it ends.
     next(): void;
@@ -392,8 +399,10 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         nudge: null,
         nudged: false,
         feedbackHint: null,
+        fixed: null,
 
         load(hash) {
+            set({ fixed: null });
             // No payload at all is not an error message, just the "open the link" screen.
             if (!/^#?oefen=/.test(hash)) { set({ sessie: null, run: null, shown: null, error: null }); return; }
             let s: OefenSessie;
@@ -431,10 +440,18 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         // A self-made Zelf oefenen session: no link, and it starts at once (the picker was the confirm screen).
         openZelf(s) {
+            set({ fixed: null });
             get().open(s);
             const { phase, sessie } = get();
             // A finished run of the same choice is not reopened on its stats: the pupil asked for a new one.
             if (sessie && (phase === 'start' || phase === 'locked')) get().start();
+        },
+
+        openReview(s, items) {
+            clearFlash();
+            // Not open(): an earlier stored review of this id must not resume with another list.
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false, nudge: null, nudged: false, feedbackHint: null, fixed: items });
+            get().start();
         },
 
         start() {
@@ -454,6 +471,16 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const now = Date.now();
             if (run.done) { set({ phase: 'locked' }); return; }
             if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
+            const fixed = get().fixed;
+            if (fixed) {
+                const item = fixed[run.stats.history.length];
+                if (!item) { finish(run, now); return; }
+                const current: KioskCurrent = { ...item, shownAt: now };
+                const updated: OefenRun = { ...run, current };
+                persist(updated);
+                set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: firstCell(s, current) });
+                return;
+            }
             const seen = new Set(run.stats.history.map(h => h.exerciseKey));
             // Per slot: a descriptor's prepare may take turns by it (gemengd "om de beurt").
             const madeBy = madePerSlot(s, run.stats.history);

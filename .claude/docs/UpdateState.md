@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Spelen prototype (owner brief "Oefenen & Spelen", scope + and − at leerjaar 1–3): Zelf oefenen asks Oefenen or Spelen; useSpelStore with events, met hulp, mistake log and a Nakijken review round; seeded distractors; skin registry with Ballonnen, Pinguïntoren and Zombies drawn in code SVG; beta only, no sound. Plan in PLAN-spelen.local.md.
+
 **2026-11-14** — workedSteps covers one-part sums (strategy `eenDeel`: brug to the tiental, else work at that place: 8 + 5 = (8 + 2) + 3, 14 + 3 = 10 + (4 + 3)); facts, 10 − 4 and E + TE stay without steps; mabSteps draws the new lines. For the Spelen help button in leerjaar 1–2.
 
 **2026-11-14** — Brug labels (owner call): leerjaar 1 T + T and T − T tot 20 split into Zonder brug (default) / Brug bij E; 21 card variants whose sums do cross relabelled "Met en zonder brug" in cards.json; five that only land on a round number keep "Geen brug nodig" (eenvoudig.brugLabels.test.ts).

@@ -40,6 +40,8 @@ describe('Zelf oefenen picker', () => {
         const variants = screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''));
         expect(variants.length).toBeGreaterThan(0);
         fireEvent.click(variants[0]);
+        // + and − at leerjaar 1–3 ask Oefenen or Spelen first.
+        click('Oefenen');
         expect(screen.getByRole('heading', { name: 'Hoeveel wil je doen?' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
         click('3 oefeningen');
@@ -57,6 +59,7 @@ describe('Zelf oefenen picker', () => {
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
+        click('Oefenen');
         click('3 minuten');
         click('Begin met oefenen');
         expect(st().sessie!.timerMin).toBe(3);
@@ -69,6 +72,7 @@ describe('Zelf oefenen picker', () => {
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
+        click('Oefenen');
         click('Begin met oefenen');
         // A finished run, set straight into the store (the run itself is the kiosk's own tested path).
         useOefenStore.setState({ phase: 'locked', run: { ...st().run!, done: true } });

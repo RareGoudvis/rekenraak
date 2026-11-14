@@ -1,0 +1,159 @@
+/* Pinguïntoren skin. Flat fills under a thick dark outline (spelen.css tokens); the outlines keep their
+   width while the camera zooms out (non-scaling stroke). Transforms only, nothing moves under reduced motion. */
+.pt-root {
+  --pt-ice: color-mix(in srgb, var(--accent-bewerkingen) 16%, var(--kiosk-paper));
+  --pt-ice-2: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper));
+  --pt-sea: color-mix(in srgb, var(--accent-bewerkingen) 60%, var(--kiosk-paper));
+  --pt-body: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--spel-ink));
+  --pt-orange: var(--accent-vraagstukken);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--spel-sky);
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* ── The tower ────────────────────────────────────────────────────────────── */
+.pt-world { position: relative; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
+.pt-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pt-svg * { vector-effect: non-scaling-stroke; }
+
+.pt-cloud { fill: var(--spel-cloud); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.pt-cloud.is-far { opacity: .8; }
+.pt-sea { fill: var(--pt-sea); stroke: var(--spel-ink); stroke-width: 3px; }
+.pt-cam {
+  transform-origin: 120px 270px;
+  transition: transform 700ms var(--ease-out);
+}
+.pt-floe { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+
+.pt-ice { fill: var(--pt-ice); stroke: var(--spel-ink); stroke-width: 3px; }
+.pt-ice.is-alt { fill: var(--pt-ice-2); }
+.pt-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; stroke-linecap: round; }
+
+/* The goal: a dashed line with a flag and its number. */
+.pt-goal-line { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-dasharray: 6 6; opacity: .55; }
+.pt-pole { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; }
+.pt-flag { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.pt-goal-num {
+  fill: var(--spel-ink);
+  font-family: var(--font-sheet-math);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pt-feet, .pt-beak { fill: var(--pt-orange); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.pt-body, .pt-flipper { fill: var(--pt-body); stroke: var(--spel-ink); stroke-width: 3px; }
+.pt-belly { fill: var(--kiosk-paper); }
+.pt-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.pt-pupil { fill: var(--spel-ink); }
+
+/* The penguin rides the top of the stack; a landed block makes it hop, a fallen one lands it softly. */
+.pt-penguin { transition: transform 420ms var(--ease-out); }
+.pt-penguin-art { transform-origin: 0 0; animation: pt-sway 2.8s ease-in-out infinite alternate; }
+@keyframes pt-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.pt-hop { animation: pt-hop 420ms var(--ease-out); }
+@keyframes pt-hop {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-34px); }
+  100% { transform: translateY(0); }
+}
+.pt-land { transform-origin: 0 0; animation: pt-land 360ms var(--ease-out); }
+@keyframes pt-land {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12, .86); }
+  100% { transform: scale(1); }
+}
+
+.pt-block.is-new { animation: pt-drop 420ms var(--ease-spring) both; }
+@keyframes pt-drop { from { transform: translateY(-70px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* A mistake: the tower wobbles on its base. Two copies so the next mistake restarts it. */
+.pt-tower { transform-origin: 120px 270px; }
+.pt-tower.is-wobble-0 { animation: pt-wobble-0 900ms ease-in-out; }
+.pt-tower.is-wobble-1 { animation: pt-wobble-1 900ms ease-in-out; }
+@keyframes pt-wobble-0 {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-3deg); }
+  45% { transform: rotate(2.4deg); }
+  70% { transform: rotate(-1.2deg); }
+}
+@keyframes pt-wobble-1 {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-3deg); }
+  45% { transform: rotate(2.4deg); }
+  70% { transform: rotate(-1.2deg); }
+}
+
+/* ...and the top block slides off into the sea. */
+.pt-fall { transform-box: fill-box; transform-origin: center; animation: pt-fall 1100ms ease-in forwards; }
+@keyframes pt-fall {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  25% { transform: translate(26px, -6px) rotate(12deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate(96px, var(--drop)) rotate(70deg); opacity: 0; }
+}
+
+/* ── The sum and the keypad ───────────────────────────────────────────────── */
+.pt-panel {
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.pt-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.pt-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: pt-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes pt-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+.pt-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+/* Upright (a phone, a tablet on its side in a stand): the tower on top, the sum and keypad below. */
+@media (orientation: portrait) {
+  .pt-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .pt-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .pt-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+/* Side by side: the sea runs on under the keypad (the floe's waterline sits 8% up from the bottom). */
+@media (orientation: landscape) {
+  .pt-root { background: linear-gradient(to top, var(--pt-sea) 8%, var(--spel-ink) 8%, var(--spel-ink) calc(8% + 3px), var(--spel-sky) calc(8% + 3px)); }
+}
+/* A short landscape screen: smaller keys so the keypad fits beside the tower. */
+@media (orientation: landscape) and (max-height: 640px) {
+  .pt-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .pt-panel { gap: var(--sp-2); }
+}
+
+/* "Hoe los ik dit op?": everything holds still. */
+.pt-root.is-paused * { animation-play-state: paused; }
+
+.pt-root.is-still .pt-cam,
+.pt-root.is-still .pt-penguin { transition: none; }
+.pt-root.is-still .pt-penguin-art,
+.pt-root.is-still .pt-hop,
+.pt-root.is-still .pt-land,
+.pt-root.is-still .pt-block.is-new,
+.pt-root.is-still .pt-tower,
+.pt-root.is-still .pt-sign-answer { animation: none; }
