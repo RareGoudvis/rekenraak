@@ -8,6 +8,10 @@
   --zb-camp-w: calc(var(--zb-w) * 1.95);
   /* Where the feet stand, from the street's bottom edge. */
   --zb-floor: clamp(18px, 6%, 44px);
+  /* The "?" signs of the zombies behind are small; the front sign's pole is that much taller, so on a narrow
+     street the front sum always hangs clear above them. */
+  --zb-q: clamp(16px, calc(var(--zb-w) * .17), 26px);
+  --zb-lift: calc(var(--zb-q) * 1.2 + 2 * var(--spel-line) + var(--sp-2));
   --zb-skin: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--mab-e));
   --zb-pants: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
   --zb-sky: color-mix(in srgb, var(--accent-meetkunde) 16%, var(--kiosk-paper));
@@ -152,7 +156,7 @@
   line-height: 1.2;
   white-space: nowrap;
 }
-.zb-sign:not(.is-front) { min-width: calc(var(--zb-w) * .5); text-align: center; color: var(--text-muted); }
+.zb-sign:not(.is-front) { min-width: calc(var(--zb-w) * .34); padding: 0 var(--sp-2); font-size: var(--zb-q); text-align: center; color: var(--text-muted); }
 .zb-sign-answer {
   display: inline-block;
   padding: 0 var(--sp-1);
@@ -167,6 +171,7 @@
   border: 2px solid var(--spel-ink);
   background: var(--zb-wall);
 }
+.zb-sign.is-front + .zb-pole { height: calc(var(--zb-w) * .14 + var(--zb-lift)); }
 
 /* Shuffling: a tilt and the legs in turn, only while the zombies walk. */
 .zb-root.is-moving .zb-zombie.is-walk .zb-art { animation: zb-shuffle 900ms ease-in-out infinite alternate; transform-origin: 50% 100%; }
@@ -272,6 +277,11 @@
 
 /* Moeilijk: three survivors and no barricades, so the street starts right after them. */
 .zb-root.is-moeilijk { --zb-camp-w: calc(var(--zb-w) * 1.05); }
+
+/* A low landscape screen: smaller zombies, so the lifted front sign still fits under the top bar. */
+@media (orientation: landscape) and (max-height: 700px) {
+  .zb-root { --zb-w: clamp(84px, 17vmin, 190px); }
+}
 
 /* A phone upright: a tighter group leaves the zombies more street. */
 @media (orientation: portrait) and (max-width: 600px) {
