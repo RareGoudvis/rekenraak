@@ -44,8 +44,9 @@ describe('Spelen skins', () => {
                 progress: progressWith({ goal: meta.round.goal ? { count: 0, target: meta.round.goal } : null, msLeft: meta.timed ? 60_000 : null }),
             });
             const { unmount } = render(<Suspense fallback={null}><Skin {...p} /></Suspense>);
-            if (meta.input === 'keypad') expect(await screen.findByRole('group', { name: 'Cijfers' })).toBeTruthy();
-            else expect(await screen.findByRole('group', { name: 'Kies het antwoord' })).toBeTruthy();
+            // A cold lazy chunk with a big SVG can take over a second on a busy machine.
+            if (meta.input === 'keypad') expect(await screen.findByRole('group', { name: 'Cijfers' }, { timeout: 5000 })).toBeTruthy();
+            else expect(await screen.findByRole('group', { name: 'Kies het antwoord' }, { timeout: 5000 })).toBeTruthy();
             expect(screen.getAllByText('7 + 5 = ?').length).toBeGreaterThan(0);
             unmount();
         }

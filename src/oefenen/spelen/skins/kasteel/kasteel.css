@@ -1,0 +1,246 @@
+/* Kasteel skin: two castles on a field, a catapult on each wall. Flat fills under a thick dark outline
+   (spelen.css tokens). Stones fly on two nested CSS transforms; blocks, cracks, towers and the flag change
+   by class. Only transforms and opacity animate (light for old laptops); reduced motion = state changes only. */
+.ks-root,
+.ks-ending,
+.ks-duel {
+  --ks-stone: color-mix(in srgb, var(--text-muted) 26%, var(--kiosk-paper));
+  --ks-brick: color-mix(in srgb, var(--text-muted) 42%, var(--kiosk-paper));
+  --ks-hole: color-mix(in srgb, var(--text-muted) 55%, var(--spel-ink));
+  --ks-wood: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --ks-gate: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  --ks-blue: var(--spel-fill-1);
+  --ks-orange: var(--spel-fill-5);
+  --ks-ok: var(--kid-go);
+  --ks-mid: var(--spel-star);
+  --ks-low: var(--accent-getallenkennis);
+  --ks-dust: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--kiosk-paper));
+  --ks-skin: var(--kid-tint-4);
+}
+.ks-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--spel-sky);
+  overflow: hidden;
+  overflow: clip;
+}
+.ks-world { position: relative; z-index: 0; min-width: 0; min-height: 0; }
+.ks-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ks-scene * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── The field ────────────────────────────────────────────────────────────── */
+.ks-grass { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-hill { fill: color-mix(in srgb, var(--spel-grass) 60%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-cloud { fill: var(--spel-cloud); stroke: var(--spel-ink); stroke-width: 3px; }
+
+/* ── A castle ─────────────────────────────────────────────────────────────── */
+.ks-castle { --ks-team: var(--ks-blue); }
+.ks-castle.is-orange { --ks-team: var(--ks-orange); }
+.ks-stone { fill: var(--ks-stone); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-brick { fill: var(--ks-brick); stroke: var(--spel-ink); stroke-width: 2px; }
+.ks-hole { fill: var(--ks-hole); stroke: var(--spel-ink); stroke-width: 2px; }
+.ks-slit { fill: var(--spel-ink); }
+.ks-gate { fill: var(--ks-gate); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-gate-bars { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ks-crack { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-dasharray: 90; animation: ks-crack 500ms var(--ease-out) both; }
+@keyframes ks-crack { from { stroke-dashoffset: 90; } to { stroke-dashoffset: 0; } }
+.ks-pole { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.ks-cloth { fill: var(--ks-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-wood { fill: none; stroke: var(--ks-wood); stroke-width: 7px; }
+.ks-catapult .ks-wood { stroke: var(--spel-ink); stroke-width: 9px; }
+.ks-catapult .ks-wood + .ks-arm .ks-beam,
+.ks-beam { stroke: var(--spel-ink); stroke-width: 8px; }
+.ks-cup { fill: var(--ks-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-axle { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+/* The flag: waves while the castle stands strong, droops as it weakens, goes up high for the winner. */
+.ks-flag { transition: transform 600ms var(--ease-out); }
+.ks-flag.is-up .ks-cloth,
+.ks-flag.is-raised .ks-cloth { animation: ks-wave 1.1s ease-in-out infinite alternate; transform-origin: 0 0; }
+@keyframes ks-wave { from { transform: skewY(-4deg) scaleX(.96); } to { transform: skewY(5deg) scaleX(1.02); } }
+.ks-flag.is-droop { transform: rotate(62deg) scaleX(.8); }
+.ks-flag.is-low { transform: translateY(34px) rotate(76deg) scaleX(.7); }
+.ks-flag.is-raised { transform: translateY(-18px) scale(1.3); }
+.ks-flag.is-gone { display: none; }
+
+/* Towers lean outward, then topple and leave a small heap. */
+.ks-tower { transition: transform 500ms var(--ease-spring); }
+.ks-tower.is-outer.is-lean { transform: rotate(-6deg); }
+.ks-tower.is-inner.is-lean { transform: rotate(6deg); }
+.ks-tower.is-outer.is-down { animation: ks-topple-out 800ms ease-in both; }
+.ks-tower.is-inner.is-down { animation: ks-topple-in 800ms ease-in both; }
+@keyframes ks-topple-out { 0% { transform: rotate(-6deg); opacity: 1; } 75% { opacity: 1; } 100% { transform: rotate(-84deg); opacity: 0; } }
+@keyframes ks-topple-in { 0% { transform: rotate(6deg); opacity: 1; } 75% { opacity: 1; } 100% { transform: rotate(84deg); opacity: 0; } }
+.ks-heap { fill: color-mix(in srgb, var(--ks-brick) 70%, var(--spel-grass)); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-rock { stroke-width: 2.5px; }
+.ks-rubble { animation: ks-pop 420ms var(--ease-spring) 520ms both; }
+.ks-rubble.is-heap { animation-delay: 380ms; }
+@keyframes ks-pop { from { transform: scale(.2, 0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* A hit: the castle shakes. At 0: it sinks into one heap under a big dust puff. */
+.ks-shake-0 { animation: ks-shake-0 360ms ease-out; }
+.ks-shake-1 { animation: ks-shake-1 360ms ease-out; }
+@keyframes ks-shake-0 { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px) rotate(-.6deg); } 45% { transform: translateX(5px) rotate(.5deg); } 70% { transform: translateX(-3px); } }
+@keyframes ks-shake-1 { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px) rotate(-.6deg); } 45% { transform: translateX(5px) rotate(.5deg); } 70% { transform: translateX(-3px); } }
+.ks-castle.is-fallen .ks-standing { animation: ks-collapse 900ms ease-in both; }
+@keyframes ks-collapse { 0% { transform: none; opacity: 1; } 25% { transform: translateY(-6px) scaleY(1.03); } 80% { opacity: 1; } 100% { transform: scaleY(.08); opacity: 0; } }
+.ks-puff circle { fill: var(--ks-dust); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-puff { animation: ks-puff 1500ms var(--ease-out) 150ms both; }
+@keyframes ks-puff { 0% { transform: scale(.2); opacity: 0; } 25% { opacity: 1; } 70% { opacity: .9; } 100% { transform: scale(1.15) translateY(-24px); opacity: 0; } }
+
+/* Chunks off the wall: they tumble down to the grass and fade; a little dust cloud where the stone hit. */
+.ks-chunk rect { fill: var(--ks-brick); stroke: var(--spel-ink); stroke-width: 2px; }
+.ks-chunk { animation: ks-tumble 1300ms cubic-bezier(.45, 0, .8, .6) both; animation-delay: calc(var(--k) * 40ms); }
+@keyframes ks-tumble {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  70% { transform: translate(var(--cx), var(--cy)) rotate(var(--r)); opacity: 1; }
+  100% { transform: translate(var(--cx), var(--cy)) rotate(var(--r)); opacity: 0; }
+}
+.ks-dust circle { fill: var(--ks-dust); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ks-dust { animation: ks-dust 800ms var(--ease-out) both; }
+@keyframes ks-dust { 0% { transform: scale(.3); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+
+/* ── Stones in the air: across on one transform, up and down on the other ── */
+.ks-fly-x { animation: ks-fly-x var(--dur) linear both; }
+.ks-fly-y { animation: ks-fly-y var(--dur) linear both; }
+@keyframes ks-fly-x { from { transform: translateX(0); } to { transform: translateX(var(--dx)); } }
+@keyframes ks-fly-y {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+  45% { transform: translateY(var(--peak)); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+  100% { transform: translateY(var(--dy)); }
+}
+.ks-spin { animation: ks-spin 600ms linear infinite; }
+@keyframes ks-spin { to { transform: rotate(360deg); } }
+.ks-ball { fill: var(--ks-brick); }
+.ks-ball.is-big { fill: var(--ks-hole); }
+.ks-ball-line { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* The catapult throws: the arm swings up and settles back. */
+.ks-arm.is-fire { animation: ks-throw 520ms var(--ease-out); }
+@keyframes ks-throw { 0% { transform: rotate(0); } 30% { transform: rotate(105deg); } 100% { transform: rotate(0); } }
+
+/* ── The life bars ────────────────────────────────────────────────────────── */
+.ks-bar { --ks-team: var(--ks-blue); --ks-fill: var(--ks-ok); }
+.ks-bar.is-orange { --ks-team: var(--ks-orange); }
+.ks-bar.is-mid { --ks-fill: var(--ks-mid); }
+.ks-bar.is-low { --ks-fill: var(--ks-low); }
+.ks-bar-bg { fill: var(--kiosk-paper); }
+.ks-bar-fill { fill: var(--ks-fill); transition: width 300ms var(--ease-out); }
+.ks-bar-line { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; }
+.ks-bar-text { fill: var(--spel-ink); font-family: var(--font-sheet-math); font-size: 21px; font-weight: 700; }
+.ks-badge { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.ks-heart { fill: var(--ks-low); stroke: var(--spel-ink); stroke-width: 2px; }
+.ks-name { fill: var(--ks-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-name-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 17px; font-weight: 800; }
+.ks-bar-hit-0 { animation: ks-bar-hit-0 420ms ease-out; }
+.ks-bar-hit-1 { animation: ks-bar-hit-1 420ms ease-out; }
+@keyframes ks-bar-hit-0 { 0%, 100% { transform: translateX(0) scale(1); } 20% { transform: translateX(-5px) scale(1.06); } 45% { transform: translateX(4px) scale(1.04); } 70% { transform: translateX(-2px); } }
+@keyframes ks-bar-hit-1 { 0%, 100% { transform: translateX(0) scale(1); } 20% { transform: translateX(-5px) scale(1.06); } 45% { transform: translateX(4px) scale(1.04); } 70% { transform: translateX(-2px); } }
+.ks-bar-hit-0 .ks-bar-fill { animation: ks-flash-0 420ms ease-out; }
+.ks-bar-hit-1 .ks-bar-fill { animation: ks-flash-1 420ms ease-out; }
+@keyframes ks-flash-0 { 0%, 35% { fill: var(--kiosk-paper); } 100% { fill: var(--ks-fill); } }
+@keyframes ks-flash-1 { 0%, 35% { fill: var(--kiosk-paper); } 100% { fill: var(--ks-fill); } }
+
+/* The computer's clock: the ring fills up to its next shot. */
+.ks-reload-bg { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-reload-fill { fill: none; stroke: var(--ks-orange); stroke-width: 6px; stroke-dasharray: 100; stroke-dashoffset: 100; animation: ks-reload var(--dur) linear both; }
+@keyframes ks-reload { to { stroke-dashoffset: 0; } }
+
+.ks-call { animation: ks-call 1100ms var(--ease-out) both; }
+@keyframes ks-call { 0% { transform: scale(.3); opacity: 0; } 20% { transform: scale(1.1); opacity: 1; } 75% { transform: scale(1) translateY(-8px); opacity: 1; } 100% { transform: translateY(-20px); opacity: 0; } }
+.ks-call-bg { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 19px; font-weight: 900; }
+
+/* ── The kids who cheer for the winner ───────────────────────────────────── */
+.ks-kid { --ks-team: var(--ks-blue); }
+.ks-kid.is-orange { --ks-team: var(--ks-orange); }
+.ks-limb { fill: none; stroke: var(--spel-ink); stroke-width: 6px; }
+.ks-tunic { fill: var(--ks-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-face { fill: var(--ks-skin); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-helmet { fill: var(--ks-stone); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-plume { fill: var(--ks-team); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ks-eye { fill: var(--spel-ink); }
+.ks-smile { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ks-kid.is-cheer { animation: ks-cheer 620ms ease-in-out infinite alternate; }
+@keyframes ks-cheer { from { transform: translateY(0); } to { transform: translateY(-18px) rotate(-5deg); } }
+
+/* ── The sum, the streak and the keypad (1 player) ───────────────────────── */
+.ks-panel {
+  width: min(44vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+  position: relative;
+  z-index: 1;
+}
+.ks-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.ks-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+.ks-streak { margin: 0; display: flex; align-items: center; gap: 6px; }
+.ks-pip {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--kiosk-paper);
+  transition: background-color 200ms;
+}
+.ks-pip.is-on { background: var(--spel-star); }
+.ks-streak-label { margin-left: var(--sp-1); font-weight: 800; color: var(--text-muted); }
+.ks-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .ks-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .ks-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); border-top: var(--spel-line) solid var(--spel-ink); background: var(--spel-grass); }
+  .ks-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .ks-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+}
+
+/* ── 2 players: the castles on top, the halves below (Touwtrekken's) ────── */
+.ks-duel-stage { grid-template-rows: minmax(150px, 44%) minmax(0, 1fr); }
+/* The field stays in its band: the halves below get no grass over them. */
+.ks-duel-world { overflow: hidden; overflow: clip; }
+.tt-end-scores .ks-end-lives { font-size: var(--kiosk-text-lg); }
+.tt-end-scores .ks-end-lives svg { color: var(--ks-low); }
+.ks-duel.is-ended .tt-halves { opacity: .35; }
+
+/* "Hoe los ik dit op?": everything holds still (stones in the air too). */
+.ks-root.is-paused * { animation-play-state: paused; }
+/* Reduced motion: no flying, tumbling or shaking, only the states (blocks gone, towers down, a heap). */
+.ks-root.is-still .ks-scene *,
+.ks-ending.is-still .ks-scene *,
+.ks-duel.is-still .ks-scene * { animation: none !important; transition: none !important; }
+.is-still .ks-castle.is-fallen .ks-standing,
+.is-still .ks-puff,
+.is-still .ks-call { opacity: 0; }
+.is-still .ks-tower.is-down { visibility: hidden; }
+/* The computer's clock ring still fills: it tells when the next stone comes. */
+.ks-root.is-still .ks-reload-fill { animation: ks-reload var(--dur) linear both !important; }
+.ks-ending .ks-scene { position: absolute; inset: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .ks-duel .ks-scene * { animation: none !important; transition: none !important; }
+}

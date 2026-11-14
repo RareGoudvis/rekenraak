@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Heart, Hexagon, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
-import { ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
+import { CastleTurret, ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -13,6 +13,13 @@ const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
 // Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
+// Kasteel: 1 speler against the computer (Normaal / Moeilijk) or 2 spelers on one screen (Samen tegelijk / Om beurten).
+const KASTEEL_OPTIONS: SkinOption[] = [
+    { id: 'spelers', label: 'Hoeveel spelers?', default: '1', choices: [{ value: '1', label: '1 speler' }, { value: '2', label: '2 spelers' }] },
+    { id: 'levens', label: 'Levens per kasteel', default: '20', choices: [10, 20, 30].map(n => ({ value: String(n), label: `${n} levens` })) },
+    { ...NIVEAU, when: { id: 'spelers', value: '1' } },
+    { id: 'manier', label: 'Hoe spelen jullie?', default: 'samen', when: { id: 'spelers', value: '2' }, choices: [{ value: 'samen', label: 'Samen tegelijk' }, { value: 'beurt', label: 'Om beurten' }] },
+];
 
 // The game picker's tiles, in order. A new skin = one entry here + its component file; the
 // session, the shell and the picker never change. No Component (or Screen) = shown as "binnenkort".
@@ -74,6 +81,22 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {}, accepts: KEYPAD_NUMBER },
         icon: FlagPennant,
         Screen: lazy(() => import('./touwtrekken/Touwtrekken')),
+    },
+    {
+        // 1 speler: a catapult duel with the computer's castle (kasteel/siege.ts: its clock, the lives, the tuning); your castle
+        // at 0 = the early end, theirs = won (onFinish). The hidden cap never comes first: every answer costs a castle a life.
+        // 2 spelers: its own screen on the duel store (first to knock the other castle to 0). Each right answer launches
+        // (correct), a stone hitting a wall is the skin's 'hit' cue, the computer's clock shot its 'launch' cue.
+        meta: {
+            id: 'kasteel', label: 'Kasteel', input: 'keypad', timed: true, players: '1-2', round: { cap: 90 }, canFail: true, accepts: KEYPAD_NUMBER,
+            winTitle: 'Kasteel veroverd!', failTitle: 'Oei! Je kasteel is om. Nog eens?', options: KASTEEL_OPTIONS,
+            sounds: { correct: 'zwoesj', wrong: 'plop', launch: 'zwoesj', hit: 'blok', win: 'jingle', fail: 'puf' },
+        },
+        icon: CastleTurret,
+        Component: lazy(() => import('./kasteel/Kasteel')),
+        Screen: lazy(() => import('./kasteel/KasteelDuel')),
+        screenWhen: { id: 'spelers', value: '2' },
+        Ending: lazy(() => import('./kasteel/Kasteel').then(m => ({ default: m.KasteelEnding }))),
     },
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts, 2 boards. A sum card turned first and then
