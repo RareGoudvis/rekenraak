@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, screen, within, act } from '@testing-library/react';
-import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
+import OefenWorkspace from '../components/oefenen/OefenWorkspace';
 import OefenShareModal from '../components/oefenen/OefenShareModal';
 import { buildSessie, filterOefenLeaves, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { kioskSupports } from '../services/oefenen/kiosk';
@@ -12,6 +12,7 @@ import type { OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
 import { LEERJAREN, leafAllowedForGrade } from '../config/gradePresets';
 import { APP_STRUCTURE } from '../config/appstructure';
+import { gradeShown, leafBtn as addBtn, pickGrade, queryLeafBtn, searchTree, shownLeafIds, showUitgebreid } from './helpers/oefenSidebar';
 
 // The raw sidebar node of a leaf: what the sidebar's leerjaar filter reads.
 const leafNode = (id: string) => APP_STRUCTURE.flatMap(d => d.subdomains.flatMap(s => s.types.flatMap(t => [t, ...(t.children ?? [])]))).find(l => l.id === id)!;
@@ -41,16 +42,20 @@ const leaf = (id: string) => {
     if (!l) throw new Error(`leaf ${id} is not kiosk-capable`);
     return l;
 };
-// The left-hand button for a leaf: its label plus the "1×" counter once added.
-// The footer button is the last "Delen": a hr-std leaf is called Delen too.
-const footerBtn = (name: string) => screen.getAllByRole('button', { name }).at(-1) as HTMLButtonElement;
-// Several leaves share a label ("Natuurlijke getallen" under hoofdrekenen and cijferen):
-// the buttons follow the list order, so the leaf's rank among its namesakes picks its button.
-const addBtn = (id: string) => {
-    const { label } = leaf(id);
-    const rank = listOefenLeaves().filter(l => l.label === label).findIndex(l => l.id === id);
-    return screen.getAllByRole('button', { name: (name: string) => name.replace(/\d+×$/, '') === label })[rank];
+// The workspace's Opslaan / Delen sit in its top bar: a hr-std leaf in the catalogue is called Delen too.
+const footerBtn = (name: string | RegExp) => within(screen.getByRole('banner')).getByRole('button', { name }) as HTMLButtonElement;
+// The inspector: its scope switch, and a section opened by its title (the head's name starts with it).
+const inspector = () => within(screen.getByRole('complementary', { name: 'Instellingen' }));
+const scopeSessie = () => fireEvent.click(inspector().getByRole('button', { name: 'Hele sessie' }));
+const openSection = (title: string) => {
+    const head = inspector().getByRole('button', { name: new RegExp(`^${title}`), expanded: false });
+    fireEvent.click(head);
 };
+// Session settings live in the Hele sessie scope, one section open at a time.
+const sessieSection = (title: string) => { scopeSessie(); if (inspector().queryByRole('button', { name: new RegExp(`^${title}`), expanded: true }) === null) openSection(title); };
+// Select a row by clicking its card (the selected row's settings show in the inspector).
+const selectRow = (label: string) => fireEvent.click(within(screen.getByRole('region', { name: label })).getAllByRole('button')[0]);
+const rowSection = (title: string) => { if (inspector().queryByRole('button', { name: new RegExp(`^${title}`), expanded: true }) === null) openSection(title); };
 const settings: BuilderSettings = { id: 'sess1', createdAt: 1, title: ' Tafels ', mode: 'willekeurig', allowRepeatType: true, timerMin: 15, testMode: true, statsLocked: true };
 
 describe('normaliseWeights', () => {
@@ -110,17 +115,21 @@ describe('buildSessie', () => {
     });
 });
 
-describe('OefenBuilderModal', () => {
+describe('Oefenmodus workspace', () => {
     test('adds two rows, sets willekeurig + timer, and shares a link that decodes to that session', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         fireEvent.click(addBtn('hr-std-optellen-nat'));
         expect(screen.getByText('2 soorten in de sessie')).toBeTruthy();
 
+        sessieSection('Sessie');
         fireEvent.click(screen.getByRole('button', { name: 'Willekeurig' }));
+        sessieSection('Tijd en aantal');
         fireEvent.click(screen.getByRole('button', { name: '15 min' }));
-        // Willekeurig reveals the chance sliders, each showing its normalised share.
-        expect(screen.getAllByText(/^Kans: 50%$/)).toHaveLength(2);
+        // Willekeurig puts each card's normalised share on a chip, and the selected row's slider says it too.
+        expect(screen.getAllByText(/^Kans 50%$/)).toHaveLength(2);
+        selectRow(leaf('procenten-nemen').label);
+        expect(screen.getByText('Kans: 50%')).toBeTruthy();
 
         fireEvent.click(footerBtn('Delen'));
         const link = screen.getByRole('link').getAttribute('href')!;
@@ -131,8 +140,9 @@ describe('OefenBuilderModal', () => {
     });
 
     test('Kansen 1 / 2: 2 goes in the link; testmodus disables it, says why, and ships 1', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
+        sessieSection('Feedback');
         const kansen = within(screen.getByRole('group', { name: 'Kansen per oefening' }));
         expect(kansen.getByRole('button', { name: '1' }).getAttribute('aria-pressed')).toBe('true');
         fireEvent.click(kansen.getByRole('button', { name: '2' }));
@@ -140,7 +150,6 @@ describe('OefenBuilderModal', () => {
         const linkNow = () => {
             fireEvent.click(footerBtn('Delen'));
             const href = screen.getByRole('link').getAttribute('href')!;
-            // The share modal's own Sluiten sits on top of the builder's.
             fireEvent.click(screen.getAllByRole('button', { name: 'Sluiten' }).at(-1)!);
             return decodeSessie(href.split('#oefen=')[1]);
         };
@@ -158,8 +167,9 @@ describe('OefenBuilderModal', () => {
     });
 
     test('testmodus forces "Statistieken pas op het einde" on, disabled, says why; off again restores the choice', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
+        sessieSection('Feedback');
         const locked = () => screen.getByRole('switch', { name: /Statistieken pas op het einde/ }) as HTMLButtonElement;
         expect(locked().getAttribute('aria-checked')).toBe('false');
         fireEvent.click(screen.getByRole('switch', { name: /Testmodus/ }));
@@ -172,7 +182,7 @@ describe('OefenBuilderModal', () => {
     });
 
     test('a row with settings the kiosk cannot check shows a hint and keeps Delen off', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('vormleer-hoeken-herkennen'));
         expect(screen.queryByRole('status')).toBeNull();
         act(() => {
@@ -184,37 +194,41 @@ describe('OefenBuilderModal', () => {
     });
 
     test('Opslaan puts the session in the library under its title; reopening keeps the id', () => {
-        const first = render(<OefenBuilderModal onClose={() => { }} />);
+        const first = render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten' } });
+        fireEvent.change(screen.getByLabelText('Naam van de sessie'), { target: { value: 'Procenten' } });
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         const saved = loadOefenSessies();
         expect(saved).toHaveLength(1);
         expect(saved[0].name).toBe('Procenten');
         first.unmount();
 
-        render(<OefenBuilderModal onClose={() => { }} initial={saved[0].sessie} />);
+        render(<OefenWorkspace onClose={() => { }} initial={saved[0].sessie} />);
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         expect(loadOefenSessies()).toHaveLength(1);
-        expect(within(screen.getByLabelText('Instellingen van de sessie')).getByLabelText('Titel')).toBeTruthy();
+        // Reopened on Hele sessie > Sessie, with the title in both the top bar and the section.
+        expect((inspector().getByLabelText('Titel') as HTMLInputElement).value).toBe('Procenten');
+        expect((screen.getByLabelText('Naam van de sessie') as HTMLInputElement).value).toBe('Procenten');
     });
 
     test('Bewerken: renaming keeps the id; changing a type saves a new id in the same library row', () => {
-        const first = render(<OefenBuilderModal onClose={() => { }} />);
+        const first = render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten' } });
+        fireEvent.change(screen.getByLabelText('Naam van de sessie'), { target: { value: 'Procenten' } });
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         const original = loadOefenSessies()[0].sessie;
         first.unmount();
 
-        const renamed = render(<OefenBuilderModal onClose={() => { }} initial={original} />);
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten week 2' } });
+        const renamed = render(<OefenWorkspace onClose={() => { }} initial={original} />);
+        fireEvent.change(inspector().getByLabelText('Titel'), { target: { value: 'Procenten week 2' } });
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         expect(loadOefenSessies().map(e => [e.id, e.sessie.id, e.sessie.title])).toEqual([[original.id, original.id, 'Procenten week 2']]);
         renamed.unmount();
 
         const reopened = loadOefenSessies()[0].sessie;
-        render(<OefenBuilderModal onClose={() => { }} initial={reopened} />);
+        render(<OefenWorkspace onClose={() => { }} initial={reopened} />);
+        selectRow(reopened.types[0].label);
+        rowSection('Hoeveel');
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '12' } });
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         const lib = loadOefenSessies();
@@ -228,44 +242,53 @@ describe('OefenBuilderModal', () => {
     });
 });
 
-describe('OefenBuilderModal title', () => {
+describe('Oefenmodus workspace title', () => {
     test('the library name typed at Opslaan becomes the session title', () => {
         const spy = vi.spyOn(window, 'prompt').mockReturnValue('Week 6 tafels');
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         spy.mockRestore();
         const saved = loadOefenSessies();
         expect(saved[0].name).toBe('Week 6 tafels');
         expect(saved[0].sessie.title).toBe('Week 6 tafels');
-        expect((screen.getByLabelText('Titel') as HTMLInputElement).value).toBe('Week 6 tafels');
+        expect((screen.getByLabelText('Naam van de sessie') as HTMLInputElement).value).toBe('Week 6 tafels');
     });
 });
 
-describe('OefenBuilderModal kans slider', () => {
+describe('Oefenmodus workspace kans slider', () => {
     test('one row: 100 %, slider disabled with a hint; a second row enables both and splits', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
+        // Afwisselen: the pinned slider is off and says why.
+        expect((screen.getByLabelText(/^Kans:/) as HTMLInputElement).disabled).toBe(true);
+        expect(screen.getByText('Kans: om de beurt')).toBeTruthy();
+        sessieSection('Sessie');
         fireEvent.click(screen.getByRole('button', { name: 'Willekeurig' }));
+        selectRow(leaf('procenten-nemen').label);
         const one = screen.getByLabelText(/^Kans:/) as HTMLInputElement;
         expect(one.disabled).toBe(true);
         expect(screen.getByText('Kans: 100%')).toBeTruthy();
         expect(screen.getByText('Voeg een tweede soort toe om de kansen te verdelen.')).toBeTruthy();
         fireEvent.click(addBtn('procenten-welk'));
-        const sliders = screen.getAllByLabelText(/^Kans:/) as HTMLInputElement[];
-        expect(sliders.every(s => !s.disabled)).toBe(true);
-        fireEvent.change(sliders[0], { target: { value: '100' } });
-        fireEvent.change(sliders[1], { target: { value: '50' } });
+        // The new row is selected and its slider is live; then the first row's again.
+        fireEvent.change(screen.getByLabelText(/^Kans:/), { target: { value: '50' } });
+        selectRow(leaf('procenten-nemen').label);
+        const first = screen.getByLabelText(/^Kans:/) as HTMLInputElement;
+        expect(first.disabled).toBe(false);
+        fireEvent.change(first, { target: { value: '100' } });
         expect(screen.getByText('Kans: 67%')).toBeTruthy();
-        expect(screen.getByText('Kans: 33%')).toBeTruthy();
+        expect(screen.getByText('Kans 67%')).toBeTruthy();
+        expect(screen.getByText('Kans 33%')).toBeTruthy();
         expect(screen.queryByText('Voeg een tweede soort toe om de kansen te verdelen.')).toBeNull();
     });
 });
 
-describe('OefenBuilderModal limit slider', () => {
+describe('Oefenmodus workspace limit slider', () => {
     test('the right end past 50 means unlimited, other values become the session limit', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
+        rowSection('Hoeveel');
         const slider = screen.getByLabelText(/^Aantal:/) as HTMLInputElement;
         expect(slider.type).toBe('range');
         expect(slider.min).toBe('1');
@@ -278,8 +301,9 @@ describe('OefenBuilderModal limit slider', () => {
         const link = screen.getByRole('link').getAttribute('href')!;
         expect(decodeSessie(link.split('#oefen=')[1]).types[0].limit).toBe(12);
         cleanup();
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
+        rowSection('Hoeveel');
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '7' } });
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '51' } });
         expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
@@ -345,12 +369,14 @@ describe('OefenShareModal', () => {
     });
 });
 
-describe('OefenBuilderModal pre-flight (no exercises)', () => {
+describe('Oefenmodus workspace pre-flight (no exercises)', () => {
     const DEAD = 'Deze instellingen leveren geen oefeningen op.';
-    const rowOf = (id: string) => within(screen.getByRole('region', { name: leaf(id).label }));
+    // The row's card (its sample and chips) and, once selected, its settings in the inspector.
+    const cardOf = (id: string) => within(screen.getByRole('region', { name: leaf(id).label }));
+    const rowOf = (id: string) => { selectRow(leaf(id).label); rowSection('Wat oefenen ze'); return inspector(); };
 
     test('klok lezen with every tijdstype unticked: red note, Delen off; one ticked again clears both', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         fireEvent.click(addBtn('klok-analoog-lezen'));
         expect(screen.queryByText(DEAD)).toBeNull();
@@ -370,7 +396,7 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
     });
 
     test('a dead row: the preview says so (no "klik Genereer"), Opslaan says it saves anyway and does', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('patronen-kettingsommen'));
         // × five times under 20 (1·2^5 = 32): a setting KettingConfig offers that generates nothing.
         act(() => {
@@ -378,11 +404,12 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
             st.setDraftBlocks(st.draftBlocks.map(b => ({ ...b, constraints: { ...b.constraints, ops: ['x'], chainLength: 5, maxGetal: 20 } })));
         });
         expect(rowOf('patronen-kettingsommen').getByText(DEAD)).toBeTruthy();
-        expect(rowOf('patronen-kettingsommen').getByText('Geen oefeningen met deze instellingen')).toBeTruthy();
+        expect(cardOf('patronen-kettingsommen').getByText('Geen oefeningen met deze instellingen')).toBeTruthy();
+        expect(cardOf('patronen-kettingsommen').getByText('Geen oefeningen')).toBeTruthy();
         expect(screen.queryByText(/klik Genereer/)).toBeNull();
         // Honest, not blocking: the footer says Opslaan keeps it but Delen waits.
         expect(screen.getByRole('note', { name: 'Opslaan zonder delen' }).textContent).toMatch(/opslaan.*delen/i);
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Klok' } });
+        fireEvent.change(screen.getByLabelText('Naam van de sessie'), { target: { value: 'Klok' } });
         fireEvent.click(footerBtn('Opslaan'));
         expect(loadOefenSessies()).toHaveLength(1);
     });
@@ -393,7 +420,7 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
     const tableBtn = (id: string, t: number) => rowOf(id).getAllByRole('button', { name: String(t) }).at(-1)!;
 
     test.each(['hr-std-vermenigvuldigen-nat', 'hr-std-delen-nat'])('%s: the last tafel cannot be unticked', (id) => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn(id));
         for (const t of [...draftKey<number[]>('selectedTables')]) fireEvent.click(tableBtn(id, t));
         expect(draftKey<number[]>('selectedTables')).toHaveLength(1);
@@ -401,7 +428,7 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
     });
 
     test('hr-std-delen-nat: 0 alone is no deeltafel, so the last other deler stays', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('hr-std-delen-nat'));
         fireEvent.click(tableBtn('hr-std-delen-nat', 0));
         for (const t of draftKey<number[]>('selectedTables').filter(t => t !== 0)) fireEvent.click(tableBtn('hr-std-delen-nat', t));
@@ -410,7 +437,7 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
     });
 
     test('hr-std-delen-nat met rest: the last visible deler cannot be unticked', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('hr-std-delen-nat'));
         fireEvent.click(rowOf('hr-std-delen-nat').getByRole('button', { name: 'Met rest' }));
         for (const t of [...draftKey<number[]>('selectedTables')]) fireEvent.click(tableBtn('hr-std-delen-nat', t));
@@ -419,7 +446,7 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
     });
 
     test('geld-teruggeven: the last "betalen met" biljet cannot be unticked', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('geld-teruggeven'));
         for (const v of [...draftKey<number[]>('payWithOptions')]) fireEvent.click(rowOf('geld-teruggeven').getByText(denominationLabel(v)));
         expect(draftKey<number[]>('payWithOptions')).toHaveLength(1);
@@ -435,47 +462,45 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
     });
 });
 
-describe('OefenBuilderModal catalogue search + leerjaar (O17)', () => {
-    const labels = () => screen.getAllByTitle('Toevoegen aan de sessie').map(b => b.textContent?.replace(/\d+×$/, ''));
-    const search = () => screen.getByPlaceholderText('Zoek oefening…');
-    const chip = (name: string) => within(screen.getByRole('group', { name: 'Leerjaar' })).getByRole('button', { name });
+describe('Oefenmodus workspace catalogue search + leerjaar (O17)', () => {
     afterEach(() => { useWorksheetStore.setState({ selectedGrade: null }); });
 
-    test('search narrows the list case-insensitively, also on the leaf group; no hit says so', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
-        const all = labels().length;
-        fireEvent.change(search(), { target: { value: 'PERCENT' } });
-        expect(labels()).toContain(leaf('procenten-nemen').label);
-        expect(labels()).not.toContain(leaf('breuken-vereenvoudigen').label);
-        expect(labels().length).toBeLessThan(all);
+    test('search narrows the tree case-insensitively, also on the leaf group; no hit says so', () => {
+        render(<OefenWorkspace onClose={() => { }} />);
+        const all = shownLeafIds().length;
+        searchTree('PERCENT');
+        expect(shownLeafIds()).toContain('procenten-nemen');
+        expect(shownLeafIds()).not.toContain('breuken-vereenvoudigen');
+        expect(shownLeafIds().length).toBeLessThan(all);
         // "Analoge klok" is the parent of "Lezen": the sidebar finds its children by it too.
-        fireEvent.change(search(), { target: { value: 'analoge klok' } });
-        expect(labels()).toContain(leaf('klok-analoog-lezen').label);
-        fireEvent.change(search(), { target: { value: 'zzqq' } });
-        expect(screen.queryAllByTitle('Toevoegen aan de sessie')).toHaveLength(0);
+        searchTree('analoge klok');
+        expect(shownLeafIds()).toContain('klok-analoog-lezen');
+        searchTree('zzqq');
+        expect(shownLeafIds()).toHaveLength(0);
         expect(screen.getByText('Geen oefening gevonden voor "zzqq".')).toBeTruthy();
-        fireEvent.change(search(), { target: { value: '' } });
-        expect(labels().length).toBe(all);
+        searchTree('');
+        expect(shownLeafIds().length).toBe(all);
     });
 
-    test('leerjaar chips: L4 hides a L5 leaf, L5 and Alle show it; the sidebar leerjaar is the start value', () => {
+    test('leerjaar: L4 hides a L5 leaf, L5 and Alle show it; the sidebar leerjaar is the start value', () => {
         useWorksheetStore.setState({ selectedGrade: 4 });
-        render(<OefenBuilderModal onClose={() => { }} />);
-        expect(chip('L4').getAttribute('aria-pressed')).toBe('true');
-        expect(labels()).not.toContain(leaf('procenten-nemen').label);
-        fireEvent.click(chip('L5'));
-        expect(labels()).toContain(leaf('procenten-nemen').label);
-        fireEvent.click(chip('L1'));
-        const l1 = labels().length;
-        fireEvent.click(chip('Alle'));
-        expect(labels().length).toBeGreaterThan(l1);
+        render(<OefenWorkspace onClose={() => { }} />);
+        showUitgebreid();
+        expect(gradeShown()).toContain('L4');
+        expect(queryLeafBtn('procenten-nemen')).toBeNull();
+        pickGrade('L5');
+        expect(queryLeafBtn('procenten-nemen')).not.toBeNull();
+        pickGrade('L1');
+        const l1 = shownLeafIds().length;
+        pickGrade('Alle');
+        expect(shownLeafIds().length).toBeGreaterThan(l1);
         // The builder's own filter never moves the sidebar's leerjaar.
         expect(useWorksheetStore.getState().selectedGrade).toBe(4);
     });
 
     test('a new row seeds at the sidebar leerjaar; a later leerjaar change seeds only new rows (triage item 4)', () => {
         useWorksheetStore.setState({ selectedGrade: 1 });
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         const maxOf = (i: number) => (useWorksheetStore.getState().draftBlocks[i].constraints as Record<string, unknown>).maxGetal;
         fireEvent.click(addBtn('hr-std-optellen-nat'));
         expect(maxOf(0)).toBe(20);
@@ -535,18 +560,24 @@ describe('OefenShareModal summary (O19)', () => {
 describe('exactForm control (O8 builder half)', () => {
     const SAME = 'Gelijkwaardig goedrekenen';
     const EXACT = 'Enkel de gevraagde vorm';
-    const rowOf = (id: string) => within(screen.getByRole('region', { name: leaf(id).label }));
+    // A row's Antwoord section, or null when the row has none.
+    const antwoordOf = (id: string) => {
+        selectRow(leaf(id).label);
+        if (!inspector().queryByRole('button', { name: /^Antwoord/ })) return null;
+        rowSection('Antwoord');
+        return inspector().getByRole('group', { name: 'Antwoord' });
+    };
     // The button reads "Opgeslagen" for 2 s after a save.
     const saved = () => { fireEvent.click(screen.getByRole('button', { name: /Opslaan|Opgeslagen/ })); return loadOefenSessies()[0].sessie; };
 
     test('preselected from the descriptor default; only a change is written to the row', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Breuken' } });
+        render(<OefenWorkspace onClose={() => { }} />);
+        fireEvent.change(screen.getByLabelText('Naam van de sessie'), { target: { value: 'Breuken' } });
         fireEvent.click(addBtn('breuken-vereenvoudigen'));
         fireEvent.click(addBtn('procenten-nemen'));
         // A leaf without a breuk answer (no exactFormDefault) gets no control.
-        expect(rowOf('procenten-nemen').queryByRole('group', { name: 'Antwoord' })).toBeNull();
-        const group = within(rowOf('breuken-vereenvoudigen').getByRole('group', { name: 'Antwoord' }));
+        expect(antwoordOf('procenten-nemen')).toBeNull();
+        const group = within(antwoordOf('breuken-vereenvoudigen')!);
         expect(group.getByRole('button', { name: EXACT }).getAttribute('aria-pressed')).toBe('true');
         expect(group.getByRole('button', { name: SAME }).getAttribute('aria-pressed')).toBe('false');
         expect('exactForm' in saved().types[0]).toBe(false);
@@ -574,43 +605,49 @@ describe('exactForm control (O8 builder half)', () => {
 });
 
 describe('builder stays within the link bounds (item 8)', () => {
-    test('20 rows: every add button is off with a note; removing one turns them back on', () => {
+    test('20 rows: a catalogue click adds nothing and a note says why; removing one makes room again', () => {
         // Reopened with 20 types: one render instead of 20 adds, each re-rendering every row.
         const type = { typeId: 'procenten', leafId: 'procenten-nemen', label: 'Percent', constraints: { ...leaf('procenten-nemen').constraints }, weight: 5 };
         const full: OefenSessie = { v: 1, id: 'full', title: 'Vol', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false, types: Array.from({ length: 20 }, () => ({ ...type })) };
-        render(<OefenBuilderModal onClose={() => { }} initial={full} />);
+        render(<OefenWorkspace onClose={() => { }} initial={full} />);
         expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
-        const adds = () => screen.getAllByTitle(/Toevoegen aan de sessie|Maximum 20 soorten per sessie/) as HTMLButtonElement[];
-        expect(adds().every(b => b.disabled)).toBe(true);
         expect(screen.getByText('Maximum 20 soorten per sessie.')).toBeTruthy();
+        // A full session takes no more rows, from the catalogue nor by Dupliceren.
         fireEvent.click(addBtn('procenten-welk'));
         expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
+        expect(screen.getAllByRole('button', { name: 'Dupliceren' }).every(b => (b as HTMLButtonElement).disabled)).toBe(true);
         fireEvent.click(screen.getAllByRole('button', { name: /Verwijderen/ })[0]);
-        expect(adds().every(b => !b.disabled)).toBe(true);
         expect(screen.queryByText('Maximum 20 soorten per sessie.')).toBeNull();
+        fireEvent.click(addBtn('procenten-welk'));
+        expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
     });
 
     test('the title field takes at most 80 characters (the link refuses longer)', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
-        expect((screen.getByLabelText('Titel') as HTMLInputElement).maxLength).toBe(80);
+        render(<OefenWorkspace onClose={() => { }} />);
+        expect((screen.getByLabelText('Naam van de sessie') as HTMLInputElement).maxLength).toBe(80);
+        expect((inspector().getByLabelText('Titel') as HTMLInputElement).maxLength).toBe(80);
     });
 });
 
 describe('klok description says what the kiosk asks (O21)', () => {
     // ClockConfig serves the sheet too, where lezen IS written in words: both answers are named.
     test('analoge klok lezen: in woorden in de oefenmodus; tekenen: wijzers slepen', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('klok-analoog-lezen'));
         fireEvent.click(addBtn('klok-analoog-tekenen'));
-        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd in woorden)')).toBeTruthy();
         expect(screen.getByText('Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)')).toBeTruthy();
+        selectRow(leaf('klok-analoog-lezen').label);
+        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd in woorden)')).toBeTruthy();
     });
 
     test('the lezen row\'s Antwoord control: in woorden by default, als uu:mm renames the row and the hint follows', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('klok-analoog-lezen'));
         fireEvent.click(addBtn('klok-analoog-tekenen'));
         // Only the lezen row offers it.
+        expect(inspector().queryByRole('button', { name: /^Antwoord/ })).toBeNull();
+        selectRow(leaf('klok-analoog-lezen').label);
+        rowSection('Antwoord');
         const groups = screen.getAllByRole('group', { name: 'Antwoord' });
         expect(groups).toHaveLength(1);
         const woorden = within(groups[0]).getByRole('button', { name: 'In woorden' });
@@ -619,31 +656,39 @@ describe('klok description says what the kiosk asks (O21)', () => {
         expect(digitaal.getAttribute('aria-pressed')).toBe('false');
         fireEvent.click(digitaal);
         expect(digitaal.getAttribute('aria-pressed')).toBe('true');
+        rowSection('Wat oefenen ze');
         expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)')).toBeTruthy();
         expect(screen.getByRole('region', { name: 'Analoge klok · lezen · uu:mm' })).toBeTruthy();
         expect(useWorksheetStore.getState().draftBlocks[0].constraints).toMatchObject({ klokAnswer: 'digitaal' });
-        fireEvent.click(woorden);
+        rowSection('Antwoord');
+        fireEvent.click(within(screen.getByRole('group', { name: 'Antwoord' })).getByRole('button', { name: 'In woorden' }));
         expect(screen.getByRole('region', { name: 'Analoge klok · lezen' })).toBeTruthy();
     });
 });
 
-describe('OefenBuilderModal endless-session hint (O18)', () => {
+describe('Oefenmodus workspace endless-session hint (O18)', () => {
     const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling zelf op Stoppen tikt.';
 
     test('an unlimited row without a timer says when the run stops; a timer or limits on every row clear it', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         expect(screen.queryByText(ENDLESS)).toBeNull();
         fireEvent.click(addBtn('procenten-nemen'));
-        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
+        expect(screen.getByText('Geen limiet')).toBeTruthy();
+        sessieSection('Tijd en aantal');
         expect(screen.getByText(ENDLESS)).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: '10 min' }));
         expect(screen.queryByText(ENDLESS)).toBeNull();
         fireEvent.click(within(screen.getByRole('group', { name: 'Tijd' })).getByRole('button', { name: 'Uit' }));
         expect(screen.getByText(ENDLESS)).toBeTruthy();
+        selectRow(leaf('procenten-nemen').label);
+        rowSection('Hoeveel');
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '12' } });
+        sessieSection('Tijd en aantal');
         expect(screen.queryByText(ENDLESS)).toBeNull();
+        expect(screen.getByText('12 oefeningen (de som van de limieten).')).toBeTruthy();
         // One unlimited row is enough to make the whole run endless.
         fireEvent.click(addBtn('procenten-welk'));
+        sessieSection('Tijd en aantal');
         expect(screen.getByText(ENDLESS)).toBeTruthy();
     });
 });

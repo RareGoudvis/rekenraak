@@ -18,7 +18,7 @@ import EenvoudigDrawer from '../eenvoudig/EenvoudigDrawer';
 import { useAsideRight, useDrawerDismiss } from '../eenvoudig/drawerHooks';
 import { useEenvoudigData } from '../eenvoudig/useEenvoudigData';
 import { useEenvoudigUi } from '../eenvoudig/useEenvoudigUi';
-import { listOefenLeaves, seedRowConstraints, withKioskSeed, type OefenLeaf } from './oefenBuild';
+import { listOefenLeaves, withKioskSeed, type OefenLeaf } from './oefenBuild';
 
 interface Props {
     onAdd(leafId: string, constraints?: Record<string, unknown>, label?: string): void;
@@ -71,10 +71,8 @@ export default function OefenSidebar({ onAdd, isAdded }: Props) {
     const tree = useMemo(() => filterByGrade(filterTree(fullTree, search), grade), [fullTree, search, grade]);
     const open = useTreeOpen(search.trim().length > 0);
     const addLeaf = (t: TreeLeaf) => {
-        const leaf = leaves.get(t.id);
-        if (!leaf) return;
-        // The builder's seed: the editor's leerjaar at the moment of adding.
-        onAdd(leaf.id, seedRowConstraints(leaf, useWorksheetStore.getState().selectedGrade), leaf.label);
+        // Only the id: the builder seeds a leaf row itself (the editor's leerjaar at the moment of adding).
+        if (leaves.has(t.id)) onAdd(t.id);
     };
     const countBadge = (leafId: string) => {
         const n = isAdded?.(leafId) ?? 0;
@@ -110,6 +108,8 @@ export default function OefenSidebar({ onAdd, isAdded }: Props) {
             onAdd(r.leafId, withKioskSeed(r.typeId, r.constraints), r.label);
             setTopic(null);
         },
+        // The rows of the leaf a click on the card adds (its first variant's).
+        badgeOf: isAdded ? (card) => isAdded(card.vars[0].leafId) : undefined,
     };
 
     const pickTab = (next: Tab) => { setTopic(null); setTab(next); };
@@ -143,7 +143,7 @@ export default function OefenSidebar({ onAdd, isAdded }: Props) {
                 </div>
                 <hr style={S.divider} />
                 <div style={S.navArea}>
-                    <SidebarTree tree={tree} search={search} open={open} onLeaf={addLeaf} leafEnd={countBadge} leafTitle={oefenTitle} />
+                    <SidebarTree tree={tree} search={search} open={open} onLeaf={addLeaf} leafEnd={countBadge} leafTitle={oefenTitle} markIds />
                 </div>
             </>)}
             {drawerOpen && data && topic !== null && (

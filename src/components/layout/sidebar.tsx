@@ -14,7 +14,6 @@ import PopupSelect from '../ui/PopupSelect';
 import Wordmark from '../ui/Wordmark';
 import BetaCaption from '../ui/BetaCaption';
 import OverzichtPanel from './OverzichtPanel';
-import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 import EenvoudigPane from '../eenvoudig/EenvoudigPane';
 import EenvoudigPanelHost from '../eenvoudig/EenvoudigPanelHost';
 import { effectiveSidebarTab, saveDefaultMode } from '../../services/eenvoudigMode';
@@ -29,8 +28,7 @@ export default function Sidebar() {
     const sidebarPreview = useWorksheetStore((state) => state.sidebarPreview);
     const setView = useWorksheetStore((state) => state.setView);
     const locked = !!curriculum?.locked;
-    const oefenOpen = useWorksheetStore((state) => state.oefenBuilderOpen);
-    const setOefenOpen = useWorksheetStore((state) => state.setOefenBuilderOpen);
+    const openOefenmodus = useWorksheetStore((state) => state.openOefenmodus);
 
     // Hover example: after a short delay over a leaf, show a live preview card anchored
     // to its right (or left if it would overflow). Gated on the sidebarPreview setting.
@@ -180,7 +178,7 @@ export default function Sidebar() {
                 (it would offer exercises outside the whitelist) but keeps Bordmodus. */}
             <div style={S.modeRow}>
                 {!locked && (
-                    <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setOefenOpen(true)}
+                    <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => openOefenmodus()}
                         title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
                         <Student size={16} aria-hidden="true" /><span>Oefenmodus</span>
                     </button>
@@ -206,7 +204,6 @@ export default function Sidebar() {
                 <Wordmark height={22} />
             </a>
             {!locked && <EenvoudigPanelHost />}
-            {oefenOpen && <OefenBuilderModal onClose={() => setOefenOpen(false)} />}
         </aside>
     );
 }

@@ -1,7 +1,9 @@
 /* Pupil kiosk (oefenen.html). Theme tokens from theme.css; the kiosk's own tokens below are
    larger than the teacher UI's because a pupil reads at arm's length and taps with a thumb.
    Landscape-first (phone on its side, tablet, Chromebook); portrait stacks as a fallback. */
-.oefen-body {
+/* .oefen-preview: the teacher's Oefenmodus workspace draws a sample card with the same tokens. */
+.oefen-body,
+.oefen-preview {
   --kiosk-text: clamp(18px, 1.6vmin + 12px, 22px);
   --kiosk-text-lg: clamp(22px, 2.4vmin + 14px, 30px);
   --kiosk-text-xl: clamp(28px, 4vmin + 14px, 44px);

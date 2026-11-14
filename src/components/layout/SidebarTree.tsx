@@ -27,12 +27,14 @@ interface Props {
     leafEnd?: (leafId: string) => ReactNode;
     // The leaf's tooltip; the editor's says it adds one exercise to the sheet.
     leafTitle?: (label: string) => string;
+    // Row ids as data attributes, for tests and harnesses (the editor's DOM stays as it was).
+    markIds?: boolean;
 }
 
 const sheetTitle = (label: string) => `${label} toevoegen (één oefening)`;
 
 // The Uitgebreid tree: domain bands, subdomain rows with a count, type accordions and leaves.
-export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafEnd, leafTitle = sheetTitle }: Props) {
+export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafEnd, leafTitle = sheetTitle, markIds }: Props) {
     const { openSubdomain, openTypes, toggleSubdomain, toggleType } = open;
     const isSearching = search.trim().length > 0;
     return (<>
@@ -63,6 +65,7 @@ export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafE
                                                 {/* Subdomain header */}
                                                 <button
                                                     className="sidebar-row"
+                                                    data-sub-id={markIds ? subdomain.id : undefined}
                                                     style={S.subdomainBtn(subOpen, accent, subdomain.placeholder)}
                                                     onClick={() => toggleSubdomain(subdomain.id)}
                                                 >
@@ -92,6 +95,7 @@ export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafE
                                                                     <button
                                                                         key={type.id}
                                                                         className="sidebar-leaf"
+                                                                        data-leaf-id={markIds ? type.id : undefined}
                                                                         style={S.leafBtn}
                                                                         title={leafTitle(type.label)}
                                                                         onClick={() => onLeaf(leaf)}
@@ -130,6 +134,7 @@ export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafE
                                                                                     <button
                                                                                         key={leaf.id}
                                                                                         className="sidebar-leaf"
+                                                                                        data-leaf-id={markIds ? leaf.id : undefined}
                                                                                         style={S.leafBtn}
                                                                                         title={leafTitle(leaf.label)}
                                                                                         onClick={() => onLeaf(leaf)}

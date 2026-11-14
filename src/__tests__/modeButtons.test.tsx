@@ -18,11 +18,13 @@ beforeEach(() => {
 afterEach(() => { cleanup(); useWorksheetStore.setState({ curriculum: null, view: 'editor' }); });
 
 describe('mode buttons', () => {
-    test('the sidebar has both; Oefenmodus opens the builder', () => {
+    test('the sidebar has both; Oefenmodus switches to its own workspace view', () => {
         render(<Sidebar />);
         expect(sidebar().getByRole('button', { name: BORD })).toBeTruthy();
         fireEvent.click(sidebar().getByRole('button', { name: OEFEN }));
-        expect(screen.getByRole('dialog', { name: 'Oefenmodus samenstellen' })).toBeTruthy();
+        expect(useWorksheetStore.getState()).toMatchObject({ view: 'oefenmodus', oefenInitial: null, oefenReturn: 'editor' });
+        // No dialog any more: the builder is a view, not a modal over the sidebar.
+        expect(screen.queryByRole('dialog')).toBeNull();
     });
 
     test('Bordmodus switches to the whiteboard view', () => {

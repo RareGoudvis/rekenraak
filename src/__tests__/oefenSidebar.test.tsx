@@ -2,7 +2,7 @@
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, waitFor, act, within } from '@testing-library/react';
 import OefenSidebar from '../components/oefenen/OefenSidebar';
-import { listOefenLeaves, seedRowConstraints, withKioskSeed } from '../components/oefenen/oefenBuild';
+import { listOefenLeaves, withKioskSeed } from '../components/oefenen/oefenBuild';
 import { useEenvoudigUi } from '../components/eenvoudig/useEenvoudigUi';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { APP_STRUCTURE, flattenLeaves } from '../config/appstructure';
@@ -71,13 +71,12 @@ describe('Uitgebreid', () => {
         for (const id of nonKiosk) expect(seen.has(id)).toBe(false);
     });
 
-    test('a leaf adds its builder seed at the editor leerjaar with its kiosk label', () => {
+    test('a leaf hands on only its id: the builder seeds it at the editor leerjaar', () => {
         const onAdd = renderSidebar();
         tab('Uitgebreid');
         fireEvent.click(leafButton('hr-std-optellen-nat'));
-        const leaf = listOefenLeaves().find(l => l.id === 'hr-std-optellen-nat')!;
         expect(onAdd).toHaveBeenCalledTimes(1);
-        expect(onAdd.mock.calls[0]).toEqual(['hr-std-optellen-nat', seedRowConstraints(leaf, 3), leaf.label]);
+        expect(onAdd.mock.calls[0]).toEqual(['hr-std-optellen-nat']);
     });
 
     test('the count badge shows how often a leaf is in the session', () => {
@@ -155,5 +154,13 @@ describe('Eenvoudig', () => {
         expect(onAdd.mock.calls[0]).toEqual([r.leafId, withKioskSeed(r.typeId, r.constraints), r.label]);
         expect(r.constraints).not.toEqual({});
         expect(document.querySelector('.ez-drawer')).toBeNull();
+    });
+
+    test('a card shows how many rows its leaf has', async () => {
+        renderSidebar(id => (id === 'hr-std-optellen-nat' ? 2 : 0));
+        await waitFor(() => expect(navRows().length).toBeGreaterThan(0));
+        const drawer = await openTopic('Optellen');
+        const heads = [...drawer.querySelectorAll('.ez-tc-h')].map(h => h.textContent ?? '');
+        expect(heads.some(h => h.endsWith('2×'))).toBe(true);
     });
 });

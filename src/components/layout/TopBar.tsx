@@ -215,8 +215,9 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-            // The board overlay keeps this TopBar mounted; sheet undo there would be invisible.
-            if (useWorksheetStore.getState().view === 'whiteboard') return;
+            // The board and Oefenmodus overlays keep this TopBar mounted; sheet undo there would be invisible.
+            const view = useWorksheetStore.getState().view;
+            if (view === 'whiteboard' || view === 'oefenmodus') return;
             const t = e.target as HTMLElement | null;
             if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
             const key = e.key.toLowerCase();
