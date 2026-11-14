@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Zeehondjes voeren: a calm choice skin for the youngest (skins/zeehond/): 4 seals on floes hold up the options, the right one gets a fish from the bucket; untimed, 15 sums, plays the klok (accepts.pictures).
+
 **2026-11-14** — Spelen plays the klok (first content pack): content/pack.ts (SpelVisual: klok face / digital time; a question visual, per-choice views), content/packs.ts (SPEL_PACKS), SpelVisual / SpelChoiceFace; four directions from the cards (klok lezen in words, wijzerklok → digitaal, wijzers tekenen, digitale klok instellen); clock distractors (half-drie trap, kwart over/voor, hands swapped, ±5 min, wrong hour; never 08:15 next to 20:15); content `pictures: true` only reaches skins with `accepts.pictures` (Ballonnen, Pakjesband, Mollen). Board code reads answers through answerOf (facts is optional now).
 
 **2026-11-14** — Spelen round 3B: Kerstboom versieren (Kerst, 15 decorations + star, lights up), Verborgen prent (16 tiles over 8 code-drawn funny animals in prent/prenten/, no repeat in a row) and Schatkist (the last digits of right answers make a 4-digit lock code, 3 chests; accepts digits only). That makes 15 games.

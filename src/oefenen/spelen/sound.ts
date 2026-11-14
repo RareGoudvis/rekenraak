@@ -5,7 +5,7 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
@@ -218,6 +218,13 @@ const RECIPES: Record<SpelSound, Recipe> = {
         noise(ac, d, t, { dur: 0.05, vol: 0.12, filter: 'lowpass', f0: 900 });
         tone(ac, d, t, { f0: 1100, f1: 1500, at: 0.07, dur: 0.14, vol: 0.1, wobble: [30, 60] });
     },
+    // Zeehondjes right: a happy, soft seal "ork-ork" (two short low barks going up).
+    ork: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 260, f1: 340, dur: 0.12, vol: 0.22, wobble: [24, 18] });
+        tone(ac, d, t, { type: 'triangle', f0: 300, f1: 400, at: 0.16, dur: 0.14, vol: 0.22, wobble: [24, 18] });
+    },
+    // Zeehondjes wrong: a soft little "plons" in the water; neutral, never a buzzer.
+    plons: (ac, d, t) => { tone(ac, d, t, { f0: 560, f1: 200, dur: 0.14, vol: 0.16 }); noise(ac, d, t, { at: 0.04, dur: 0.26, vol: 0.12, filter: 'lowpass', f0: 1200, f1: 300 }); },
 };
 
 /** Plays one sound; silent when sound is off, before the first gesture, or without Web Audio. */
