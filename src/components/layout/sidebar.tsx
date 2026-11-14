@@ -380,8 +380,8 @@ export default function Sidebar() {
                     </button>
                 )}
                 <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setView('whiteboard')}
-                    title="Bordmodus: oefeningen en hulpmiddelen op het digibord" aria-label="Bordmodus: oefeningen en hulpmiddelen op het digibord">
-                    <Chalkboard size={16} aria-hidden="true" /><span>Bordmodus</span>
+                    title="Whiteboard: oefeningen en hulpmiddelen op het digibord" aria-label="Whiteboard: oefeningen en hulpmiddelen op het digibord">
+                    <Chalkboard size={16} aria-hidden="true" /><span>Whiteboard</span>
                 </button>
             </div>
             <BetaCaption />
@@ -441,7 +441,7 @@ const S = {
     modeRow: { flex: 'none', display: 'flex', gap: 'var(--sp-1)', padding: 'var(--sp-1) var(--sp-2)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
     modeBtn: {
         flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
-        // Same chrome as the TopBar's secondary IconButtons (Oefeningen toevoegen / Menu): a
+        // Same chrome as the TopBar's secondary IconButtons (Menu, Bewaren): a
         // bordered box, so these read as buttons and not as two labels.
         background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-sm)', height: 'var(--control-h)', padding: '0 10px',
         color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit', fontWeight: 600,

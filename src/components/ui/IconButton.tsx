@@ -16,6 +16,7 @@ interface Props {
         toolbar/panel buttons everywhere else stay on the one shared height. */
     boxSize?: number;
     dataTour?: string;            // forwarded as data-tour (spotlight onboarding anchor)
+    pressed?: boolean;            // toggle buttons: aria-pressed (absent = not a toggle)
     /** Extra classes. */
     className?: string;
 }
@@ -25,7 +26,7 @@ interface Props {
 // All colour tokens come from CSS variables so themes flow through.
 export default function IconButton({
     icon: Icon, label, visibleLabel, onClick, disabled = false,
-    variant = 'neutral', size = 18, boxSize, dataTour, className = '',
+    variant = 'neutral', size = 18, boxSize, dataTour, pressed, className = '',
 }: Props) {
     const style = computeStyle(variant, disabled, !!visibleLabel, boxSize);
     // Phosphor weight is a prop (not CSS), so the hover thickening can't live in
@@ -40,6 +41,7 @@ export default function IconButton({
             title={label}
             aria-label={label}
             aria-disabled={disabled || undefined}
+            aria-pressed={pressed}
             data-tour={dataTour}
             style={style}
             onMouseEnter={() => setEmphasized(true)}

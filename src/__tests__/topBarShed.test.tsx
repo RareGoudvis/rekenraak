@@ -7,13 +7,14 @@ import TopBar from '../components/layout/TopBar';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 
 // jsdom has no layout, so the three zone columns get the widths a real 1920 px window
-// measured (Playwright, 2026-10-28, after the "?" went icon-only and Bewaren joined): [left group,
-// name track, right group] per stage.
+// measured (Playwright, 2026-11-14, after "Oefeningen toevoegen" moved into the Menu and
+// Oplossingen went icon-only): [left group, name track, right group] per stage.
 const ZONE_WIDTHS: Record<number, [number, number, number]> = {
-    0: [454, 330, 498],
-    1: [180, 149, 226],
-    2: [180, 0, 226],
-    3: [138, 0, 226],
+    0: [259, 330, 407],
+    1: [138, 149, 226],
+    2: [138, 0, 226],
+    3: [138, 0, 184],
+    4: [138, 0, 96],
 };
 // jsdom leaves var() unresolved, so the bar padding and zone gap the components really set
 // are resolved against theme.css: a padding change shows up here instead of in a stub.
@@ -74,16 +75,16 @@ const stageAt = (width: number) => {
 };
 
 describe('TopBar shedding', () => {
-    // Why: the Bewaren label adds ~60 px at stage 0 (the "?" lost its label, the save button
-    // gained one), so full labels need a ~1975 px window now.
+    // Why: without the Toevoegen button and the Oplossingen word, full labels need a bar of
+    // 1 044 px (zones + gaps + padding): a ~1 700 px window, so 1920 keeps every label.
     test('a wide window: every label fits the inner width', () => {
-        expect(stageAt(1338)).toBe(0);
+        expect(stageAt(1052)).toBe(0);
     });
 
     // Why: the bar's padding is not room the row gets; counting it kept stage 0 at 1920 px
     // while the right group ran over "Automatisch bewaard".
     test('a window just under that sheds to icons once the inner width is short', () => {
-        expect(stageAt(1326)).toBe(1);
+        expect(stageAt(1040)).toBe(1);
     });
 
     // Why: the name centres in the space the groups leave, not dead centre of the bar, so
@@ -125,5 +126,30 @@ describe('TopBar help and save buttons', () => {
         fireEvent.click(bar.getByRole('button', { name: /^Menu/ }));
         expect(bar.queryByText(/Open bestand/)).toBeNull();
         expect(bar.queryByText('Uitleg')).toBeNull();
+    });
+});
+
+describe('TopBar toolbar items', () => {
+    test('Oplossingen is an icon-only toggle with aria-pressed', () => {
+        barWidth = 2000;
+        useWorksheetStore.setState({ showSolutions: false });
+        const { container } = render(<TopBar onPrint={() => {}} onOpenHelp={() => {}} />);
+        const bar = within(container.querySelector('.topbar') as HTMLElement);
+        const show = bar.getByRole('button', { name: 'Oplossingen tonen' });
+        expect(show.textContent?.trim()).toBe('');
+        expect(show.getAttribute('aria-pressed')).toBe('false');
+        fireEvent.click(show);
+        expect(useWorksheetStore.getState().showSolutions).toBe(true);
+        expect(bar.getByRole('button', { name: 'Oplossingen verbergen' }).getAttribute('aria-pressed')).toBe('true');
+        act(() => { useWorksheetStore.setState({ showSolutions: false }); });
+    });
+
+    test('"Oefeningen toevoegen…" is a Menu row at every width, not a bar button', () => {
+        barWidth = 2000;
+        const { container } = render(<TopBar onPrint={() => {}} onOpenHelp={() => {}} />);
+        const bar = within(container.querySelector('.topbar') as HTMLElement);
+        expect(bar.queryByRole('button', { name: /oefeningen.*toevoegen/i })).toBeNull();
+        fireEvent.click(bar.getByRole('button', { name: /^Menu/ }));
+        expect(bar.getByRole('button', { name: 'Oefeningen toevoegen…' })).toBeTruthy();
     });
 });

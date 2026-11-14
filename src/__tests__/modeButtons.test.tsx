@@ -8,7 +8,7 @@ import { useWorksheetStore } from '../store/useWorksheetStore';
 // Oefenmodus and Bordmodus live in a row above the sidebar's wordmark, not in the TopBar:
 // in the bar they pushed its stage 0 (all labels) past a 1920 px screen.
 const OEFEN = /^Oefenmodus/;
-const BORD = /^Bordmodus/;
+const BORD = /^Whiteboard/;
 const sidebar = () => within(document.querySelector('aside') as HTMLElement);
 
 beforeEach(() => {
@@ -53,5 +53,6 @@ describe('mode buttons', () => {
         fireEvent.click(bar.getByRole('button', { name: /^Menu/ }));
         expect(bar.queryByText('Oefenmodus')).toBeNull();
         expect(bar.queryByText('Bordmodus')).toBeNull();
+        expect(bar.queryByText('Whiteboard')).toBeNull();
     });
 });
