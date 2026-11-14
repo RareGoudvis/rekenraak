@@ -237,8 +237,52 @@ function deelPlan(a: number, d: number, lines: StepLine[]): MabPlan | null {
     return { initial, stages };
 }
 
+const matPicture = (n: number): MabPicture => ({ clusters: [matOf(n, 'have', { stable: true })], captions: [] });
+
+// A whole + / − sum without worked steps (3 + 4, 5 + 5, 7 − 3, 50 − 7): the picture alone, one stage per tap
+// (owner, 2026-11-14: "it's just MAB materials that can visualise it"). Initial = the first term.
+export function mabOnlyPlan(data: unknown): MabPlan | null {
+    const eq = data as Equation | null;
+    if (!eq || typeof eq !== 'object' || !Array.isArray(eq.operands) || eq.operands.length !== 2) return null;
+    if (eq.operator !== '+' && eq.operator !== '-') return null;
+    if (eq.operators && eq.operators.some(o => o !== eq.operator)) return null;
+    if (eq.missingIndex !== undefined || (eq.missingTerm && eq.missingTerm !== 'result') || eq.remainder !== undefined) return null;
+    const [a, b] = eq.operands;
+    if (typeof a !== 'number' || typeof b !== 'number' || !okNum(a) || !okNum(b) || a < 1 || b < 1) return null;
+    const answer = eq.operator === '+' ? a + b : a - b;
+    if (!okNum(answer)) return null;
+    if (eq.operator === '+') {
+        // The second term joins (heavy outline); a full ten is exchanged in a stage of its own.
+        const joined: MabPicture = { clusters: [{ pieces: [0, 1, 2, 3].map(p => [...repeat('have', digit(a, p)), ...repeat('now', digit(b, p))]), stable: true }], captions: [] };
+        const exchange = plusStage(a, b, []);
+        return { initial: matPicture(a), stages: [joined, ...(exchange.captions.length ? [exchange] : []), matPicture(answer)] };
+    }
+    const take = minusStage(a, b);
+    // Lenen first (the piece opened, nothing crossed out yet), then the pieces taken away.
+    const opened: MabPicture | null = take.captions.length
+        ? { clusters: take.clusters.map(c => ({ ...c, pieces: c.pieces.map(list => list.map(s => (s === 'gone' ? 'have' : s))) })), captions: take.captions }
+        : null;
+    return { initial: matPicture(a), stages: [...(opened ? [opened] : []), take, matPicture(answer)] };
+}
+
+// The sum may get the picture alone: mabOnlyPlan under the block's settings (a puntoefening or a preset keeps its own method).
+export function mabOnlyApplies(data: unknown, constraints?: unknown): boolean {
+    const eq = data as Equation | null;
+    const c = (constraints ?? {}) as { equationType?: string; preset?: string };
+    if (!eq || c.equationType === 'puntoefening') return false;
+    const [vop, vpreset] = eq.variant ? eq.variant.split(':') : [eq.operator, c.preset];
+    if (vop !== eq.operator || (vpreset && vpreset !== 'vrij')) return false;
+    return mabOnlyPlan(eq) !== null;
+}
+
+// SYNC: mab.css hides MAB below 600 × 500 px (a phone), so a picture-only offer would be empty there.
+const MAB_PHONE_QUERY = '(max-width: 599px), (max-height: 499px)';
+export const mabFitsScreen = (): boolean => typeof window === 'undefined' || !window.matchMedia?.(MAB_PHONE_QUERY).matches;
+
 // The MAB picture for one hoofdrekenen sum and its steps, or null when MAB does not apply (owner rules 1 and 2).
+// No lines = the picture alone (mabOnlyPlan).
 export function mabPlan(data: unknown, lines: StepLine[]): MabPlan | null {
+    if (Array.isArray(lines) && lines.length === 0) return mabOnlyPlan(data);
     const eq = data as Equation | null;
     if (!eq || typeof eq !== 'object' || !Array.isArray(eq.operands) || eq.operands.length !== 2 || !lines?.length) return null;
     if (eq.operators && eq.operators.some(o => o !== eq.operator)) return null;

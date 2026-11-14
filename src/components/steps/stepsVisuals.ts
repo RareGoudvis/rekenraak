@@ -11,7 +11,8 @@ export const STEPS_VISUALS: readonly StepsVisual[] = Object.values(modules).map(
 const byType = new Map(STEPS_VISUALS.flatMap(v => v.typeIds.map(t => [t, v] as const)));
 
 // `slot` says where Oefenmodus draws it (StepsVisual.kioskSlot); absent = 'panel', and the stappenhulp always gets 'panel'.
-export type RenderStepsVisual = ((revealed: number) => ReactNode) & { slot?: 'panel' | 'card' };
+// `stages`: no lines, the picture alone; revealed runs 0..stages (StepsPanel, StepsView).
+export type RenderStepsVisual = ((revealed: number) => ReactNode) & { slot?: 'panel' | 'card'; stages?: number };
 
 // The slot's renderer for one exercise, or undefined when its type has no visual there.
 export function stepsVisualFor(typeIds: string | readonly string[], data: unknown, lines: StepLine[], where: 'kiosk' | 'tutor', ctx: StepsVisualContext = {}): RenderStepsVisual | undefined {
@@ -19,5 +20,6 @@ export function stepsVisualFor(typeIds: string | readonly string[], data: unknow
     if (!visual || (where === 'kiosk' && visual.kiosk === false)) return undefined;
     if (visual.applies && !visual.applies(data, lines, ctx)) return undefined;
     const render = (revealed: number) => createElement('div', { className: 'steps-visual' }, createElement(visual.Visual, { data, lines, revealed }));
-    return Object.assign(render, { slot: where === 'kiosk' ? visual.kioskSlot ?? 'panel' : 'panel' } as const);
+    const stages = lines.length === 0 ? visual.stages?.(data) : undefined;
+    return Object.assign(render, { slot: where === 'kiosk' ? visual.kioskSlot ?? 'panel' : 'panel', ...(stages ? { stages } : {}) } as const);
 }

@@ -12,6 +12,7 @@ import QuestionSteps from '../oefenen/kiosk/QuestionSteps';
 import { StepTokens } from '../components/viewer/StepTokens';
 import { codecById } from '../services/steps/tutorCodecs';
 import { stepsVisualFor } from '../components/steps/stepsVisuals';
+import { mabAllowed, mabFitsScreen, mabOnlyApplies } from '../services/steps/mabSteps';
 
 // The stappenhulp (tutor.html): a sheet's QR → a menu of its sums → one sum's worked steps,
 // revealed a line at a time. It never checks the pupil's work and sends nothing anywhere.
@@ -59,10 +60,11 @@ function itemSum(item: TutorItem): ReactNode {
 }
 
 // The lines a tappable item opens; null keeps it greyed (the sheet said no steps, or this page knows none).
-function itemSteps(item: TutorItem | null): StepLine[] | null {
+function itemSteps(item: TutorItem | null, grade?: number): StepLine[] | null {
     if (!item) return null;
     // A sum is worked out here, not taken from the print: a sheet printed before a strategy existed marked it greyed.
-    if (item.kind === 'sum') return workedSteps(item.eq);
+    // A fact without steps (3 + 4) opens the MAB picture alone ([]) for leerjaar 1–3 on a screen big enough for it.
+    if (item.kind === 'sum') return workedSteps(item.eq) ?? (mabAllowed({ grade }) && mabFitsScreen() && mabOnlyApplies(item.eq) ? [] : null);
     // A codec type keeps the sheet's own decision: its steps may depend on settings the page never sees.
     if (!item.steps) return null;
     return codecById(item.codec)?.steps(item.data) ?? null;
@@ -113,7 +115,7 @@ export default function TutorApp() {
 
     const { groups, grade } = state.sheet;
     const current = open ? groups[open.g]?.items[open.i] : null;
-    const currentSteps = itemSteps(current ?? null);
+    const currentSteps = itemSteps(current ?? null, grade);
     if (open && current && currentSteps) {
         const g = groups[open.g];
         const label = itemLabel(g.numbering, open.i) ?? `oefening ${open.i + 1}`;
@@ -144,7 +146,7 @@ export default function TutorApp() {
                         <ul className="tutor-list">
                             {g.items.map((item, i) => {
                                 const label = itemLabel(g.numbering, i) ?? `${i + 1}.`;
-                                const steps = itemSteps(item);
+                                const steps = itemSteps(item, grade);
                                 return (
                                     <li key={i}>
                                         {steps ? (

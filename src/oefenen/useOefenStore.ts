@@ -7,9 +7,8 @@ import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 import { KWART, TIME_WORDS } from '../services/clock/timeWords';
-import { REGISTRY } from '../config/exerciseRegistry';
 import type { HandigStrategy, StepLine } from '../services/math/workedSteps';
-import { handigFor } from '../services/stepsAvailability';
+import { handigFor, stepsOrMabFor } from '../services/stepsAvailability';
 import { isZelfSessie } from './zelf/zelfSessie';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
@@ -63,7 +62,7 @@ interface OefenState {
     lastCorrect: boolean | null;
     // Where closeStats returns to; a flash interrupted by Stats resumes as if it had ended.
     statsFrom: 'exercise' | 'feedback' | 'retry' | 'steps';
-    // The worked steps offered after a final fout (owner decision 2026-11-12), null otherwise.
+    // The worked steps offered after a final fout (owner decision 2026-11-12), null otherwise; [] = the MAB picture alone.
     stepsOffer: StepLine[] | null;
     // Handig rekenen for the same exercise, offered inside the steps panel.
     handigOffer: HandigStrategy[];
@@ -595,7 +594,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const updated: OefenRun = { ...run, stats, current: undefined };
             persist(updated);
             // Only after the final try: steps during a retry would give the answer away. Testmodus never shows them.
-            const stepsOffer = correct || s.testMode || s.noSteps ? null : REGISTRY[type.typeId]?.steps?.(cur.exercise, cur.constraints) ?? null;
+            // A fact without steps (3 + 4) still gets the MAB picture alone where MAB applies ([] lines).
+            const stepsOffer = correct || s.testMode || s.noSteps ? null : stepsOrMabFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
             const handigOffer = stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints, s.grade) : [];
             set({ run: updated, lastCorrect: correct, stepsOffer, handigOffer });
             // Testmodus: no juist/fout per exercise, straight on to the next one.

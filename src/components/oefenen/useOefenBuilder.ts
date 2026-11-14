@@ -9,7 +9,7 @@ import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
     buildSessie, deadRows, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie, seedRowConstraints,
-    rowMayHaveMab, rowMayHaveSteps, type BuilderRow, type OefenLeaf,
+    rowMayHaveMab, rowMayHaveMabOnly, rowMayHaveSteps, type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
 // Row = what the builder owns per slot; the row's constraints live in the store's draft block.
@@ -127,10 +127,13 @@ export function useOefenBuilder(initial?: OefenSessie) {
         const { cardLabel: _l, cardVar: _v, ...row } = r;
         return constraints ? [{ ...row, constraints }] : [];
     });
-    // The steps switch only shows when a chosen row can actually produce a sum with steps.
-    const stepsPossible = buildable.some(rowMayHaveSteps);
+    const mabGrade = grade !== null && grade <= 3;
+    // Leerjaar 1–3: a fact without steps (3 + 4) still gets MAB by itself after a fout, so it counts as help too.
+    const mabOnlyPossible = mabGrade && buildable.some(rowMayHaveMabOnly);
+    // The steps switch only shows when a chosen row can actually produce a sum with steps (or that MAB picture).
+    const stepsPossible = buildable.some(rowMayHaveSteps) || mabOnlyPossible;
     // MAB above the steps is for leerjaar 1–3 only, and only when a row can produce a whole sum up to 1000.
-    const mabPossible = stepsPossible && grade !== null && grade <= 3 && buildable.some(rowMayHaveMab);
+    const mabPossible = stepsPossible && mabGrade && (mabOnlyPossible || buildable.some(rowMayHaveMab));
     const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts, noSteps: !showSteps, noMab: !showMab, grade });
     // A content edit is a new session, a rename keeps the id (the title is not part of the content).
     const contentKey = sessieContentHash(built);

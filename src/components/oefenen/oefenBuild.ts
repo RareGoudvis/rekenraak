@@ -6,7 +6,7 @@ import { OEFEN_VERSION, type KioskRowSetting, type OefenAttempts, type OefenMode
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { deadSlots, nextExercise, type Rng } from '../../services/oefenen/scheduler';
 import { stepsFor } from '../../services/stepsAvailability';
-import { MAB_TYPE_IDS, mabPlan } from '../../services/steps/mabSteps';
+import { MAB_TYPE_IDS, mabOnlyApplies, mabPlan } from '../../services/steps/mabSteps';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
@@ -238,6 +238,12 @@ export function rowMayHaveMab(row: ProbeRow): boolean {
         const lines = stepsFor(typeId, ex, c);
         return lines !== null && mabPlan(ex, lines) !== null;
     });
+}
+
+/** The row can draw a sum without steps that MAB shows by itself (3 + 4, 7 − 3; the leerjaar is the caller's check). */
+export function rowMayHaveMabOnly(row: ProbeRow): boolean {
+    if (!MAB_TYPE_IDS.includes(row.leaf.typeId)) return false;
+    return probeRow(row, 'mabOnly', (typeId, ex, c) => stepsFor(typeId, ex, c) === null && mabOnlyApplies(ex, c));
 }
 
 /** Rows whose settings generate nothing: the kiosk would end a pupil's run on them, so Delen waits. */

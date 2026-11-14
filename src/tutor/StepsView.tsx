@@ -12,9 +12,11 @@ export default function StepsView({ sum, lines, handig = [], visual }: { sum: Re
     const [revealed, setRevealed] = useState(0);
     const [alle, setAlle] = useState(false);
     const [showHandig, setShowHandig] = useState(false);
+    // No lines, only a picture (MAB for 3 + 4): each tap shows its next stage.
+    const pictureOnly = lines.length === 0 && !!visual?.stages;
     const basisIdx = lines.flatMap((l, i) => (l.basis ? [i] : []));
-    const total = basisIdx.length;
-    const upto = revealed > 0 ? basisIdx[Math.min(revealed, total) - 1] : -1;
+    const total = pictureOnly ? visual!.stages! : basisIdx.length;
+    const upto = revealed > 0 && !pictureOnly ? basisIdx[Math.min(revealed, total) - 1] : -1;
     const done = total > 0 && revealed >= total;
     // Once every Basis line is out, Alle also shows optional lines after the last one.
     const last = done ? lines.length - 1 : upto;
@@ -24,14 +26,14 @@ export default function StepsView({ sum, lines, handig = [], visual }: { sum: Re
         <>
             <div className="tutor-card">
                 <div className="tutor-sum">{sum}</div>
-                {visual?.(upto + 1)}
+                {visual?.(pictureOnly ? Math.min(revealed, total) : upto + 1)}
                 {shown.length > 0 ? (
                     <ol className="tutor-lines" aria-live="polite">
                         {shown.map(({ l, i }) => (
                             <li key={i} className={`${i === upto ? 'is-new' : ''}${l.basis ? '' : ' is-extra'}`}><StepLineView line={l} fmt={formatMathNumber} /></li>
                         ))}
                     </ol>
-                ) : (
+                ) : (!pictureOnly || revealed === 0) && (
                     <p className="tutor-quiet">Probeer het eerst zelf op je blad. Lukt het niet? Tik op de knop.</p>
                 )}
             </div>
@@ -40,9 +42,14 @@ export default function StepsView({ sum, lines, handig = [], visual }: { sum: Re
                 : <button type="button" className="tutor-btn tutor-btn-primary" onClick={() => setRevealed(r => r + 1)}>
                     {revealed === 0 ? 'Toon de eerste stap' : 'Toon de volgende stap'}
                 </button>}
-            <button type="button" className="tutor-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
-                {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
-            </button>
+            {/* The picture has no optional lines to switch on, so Alle stappen just jumps to the end. */}
+            {pictureOnly
+                ? !done && <button type="button" className="tutor-btn" onClick={() => setRevealed(total)}>Alle stappen</button>
+                : (
+                    <button type="button" className="tutor-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
+                        {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
+                    </button>
+                )}
             {handig.length > 0 && (
                 <button type="button" className="tutor-btn" aria-pressed={showHandig} onClick={() => setShowHandig(h => !h)}>
                     {showHandig ? 'Handig rekenen: aan' : 'Handig rekenen'}
