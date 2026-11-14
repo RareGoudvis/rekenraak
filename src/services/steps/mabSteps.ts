@@ -108,6 +108,13 @@ function minusStage(have: number, take: number | null): MabPicture {
 // Rijgen + and −: the running total, the part this line adds or takes off, the parts still to come.
 function addSubPlan(eq: Equation, a: number, b: number, lines: StepLine[]): MabPlan | null {
     const op = eq.operator as '+' | '-';
+    const initial = op === '+' ? plusStage(a, null, [b]) : minusStage(a, null);
+    // One part without a brug (14 + 3 = 10 + (4 + 3), 85 − 40 = (80 − 40) + 5): b goes on or off at its own place.
+    if (lines[0].kind === 'parts') {
+        const move = op === '+' ? plusStage(a, b, []) : minusStage(a, b);
+        const result: MabPicture = { clusters: [matOf(op === '+' ? a + b : a - b, 'have', { stable: true })], captions: [] };
+        return { initial, stages: lines.map(l => (l.kind === 'parts' ? move : l.kind === 'answer' ? result : null)) };
+    }
     const chains = lines.map(l => chainOf(l.tokens, op));
     if (chains.some(c => !c)) return null;
     const stageOf = (c: { nums: number[]; bracket: boolean }): MabPicture => {
@@ -124,7 +131,6 @@ function addSubPlan(eq: Equation, a: number, b: number, lines: StepLine[]): MabP
         if (prev && !lines[i - 1].basis && prev.nums.length === 2) return stageOf(prev);
         return { clusters: [matOf(c!.nums[0], 'have', { stable: true })], captions: [] };
     });
-    const initial = op === '+' ? plusStage(a, null, [b]) : minusStage(a, null);
     return { initial, stages };
 }
 
