@@ -10,16 +10,22 @@ export interface SpelContent {
     answerChars?: number;
     // Every answer is plain digits (no comma, fraction or sign): a digit-by-digit skin can play it.
     digitsOnly?: boolean;
+    // The question and its choices are pictures or phrases (a content pack: the klok): only a skin that draws <SpelVisual>.
+    pictures?: boolean;
 }
 
 // Whole-number + and − (SPEL_LEAVES): the only content games have today.
 export const NUMBER_CONTENT: SpelContent = { kind: 'number', digitsOnly: true };
+
+// A content pack's choices (content/packs.ts): a clock face asks, faces / times / phrases answer.
+export const PICTURE_CONTENT: SpelContent = { kind: 'choice', pictures: true };
 
 /** Whether a skin can play this content: its answer kind, short enough answers, digits where the skin needs them. */
 export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean {
     if (!accepts.kinds.includes(content.kind)) return false;
     if (accepts.maxAnswerChars !== undefined && content.answerChars !== undefined && content.answerChars > accepts.maxAnswerChars) return false;
     if (accepts.digits && !content.digitsOnly) return false;
+    if (content.pictures && !accepts.pictures) return false;
     return true;
 }
 

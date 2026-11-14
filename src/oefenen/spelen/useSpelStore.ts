@@ -204,7 +204,9 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             const type = s.types[q.slot];
             const d = kioskFor(type.typeId);
             if (!d || given.trim() === '') return;
-            settle(given.trim(), checkAnswer(d, q.exercise, q.constraints, given.trim(), type.exactForm), now);
+            // A pack choice is checked in the kiosk's own answer form (a time as [uur, minuten], a wording's fields).
+            const asKiosk = q.kioskAnswers?.[q.choices.indexOf(given.trim())] ?? given.trim();
+            settle(given.trim(), checkAnswer(d, q.exercise, q.constraints, asKiosk, type.exactForm), now);
         },
 
         miss(now = Date.now()) {

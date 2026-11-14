@@ -1,0 +1,23 @@
+/* The game clock faces (KlokFace): the sheet's face with bolder hands and numerals, and the digital screen. */
+.spel-klok { display: block; color: var(--spel-ink); overflow: visible; }
+.spel-klok text { font-weight: 700; }
+.spel-klok-hour,
+.spel-klok-minute { stroke: var(--spel-ink); stroke-linecap: round; }
+.spel-klok-hour { stroke-width: 5; }
+.spel-klok-minute { stroke-width: 3; }
+.spel-klok-pin { fill: var(--spel-ink); }
+/* The help: the grote wijzer in colour and a ring round the cijfer it points at. */
+.spel-klok.is-mark .spel-klok-minute { stroke: var(--accent-bewerkingen); stroke-width: 4; }
+.spel-klok-ring { fill: none; stroke: var(--accent-bewerkingen); stroke-width: 2.5; }
+
+.spel-digi {
+  display: inline-block;
+  padding: .1em .45em;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-sm);
+  background: var(--spel-ink);
+  color: var(--kiosk-paper);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .06em;
+  line-height: 1.15;
+}

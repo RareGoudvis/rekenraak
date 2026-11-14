@@ -60,7 +60,8 @@ describe('distractors', () => {
                         expect(made).not.toBeNull();
                         const q = spelQuestionOf(s.types[slot], slot, made!);
                         expect(q, `${choice.label}: ${JSON.stringify(made!.exercise)}`).not.toBeNull();
-                        check(q!.facts, q!.choices.map(Number).filter(n => n !== q!.facts.answer));
+                        // Klok choices have their own suite (spelen.klok.test.tsx); here only that each made exercise has a question.
+                        if (q!.facts) check(q!.facts, q!.choices.map(Number).filter(n => n !== q!.facts!.answer));
                         expect(q!.choices).toContain(q!.answer);
                         expect(q!.choices).toHaveLength(4);
                         sums++;

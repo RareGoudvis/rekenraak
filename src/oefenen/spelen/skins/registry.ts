@@ -7,6 +7,8 @@ import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 const KEYPAD_NUMBER: SkinAccepts = { kinds: ['number'] };
 // Tap skins show the options on their targets: session distractors for a number, or the exercise's own choices.
 const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 4 };
+// Tap skins that also draw content pictures (SpelSign, SpelChoiceFace): the klok's faces, times and phrases.
+const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
 // Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
@@ -21,7 +23,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
     },
     {
-        meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: TAP_CHOICE },
+        meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: TAP_PICTURES },
         icon: Balloon,
         Component: lazy(() => import('./ballonnen/Ballonnen')),
     },
@@ -76,7 +78,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
         // belt's end is a miss (pakjesband/belt.ts: about 12 s per sum).
         meta: {
-            id: 'pakjesband', label: 'Pakjesband', input: 'choice', timed: false, round: { questions: 20 }, season: 'sinterklaas', accepts: TAP_CHOICE,
+            id: 'pakjesband', label: 'Pakjesband', input: 'choice', timed: false, round: { questions: 20 }, season: 'sinterklaas', accepts: TAP_PICTURES,
             sounds: { correct: 'whoomp', wrong: 'boing', miss: 'plop' },
         },
         icon: Gift,
@@ -84,7 +86,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // Pasen: nine eggs in the grass, the answer and eight distractors (choiceCount). Untimed. Number only:
-        // an exercise's own choices are too few for nine eggs.
+        // an exercise's own choices are too few for nine eggs, and nine clock faces are too many to read.
         meta: {
             id: 'eieren', label: 'Eieren zoeken', input: 'choice', choiceCount: 9, timed: false, round: { questions: 15 }, season: 'pasen',
             accepts: { kinds: ['number'], maxAnswerChars: 4 }, sounds: { correct: 'piep', wrong: 'plop' },
@@ -94,7 +96,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // Two minutes; the moles pop up a little quicker with the streak (mollen/moles.ts).
-        meta: { id: 'mollen', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_CHOICE, sounds: { correct: 'bonk', wrong: 'plop' } },
+        meta: { id: 'mollen', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'plop' } },
         icon: Hammer,
         Component: lazy(() => import('./mollen/Mollen')),
     },

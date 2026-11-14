@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
 import type { SkinProps } from '../types';
+import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
+import { choiceLabel, faceKind, signClass, viewFor } from '../../spelChoice';
 import { MOLE, molePace, newField, stepField, viewOf, type MoleField } from './moles';
 import './mollen.css';
 
@@ -53,7 +54,7 @@ function StarBit({ i }: { i: number }) {
     );
 }
 
-export default function Mollen({ question, choices, phase, feedback, onAnswer, progress, reducedMotion }: SkinProps) {
+export default function Mollen({ question, choices, views, phase, feedback, onAnswer, progress, reducedMotion }: SkinProps) {
     const options = choices ?? [];
     const [view, setView] = useState<HoleView[]>(() => viewOf(newField(0), 0));
     const [picked, setPicked] = useState<{ key: string; hole: number } | null>(null);
@@ -112,22 +113,20 @@ export default function Mollen({ question, choices, phase, feedback, onAnswer, p
 
     if (!question) return <div className="ml-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
 
     return (
-        <div className={`ml-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--ml-pace': molePace(progress.streak) } as CSSProperties}>
+        <div className={`ml-root${views ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--ml-pace': molePace(progress.streak) } as CSSProperties}>
             <div className="ml-grass" aria-hidden />
             <div className="ml-top">
-                <p className={`ml-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="ml-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
+                <p className={`ml-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
+                    <SpelSign question={question} feedback={feedback} flash={flash} choices={options} views={views} answerClassName="ml-sign-answer" />
                 </p>
             </div>
             <div className="ml-field" role="group" aria-label="Kies het antwoord">
                 {Array.from({ length: MOLE.holes }, (_, h) => {
                     const m = view[h];
                     const up = !!m?.up;
+                    const face = m ? viewFor(options, views, m.value) : undefined;
                     const mine = pickedHole === h;
                     const state = mine && phase === 'right' ? ' is-bonked'
                         : mine && phase === 'wrong' ? ' is-nope'
@@ -138,12 +137,12 @@ export default function Mollen({ question, choices, phase, feedback, onAnswer, p
                             <span className="ml-pit" aria-hidden />
                             <div className="ml-clip">
                                 <button type="button" className="ml-mole" disabled={phase !== 'play' || !up} tabIndex={up ? 0 : -1} aria-hidden={!up}
-                                    aria-label={m ? formatMathNumber(Number(m.value)) : undefined}
+                                    aria-label={m ? choiceLabel(m.value, face) : undefined}
                                     // A moving target: the tap counts where the finger lands.
                                     onPointerDown={e => { if (e.button === 0) tap(h); }}
                                     onClick={() => tap(h)}>
                                     <MoleArt />
-                                    {m && <span className="ml-num kiosk-math" aria-hidden>{formatMathNumber(Number(m.value))}</span>}
+                                    {m && <span className={`ml-num kiosk-math is-${faceKind(face)}`} aria-hidden><SpelChoiceFace value={m.value} view={face} /></span>}
                                 </button>
                             </div>
                             <span className="ml-rim" aria-hidden />
