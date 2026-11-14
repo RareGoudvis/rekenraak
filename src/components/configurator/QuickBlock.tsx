@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Sparkle as Sparkles } from '@phosphor-icons/react';
-import IconButton from '../ui/IconButton';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { QUICK_SETTINGS, type QuickPills, type QuickSpec } from '../../config/quickSettings';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { loadEenvoudigData } from '../../config/eenvoudig/cards';
-import { regenerateBlock } from '../../services/generateDispatch';
 import type { MathBlock } from '../../services/math/types';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { F } from './plugins/shared/fieldStyles';
@@ -41,26 +38,6 @@ function useCardTopic(cardId: string | undefined): string | null {
 function FullConfig({ block }: { block: MathBlock }) {
     const Config = EXERCISE_UI[block.typeId]?.Config;
     return Config ? <div className="qb-row"><Config block={block} /></div> : null;
-}
-
-// How many exercises matters for every type, so the quick block always offers it (same rule as the Opdrachtblok slider).
-function CountRow({ block }: { block: MathBlock }) {
-    const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
-    const aantal = block.numberOfExercises || 10;
-    return (
-        <div className="qb-row">
-            <label className="qb-q" htmlFor={`qb-count-${block.id}`}>Aantal oefeningen: {aantal}</label>
-            <input
-                id={`qb-count-${block.id}`} type="range" min="1" max="20" step="1" value={aantal}
-                style={{ accentColor: 'var(--accent-purple)' }}
-                onChange={(e) => {
-                    const next = Number(e.target.value);
-                    // The score caps at 2 points per exercise, as in the Opdrachtblok.
-                    updateBlockSettings(block.id, { numberOfExercises: next, totalPoints: Math.min(block.totalPoints || 0, next * 2) });
-                }}
-            />
-        </div>
-    );
 }
 
 function PillsRow({ block, spec }: { block: MathBlock; spec: QuickPills }) {
@@ -114,10 +91,7 @@ function LayoutRow({ block }: { block: MathBlock }) {
 
 // Hover and selected are grey (the accent stays for primary buttons); tokens only.
 const CSS = `
-.qb { margin: 0 0 var(--sp-3); padding: var(--sp-4); border-radius: var(--radius-md); background: var(--accent-soft); border: 1px solid var(--accent); }
-.qb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
-.qb-head h4 { margin: 0 0 2px; font-size: var(--text-md); font-weight: 700; color: var(--text-main); }
-.qb-head p { margin: 0; font-size: var(--text-xs); color: var(--text-muted); }
+.qb-head { display: flex; justify-content: flex-end; margin-bottom: var(--sp-2); }
 .qb-row + .qb-row { margin-top: var(--sp-3); }
 .qb-q { font-size: var(--text-sm); font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
 .qb-opts { display: flex; flex-direction: column; gap: 5px; }
@@ -126,22 +100,16 @@ const CSS = `
 .qb-opts button[aria-pressed="true"] { background: var(--bg-active); font-weight: 700; }
 .qb-edit { padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid var(--separator); background: var(--bg-surface); font: inherit; font-size: var(--text-xs); font-weight: 600; color: var(--text-main); cursor: pointer; flex: none; }
 .qb-edit:hover { background: var(--bg-hover); }
-.qb-gen { margin-top: var(--sp-3); }
 .qb .seg-group { width: 100%; }
 .qb .seg-btn { padding: 0 4px; }
 .qb input[type="range"] { width: 100%; margin-top: 6px; }
-.qb-more { display: flex; align-items: center; gap: 6px; width: 100%; padding: 9px 0; margin-bottom: var(--sp-2); border: 0; border-bottom: 1px solid var(--separator); background: transparent; font: inherit; font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); cursor: pointer; }
-.qb-more:hover { color: var(--text-main); }
 `;
 
 // Generic: renders any QUICK_SETTINGS row; the registry-style table decides what a type shows.
+// The Inspector's "Snel aanpassen" section frames it; aantal and Genereer sit in the Inspector's pinned row.
 export default function QuickBlock({ block }: { block: MathBlock }) {
     const specs: QuickSpec[] = QUICK_SETTINGS[block.typeId] ?? [];
     const setEenvoudigPanel = useWorksheetStore((s) => s.setEenvoudigPanel);
-    const setExercises = useWorksheetStore((s) => s.setExercises);
-    const setGenerationNote = useWorksheetStore((s) => s.setGenerationNote);
-    const uniqueExercises = useWorksheetStore((s) => s.docSettings.uniqueExercises ?? true);
-    const isStale = useWorksheetStore((s) => !!s.staleBlocks[block.id]);
     const topic = useCardTopic(block.cardId);
 
     const isCombo = !!block.cardId?.startsWith('combo');
@@ -152,36 +120,14 @@ export default function QuickBlock({ block }: { block: MathBlock }) {
     return (
         <div className="qb" data-testid="quick-block">
             <style>{CSS}</style>
-            <div className="qb-head">
-                <div>
-                    <h4>Snel aanpassen</h4>
-                    <p>De instellingen die hier het meest tellen.</p>
-                </div>
-                {block.cardId && onEdit && <button type="button" className="qb-edit" onClick={onEdit}>Aanpassen</button>}
-            </div>
-            <CountRow block={block} />
+            {block.cardId && onEdit && <div className="qb-head">
+                <button type="button" className="qb-edit" onClick={onEdit}>Aanpassen</button>
+            </div>}
             {specs.map((spec, i) => spec.kind === 'layout'
                 ? <LayoutRow key={`layout-${i}`} block={block} />
                 : spec.kind === 'full'
                 ? <FullConfig key={`full-${i}`} block={block} />
                 : <PillsRow key={spec.key} block={block} spec={spec} />)}
-            <div className="qb-gen">
-                <IconButton
-                    icon={Sparkles}
-                    label={isStale ? 'Instellingen gewijzigd, genereer opnieuw' : 'Genereer oefeningen'}
-                    visibleLabel={isStale ? 'Genereer •' : 'Genereer'}
-                    variant="primary"
-                    onClick={() => regenerateBlock(block, setExercises, setGenerationNote, uniqueExercises)}
-                />
-            </div>
         </div>
-    );
-}
-
-export function MoreToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-    return (
-        <button type="button" className="qb-more" aria-expanded={open} onClick={onToggle}>
-            {open ? '▾' : '▸'} Alle instellingen
-        </button>
     );
 }

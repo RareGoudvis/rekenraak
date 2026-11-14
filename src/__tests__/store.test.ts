@@ -538,13 +538,13 @@ describe('raising the exercise count', () => {
 });
 
 describe('addBlockFromType opens the new block', () => {
-    test('selects it and switches the inspector to Oefeningen even from Blad', () => {
+    test('selects it and switches the inspector to its block scope even from Heel het blad', () => {
         useWorksheetStore.getState().clearBlocks();
-        useWorksheetStore.getState().setInspectorTab('blad');
+        useWorksheetStore.getState().setInspectorScope('blad');
         useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen');
         const s = useWorksheetStore.getState();
         expect(s.activeBlockId).toBe(s.blocks[0].id);
-        expect(s.inspectorTab).toBe('oefening');
+        expect(s.inspectorScope).toBe('block');
     });
 });
 

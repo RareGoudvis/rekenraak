@@ -75,6 +75,8 @@ export interface DocSettings {
     tutorQr?: boolean;
     // The short line beside the QR that tells pupils what it is for. Absent = shown.
     tutorQrCaption?: boolean;
+    // Sheet-wide worked steps in the answer key (Uit / Basis / Alle); absent = uit. Rendered elsewhere.
+    solutionStepsAll?: 'uit' | 'basis' | 'alle';
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
     // Vertical rule in the gutter between blocks that share a row. showDividers is the
@@ -213,6 +215,12 @@ export interface DocumentSlice {
     setSelectedGrade: (grade: Leerjaar | null) => void;
 }
 
+export type InspectorScope = 'block' | 'blad';
+export type InspectorBlockSection = 'snel' | 'wat' | 'opblad' | 'sleutel' | 'diff' | 'ruimte';
+export type InspectorBladSection = 'koptekst' | 'opdrachten' | 'tekst' | 'hulp' | 'voettekst';
+// '' = every section closed; block null = the mode's default (Snel aanpassen in Eenvoudig, else Wat oefenen ze).
+export interface InspectorSections { block: InspectorBlockSection | '' | null; blad: InspectorBladSection | '' }
+
 export interface UiSlice {
     activeBlockId: string | 'document' | null;
     showSolutions: boolean;
@@ -233,13 +241,14 @@ export interface UiSlice {
     // Transient UI state: never saved, shared or pushed to history.
     eenvoudigPanel: EenvoudigPanel | null;
     setEenvoudigPanel: (panel: EenvoudigPanel | null) => void;
-    inspectorTab: 'blad' | 'weergave' | 'oefening';
-    setInspectorTab: (t: 'blad' | 'weergave' | 'oefening') => void;
-    // Which sub-tab the Blad panel shows. Set by its own tab strip and by clicking the
-    // header or footer ON the sheet, so both routes land in the same place. Transient UI
-    // state: no history, never persisted or shared.
-    bladSection: 'koptekst' | 'opdrachten' | 'voettekst';
-    setBladSection: (s: 'koptekst' | 'opdrachten' | 'voettekst') => void;
+    // The Inspector's scope switch (Opdracht N | Heel het blad) and, per scope, the one open
+    // section. Set by the panel itself, by selecting a block and by clicking the header or
+    // footer ON the sheet, so every route lands in the same place. Transient UI state.
+    inspectorScope: InspectorScope;
+    inspectorSections: InspectorSections;
+    setInspectorScope: (scope: InspectorScope) => void;
+    // Switches to `scope` too, so a caller that opens a section never lands on the other scope.
+    setInspectorSection: <K extends InspectorScope>(scope: K, section: NonNullable<InspectorSections[K]>) => void;
     // Oefenmodus builder dialog: lifted out of the sidebar so the upgrade modal can open it too. Transient UI state.
     oefenBuilderOpen: boolean;
     setOefenBuilderOpen: (open: boolean) => void;
