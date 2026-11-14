@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
-import { TreeEvergreen } from '@phosphor-icons/react';
+import { ImageSquare, TreeEvergreen } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -72,6 +72,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {}, accepts: KEYPAD_NUMBER },
         icon: FlagPennant,
         Screen: lazy(() => import('./touwtrekken/Touwtrekken')),
+    },
+    {
+        // A funny animal under 4 × 4 tiles: each right answer flips one away (random order), 16 show it all. A mistake
+        // never puts one back (goalKeep); 30 questions at most. Never the same picture twice in a row (prent/pick.ts).
+        meta: {
+            id: 'prent', label: 'Verborgen prent', input: 'keypad', timed: false, round: { questions: 30, goal: 16, goalKeep: true },
+            winTitle: 'Daar is de prent!', accepts: KEYPAD_NUMBER, sounds: { correct: 'pop', wrong: 'plop', win: 'cheer' },
+        },
+        icon: ImageSquare,
+        Component: lazy(() => import('./prent/Prent')),
+        Ending: lazy(() => import('./prent/Prent').then(m => ({ default: m.PrentEnding }))),
     },
     {
         // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the

@@ -1,0 +1,118 @@
+/* Verborgen prent. The pictures (prenten/) are flat fills under a thick dark outline; their palette is the
+   --pf-* tokens below, mixed from the theme. Tiles flip away with a transform; nothing moves under reduced motion. */
+.pr-root,
+.pr-ending,
+.pr-gallery {
+  --pf-ink: var(--spel-ink);
+  --pf-white: var(--kiosk-paper);
+  --pf-sky: var(--spel-sky);
+  --pf-sun: var(--mab-e);
+  --pf-grass: var(--spel-grass);
+  --pf-green: var(--accent-metendrekenen);
+  --pf-mint: color-mix(in srgb, var(--accent-metendrekenen) 40%, var(--kiosk-paper));
+  --pf-gold: color-mix(in srgb, var(--mab-e) 70%, var(--accent-vraagstukken));
+  --pf-cream: color-mix(in srgb, var(--mab-e) 18%, var(--kiosk-paper));
+  --pf-tan: color-mix(in srgb, var(--accent-vraagstukken) 32%, var(--kiosk-paper));
+  --pf-brown: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --pf-wood: color-mix(in srgb, var(--accent-vraagstukken) 62%, var(--spel-ink));
+  --pf-fur: color-mix(in srgb, var(--accent-vraagstukken) 35%, color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper)));
+  --pf-pink: color-mix(in srgb, var(--accent-getallenkennis) 32%, var(--kiosk-paper));
+  --pf-cheek: color-mix(in srgb, var(--accent-getallenkennis) 45%, var(--kiosk-paper));
+  --pf-red: var(--accent-getallenkennis);
+  --pf-orange: var(--accent-vraagstukken);
+  --pf-blue: var(--accent-bewerkingen);
+  --pf-sea: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper));
+  --pf-ice: color-mix(in srgb, var(--accent-bewerkingen) 12%, var(--kiosk-paper));
+  --pf-purple: color-mix(in srgb, var(--accent-meetkunde) 62%, var(--kiosk-paper));
+  --pf-lilac: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--kiosk-paper));
+  --pf-grey: color-mix(in srgb, var(--spel-ink) 22%, var(--kiosk-paper));
+  --pf-grey-dark: color-mix(in srgb, var(--spel-ink) 55%, var(--kiosk-paper));
+  --pf-dark: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--spel-ink));
+  --pr-tile-0: color-mix(in srgb, var(--spel-fill-1) 55%, var(--kiosk-paper));
+  --pr-tile-1: color-mix(in srgb, var(--spel-fill-4) 45%, var(--kiosk-paper));
+  --pr-tile-2: color-mix(in srgb, var(--spel-fill-2) 60%, var(--kiosk-paper));
+  --pr-tile-3: color-mix(in srgb, var(--spel-fill-3) 50%, var(--kiosk-paper));
+}
+
+.prent-art { stroke: var(--pf-ink); stroke-width: 4px; stroke-linejoin: round; stroke-linecap: round; }
+.prent-art .ns { stroke: none; }
+
+.pr-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--spel-sky);
+  overflow: hidden;
+  overflow: clip;
+}
+.pr-world { position: relative; min-width: 0; min-height: 0; padding: var(--sp-4); }
+.pr-svg { display: block; width: 100%; height: 100%; }
+.pr-world .pr-svg { position: absolute; inset: var(--sp-4); width: calc(100% - 2 * var(--sp-4)); height: calc(100% - 2 * var(--sp-4)); }
+.pr-shadow { fill: var(--spel-ink); }
+.pr-border { fill: none; stroke: var(--spel-ink); stroke-width: 6px; }
+
+/* The tiles: a soft colour and a little sparkle each; one flips away per right answer. */
+.pr-tile rect { fill: var(--pr-tile); stroke: var(--spel-ink); stroke-width: 3px; }
+.pr-spark { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.pr-tile { transition: transform 520ms var(--ease-out), opacity 520ms var(--ease-out); }
+.pr-tile.is-gone { transform: scale(.15) rotate(-25deg); opacity: 0; pointer-events: none; }
+.pr-root.is-done .pr-svg { animation: pr-cheer 700ms var(--ease-spring); }
+@keyframes pr-cheer { 0% { transform: scale(1); } 40% { transform: scale(1.04); } 100% { transform: scale(1); } }
+
+.pr-ending { background: var(--spel-sky); padding: var(--sp-2); }
+.pr-ending .pr-svg { position: absolute; inset: var(--sp-2); width: calc(100% - 2 * var(--sp-2)); height: calc(100% - 2 * var(--sp-2)); animation: pr-pop 600ms var(--ease-spring) both; }
+@keyframes pr-pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ── The sum and the keypad ───────────────────────────────────────────────── */
+.pr-panel {
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.pr-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.pr-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: pr-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes pr-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+.pr-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .pr-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .pr-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .pr-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .pr-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .pr-panel { gap: var(--sp-2); }
+}
+
+.pr-root.is-paused * { animation-play-state: paused; }
+.pr-root.is-still .pr-tile { transition: none; }
+.pr-root.is-still *,
+.pr-ending.is-still * { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pr-tile { transition: none; }
+  .pr-root *, .pr-ending * { animation: none; }
+}

@@ -11,6 +11,9 @@ import { progressOf, useSpelStore } from '../oefenen/spelen/useSpelStore';
 import type { SpelEventName } from '../oefenen/spelen/events';
 import Kerstboom, { KerstboomEnding } from '../oefenen/spelen/skins/kerstboom/Kerstboom';
 import { DECOR, DECOR_ALL, hungFor } from '../oefenen/spelen/skins/kerstboom/tree';
+import Prent, { PrentEnding, PrentPicture } from '../oefenen/spelen/skins/prent/Prent';
+import { PRENTEN } from '../oefenen/spelen/skins/prent/prenten';
+import { PRENT_KEY, TILES, flippedFor, lastPrent, pickPrent, tileOrder } from '../oefenen/spelen/skins/prent/pick';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Spelen round 3B: Kerstboom versieren, Verborgen prent and Schatkist on the real session.
@@ -125,5 +128,100 @@ describe('Kerstboom versieren', () => {
         expect(container.querySelector('.kb-tree.is-lit')).toBeNull();
         expect(container.querySelectorAll('.kb-bauble, .kb-tinsel')).toHaveLength(6);
         expect(container.querySelector('.kb-ending.is-still')).not.toBeNull();
+    });
+});
+
+describe('Verborgen prent', () => {
+    beforeEach(() => { localStorage.removeItem(PRENT_KEY); });
+
+    test('registry: keypad, untimed, 16 tiles to flip (goalKeep), 30 questions at most, no season', () => {
+        expect(skinById('prent')!.meta).toMatchObject({ input: 'keypad', timed: false, round: { questions: 30, goal: 16, goalKeep: true }, accepts: { kinds: ['number'] } });
+        expect(skinById('prent')!.meta.season).toBeUndefined();
+        expect(TILES).toBe(16);
+    });
+
+    test('eight funny animals, each its own picture', () => {
+        expect(PRENTEN).toHaveLength(8);
+        expect(new Set(PRENTEN.map(p => p.id)).size).toBe(8);
+        for (const p of PRENTEN) {
+            const { container, unmount } = render(<svg><p.Art /></svg>);
+            expect(container.querySelector('.prent-art')).not.toBeNull();
+            unmount();
+        }
+        const { container } = render(<PrentPicture prent={PRENTEN[0]} gone="all" label="De prent" />);
+        expect(container.querySelectorAll('.pr-tile')).toHaveLength(0);
+        expect(container.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('De prent');
+    });
+
+    test('the pick: random, never the last one; one picture stays itself; the tiles are a shuffle', () => {
+        const ids = PRENTEN.map(p => p.id);
+        for (const last of ids) {
+            for (const r of [0, 0.2, 0.5, 0.8, 0.999]) {
+                const id = pickPrent(ids, last, () => r);
+                expect(ids).toContain(id);
+                expect(id).not.toBe(last);
+            }
+        }
+        expect(new Set(Array.from({ length: 40 }, (_, i) => pickPrent(ids, null, () => i / 40))).size).toBe(8);
+        expect(pickPrent(['giraf'], 'giraf')).toBe('giraf');
+        const order = tileOrder();
+        expect([...order].sort((a, b) => a - b)).toEqual(Array.from({ length: 16 }, (_, i) => i));
+        expect(flippedFor(0, 16)).toBe(0);
+        expect(flippedFor(7, 16)).toBe(7);
+        expect(flippedFor(16, 16)).toBe(16);
+        expect(flippedFor(9, 10)).toBeLessThan(16);
+    });
+
+    test('a tile flips per right answer (met hulp too), none comes back on a mistake; 16 end the round', () => {
+        start('prent');
+        const { container } = render(<Wired Skin={Prent} />);
+        const gone = () => container.querySelectorAll('.pr-tile.is-gone').length;
+        expect(container.querySelectorAll('.pr-tile')).toHaveLength(16);
+        expect(gone()).toBe(0);
+        right();
+        expect(gone()).toBe(1);
+        wrong();
+        wrong();
+        expect(gone()).toBe(1);
+        helped();
+        right();
+        expect(gone()).toBe(2);
+        for (let i = 0; i < 13; i++) right();
+        expect(gone()).toBe(15);
+        expect(gone()).toBe(sp().history.filter(h => h.correct).length);
+        act(() => sp().answer(sp().question!.answer));
+        expect(gone()).toBe(16);
+        expect(container.querySelector('.pr-root.is-done')).not.toBeNull();
+        act(() => sp().next());
+        expect(sp().phase).toBe('end');
+        expect(sp().outcome).toBe('won');
+    });
+
+    test('never the same picture twice in a row; the end screen shows the picture of the round', () => {
+        const shown: string[] = [];
+        for (let i = 0; i < 12; i++) {
+            start('prent');
+            const { container, unmount } = render(<Wired Skin={Prent} />);
+            shown.push(container.querySelector('[data-prent]')!.getAttribute('data-prent')!);
+            unmount();
+            const end = render(<PrentEnding outcome="won" progress={progressOf(sp())} options={{}} reducedMotion={false} />);
+            expect(end.container.querySelector('[data-prent]')!.getAttribute('data-prent')).toBe(shown[i]);
+            expect(end.container.querySelectorAll('.pr-tile')).toHaveLength(0);
+            end.unmount();
+        }
+        for (let i = 1; i < shown.length; i++) expect(shown[i]).not.toBe(shown[i - 1]);
+        // The picture's own label is its id (prenten/index.ts).
+        expect(lastPrent()).toBe(shown.at(-1));
+    });
+
+    test('without localStorage the game still picks and plays', () => {
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+        expect(lastPrent()).toBeNull();
+        start('prent');
+        const { container } = render(<Wired Skin={Prent} />);
+        expect(container.querySelector('[data-prent]')).not.toBeNull();
+        right();
+        expect(container.querySelectorAll('.pr-tile.is-gone')).toHaveLength(1);
     });
 });
