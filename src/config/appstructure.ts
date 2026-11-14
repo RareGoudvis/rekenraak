@@ -5,6 +5,18 @@ import { targetHeading, columnTargets } from '../services/afronden/afrondenGener
 // A leaf's default opdracht-titel: a fixed line, or a function of its merged constraints
 // for families whose wording depends on a setting (e.g. ordenen's klein→groot / groot→klein).
 export type InstructionFn = (c: BlockConstraints) => string;
+export type GradeDefaults = Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Record<string, unknown>>>;
+
+// Breuk van een hoeveelheid follows the tafels (owner 2026-11-14): leerjaar 2 helft / kwart of up to 20,
+// from leerjaar 3 noemers up to 10 and totals up to 10 × 10.
+const HOEVEELHEID_GRADES: GradeDefaults = {
+    1: { maxDenominator: 4, maxTotal: 20 },
+    2: { maxDenominator: 4, maxTotal: 20 },
+    3: { maxDenominator: 10, maxTotal: 100 },
+    4: { maxDenominator: 10, maxTotal: 100 },
+    5: { maxDenominator: 10, maxTotal: 100 },
+    6: { maxDenominator: 10, maxTotal: 100 },
+};
 
 export interface LeafExercise {
     id: string;
@@ -17,6 +29,9 @@ export interface LeafExercise {
     // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
     // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
     gradeSetsMax?: true;
+    // Per leerjaar, values that replace the leaf's own defaults with that leerjaar picked (a card's or
+    // author's other value wins). No leerjaar keeps defaultConstraints, so old links and kiosk tables stay put.
+    gradeDefaults?: GradeDefaults;
     // Exercises per new block when this leaf wants another count than its type's registry
     // default (rooster figures are tall: 2 fill a page). Read via LEAF_BY_ID.
     defaultCount?: number;
@@ -38,6 +53,8 @@ export interface ExerciseType {
     // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
     // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
     gradeSetsMax?: true;
+    // Same as LeafExercise.gradeDefaults, for a type that is itself the leaf.
+    gradeDefaults?: GradeDefaults;
     // Oefenmodus name when kioskLabel()'s derived one ("Optellen · natuurlijk") does not fit.
     shortLabel?: string;
     // Same as LeafExercise.defaultCount, for a type that is itself the leaf.
@@ -207,7 +224,7 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'breuken-herkennen', label: 'Breuken herkennen', typeId: 'breuken', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk deel is gekleurd? Schrijf de breuk.' },
                     // answerFormat must be set here: the registry default ('fraction-questions') is a
                     // herkennen value, and variantDefaults() only runs on a variant switch, not on block add.
-                    { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 }, instruction: 'Bereken de breuk van de hoeveelheid.' },
+                    { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 }, gradeDefaults: HOEVEELHEID_GRADES, instruction: 'Bereken de breuk van de hoeveelheid.' },
                     // Four, not the row's six: one true-size segment per row, six ran past one A4 page.
                     { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk', maxDenominator: 6, maxLineLength: 8 }, defaultCount: 4, instruction: 'Duid de breuk aan op het lijnstuk.' },
                     { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek', maxDenominator: 9 }, instruction: 'Kleur de breuk van de veelhoek.' },
@@ -652,6 +669,7 @@ export interface AppLeaf {
     defaultConstraints?: Record<string, unknown>;
     instruction?: string | InstructionFn;
     gradeSetsMax?: true;
+    gradeDefaults?: GradeDefaults;
     defaultCount?: number;
     shortLabel?: string;
 }
@@ -673,6 +691,7 @@ export function flattenLeaves(): AppLeaf[] {
                         defaultConstraints: type.defaultConstraints,
                         instruction: type.instruction,
                         gradeSetsMax: type.gradeSetsMax,
+                        gradeDefaults: type.gradeDefaults,
                         defaultCount: type.defaultCount,
                         shortLabel: type.shortLabel,
                     });
@@ -687,6 +706,7 @@ export function flattenLeaves(): AppLeaf[] {
                             defaultConstraints: leaf.defaultConstraints,
                             instruction: leaf.instruction,
                             gradeSetsMax: leaf.gradeSetsMax,
+                            gradeDefaults: leaf.gradeDefaults,
                             defaultCount: leaf.defaultCount,
                             shortLabel: leaf.shortLabel,
                         });
@@ -702,5 +722,5 @@ export function flattenLeaves(): AppLeaf[] {
 // only has a leafId (a persisted curriculum lock, a MathBlock.leafId) resolve the same
 // opdracht-titel a sidebar click would have produced, without holding onto the leaf's
 // own object reference (which a share link can't serialise — it may be a function).
-export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn; gradeSetsMax?: true; defaultCount?: number }> =
-    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction, gradeSetsMax: l.gradeSetsMax, defaultCount: l.defaultCount }]));
+export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn; gradeSetsMax?: true; gradeDefaults?: GradeDefaults; defaultConstraints?: Record<string, unknown>; defaultCount?: number }> =
+    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction, gradeSetsMax: l.gradeSetsMax, gradeDefaults: l.gradeDefaults, defaultConstraints: l.defaultConstraints, defaultCount: l.defaultCount }]));

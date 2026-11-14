@@ -149,6 +149,19 @@ function breukenSeed(typeId: string, base: BaseSettings, merged: Record<string, 
         !pinned(k) && !(rangePinned && (k === 'minDenominator' || k === 'maxDenominator'))));
 }
 
+// A leaf's gradeDefaults for the picked leerjaar: each replaces the leaf's own value only where the override
+// still holds it, so a card or author that set another value (or another subType) keeps theirs.
+function withGradeDefaults(override: Record<string, unknown> | undefined, grade: Leerjaar | null | undefined, leafId: string | undefined): Record<string, unknown> | undefined {
+    const leaf = leafId ? LEAF_BY_ID[leafId] : undefined;
+    const table = grade != null && override ? leaf?.gradeDefaults?.[grade] : undefined;
+    if (!table || !override) return override;
+    const own = leaf?.defaultConstraints ?? {};
+    if ('subType' in own && override.subType !== own.subType) return override;
+    const next = { ...override };
+    for (const [k, v] of Object.entries(table)) if (!(k in override) || override[k] === own[k]) next[k] = v;
+    return next;
+}
+
 // A new block's constraints: registry defaults → base snapshot → override, so a leaf that
 // pins a value (splitsen-basis maxGetal:10) wins. The store, the sidebar hover card, the
 // MassAdd preview and the test helper all call this, so a preview is the block it adds.
@@ -163,6 +176,7 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
         void _pinnedMax;
         override = rest;
     }
+    override = withGradeDefaults(override, grade, leafId);
     const snapshot = baseApply(base, defaults, range);
     const merged: Record<string, unknown> = { ...defaults, ...snapshot, ...(override ?? {}) };
     Object.assign(merged, breukenSeed(typeId, base, merged, override));

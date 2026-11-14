@@ -165,12 +165,14 @@ const fractionSpace: OptionSpace = {
     shapes: [['rectangle'], ['circle'], ['rectangle', 'circle']],
     objectShape: ['circle', 'square'],
     minDenominator: [2, 3],
-    maxDenominator: [4, 8, 12],
+    // 10 = the hoeveelheid ceiling a leerjaar 3+ seed lands on.
+    maxDenominator: [4, 8, 10, 12],
     answerFormat: ['fraction-questions', 'met-hulp', 'met-berekening'],
     answerMode: ['berekeningslijnen', 'structuurlijnen', 'blanco'],
     level: [1, 2],
     // 2 sits below a noemer of 3: the edge where no multiple of the noemer fits.
-    maxTotal: [2, 10, 20, 60],
+    // 100 = the leerjaar 3+ seed (tafels up to 10 × 10).
+    maxTotal: [2, 10, 20, 60, 100],
     maxAbstractN3: [100, 1000],
     minLineLength: [2, 4],
     maxLineLength: [8, 12, 20],
