@@ -95,6 +95,8 @@ export default function CurriculumBuilderModal({ onClose }: Props) {
     const focusedItem = catalog.find(it => it.typeId === focused);
     const focusedDraft = focusedItem ? draftFor(focusedItem.typeId) : undefined;
     const Config = focusedItem ? EXERCISE_UI[focusedItem.typeId]?.Config : undefined;
+    // Layout rows moved out of Config (inspector design A); a curriculum still sets them, so they follow the content rows.
+    const StyleConfig = focusedItem ? EXERCISE_UI[focusedItem.typeId]?.StyleConfig : undefined;
 
     return (
         <ModalShell onClose={onClose} ariaLabel="Curriculum samenstellen" variant="dialog" maxWidth={1280}>
@@ -185,6 +187,7 @@ export default function CurriculumBuilderModal({ onClose }: Props) {
 
                                 <div style={S.configWrap}>
                                     {Config ? <Config block={focusedDraft} /> : <p style={S.muted}>Geen instellingen voor dit type.</p>}
+                                    {Config && StyleConfig && focusedDraft && <StyleConfig block={focusedDraft} />}
                                 </div>
                             </>
                         ) : (
