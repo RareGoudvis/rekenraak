@@ -20,9 +20,9 @@ interface Props {
 }
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
-// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
-// least-used button (Toevoegen) folds into the Menu; 4 = "Genereer alles" folds too; 5 = undo/redo;
-// 6 = the "?" and Bewaren buttons fold into the Menu (at ~820 px the four icons overlapped).
+// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = "Genereer alles"
+// folds into the Menu; 4 = undo/redo; 5 = the "?" and Bewaren buttons fold too (at ~820 px the
+// four icons overlapped). "Oefeningen toevoegen…" is a Menu row at every stage.
 // Each stage strictly sheds width relative to the last, which is what lets useShedStages' hysteresis work.
 // Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
 // Table + flags: topBarStages.ts.
@@ -33,7 +33,7 @@ interface Props {
 const SAVE_FAILED_TEXT = 'Herstelkopie in deze browser mislukt (opslag vol?). Bewaar het blad als bestand.';
 const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
 
-// Shared between the centre-track (stage 0-1) and the under-bar line (stage 2-3) so the
+// Shared between the centre-track (stage 0-1) and the under-bar line (stage 2+) so the
 // save-status colour/tooltip logic isn't duplicated.
 function SaveIndicator({ saveState, lastSavedAt, showText }: { saveState: SaveState; lastSavedAt: number | null; showText: boolean }) {
     return (
@@ -196,7 +196,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
     // Keyed on the committed name, not the edit box: a shed mid-edit would unmount the input.
     const stage = useShedStages(barRef, contentRef, TOPBAR_STAGE_COUNT, headerTitle);
-    const { iconOnly, nameInRow, quickFolded: foldedIntoMenu, generateFolded, historyFolded, helpSaveFolded } = topBarStageFlags(stage);
+    const { iconOnly, nameInRow, generateFolded, historyFolded, helpSaveFolded } = topBarStageFlags(stage);
 
     // Close any open dropdown on outside click / Escape. A fixed backdrop can't be used here:
     // the `.mac-vibrant` bar has backdrop-filter, which traps position:fixed to the bar instead
@@ -245,7 +245,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         }
     };
 
-    // Shared by the Bewaren dropdown and, at stage 6, the Menu (where the button itself has folded).
+    // Shared by the Bewaren dropdown and, at stage 5, the Menu (where the button itself has folded).
     const saveRows = (
         <>
             <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
@@ -283,22 +283,10 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 headers, which run to the top of the window alongside this bar. */}
             <div ref={contentRef} style={S.zones}>
               <div style={S.groupLeft}>
-                {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it.
-                    Folds into the Menu at stage 3 — see the menu body below. */}
-                {!foldedIntoMenu && (
-                    <IconButton
-                        icon={LayoutGrid}
-                        label="Meerdere oefeningen tegelijk kiezen en toevoegen"
-                        visibleLabel={iconOnly ? undefined : 'Oefeningen toevoegen'}
-                        onClick={() => setMassAddOpen(true)}
-                        variant="secondary"
-                    />
-                )}
-
                 {/* One "Menu" instead of a ≡ and a ⚙ side by side: two unlabelled
                     icons that both opened a list of app-level things was a guess the
                     teacher had to make. Everything app-level now lives behind one word.
-                    Never folds itself — it's the fold target for stage 3. */}
+                    Never folds itself: it's the fold target of every later stage. */}
                 <div style={S.menuWrap}>
                     <IconButton
                         icon={List}
@@ -310,35 +298,32 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     {menu === 'menu' && (
                         <>
                             <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '230px' }}>
-                                {foldedIntoMenu && (
+                                {/* Mass add sits here at every stage; the sidebar and the Werkblad tab add one type at a time. */}
+                                <div style={S.sectionLabel}>Snel</div>
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setMassAddOpen(true); }}>
+                                    <LayoutGrid size={15} /> Oefeningen toevoegen…
+                                </button>
+                                {helpSaveFolded && (
+                                    <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
+                                        <HelpIcon size={15} /> Uitleg en rondleiding
+                                    </button>
+                                )}
+                                {generateFolded && (
+                                    <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); if (hasBlocks) generateAllBlocks(); }}>
+                                        <Sparkles size={15} /> Genereer alles
+                                    </button>
+                                )}
+                                {historyFolded && (
                                     <>
-                                        <div style={S.sectionLabel}>Snel</div>
-                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setMassAddOpen(true); }}>
-                                            <LayoutGrid size={15} /> Oefeningen toevoegen
+                                        <button className="ui-hover" style={S.menuItem} disabled={!canUndo} onClick={() => { setMenu(null); doUndo(); }}>
+                                            <Undo2 size={15} /> Ongedaan maken
                                         </button>
-                                        {helpSaveFolded && (
-                                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
-                                                <HelpIcon size={15} /> Uitleg en rondleiding
-                                            </button>
-                                        )}
-                                        {generateFolded && (
-                                            <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); if (hasBlocks) generateAllBlocks(); }}>
-                                                <Sparkles size={15} /> Genereer alles
-                                            </button>
-                                        )}
-                                        {historyFolded && (
-                                            <>
-                                                <button className="ui-hover" style={S.menuItem} disabled={!canUndo} onClick={() => { setMenu(null); doUndo(); }}>
-                                                    <Undo2 size={15} /> Ongedaan maken
-                                                </button>
-                                                <button className="ui-hover" style={S.menuItem} disabled={!canRedo} onClick={() => { setMenu(null); doRedo(); }}>
-                                                    <Redo2 size={15} /> Opnieuw
-                                                </button>
-                                            </>
-                                        )}
-                                        <div style={S.menuDivider} />
+                                        <button className="ui-hover" style={S.menuItem} disabled={!canRedo} onClick={() => { setMenu(null); doRedo(); }}>
+                                            <Redo2 size={15} /> Opnieuw
+                                        </button>
                                     </>
                                 )}
+                                <div style={S.menuDivider} />
                                 {helpSaveFolded && (
                                     <>
                                         <div style={S.sectionLabel}>Bewaren</div>
@@ -468,13 +453,13 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 {flash && <span style={S.flashLine} role="status"><Check size={14} /> {flash}</span>}
 
-                {/* Labelled: an eye alone doesn't say whether it shows or hides answers. */}
+                {/* Icon-only toggle: the tooltip says what a click does, the pressed fill says the key is on. */}
                 <IconButton
                     icon={showSolutions ? EyeOff : Eye}
                     label={showSolutions ? 'Oplossingen verbergen' : 'Oplossingen tonen'}
-                    visibleLabel={iconOnly ? undefined : 'Oplossingen'}
                     onClick={() => setShowSolutions(!showSolutions)}
                     variant={showSolutions ? 'active' : 'neutral'}
+                    pressed={showSolutions}
                 />
 
                 {/* Afdrukken — single button; choose worksheet vs worksheet+solutions.

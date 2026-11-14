@@ -1,14 +1,13 @@
 // Pure shed-stage table of the top bar; TopBar renders from it, topBarShed.test pins it.
 // 0 = every label + centred name; 1 = icon-only; 2 = name leaves the row for a line under
-// the bar; 3 = Toevoegen folds into Menu; 4 = "Genereer alles" folds too; 5 = undo/redo
-// fold too (the shortcuts stay); 6 = the "?" and Bewaren buttons fold into the Menu as well (with them in the row, 820 px overlapped). Below ~915 px the bar overlapped while stage 3 was the last
-// stage; the middle column is ~170 px at 820 px, so stage 4 alone is not enough there.
-export const TOPBAR_STAGE_COUNT = 7;
+// the bar; 3 = "Genereer alles" folds into the Menu; 4 = undo/redo fold too (the shortcuts
+// stay); 5 = the "?" and Bewaren buttons fold as well (with them in the row, 820 px overlapped).
+// "Oefeningen toevoegen" is a Menu row at every stage, so its old fold stage is gone.
+export const TOPBAR_STAGE_COUNT = 6;
 
 export interface TopBarStageFlags {
     iconOnly: boolean;
     nameInRow: boolean;
-    quickFolded: boolean;
     generateFolded: boolean;
     historyFolded: boolean;
     helpSaveFolded: boolean;
@@ -18,9 +17,8 @@ export function topBarStageFlags(stage: number): TopBarStageFlags {
     return {
         iconOnly: stage >= 1,
         nameInRow: stage < 2,
-        quickFolded: stage >= 3,
-        generateFolded: stage >= 4,
-        historyFolded: stage >= 5,
-        helpSaveFolded: stage >= 6,
+        generateFolded: stage >= 3,
+        historyFolded: stage >= 4,
+        helpSaveFolded: stage >= 5,
     };
 }

@@ -34,3 +34,14 @@ export function blockHasTutorSteps(block: MathBlock): boolean {
     if (!REGISTRY[block.typeId]?.steps) return false;
     return exercisesOf(block).some(ex => tutorCarries(block.typeId, ex, block.constraints) && stepsFor(block.typeId, ex, block.constraints) !== null);
 }
+
+export type SolutionStepsLevel = 'uit' | 'basis' | 'alle';
+
+// The answer-key steps level a block shows: its own choice wins, else the sheet-wide
+// docSettings.solutionStepsAll (absent = 'uit'), and only on blocks whose type has steps.
+export function effectiveSolutionSteps(block: MathBlock, docSettings?: { solutionStepsAll?: SolutionStepsLevel } | null): SolutionStepsLevel {
+    const own = (block.constraints as { solutionSteps?: SolutionStepsLevel } | undefined)?.solutionSteps;
+    if (own) return own;
+    const sheet = docSettings?.solutionStepsAll ?? 'uit';
+    return sheet !== 'uit' && blockHasSteps(block) ? sheet : 'uit';
+}

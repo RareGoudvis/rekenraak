@@ -1,6 +1,6 @@
 import { BETA_MODULES } from '../../config/beta';
 
-const LABEL: Record<keyof typeof BETA_MODULES, string> = { oefenmodus: 'Oefenmodus', bordmodus: 'Bordmodus' };
+const LABEL: Record<keyof typeof BETA_MODULES, string> = { oefenmodus: 'Oefenmodus', bordmodus: 'Whiteboard' };
 
 // One muted line under the mode buttons instead of a pill per button: two identical pills in a row read as noise.
 export default function BetaCaption() {

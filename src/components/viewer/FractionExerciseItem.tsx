@@ -10,6 +10,8 @@ import KioskAnswerSlot from './KioskAnswerSlot';
 import HoeveelheidGroupsCard from './HoeveelheidGroupsCard';
 import { breukHoeveelheidSteps, stepText } from '../../services/math/workedSteps';
 import { formatMathNumber } from '../../services/math/formatters';
+import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { effectiveSolutionSteps } from '../../services/stepsAvailability';
 
 // Object geometry is written as px at the 13pt default and emitted as em, so the drawn
 // hoeveelheid objects follow the Lettergrootte slider.
@@ -58,6 +60,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const ix = useViewerInteraction();
     // Oefenmodus card: a hoeveelheid asks only the final amount, so its working rows stay on paper.
     const scaffold = useShowScaffold();
+    const solutionStepsAll = useWorksheetStore((state) => state.docSettings.solutionStepsAll);
     // A figure `figureUnits` wide at the 13pt default may only grow until it fills the
     // column; past that the slider would push it off the page instead of enlarging it.
     const figureFont = (figureUnits: number): React.CSSProperties =>
@@ -68,7 +71,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const hGroup = parseFloat((hTotal / Math.max(1, ex.denominator)).toFixed(4));
     const hCount = parseFloat((hGroup * ex.numerator).toFixed(4));
     // Worked steps in the key (zonder-hulp only: the other scaffolds already fill the same rows).
-    const keyLines = showSolutions && (c.solutionSteps ?? 'uit') !== 'uit'
+    const keyLines = showSolutions && effectiveSolutionSteps(block, { solutionStepsAll }) !== 'uit'
         ? (breukHoeveelheidSteps(ex)?.flatMap(l => (l.compact ? [stepText(l.compact, formatMathNumber)] : [])) ?? [])
         : [];
     const fillIn = (v: number, w: number) => showSolutions ? sol(String(v)) : blank(w);

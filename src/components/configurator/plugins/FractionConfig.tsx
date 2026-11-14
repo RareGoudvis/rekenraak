@@ -8,7 +8,7 @@ import SettingLabel from './SettingLabel';
 import BreukenSettings from './shared/BreukenSettings';
 import { breukenFigureCeiling } from '../../../config/numberRanges';
 import { constraintsForVariant } from './shared/fractionVariant';
-import { blockHasSteps } from '../../../services/stepsAvailability';
+import { blockHasSteps, effectiveSolutionSteps } from '../../../services/stepsAvailability';
 import type { FractionConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -248,6 +248,8 @@ const sliderStyle: React.CSSProperties = {
 // Mounted by Inspector through EXERCISE_UI['breuken'].StyleConfig.
 export function FractionStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<FractionConstraints>(block);
+    // Aan = any level the key prints, so a sheet-wide level shows here until the block picks its own.
+    const stepsOn = effectiveSolutionSteps(block, useWorksheetStore((st) => st.docSettings)) !== 'uit';
     const subType: string = c.subType ?? '';
     return (
         <>
@@ -328,7 +330,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
                             <div className="seg-group">
                                 {([{ key: 'uit', label: 'Uit' }, { key: 'basis', label: 'Aan' }] as const).map(({ key, label }) => (
-                                    <button key={key} className="seg-btn" aria-pressed={(c.solutionSteps ?? 'uit') === key}
+                                    <button key={key} className="seg-btn" aria-pressed={(key === 'uit') !== stepsOn}
                                         onClick={() => patch({ solutionSteps: key })}>
                                         {label}
                                     </button>
