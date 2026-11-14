@@ -156,7 +156,7 @@ export default function FractionConfig({ block }: Props) {
             {(isHoeveelheid || isRechthoek) && (
                 <div style={styles.section}>
                     <SettingLabel text="Max. aantal objecten:" info="Het grootste aantal objecten dat verdeeld wordt." />
-                    <input type="number" min="4" max="50" step="2"
+                    <input type="number" min="4" max="100" step="2"
                         value={c.maxTotal ?? 20}
                         onChange={(e) => updateConstraint('maxTotal', Number(e.target.value))}
                         style={inputStyle} />

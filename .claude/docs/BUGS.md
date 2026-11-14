@@ -79,6 +79,5 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 
-- Breuken optellen (hr-std-optellen-rat, 'multi_step'): the generator serves odd terms such as 8/8 or 8/4 (a whole number written as a breuk) and 6/3, so the kgv steps rewrite 8/8 as 24/24. Repro: leaf hr-std-optellen-rat, fractionDifficulty multi_step, seed 7. 2026-11-13.
 - Flaky test steps.herleiding "every generated oppervlakte exercise has steps": a random samengesteld-enkel km² + mm² → mm² exercise (toParts value 1000000000000749) gets null steps, about 1 run in many. Seen by the gate 2026-11-14.
 - Sidebar mode row at a 1024 px window: the two mode buttons are narrower than icon + label, so the Oefenmodus icon is squeezed to nothing and the Whiteboard icon to a dot (flex minWidth 0 on the svg). Seen 2026-11-14, not caused by the rename.

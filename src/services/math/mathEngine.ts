@@ -273,8 +273,8 @@ const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
                 // Terms 1-2 draw as the 2-term path does (an unflagged first term may be improper: a
                 // "−" chain needs it to stay positive); a "Gemengd" chain keeps its extra terms proper.
                 if (i < 2 || (!mixedNumber1 && !mixedNumber2)) {
-                    const n = randInt(1, maxN);
-                    return { n, d: denOf(i) };
+                    const n = randInt(1, maxN), d = denOf(i);
+                    return { n: n % d === 0 ? breukNumerator(maxN, d) : n, d };
                 }
                 const d = denOf(i);
                 return { n: operandNumerator(maxN, d, true), d };
@@ -358,10 +358,17 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
     return exercises;
 };
 
-// A "Gemengd getal" operand keeps its breukdeel proper (2 38/27 is no mixed number); one draw
-// either way, so rows without the flag keep their random sequence.
+// A "Gemengd getal" operand keeps its breukdeel proper (2 38/27 is no mixed number).
 const operandNumerator = (maxN: number, d: number, mixed: boolean): number =>
-    randInt(1, mixed ? Math.max(1, Math.min(maxN, d - 1)) : maxN);
+    (mixed ? randInt(1, Math.max(1, Math.min(maxN, d - 1))) : breukNumerator(maxN, d));
+
+// A + − breuk term is never a whole number written as a breuk (8/8, 6/3): the kgv steps would blow it
+// up to 24/24. Redrawn only on a multiple, so other draws keep their random sequence; 1 always qualifies (d >= 2).
+function breukNumerator(maxN: number, d: number): number {
+    let n: number;
+    do { n = randInt(1, maxN); } while (n % d === 0);
+    return n;
+}
 
 // 'multi_step' noemers: neither equals, divides nor is a multiple of the other. Null when the
 // drawn d1 has no such partner in [2, maxD2] (max noemer 2, or d1 = 6 at max 3): the

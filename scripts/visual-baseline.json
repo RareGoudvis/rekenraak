@@ -222,8 +222,8 @@
    "textHash": "131c2cac4a61444f"
   },
   "breuken-hoeveelheid-w1-s1": {
-   "cellHeightPx": 1214,
-   "intrinsicPx": 272,
+   "cellHeightPx": 1235,
+   "intrinsicPx": 270,
    "textHash": "7638b7064587e8d1"
   },
   "breuken-hoeveelheid-w2-s0": {
@@ -232,8 +232,8 @@
    "textHash": "131c2cac4a61444f"
   },
   "breuken-hoeveelheid-w2-s1": {
-   "cellHeightPx": 1214,
-   "intrinsicPx": 272,
+   "cellHeightPx": 1235,
+   "intrinsicPx": 270,
    "textHash": "7638b7064587e8d1"
   },
   "breuken-hoeveelheid-w4-s0": {
@@ -242,8 +242,8 @@
    "textHash": "131c2cac4a61444f"
   },
   "breuken-hoeveelheid-w4-s1": {
-   "cellHeightPx": 639,
-   "intrinsicPx": 562,
+   "cellHeightPx": 656,
+   "intrinsicPx": 559,
    "textHash": "7638b7064587e8d1"
   },
   "breuken-kleuren-w1-s0": {
@@ -1719,32 +1719,32 @@
   "hr-std-aftrekken-rat-w1-s0": {
    "cellHeightPx": 586,
    "intrinsicPx": 211,
-   "textHash": "f23f32749fe693f1"
+   "textHash": "26a3854a2030b234"
   },
   "hr-std-aftrekken-rat-w1-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 147,
-   "textHash": "6a8a515ca1fa471d"
+   "textHash": "37cf03f65e1405df"
   },
   "hr-std-aftrekken-rat-w2-s0": {
    "cellHeightPx": 586,
    "intrinsicPx": 211,
-   "textHash": "f23f32749fe693f1"
+   "textHash": "26a3854a2030b234"
   },
   "hr-std-aftrekken-rat-w2-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 164,
-   "textHash": "6a8a515ca1fa471d"
+   "textHash": "37cf03f65e1405df"
   },
   "hr-std-aftrekken-rat-w4-s0": {
    "cellHeightPx": 325,
    "intrinsicPx": 485,
-   "textHash": "f23f32749fe693f1"
+   "textHash": "26a3854a2030b234"
   },
   "hr-std-aftrekken-rat-w4-s1": {
    "cellHeightPx": 325,
-   "intrinsicPx": 386,
-   "textHash": "6a8a515ca1fa471d"
+   "intrinsicPx": 382,
+   "textHash": "37cf03f65e1405df"
   },
   "hr-std-delen-dec-w1-s0": {
    "cellHeightPx": 564,
@@ -1959,32 +1959,32 @@
   "hr-std-optellen-rat-w1-s0": {
    "cellHeightPx": 586,
    "intrinsicPx": 211,
-   "textHash": "6f0d517bd4b93d0d"
+   "textHash": "1996ee0139ae95b4"
   },
   "hr-std-optellen-rat-w1-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 147,
-   "textHash": "800490d38949acdd"
+   "textHash": "51ea01a30c456caf"
   },
   "hr-std-optellen-rat-w2-s0": {
    "cellHeightPx": 586,
    "intrinsicPx": 211,
-   "textHash": "6f0d517bd4b93d0d"
+   "textHash": "1996ee0139ae95b4"
   },
   "hr-std-optellen-rat-w2-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 164,
-   "textHash": "800490d38949acdd"
+   "textHash": "51ea01a30c456caf"
   },
   "hr-std-optellen-rat-w4-s0": {
    "cellHeightPx": 325,
    "intrinsicPx": 485,
-   "textHash": "6f0d517bd4b93d0d"
+   "textHash": "1996ee0139ae95b4"
   },
   "hr-std-optellen-rat-w4-s1": {
    "cellHeightPx": 325,
    "intrinsicPx": 390,
-   "textHash": "800490d38949acdd"
+   "textHash": "51ea01a30c456caf"
   },
   "hr-std-vermenigvuldigen-dec-w1-s0": {
    "cellHeightPx": 564,

@@ -65,7 +65,7 @@ function makeShapeExercise(subType: FractionSubType, block: MathBlock): Fraction
 }
 
 function makeAmountExercise(subType: FractionSubType, block: MathBlock): FractionExercise {
-    const { objectShape = 'circle', maxTotal = 20, minDenominator = 2, maxDenominator = 5 } = block.constraints as FractionConstraints;
+    const { objectShape = 'circle', maxTotal = 20, minDenominator = 2, maxDenominator = 5, maxGroupSize } = block.constraints as FractionConstraints;
     // Total = denominator × multiplier must stay ≤ maxTotal, so the denominator can't
     // exceed maxTotal and the multiplier is bounded (was forced ≥2 → total up to 2×den
     // overshot maxTotal when maxTotal < 2×denominator).
@@ -75,7 +75,7 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
     const hi = Math.max(lo, Math.min(maxDenominator, maxTotal));
     const denominator = randInt(lo, hi);
     const numerator = randInt(1, denominator - 1);
-    const maxMult = Math.max(1, Math.floor(maxTotal / denominator));
+    const maxMult = Math.max(1, Math.min(Math.floor(maxTotal / denominator), maxGroupSize ?? Infinity));
     const multiplier = randInt(Math.min(2, maxMult), maxMult);
     return {
         id: Math.random().toString(36).substring(2, 9),

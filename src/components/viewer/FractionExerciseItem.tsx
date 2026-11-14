@@ -51,6 +51,32 @@ function groupRows(total: number, denominator: number, mode: string): number[] {
     return Array.from({ length: Math.ceil(total / perRow) }, (_, r) => Math.min(perRow, total - r * perRow));
 }
 
+// Hoeveelheid objects and the key's group boxes, in px at the 13pt default.
+const OBJ_SIZE = 22, OBJ_GAP = 4, GROUP_PAD = 3, GROUP_BORDER = 1.5, GROUP_GAP = 6, KEY_MIN_ROW = 5;
+
+// The key's group boxes: the balanced columns per group and groups per line that keep the figure lowest. A line
+// wider than the plain grid's widest row (`gridW`) shrinks the figure to that width (`scale`), so the cell's min width stays put.
+function keyGroupLayout(partSize: number, groups: number, gridW: number): { cols: number; perLine: number; scale: number } {
+    const unit = OBJ_SIZE + OBJ_GAP, frame = 2 * (GROUP_PAD + GROUP_BORDER);
+    // Never shrink the objects by more than this to fit more groups on a line.
+    const minScale = 0.85;
+    let best = { cols: 1, perLine: 1, width: 0, scale: 1, height: Infinity };
+    for (let rows = 1; rows <= partSize; rows++) {
+        const cols = Math.ceil(partSize / rows);
+        if (Math.ceil(partSize / cols) !== rows) continue;
+        const boxW = cols * unit - OBJ_GAP + frame, boxH = rows * unit - OBJ_GAP + frame;
+        const fit = Math.min(groups, Math.max(1, Math.floor((gridW / minScale + GROUP_GAP) / (boxW + GROUP_GAP))));
+        // Even lines: 8 groups at 3 per line become 3 + 3 + 2, never 3 + 3 + 1 + 1.
+        const lines = Math.ceil(groups / fit), perLine = Math.ceil(groups / lines);
+        const width = perLine * (boxW + GROUP_GAP) - GROUP_GAP, scale = Math.min(1, gridW / width);
+        if (scale < minScale && cols > 1) continue;
+        // A ragged last row inside each group (3 + 3 + 2) counts a tenth higher: full rectangles count easier.
+        const height = lines * (boxH + GROUP_GAP) * scale * (partSize % cols ? 1.1 : 1);
+        if (height < best.height || (height === best.height && width < best.width)) best = { cols, perLine, width, scale, height };
+    }
+    return best;
+}
+
 export default function FractionExerciseItem({ ex, block, showSolutions, columnWidth }: Props) {
     const subType = ex.subType;
     const c = block.constraints as FractionConstraints;
@@ -230,7 +256,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     if (subType === 'hoeveelheid') {
         const total = ex.total ?? 0;
         const coloredCount = Math.round(total * ex.numerator / ex.denominator);
-        const objSize = 22, objGap = 4;
+        const objSize = OBJ_SIZE, objGap = OBJ_GAP;
         const groupingMode: string = c.groupingMode ?? 'standaard';
         // Row sizes (objects per row) drive how objects group — easier grouping helps starters.
         const rowSizes = groupRows(total, ex.denominator, groupingMode);
@@ -257,6 +283,28 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             </div>
         );
 
+        // The key splits the objects into the n equal groups (dashed outline each) and fills the first t.
+        const partSize = ex.denominator > 0 && total % ex.denominator === 0 ? total / ex.denominator : 0;
+        // At least five objects wide: a narrow grid (34 in gebalanceerd = 17 rows of 2) must not become one long column of groups.
+        const gridW = Math.max(...rowSizes, KEY_MIN_ROW) * (objSize + objGap) - objGap;
+        // per-deel already draws one row per group: the key keeps those rows and outlines each.
+        const rowsAreGroups = partSize > 0 && rowSizes.length === ex.denominator && rowSizes.every(n => n === partSize);
+        const keyGroups = partSize === 0 ? null
+            : rowsAreGroups ? { cols: partSize, perLine: 1, scale: Math.min(1, gridW / (gridW + 2 * (GROUP_PAD + GROUP_BORDER))) }
+            : keyGroupLayout(partSize, ex.denominator, gridW);
+        // The plain grid's font, shrunk when the group lines run wider than its widest row.
+        const keyFont = keyGroups && { fontSize: `${Math.min(sheetSizePx, (columnWidth / gridW) * PX_PER_EM_AT_DEFAULT) * keyGroups.scale}px` };
+        const groupedGrid = keyGroups && (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${keyGroups.perLine}, auto)`, justifyContent: 'start', gap: em(GROUP_GAP), ...keyFont }}>
+                {Array.from({ length: ex.denominator }, (_, k) => (
+                    <div key={k} style={{ display: 'grid', gridTemplateColumns: `repeat(${keyGroups.cols}, auto)`, gap: em(OBJ_GAP), padding: em(GROUP_PAD), border: `${em(GROUP_BORDER)} dashed ${SOL}`, borderRadius: em(6) }}>
+                        {Array.from({ length: partSize }, (_, i) => objEl(k * partSize + i, k < ex.numerator))}
+                    </div>
+                ))}
+            </div>
+        );
+        const objects = showSolutions && groupedGrid ? groupedGrid : simpleGrid;
+
         // Unified task line across all concreet scaffolds (no "van deze hoeveelheid").
         const taskLine = (
             <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'var(--font-sheet-math)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -279,7 +327,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
 
         const gridWrap = (
             <div style={{ minHeight: '52px', display: 'flex', alignItems: 'center' }}>
-                {simpleGrid}
+                {objects}
             </div>
         );
 
@@ -298,7 +346,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, auto)', columnGap: '3px', rowGap: `${Math.min(gap, 10)}px`, alignItems: 'center', width: '100%' }}>
                     <div style={{ gridColumn: '1 / -1' }}>{taskLine}</div>
-                    <div style={{ gridColumn: '1 / -1', minHeight: '52px', display: 'flex', alignItems: 'center' }}>{simpleGrid}</div>
+                    <div style={{ gridColumn: '1 / -1', minHeight: '52px', display: 'flex', alignItems: 'center' }}>{objects}</div>
                     {fillIn(hTotal, 28)}<span>:</span>{fillIn(ex.denominator, 24)}<span>=</span>{fillIn(hGroup, 28)}
                     {fillIn(ex.numerator, 24)}<span>×</span>{fillIn(hGroup, 28)}<span>=</span>{fillIn(hCount, 28)}
                 </div>
@@ -338,7 +386,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                 {taskLine}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '52px' }}>
-                    {simpleGrid}
+                    {objects}
                 </div>
                 {questionLine}
                 {/* Key with steps: the two working lines carry the calculation (12 : 3 = 4, 2 × 4 = 8) instead of staying empty. */}
