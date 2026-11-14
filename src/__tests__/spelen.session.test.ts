@@ -7,6 +7,7 @@ import { progressOf, spelSessieOf, useSpelStore, type SpelStart } from '../oefen
 import type { SkinMeta } from '../oefenen/spelen/skins/types';
 import type { SpelEventName } from '../oefenen/spelen/events';
 import { resetKiosk } from './helpers/oefenKiosk';
+import { skinById } from '../oefenen/spelen/skins/registry';
 import { stepsFor } from '../services/stepsAvailability';
 
 // The Spelen session: one try per question, a wrong answer is logged, "Hoe los ik dit op?" pauses
@@ -208,6 +209,26 @@ describe('Spelen session', () => {
         // One per question: a second miss during the flash does nothing.
         sp().miss();
         expect(sp().history).toHaveLength(3);
+    });
+
+    test('Zombies: a 3 minute round whose clock stops under Hoe los ik dit op?; misses never end it early', () => {
+        const meta = skinById('zombies')!.meta;
+        expect(meta).toMatchObject({ input: 'keypad', timed: true, round: { seconds: 180 } });
+        const t0 = 2_000_000;
+        sp().start(startWith(meta, t0));
+        for (let i = 0; i < 12; i++) { sp().miss(t0 + i * 1000); sp().next(t0 + i * 1000 + 500); }
+        expect(sp().phase).toBe('play');
+        expect(sp().mistakes).toHaveLength(12);
+        sp().openHelp(t0 + 60_000);
+        expect(progressOf(sp(), t0 + 170_000).msLeft).toBe(120_000);
+        sp().tick(t0 + 400_000);
+        expect(sp().phase).toBe('help');
+        sp().closeHelp(t0 + 400_000);
+        expect(progressOf(sp(), t0 + 400_000).msLeft).toBe(120_000);
+        sp().tick(t0 + 519_000);
+        expect(sp().phase).toBe('play');
+        sp().tick(t0 + 520_000);
+        expect(sp().phase).toBe('end');
     });
 
     test('Nakijken replays exactly the mistakes, same numbers, in the Oefenen kiosk with steps after a fout', () => {

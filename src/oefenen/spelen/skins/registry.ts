@@ -20,6 +20,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // About 3 minutes; the zombies speed up with the streak (progress.streak).
         meta: { id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 } },
         icon: Ghost,
+        Component: lazy(() => import('./zombies/Zombies')),
     },
 ];
 
