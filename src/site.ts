@@ -29,7 +29,8 @@ function initSidebarSpy(): void {
         // reading. Fallback (nothing has reached the edge yet, e.g. right after page
         // load): the nearest upcoming section, as long as it's not more than ~40% of the
         // viewport below that edge.
-        const edge = barH + 8;
+        // Past the headings' 12px scroll-margin (site.css), so a TOC jump lights its own row.
+        const edge = barH + 16;
         const limit = edge + window.innerHeight * 0.4;
         let current: { item: (typeof items)[number]; top: number } | null = null;
         let upcoming: { item: (typeof items)[number]; top: number } | null = null;
