@@ -316,20 +316,30 @@ async function shotsSleutel() {
 async function shotsOefenmodus() {
     const { ctx, page } = await app({ mode: 'oefeningen' });
     let link = '';
+    // The Oefenmodus workspace: catalogue left, the session with samples in the middle, settings right.
     await step('oefenmodus-kiezen', async () => {
         await page.getByRole('button', { name: /^Oefenmodus/ }).first().click();
-        await settle(page, 900);
-        const dlg = page.locator('[role=dialog]').first();
-        await dlg.getByText('Optellen · natuurlijk', { exact: true }).click();
-        await settle(page, 700);
-        await dlg.getByText('Aftrekken · natuurlijk', { exact: true }).click();
-        await settle(page, 700);
-        await dlg.locator('input[placeholder^="Bv."]').fill('Optellen en aftrekken');
-        await settle(page, 400);
+        await settle(page, 1000);
+        const side = page.locator('.oefen-sidebar');
+        await side.getByText('Hoofdrekenen', { exact: true }).click();
+        await settle(page, 500);
+        // Optellen and Aftrekken (standaardprocedure) are open: their first rows are the natuurlijke getallen.
+        await side.getByText('Natuurlijke getallen', { exact: true }).nth(0).click();
+        await settle(page, 800);
+        await side.getByText('Natuurlijke getallen', { exact: true }).nth(1).click();
+        await settle(page, 800);
+        await page.getByLabel('Naam van de sessie').fill('Optellen en aftrekken');
+        await settle(page, 600);
         await shot(page, 'oefenmodus-kiezen');
     });
+    await step('oefenmodus-sessie', async () => {
+        const insp = page.locator('aside[aria-label=Instellingen]');
+        await insp.getByRole('button', { name: 'Hele sessie', exact: true }).click();
+        await settle(page);
+        await shot(page, 'oefenmodus-sessie', { x: 1076, y: 0, width: 364, height: 680 });
+    });
     await step('oefenmodus-delen', async () => {
-        await page.locator('[role=dialog]').first().getByRole('button', { name: 'Delen', exact: true }).click();
+        await page.locator('header').getByRole('button', { name: 'Delen', exact: true }).click();
         await settle(page, 1000);
         link = await page.evaluate(() => [...document.querySelectorAll('a')].map(a => a.href).find(h => h.includes('#oefen=')) ?? '');
         await shot(page, 'oefenmodus-delen');
