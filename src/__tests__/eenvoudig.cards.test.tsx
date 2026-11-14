@@ -30,6 +30,7 @@ const OPTIONAL_TYPED_KEYS: Record<string, string[]> = {
     getallenas: ['fractionStep', 'allowMixed', 'gelijknamig'],
     splitsen: ['decimalPlaces'],
     'hr-std-gemengd': ['selectedTables', 'tableLimit', 'multiplicationMode'],
+    'romeinse-cijfers': ['maxGetal'],
 };
 
 beforeAll(async () => {
