@@ -136,6 +136,10 @@
   .pt-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
   .pt-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
 }
+/* Side by side: the sea runs on under the keypad (the floe's waterline sits 8% up from the bottom). */
+@media (orientation: landscape) {
+  .pt-root { background: linear-gradient(to top, var(--pt-sea) 8%, var(--spel-ink) 8%, var(--spel-ink) calc(8% + 3px), var(--spel-sky) calc(8% + 3px)); }
+}
 /* A short landscape screen: smaller keys so the keypad fits beside the tower. */
 @media (orientation: landscape) and (max-height: 640px) {
   .pt-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
