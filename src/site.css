@@ -1,5 +1,5 @@
-/* Page-only rules for the static marketing/FAQ/catalogue pages (about.html, faq.html,
-   oefeningen.html — see src/site.ts). These pages reuse the app's real CSS (imported
+/* Page-only rules for the static marketing/FAQ/catalogue/manual pages (about.html, faq.html,
+   oefeningen.html, handleiding.html — see src/site.ts). These pages reuse the app's real CSS (imported
    alongside this file) wherever a class already exists — mac-vibrant, topbar,
    panel-head, seg-group/seg-btn, sidebar-row, ui-hover. Everything here is either page
    content typography the app has no equivalent for (h1/h2/.card/.faq-item/.ex-card/…),
@@ -65,6 +65,8 @@ p { margin: 0 0 16px; }
    it's a real page link (Over/Vragen/Oefeningen navigate), so it only needs the anchor
    defaults reset — the look itself (track, thumb, spacing) is the real class. */
 .seg-btn { text-decoration: none; }
+/* Four page tabs in the 286px column: the same tight padding the app's own left tabs use (index.css). */
+.site-aside .panel-head .seg-btn { flex: 1 1 auto; padding-inline: 4px; min-width: 0; }
 
 /* Anchor-nav rows: reuse .sidebar-row's real hover treatment, this class only supplies
    the base look (the app's row base look is inline, tied to per-row open/active state
@@ -148,6 +150,25 @@ ol li { margin: 10px 0; }
 /* :not([hidden]) — plain `display: inline-block` on the class would out-rank the
    attribute's UA default and defeat the JS-toggled [hidden] entirely. */
 .ex-toon-alles:not([hidden]) { display: inline-block; margin: 0 0 20px; font-weight: 600; font-size: var(--text-sm); }
+
+/* ── Handleiding (handleiding.html): screenshots, side-by-side figures and tips. ── */
+.shot { margin: 16px 0 24px; }
+.shot img {
+  display: block; max-width: 100%; height: auto;
+  border: 1px solid var(--separator); border-radius: 10px;
+  background: var(--bg-surface); box-shadow: var(--shadow-1);
+}
+.shot figcaption { margin-top: 8px; font-size: var(--text-sm); color: var(--text-muted); }
+/* A narrow figure (a panel crop) beside its text or a second figure; stacks when the column is narrow. */
+.shot-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin: 16px 0 24px; }
+.shot-row > * { flex: 1 1 260px; min-width: 0; }
+.shot-row > .shot { margin: 0; }
+.shot-row > .shot-narrow { flex: 0 1 auto; }
+.tip {
+  margin: 12px 0 20px; padding: 10px 14px;
+  border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
+  background: var(--accent-soft); color: var(--text-main);
+}
 
 /* ── Responsive: sidebar collapses above the content under ~800px, no horizontal scroll.
    The tabs (in .panel-head) and the wordmark (.site-brand-foot) stay in normal flow, so
