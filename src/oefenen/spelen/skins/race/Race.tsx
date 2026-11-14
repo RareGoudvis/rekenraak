@@ -15,9 +15,12 @@ import './race.css';
 const PPM = 14;
 const HILLS = 0.2;
 const TREES = 0.55;
-// Tile widths of the repeating layers (race.css draws them at these sizes).
+// Tile widths of the repeating layers (race.css draws them at these sizes), and how many tiles each strip
+// holds: shifted by up to one tile, a strip still reaches past the right edge of a 2560 px wide screen.
 const HILL_TILE = 800;
 const TREE_TILE = 600;
+const HILL_TILES = [0, 1, 2, 3, 4];
+const TREE_TILES = [0, 1, 2, 3, 4, 5];
 const DASH = 80;
 // The car rolls over the line before the end screen comes.
 const FINISH_HOLD_MS = 1400;
@@ -164,8 +167,8 @@ export default function Race({ question, phase, feedback, onAnswer, progress, ev
                     <span className="rc-cloud is-a" />
                     <span className="rc-cloud is-b" />
                 </div>
-                <div className="rc-hills" aria-hidden><div ref={hills} className="rc-strip"><Hills /><Hills /><Hills /></div></div>
-                <div className="rc-trees" aria-hidden><div ref={trees} className="rc-strip"><Trees /><Trees /><Trees /><Trees /></div></div>
+                <div className="rc-hills" aria-hidden><div ref={hills} className="rc-strip">{HILL_TILES.map(k => <Hills key={k} />)}</div></div>
+                <div className="rc-trees" aria-hidden><div ref={trees} className="rc-strip">{TREE_TILES.map(k => <Trees key={k} />)}</div></div>
                 <div className="rc-road" aria-hidden>
                     <div ref={lines} className="rc-lines" />
                     <div ref={finishLine} className="rc-finish" />
