@@ -76,6 +76,7 @@
 /* ── Game shell ───────────────────────────────────────────────────────────── */
 /* Doubled class: wins over the kiosk's narrow-phone bar (which drops a title this bar does not have). */
 .kiosk-topbar.spel-topbar { grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr); }
+.spel-progress { white-space: nowrap; }
 .spel-score {
   display: inline-flex;
   align-items: center;
@@ -175,6 +176,9 @@
   gap: var(--sp-2);
   width: min(100%, 360px);
 }
+/* Game keys stay at least --spel-tap (48 px), a little above the kiosk's 44. */
+.spel-keypad .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 88px)); }
+.spel-keypad .kiosk-key { min-height: var(--spel-tap); }
 .spel-keypad-field {
   display: flex;
   align-items: center;

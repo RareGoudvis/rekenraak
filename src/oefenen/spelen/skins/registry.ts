@@ -6,8 +6,10 @@ import type { SkinEntry } from './types';
 // session, the shell and the picker never change. No Component = shown as "binnenkort".
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
-        meta: { id: 'pinguintoren', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 20 } },
+        // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends.
+        meta: { id: 'pinguintoren', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 } },
         icon: Bird,
+        Component: lazy(() => import('./pinguintoren/Pinguintoren')),
     },
     {
         meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 } },

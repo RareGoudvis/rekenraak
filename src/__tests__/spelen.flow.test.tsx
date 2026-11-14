@@ -34,10 +34,11 @@ async function toGames(grade: string, section: string, name: string, choice: Reg
 }
 
 describe('Spelen flow', () => {
-    test('the registry: three tiles, only Ballonnen playable, Zombies timed', () => {
+    test('the registry: three tiles, Zombies timed', () => {
         expect(SKINS.map(s => s.meta.label)).toEqual(['Pinguïntoren', 'Ballonnen', 'Zombies']);
-        expect(SKINS.filter(s => s.Component).map(s => s.meta.id)).toEqual(['ballonnen']);
+        expect(SKINS.filter(s => s.Component).map(s => s.meta.id)).toEqual(['pinguintoren', 'ballonnen']);
         expect(SKINS.find(s => s.meta.id === 'zombies')!.meta.timed).toBe(true);
+        expect(SKINS.find(s => s.meta.id === 'pinguintoren')!.meta).toMatchObject({ input: 'keypad', timed: false, round: { questions: 30, goal: 20 } });
         expect(SKINS.find(s => s.meta.id === 'ballonnen')!.meta).toMatchObject({ input: 'choice', round: { questions: 20 } });
     });
 
@@ -59,7 +60,7 @@ describe('Spelen flow', () => {
         await toGames('2', 'Hoofdrekenen', 'Optellen', /Met brug/);
         click('Spelen');
         expect(screen.getByRole('heading', { name: 'Kies een spel' })).toBeTruthy();
-        expect((screen.getByRole('button', { name: /Pinguïntoren, binnenkort/ }) as HTMLButtonElement).disabled).toBe(true);
+        expect((screen.getByRole('button', { name: 'Pinguïntoren' }) as HTMLButtonElement).disabled).toBe(false);
         expect((screen.getByRole('button', { name: /Zombies, op tijd, binnenkort/ }) as HTMLButtonElement).disabled).toBe(true);
         click('Ballonnen');
         expect(sp().phase).toBe('play');
@@ -91,6 +92,25 @@ describe('Spelen flow', () => {
         expect(useOefenStore.getState().sessie!.title).toBe('Nakijken');
         expect(useOefenStore.getState().shown!.exerciseKey).toBe(keys[0]);
         expect(await screen.findByText('1 / 3')).toBeTruthy();
+    });
+
+    test('Pinguïntoren: typed answers build the tower; a mistake takes a block off; 20 blocks end on De toren is af!', async () => {
+        await toGames('1', 'Hoofdrekenen', 'Optellen', /Zonder brug/);
+        click('Spelen');
+        click('Pinguïntoren');
+        await screen.findByRole('group', { name: 'Cijfers' });
+        const type = (v: string) => { for (const k of [...v, 'Enter']) fireEvent.keyDown(window, { key: k }); };
+        let n = 0;
+        while (sp().phase === 'play') {
+            const q = sp().question!;
+            type(n === 3 || n === 7 ? String(Number(q.answer) + 1) : q.answer);
+            n++;
+            act(() => sp().next());
+        }
+        expect(await screen.findByRole('heading', { name: 'De toren is af!' })).toBeTruthy();
+        // Each mistake takes a block back: 24 questions for 20 blocks.
+        expect(screen.getByText('22 van 24 juist')).toBeTruthy();
+        expect(sp().mistakes).toHaveLength(2);
     });
 
     test('Ander spel goes back to the tiles of the same choice; keys 1 to 4 pick a balloon', async () => {
