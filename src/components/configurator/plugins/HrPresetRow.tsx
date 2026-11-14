@@ -12,11 +12,13 @@ interface Props {
     block: MathBlock;
     // addsub: Vrij / Compenseren · muldiv: Vrij / Met 10-100-1000
     variant: 'addsub' | 'muldiv';
+    // muldiv only: names the numbers the tienvoud maximum can bound.
+    op?: 'x' | ':';
 }
 
 // Top rows of every hoofdrekenen config: Oefenvorm preset + aantal termen/factoren.
 // Presets are generator flavours, not separate exercise types (constraints.preset).
-export default function HrPresetRow({ block, variant }: Props) {
+export default function HrPresetRow({ block, variant, op = 'x' }: Props) {
     const [c, patch] = useConstraints<MulDivConstraints>(block);
     // Inside a gemengd variant tab the oefenvorm IS the variant, so its picker is gone.
     const fixedPreset = useConstraintScope()?.fixedPreset;
@@ -74,7 +76,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                     </div>
                     {range && !hidden.has('maxGetal') && <div style={styles.section}>
                         {/* The sub-config is hidden for this preset, so max getal lives here. */}
-                        <SettingLabel text="Maximum getal:" info="Het grootste uitgangsgetal (bij : het quotiënt)." />
+                        <SettingLabel text="Maximum getal:" info="Het grootste getal; waarvoor het geldt, kies je hieronder." />
                         <PopupSelect
                             clampToLowest
                             value={c.maxGetal ?? 1000}
@@ -82,6 +84,17 @@ export default function HrPresetRow({ block, variant }: Props) {
                             onChange={(v) => set('maxGetal', v)}
                             ariaLabel="Maximum getal"
                         />
+                    </div>}
+                    {/* Gemengd caps every answer under its shared max already (capToMax). */}
+                    {range && !hidden.has('maxGetal') && !fixedPreset && <div style={styles.section}>
+                        <SettingLabel text="Maximum voor:" info={op === ':' ? 'Quotiënt = 470 : 10 met 47 tot het maximum. Deeltal = 470 tot het maximum.' : 'Uitgangsgetal = 47 × 10 met 47 tot het maximum. Uitkomst = 470 tot het maximum.'} />
+                        <div style={styles.buttonGroup}>
+                            {[false, true].map(on => (
+                                <button key={String(on)} onClick={() => set('tienvoudTotMax', on)} aria-pressed={!!c.tienvoudTotMax === on} style={styles.radioBtn(!!c.tienvoudTotMax === on)}>
+                                    {on ? (op === ':' ? 'Deeltal' : 'Uitkomst') : (op === ':' ? 'Quotiënt' : 'Uitgangsgetal')}
+                                </button>
+                            ))}
+                        </div>
                     </div>}
                 </>
             )}

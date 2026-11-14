@@ -22,7 +22,7 @@ export default function DivisionConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             {/* OEFENVORM + AANTAL FACTOREN */}
-            {numberType !== 'rational' && <HrPresetRow block={block} variant="muldiv" />}
+            {numberType !== 'rational' && <HrPresetRow block={block} variant="muldiv" op=":" />}
 
             {/* TYPE OEFENING */}
             <div style={styles.section}>

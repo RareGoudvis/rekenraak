@@ -84,6 +84,8 @@ export type AddSubConstraints = {
     preset?: 'vrij' | 'compenseren' | 'tienvoud';
     presetDistance?: number;
     presetFactors?: number[];
+    // Tienvoud only: true = maxGetal bounds the answer (×) and the deeltal (:) instead of the base, so "tot 1 000" holds for every number (the Eenvoudig × / : 10 cards).
+    tienvoudTotMax?: boolean;
     /** compenseren: print the intermediate step ('tussenstap') or only the answer. */
     compenserenScaffold?: 'tussenstap' | 'geen';
     // Answer key only: print the worked steps under each sum ('basis' = the owner's kept lines,
