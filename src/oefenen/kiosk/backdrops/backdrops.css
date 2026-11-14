@@ -1,0 +1,88 @@
+/* The leerjaar scenes behind the pupil pages (KidBackdrop with a grade). Sticker style but calm: pastel fills and a
+   softened outline, drawn only along the bottom and the far edges, so the middle stays sky and the text keeps its
+   contrast. Static, apart from one slow bob per scene (off under reduced motion). */
+.kid-backdrop.is-theme {
+  --ks-line: color-mix(in srgb, var(--kid-ink) 42%, transparent);
+  --ks-eye: color-mix(in srgb, var(--kid-ink) 72%, transparent);
+  --ks-white: #FFFFFF;
+  --ks-honey: #FCE08A;
+  --ks-pink: #F9C4DA;
+  --ks-wood: #E2B98F;
+  --ks-teal: #A3E0D2;
+  --ks-terra: #EDB894;
+  --ks-lava: #FDBF80;
+  --ks-rock: #E3C0A2;
+  --ks-cheek: #F8B8AE;
+  --ks-leaf: #A4DDB0;
+  --ks-leaf-dark: #82CB97;
+  --ks-red: #F6A9A0;
+  --ks-blue: #A9CBF5;
+  --ks-pine: #93D1A9;
+  --ks-hat: #9AA3B0;
+  --ks-orange: #FDBA74;
+  --ks-sun: #FDE9A0;
+  --ks-cactus: #9FD5A5;
+  --ks-camel: #E9C793;
+  --ks-ground-h: clamp(40px, 9vh, 84px);
+  background: var(--ks-sky);
+}
+/* Per leerjaar: the sky and the two ground layers. */
+.kid-backdrop.ks-1 { --ks-sky: #D8EDFF; --ks-ground: #A9E2A4; --ks-ground-back: #C8EEC2; }
+.kid-backdrop.ks-2 { --ks-sky: #E5E4FF; --ks-ground: #B7E5D0; --ks-ground-back: #D4D2F6; }
+.kid-backdrop.ks-3 { --ks-sky: #FFE7CF; --ks-ground: #F2C7A2; --ks-ground-back: #F8DABF; }
+.kid-backdrop.ks-4 { --ks-sky: #DCF2E4; --ks-ground: #93D6A4; --ks-ground-back: #BDE8C6; }
+.kid-backdrop.ks-5 { --ks-sky: #E4EEF9; --ks-ground: #FFFFFF; --ks-ground-back: #EEF4FB; }
+.kid-backdrop.ks-6 { --ks-sky: #FFF0D6; --ks-ground: #F5DAA4; --ks-ground-back: #FAE8C4; }
+
+.kid-backdrop.is-theme svg * { stroke: var(--ks-line); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.ks-ground { left: 0; bottom: 0; width: 100%; height: var(--ks-ground-h); }
+.ks-ground path { fill: var(--ks-ground); }
+.ks-ground.is-back { height: calc(var(--ks-ground-h) * 1.5); }
+.ks-ground.is-back path { fill: var(--ks-ground-back); }
+.ks-corner { bottom: calc(var(--ks-ground-h) * 0.4); width: clamp(100px, 18vw, 260px); height: auto; }
+.ks-corner-l { left: 0.5%; }
+.ks-corner-r { right: 0.5%; }
+/* The top corners beside the brand pill: free sky on a tablet or laptop. */
+.ks-air { top: 4px; width: clamp(90px, 13vw, 170px); height: auto; }
+.ks-air-l { left: 2%; }
+.ks-air-r { right: 2%; }
+@media (max-width: 699px), (max-height: 560px) {
+  .kid-backdrop .ks-air { display: none; }
+}
+
+.ks-white { fill: var(--ks-white); }
+.ks-honey { fill: var(--ks-honey); }
+.ks-pink { fill: var(--ks-pink); }
+.ks-wood { fill: var(--ks-wood); }
+.ks-teal { fill: var(--ks-teal); }
+.ks-terra { fill: var(--ks-terra); }
+.ks-lava { fill: var(--ks-lava); }
+.ks-rock { fill: var(--ks-rock); }
+.ks-leaf { fill: var(--ks-leaf); }
+.ks-leaf-dark { fill: var(--ks-leaf-dark); }
+.ks-red { fill: var(--ks-red); }
+.ks-blue { fill: var(--ks-blue); }
+.ks-pine { fill: var(--ks-pine); }
+.ks-hat { fill: var(--ks-hat); }
+.ks-orange { fill: var(--ks-orange); }
+.ks-sun { fill: var(--ks-sun); }
+.ks-cactus { fill: var(--ks-cactus); }
+.ks-sand-dark { fill: var(--ks-camel); }
+.kid-backdrop.is-theme .ks-hill { fill: var(--ks-ground); stroke: none; }
+.ks-hill-edge { fill: none; }
+.ks-wing { fill: color-mix(in srgb, var(--ks-white) 80%, transparent); }
+.kid-backdrop.is-theme .ks-cheek { fill: var(--ks-cheek); stroke: none; }
+.kid-backdrop.is-theme :is(.ks-eye, .ks-hole) { fill: var(--ks-eye); stroke: none; }
+.kid-backdrop.is-theme :is(.ks-mouth, .ks-stripe) { fill: none; stroke: var(--ks-eye); stroke-width: 3; }
+.ks-stem, .ks-band, .ks-vein { fill: none; }
+.kid-backdrop.is-theme .ks-trail { fill: none; stroke-dasharray: 4 6; }
+.kid-backdrop.is-theme .ks-vein { stroke-width: 1.5; }
+.kid-backdrop.is-theme .ks-branch { fill: none; stroke: var(--ks-wood); stroke-width: 9; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ks-bob { animation: ks-bob 5s ease-in-out infinite; }
+}
+@keyframes ks-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}

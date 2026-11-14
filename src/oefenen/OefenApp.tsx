@@ -31,7 +31,7 @@ export default function OefenApp() {
     if (error || !sessie) {
         return <div className="oefen-app"><KidBackdrop /><ErrorScreen message={error} /></div>;
     }
-    if (phase === 'start') return <div className="oefen-app"><KidBackdrop /><StartScreen /></div>;
-    if (phase === 'locked') return <div className="oefen-app"><KidBackdrop clouds={false} extra="confetti" /><main className="kiosk-scroll"><StatsScreen /></main></div>;
+    if (phase === 'start') return <div className="oefen-app"><KidBackdrop grade={sessie.grade} /><StartScreen /></div>;
+    if (phase === 'locked') return <div className="oefen-app"><KidBackdrop clouds={false} extra="confetti" grade={sessie.grade} /><main className="kiosk-scroll"><StatsScreen /></main></div>;
     return <Kiosk />;
 }

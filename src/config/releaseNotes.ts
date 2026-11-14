@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Kinderen kiezen hun leerjaar met grote cijfers bovenaan, zien alle spellen meteen en krijgen een eigen achtergrond per leerjaar.' },
             { kind: 'nieuw', text: 'Spelen met breuken: herkennen, gelijkwaardig, vereenvoudigen, gelijknamig en vergelijken, tot leerjaar 4, ook in Hartjes en Honingraat.' },
             { kind: 'nieuw', text: 'Nieuw spel Kasteel: schiet met je katapult het kasteel van de computer of van een klasgenoot om. Kies 10, 20 of 30 levens.' },
             { kind: 'nieuw', text: 'Nieuw spel Voetbal: ijsberen passen bij elk juist antwoord en schieten op doel. Een match van 3 of 5 minuten met rust.' },
