@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, signClass } from '../../spelChoice';
+import { choiceLabel, faceKind, pictureClass, signClass } from '../../spelChoice';
 import { beltDone, beltStep, isOff, parcelAt, runStart } from './belt';
 import './pakjesband.css';
 
@@ -166,7 +166,7 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
     const right = phase === 'right' && pickedNow;
 
     return (
-        <div className={`pk-root${views ? ' has-pictures' : ''}${phase === 'play' && !reducedMotion ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`pk-root${views ? ' has-pictures' : ''}${pictureClass(views)}${phase === 'play' && !reducedMotion ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
             <span className="pk-moon" aria-hidden />
             {STARS.map(([x, y, s], k) => (
                 <span key={k} className="pk-star" style={{ left: `${x}%`, top: `${y}%`, '--s': s, '--k': k } as CSSProperties} aria-hidden><StarArt /></span>

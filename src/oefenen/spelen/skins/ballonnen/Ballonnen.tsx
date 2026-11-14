@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { Star } from '@phosphor-icons/react';
 import type { SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, signClass } from '../../spelChoice';
+import { choiceLabel, faceKind, pictureClass, signClass } from '../../spelChoice';
 import { floatAt, floatPace, floatPath, type FloatGeom, type FloatPath } from './float';
 import './ballonnen.css';
 
@@ -150,7 +150,7 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div ref={sky} className={`bal-sky${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div ref={sky} className={`bal-sky${pictureClass(views)}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
             <Cloud className="bal-cloud-a" />
             <Cloud className="bal-cloud-b" />
             <Cloud className="bal-cloud-c" />

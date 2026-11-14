@@ -126,10 +126,10 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts, 2 boards. A sum card turned first and then
         // a wrong answer, twice for the same sum, logs that sum once (board/session.ts). Answers up to 5 characters
-        // ("3/8", "08:15") fit a card once the packs come.
+        // ("10/12") fit a card; breuken pair a picture with its breuk, or a breuk with its vereenvoudigde breuk.
         meta: {
             id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn',
-            round: { board: { kind: 'pairs', boards: 2, size: 6, strikes: 2 } }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5 },
+            round: { board: { kind: 'pairs', boards: 2, size: 6, strikes: 2 } }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
             sounds: { correct: 'ting', wrong: 'plop', flip: 'flip', nomatch: 'plop' },
         },
         icon: Heart,
@@ -138,9 +138,10 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Lente: a honeycomb of 13 sums, find every one that makes the target (3–5), 3 honeycombs. A wrong cell is a
         // mistake at once. Cards whose answers rarely repeat (tot 1000) get "groter dan" a round number instead.
+        // Gelijkwaardige breuken: "zoek alle breuken die gelijk zijn aan 1/2" (content/breuken/breukComb.ts).
         meta: {
             id: 'honingraat', label: 'Honingraat', input: 'board', timed: false, season: 'lente',
-            round: { board: { kind: 'target', boards: 3, size: 13, strikes: 1 } }, accepts: { kinds: ['number'], ops: ['+', '-'] },
+            round: { board: { kind: 'target', boards: 3, size: 13, strikes: 1 } }, accepts: { kinds: ['number', 'choice'], ops: ['+', '-'], pictures: true, board: 'target' },
             sounds: { correct: 'drup', wrong: 'bzz' },
         },
         icon: Hexagon,

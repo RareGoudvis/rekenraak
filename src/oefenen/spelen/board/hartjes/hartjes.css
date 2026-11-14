@@ -105,6 +105,18 @@
   white-space: nowrap;
 }
 .hj-card.is-answer .hj-text { font-size: calc(var(--hj-w) * .22); }
+/* A pack's picture card (a breuk as a pizza): bigger hearts so the picture reads (about 120 px). */
+@media (orientation: landscape) and (min-height: 461px) {
+  .hj-root.has-pictures { --hj-w: clamp(72px, min(18.5vw, 26vh), 230px); }
+}
+.hj-pic {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  width: 64%;
+  height: 64%;
+  transform: translate(-50%, -50%);
+}
 .hj-grid.is-long .hj-card.is-sum .hj-text { font-size: calc(var(--hj-w) * .125); }
 
 /* A pair found: a few small stars twinkle around both hearts. */

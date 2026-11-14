@@ -10,9 +10,14 @@
 /* A face on the sign: at least 96 px, more on a big screen. */
 .spel-sign-pic.is-klok { width: clamp(96px, 19vmin, 160px); height: clamp(96px, 19vmin, 160px); }
 .spel-sign-text { display: inline-block; }
+/* A breuk picture fills the box it gets; on the sign at least 120 px (elf- and twaalfden need the room). */
+.spel-breuk { display: block; width: 100%; height: 100%; }
+.spel-breuk-pair { display: flex; gap: var(--sp-3); }
+.spel-sign-pic.is-breuk { width: clamp(120px, 24vmin, 200px); height: clamp(120px, 24vmin, 200px); }
 
 /* Hoe los ik dit op? for a pack question: its picture with the part that matters marked, and the tip. */
 .spel-help-pic.is-klok { width: clamp(140px, 30vmin, 240px); height: clamp(140px, 30vmin, 240px); flex: none; }
+.spel-help-pic.is-breuk .spel-breuk { width: clamp(120px, 26vmin, 220px); height: clamp(120px, 26vmin, 220px); }
 .spel-help-pic.is-digitaal { font-size: var(--kiosk-text-xl); font-weight: 700; }
 .spel-help-tip {
   margin: 0;
@@ -25,4 +30,4 @@
 
 /* The end screen's foutjes table: a small face beside the question or as the answer. */
 .spel-end-pic { display: inline-flex; vertical-align: middle; margin-inline-end: var(--sp-2); }
-.spel-end-pic.is-klok { width: 64px; height: 64px; }
+.spel-end-pic.is-klok, .spel-end-pic.is-breuk { width: 64px; height: 64px; }

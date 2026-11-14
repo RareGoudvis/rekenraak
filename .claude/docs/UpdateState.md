@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Breuken in Spelen (the second content pack): herkennen at L2–L4 and gelijkwaardig, vereenvoudig, gelijknamig and vergelijken at L4 (`breukSpelOf` maps card → type; a `partial` pack plays its part of a mixed choice: `spelVarsOf` / `spelChoiceOf`; per-variant max grade), in the picture tap games and Zeehondjes, on Hartjes pairs and a Honingraat equivalence comb; Nakijken replays them in the kiosk.
+
 **2026-11-14** — Kasteel (Spelen): a catapult duel against the computer (Normaal or Moeilijk; it fires every 15 / 10 s and on your mistakes) or between two pupils (Touwtrekken's duel store), 10 / 20 / 30 lives with life bars, castles that crack, lean, topple and collapse; tuning in kasteel/siege.ts.
 
 **2026-11-14** — Spelen polish: Bever is a wide dam across a stream (log layers on a mud core, pond left, trickle right) with a burst ending; Race scenery spans every screen width; Zombies' front sum sign hangs higher and the "?" signs are smaller, so they never overlap.

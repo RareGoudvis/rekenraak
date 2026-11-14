@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, signClass, viewFor } from '../../spelChoice';
+import { choiceLabel, faceKind, pictureClass, signClass, viewFor } from '../../spelChoice';
 import { MOLE, molePace, newField, stepField, viewOf, type MoleField } from './moles';
 import './mollen.css';
 
@@ -115,7 +115,7 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div className={`ml-root${views ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--ml-pace': molePace(progress.streak) } as CSSProperties}>
+        <div className={`ml-root${views ? ' has-pictures' : ''}${pictureClass(views)}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--ml-pace': molePace(progress.streak) } as CSSProperties}>
             <div className="ml-grass" aria-hidden />
             <div className="ml-top">
                 <p className={`ml-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">

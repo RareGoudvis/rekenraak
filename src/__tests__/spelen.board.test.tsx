@@ -3,11 +3,12 @@ import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vi
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards';
 import { buildZelfSessie, choicesFor, usableVariants, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
-import { choiceCanPlay, type SpelQuestion } from '../oefenen/spelen/spelQuestion';
+import { choiceCanPlay, spelContentOf, type SpelQuestion } from '../oefenen/spelen/spelQuestion';
+import { BREUK_LEAVES } from '../oefenen/spelen/content/breuken/breukPack';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { SPEL_BOARD_PAUSE_MS, useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
-import { skinsFor, NUMBER_CONTENT } from '../oefenen/spelen/accepts';
+import { skinAccepts, skinsFor, NUMBER_CONTENT } from '../oefenen/spelen/accepts';
 import { targetBoardEq, targetBoardGt } from '../oefenen/spelen/board/board';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
 import { mulberry32 } from '../oefenen/spelen/distractors';
@@ -49,7 +50,8 @@ describe('board generation', () => {
         for (const g of [1, 2, 3] as const) {
             for (const topic of usableVariants(data, g).keys()) {
                 for (const c of choicesFor(data, g, topic)) {
-                    if (!choiceCanPlay(c, g)) continue;
+                    // Only what the picker offers Hartjes (not the klok); breuken pairs have their own suite (leerjaar 2 has only five different values).
+                    if (!choiceCanPlay(c, g) || !skinAccepts(HARTJES().accepts, spelContentOf(c, g)!) || c.vars.some(v => (BREUK_LEAVES as readonly string[]).includes(v.leafId))) continue;
                     const s = { ...buildZelfSessie(c, { kind: 'count', n: 10 }, 0, g), total: undefined };
                     for (let seed = 0; seed < 3; seed++) {
                         const pairs = nextBoardOf(s, PAIRS, null, [], undefined, mulberry32(seed))!;

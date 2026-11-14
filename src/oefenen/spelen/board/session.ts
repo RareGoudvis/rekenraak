@@ -2,7 +2,8 @@ import { checkAnswer } from '../../../services/oefenen/check';
 import { kioskFor } from '../../../services/oefenen/kiosk';
 import type { OefenHistoryEntry, OefenSessie } from '../../../services/oefenen/types';
 import type { SpelMistake } from '../useSpelStore';
-import { boardCleared, buildBoard, drawPool, POOL, targetClaim, type BoardRound, type SpelBoard } from './board';
+import { boardCleared, buildBoard, drawPool, packBoard, POOL, targetClaim, type BoardRound, type SpelBoard } from './board';
+import { packFor } from '../content/packs';
 
 export type { SpelBoard } from './board';
 
@@ -18,6 +19,13 @@ export type { SpelBoard } from './board';
 export function nextBoardOf(s: OefenSessie, round: BoardRound, prev: SpelBoard | null, history: readonly OefenHistoryEntry[], choiceCount?: number, rng: () => number = Math.random): SpelBoard | null {
     const index = prev ? prev.index + 1 : 0;
     if (index >= round.boards) return null;
+    // A pack's own comb (the breuken) needs one question of the card for its slot and settings, seen or not.
+    const comb = round.kind === 'target' && s.types.length > 0 && s.types.every(t => packFor(t.leafId)?.targetBoard);
+    if (comb) {
+        const [sample] = drawPool(s, history, new Set(), 1, choiceCount);
+        const built = sample ? packFor(s.types[sample.slot].leafId)!.targetBoard!(s.types[sample.slot], sample, round.size, index, rng) : null;
+        return built && packBoard(built.cells, built.target, index, rng);
+    }
     const seen = new Set([...history.map(h => h.exerciseKey), ...(prev?.cells.map(c => c.question.key) ?? [])]);
     return buildBoard(round, drawPool(s, history, seen, POOL[round.kind], choiceCount), index, rng);
 }
@@ -42,8 +50,10 @@ export function boardPickIn(s: OefenSessie, board: SpelBoard, round: BoardRound,
     const d = type && kioskFor(type.typeId);
     if (!d) return null;
     if (!board.target && given === '') return null;
-    // A target cell claims "this sum makes the target"; a memory pick claims the paired answer card.
-    const correct = board.target ? c.match : checkAnswer(d, q.exercise, q.constraints, given, type.exactForm);
+    // A target cell claims "this sum makes the target"; a memory pick claims the paired answer card, checked in
+    // the kiosk's own answer form when it is one of this question's choices (a breuk as [noemer, teller]).
+    const asKiosk = q.kioskAnswers?.[q.choices.indexOf(given)] ?? given;
+    const correct = board.target ? c.match : checkAnswer(d, q.exercise, q.constraints, asKiosk, type.exactForm);
     const claim = board.target ? targetClaim(board.target) : given;
     const entryOf = (ok: boolean): OefenHistoryEntry => ({ slot: q.slot, typeId: type.typeId, exerciseKey: q.key, correct: ok, ms: Math.max(0, ms) });
     let next = c;
