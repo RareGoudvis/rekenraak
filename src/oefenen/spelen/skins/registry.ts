@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
+import { TreeEvergreen } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -81,6 +82,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: Gift,
         Component: lazy(() => import('./pakjesband/Pakjesband')),
+    },
+    {
+        // Kerst: a bare fir tree; each right answer hangs the next bauble or garland, the 15th is the star on top.
+        // A mistake never takes one off (goalKeep); 30 questions at most. The finished tree lights up.
+        meta: {
+            id: 'kerstboom', label: 'Kerstboom versieren', input: 'keypad', timed: false, round: { questions: 30, goal: 15, goalKeep: true }, season: 'kerst',
+            winTitle: 'De boom is klaar!', accepts: KEYPAD_NUMBER, sounds: { correct: 'sparkle', wrong: 'plop', win: 'jingle' },
+        },
+        icon: TreeEvergreen,
+        Component: lazy(() => import('./kerstboom/Kerstboom')),
+        Ending: lazy(() => import('./kerstboom/Kerstboom').then(m => ({ default: m.KerstboomEnding }))),
     },
     {
         // Pasen: nine eggs in the grass, the answer and eight distractors (choiceCount). Untimed. Number only:
