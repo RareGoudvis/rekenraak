@@ -39,7 +39,7 @@ describe('selected-looking Config buttons carry an ARIA state', () => {
         const ui = EXERCISE_UI[typeId];
         const block = makeBlock(typeId, { id: 'b', constraints: defaults });
         const bad: string[] = [];
-        for (const Comp of [ui.Config, ui.StyleConfig, ui.AdvancedConfig]) {
+        for (const Comp of [ui.Config, ui.StyleConfig, ui.SolutionConfig, ui.AdvancedConfig]) {
             if (!Comp) continue;
             const { container, unmount } = render(<Comp block={block} />);
             for (const b of container.querySelectorAll('button')) {

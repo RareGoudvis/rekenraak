@@ -13,7 +13,6 @@ export default function TemperatuurConfig({ block }: Props) {
     const {
         variant = 'kleuren',
         includeNegatives = false,
-        perRow = 4,
         mode1 = 'gekleurd',
         mode2 = 'getal',
     } = c;
@@ -54,16 +53,23 @@ export default function TemperatuurConfig({ block }: Props) {
                     <button onClick={() => set('includeNegatives', true)} aria-pressed={!!includeNegatives} style={styles.radioBtn(includeNegatives)}>Ja (−15…25°)</button>
                 </div>
             </div>
+        </div>
+    );
+}
 
-            {/* PER ROW — hidden for verschil (the viewer renders verschil in a fixed 2 columns) */}
-            {variant !== 'verschil' && (
-                <div style={styles.section}>
-                    <SettingLabel text={`Per rij: ${perRow}`} info="Hoeveel thermometers er naast elkaar staan." />
-                    <input type="range" min="2" max="4" step="1" value={perRow}
-                        onChange={(e) => set('perRow', Number(e.target.value))}
-                        style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-                </div>
-            )}
+// ── Differentiatie: how many thermometers stand side by side.
+// Mounted by Inspector through EXERCISE_UI['temperatuur'].StyleConfig.
+export function TemperatuurStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<TemperatuurConstraints>(block);
+    const { variant = 'kleuren', perRow = 4 } = c;
+    // Hidden for verschil: the viewer renders verschil in a fixed 2 columns.
+    if (variant === 'verschil') return null;
+    return (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text={`Per rij: ${perRow}`} info="Hoeveel thermometers er naast elkaar staan." />
+            <input type="range" min="2" max="4" step="1" value={perRow}
+                onChange={(e) => patch({ perRow: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
         </div>
     );
 }

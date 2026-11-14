@@ -7,36 +7,14 @@ import type { AddSubConstraints } from '../../../../services/math/constraintType
 import { blockHasSteps, effectiveSolutionSteps } from '../../../../services/stepsAvailability';
 
 // The Differentiatie rows shared by the four hoofdrekenen leaves, mounted through
-// EXERCISE_UI[typeId].StyleConfig. The + − breuk difficulty (gelijknamig / ongelijknamig) is
-// content, so it moved to the Oefeningen tab's Breuken block (addition/RationalSettings).
+// EXERCISE_UI[typeId].StyleConfig (the answer-key rows are HrSolutionConfig below). The + − breuk
+// difficulty (gelijknamig / ongelijknamig) is content, so it moved to the Oefeningen tab's Breuken
+// block (addition/RationalSettings).
 function HrStdStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
     const updateBlockLayout = useWorksheetStore((s) => s.updateBlockLayout);
-    // Pressed = what the key prints, so a sheet-wide level shows here until the block picks its own.
-    const stepLevel = effectiveSolutionSteps(block, useWorksheetStore((s) => s.docSettings));
-    // Only offered when some exercise on the block has a strategy (today: optellen by rijgen).
-    const hasSteps = blockHasSteps(block);
     return (
         <>
-            {/* ── Tussenstappen in de verbetersleutel ── */}
-            {hasSteps && (
-                <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
-                    <div className="seg-group">
-                        {([
-                            { key: 'uit', label: 'Uit' },
-                            { key: 'basis', label: 'Basis' },
-                            { key: 'alle', label: 'Alle' },
-                        ] as const).map(({ key, label }) => (
-                            <button key={key} className="seg-btn" aria-pressed={stepLevel === key}
-                                onClick={() => patch({ solutionSteps: key })}>
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                </>
-            )}
-
             {/* ── Compenseren-preset: tussenstap aan/uit ── */}
             {c.preset === 'compenseren' && (
                 <>
@@ -92,4 +70,32 @@ export function AddSubStyleConfig({ block }: { block: MathBlock }) {
 
 export function MulDivStyleConfig({ block }: { block: MathBlock }) {
     return <HrStdStyleConfig block={block} />;
+}
+
+// Verbetersleutel rows for the hoofdrekenen leaves (EXERCISE_UI[typeId].SolutionConfig): they only change the key.
+export function HrSolutionConfig({ block }: { block: MathBlock }) {
+    const [, patch] = useConstraints<AddSubConstraints>(block);
+    // Pressed = what the key prints, so a sheet-wide level shows here until the block picks its own.
+    const stepLevel = effectiveSolutionSteps(block, useWorksheetStore((s) => s.docSettings));
+    // Only offered when some exercise on the block has a strategy (today: optellen by rijgen).
+    const hasSteps = blockHasSteps(block);
+    if (!hasSteps) return null;
+    return (
+        <>
+            {/* ── Tussenstappen in de verbetersleutel ── */}
+            <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
+            <div className="seg-group">
+                {([
+                    { key: 'uit', label: 'Uit' },
+                    { key: 'basis', label: 'Basis' },
+                    { key: 'alle', label: 'Alle' },
+                ] as const).map(({ key, label }) => (
+                    <button key={key} className="seg-btn" aria-pressed={stepLevel === key}
+                        onClick={() => patch({ solutionSteps: key })}>
+                        {label}
+                    </button>
+                ))}
+            </div>
+        </>
+    );
 }

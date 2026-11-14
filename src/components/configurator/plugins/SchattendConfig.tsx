@@ -23,7 +23,6 @@ export default function SchattendConfig({ block }: Props) {
     const maxGetal = c.maxGetal ?? (isDecimal ? 100 : 1000);
     const roundTargets: string[] = c.roundTargets ?? (isDecimal ? ['E'] : ['H']);
     const scaffolding: string = c.scaffolding ?? 'tussenstappen';
-    const answerLine: string = c.answerLine ?? 'kort';
 
     const set = (key: keyof SchattendConstraints, value: unknown) => patch({ [key]: value } as Partial<SchattendConstraints>);
     const toggleIn = (key: keyof SchattendConstraints, list: unknown[], v: unknown) => {
@@ -70,13 +69,21 @@ export default function SchattendConfig({ block }: Props) {
                     <button onClick={() => set('scaffolding', 'enkel-schatting')} aria-pressed={scaffolding === 'enkel-schatting'} style={styles.radioBtn(scaffolding === 'enkel-schatting')}>Enkel schatting</button>
                 </div>
             </div>
+        </div>
+    );
+}
 
-            <div style={styles.section}>
-                <SettingLabel text="Antwoordlijn:" info="Een lange lijn loopt tot het einde van de rij; er past dan één oefening per rij." />
-                <div style={styles.buttonGroup}>
-                    <button onClick={() => set('answerLine', 'kort')} aria-pressed={answerLine === 'kort'} style={styles.radioBtn(answerLine === 'kort')}>Kort</button>
-                    <button onClick={() => set('answerLine', 'lang')} aria-pressed={answerLine === 'lang'} style={styles.radioBtn(answerLine === 'lang')}>Lang</button>
-                </div>
+// ── Differentiatie: the length of the answer line (a long one takes the whole row).
+// Mounted by Inspector through EXERCISE_UI['schattend'].StyleConfig.
+export function SchattendStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<SchattendConstraints>(block);
+    const answerLine: string = c.answerLine ?? 'kort';
+    return (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text="Antwoordlijn:" info="Een lange lijn loopt tot het einde van de rij; er past dan één oefening per rij." />
+            <div style={styles.buttonGroup}>
+                <button onClick={() => patch({ answerLine: 'kort' })} aria-pressed={answerLine === 'kort'} style={styles.radioBtn(answerLine === 'kort')}>Kort</button>
+                <button onClick={() => patch({ answerLine: 'lang' })} aria-pressed={answerLine === 'lang'} style={styles.radioBtn(answerLine === 'lang')}>Lang</button>
             </div>
         </div>
     );

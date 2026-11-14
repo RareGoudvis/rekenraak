@@ -119,6 +119,7 @@ export default function BoardInspector({ widget }: Props) {
                     <div style={S.section}>
                         <span style={S.sectionTitle}>Differentiatie</span>
                         <StyleConfig block={block} />
+                        {ui?.SolutionConfig && <ui.SolutionConfig block={block} />}
                     </div>
                 )}
 

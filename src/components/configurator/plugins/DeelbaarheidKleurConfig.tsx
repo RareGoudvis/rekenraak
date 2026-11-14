@@ -21,9 +21,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
         rasterVorm,
         divisors = [2, 5, 10],
         maxGetal = 100,
-        perRow = 10,
         rasterCount = 100,
-        rasterCols = 10,
         showRest = false,
     } = c;
     // 'raster' is a legacy viewMode value (pre C1 step 6); a block saved with it still
@@ -92,14 +90,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                         <input type="range" min="20" max={Math.min(120, maxGetal)} step="10" value={Math.min(rasterCount, maxGetal)}
                             onChange={(e) => set('rasterCount', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-                    </div>
-                    <div style={styles.section}>
-                        <SettingLabel text={`Kolommen: ${rasterCols}`} info="Aantal kolommen in het raster." />
-                        <input type="range" min="5" max="12" step="1" value={rasterCols}
-                            onChange={(e) => set('rasterCols', Number(e.target.value))}
-                            style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-                    </div>
-                </>
+                    </div>                </>
             ) : (
                 <>
                     {range && <div style={styles.section}>
@@ -111,14 +102,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>}
-                    <div style={styles.section}>
-                        <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij staan." />
-                        <input type="range" min="5" max="14" step="1" value={perRow}
-                            onChange={(e) => set('perRow', Number(e.target.value))}
-                            style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-                    </div>
-                    <div style={styles.section}>
+                    </div>}                    <div style={styles.section}>
                         <div style={styles.onOffRow}>
                             <span style={styles.onOffLabel}>Rest berekenen</span>
                             <button onClick={() => set('showRest', !showRest)} aria-pressed={!!showRest} style={styles.onOffBtn(showRest)}>{showRest ? 'Aan' : 'Uit'}</button>
@@ -126,6 +110,32 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                     </div>
                 </>
             )}
+        </div>
+    );
+}
+
+// ── Differentiatie: how wide the strook or the raster is.
+// Mounted by Inspector through EXERCISE_UI['deelbaarheid-kleuren'].StyleConfig.
+export function DeelbaarheidKleurStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<DeelbaarheidKleurConstraints>(block);
+    const { viewMode: viewModeRaw = 'strip', rasterVorm, perRow = 10, rasterCols = 10 } = c;
+    // SYNC: the same legacy 'raster' reading as DeelbaarheidKleurConfig above.
+    const viewMode = viewModeRaw === 'raster' ? 'strip' : viewModeRaw;
+    const vorm = rasterVorm ?? (viewModeRaw === 'raster' ? 'rechthoek' : 'lijn');
+    const isRaster = viewMode === 'strip' && vorm === 'rechthoek';
+    return isRaster ? (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text={`Kolommen: ${rasterCols}`} info="Aantal kolommen in het raster." />
+            <input type="range" min="5" max="12" step="1" value={rasterCols}
+                onChange={(e) => patch({ rasterCols: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+        </div>
+    ) : (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij staan." />
+            <input type="range" min="5" max="14" step="1" value={perRow}
+                onChange={(e) => patch({ perRow: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
         </div>
     );
 }
