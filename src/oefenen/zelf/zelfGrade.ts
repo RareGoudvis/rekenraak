@@ -1,7 +1,7 @@
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 
-// Each leerjaar its own colour (kiosk.css --kid-tint-1 … 6).
-export const gradeTint = (g: number) => ({ '--tint': `var(--kid-tint-${g})` } as React.CSSProperties);
+// Each leerjaar its own colour (kiosk.css --kid-tint-1 … 6), and a darker shade of it for the chosen ring.
+export const gradeTint = (g: number) => ({ '--tint': `var(--kid-tint-${g})`, '--tint-ring': `var(--kid-tint-ring-${g})` } as React.CSSProperties);
 
 // The leerjaar is remembered per device, so a pupil lands on their own topics next time.
 export const GRADE_KEY = 'rekenraak_zelf_leerjaar_v1';

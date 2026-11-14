@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-15** — Zelf start: "Speel meteen" picture tiles per leerjaar (src/oefenen/zelf/speelMeteen.ts, 12 per leerjaar 1–4, each a game × a Zelf choice, tested to resolve and fit) with a thumbnail per game (public/spelen/thumbs/) replace the icon strip; a tap starts that game with that oefening. The link hint is a small line at the bottom; the chosen leerjaar's ring is a darker shade of its own colour.
+
 **2026-11-14** — Zelf oefenen opens on one screen: a leerjaar bar with six big numbers (remembered per device; a first visit glows "Kies je leerjaar" and dims the topics), a "Je kan ook spelen!" strip built from SKINS (gameBlurbs.ts, a "nu!" ribbon in season), topics in 4 columns, and a scene per leerjaar (kiosk/backdrops/: bijen, monstertjes, lavaland, jungle, sneeuw, woestijn) on the topics screen and the kiosk start/end screens.
 
 **2026-11-14** — Breuken in Spelen (the second content pack): herkennen at L2–L4 and gelijkwaardig, vereenvoudig, gelijknamig and vergelijken at L4 (`breukSpelOf` maps card → type; a `partial` pack plays its part of a mixed choice: `spelVarsOf` / `spelChoiceOf`; per-variant max grade), in the picture tap games and Zeehondjes, on Hartjes pairs and a Honingraat equivalence comb; Nakijken replays them in the kiosk.

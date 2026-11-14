@@ -6,12 +6,15 @@ import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { useOefenStore } from '../useOefenStore';
 import { tryFullscreen } from '../kiosk/fullscreen';
 import KidBackdrop from '../kiosk/KidBackdrop';
-import { useSpelStore } from '../spelen/useSpelStore';
+import { useSpelStore, type SpelStart } from '../spelen/useSpelStore';
 import { choiceCanPlay, spelContentOf } from '../spelen/spelQuestion';
 import GamePicker from '../spelen/GamePicker';
+import SpelOptions from '../spelen/SpelOptions';
+import { pickerToday } from '../spelen/seasons';
 import { SECTION_TINT, topicIcon } from './topicIcons';
 import LeerjaarBar from './LeerjaarBar';
-import GameStrip from './GameStrip';
+import SpeelMeteen from './SpeelMeteenRow';
+import { speelMeteenFor, speelMeteenPreview, type SpeelMeteenTile } from './speelMeteen';
 import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choiceMayHaveMab, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
 
@@ -52,6 +55,8 @@ export default function ZelfPicker() {
     const [play, setPlay] = useState<'oefenen' | 'spelen'>(from ? 'spelen' : 'oefenen');
     // Kies een spel: the game tiles take the screen.
     const [gamesOpen, setGamesOpen] = useState(!!from);
+    // A Speel meteen tile whose game asks its options first (Kasteel, Zombies, Bom …).
+    const [setup, setSetup] = useState<SpeelMeteenTile | null>(null);
     const canPlay = choice !== null && grade !== null && choiceCanPlay(choice, grade);
     const playing = canPlay && play === 'spelen';
     const [mode, setMode] = useState<ZelfMode>({ kind: 'count', n: 5 });
@@ -69,6 +74,8 @@ export default function ZelfPicker() {
     }, [choice]);
 
     // Before a leerjaar is picked the topics of every leerjaar show (dimmed).
+    const quick = useMemo(() => (data && grade !== null ? speelMeteenFor(data, grade, pickerToday()) : null), [data, grade]);
+    const quickPreview = useMemo(() => speelMeteenPreview(pickerToday()), []);
     const anyGrade = useMemo(() => data && new Set(LEERJAREN.flatMap(g => [...usableVariants(data, g).keys()])), [data]);
     const choices = data && grade !== null && topicId !== null ? choicesFor(data, grade, topicId) : [];
     const back = () => {
@@ -87,6 +94,27 @@ export default function ZelfPicker() {
         </div>
     );
 
+    // The tile's game with its oefening, as from the game picker: Nakijken and Ander spel come back to that choice.
+    const playTile = (t: SpeelMeteenTile, meta: SpelStart['meta'] = t.skin.meta) => {
+        if (grade === null) return;
+        if (meta === t.skin.meta && meta.options?.length) { setSetup(t); return; }
+        tryFullscreen();
+        useSpelStore.getState().start({ choice: t.choice, grade, topicId: t.entry.topic, meta });
+    };
+
+    if (topicId === null && setup && grade !== null) {
+        const topic = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === setup.entry.topic)?.label ?? '';
+        return (
+            <>
+                <KidBackdrop clouds={false} grade={grade} />
+                <main className="oefen-center zelf">
+                    <p className="oefen-lead">{topic}: {setup.choice.label}</p>
+                    <SpelOptions meta={setup.skin.meta} onStart={meta => playTile(setup, meta)} onBack={() => setSetup(null)} />
+                </main>
+            </>
+        );
+    }
+
     if (topicId === null) {
         const shown = grade !== null ? (data ? new Set(usableVariants(data, grade).keys()) : null) : anyGrade;
         const pickGrade = (g: Leerjaar) => { setGrade(g); saveGrade(g); };
@@ -96,7 +124,7 @@ export default function ZelfPicker() {
                 <main className="oefen-center zelf zelf-home">
                     <p className="kiosk-start-brand">RekenRaak · Zelf oefenen</p>
                     <LeerjaarBar grade={grade} onPick={pickGrade} />
-                    <GameStrip />
+                    {data && <SpeelMeteen tiles={quick} preview={quickPreview} onPlay={playTile} />}
                     {/* The title waits for the topics, so "Wat wil je oefenen?" always comes with them. */}
                     {!data || !shown ? <p className="oefen-lead">Even laden…</p> : <h1 className="oefen-title zelf-home-title">Wat wil je oefenen?</h1>}
                     {data && shown && (
@@ -131,7 +159,7 @@ export default function ZelfPicker() {
                             })}
                         </div>
                     )}
-                    <p className="kiosk-start-note">Heb je een link of QR-code van je juf of meester? Open die dan.</p>
+                    <p className="zelf-home-note">Heb je een link of QR-code van je juf of meester? Open die dan.</p>
                 </main>
             </>
         );

@@ -398,6 +398,9 @@ async function runZelfCase([w, h], page0) {
             rows.push({ ...base, solutions: i, cellHeightPx: h, intrinsicPx: w, text: await page.locator('.oefen-app').innerText(), screenshot: name, consoleErrors: [...errors], ok: true });
         }
         if (await page.getByRole('button', { name: 'Leerjaar 2', exact: true }).getAttribute('aria-pressed') !== 'true') throw new Error('Leerjaar 2 not pressed');
+        // Speel meteen: the leerjaar's picture tiles under the bar.
+        const tiles = await page.getByRole('region', { name: 'Speel meteen' }).getByRole('button', { disabled: false }).count();
+        if (tiles < 8) throw new Error(`Speel meteen: ${tiles} tiles`);
         if (errors.length) throw new Error(`console: ${errors.join(' | ')}`);
         console.log(`  ok    zelf        ${page0} @${w}x${h}`);
         return rows;

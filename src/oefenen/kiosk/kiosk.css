@@ -62,6 +62,13 @@
   --kid-tint-4: #FED7AA;
   --kid-tint-5: #E9D5FF;
   --kid-tint-6: #FBCFE8;
+  /* The chosen leerjaar's ring: a darker shade of its tint, at least 3:1 on white. */
+  --kid-tint-ring-1: #D97706;
+  --kid-tint-ring-2: #16A34A;
+  --kid-tint-ring-3: #2563EB;
+  --kid-tint-ring-4: #EA580C;
+  --kid-tint-ring-5: #9333EA;
+  --kid-tint-ring-6: #DB2777;
 }
 
 /* theme.css pins html/body/#root to 100vh, which on phones includes the hidden URL bar. */
@@ -1509,7 +1516,8 @@ html:has(.oefen-body),
   cursor: pointer;
 }
 .zelf-year:active:not([aria-pressed="true"]) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
-.zelf-year[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--kid-ring), var(--kid-drop-sm); transform: scale(1.18); }
+/* The chosen number: a ring in a darker shade of its own colour (zelfGrade.ts gradeTint sets --tint-ring). */
+.zelf-year[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--tint-ring, var(--kid-ring)), var(--kid-drop-sm); transform: scale(1.18); }
 @media (prefers-reduced-motion: no-preference) {
   .zelf-year { transition: transform 0.12s ease-out; }
   /* First visit: the bar glows gently until a number is picked (reduced motion: the words alone). */
@@ -1522,48 +1530,111 @@ html:has(.oefen-body),
 @media (max-width: 599px) {
   .zelf-years { flex-direction: column; gap: 8px; padding: 10px 12px 14px; }
   .zelf-years-row { gap: 10px; }
-  .zelf-year[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--kid-ring), var(--kid-drop-sm); transform: scale(1.12); }
+  .zelf-year[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--tint-ring, var(--kid-ring)), var(--kid-drop-sm); transform: scale(1.12); }
 }
 
-/* "Je kan ook spelen!": one compact row of drawn game tiles; more scroll sideways. */
-.zelf-games {
+/* The topics screen's link hint: one small muted line at the very bottom, so the bar, the games and the topics get the room. */
+.zelf-home-note { margin: 4px 0 0; color: var(--kid-muted); font-size: var(--text-sm); font-weight: 700; text-align: center; }
+
+/* "Speel meteen": a row of picture tiles (thumbnail on top, title below); more scroll sideways. */
+.zelf-play {
+  position: relative;
   width: min(100%, 1100px);
   display: flex;
-  align-items: center;
-  gap: 4px 14px;
-  padding: 4px 8px 4px 18px;
-  border: 2.5px solid var(--kid-ink);
-  border-radius: var(--kid-radius);
-  background: var(--kid-card);
-  box-shadow: var(--kid-drop-sm);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
 }
-.zelf-games-title { margin: 0; flex: none; max-width: 7.5em; font-size: var(--kiosk-text); font-weight: 900; line-height: 1.15; text-align: left; }
-.zelf-games-row {
-  flex: 1;
-  min-width: 0;
+.zelf-play.is-dim { opacity: 0.5; filter: grayscale(0.6); }
+.zelf-play-heading { margin: 0; padding-left: 6px; font-size: var(--kiosk-text-lg); font-weight: 900; line-height: 1.15; text-align: left; }
+.zelf-play-row {
   margin: 0;
-  /* The end padding lets the last game scroll clear of the fade. */
-  padding: 8px 40px 6px 4px;
+  /* Room for the drop shadow and the tilted ribbon; the end padding lets the last tile scroll clear of the fade. */
+  padding: 12px 48px 14px 6px;
   list-style: none;
   display: flex;
-  gap: 4px;
+  gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: thin;
   /* The far edge fades: there are more games to the side. */
-  mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 44px), transparent);
 }
-.zelf-games-row li { flex: none; scroll-snap-align: start; }
+.zelf-play-row li { flex: none; scroll-snap-align: start; }
+.zelf-play-tile {
+  --kid-sh: var(--kid-drop);
+  position: relative;
+  width: 204px;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-card);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.zelf-play-tile:disabled { cursor: default; }
+.zelf-play-tile:active:not(:disabled) { transform: translateY(4px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.zelf-play-tile:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
+@media (hover: hover) {
+  .zelf-play-tile:hover:not(:disabled) { transform: translateY(-3px) rotate(-1deg); }
+}
+/* The thumbnail; the game's icon on its colour sits under it and shows when the picture is missing. */
+.zelf-play-thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: var(--kid-line) solid var(--kid-ink);
+  border-radius: calc(var(--kid-radius-sm) - 3px) calc(var(--kid-radius-sm) - 3px) 0 0;
+  background: var(--tint, var(--kid-tint-3));
+}
+.zelf-play-icon { width: 46%; height: 70%; }
+.zelf-play-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.zelf-play-title { padding: 8px 12px 10px; font-size: var(--kiosk-text); font-weight: 800; line-height: 1.15; }
+/* A clock (op tijd) or two pupils (2 spelers) on the picture's corner. */
+.zelf-play-marks { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.zelf-play-mark {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--kid-card);
+}
+.zelf-play-mark svg { width: 18px; height: 18px; }
+/* In season: a tilted "nu!" ribbon. */
+.zelf-play-nu {
+  position: absolute;
+  z-index: 1;
+  top: -8px;
+  left: -6px;
+  padding: 1px 10px;
+  border: 2px solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-ring);
+  font-size: var(--kiosk-text);
+  font-weight: 900;
+  line-height: 1.2;
+  transform: rotate(-12deg);
+}
 /* The arrow on the faded edge: more games (hidden at the end of the row). */
-.zelf-games { position: relative; }
-.zelf-games-more {
+.zelf-play-more {
   --kid-sh: var(--kid-drop-sm);
   position: absolute;
-  right: 10px;
+  right: 4px;
   top: 50%;
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1575,127 +1646,12 @@ html:has(.oefen-body),
   color: var(--kid-ink);
   cursor: pointer;
 }
-.zelf-games-more svg { width: 22px; height: 22px; }
-.zelf-games-more:active { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
-.zelf-game {
-  position: relative;
-  width: 94px;
-  padding: 4px 2px 2px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  border: 0;
-  border-radius: 14px;
-  background: none;
-  color: var(--kid-ink);
-  font: inherit;
-  cursor: pointer;
-}
-.zelf-game-disc {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: var(--kid-line) solid var(--kid-ink);
-  border-radius: 50%;
-  background: var(--tint, var(--kid-tint-3));
-  box-shadow: var(--kid-drop-sm);
-  color: var(--kid-ink);
-}
-.zelf-game-disc > svg { width: 62%; height: 62%; }
-/* A clock (op tijd) or two pupils (2 spelers) on the disc's shoulder. */
-.zelf-game-dot {
-  position: absolute;
-  top: -7px;
-  right: -9px;
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--kid-ink);
-  border-radius: 50%;
-  background: var(--kid-card);
-}
-.zelf-game-dot svg { width: 15px; height: 15px; }
-/* In season: a small tilted "nu!" ribbon. */
-.zelf-game-nu {
-  position: absolute;
-  top: 0;
-  left: 4px;
-  padding: 0 7px;
-  border: 2px solid var(--kid-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kid-ring);
-  font-size: 13px;
-  font-weight: 900;
-  line-height: 1.3;
-  transform: rotate(-12deg);
-}
-.zelf-game-name { max-width: 100%; font-size: 13px; font-weight: 800; line-height: 1.1; text-align: center; }
-.zelf-game:active .zelf-game-disc { box-shadow: 0 1px 0 var(--kid-ink); }
-@media (prefers-reduced-motion: no-preference) {
-  /* A gentle bob, out of step from tile to tile. */
-  .zelf-game-disc { animation: zelf-bob 3.2s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.45s); }
-  .zelf-game:hover .zelf-game-disc { animation-play-state: paused; }
-}
-@keyframes zelf-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
+.zelf-play-more svg { width: 24px; height: 24px; }
+.zelf-play-more:active { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
 @media (max-width: 599px) {
-  .zelf-games { flex-direction: column; align-items: stretch; padding: 8px 6px 2px; }
-  .zelf-games-title { max-width: none; padding-left: 10px; }
+  .zelf-play-tile { width: 184px; }
+  .zelf-play-row { gap: 12px; }
 }
-
-/* A tapped game: a small sheet with what you do and how to get there. */
-.zelf-sheet-back {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-4);
-  background: color-mix(in srgb, var(--kid-ink) 40%, transparent);
-}
-.zelf-sheet {
-  width: min(100%, 440px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 22px 24px 26px;
-  border: var(--kid-line) solid var(--kid-ink);
-  border-radius: var(--kid-radius-lg);
-  background: var(--kid-card);
-  box-shadow: var(--kid-drop-lg);
-  text-align: center;
-}
-.zelf-game-disc.is-lg { width: 96px; height: 96px; animation: none; box-shadow: var(--kid-drop); }
-.zelf-sheet-title { margin: 0; font-size: var(--kiosk-text-xl); font-weight: 900; line-height: 1.1; }
-.zelf-sheet-what { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 800; line-height: 1.25; }
-.zelf-sheet-marks { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.zelf-game-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 12px;
-  border: 2px solid var(--kid-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kid-key);
-  font-weight: 800;
-}
-.zelf-sheet-how { margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--kid-pick); font-weight: 700; line-height: 1.3; }
-.zelf-sheet .kiosk-btn { min-width: 140px; margin-top: 4px; }
-@media (prefers-reduced-motion: no-preference) {
-  .zelf-sheet { animation: zelf-pop 0.18s ease-out; }
-}
-@keyframes zelf-pop { from { transform: scale(0.92); opacity: 0; } }
 
 /* The topics: four per row on a tablet or laptop, the badge beside the name; narrower, the badge on top. */
 .zelf-topics { width: min(100%, 1100px); display: flex; flex-direction: column; align-items: center; gap: 14px; }
