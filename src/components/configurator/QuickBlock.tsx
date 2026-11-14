@@ -39,8 +39,9 @@ function useCardTopic(cardId: string | undefined): string | null {
 
 // A type whose whole panel is short enough to show in the quick block (QuickFull).
 function FullConfig({ block }: { block: MathBlock }) {
-    const Config = EXERCISE_UI[block.typeId]?.Config;
-    return Config ? <div className="qb-row"><Config block={block} /></div> : null;
+    const { Config, StyleConfig } = EXERCISE_UI[block.typeId] ?? {};
+    // The family's sheet-layout rows (e.g. figuren per rij) belong to the whole panel too.
+    return Config ? <div className="qb-row"><Config block={block} />{StyleConfig && <StyleConfig block={block} />}</div> : null;
 }
 
 // How many exercises matters for every type, so the quick block always offers it (same rule as the Opdrachtblok slider).

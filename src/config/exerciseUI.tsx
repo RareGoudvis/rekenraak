@@ -92,10 +92,10 @@ import VormleerConfig from '../components/configurator/plugins/VormleerConfig';
 
 // Per-family Opmaak sections (Differentiatie rows + the Geavanceerd accordion body).
 // They live next to the family's own settings so one file owns the whole option list.
-import { AddSubStyleConfig, MulDivStyleConfig } from '../components/configurator/plugins/shared/HrStdStyleConfig';
+import { AddSubStyleConfig, MulDivStyleConfig, HrSolutionConfig } from '../components/configurator/plugins/shared/HrStdStyleConfig';
 import { CijferStyleConfig, CijferAdvancedConfig } from '../components/configurator/plugins/CijferConfig';
-import { FractionStyleConfig, FractionAdvancedConfig, fractionAdvancedApplies } from '../components/configurator/plugins/FractionConfig';
-import { SplitsenAdvancedConfig } from '../components/configurator/plugins/SplitsenConfig';
+import { FractionStyleConfig, FractionSolutionConfig, FractionAdvancedConfig, fractionAdvancedApplies } from '../components/configurator/plugins/FractionConfig';
+import { SplitsenStyleConfig, SplitsenAdvancedConfig } from '../components/configurator/plugins/SplitsenConfig';
 import { GeldStyleConfig, GeldAdvancedConfig } from '../components/configurator/plugins/GeldConfig';
 import { GeldTeruggevenStyleConfig } from '../components/configurator/plugins/GeldTeruggevenConfig';
 import { MabStyleConfig, MabAppearanceConfig, MabAdvancedConfig } from '../components/configurator/plugins/MabConfig';
@@ -104,6 +104,12 @@ import { PatroonStyleConfig } from '../components/configurator/plugins/PatroonCo
 import { MetenStyleConfig } from '../components/configurator/plugins/MetenConfig';
 import { HerleidingenStyleConfig, HerleidingenAdvancedConfig } from '../components/configurator/plugins/HerleidingenConfig';
 import { ControlerenStyleConfig } from '../components/configurator/plugins/ControlerenConfig';
+import { TemperatuurStyleConfig } from '../components/configurator/plugins/TemperatuurConfig';
+import { WeegschaalStyleConfig } from '../components/configurator/plugins/WeegschaalConfig';
+import { VormleerStyleConfig } from '../components/configurator/plugins/VormleerConfig';
+import { DeelbaarheidKleurStyleConfig } from '../components/configurator/plugins/DeelbaarheidKleurConfig';
+import { EvenOnevenStyleConfig } from '../components/configurator/plugins/EvenOnevenConfig';
+import { SchattendStyleConfig } from '../components/configurator/plugins/SchattendConfig';
 
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
@@ -118,6 +124,8 @@ export interface ExerciseUIDef {
     Config: ConfigComponent;
     /** Differentiatie rows that belong to this family (Inspector mounts them; no typeId branch). */
     StyleConfig?: ConfigComponent;
+    /** Verbetersleutel rows: settings that only change the answer key, never the pupil's sheet. */
+    SolutionConfig?: ConfigComponent;
     /** Opdrachtblok rows under Aantal oefeningen (how the block's exercises are laid out). */
     AppearanceConfig?: ConfigComponent;
     /** Body of the Geavanceerd accordion for this family. Its presence is what shows the accordion. */
@@ -130,11 +138,11 @@ export interface ExerciseUIDef {
 
 export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     // Mental math — shared viewer, operation-specific config.
-    'hr-std-optellen':         { Viewer: MathBlockRenderer, Config: AdditionConfig, StyleConfig: AddSubStyleConfig },
-    'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig, StyleConfig: AddSubStyleConfig },
-    'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig, StyleConfig: MulDivStyleConfig },
-    'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig, StyleConfig: MulDivStyleConfig },
-    'hr-std-gemengd':          { Viewer: MathBlockRenderer, Config: GemengdConfig, StyleConfig: AddSubStyleConfig },
+    'hr-std-optellen':         { Viewer: MathBlockRenderer, Config: AdditionConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig },
+    'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig },
+    'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig, StyleConfig: MulDivStyleConfig, SolutionConfig: HrSolutionConfig },
+    'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig, StyleConfig: MulDivStyleConfig, SolutionConfig: HrSolutionConfig },
+    'hr-std-gemengd':          { Viewer: MathBlockRenderer, Config: GemengdConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig },
 
     // Cijferen — shared viewer + config across all 8 leaves.
     'cijferen-optellen-nat':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
@@ -147,8 +155,8 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'cijferen-delen-dec':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
 
     'klok-kloklezen': { Viewer: ClockViewer,    Config: ClockConfig },
-    'breuken':        { Viewer: FractionViewer, Config: FractionConfig, StyleConfig: FractionStyleConfig, AdvancedConfig: FractionAdvancedConfig, advancedApplies: fractionAdvancedApplies },
-    'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig, AdvancedConfig: SplitsenAdvancedConfig },
+    'breuken':        { Viewer: FractionViewer, Config: FractionConfig, StyleConfig: FractionStyleConfig, SolutionConfig: FractionSolutionConfig, AdvancedConfig: FractionAdvancedConfig, advancedApplies: fractionAdvancedApplies },
+    'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig, StyleConfig: SplitsenStyleConfig, AdvancedConfig: SplitsenAdvancedConfig },
 
     'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
     'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
@@ -165,20 +173,20 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'breuken-rangschikken': { Viewer: OrdenenViewer,     Config: BreukenRangschikkenConfig, StyleConfig: BreukenRangschikkenStyleConfig },
     'deelbaarheid': { Viewer: DeelbaarheidViewer, Config: DeelbaarheidConfig },
     'getalpatronen': { Viewer: PatroonViewer, Config: PatroonConfig, StyleConfig: PatroonStyleConfig },
-    'deelbaarheid-kleuren': { Viewer: DeelbaarheidKleurViewer, Config: DeelbaarheidKleurConfig },
+    'deelbaarheid-kleuren': { Viewer: DeelbaarheidKleurViewer, Config: DeelbaarheidKleurConfig, StyleConfig: DeelbaarheidKleurStyleConfig },
     'getallenas':   { Viewer: GetallenasViewer,   Config: GetallenasConfig },
     'getallenrijen':{ Viewer: GetallenrijenViewer, Config: GetallenrijenConfig, StyleConfig: GetallenrijenStyleConfig },
     'lengte-meten': { Viewer: MetenViewer, Config: MetenConfig, StyleConfig: MetenStyleConfig },
     'omtrek':       { Viewer: MetenViewer, Config: MetenConfig, StyleConfig: MetenStyleConfig },
-    'temperatuur':  { Viewer: TemperatuurViewer,  Config: TemperatuurConfig },
+    'temperatuur':  { Viewer: TemperatuurViewer,  Config: TemperatuurConfig, StyleConfig: TemperatuurStyleConfig },
     'plaatswaarde': { Viewer: PlaatswaardeViewer, Config: PlaatswaardeConfig },
-    'even-oneven':  { Viewer: EvenOnevenViewer,   Config: EvenOnevenConfig },
+    'even-oneven':  { Viewer: EvenOnevenViewer,   Config: EvenOnevenConfig, StyleConfig: EvenOnevenStyleConfig },
     'vergelijken':  { Viewer: VergelijkenViewer,  Config: VergelijkenConfig },
     'afronden':     { Viewer: AfrondenViewer,     Config: AfrondenConfig },
     'romeinse-cijfers': { Viewer: RomeinseViewer, Config: RomeinseConfig },
     'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig, StyleConfig: HerleidingenStyleConfig, AdvancedConfig: HerleidingenAdvancedConfig },
 
-    'schattend': { Viewer: SchattendViewer, Config: SchattendConfig },
+    'schattend': { Viewer: SchattendViewer, Config: SchattendConfig, StyleConfig: SchattendStyleConfig },
 
     'verbanden': { Viewer: VerbandenViewer, Config: VerbandenConfig },
     'procenten': { Viewer: ProcentenViewer, Config: ProcentenConfig },
@@ -200,8 +208,8 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
 
     // Meetkunde + SVG-heavy meten types — vormleer shares one viewer/config trio.
     'oppervlakte': { Viewer: OppervlakteViewer, Config: OppervlakteConfig },
-    'weegschaal':  { Viewer: WeegschaalViewer,  Config: WeegschaalConfig },
-    'vormleer-punt-lijn': { Viewer: VormleerViewer, Config: VormleerConfig },
-    'vormleer-hoeken':    { Viewer: VormleerViewer, Config: VormleerConfig },
-    'vormleer-figuren':   { Viewer: VormleerViewer, Config: VormleerConfig },
+    'weegschaal':  { Viewer: WeegschaalViewer,  Config: WeegschaalConfig, StyleConfig: WeegschaalStyleConfig },
+    'vormleer-punt-lijn': { Viewer: VormleerViewer, Config: VormleerConfig, StyleConfig: VormleerStyleConfig },
+    'vormleer-hoeken':    { Viewer: VormleerViewer, Config: VormleerConfig, StyleConfig: VormleerStyleConfig },
+    'vormleer-figuren':   { Viewer: VormleerViewer, Config: VormleerConfig, StyleConfig: VormleerStyleConfig },
 };

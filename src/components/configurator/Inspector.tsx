@@ -859,6 +859,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         says which section belongs to this typeId, so the Inspector never branches
                         on one. See EXERCISE_UI[typeId].StyleConfig in exerciseUI.tsx. */}
                     {StyleConfig && <StyleConfig block={activeBlock} />}
+                    {/* Interim until the sectioned inspector: the family's verbetersleutel rows. */}
+                    {ui?.SolutionConfig && <ui.SolutionConfig block={activeBlock} />}
                 </div>
             </div>
             )}

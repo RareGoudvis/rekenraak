@@ -124,20 +124,6 @@ export default function FractionConfig({ block }: Props) {
                         </div>
                     </div>
 
-                    {/* Static size only makes sense with a single shape (mixed shapes scale per fraction) */}
-                    {selectedShapes.length === 1 && (
-                        <div style={styles.section}>
-                            <div style={styles.onOffRow}>
-                                <span style={styles.onOffLabel}>Vaste grootte</span>
-                                <button onClick={() => updateConstraint('staticSize', !c.staticSize)} aria-pressed={!!c.staticSize} style={styles.onOffBtn(!!c.staticSize)}>
-                                    {c.staticSize ? 'Aan' : 'Uit'}
-                                </button>
-                            </div>
-                            <p style={styles.hint}>
-                                Vorm blijft even groot, ook als de breuk verandert. Stel de maat in onder Geavanceerd.
-                            </p>
-                        </div>
-                    )}
                 </>
             )}
 
@@ -249,8 +235,25 @@ const sliderStyle: React.CSSProperties = {
 export function FractionStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<FractionConstraints>(block);
     const subType: string = c.subType ?? '';
+    const isShape = subType === 'kleuren' || subType === 'herkennen';
+    const selectedShapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : [c.shape ?? 'rectangle'];
     return (
         <>
+            {/* Static size only makes sense with a single shape (mixed shapes scale per fraction) */}
+            {isShape && selectedShapes.length === 1 && (
+                <div style={{ ...styles.section, marginTop: '12px' }}>
+                    <div style={styles.onOffRow}>
+                        <span style={styles.onOffLabel}>Vaste grootte</span>
+                        <button onClick={() => patch({ staticSize: !c.staticSize })} aria-pressed={!!c.staticSize} style={styles.onOffBtn(!!c.staticSize)}>
+                            {c.staticSize ? 'Aan' : 'Uit'}
+                        </button>
+                    </div>
+                    <p style={styles.hint}>
+                        Vorm blijft even groot, ook als de breuk verandert. Stel de maat in onder Geavanceerd.
+                    </p>
+                </div>
+            )}
+
             {/* ── Niveau (hoeveelheid-abstract only) — with example range per level ── */}
             {subType === 'hoeveelheid-abstract' && (
                 <>
@@ -322,21 +325,6 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                         ))}
                     </div>
 
-                    {/* The other scaffolds' key already fills the same rows, so only zonder hulp offers the steps. */}
-                    {(c.answerFormat ?? 'met-hulp') === 'zonder-hulp' && blockHasSteps(block) && (
-                        <>
-                            <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
-                            <div className="seg-group">
-                                {([{ key: 'uit', label: 'Uit' }, { key: 'basis', label: 'Aan' }] as const).map(({ key, label }) => (
-                                    <button key={key} className="seg-btn" aria-pressed={(c.solutionSteps ?? 'uit') === key}
-                                        onClick={() => patch({ solutionSteps: key })}>
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-
                     {/* Groepering — makkelijker groeperen helpt starters de delen zien */}
                     <label style={{ ...F.label, marginTop: '12px' }}>Groepering</label>
                     <div style={F.optionCol}>
@@ -392,6 +380,26 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                     </div>
                 </>
             )}
+        </>
+    );
+}
+
+// ── Verbetersleutel: worked steps in the key (EXERCISE_UI['breuken'].SolutionConfig).
+export function FractionSolutionConfig({ block }: { block: MathBlock }) {
+    const [c, patch] = useConstraints<FractionConstraints>(block);
+    // The other scaffolds' key already fills the same rows, so only hoeveelheid zonder hulp offers the steps.
+    if (c.subType !== 'hoeveelheid' || (c.answerFormat ?? 'met-hulp') !== 'zonder-hulp' || !blockHasSteps(block)) return null;
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '12px' }}>Stappen in de verbetersleutel</label>
+            <div className="seg-group">
+                {([{ key: 'uit', label: 'Uit' }, { key: 'basis', label: 'Aan' }] as const).map(({ key, label }) => (
+                    <button key={key} className="seg-btn" aria-pressed={(c.solutionSteps ?? 'uit') === key}
+                        onClick={() => patch({ solutionSteps: key })}>
+                        {label}
+                    </button>
+                ))}
+            </div>
         </>
     );
 }
