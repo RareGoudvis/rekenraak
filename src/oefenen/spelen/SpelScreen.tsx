@@ -141,6 +141,8 @@ export default function SpelScreen() {
                         progress={progress}
                         events={st.events}
                         reducedMotion={reducedMotion}
+                        runKey={st.from ? `${st.meta.id}:${st.from.choice.key}` : undefined}
+                        onFinish={st.finish}
                     />
                 </Suspense>
                 {phase === 'help' && <HelpPanel />}

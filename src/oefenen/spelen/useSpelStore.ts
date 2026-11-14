@@ -12,7 +12,7 @@ import { useOefenStore } from '../useOefenStore';
 import { createSpelEvents, type SpelEvents } from './events';
 import { reviewOf } from './review';
 import { spelQuestionOf, type SpelQuestion } from './spelQuestion';
-import type { SkinMeta, SkinProgress } from './skins/types';
+import type { SkinMeta, SkinProgress, SkinResult } from './skins/types';
 
 // The Spelen session: a round of one Zelf oefenen choice behind a game skin. Runtime only: never in a
 // link, a session hash or the device stats. One try per question, no steps during play, no lives.
@@ -56,6 +56,8 @@ interface SpelState {
     shownAt: number;
     // Set by leave / otherGame: the picker opens on the game tiles of this choice.
     pickerAt: SpelFrom | null;
+    // Set when the skin's own finish ended the round (Race).
+    result: SkinResult | null;
     events: SpelEvents;
 
     start(o: SpelStart): void;
@@ -66,6 +68,8 @@ interface SpelState {
     openHelp(now?: number): void;
     closeHelp(now?: number): void;
     tick(now?: number): void;
+    // The skin's own goal was reached (Race's finish line): the round ends with its result.
+    finish(result: SkinResult): void;
     restart(): void;
     // Back to the picker on this choice's game tiles (Ander spel, Terug mid-round).
     otherGame(): void;
@@ -87,15 +91,15 @@ export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | '
 /** The game's session: the choice's Zelf oefenen types unchanged (a game never changes what is asked), its round from the skin. */
 export const spelSessieOf = (o: SpelStart): OefenSessie => {
     const base = buildZelfSessie(o.choice, { kind: 'count', n: 10 }, o.now ?? Date.now(), o.grade);
-    const { questions, seconds } = o.meta.round;
-    const s: OefenSessie = { ...base, id: `zelf-${fnv1a(`spel|${o.choice.key}|${o.meta.id}`)}`, total: seconds ? undefined : questions ?? 20 };
+    const { questions, seconds, cap } = o.meta.round;
+    const s: OefenSessie = { ...base, id: `zelf-${fnv1a(`spel|${o.choice.key}|${o.meta.id}`)}`, total: seconds || cap ? undefined : questions ?? 20 };
     delete s.timerMin;
     return s;
 };
 
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
-    helped: 0, helpedNow: false, climb: 0, mistakes: [], help: null, endsAt: null, pausedLeft: null, shownAt: 0,
+    helped: 0, helpedNow: false, climb: 0, mistakes: [], help: null, endsAt: null, pausedLeft: null, shownAt: 0, result: null,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
@@ -158,6 +162,8 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             if (!s || phase === 'idle' || phase === 'end' || phase === 'help') return;
             if (timeUp(now)) { get().events.emit('timeUp', {}); end(); return; }
             if (s.total !== undefined && history.length >= s.total) { end(); return; }
+            const cap = get().meta?.round.cap;
+            if (cap && history.length >= cap) { end(); return; }
             const goal = get().meta?.round.goal;
             if (goal && get().climb >= goal) { end(); return; }
             const seen = new Set(history.map(h => h.exerciseKey));
@@ -209,6 +215,13 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         tick(now = Date.now()) {
             const { phase } = get();
             if ((phase === 'play' || phase === 'right' || phase === 'wrong') && timeUp(now)) { get().events.emit('timeUp', {}); end(); }
+        },
+
+        finish(result) {
+            const { phase } = get();
+            if (phase !== 'play' && phase !== 'right' && phase !== 'wrong') return;
+            set({ result });
+            end();
         },
 
         restart() {

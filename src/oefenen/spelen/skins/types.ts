@@ -14,7 +14,17 @@ export interface SkinMeta {
     timed: boolean;
     // The round: a number of questions, or seconds (timed skins). goal = a climb (Pinguïntoren): a right
     // answer adds one, a mistake takes one off (never below 0); the round ends at goal, questions is then the cap.
-    round: { questions?: number; seconds?: number; goal?: number };
+    // cap = a limit the pupil never sees (Race ends at its finish): the bar counts without a total.
+    round: { questions?: number; seconds?: number; goal?: number; cap?: number };
+}
+
+// What a skin hands back when its own finish ends the round (Race), for the end screen.
+export interface SkinResult {
+    title: string;
+    lead: string;
+    detail?: string;
+    // Shown as a two-tap "Wis mijn scores" on the end screen.
+    wipe?: () => void;
 }
 
 // The game phase a skin sees: play = waiting for an answer; right / wrong = the short flash after one;
@@ -61,7 +71,12 @@ export interface SkinProps {
     events: SpelEvents;
     // prefers-reduced-motion: skip rising, floating and bursts.
     reducedMotion: boolean;
+    // Stable per card + game: the key for a skin's own records on this device (Race's best time).
+    runKey?: string;
+    // The skin's own goal ended the round (Race: the finish line).
+    onFinish?(result: SkinResult): void;
 }
+
 
 export interface SkinEntry {
     meta: SkinMeta;

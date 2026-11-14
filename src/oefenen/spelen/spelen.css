@@ -219,4 +219,5 @@
 .spel-end .spel-end-errors td.is-given { color: var(--text-muted); }
 .spel-end-main { min-height: 64px; min-width: min(100%, 320px); }
 .spel-end-clean { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; color: var(--kiosk-ok); }
+.spel-end-record { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; }
 .spel-end-more { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
