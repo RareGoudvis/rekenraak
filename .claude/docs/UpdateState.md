@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Spelen polish: Bever is a wide dam across a stream (log layers on a mud core, pond left, trickle right) with a burst ending; Race scenery spans every screen width; Zombies' front sum sign hangs higher and the "?" signs are smaller, so they never overlap.
+
 **2026-11-14** — Voetbal (Spelen): polar bears against friendly black bears, a 3 or 5 minute match in two halves (a "Rust!" hold), four right answers are passes, the fifth sum is a 10 s shot on goal (onMiss); a skin may hold the session clock (`hold()`, onHold) and report its own end lines (`report()`).
 
 **2026-11-14** — × / : content: Eenvoudig cards × / : 10, 100 (lj 3) and 1000 (lj 4) through the tienvoud preset with a new `tienvoudTotMax` option (answer or deeltal under maxGetal; absent = sheets unchanged); E × HTE also in lj 3, E × DHTE also in lj 4; Spelen plays × and : up to leerjaar 4 (+ / − stay at 3), with answer length in the content (answerChars.ts: Eieren hides at 5 characters), a zeros-slip distractor and a "cijfer schuift" help tip.

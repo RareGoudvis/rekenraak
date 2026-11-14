@@ -20,7 +20,9 @@
 }
 
 /* ── The scene ────────────────────────────────────────────────────────────── */
-.rc-world { position: relative; grid-area: 1 / 1 / -1 / -1; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
+/* Side by side the scene fills the whole screen behind the keypad: out of the grid, so it never stops at the
+   panel's column whatever the grid does. */
+.rc-world { position: absolute; inset: 0; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
 .rc-sky { position: absolute; inset: 0; }
 .rc-sun {
   position: absolute;
@@ -267,7 +269,7 @@
 
 @media (orientation: portrait) {
   .rc-root { --rc-panel-w: 0px; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  .rc-world { grid-area: 1 / 1; }
+  .rc-world { position: relative; inset: auto; grid-area: 1 / 1; }
   .rc-panel { grid-column: 1; grid-row: 2; }
   .rc-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
   .rc-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }

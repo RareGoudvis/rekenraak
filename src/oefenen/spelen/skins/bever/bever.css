@@ -8,6 +8,7 @@
   --bv-wood: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
   --bv-wood-2: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-ink));
   --bv-wood-end: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--kiosk-paper));
+  --bv-mud: color-mix(in srgb, var(--accent-vraagstukken) 28%, var(--spel-ink));
   --bv-fur: color-mix(in srgb, var(--accent-vraagstukken) 48%, var(--spel-ink));
   --bv-tail: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--spel-ink));
   --bv-belly: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--kiosk-paper));
@@ -37,7 +38,7 @@
   background: var(--spel-star);
 }
 .bv-sun-art { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
-.bv-cam { transform-origin: 213px 262px; transition: transform 700ms var(--ease-out); }
+.bv-cam { transform-origin: 265px 262px; transition: transform 700ms var(--ease-out); }
 .bv-bed { fill: var(--bv-bed); stroke: var(--spel-ink); stroke-width: 3px; }
 .bv-bank { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
 .bv-water { transition: transform 250ms linear; }
@@ -50,13 +51,25 @@
 @keyframes bv-wave {
   0% { transform: translateX(-60px) scaleY(.4); opacity: 0; }
   20% { opacity: 1; }
-  75% { transform: translateX(195px) scaleY(1.2); opacity: 1; }
-  100% { transform: translateX(205px) scaleY(.2); opacity: 0; }
+  75% { transform: translateX(140px) scaleY(1.2); opacity: 1; }
+  100% { transform: translateX(150px) scaleY(.2); opacity: 0; }
 }
 
 .bv-wood { fill: var(--bv-wood); stroke: var(--spel-ink); stroke-width: 3px; }
 .bv-wood.is-alt { fill: var(--bv-wood-2); }
 .bv-end { fill: var(--bv-wood-end); stroke: var(--spel-ink); stroke-width: 2px; }
+.bv-grain { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-linecap: round; opacity: .45; }
+/* The mud core behind the logs and the dabs packed in their seams. */
+.bv-core { fill: var(--bv-mud); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.bv-mud { fill: var(--bv-mud); stroke: var(--spel-ink); stroke-width: 2px; }
+.bv-trickle { fill: var(--bv-water); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+/* Water at the top: drops spill over the upstream corner. */
+.bv-spill { transition: transform 420ms var(--ease-out); }
+.bv-splash, .bv-drop { fill: var(--bv-water); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; transform-box: fill-box; }
+.bv-splash { transform-origin: 50% 100%; animation: bv-splash 520ms ease-in-out infinite alternate; }
+@keyframes bv-splash { from { transform: scaleY(.7); } to { transform: scaleY(1.1); } }
+.bv-drop { animation: bv-hopdrop 520ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.26s); }
+@keyframes bv-hopdrop { from { transform: translateY(5px); } to { transform: translateY(-3px); } }
 .bv-stick.is-new { animation: bv-drop 420ms var(--ease-spring) both; }
 @keyframes bv-drop { from { transform: translateY(-60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 /* Close to the top: the top of the dam trembles a little (a gentle nudge to hurry). */
@@ -131,12 +144,20 @@
 .bv-party { animation: bv-party 700ms ease-in-out infinite alternate; }
 @keyframes bv-party { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-14px) rotate(4deg); } }
 .bv-log { fill: var(--bv-wood); stroke: var(--spel-ink); stroke-width: 3px; }
-.bv-float { animation: bv-away 7s linear infinite; }
-@keyframes bv-away { from { translate: -140px 0; } to { translate: 160px 0; } }
+.bv-splinter { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; }
+/* The burst: foam where the dam broke; the logs (and the beaver's) fly out of the gap first. */
+.bv-foam { fill: var(--bv-water-top); stroke: var(--spel-ink); stroke-width: 2.5px; transform-box: fill-box; transform-origin: center; animation: bv-foam 600ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.2s); }
+@keyframes bv-foam { from { transform: scale(.75); } to { transform: scale(1.15); } }
+.bv-burst { transform-box: fill-box; transform-origin: center; animation: bv-burst 900ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 90ms); }
+@keyframes bv-burst { from { transform: translate(var(--bx), var(--by)) rotate(var(--br)); } to { transform: none; } }
+.bv-gush { fill: var(--bv-water); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+/* Once out of the gap the rider floats off downstream and stays there, bobbing (its rest spot = the still picture). */
+.bv-float { animation: bv-away 3.6s var(--ease-out) both; }
+@keyframes bv-away { from { translate: -170px 0; } to { translate: 0 0; } }
 .bv-bob { animation: bv-bob 1.4s ease-in-out infinite alternate; }
 @keyframes bv-bob { from { transform: translateY(-3px) rotate(-3deg); } to { transform: translateY(4px) rotate(3deg); } }
-.bv-drift { animation: bv-drift 5s linear infinite; animation-delay: calc(var(--i) * -1.2s); }
-@keyframes bv-drift { from { transform: translateX(-60px); } to { transform: translateX(80px); } }
+.bv-drift { animation: bv-drift 3s var(--ease-out) both; animation-delay: calc(var(--i) * 120ms); }
+@keyframes bv-drift { from { transform: translateX(-60px); } to { transform: none; } }
 .bv-confetti { position: absolute; inset: 0; pointer-events: none; }
 .bv-bit {
   position: absolute;
@@ -156,14 +177,19 @@
 .bv-root.is-paused * { animation-play-state: paused; }
 .bv-root.is-still .bv-cam,
 .bv-root.is-still .bv-water,
-.bv-root.is-still .bv-beaver { transition: none; }
+.bv-root.is-still .bv-beaver,
+.bv-root.is-still .bv-spill { transition: none; }
 .bv-root.is-still .bv-ripple,
 .bv-root.is-still .bv-stick.is-new,
 .bv-root.is-still .bv-hop,
 .bv-root.is-still .bv-dam,
+.bv-root.is-still .bv-drop,
+.bv-root.is-still .bv-splash,
 .bv-ending.is-still .bv-ripple,
 .bv-ending.is-still .bv-party,
 .bv-ending.is-still .bv-float,
 .bv-ending.is-still .bv-bob,
-.bv-ending.is-still .bv-drift { animation: none; }
+.bv-ending.is-still .bv-drift,
+.bv-ending.is-still .bv-foam,
+.bv-ending.is-still .bv-burst { animation: none; }
 .bv-ending.is-still .bv-bit { animation: none; top: calc(8% + (var(--i) * 6%)); }
