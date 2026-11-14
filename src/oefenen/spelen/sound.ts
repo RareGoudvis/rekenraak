@@ -5,13 +5,17 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
-// What a skin may voice: a right answer, a wrong one, and its own deadline running out (a zombie at the door).
-export type SoundCue = 'correct' | 'wrong' | 'miss';
-export type SkinSounds = Partial<Record<SoundCue, SpelSound>>;
-const DEFAULT_CUES: Required<SkinSounds> = { correct: 'pop', wrong: 'plop', miss: 'plop' };
+// What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
+// how the round ended (win / lost / fail), and the skin's own moments (props.sound: barricade, caught).
+export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught';
+// null = that cue stays silent (the skin voices the moment itself).
+export type SkinSounds = Partial<Record<SoundCue, SpelSound | null>>;
+const DEFAULT_CUES: Record<SoundCue, SpelSound> = {
+    correct: 'pop', wrong: 'plop', miss: 'plop', win: 'jingle', lost: 'boing', fail: 'boing', barricade: 'krak', caught: 'boing',
+};
 // A small sparkle every this many in a row.
 export const SPARKLE_EVERY = 5;
 
@@ -151,6 +155,41 @@ const RECIPES: Record<SpelSound, Recipe> = {
     },
     // Every few in a row: two small high notes, after the right-answer sound.
     sparkle: (ac, d, t) => { tone(ac, d, t, { f0: 1319, at: 0.12, dur: 0.12, vol: 0.1 }); tone(ac, d, t, { f0: 1760, at: 0.2, dur: 0.18, vol: 0.1 }); },
+    // Bom right: a wire is snipped (two small clicks and a ping).
+    snip: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.03, vol: 0.28, filter: 'highpass', f0: 2600 });
+        noise(ac, d, t, { at: 0.07, dur: 0.03, vol: 0.28, filter: 'highpass', f0: 2600 });
+        tone(ac, d, t, { f0: 880, f1: 1175, at: 0.08, dur: 0.12, vol: 0.14 });
+    },
+    // Bom time up: a big soft puff of smoke, then a little confetti twinkle. Never a bang.
+    puf: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.9, vol: 0.38, filter: 'lowpass', f0: 900, f1: 150 });
+        tone(ac, d, t, { f0: 220, f1: 70, dur: 0.5, vol: 0.22 });
+        tone(ac, d, t, { f0: 1568, at: 0.55, dur: 0.14, vol: 0.07 });
+        tone(ac, d, t, { f0: 2093, at: 0.66, dur: 0.18, vol: 0.06 });
+    },
+    // A won round: a happy hooray (a swell of air under a quick run up).
+    cheer: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.7, vol: 0.12, filter: 'bandpass', f0: 800, f1: 1600, q: 0.7 });
+        [523, 659, 784, 1047].forEach((f, i) => tone(ac, d, t, { type: 'triangle', f0: f, at: 0.05 + i * 0.08, dur: 0.3, vol: 0.2 }));
+        tone(ac, d, t, { type: 'triangle', f0: 1319, at: 0.4, dur: 0.5, vol: 0.18 });
+    },
+    // Bever mistake: a wave rolls in.
+    whoosh: (ac, d, t) => { noise(ac, d, t, { dur: 0.5, vol: 0.2, filter: 'bandpass', f0: 400, f1: 1200, q: 0.6 }); tone(ac, d, t, { f0: 180, f1: 140, dur: 0.4, vol: 0.12 }); },
+    // Bever dam breaks: bubbly blips going up, the beaver floats off giggling.
+    blub: (ac, d, t) => { [0, 0.12, 0.24, 0.36].forEach((at, i) => tone(ac, d, t, { f0: 300 + i * 70, f1: 600 + i * 90, at, dur: 0.1, vol: 0.18 })); },
+    // Zombies: a crate or fence breaks (a soft wooden crack).
+    krak: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.08, vol: 0.32, filter: 'bandpass', f0: 1500, q: 1.2 });
+        tone(ac, d, t, { type: 'triangle', f0: 300, f1: 150, dur: 0.14, vol: 0.22 });
+        noise(ac, d, t, { at: 0.1, dur: 0.06, vol: 0.18, filter: 'bandpass', f0: 1100, q: 1.2 });
+    },
+    // Zombies: a survivor is caught; a silly falling "wah wah wah".
+    wahwah: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 392, f1: 370, dur: 0.24, vol: 0.2 });
+        tone(ac, d, t, { type: 'triangle', f0: 370, f1: 349, at: 0.27, dur: 0.24, vol: 0.2 });
+        tone(ac, d, t, { type: 'triangle', f0: 349, f1: 262, at: 0.54, dur: 0.5, vol: 0.2, wobble: [6, 8] });
+    },
 };
 
 /** Plays one sound; silent when sound is off, before the first gesture, or without Web Audio. */
@@ -166,12 +205,18 @@ export function soundFor<K extends SpelEventName>(cues: SkinSounds | undefined, 
     switch (name) {
         case 'correct': return c.correct;
         // An empty given is the skin's own deadline (onMiss).
-        case 'wrong': return (payload as SpelEventMap['wrong']).given === '' ? (cues?.miss ?? c.wrong) : c.wrong;
+        case 'wrong': return (payload as SpelEventMap['wrong']).given === '' ? (cues?.miss !== undefined ? cues.miss : c.wrong) : c.wrong;
         case 'streak': { const n = (payload as SpelEventMap['streak']).count; return n > 0 && n % SPARKLE_EVERY === 0 ? 'sparkle' : null; }
-        case 'end': return 'jingle';
+        case 'end': {
+            const o = (payload as SpelEventMap['end']).outcome;
+            return o === 'won' ? c.win : o === 'lost' ? c.lost : o === 'failed' ? c.fail : 'jingle';
+        }
         default: return null;
     }
 }
+
+/** The sound for one of the skin's own cues (props.sound). */
+export const cueSound = (cues: SkinSounds | undefined, cue: SoundCue): SpelSound | null => ({ ...DEFAULT_CUES, ...cues })[cue];
 
 const VOICED: SpelEventName[] = ['correct', 'wrong', 'streak', 'end'];
 

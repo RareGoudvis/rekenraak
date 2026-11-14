@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Spelen: nieuw Bom en Bever, Zombies met overlevers en barricades. Kies vooraf tijd, doel of Normaal/Moeilijk.' },
             { kind: 'nieuw', text: 'Spelen: Race tegen je eigen record (spookauto) en Touwtrekken voor twee spelers aan één bord.' },
             { kind: 'nieuw', text: 'Spelen: de ballonnen zweven nu omhoog, en er zijn zachte geluidjes (standaard uit, knop met luidspreker).' },
             { kind: 'nieuw', text: 'Nieuw (beta): Spelen bij Zelf oefenen. Optellen en aftrekken in leerjaar 1 tot 3 als Ballonnen, Pinguïntoren of Zombies, met hulp en Nakijken.' },

@@ -1,0 +1,169 @@
+/* Bever skin. A side view of a stream: flat fills under a thick dark outline (spelen.css tokens). The water
+   and the camera follow the shell's clock through CSS transitions; the outlines keep their width when zoomed. */
+.bv-root,
+.bv-ending {
+  --bv-water: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper));
+  --bv-water-top: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper));
+  --bv-bed: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--text-muted));
+  --bv-wood: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --bv-wood-2: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-ink));
+  --bv-wood-end: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--kiosk-paper));
+  --bv-fur: color-mix(in srgb, var(--accent-vraagstukken) 48%, var(--spel-ink));
+  --bv-tail: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--spel-ink));
+  --bv-belly: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--kiosk-paper));
+}
+.bv-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--spel-sky);
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* ── The stream ───────────────────────────────────────────────────────────── */
+.bv-world { position: relative; min-width: 0; min-height: 0; }
+.bv-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bv-svg *, .bv-ending svg * { vector-effect: non-scaling-stroke; }
+.bv-sun {
+  position: absolute;
+  top: 7%;
+  left: 7%;
+  width: clamp(40px, 8vmin, 72px);
+  aspect-ratio: 1;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+}
+.bv-sun-art { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
+.bv-cam { transform-origin: 213px 262px; transition: transform 700ms var(--ease-out); }
+.bv-bed { fill: var(--bv-bed); stroke: var(--spel-ink); stroke-width: 3px; }
+.bv-bank { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.bv-water { transition: transform 250ms linear; }
+.bv-water-body { fill: var(--bv-water); }
+.bv-ripple { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; animation: bv-ripple 2.4s linear infinite; }
+@keyframes bv-ripple { from { transform: translateX(0); } to { transform: translateX(40px); } }
+/* A mistake: a wave rolls in from the left and breaks on the dam. */
+.bv-wave path { fill: var(--bv-water-top); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.bv-wave { animation: bv-wave 1100ms var(--ease-out) both; }
+@keyframes bv-wave {
+  0% { transform: translateX(-60px) scaleY(.4); opacity: 0; }
+  20% { opacity: 1; }
+  75% { transform: translateX(195px) scaleY(1.2); opacity: 1; }
+  100% { transform: translateX(205px) scaleY(.2); opacity: 0; }
+}
+
+.bv-wood { fill: var(--bv-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.bv-wood.is-alt { fill: var(--bv-wood-2); }
+.bv-end { fill: var(--bv-wood-end); stroke: var(--spel-ink); stroke-width: 2px; }
+.bv-stick.is-new { animation: bv-drop 420ms var(--ease-spring) both; }
+@keyframes bv-drop { from { transform: translateY(-60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* Close to the top: the top of the dam trembles a little (a gentle nudge to hurry). */
+.bv-root.is-close .bv-dam { animation: bv-tremble 500ms ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes bv-tremble { from { transform: rotate(-.6deg); } to { transform: rotate(.6deg); } }
+
+/* ── The beaver ───────────────────────────────────────────────────────────── */
+.bv-beaver { transition: transform 420ms var(--ease-out); }
+.bv-beaver-art * { stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; stroke-linecap: round; }
+.bv-fur { fill: var(--bv-fur); }
+.bv-tail { fill: var(--bv-tail); }
+.bv-tail-line { fill: none; stroke: var(--bv-fur); stroke-width: 2px; }
+.bv-belly { fill: var(--bv-belly); stroke: none; }
+.bv-snout { fill: var(--bv-belly); }
+.bv-nose { fill: var(--spel-ink); }
+.bv-tooth { fill: var(--kiosk-paper); stroke-width: 2px; }
+.bv-eye { fill: var(--spel-ink); stroke: none; }
+.bv-glint { fill: var(--kiosk-paper); stroke: none; }
+.bv-line, .bv-mouth { fill: none; }
+.bv-mouth { stroke-width: 3px; }
+.bv-hat path { fill: var(--spel-fill-4); }
+.bv-hat circle { fill: var(--spel-star); }
+.bv-hop { animation: bv-hop 420ms var(--ease-out); }
+@keyframes bv-hop { 0% { transform: translateY(0); } 45% { transform: translateY(-22px); } 100% { transform: translateY(0); } }
+
+/* ── The sum and the keypad ───────────────────────────────────────────────── */
+.bv-panel {
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+  /* The bank runs on under the keypad (the world's SVG draws past its column). */
+  position: relative;
+  z-index: 1;
+}
+.bv-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.bv-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+.bv-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .bv-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .bv-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); border-top: var(--spel-line) solid var(--spel-ink); background: var(--spel-grass); }
+  .bv-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .bv-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .bv-panel { gap: var(--sp-2); }
+}
+
+/* ── The end screen picture ───────────────────────────────────────────────── */
+.bv-party { animation: bv-party 700ms ease-in-out infinite alternate; }
+@keyframes bv-party { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-14px) rotate(4deg); } }
+.bv-log { fill: var(--bv-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.bv-float { animation: bv-away 7s linear infinite; }
+@keyframes bv-away { from { translate: -140px 0; } to { translate: 160px 0; } }
+.bv-bob { animation: bv-bob 1.4s ease-in-out infinite alternate; }
+@keyframes bv-bob { from { transform: translateY(-3px) rotate(-3deg); } to { transform: translateY(4px) rotate(3deg); } }
+.bv-drift { animation: bv-drift 5s linear infinite; animation-delay: calc(var(--i) * -1.2s); }
+@keyframes bv-drift { from { transform: translateX(-60px); } to { transform: translateX(80px); } }
+.bv-confetti { position: absolute; inset: 0; pointer-events: none; }
+.bv-bit {
+  position: absolute;
+  top: -12px;
+  left: var(--x);
+  width: 10px;
+  height: 14px;
+  border: 2px solid var(--spel-ink);
+  border-radius: 2px;
+  background: var(--c);
+  animation: bv-fall 2.8s linear infinite;
+  animation-delay: calc(var(--i) * -0.2s);
+}
+@keyframes bv-fall { from { transform: translateY(0) rotate(0); } to { transform: translateY(clamp(150px, 28vh, 260px)) rotate(500deg); } }
+
+/* "Hoe los ik dit op?": everything holds still. */
+.bv-root.is-paused * { animation-play-state: paused; }
+.bv-root.is-still .bv-cam,
+.bv-root.is-still .bv-water,
+.bv-root.is-still .bv-beaver { transition: none; }
+.bv-root.is-still .bv-ripple,
+.bv-root.is-still .bv-stick.is-new,
+.bv-root.is-still .bv-hop,
+.bv-root.is-still .bv-dam,
+.bv-ending.is-still .bv-ripple,
+.bv-ending.is-still .bv-party,
+.bv-ending.is-still .bv-float,
+.bv-ending.is-still .bv-bob,
+.bv-ending.is-still .bv-drift { animation: none; }
+.bv-ending.is-still .bv-bit { animation: none; top: calc(8% + (var(--i) * 6%)); }

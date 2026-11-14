@@ -139,8 +139,8 @@ describe('Race skin and session', () => {
     const props = (over: Partial<SkinProps> = {}): SkinProps => ({
         question: { key: 'q1', text: '7 + 5 = ?', index: 0 }, choices: null, phase: 'play', feedback: null,
         onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), events: createSpelEvents(), reducedMotion: false,
-        progress: { answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null },
-        runKey: 'race:test', onFinish: vi.fn(), ...over,
+        progress: { answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: null },
+        runKey: 'race:test', onFinish: vi.fn(), onFail: vi.fn(), sound: vi.fn(), options: {}, ...over,
     });
     const xOf = (c: HTMLElement) => Number((c.querySelector('.rc-root') as HTMLElement).dataset.x);
 

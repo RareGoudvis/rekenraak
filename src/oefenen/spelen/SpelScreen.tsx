@@ -8,7 +8,7 @@ import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
 import SpelEnd from './SpelEnd';
-import { useSpelSounds } from './sound';
+import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
 import './spelen.css';
 
@@ -98,7 +98,7 @@ export default function SpelScreen() {
         const Screen = entry.Screen;
         return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
     }
-    if (st.phase === 'end') return <div className="oefen-app"><SpelEnd /></div>;
+    if (st.phase === 'end') return <div className="oefen-app"><SpelEnd reducedMotion={reducedMotion} /></div>;
     if (!st.meta || !entry?.Component) return null;
     const Skin = entry.Component;
     const progress = progressOf(st, now);
@@ -147,7 +147,10 @@ export default function SpelScreen() {
                         onAnswer={st.answer}
                         onHelp={() => st.openHelp()}
                         onMiss={() => st.miss()}
+                        onFail={() => st.fail()}
+                        sound={cue => { const s = cueSound(st.meta?.sounds, cue); if (s) play(s); }}
                         progress={progress}
+                        options={st.meta.chosen ?? {}}
                         events={st.events}
                         reducedMotion={reducedMotion}
                         runKey={st.from ? `${st.meta.id}:${st.from.choice.key}` : undefined}

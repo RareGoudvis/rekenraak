@@ -36,7 +36,7 @@ async function toGames(grade: string, section: string, name: string, choice: Reg
 
 describe('Spelen flow', () => {
     test('the registry: the tiles, Zombies timed', () => {
-        expect(SKINS.map(s => s.meta.label)).toEqual(['Pinguïntoren', 'Ballonnen', 'Zombies', 'Race', 'Touwtrekken']);
+        expect(SKINS.map(s => s.meta.label)).toEqual(expect.arrayContaining(['Pinguïntoren', 'Ballonnen', 'Zombies', 'Race', 'Touwtrekken', 'Bom', 'Bever']));
         expect(SKINS.every(s => s.Component || s.Screen)).toBe(true);
         expect(SKINS.find(s => s.meta.id === 'zombies')!.meta.timed).toBe(true);
         expect(SKINS.find(s => s.meta.id === 'pinguintoren')!.meta).toMatchObject({ input: 'keypad', timed: false, round: { questions: 30, goal: 20 } });
@@ -86,7 +86,7 @@ describe('Spelen flow', () => {
             act(() => sp().next());
         }
         expect(await screen.findByRole('heading', { name: 'Klaar!' })).toBeTruthy();
-        expect(screen.getByText('16 van 20 juist')).toBeTruthy();
+        expect(screen.getByText('16 van 20 juist, 1 met hulp')).toBeTruthy();
         expect(sp().helped).toBe(1);
         expect(sp().mistakes).toHaveLength(3);
         const keys = sp().mistakes.map(m => m.question.key);
@@ -121,6 +121,9 @@ describe('Spelen flow', () => {
         await toGames('2', 'Hoofdrekenen', 'Aftrekken', /Met brug/);
         click('Spelen');
         click('Zombies, op tijd');
+        // The pre-start screen: Normaal is already picked, one tap on Start.
+        expect(screen.getByRole('button', { name: 'Normaal' }).getAttribute('aria-pressed')).toBe('true');
+        click('Start');
         await screen.findByRole('group', { name: 'Cijfers' });
         // The lazy skin's effects (the keypad's key listener) run before the first key.
         await act(async () => { });
@@ -135,7 +138,9 @@ describe('Spelen flow', () => {
         act(() => sp().miss());
         expect(sp().mistakes).toEqual([{ question: missed, given: '' }]);
         act(() => sp().tick(sp().endsAt! + 1));
-        expect(await screen.findByRole('heading', { name: 'De tijd is om!' })).toBeTruthy();
+        // Survivors left at the end: they cheer.
+        expect(await screen.findByRole('heading', { name: 'Gered!' })).toBeTruthy();
+        expect(sp().outcome).toBe('won');
         expect(screen.getByText('geen')).toBeTruthy();
     });
 

@@ -16,7 +16,7 @@ import { FLOAT, floatAt, floatPace, floatPath, phaseAt, readableAt, type FloatGe
 // drive what is drawn (blocks, wobble, the falling block, the paused look).
 
 const progressWith = (over: Partial<SkinProgress> = {}): SkinProgress => ({
-    answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null, ...over,
+    answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: null, ...over,
 });
 
 function propsWith(over: Partial<SkinProps> = {}): SkinProps {
@@ -24,8 +24,8 @@ function propsWith(over: Partial<SkinProps> = {}): SkinProps {
         question: { key: 'q1', text: '7 + 5 = ?', index: 0 },
         choices: ['12', '11', '13', '22'],
         phase: 'play', feedback: null,
-        onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(),
-        progress: progressWith(), events: createSpelEvents(), reducedMotion: false,
+        onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
+        progress: progressWith(), options: {}, events: createSpelEvents(), reducedMotion: false,
         ...over,
     };
 }
@@ -181,14 +181,17 @@ describe('Spelen skins', () => {
             expect(container.querySelector('.zb-sign.is-front')!.textContent).toBe('9 + 5 = ?');
         });
 
-        test('at the door it bumps (boing) and the sum counts as a miss, once; nothing ends early', () => {
+        test('at the barricade it bumps (boing) and the sum counts as a miss, once; the first one only breaks a barricade', () => {
             const events = createSpelEvents();
             const onMiss = vi.fn();
-            const { container } = render(<Zombies {...at(events, { onMiss })} />);
+            const onFail = vi.fn();
+            const sound = vi.fn();
+            const { container } = render(<Zombies {...at(events, { onMiss, onFail, sound })} />);
             wait(30_000);
             expect(onMiss).toHaveBeenCalledTimes(1);
+            expect(sound).toHaveBeenCalledWith('barricade');
+            expect(onFail).not.toHaveBeenCalled();
             expect(container.querySelector('[data-zombie=front] .zb-zombie.is-boing')).not.toBeNull();
-            expect(container.querySelector('.zb-house.is-bumped')).not.toBeNull();
             expect(frontX(container)).toBe(0);
         });
 

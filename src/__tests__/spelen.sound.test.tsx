@@ -2,9 +2,9 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, act } from '@testing-library/react';
 import { SKINS } from '../oefenen/spelen/skins/registry';
-import { createSpelEvents } from '../oefenen/spelen/events';
+import { createSpelEvents, type SpelOutcome } from '../oefenen/spelen/events';
 import {
-    SOUND_KEY, SPEL_SOUNDS, play, resetSoundForTests, setSoundOn, soundFor, soundOn, unlockSound, useSpelSounds, type SkinSounds,
+    SOUND_KEY, SPEL_SOUNDS, cueSound, play, resetSoundForTests, setSoundOn, soundFor, soundOn, unlockSound, useSpelSounds, type SkinSounds,
 } from '../oefenen/spelen/sound';
 
 // Spelen sounds: off by default and kept per device; silent when off, before a gesture or without Web Audio;
@@ -119,14 +119,26 @@ describe('Spelen sound', () => {
         expect(soundFor(cues('pinguintoren'), 'wrong', wrong)).toBe('splash');
         expect(soundFor(cues('zombies'), 'correct', right)).toBe('poef');
         expect(soundFor(cues('zombies'), 'wrong', wrong)).toBe('plop');
-        expect(soundFor(cues('zombies'), 'wrong', miss)).toBe('boing');
+        // A zombie through: the skin voices the barricade or the catch itself (cueSound), the session stays quiet.
+        expect(soundFor(cues('zombies'), 'wrong', miss)).toBeNull();
+        expect(cueSound(cues('zombies'), 'barricade')).toBe('krak');
+        expect(cueSound(cues('zombies'), 'caught')).toBe('wahwah');
+        expect(soundFor(cues('bom'), 'correct', right)).toBe('snip');
+        expect(soundFor(cues('bever'), 'wrong', wrong)).toBe('whoosh');
+        // How a round ended: a cheer for a win, a soft PUF for the bomb's time up, never a buzzer for a fail.
+        const end = (outcome: SpelOutcome) => ({ score: 1, bestStreak: 1, mistakes: 0, helped: 0, outcome });
+        expect(soundFor(cues('bom'), 'end', end('won'))).toBe('cheer');
+        expect(soundFor(cues('bom'), 'end', end('lost'))).toBe('puf');
+        expect(soundFor(cues('bever'), 'end', end('failed'))).toBe('blub');
+        expect(soundFor(cues('zombies'), 'end', end('failed'))).toBe('wahwah');
+        expect(soundFor(cues('ballonnen'), 'end', end('done'))).toBe('jingle');
         // Shared by every game: a sparkle every 5 in a row, the jingle at the end, nothing for help or time up.
         for (const { meta } of SKINS) {
             expect(soundFor(meta.sounds, 'streak', { count: 5 })).toBe('sparkle');
             expect(soundFor(meta.sounds, 'streak', { count: 10 })).toBe('sparkle');
             expect(soundFor(meta.sounds, 'streak', { count: 4 })).toBeNull();
             expect(soundFor(meta.sounds, 'streak', { count: 0 })).toBeNull();
-            expect(soundFor(meta.sounds, 'end', { score: 1, bestStreak: 1, mistakes: 0, helped: 0 })).toBe('jingle');
+            expect(soundFor(meta.sounds, 'end', { score: 1, bestStreak: 1, mistakes: 0, helped: 0, outcome: 'done' })).toBe('jingle');
             expect(soundFor(meta.sounds, 'help', {})).toBeNull();
             expect(soundFor(meta.sounds, 'timeUp', {})).toBeNull();
         }

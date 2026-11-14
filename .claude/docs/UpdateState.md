@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Spelen round 2: Bom (3 or 5 min, 10/20/50 juist to defuse, a harmless PUF! when time runs out) and Bever (a dam against rising water, Normaal/Moeilijk), Zombies reworked to survivors behind barricades; a pre-start options screen (remembered per device), a friendly early end for Bever and Zombies only (`canFail`, outcome done/won/lost/failed), end-screen pictures per skin; the end line names met hulp.
+
 **2026-11-14** — Spelen: Race (beat your own best time against a ghost car, best per card in localStorage, "Wis mijn scores") and Touwtrekken (two pupils on one board, Samen tegelijk or Om beurten, its own duel store and screen via `SkinEntry.Screen`); both with sound (SoundToggle shared).
 
 **2026-11-14** — Spelen polish: Ballonnen float up and wrap round to the bottom (≥ 3 readable, frozen under help, still under reduced motion); soft synthesised game sounds (Web Audio, src/oefenen/spelen/sound.ts, one line per skin in its registry entry) behind a speaker toggle, off by default.

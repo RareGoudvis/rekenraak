@@ -1,6 +1,7 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { SpelEvents } from '../events';
-import type { SkinSounds } from '../sound';
+import type { SoundCue, SkinSounds } from '../sound';
+import type { SpelOutcome } from '../events';
 import type { SpelFrom } from '../useSpelStore';
 
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
@@ -17,9 +18,18 @@ export interface SkinMeta {
     // The round: a number of questions, or seconds (timed skins). goal = a climb (Pinguïntoren): a right
     // answer adds one, a mistake takes one off (never below 0); the round ends at goal, questions is then the cap.
     // cap = a limit the pupil never sees (Race ends at its finish): the bar counts without a total.
-    round: { questions?: number; seconds?: number; goal?: number; cap?: number };
-    // Its sounds for a right answer, a wrong one and its own deadline (sound.ts); absent = the defaults.
+    // goalKeep: a mistake never takes one off the climb (Bom: a wrong answer only costs time).
+    round: { questions?: number; seconds?: number; goal?: number; cap?: number; goalKeep?: boolean };
+    // Its sounds per cue (sound.ts): session cues and the skin's own (props.sound); absent = the defaults.
     sounds?: SkinSounds;
+    // A pre-start screen with these choices (big buttons, a default preselected); absent = no screen.
+    options?: SkinOption[];
+    // What was picked on that screen (the round already carries their patches); set by the picker.
+    chosen?: SkinChoices;
+    // Owner-approved early end (Bever, Zombies): the skin may call onFail; every other skin never ends early.
+    canFail?: boolean;
+    // The end screen's title when the round was won ("Ontmanteld!").
+    winTitle?: string;
     // 2 = a game for two pupils on one screen (Touwtrekken): the picker says "2 spelers".
     players?: 2;
 }
@@ -32,6 +42,25 @@ export interface SkinResult {
     // Shown as a two-tap "Wis mijn scores" on the end screen.
     wipe?: () => void;
 }
+
+export interface SkinOptionChoice {
+    value: string;
+    // The button text ("3 minuten").
+    label: string;
+    // Merged into meta.round when picked.
+    round?: Partial<SkinMeta['round']>;
+}
+
+export interface SkinOption {
+    id: string;
+    // The group's question ("Hoe lang?").
+    label: string;
+    choices: SkinOptionChoice[];
+    default: string;
+}
+
+// Option id → picked value ({ tijd: '3', doel: '20' }).
+export type SkinChoices = Record<string, string>;
 
 // The game phase a skin sees: play = waiting for an answer; right / wrong = the short flash after one;
 // help = paused under "Hoe los ik dit op?" (no input).
@@ -57,6 +86,13 @@ export interface SkinProgress {
     msLeft: number | null;
     // Goal rounds (round.goal): how high the climb is now; null otherwise.
     goal: { count: number; target: number } | null;
+    // Right answers, met hulp included (a stick on the dam).
+    right: number;
+    // Counted mistakes (the end screen's Foutjes), and the skin's own deadlines among all answers (onMiss).
+    mistakes: number;
+    misses: number;
+    // Timed rounds: the round's length; null when untimed.
+    msTotal: number | null;
 }
 
 export interface SkinProps {
@@ -72,7 +108,13 @@ export interface SkinProps {
     onHelp(): void;
     // The skin's own deadline for this question ran out (a zombie at the door): a mistake without an answer.
     onMiss(): void;
+    // meta.canFail skins only: the friendly early end (the dam broke, everyone was caught).
+    onFail(): void;
+    // The skin's own sound cues (a barricade breaks); the registry entry maps them to sounds.
+    sound(cue: SoundCue): void;
     progress: SkinProgress;
+    // What was picked on the pre-start screen (empty without one).
+    options: SkinChoices;
     // correct / wrong / help / streak / timeUp / end, for effects.
     events: SpelEvents;
     // prefers-reduced-motion: skip rising, floating and bursts.
@@ -91,10 +133,20 @@ export interface SkinScreenProps {
     onExit(): void;
 }
 
+// The end screen's picture for a skin (the bomb with a smiley, the PUF! cloud, the beaver on its log).
+export interface SkinEndingProps {
+    outcome: SpelOutcome;
+    progress: SkinProgress;
+    options: SkinChoices;
+    reducedMotion: boolean;
+}
+
 export interface SkinEntry {
     meta: SkinMeta;
     // Absent = "binnenkort" in the picker. Lazy: each skin is its own chunk.
     Component?: LazyExoticComponent<ComponentType<SkinProps>>;
     // Instead of Component: the whole game screen, shell included.
     Screen?: LazyExoticComponent<ComponentType<SkinScreenProps>>;
+    // Optional picture above the end screen's numbers (same chunk as the skin).
+    Ending?: LazyExoticComponent<ComponentType<SkinEndingProps>>;
 }

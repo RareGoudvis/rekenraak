@@ -125,7 +125,7 @@ describe('Spelen session', () => {
         }
         expect(sp().phase).toBe('end');
         expect(sp().history).toHaveLength(20);
-        expect(log.at(-1)).toEqual({ name: 'end', payload: { score: 15, bestStreak: 4, mistakes: 4, helped: 1 } });
+        expect(log.at(-1)).toEqual({ name: 'end', payload: { score: 15, bestStreak: 4, mistakes: 4, helped: 1, outcome: 'done' } });
     });
 
     test('a timed round: the clock stops while paused, then time up ends it', () => {

@@ -1,17 +1,23 @@
 /* Zombies skin. Silly, not scary: round green zombies, googly eyes, flat fills under a thick dark outline.
    The rAF loop only sets each lane's translateX; every other movement is a CSS transform here. */
-.zb-root {
+.zb-root,
+.zb-ending {
   --zb-w: clamp(84px, 21vmin, 190px);
-  --zb-house-w: calc(var(--zb-w) * 1.25);
+  /* The group behind its barricades on the left; the street starts after it. */
+  --zb-sv-w: calc(var(--zb-w) * .38);
+  --zb-camp-w: calc(var(--zb-w) * 1.95);
   /* Where the feet stand, from the street's bottom edge. */
   --zb-floor: clamp(18px, 6%, 44px);
   --zb-skin: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--mab-e));
   --zb-pants: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
   --zb-sky: color-mix(in srgb, var(--accent-meetkunde) 16%, var(--kiosk-paper));
   --zb-wall: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--kiosk-paper));
-  --zb-roof: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--accent-vraagstukken));
-  --zb-door: color-mix(in srgb, var(--accent-bewerkingen) 75%, var(--kiosk-paper));
+  --zb-wood: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--kiosk-paper));
+  --zb-human: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--kiosk-paper));
+  --zb-hair: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--spel-ink));
   --zb-smoke: color-mix(in srgb, var(--text-muted) 25%, var(--kiosk-paper));
+}
+.zb-root {
   position: absolute;
   inset: 0;
   display: grid;
@@ -41,30 +47,74 @@
   background: var(--spel-grass);
 }
 
-.zb-house { position: absolute; left: var(--sp-2); bottom: calc(var(--zb-floor) - 2px); width: var(--zb-house-w); }
-.zb-house-art { display: block; width: 100%; height: auto; overflow: visible; }
-.zb-house-art * { stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
-.zb-chimney { fill: var(--zb-roof); }
-.zb-roof { fill: var(--zb-roof); }
-.zb-wall { fill: var(--zb-wall); }
-.zb-window { fill: var(--spel-star); }
-.zb-window-bar { fill: none; stroke-width: 2.5; }
-.zb-door-leaf { fill: var(--zb-door); }
-.zb-knob { fill: var(--spel-star); stroke-width: 2; }
-/* A bump: the door shakes on its hinge. */
-.zb-door { transform-box: fill-box; transform-origin: left bottom; }
-.zb-house.is-bumped .zb-door { animation: zb-door 600ms ease-in-out; }
-@keyframes zb-door {
-  0%, 100% { transform: none; }
-  25% { transform: skewY(-6deg) scaleX(.92); }
-  55% { transform: skewY(4deg); }
-  80% { transform: skewY(-2deg); }
+/* ── The survivors and their barricades ───────────────────────────────────── */
+.zb-camp {
+  position: absolute;
+  left: var(--sp-2);
+  bottom: calc(var(--zb-floor) - 2px);
+  width: var(--zb-camp-w);
+  display: flex;
+  align-items: flex-end;
+}
+.zb-crew { flex: 1 1 auto; display: flex; align-items: flex-end; }
+.zb-sv { position: relative; flex: 0 0 auto; width: var(--zb-sv-w); margin-right: calc(var(--zb-sv-w) * -.22); }
+/* Staggered heights: a little group, not a row of soldiers. */
+.zb-sv:nth-child(even) { margin-bottom: calc(var(--zb-sv-w) * .12); }
+.zb-sv-body { display: block; transform-origin: 50% 100%; }
+.zb-sv-art { display: block; width: 100%; height: auto; overflow: visible; }
+.zb-sv-art * { stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.zb-sv-skin { fill: var(--zb-human); }
+.zb-sv-hair { fill: var(--zb-hair); }
+.zb-sv:nth-child(3n + 1) .zb-sv-hair { fill: var(--mab-e); }
+.zb-sv:nth-child(3n + 2) .zb-sv-hair { fill: var(--spel-ink); }
+.zb-sv-shirt { fill: var(--spel-fill-1); }
+.zb-sv:nth-child(5n + 2) .zb-sv-shirt { fill: var(--spel-fill-4); }
+.zb-sv:nth-child(5n + 3) .zb-sv-shirt { fill: var(--spel-fill-5); }
+.zb-sv:nth-child(5n + 4) .zb-sv-shirt { fill: var(--spel-fill-2); }
+.zb-sv:nth-child(5n) .zb-sv-shirt { fill: var(--spel-fill-3); }
+.zb-sv-arm-line { fill: none; stroke-width: 10; }
+.zb-sv-arm { fill: none; stroke: var(--zb-human); stroke-width: 5; }
+.zb-sv-arm.is-green { stroke: var(--zb-skin); }
+.zb-sv-open { fill: var(--spel-ink); }
+/* Calm and brave: a slow sway while the zombies come. */
+.zb-root.is-moving .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-sv-sway 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.4s); }
+@keyframes zb-sv-sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+/* Caught: a silly spin into a green zombie, then it shuffles off along the street. */
+.zb-sv.is-caught { z-index: 1; animation: zb-sv-off 9s linear 900ms forwards; }
+.zb-sv.is-caught .zb-sv-body { animation: zb-sv-turn 900ms var(--ease-spring) both, zb-shuffle 900ms ease-in-out 900ms infinite alternate; }
+@keyframes zb-sv-turn {
+  0% { transform: scale(1) rotate(0); }
+  40% { transform: scale(1.15, .8) rotate(-12deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes zb-sv-off {
+  0% { transform: translateX(0); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateX(calc(var(--zb-w) * 7)); opacity: 0; }
 }
 
-/* The walk: x = 0 is just right of the door, 100 = the right edge (lanes are as wide as the track). */
+/* The barricades stand in front of the group's right half: the survivors are behind them. */
+.zb-barricades { position: relative; z-index: 2; flex: 0 0 auto; display: flex; align-items: flex-end; margin-left: calc(var(--zb-w) * -.42); }
+.zb-bar { position: relative; flex: 0 0 auto; width: calc(var(--zb-w) * .34); margin-left: calc(var(--zb-w) * -.1); transform-origin: 50% 100%; }
+.zb-bar:first-child { margin-left: 0; }
+.zb-bar:nth-child(2) { width: calc(var(--zb-w) * .44); }
+.zb-bar-art { display: block; width: 100%; height: auto; overflow: visible; }
+.zb-bar-art * { stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.zb-wood { fill: var(--zb-wood); }
+.zb-wood-line { fill: none; stroke-width: 2.5; }
+/* Broken: it tips over and drops away (it stopped one zombie). */
+.zb-bar.is-broken { animation: zb-bar-break 700ms var(--ease-out) forwards; }
+@keyframes zb-bar-break {
+  0% { transform: none; opacity: 1; }
+  30% { transform: translateX(-8%) rotate(-14deg) scale(1.05); opacity: 1; }
+  100% { transform: translate(-30%, 20%) rotate(-80deg) scale(.6); opacity: 0; }
+}
+.zb-bar.is-gone { visibility: hidden; }
+
+/* The walk: x = 0 is just right of the barricades, 100 = the right edge (lanes are as wide as the track). */
 .zb-track {
   position: absolute;
-  left: calc(var(--zb-house-w) + var(--sp-2));
+  left: calc(var(--zb-camp-w) + var(--sp-3));
   right: var(--zb-w);
   bottom: var(--zb-floor);
   height: 0;
@@ -220,9 +270,13 @@
   .zb-controls .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); gap: var(--sp-1); }
 }
 
-/* A phone upright: a smaller house leaves the zombies more street. */
+/* Moeilijk: three survivors and no barricades, so the street starts right after them. */
+.zb-root.is-moeilijk { --zb-camp-w: calc(var(--zb-w) * 1.05); }
+
+/* A phone upright: a tighter group leaves the zombies more street. */
 @media (orientation: portrait) and (max-width: 600px) {
-  .zb-root { --zb-house-w: calc(var(--zb-w) * .9); }
+  .zb-root { --zb-sv-w: calc(var(--zb-w) * .3); --zb-camp-w: calc(var(--zb-w) * 1.55); }
+  .zb-root.is-moeilijk { --zb-camp-w: calc(var(--zb-w) * .85); }
 }
 
 /* "Hoe los ik dit op?": all movement holds (the loop stops too). */
@@ -236,6 +290,19 @@
 .zb-root.is-still .zb-zombie .zb-art,
 .zb-root.is-still .zb-zombie .zb-sign,
 .zb-root.is-still .zb-zombie .zb-pole,
-.zb-root.is-still .zb-door { animation: none; }
+.zb-root.is-still .zb-sv,
+.zb-root.is-still .zb-sv-body,
+.zb-root.is-still .zb-bar { animation: none; }
+.zb-root.is-still .zb-bar.is-broken { visibility: hidden; }
 .zb-root.is-still .zb-zombie.is-flop .zb-body { animation: zb-fade 300ms linear 300ms forwards; }
 @keyframes zb-fade { to { opacity: 0; } }
+
+/* ── The end screen picture ───────────────────────────────────────────────── */
+.zb-ending { --zb-w: clamp(84px, 18vmin, 150px); --zb-sv-w: calc(var(--zb-w) * .5); --zb-floor: 14%; background: var(--zb-sky); }
+.zb-party { position: absolute; left: 0; right: 0; bottom: var(--zb-floor); display: flex; justify-content: center; align-items: flex-end; }
+.zb-party .zb-sv { margin: 0 calc(var(--zb-sv-w) * .05); }
+.zb-sv.is-cheer .zb-sv-body { animation: zb-cheer 600ms var(--ease-out) infinite alternate; animation-delay: calc(var(--k) * -.15s); }
+@keyframes zb-cheer { from { transform: translateY(0); } to { transform: translateY(-22%); } }
+.zb-sv.is-dance .zb-sv-body { animation: zb-dance 800ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.3s); }
+@keyframes zb-dance { from { transform: rotate(-10deg) translateX(-6%); } to { transform: rotate(10deg) translateX(6%); } }
+.zb-ending.is-still .zb-sv-body { animation: none; }
