@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Nieuw: kaarten × en : door 10, 100 en 1 000, en E × DHTE in leerjaar 4. Spelen werkt nu ook voor × en : in leerjaar 4.' },
             { kind: 'nieuw', text: 'Nieuw spel: Zeehondjes voeren. Rustig, voor de jongsten: geef het juiste zeehondje een visje. Werkt ook met de klok.' },
             { kind: 'nieuw', text: 'Spelen met de klok: lees de wijzers of kies de juiste klok in Ballonnen, Pakjesband en Mollen meppen.' },
             { kind: 'nieuw', text: 'Nieuwe spellen: Kerstboom versieren, Verborgen prent met 8 grappige dieren, en Schatkist: elk juist antwoord geeft een cijfer van de code.' },

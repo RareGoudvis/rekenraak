@@ -90,6 +90,7 @@ const hrMulDiv: OptionSpace = {
     fractionOrderMode: ['AB', 'BA', 'beide'],
     preset: ['vrij', 'tienvoud'],
     presetFactors: [[10], [10, 100, 1000]],
+    tienvoudTotMax: [false, true],
     excludeOne: [false, true],
     // multiplication/NaturalSettings 'Met rest' niveau and the 'andere' delen niveaus (N1-N6).
     metRestLevel: [1, 2, 3],

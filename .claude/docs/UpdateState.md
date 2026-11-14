@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — × / : content: Eenvoudig cards × / : 10, 100 (lj 3) and 1000 (lj 4) through the tienvoud preset with a new `tienvoudTotMax` option (answer or deeltal under maxGetal; absent = sheets unchanged); E × HTE also in lj 3, E × DHTE also in lj 4; Spelen plays × and : up to leerjaar 4 (+ / − stay at 3), with answer length in the content (answerChars.ts: Eieren hides at 5 characters), a zeros-slip distractor and a "cijfer schuift" help tip.
+
 **2026-11-14** — Zeehondjes voeren: a calm choice skin for the youngest (skins/zeehond/): 4 seals on floes hold up the options, the right one gets a fish from the bucket; untimed, 15 sums, plays the klok (accepts.pictures).
 
 **2026-11-14** — Spelen plays the klok (first content pack): content/pack.ts (SpelVisual: klok face / digital time; a question visual, per-choice views), content/packs.ts (SPEL_PACKS), SpelVisual / SpelChoiceFace; four directions from the cards (klok lezen in words, wijzerklok → digitaal, wijzers tekenen, digitale klok instellen); clock distractors (half-drie trap, kwart over/voor, hands swapped, ±5 min, wrong hour; never 08:15 next to 20:15); content `pictures: true` only reaches skins with `accepts.pictures` (Ballonnen, Pakjesband, Mollen). Board code reads answers through answerOf (facts is optional now).

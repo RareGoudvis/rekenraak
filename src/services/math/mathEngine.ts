@@ -665,14 +665,14 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
 // 6. VERMENIGVULDIGEN (MULTIPLICATION)
 // ============================================================================
 
-// Tienvoud factors (10/100/1000) and, under gemengd's capToMax, how large a base (× answer, :
+// Tienvoud factors (10/100/1000) and, under gemengd's capToMax or tienvoudTotMax, how large a base (× answer, :
 // quotient) each factor leaves room for: in display steps for decimals, whole numbers otherwise.
 // A factor without room for the smallest base (2, or one display step) leaves the pool; an empty
 // pool yields no exercises, so the relax ladder drops the preset and says so.
 function tienvoudPool(c: MulDivConstraints, maxGetal: number, numberType: string, scale: number) {
     const picked: number[] = (c.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
     const all = picked.length ? picked : [10, 100, 1000];
-    if (!c.capToMax) return { pool: all, room: null };
+    if (!c.capToMax && !c.tienvoudTotMax) return { pool: all, room: null };
     const room = (f: number) => numberType === 'decimal' ? Math.floor(Math.round(maxGetal * scale) / f) : Math.floor(maxGetal / f);
     return { pool: all.filter(f => room(f) >= (numberType === 'decimal' ? 1 : 2)), room };
 }

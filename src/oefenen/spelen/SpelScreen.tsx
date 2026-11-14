@@ -7,11 +7,12 @@ import { mabOnlyFor } from '../../services/stepsAvailability';
 import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
-import type { SumFacts } from './distractors';
+import { powerOfTen, type SumFacts } from './distractors';
 import SpelEnd from './SpelEnd';
 import { SpelVisual } from './SpelVisual';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
+import { formatMathNumber } from '../../services/math/formatters';
 import './spelen.css';
 
 
@@ -183,9 +184,22 @@ export default function SpelScreen() {
     );
 }
 
+// × / : 10, 100, 1000 past the tafel van 10: the digits shift, shown on a fixed example (47) so the tip teaches the rule.
+function shiftTip(f: SumFacts): string | null {
+    const p = powerOfTen(f);
+    const [x = 0, y = 0] = f.operands;
+    // 7 × 10 and 70 : 10 are the tafel van 10: its jumps below.
+    if (p === null || (p === 10 && (f.op === 'x' ? (p === y ? x : y) : f.answer) <= 10)) return null;
+    const places = ['één plaats', 'twee plaatsen', 'drie plaatsen'][String(p).length - 2];
+    const n = formatMathNumber;
+    return f.op === 'x' ? `Elk cijfer schuift ${places} op: 47 × ${n(p)} = ${n(47 * p)}.` : `Elk cijfer schuift ${places} terug: ${n(47 * p)} : ${n(p)} = 47.`;
+}
+
 // The help without worked steps: count on or back for + / −; for the tafels the jumps of the tafel, up to the answer
 // (that is the help: 7 × 6 = six jumps of 7). Keeps to ten jumps so a big product does not flood the panel.
 function helpTip(f: SumFacts): string {
+    const shift = shiftTip(f);
+    if (shift) return shift;
     const [x = 0, y = 0] = f.operands;
     const jumps = (step: number, n: number) => Array.from({ length: n }, (_, i) => (i + 1) * step).join(', ');
     if (f.op === 'x' && y >= 1 && y <= 10) return `Tel in sprongen van ${x}: ${jumps(x, y)}.`;

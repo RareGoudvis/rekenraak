@@ -48,12 +48,25 @@ function digitSwap(n: number): number | null {
     return v === n ? null : v;
 }
 
+// × / : by 10, 100 or 1000: the factor (the deler), else null.
+export function powerOfTen({ operands, op }: SumFacts): number | null {
+    const [x = 0, y = 0] = operands;
+    const pow = (n: number) => n === 10 || n === 100 || n === 1000;
+    if (op === 'x') return pow(y) ? y : pow(x) ? x : null;
+    return op === ':' && pow(y) ? y : null;
+}
+
 // The mistake families, each a list of candidates; one family per option first, so three options show three kinds of slip.
-function families({ answer: a, operands, op }: SumFacts): number[][] {
+function families(facts: SumFacts): number[][] {
+    const { answer: a, operands, op } = facts;
     const [x = 0, y = 0] = operands;
     // Tafels (owner 2026-11-14): a neighbouring row of the tafel (7 × 8 read as 6 × 8 or 7 × 7), the sum for the
     // product, ±1; for delen one jump too many or too few and the deler itself written as the answer.
-    if (op === 'x') return [[x * (y + 1), x * (y - 1), (x + 1) * y, (x - 1) * y], [x + y], [a + 1, a - 1], [a + 10, a - 10]];
+    // 47 × 100: the neighbouring row is 46 or 48 hundreds (47 × 101 is no row a pupil reads).
+    const p = op === 'x' ? powerOfTen(facts) : null;
+    if (p !== null) { const b = p === y ? x : y; return [[(b + 1) * p, (b - 1) * p], [a + 10, a - 10]]; }
+    // The sum for the product is a tafel slip (7 + 8 for 7 × 8); next to 4 × 155 = 620 a 159 is no option.
+    if (op === 'x') return [[x * (y + 1), x * (y - 1), (x + 1) * y, (x - 1) * y], x <= 12 && y <= 12 ? [x + y] : [], [a + 1, a - 1], [a + 10, a - 10]];
     if (op === ':') return [[a + 1, a - 1], [y], [a + 2, a - 2], [a * 10]];
     // + read as − (and back): the pupil did the other operation.
     const other = op === '+' ? Math.abs(x - y) : x + y;
@@ -66,11 +79,16 @@ function families({ answer: a, operands, op }: SumFacts): number[][] {
     ];
 }
 
-/** Three wrong options from typical mistakes (±1, ±10, the other operation, a digit swap), unique, never the answer, never negative; near numbers fill in. */
+/** Three wrong options from typical mistakes (±1, ±10, the other operation, a digit swap, a zero too many or too few), unique, never the answer, never negative; near numbers fill in. */
 export function distractors(facts: SumFacts, rng: Rng, count = 3): number[] {
     const a = facts.answer;
     const ok = (v: number, taken: readonly number[]) => Number.isInteger(v) && v >= 0 && v !== a && !taken.includes(v);
     const out: number[] = [];
+    // × / : 10, 100, 1000: one zero too many or too few (470 for 47 or 4 700) always comes first.
+    if (count > 0 && powerOfTen(facts) !== null) {
+        const zeros = shuffle([a * 10, a / 10], rng).find(v => ok(v, out));
+        if (zeros !== undefined) out.push(zeros);
+    }
     // Round 1: one candidate from each family in a random family order; round 2: the families' leftovers.
     const fams = shuffle(families(facts), rng).map(f => shuffle(f, rng));
     for (const f of fams) {
