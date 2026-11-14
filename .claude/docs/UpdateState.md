@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Inspector design A (owner choice after three clickable mockups): scope switch Opdracht N | Heel het blad, pinned Aantal oefeningen + Genereer, summarised accordion sections; per-type panels split (SolutionConfig slot, layout rows out of Config, `summary(block)` lines); store `inspectorScope` / `inspectorSections` replace `inspectorTab` / `bladSection`.
+
 **2026-11-14** — Small batch (owner items 1–7, three agents, merged through the gate): Zelf oefenen "Terug naar begin", compact Zelf card with the QR in a dialog, breuk van een hoeveelheid key with groups + leerjaar defaults (gradeDefaults, tafel cap), no whole-valued breuken terms, sheet-wide `docSettings.solutionStepsAll`, toolbar (eye icon, Oefeningen toevoegen in the Menu, Whiteboard), MAB colours yellow/green/blue/red everywhere.
 
 **2026-11-13** — "Alle stappen" now shows the whole solution at once in Oefenmodus and the stappenhulp, and the steps MAB is gekleurd (yellow E, green T, blue H, red D via theme `--mab-*`, new pieces a heavy outline).

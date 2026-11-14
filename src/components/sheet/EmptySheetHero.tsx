@@ -43,7 +43,7 @@ export default function EmptySheetHero() {
           <span style={styles.heroStepIcon}><Lock size={20} weight="bold" /></span>
           <div>
             <p style={styles.heroStepTitle}>5. Werk af</p>
-            <p style={styles.heroStepBody}>Onder Blad regel je naam- en klasvelden, titel, voettekst, nummering en scores. Onder Opmaak de lettergrootte en de ruimte tussen de blokken.</p>
+            <p style={styles.heroStepBody}>Kies rechts bovenaan Heel het blad voor naam- en klasvelden, titel, voettekst, nummering en scores. Per opdracht vind je de lettergrootte en de ruimte onder Grootte en ruimte.</p>
           </div>
         </li>
         <li style={styles.heroStep}>

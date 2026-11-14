@@ -136,10 +136,7 @@ Prefer over a bare checkbox for document and section toggles.
 uppercase), `S.label`, `S.radioBtn(active)`, `S.input`, `S.select`, `S.checkbox`,
 `S.switchRow`/`S.switchText`.
 
-Panel structure follows rules 1 and 3. Tabs are named after the object being edited and
-ordered **content first**: `Oefeningen` · `Opmaak` · `Blad`. A chip above the tab strip
-always says *what* is selected — opdracht number, block label, domain dot **and domain
-name**. Inside `Blad`, sections run in page order: `Koptekst` → `Opdrachten` → `Voettekst`.
+Panel structure (design A, owner 2026-11-14): a segmented scope switch on top, `Opdracht N` | `Heel het blad` (no subject chip, no tabs, no search). Block scope: a pinned row with `Aantal oefeningen` (− n + stepper) and Genereer, then accordion sections, one open at a time per scope, each a title plus a one-line summary of its current values: (Eenvoudig only) `Snel aanpassen` · `Wat oefenen ze` · `Hoe staat het op het blad` · `Verbetersleutel` · `Differentiatie` · `Grootte en ruimte`. Sheet scope, in page order: `Koptekst` · `Opdrachten` · `Cijfers en tekst` · `Verbetersleutel en hulp` · `Voettekst`; styling ("Vormgeving …") sits in nested folds. Content first, styling last and folded.
 
 ### Hover / focus / motion
 - Hover for inline-styled clickables → `className="ui-hover"`.

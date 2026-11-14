@@ -129,7 +129,7 @@ structural source files changed without these docs.
 Types are declared in a **central registry** keyed by exact `typeId`:
 [exerciseRegistry.ts](src/config/exerciseRegistry.ts) (pure data — generator, exercise
 field, typed defaults) + [exerciseUI.tsx](src/config/exerciseUI.tsx) (Viewer, Config,
-optional StyleConfig / AppearanceConfig / AdvancedConfig). Dispatch / Inspector / App / `addBlockFromType` are
+optional StyleConfig / AppearanceConfig / AdvancedConfig / SolutionConfig, and a `summary(block)` line). Config holds what is practised, StyleConfig how it looks on the sheet, SolutionConfig what only the verbetersleutel shows. Dispatch / Inspector / App / `addBlockFromType` are
 **registry lookups, not if-else branches**. Full contract: [ARCHITECTURE §5](.claude/docs/ARCHITECTURE.md);
 the per-typeId table is §7.
 

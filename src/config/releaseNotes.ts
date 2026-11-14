@@ -63,7 +63,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
-                text: 'Verbetersleutel met tussenstappen bij optellen en aftrekken: kies Basis of Alle bij Opmaak.',
+                text: 'Verbetersleutel met tussenstappen bij optellen en aftrekken: kies Basis of Alle bij Verbetersleutel.',
                 example: { leafId: 'hr-std-optellen-nat', constraints: { solutionSteps: 'basis' }, grade: 3, height: 170, before: 'Eerst: alleen de uitkomst.', after: 'Nu: 475 + 368 = (475 + 300) + 60 + 8 = ... stap voor stap.' },
             },
             {
@@ -121,6 +121,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Breuk van een hoeveelheid: de oplossingen tonen de gelijke groepjes. Vanaf leerjaar 3 noemers tot 10; tot leerjaar 3 hoogstens 10 per groepje (de tafels).',
                 example: { leafId: 'breuken-hoeveelheid', grade: 3, count: 2, height: 200, before: 'Eerst: de juiste bolletjes gekleurd, zonder groepjes.', after: 'Nu: de groepjes omkaderd en de juiste groepjes gekleurd.' },
             },
+            { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
             { kind: 'nieuw', text: 'Zelf oefenen: leerlingen kunnen tijdens het oefenen terug naar het begin (twee keer tikken). Wat ze al maakten blijft bewaard.' },
             { kind: 'gewijzigd', text: 'De kaart Zelf oefenen in Oefenmodus is compacter; de QR-code opent in een apart venster.' },

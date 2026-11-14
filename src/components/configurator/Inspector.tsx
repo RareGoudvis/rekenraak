@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { blockHasTutorSteps } from '../../services/stepsAvailability';
+import { blockHasSteps, blockHasTutorSteps, effectiveSolutionSteps } from '../../services/stepsAvailability';
 import { minWidthUnits, pickerMinWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
 import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth, useIntrinsicEntries } from '../../hooks/useMeasuredHeights';
@@ -701,7 +701,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
         });
 
         if (!locked && SolutionConfig) blockSections.push({
-            id: 'sleutel', title: 'Verbetersleutel', summary: 'Wat de verbetersleutel toont',
+            id: 'sleutel', title: 'Verbetersleutel',
+            // The level the key prints: the block's own choice, else the sheet-wide one.
+            summary: blockHasSteps(b)
+                ? `Tussenstappen ${effectiveSolutionSteps(b, docSettings)}${b.constraints?.solutionSteps ? '' : ' (heel het blad)'}`
+                : 'Wat de verbetersleutel toont',
             body: <SolutionConfig block={b} />,
         });
 
