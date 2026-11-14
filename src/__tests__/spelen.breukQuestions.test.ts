@@ -50,25 +50,24 @@ describe('distractors', () => {
         }
     });
 
-    it('picture options are always drawable proper breuken; only the swap may be improper text', () => {
+    it('every option is a drawable proper breuk, as picture and as text (no swapped 8/3)', () => {
         for (const lj of LEERJAREN) for (const answer of breukPool(lj)) {
             for (const b of breukDistractors(answer, lj, mulberry32(7), 3, 'text-to-picture')) {
                 expect(b.n >= 1 && b.n < b.d && b.d >= 2 && b.d <= 12).toBe(true);
             }
             for (const b of breukDistractors(answer, lj, mulberry32(7), 3, 'picture-to-text')) {
-                const swapped = b.n === answer.d && b.d === answer.n;
-                expect(swapped || (b.n >= 1 && b.n < b.d)).toBe(true);
+                expect(b.n >= 1 && b.n < b.d).toBe(true);
             }
         }
     });
 
     it('uses the typical slips first', () => {
         const ids = (bs: Breuk[]) => bs.map(b => `${b.n}/${b.d}`).sort();
-        // 3/8 as text: swapped 8/3, the white parts 5/8, another noemer 3/x, one off 2/8 or 4/8.
+        // 3/8 as text: the white parts 5/8, another noemer 3/x, one off 2/8 or 4/8; never the swap 8/3.
         const t = ids(breukDistractors({ n: 3, d: 8 }, 4, mulberry32(1), 3, 'picture-to-text'));
-        expect(t).toContain('8/3');
+        expect(t).not.toContain('8/3');
         expect(t).toContain('5/8');
-        // As pictures the swap is skipped (8 of 3 parts cannot be drawn).
+        // The same as pictures.
         const p = ids(breukDistractors({ n: 3, d: 8 }, 4, mulberry32(1), 3, 'text-to-picture'));
         expect(p).not.toContain('8/3');
         expect(p).toContain('5/8');

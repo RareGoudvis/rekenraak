@@ -63,13 +63,13 @@ const drawable = (b: Breuk) => b.d >= BREUK_MIN_D && b.d <= BREUK_MAX_D && b.n >
 
 /*
  * The typical slips, one family per option first so three options show three kinds of mistake:
- * teller and noemer swapped (text options only: 8 of 3 parts cannot be drawn), the white parts
- * counted instead of the coloured ones, the right teller under another noemer, one part too many or few.
+ * the white parts counted instead of the coloured ones, the right teller under another noemer, one part
+ * too many or few. Not teller and noemer swapped (8/3): an onechte breuk a leerjaar 2 pupil has not met, and
+ * too plainly wrong to be a real trap (supervisor review 2026-11-14).
  */
-function families({ n, d }: Breuk, denoms: readonly number[], textOptions: boolean): Breuk[][] {
+function families({ n, d }: Breuk, denoms: readonly number[]): Breuk[][] {
     const near = [d - 1, d + 1, d - 2, d + 2].filter(x => denoms.includes(x));
     return [
-        textOptions ? [{ n: d, d: n }] : [],
         [{ n: d - n, d }],
         near.map(x => ({ n, d: x })),
         [{ n: n + 1, d }, { n: n - 1, d }],
@@ -81,17 +81,15 @@ function families({ n, d }: Breuk, denoms: readonly number[], textOptions: boole
  * another option (2/4 next to 1/2 would be two right answers), no duplicates. Families first, then
  * the leerjaar's other breuken (same noemer first, then close in value), then any drawable breuk.
  */
-export function breukDistractors(answer: Breuk, leerjaar: number, rng: Rng, count = 3, direction: BreukDirection = 'picture-to-text'): Breuk[] {
+export function breukDistractors(answer: Breuk, leerjaar: number, rng: Rng, count = 3, _direction: BreukDirection = 'picture-to-text'): Breuk[] {
     const denoms = breukDenominators(leerjaar);
-    const textOptions = direction === 'picture-to-text';
     const picked: Breuk[] = [];
-    // Only the swapped text may be a breuk no picture can show (8/3).
-    const swapped = (b: Breuk) => textOptions && b.n === answer.d && b.d === answer.n;
-    const fits = (b: Breuk) => (drawable(b) || swapped(b))
+    // Every option is a proper breuk a picture could show, also as text.
+    const fits = (b: Breuk) => drawable(b)
         && !sameValue(b, answer) && !picked.some(p => sameValue(p, b));
     const take = (b: Breuk) => { if (picked.length < count && fits(b)) picked.push(b); };
 
-    const fams = families(answer, denoms, textOptions).map(fam => shuffle(fam, rng));
+    const fams = families(answer, denoms).map(fam => shuffle(fam, rng));
     // Round-robin: the first fitting candidate of each family, then the next ones.
     for (let round = 0; picked.length < count && fams.some(fam => fam.length > round); round++) {
         for (const fam of fams) {
