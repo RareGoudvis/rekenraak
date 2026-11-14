@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Quick pills offer only values the card can make (quickOptions.ts: no empty blocks such as HTE − TE "tot 100", triangle / L-figuur by rooster vs berekenen, rounding pills per number type with a new Tienden pill); the Romeinse "tot 2 500" card stays under 2500 (optional `maxGetal` cap).
+
 **2026-11-14** — Answer key with tussenstappen: a block only goes two columns when its widest step line fits the column (`stepChars` into hrRowLayout); a line too wide for even one column wraps instead of running past the block edge.
 
 **2026-11-14** — Three follow-ups to the Oefenmodus workspace: a "sessie is vol" note above the catalogue at 20 rows (a click no longer adds nothing silently), Eenvoudig card badges count the card's own rows (`cardVar` on the row, never in the link), and the editor is `inert` under every full-screen view (Oefenmodus, Mijn bladen, Bibliotheek, Whiteboard).

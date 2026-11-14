@@ -300,7 +300,7 @@ browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review check
 
 ## Eenvoudig mode suites
 
-`eenvoudig.cards.test.tsx` walks every card variant (resolveCard unchanged under every base and grade, exactly one exercise, no failure note, viewer renders, every card reachable). `eenvoudig.pane.test.tsx` covers listing, picks equal to `resolveCard`, tabs, locked files and combo add/edit. `quickSettings.test.tsx` fails on a generating typeId without a row. `getallenJumps.legacy.test.ts` pins single-jump output to a golden recorded from the old code; `getallenJumps.test.ts` covers the mixed jumps.
+`eenvoudig.cards.test.tsx` walks every card variant (resolveCard unchanged under every base and grade, exactly one exercise, no failure note, viewer renders, every card reachable). `eenvoudig.pane.test.tsx` covers listing, picks equal to `resolveCard`, tabs, locked files and combo add/edit. `quickSettings.test.tsx` fails on a generating typeId without a row. `quickOptions.test.ts` sweeps every card × offered pill (two seeds) for empty blocks and pins the rooster/berekenen and rounding pills; `romeinseMax.test.ts` keeps a card's `maxGetal` under its niveau. `getallenJumps.legacy.test.ts` pins single-jump output to a golden recorded from the old code; `getallenJumps.test.ts` covers the mixed jumps.
 
 ## The commit gate (`.githooks/pre-commit`, `scripts/visual-gate.mjs`)
 

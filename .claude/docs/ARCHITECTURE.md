@@ -1413,7 +1413,8 @@ src/
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
 │   ├── releaseNotes.ts          # per-version "Wat is er nieuw" list (newest first) behind the banner (§10)
 │   ├── beta.ts                  # BETA_MODULES { oefenmodus, bordmodus } one-boolean beta flags, BETA_TEXT, FEEDBACK_URL (the contact form)
-│   ├── quickSettings.ts         # QUICK_SETTINGS: per generating typeId the layout / pills rows of the Eenvoudig quick block (§13; a test fails on a missing row)
+│   ├── quickSettings.ts         # QUICK_SETTINGS: per generating typeId the layout / pills rows of the Eenvoudig quick block (§13; a test fails on a missing row); a pill may carry its own `when` rule
+│   ├── quickOptions.ts          # offeredOptions: the pills a row really offers for one block (own `when` + one seeded 1-exercise probe; the current value stays, a row with < 2 pills hides)
 │   ├── upgradeNotes.ts          # copy of the UpgradeModal (title, intro, two mode cards, ≤ 160-char highlights)
 │   ├── firstRun.ts              # first-run card copy per module (oefenmodus / bordmodus)
 │   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner, derived from releaseNotes[0]

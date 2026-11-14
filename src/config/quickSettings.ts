@@ -2,11 +2,15 @@
 // Inspector shows them in a highlighted block and tucks everything else under "Alle instellingen".
 // Pure data: QuickBlock renders any row, so a new type needs a row here and no component.
 
+import { usableTargets } from '../services/afronden/afrondenGenerator';
+
 export type QuickConstraints = Record<string, unknown>;
 
 export interface QuickOption {
     label: string;
     value: unknown;
+    // Hide this one value when the block's other settings would turn it into something else.
+    when?: (c: QuickConstraints) => boolean;
 }
 
 export interface QuickPills {
@@ -38,8 +42,9 @@ export type QuickSpec = QuickPills | QuickLayout | QuickFull;
 
 const layout: QuickLayout = { kind: 'layout' };
 const full: QuickFull = { kind: 'full' };
-const pills = (key: string, label: string, options: Array<[string, unknown]>, extra: Partial<QuickPills> = {}): QuickPills =>
-    ({ kind: 'pills', key, label, options: options.map(([l, value]) => ({ label: l, value })), ...extra });
+type OptionRow = [string, unknown] | [string, unknown, (c: QuickConstraints) => boolean];
+const pills = (key: string, label: string, options: OptionRow[], extra: Partial<QuickPills> = {}): QuickPills =>
+    ({ kind: 'pills', key, label, options: options.map(([l, value, when]) => (when ? { label: l, value, when } : { label: l, value })), ...extra });
 
 const upTo = (key: string, label: string, values: number[], extra: Partial<QuickPills> = {}) =>
     pills(key, label, values.map((v): [string, unknown] => [v.toLocaleString('nl-BE'), v]), extra);
@@ -49,6 +54,15 @@ const onOff = (key: string, label: string, on: string, off: string, fallback: bo
 
 const tablesMode = (c: QuickConstraints) => (c.multiplicationMode ?? 'tafels') === 'tafels';
 const shapeSubType = (c: QuickConstraints) => c.subType === undefined || c.subType === 'kleuren' || c.subType === 'herkennen';
+// SYNC: OppervlakteConfig ROOSTER_SHAPES / BEREKEN_SHAPES (the rooster draws no triangle, berekenen no L-figuur).
+const rooster = (c: QuickConstraints) => c.subType === 'rooster';
+const notRooster = (c: QuickConstraints) => !rooster(c);
+// Same test as SchattendConfig's pills: naturals round to tientallen and up, kommagetallen to eenheden and below.
+const roundable = (key: string) => (c: QuickConstraints) => {
+    const numberType = c.numberType === 'decimal' ? 'decimal' : 'natural';
+    const max = typeof c.maxGetal === 'number' ? c.maxGetal : numberType === 'decimal' ? 100 : 1000;
+    return usableTargets(numberType, max, typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 2, [key]).length > 0;
+};
 
 const cijfer: QuickSpec[] = [upTo('maxRange', 'Tot welk getal?', [100, 1000, 10000, 100000])];
 const tafels: QuickSpec[] = [
@@ -142,7 +156,7 @@ export const QUICK_SETTINGS: Record<string, QuickSpec[]> = {
     ],
     'vergelijken': [upTo('maxGetal', 'Tot welk getal?', [20, 100, 1000, 10000, 100000])],
     'afronden': [
-        pills('roundTargets', 'Afronden op', [['Tientallen', ['T']], ['Honderdtallen', ['H']], ['Eenheden', ['E']], ['Tientallen en honderdtallen', ['T', 'H']]]),
+        pills('roundTargets', 'Afronden op', [['Tientallen', ['T'], roundable('T')], ['Honderdtallen', ['H'], roundable('H')], ['Eenheden', ['E'], roundable('E')], ['Tientallen en honderdtallen', ['T', 'H'], c => roundable('T')(c) && roundable('H')(c)]]),
         upTo('maxGetal', 'Tot welk getal?', [100, 1000, 10000, 100000]),
     ],
     'romeinse-cijfers': [pills('niveau', 'Tot welk niveau?', [['1', 1], ['2', 2], ['3', 3], ['4', 4]])],
@@ -152,7 +166,7 @@ export const QUICK_SETTINGS: Record<string, QuickSpec[]> = {
     ],
     'schattend': [
         pills('operators', 'Bewerking', [['Optellen', ['+']], ['Aftrekken', ['-']], ['Maal', ['x']], ['Delen', [':']], ['Alle vier', ['+', '-', 'x', ':']]]),
-        pills('roundTargets', 'Afronden op', [['Tientallen', ['T']], ['Honderdtallen', ['H']], ['Eenheden', ['E']]]),
+        pills('roundTargets', 'Afronden op', [['Tientallen', ['T'], roundable('T')], ['Honderdtallen', ['H'], roundable('H')], ['Eenheden', ['E'], roundable('E')], ['Tienden', ['t'], roundable('t')]]),
     ],
     'verbanden': [
         pills('reps', 'Welke schrijfwijzen?', [['Breuk en kommagetal', ['breuk', 'decimaal']], ['Breuk en procent', ['breuk', 'procent']], ['Alle drie', ['breuk', 'decimaal', 'procent']]]),
@@ -182,7 +196,7 @@ export const QUICK_SETTINGS: Record<string, QuickSpec[]> = {
     ],
     'kalender': [pills('questionCount', 'Aantal vragen', [['3', 3], ['5', 5], ['8', 8]], { when: c => (c.subType ?? 'maandrooster') !== 'maandrooster' })],
     'controleren': [pills('operators', 'Bewerking', [['Optellen', ['+']], ['Aftrekken', ['-']], ['Optellen en aftrekken', ['+', '-']]])],
-    'oppervlakte': [pills('shapes', 'Welke figuren?', [['Rechthoek', ['rechthoek']], ['Rechthoek en vierkant', ['rechthoek', 'vierkant']], ['L-figuur', ['l-figuur']], ['Rechthoekige driehoek', ['rechthoekige-driehoek']]])],
+    'oppervlakte': [pills('shapes', 'Welke figuren?', [['Rechthoek', ['rechthoek']], ['Rechthoek en vierkant', ['rechthoek', 'vierkant']], ['L-figuur', ['l-figuur'], rooster], ['Rechthoekige driehoek', ['rechthoekige-driehoek'], notRooster]])],
     'weegschaal': [
         pills('stepGram', 'Streepjes per', [['20 g', 20], ['50 g', 50], ['100 g', 100], ['250 g', 250]]),
         pills('notatie', 'Antwoord in', [['Gram', 'g'], ['Kilo met komma', 'kg-komma'], ['Kilo en gram', 'kg-g']]),

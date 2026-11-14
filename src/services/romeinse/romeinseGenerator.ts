@@ -22,14 +22,19 @@ function toRoman(n: number, subtractive = true): string {
     return res;
 }
 
+// The niveau's range, capped by a card's own max ("tot 2 500" is niveau 4 with maxGetal 2500).
+export function romeinseMax(c: Partial<RomeinseConstraints>): number {
+    const top = NIVEAU_MAX[c.niveau ?? 2] ?? 39;
+    return typeof c.maxGetal === 'number' && c.maxGetal >= 1 ? Math.min(top, c.maxGetal) : top;
+}
+
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 export function generateRomeinseExercises(block: MathBlock): RomeinseExercise[] {
     const c = block.constraints as RomeinseConstraints;
-    const niveau: number = c.niveau ?? 2;
-    const maxGetal = NIVEAU_MAX[niveau] ?? 39;
+    const maxGetal = romeinseMax(c);
     const count = block.numberOfExercises || 8;
 
     const out: RomeinseExercise[] = [];

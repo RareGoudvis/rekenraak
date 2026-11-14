@@ -1,6 +1,6 @@
 import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
-import { NIVEAU_MAX, NIVEAU_HINT } from '../../../services/romeinse/romeinseGenerator';
+import { NIVEAU_MAX, NIVEAU_HINT, romeinseMax } from '../../../services/romeinse/romeinseGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import type { RomeinseConstraints } from '../../../services/math/constraintTypes';
@@ -22,11 +22,14 @@ export default function RomeinseConfig({ block }: Props) {
                     {Object.keys(NIVEAU_MAX).map(k => {
                         const n = Number(k);
                         const isActive = niveau === n;
+                        // A card's own cap ("tot 2 500") reads in the hint instead of the niveau's top.
+                        const cap = romeinseMax({ ...c, niveau: n });
+                        const hint = cap < NIVEAU_MAX[n] ? NIVEAU_HINT[n].replace(/^tot \d+/, `tot ${cap}`) : NIVEAU_HINT[n];
                         return (
                             <button key={n} onClick={() => set('niveau', n)}
                                 aria-pressed={isActive} style={{ ...styles.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                 <span style={{ fontWeight: 'bold' }}>N{n}</span>
-                                <span style={{ fontSize: '10px', opacity: 0.8 }}>{NIVEAU_HINT[n]}</span>
+                                <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
                             </button>
                         );
                     })}

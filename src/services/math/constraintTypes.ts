@@ -434,6 +434,8 @@ export type AfrondenConstraints = {
 export type RomeinseConstraints = {
     subType: 'herkennen' | 'schrijven';
     niveau: number;
+    // Optional cap under the niveau's range (a card "tot 2 500"); no Config writes it.
+    maxGetal?: number;
 };
 
 export type GetalFunctieConstraints = {
