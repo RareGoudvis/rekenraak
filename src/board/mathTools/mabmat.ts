@@ -24,7 +24,8 @@ export interface MabMatProps {
     size: number;                    // glyph scale (1 = today)
 }
 // Same hues as MabBlocksSVG's mab-color fills, so 'eigen' starts from what the teacher saw.
-export const MAB_DEFAULT_COLORS: Record<MabKey, string> = { d: '#3b82f6', h: '#ef4444', t: '#22c55e', e: '#fbbf24' };
+// Owner (2026-11-14): yellow E, green T, blue H, red D everywhere. SYNC: MabBlocksSVG COLOR_FILL, theme.css --mab-*.
+export const MAB_DEFAULT_COLORS: Record<MabKey, string> = { d: '#ef4444', h: '#3b82f6', t: '#22c55e', e: '#fbbf24' };
 
 export function mabmatProps(widget: BoardWidget): MabMatProps {
     const p = widget.props ?? {};

@@ -40,12 +40,13 @@ interface ColumnProps {
     squarePattern?: boolean;
 }
 
-// 'mab-color' palette per place (fill). Strokes stay black for readability.
+// 'mab-color' palette per place (fill). Strokes stay black for readability. Owner (2026-11-14): the class set's
+// colours, yellow E, green T, blue H, red D. SYNC: theme.css --mab-e/t/h/d (steps MAB) and board mabmat.ts.
 const COLOR_FILL: Record<MabPlace, string> = {
     units:     '#fbbf24',  // amber/yellow
     tens:      '#22c55e',  // green
-    hundreds:  '#ef4444',  // red
-    thousands: '#3b82f6',  // blue
+    hundreds:  '#3b82f6',  // blue
+    thousands: '#ef4444',  // red
 };
 
 // Resolves the fill color for a Dienes glyph. Solution-tint (non-default color)
