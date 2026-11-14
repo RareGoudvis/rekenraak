@@ -44,8 +44,9 @@ describe('Spelen skins', () => {
                 progress: progressWith({ goal: meta.round.goal ? { count: 0, target: meta.round.goal } : null, msLeft: meta.timed ? 60_000 : null }),
             });
             const { unmount } = render(<Suspense fallback={null}><Skin {...p} /></Suspense>);
-            if (meta.input === 'keypad') expect(await screen.findByRole('group', { name: 'Cijfers' })).toBeTruthy();
-            else expect(await screen.findByRole('group', { name: 'Kies het antwoord' })).toBeTruthy();
+            // 5 s: a cold lazy load of a big skin (Voetbal, Kasteel) can pass the 1 s default under a busy gate.
+            if (meta.input === 'keypad') expect(await screen.findByRole('group', { name: 'Cijfers' }, { timeout: 5000 })).toBeTruthy();
+            else expect(await screen.findByRole('group', { name: 'Kies het antwoord' }, { timeout: 5000 })).toBeTruthy();
             expect(screen.getAllByText('7 + 5 = ?').length).toBeGreaterThan(0);
             unmount();
         }

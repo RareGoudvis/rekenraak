@@ -176,6 +176,8 @@ export default function SpelScreen() {
                         reducedMotion={reducedMotion}
                         runKey={st.from ? `${st.meta.id}:${st.from.choice.key}` : undefined}
                         onFinish={st.finish}
+                        onReport={st.report}
+                        onHold={on => st.hold(on)}
                     />
                 </Suspense>
                 {phase === 'help' && <HelpPanel />}

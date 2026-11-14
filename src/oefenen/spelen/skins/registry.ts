@@ -3,6 +3,7 @@ import { Balloon, Bird, Bomb, CarProfile, Egg, FlagPennant, Ghost, Gift, Hammer,
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 import { ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 import { Fish } from '@phosphor-icons/react';
+import { SoccerBall } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -80,6 +81,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'race', label: 'Race', input: 'keypad', timed: false, round: { cap: 60 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: KEYPAD_NUMBER },
         icon: CarProfile,
         Component: lazy(() => import('./race/Race')),
+    },
+    {
+        // A match of 3 or 5 minutes in two halves (a short "Rust!" holds the clock). Four right answers are four passes,
+        // a wrong one a friendly tap-away; the fifth sum is the shot on its own 10 s ring (onMiss = the keeper's catch).
+        meta: {
+            id: 'voetbal', label: 'Voetbal', input: 'keypad', timed: true, round: { seconds: 180, cap: 200 }, accepts: KEYPAD_NUMBER,
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
+            sounds: { correct: 'tok', wrong: 'plop', miss: null, win: 'cheer', caught: 'plof', whistle: 'fluit' },
+        },
+        icon: SoccerBall,
+        Component: lazy(() => import('./voetbal/Voetbal')),
+        Ending: lazy(() => import('./voetbal/Voetbal').then(m => ({ default: m.VoetbalEnding }))),
     },
     {
         // Two pupils on one screen: its own session and screen (two question streams, no Nakijken).
