@@ -10,6 +10,8 @@ export interface SpelContent {
     answerChars?: number;
     // Every answer is plain digits (no comma, fraction or sign): a digit-by-digit skin can play it.
     digitsOnly?: boolean;
+    // The operations its sums use; absent = unknown, taken as fitting.
+    ops?: readonly ('+' | '-' | 'x' | ':')[];
 }
 
 // Whole-number + and − (SPEL_LEAVES): the only content games have today.
@@ -20,6 +22,7 @@ export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean
     if (!accepts.kinds.includes(content.kind)) return false;
     if (accepts.maxAnswerChars !== undefined && content.answerChars !== undefined && content.answerChars > accepts.maxAnswerChars) return false;
     if (accepts.digits && !content.digitsOnly) return false;
+    if (accepts.ops && content.ops && !content.ops.every(op => accepts.ops!.includes(op))) return false;
     return true;
 }
 

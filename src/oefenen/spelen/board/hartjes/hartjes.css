@@ -1,0 +1,135 @@
+/* Hartjes koppelen skin (Valentijn). Sticker look: flat fills under a thick dark outline (spelen.css tokens),
+   CSS-only flips, nothing moves under prefers-reduced-motion. */
+.hj-root {
+  /* One heart's width; its height is .94 ×. Four across, three down at 1024 × 768. */
+  --hj-w: clamp(72px, min(18.5vw, 23vh), 210px);
+  --hj-pink: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper));
+  --hj-pink-soft: color-mix(in srgb, var(--accent-getallenkennis) 14%, var(--kiosk-paper));
+  --hj-pink-mid: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--kiosk-paper));
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  overflow: hidden;
+  overflow: clip;
+  background: color-mix(in srgb, var(--accent-getallenkennis) 8%, var(--kiosk-paper));
+}
+.hj-deco {
+  position: absolute;
+  right: -40px;
+  bottom: -50px;
+  width: 260px;
+  fill: var(--hj-pink-soft);
+  transform: rotate(-14deg);
+  pointer-events: none;
+}
+
+/* ── The sign and the pairs found ─────────────────────────────────────────── */
+.hj-top { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2) var(--sp-4); }
+.hj-sign {
+  margin: 0;
+  padding: var(--sp-1) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  box-shadow: 0 4px 0 var(--spel-ink);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 800;
+}
+.hj-count { display: inline-flex; gap: 4px; }
+.hj-dot { width: 26px; height: 24px; fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 7; }
+.hj-dot.is-on { fill: var(--hj-pink); animation: hj-pop 360ms var(--ease-spring) both; }
+@keyframes hj-pop { from { transform: scale(.4); } }
+
+/* ── The hearts ───────────────────────────────────────────────────────────── */
+.hj-grid {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, calc(var(--hj-w) * 1.08));
+  grid-auto-rows: calc(var(--hj-w) * 1.02);
+  align-content: center;
+  justify-content: center;
+  justify-items: center;
+  align-items: center;
+}
+.hj-slot { width: var(--hj-w); height: calc(var(--hj-w) * .94); perspective: 900px; animation: hj-in 320ms var(--ease-spring) both; animation-delay: calc(var(--k) * 22ms); }
+@keyframes hj-in { from { opacity: 0; transform: scale(.6); } }
+.hj-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hj-card:disabled { cursor: default; }
+.hj-card:focus-visible { outline: none; }
+.hj-card:focus-visible .hj-heart path:first-child { stroke-width: 9; }
+.hj-card:not(:disabled):active .hj-flip { transform: scale(.96); }
+.hj-flip {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 380ms var(--ease-out);
+}
+.hj-card.is-open .hj-flip { transform: rotateY(180deg); }
+.hj-side { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.hj-front { transform: rotateY(180deg); }
+.hj-heart { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hj-heart-back { fill: var(--hj-pink); stroke: var(--spel-ink); stroke-width: 5; stroke-linejoin: round; }
+.hj-heart-mini { fill: var(--kiosk-paper); opacity: .85; }
+.hj-heart-front { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 5; stroke-linejoin: round; }
+/* A pair found: both hearts go pink and stay open. */
+.hj-card.is-solved .hj-heart-front { fill: var(--hj-pink-mid); }
+.hj-text {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--hj-w) * .15);
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.hj-card.is-answer .hj-text { font-size: calc(var(--hj-w) * .22); }
+.hj-grid.is-long .hj-card.is-sum .hj-text { font-size: calc(var(--hj-w) * .125); }
+
+/* A pair found: a few small stars twinkle around both hearts. */
+.hj-sparkle { position: absolute; inset: -14%; width: 128%; height: 128%; overflow: visible; pointer-events: none; }
+.hj-sparkle path { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: hj-twinkle 800ms var(--ease-out) both; animation-delay: calc(var(--i) * 60ms); }
+@keyframes hj-twinkle { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: scale(.8); } }
+
+/* "Hoe los ik dit op?": everything waits. */
+.hj-root.is-paused *,
+.hj-root.is-paused *::after { animation-play-state: paused; }
+
+@media (orientation: portrait) {
+  .hj-root { --hj-w: clamp(64px, min(28vw, 14vh), 180px); }
+  .hj-grid { grid-template-columns: repeat(3, calc(var(--hj-w) * 1.08)); }
+}
+@media (max-height: 460px) {
+  .hj-root { --hj-w: clamp(56px, 22vh, 110px); padding-top: var(--sp-2); }
+  .hj-grid { grid-template-columns: repeat(6, calc(var(--hj-w) * 1.08)); }
+  .hj-deco { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hj-slot, .hj-dot.is-on, .hj-sparkle path { animation: none; }
+  .hj-flip { transition: none; }
+}
+.hj-root.is-still .hj-slot,
+.hj-root.is-still .hj-dot.is-on { animation: none; }
+.hj-root.is-still .hj-flip { transition: none; }

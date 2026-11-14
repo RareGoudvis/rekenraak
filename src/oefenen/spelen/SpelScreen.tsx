@@ -115,7 +115,12 @@ export default function SpelScreen() {
                     confirm="Ja, stoppen"
                     onConfirm={st.otherGame}
                 />
-                {progress.goal ? (
+                {progress.board ? (
+                    // A board round counts boards (Hartjes: 2, Honingraat: 3).
+                    <span className="kiosk-progress spel-progress" aria-label={`${progress.board.index + 1} van ${progress.board.total}`}>
+                        {`${progress.board.index + 1} / ${progress.board.total}`}
+                    </span>
+                ) : progress.goal ? (
                     // A goal round counts toward the goal, not the question cap.
                     <span className="kiosk-progress spel-progress" aria-label={`${progress.goal.count} van ${progress.goal.target}`}>
                         {`${progress.goal.count} / ${progress.goal.target}`}
@@ -133,9 +138,12 @@ export default function SpelScreen() {
                     )}
                     <SoundToggle />
                     <span className="spel-score" aria-label={`${progress.score} punten`}><Star weight="fill" aria-hidden /> {progress.score}</span>
-                    <button type="button" className="kiosk-btn spel-help-btn" onClick={() => st.openHelp()} disabled={phase !== 'play'}>
-                        <Lifebuoy aria-hidden /> <span>Hoe los ik dit op?</span>
-                    </button>
+                    {/* A board round has no sum to explain until the pupil picks one. */}
+                    {st.question && (
+                        <button type="button" className="kiosk-btn spel-help-btn" onClick={() => st.openHelp()} disabled={phase !== 'play'}>
+                            <Lifebuoy aria-hidden /> <span>Hoe los ik dit op?</span>
+                        </button>
+                    )}
                 </span>
             </header>
             <main className="spel-stage">
@@ -143,6 +151,9 @@ export default function SpelScreen() {
                     <Skin
                         question={st.question ? { key: st.question.key, text: st.question.text, index: progress.answered - (phase === 'right' || phase === 'wrong' ? 1 : 0) } : null}
                         choices={st.meta.input === 'choice' ? st.question?.choices ?? null : null}
+                        board={st.board}
+                        onBoardPick={(cell, given, strike) => st.boardPick(cell, given, strike)}
+                        onBoardFocus={st.boardFocus}
                         phase={phase}
                         feedback={st.feedback}
                         onAnswer={st.answer}

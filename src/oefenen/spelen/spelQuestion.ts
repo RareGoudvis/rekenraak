@@ -27,7 +27,8 @@ export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
 }
 
 /** What a playable choice asks of a game (the picker filters on it): today always a whole number. */
-export const spelContentOf = (choice: ZelfChoice, grade: number): SpelContent | null => (choiceCanPlay(choice, grade) ? NUMBER_CONTENT : null);
+export const spelContentOf = (choice: ZelfChoice, grade: number): SpelContent | null =>
+    (choiceCanPlay(choice, grade) ? { ...NUMBER_CONTENT, ops: [...new Set(choice.vars.map(v => SPEL_LEAVES[v.leafId]))] } : null);
 
 // One question of a game: the exercise exactly as the kiosk made it, plus what the skins show.
 export interface SpelQuestion {

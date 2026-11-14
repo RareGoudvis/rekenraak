@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Spelen round 3C: board rounds (several sums at once, checked per sum in the session, Nakijken intact: `round.board`, `boardPick`, `boardFocus`), Hartjes koppelen (Valentijn memory, a sum's second wrong pairing logs it) and Honingraat (Lente, find every sum that makes N, a wrong cell is a mistake). Plus the breuken content pieces, not yet in a game: BreukPicture (pizza / taart / reep / strook / cirkel, noemer 2–12) and seeded breuk questions (L2 noemer 2–4, L3 to 10, L4 to 12; options never equal in value, no onechte breuken).
+
 **2026-11-14** — Editor (owner): the beta chip left the top bar; the sidebar foot is Oefenmodus | Zelf oefenen (kind.html in a new tab) as one split control above a text-only Whiteboard (icons drop in a narrow sidebar via a container query, which fixes the 1024 px squeeze); the stappenhulp QR is 23 mm (was 26) and its caption is editable (`docSettings.tutorQrCaptionText`, 70 chars, empty = the default line).
 
 **2026-11-14** — The maal- en deeltafels join Spelen (leerjaar 1–3; deling met rest stays out): tafel distractors (a neighbouring row, the sum, ±1; for delen one jump off or the deler) and a help tip with the jumps ("Tel in sprongen van 7: 7, 14, 21, …").

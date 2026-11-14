@@ -5,16 +5,18 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
 // how the round ended (win / lost / fail), and the skin's own moments (props.sound: barricade, caught).
-export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught';
+// Board games: flip = a card turns, nomatch = two cards that are no pair turn back (never a mistake sound).
+export type SoundCue = 'correct' | 'wrong' | 'miss' | 'win' | 'lost' | 'fail' | 'barricade' | 'caught' | 'flip' | 'nomatch';
 // null = that cue stays silent (the skin voices the moment itself).
 export type SkinSounds = Partial<Record<SoundCue, SpelSound | null>>;
 const DEFAULT_CUES: Record<SoundCue, SpelSound> = {
     correct: 'pop', wrong: 'plop', miss: 'plop', win: 'jingle', lost: 'boing', fail: 'boing', barricade: 'krak', caught: 'boing',
+    flip: 'flip', nomatch: 'plop',
 };
 // A small sparkle every this many in a row.
 export const SPARKLE_EVERY = 5;
@@ -153,6 +155,14 @@ const RECIPES: Record<SpelSound, Recipe> = {
         [523, 659, 784].forEach((f, i) => tone(ac, d, t, { type: 'triangle', f0: f, at: i * 0.11, dur: 0.16, vol: 0.25 }));
         tone(ac, d, t, { type: 'triangle', f0: 1047, at: 0.33, dur: 0.45, vol: 0.25 });
     },
+    // Hartjes: a card turns over (a soft paper flick).
+    flip: (ac, d, t) => { noise(ac, d, t, { dur: 0.06, vol: 0.16, filter: 'bandpass', f0: 2400, f1: 1200, q: 0.9 }); tone(ac, d, t, { f0: 520, f1: 760, dur: 0.06, vol: 0.06 }); },
+    // Hartjes pair found: two bright bell notes.
+    ting: (ac, d, t) => { tone(ac, d, t, { f0: 1175, dur: 0.22, vol: 0.16 }); tone(ac, d, t, { f0: 1568, at: 0.09, dur: 0.32, vol: 0.14 }); },
+    // Honingraat wrong cell: a short soft bee hum, low and wobbly, never a buzzer.
+    bzz: (ac, d, t) => tone(ac, d, t, { type: 'triangle', f0: 210, f1: 190, dur: 0.34, vol: 0.14, wobble: [38, 16] }),
+    // Honingraat right cell: honey drips in (a warm blop going up).
+    drup: (ac, d, t) => { tone(ac, d, t, { f0: 330, f1: 620, dur: 0.12, vol: 0.26 }); tone(ac, d, t, { f0: 660, f1: 880, at: 0.1, dur: 0.1, vol: 0.1 }); },
     // Every few in a row: two small high notes, after the right-answer sound.
     sparkle: (ac, d, t) => { tone(ac, d, t, { f0: 1319, at: 0.12, dur: 0.12, vol: 0.1 }); tone(ac, d, t, { f0: 1760, at: 0.2, dur: 0.18, vol: 0.1 }); },
     // Bom right: a wire is snipped (two small clicks and a ping).

@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'vitest';
 import { distractors, mulberry32, type SumFacts } from '../oefenen/spelen/distractors';
-import { choiceCanPlay, SPEL_LEAVES } from '../oefenen/spelen/spelQuestion';
+import { choiceCanPlay, spelContentOf, SPEL_LEAVES } from '../oefenen/spelen/spelQuestion';
+import { skinsFor } from '../oefenen/spelen/accepts';
+import { SKINS } from '../oefenen/spelen/skins/registry';
 import type { ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import type { CardVariant } from '../config/eenvoudig/cards';
 
@@ -44,5 +46,11 @@ describe('tafels in Spelen', () => {
             expect(d).not.toContain(q);
             expect(d.every(v => v >= 0)).toBe(true);
         }
+    });
+
+    test('tafel content hides Honingraat (+ / − only), + content keeps it', () => {
+        const ids = (c: ZelfChoice, g: number) => skinsFor(SKINS, spelContentOf(c, g)!).map(s => s.meta.id);
+        expect(ids(choice(variant('hr-std-vermenigvuldigen-nat')), 2)).not.toContain('honingraat');
+        expect(ids(choice(variant('hr-std-optellen-nat')), 2)).toContain('honingraat');
     });
 });

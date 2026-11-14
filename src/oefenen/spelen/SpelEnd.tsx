@@ -5,8 +5,8 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 
-// An empty given = a miss (the zombie reached the door before an answer).
-const num = (v: string) => v === '' ? 'geen' : formatMathNumber(Number(v));
+// An empty given = a miss (the zombie reached the door before an answer); a board's claim reads as words ("meer dan 50").
+const num = (v: string) => v === '' ? 'geen' : /^\d+$/.test(v) ? formatMathNumber(Number(v)) : v;
 
 // After a round: the numbers, the mistakes, and Nakijken (the mistakes again, Oefenen-style) as the big button.
 // A lost or failed round reads friendly: never red, never "verloren".
