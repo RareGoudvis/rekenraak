@@ -92,7 +92,7 @@ export default function ZelfPicker() {
         const pickGrade = (g: Leerjaar) => { setGrade(g); saveGrade(g); };
         return (
             <>
-                <KidBackdrop clouds={false} />
+                <KidBackdrop clouds={false} grade={grade} />
                 <main className="oefen-center zelf zelf-home">
                     <p className="kiosk-start-brand">RekenRaak · Zelf oefenen</p>
                     <LeerjaarBar grade={grade} onPick={pickGrade} />
@@ -137,7 +137,7 @@ export default function ZelfPicker() {
         );
     }
 
-    if (!data || grade === null) return <><KidBackdrop /><main className="oefen-center zelf">{bar}<p className="oefen-lead">Even laden…</p></main></>;
+    if (!data || grade === null) return <><KidBackdrop grade={grade} /><main className="oefen-center zelf">{bar}<p className="oefen-lead">Even laden…</p></main></>;
 
     const topicLabel = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === topicId)?.label ?? '';
     const { icon: topicGlyph, size: topicSize } = topicIcon(topicId, topicLabel);
@@ -145,7 +145,7 @@ export default function ZelfPicker() {
     if (playing && choice && gamesOpen) {
         return (
             <>
-                <KidBackdrop clouds={false} />
+                <KidBackdrop clouds={false} grade={grade} />
                 <main className="oefen-center zelf">
                     {bar}
                     <h1 className="oefen-title">Kies een spel</h1>
@@ -186,7 +186,7 @@ export default function ZelfPicker() {
 
     return (
         <>
-            <KidBackdrop clouds={false} />
+            <KidBackdrop clouds={false} grade={grade} />
             <main className="oefen-center zelf">
                 {bar}
                 <div className="zelf-head" style={sectionTint(SECTION_OF_TOPIC[topicId])}>

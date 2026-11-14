@@ -6,6 +6,8 @@ import GameStrip from '../oefenen/zelf/GameStrip';
 import { gameBlurb, GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { SKINS } from '../oefenen/spelen/skins/registry';
+import KidBackdrop from '../oefenen/kiosk/KidBackdrop';
+import { sceneOf } from '../oefenen/kiosk/backdrops';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 const strip = () => screen.getByRole('region', { name: 'Je kan ook spelen!' });
@@ -115,5 +117,29 @@ describe('Zelf oefenen start: bundle', () => {
             expect(parts.length).toBeGreaterThan(0);
             for (const c of parts) expect(c.$$typeof).toBe(lazy);
         }
+    });
+});
+
+describe('Leerjaar scenes', () => {
+    test('one scene per leerjaar; no leerjaar keeps the sky and hill', () => {
+        for (let g = 1; g <= 6; g++) expect(sceneOf(g)).not.toBeNull();
+        for (const g of [undefined, null, 0, 7]) expect(sceneOf(g)).toBeNull();
+        const { container, rerender } = render(<KidBackdrop clouds={false} />);
+        expect(container.querySelector('.kid-hill')).not.toBeNull();
+        rerender(<KidBackdrop clouds={false} grade={3} />);
+        const bd = container.querySelector('.kid-backdrop')!;
+        expect(bd.className).toContain('ks-3');
+        expect(bd.getAttribute('aria-hidden')).toBe('true');
+        expect(container.querySelector('.kid-hill')).toBeNull();
+    });
+
+    test('the topics screen follows the leerjaar bar', async () => {
+        const { container } = render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        expect(container.querySelector('.kid-backdrop.is-theme')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Leerjaar 5' }));
+        expect(container.querySelector('.kid-backdrop.ks-5')).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Leerjaar 2' }));
+        expect(container.querySelector('.kid-backdrop.ks-2')).not.toBeNull();
     });
 });

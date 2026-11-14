@@ -195,7 +195,7 @@ export default function Kiosk() {
 
     return (
         <div className="oefen-app">
-            <KidBackdrop clouds={false} />
+            <KidBackdrop clouds={false} grade={sessie.grade} />
             <TopBar now={now} />
             <StorageBanner />
             {phase === 'stats' ? (
