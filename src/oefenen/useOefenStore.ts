@@ -10,6 +10,7 @@ import { KWART, TIME_WORDS } from '../services/clock/timeWords';
 import { REGISTRY } from '../config/exerciseRegistry';
 import type { HandigStrategy, StepLine } from '../services/math/workedSteps';
 import { handigFor } from '../services/stepsAvailability';
+import { isZelfSessie } from './zelf/zelfSessie';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -96,6 +97,8 @@ interface OefenState {
     clear(): void;
     // Endless run only (no timer, no limit): the pupil ends it, the card on screen uncounted.
     stop(): void;
+    // Zelf oefenen only: back to the picker; what was made is kept as a finished run.
+    leaveZelf(): void;
     tick(now?: number): void;
     setInteraction(next: InteractionState): void;
     focusCell(key: string | null): void;
@@ -610,6 +613,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (!s || !run || !canStop(s, run)) return;
             if (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry' && phase !== 'steps' && phase !== 'stats') return;
             finish(run);
+        },
+
+        leaveZelf() {
+            const { sessie: s, run } = get();
+            if (!isZelfSessie(s)) return;
+            // Finished, not left open: the next pick of the same choice would otherwise resume it.
+            if (run && !run.done) finish(run);
+            get().load('');
         },
 
         tick(now = Date.now()) {

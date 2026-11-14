@@ -150,7 +150,8 @@ html:has(.oefen-body),
   flex: none;
   height: var(--kiosk-bar-h);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* The buttons never shrink under their text: a crowded bar takes the room from the title. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   gap: var(--sp-3);
   padding: 0 var(--sp-3);
@@ -919,6 +920,9 @@ html:has(.oefen-body),
 @media (max-width: 520px) {
   .kiosk-topbar-title { display: none; }
   .kiosk-topbar { grid-template-columns: auto minmax(0, 1fr); }
+  /* Zelf oefenen: Terug naar begin says just Terug and Resultaten keeps its icon, so the bar fits at 360 px. */
+  .kiosk-back-long { display: none; }
+  .kiosk-topbar-right:has(.kiosk-back-long) .kiosk-stats-text { display: none; }
   .kiosk-table { font-size: var(--text-lg); }
   /* With 2 kansen the per-type table has seven columns: smaller headers keep it within a phone. */
   .kiosk-table thead th { font-size: var(--text-sm); }
