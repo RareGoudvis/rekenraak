@@ -14,7 +14,7 @@ interface Props {
 // One-time "what's new" for returning teachers: the two beta modes with a Probeer CTA, then highlights.
 export default function UpgradeModal({ onClose, onOpenReleaseNotes }: Props) {
     const setView = useWorksheetStore((s) => s.setView);
-    const setOefenBuilderOpen = useWorksheetStore((s) => s.setOefenBuilderOpen);
+    const openOefenmodus = useWorksheetStore((s) => s.openOefenmodus);
     // A locked curriculum hides Oefenmodus in the sidebar too (it would offer exercises outside the whitelist).
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
     const closeRef = useRef<HTMLButtonElement>(null);
@@ -22,7 +22,7 @@ export default function UpgradeModal({ onClose, onOpenReleaseNotes }: Props) {
 
     const titleId = 'upgrade-modal-title';
     const tryBord = () => { onClose(); setView('whiteboard'); };
-    const tryOefen = () => { onClose(); setOefenBuilderOpen(true); };
+    const tryOefen = () => { onClose(); openOefenmodus(); };
 
     return (
         <ModalShell onClose={onClose} ariaLabel={UPGRADE_TITLE} variant="dialog" maxWidth={720}>

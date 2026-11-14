@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
-import { render, cleanup, fireEvent, screen } from '@testing-library/react';
-import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
+import { render, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import OefenWorkspace from '../components/oefenen/OefenWorkspace';
 import { listOefenLeaves } from '../components/oefenen/oefenBuild';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); useWorksheetStore.getState().clearDraftBlocks(); });
 
-const footerBtn = (name: string) => screen.getAllByRole('button', { name }).at(-1) as HTMLButtonElement;
+const footerBtn = (name: string) => within(screen.getByRole('banner')).getByRole('button', { name }) as HTMLButtonElement;
 const addBtn = (id: string) => {
     const leaves = listOefenLeaves();
     const { label } = leaves.find(l => l.id === id)!;
@@ -36,7 +36,14 @@ const addBtn = (id: string) => {
     return screen.getAllByRole('button', { name: (name: string) => name.replace(/\d+×$/, '') === label })[rank];
 };
 const removeOnly = () => fireEvent.click(screen.getByRole('button', { name: 'Verwijderen' }));
-const setLimit = (v: number) => fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: String(v) } });
+// The limit sits in the selected row's Hoeveel section; the (only) procenten card is selected first.
+const setLimit = (v: number) => {
+    if (!screen.queryByLabelText(/^Aantal:/)) {
+        fireEvent.click(within(screen.getByRole('region', { name: listOefenLeaves().find(l => l.id === 'procenten-nemen')!.label })).getAllByRole('button')[0]);
+        fireEvent.click(within(screen.getByRole('complementary', { name: 'Instellingen' })).getByRole('button', { name: /^Hoeveel/ }));
+    }
+    fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: String(v) } });
+};
 
 // Delen, read the id the link carries, close the share modal again.
 function sharedId(): string {
@@ -49,7 +56,7 @@ function sharedId(): string {
 
 describe('a new composer', () => {
     test('Delen twice unchanged is one id; swapping the type is a new id; swapping back is the first id again', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         const first = sharedId();
         expect(sharedId()).toBe(first);
@@ -65,19 +72,19 @@ describe('a new composer', () => {
     });
 
     test('the title is not content: renaming between two Delen keeps the id', () => {
-        render(<OefenBuilderModal onClose={() => { }} />);
+        render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         const first = sharedId();
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten week 2' } });
+        fireEvent.change(screen.getByLabelText('Naam van de sessie'), { target: { value: 'Procenten week 2' } });
         expect(sharedId()).toBe(first);
     });
 });
 
 describe('Bewerken a saved session', () => {
     function savedOriginal() {
-        const first = render(<OefenBuilderModal onClose={() => { }} />);
+        const first = render(<OefenWorkspace onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
-        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten' } });
+        fireEvent.change(screen.getByLabelText('Naam van de sessie'), { target: { value: 'Procenten' } });
         fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
         first.unmount();
         return loadOefenSessies()[0].sessie;
@@ -85,7 +92,7 @@ describe('Bewerken a saved session', () => {
 
     test('an edit is a new id, a revert the original id, two different edits two ids', () => {
         const original = savedOriginal();
-        render(<OefenBuilderModal onClose={() => { }} initial={original} />);
+        render(<OefenWorkspace onClose={() => { }} initial={original} />);
         expect(sharedId()).toBe(original.id);
         setLimit(12);
         const twelve = sharedId();
@@ -103,7 +110,7 @@ describe('Bewerken a saved session', () => {
 
     test('Opslaan keeps one library row through edits and a revert, under the content shown', () => {
         const original = savedOriginal();
-        render(<OefenBuilderModal onClose={() => { }} initial={original} />);
+        render(<OefenWorkspace onClose={() => { }} initial={original} />);
         // The button reads "Opgeslagen" for a moment after each save.
         const save = () => fireEvent.click(screen.getByRole('button', { name: /^(Opslaan|Opgeslagen)$/ }));
         setLimit(12);

@@ -10,13 +10,15 @@ function loadInitialSidebarPreview(): boolean {
 }
 const INITIAL_SIDEBAR_PREVIEW = loadInitialSidebarPreview();
 
-export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set) => ({
+export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set, get) => ({
     activeBlockId: null,
     sidebarTab: 'oefeningen',
     eenvoudigPanel: null,
     inspectorScope: 'block',
     inspectorSections: { block: null, blad: 'koptekst' },
-    oefenBuilderOpen: false,
+    oefenInitial: null,
+    oefenReturn: 'editor',
+    oefenOpenSeq: 0,
     showSolutions: false,
     view: initialView(),
     sidebarPreview: INITIAL_SIDEBAR_PREVIEW,
@@ -36,7 +38,12 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     setEenvoudigPanel: (panel) => set({ eenvoudigPanel: panel }),
     setInspectorScope: (scope) => set({ inspectorScope: scope }),
     setInspectorSection: (scope, section) => set((st) => ({ inspectorScope: scope, inspectorSections: { ...st.inspectorSections, [scope]: section } })),
-    setOefenBuilderOpen: (open) => set({ oefenBuilderOpen: open }),
+    // Opened from Mijn bladen, "terug" goes back there; from anywhere else to the editor.
+    openOefenmodus: (initial) => set((st) => ({
+        view: 'oefenmodus', oefenInitial: initial ?? null, oefenOpenSeq: st.oefenOpenSeq + 1,
+        oefenReturn: st.view === 'mijn-bladen' ? 'mijn-bladen' : 'editor',
+    })),
+    closeOefenmodus: () => { get().setView(get().oefenReturn); set({ oefenInitial: null }); },
     setShowSolutions: (show) => set({ showSolutions: show }),
     setView: (view) => {
         // On bord.html the board IS the page, so leaving it leaves the page too.

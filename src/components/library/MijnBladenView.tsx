@@ -10,7 +10,6 @@ import {
     type Preset, type OefenSessieEntry,
 } from '../../services/persistence';
 import { saveCurrentToLibrary, LIBRARY_FULL_TEXT } from './saveToLibrary';
-import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 import OefenShareModal from '../oefenen/OefenShareModal';
 import { deadRowsOf } from '../oefenen/oefenBuild';
 import type { OefenSessie } from '../../services/oefenen/types';
@@ -36,8 +35,8 @@ export default function MijnBladenView() {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState<SortKey>('recent');
     const fileRef = useRef<HTMLInputElement>(null);
-    // null = closed; 'new' = empty builder; a session = editing it. Remount via key so drafts reseed.
-    const [oefenEdit, setOefenEdit] = useState<OefenSessie | 'new' | null>(null);
+    // Nieuwe oefensessie / Bewerken open the Oefenmodus workspace; its back button returns here.
+    const openOefenmodus = useWorksheetStore((s) => s.openOefenmodus);
     const [oefenShare, setOefenShare] = useState<OefenSessie | null>(null);
     // Delen's pre-flight verdict for one library row: the labels of its rows that generate nothing.
     const [deadOf, setDeadOf] = useState<{ id: string; labels: string[] } | null>(null);
@@ -209,7 +208,7 @@ export default function MijnBladenView() {
                         <h2 style={S.h2}>Oefensessies</h2>
                         <span style={S.subMeta}>{oefenSessies.length} bewaard · voor de oefenmodus op het toestel van de leerlingen</span>
                     </div>
-                    <button style={S.ghostBtn} onClick={() => setOefenEdit('new')}><Plus size={15} /> Nieuwe oefensessie</button>
+                    <button style={S.ghostBtn} onClick={() => openOefenmodus()}><Plus size={15} /> Nieuwe oefensessie</button>
                 </div>
                 {oefenSessies.length === 0 ? (
                     <div style={S.emptyNote}>Nog geen oefensessies. Klik “Nieuwe oefensessie” en bewaar ze hier om morgen opnieuw te delen.</div>
@@ -232,7 +231,7 @@ export default function MijnBladenView() {
                                 <button style={S.iconBtn} title="Hernoemen" onClick={() => handleOefenRename(e)}><PencilSimple size={15} /></button>
                                 <button style={S.iconBtn} title="Dupliceren" aria-label="Dupliceren" onClick={() => handleOefenDuplicate(e)}><Copy size={15} /></button>
                                 <button style={S.ghostBtn} onClick={() => handleOefenShare(e)}><Share size={15} /> Delen</button>
-                                <button style={S.ghostBtn} onClick={() => setOefenEdit(e.sessie.title ? e.sessie : { ...e.sessie, title: e.name.slice(0, 60) })}><PencilSimple size={15} /> Bewerken</button>
+                                <button style={S.ghostBtn} onClick={() => openOefenmodus(e.sessie.title ? e.sessie : { ...e.sessie, title: e.name.slice(0, 60) })}><PencilSimple size={15} /> Bewerken</button>
                                 <button style={{ ...S.iconBtn, color: 'var(--danger)' }} title="Verwijderen" aria-label="Verwijderen" onClick={() => handleOefenDelete(e)}><Trash size={15} /></button>
                             </div>
                         ))}
@@ -240,13 +239,6 @@ export default function MijnBladenView() {
                 )}
             </div>
 
-            {oefenEdit && (
-                <OefenBuilderModal
-                    key={oefenEdit === 'new' ? 'new' : oefenEdit.id}
-                    initial={oefenEdit === 'new' ? undefined : oefenEdit}
-                    onClose={() => { setOefenEdit(null); bump(); }}
-                />
-            )}
             {oefenShare && <OefenShareModal sessie={oefenShare} onClose={() => setOefenShare(null)} />}
         </div>
     );
