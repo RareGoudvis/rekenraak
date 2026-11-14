@@ -61,7 +61,7 @@ account, no tracking.
 
 Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `tutor.html` (the pupil stappenhulp, `src/tutor/`, opened from a sheet's QR), `kind.html` (Zelf oefenen: pupils pick an exercise themselves, no teacher link; the same kiosk root as `oefenen.html`), `bord.html` (the same app
 booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
-static SEO pages `about.html`, `faq.html`, `oefeningen.html`.
+static SEO pages `about.html`, `faq.html`, `oefeningen.html`, `handleiding.html` (the full manual per mode; `npm run handleiding:shots` regenerates its screenshots in public/handleiding/; the in-app help topics live in src/components/layout/helpTopics.ts and link into it). Oefenmodus for the teacher is the view `'oefenmodus'` (OefenWorkspace, state from useOefenBuilder), not a modal.
 
 Bordmodus widgets get their options through the settings registry
 ([src/board/settings/registry.ts](src/board/settings/registry.ts)), never a `kind` switch: a new

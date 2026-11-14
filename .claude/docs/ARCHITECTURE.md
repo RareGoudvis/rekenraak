@@ -92,7 +92,7 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point (base max L1 20 · L2 100 · L3 1 000 · L4 10 000 · L5 1 000 000 · L6 1 000 000 000, floored per type — §13): seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelisted sidebar + frozen difficulty) — see §13 |
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks edited via the real config plugins: by the curriculum builder (§13) and by the Bordmodus inspector, which mirrors the selected board card here (§14); not rendered/autosaved/historied |
-| `view` | `WorksheetView` = `'editor' \| 'mijn-bladen' \| 'bibliotheek' \| 'whiteboard'` | Which full-screen view is active. UI-only. Starts at `initialView()` ([bootEntry.ts](../../src/bootEntry.ts): `'whiteboard'` on bord.html); `setView` to a non-board view on bord.html navigates to `/` instead (§14) |
+| `view` | `WorksheetView` = `'editor' \| 'mijn-bladen' \| 'bibliotheek' \| 'whiteboard' \| 'oefenmodus'` | Which full-screen view is active. UI-only. Starts at `initialView()` ([bootEntry.ts](../../src/bootEntry.ts): `'whiteboard'` on bord.html); `setView` to a non-board view on bord.html navigates to `/` instead (§14) |
 | `sidebarTab` | `'eenvoudig' \| 'oefeningen' \| 'overzicht'` | Which sidebar tab is open (`oefeningen` = full tree, labelled Uitgebreid; `overzicht` = blocks on the sheet, labelled Werkblad). The strip renders in the TopBar (above the sidebar column), the panel renders the content — see §9 "Shell" |
 | `eenvoudigPanel` | `EenvoudigPanel \| null` | What the panel beside the Eenvoudig sidebar shows: `{ kind: 'topic', topicId }` or `{ kind: 'combo', only?, editBlockId? }`. Transient: never saved, shared or in history |
 | `inspectorScope` | `'block' \| 'blad'` | Which scope the inspector shows (design A, 2026-11-14): the scope switch `Opdracht N` / `Heel het blad`. `setActiveSelection` with a real block id and `addBlockFromType` set `'block'`. Replaces `inspectorTab`. |
@@ -1349,7 +1349,7 @@ All localStorage; nothing leaves the browser except share links the user copies.
   share-link early return, never on bord.html; App mounts it only while the welcome modal is closed
   (the releaseNotes test Harness never sees it). Two mode cards (Oefenmodus hidden when the curriculum
   is locked) with a "Probeer" CTA — Bordmodus → `setView('whiteboard')`, Oefenmodus →
-  `setOefenBuilderOpen(true)` (uiSlice; the sidebar mounts `OefenBuilderModal` from that flag) — plus
+  `openOefenmodus()` (uiSlice; the view 'oefenmodus') — plus
   the highlights, "Alles wat nieuw is" (ReleaseNotesModal) and "Sluiten"; every exit writes the key.
   Brand-new users never see it: WelcomeModal gained one muted line naming the two modes.
 - **First-run tutorial** — [TourOverlay.tsx](../../src/components/onboarding/TourOverlay.tsx),
@@ -1425,7 +1425,7 @@ src/
 │   └── slices/
 │       ├── blocksSlice.ts       # blocks + staleBlocks: add/remove/reorder/split/duplicate, exercises, generate
 │       ├── documentSlice.ts     # header/footer/docSettings/baseSettings/grade/curriculum/draft blocks, loadWorksheet
-│       ├── uiSlice.ts           # selection, tabs, view, sidebar preview, save state, block pages, oefenBuilderOpen (the Oefenmodus builder flag, set by the sidebar button and the upgrade modal), debug flag
+│       ├── uiSlice.ts           # selection, tabs, view, sidebar preview, save state, block pages, openOefenmodus / closeOefenmodus / oefenInitial / oefenReturn (the Oefenmodus builder flag, set by the sidebar button and the upgrade modal), debug flag
 │       └── historySlice.ts      # undo/redo, pushHistory, commitBlocks
 ├── hooks/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (awaits document.fonts.ready, then 2 rAF for the repack)
@@ -1468,7 +1468,7 @@ src/
 │  (repo root) oefenen.html              # the pupil kiosk page: an extra Vite entry (vite.config.ts rollupOptions.input `oefenen`), mounts src/oefenen/main.tsx; noindex
 │  (repo root) bord.html                 # the app booted straight into Bordmodus: <html data-boot="bord">, own title/meta/canonical, Vite input `bord` (§14)
 │  (repo root) src/__tests__/board*.test.ts(x), instrumentGeometry, bordEntry, clockMath, klokWidget, wbCosmetics + helpers/boardWidgetHarness.tsx  # the Bordmodus suites (TESTING.md "Bordmodus suites")
-│  (repo root) about.html, faq.html, oefeningen.html + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
+│  (repo root) about.html, faq.html, oefeningen.html, handleiding.html (+ public/handleiding/*.png, scripts/handleiding-shots.mjs → npm run handleiding:shots) + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
@@ -1631,10 +1631,13 @@ src/
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
     ├── curriculum/draftBlock.ts                           # makeDraftBlock(typeId, constraints, id?): the off-sheet block both builders mount Configs on (§13)
-    ├── oefenen/OefenBuilderModal.tsx                      # §15 teacher builder: a draft block per row, limit / kans / Antwoord (exactForm) / timer / flags, per-row pre-flight (dead rows block Delen), ≤ 20 rows, Opslaan (new id on a content edit) / Delen
+    ├── oefenen/OefenmodusView.tsx + OefenWorkspace.tsx              # §15 Oefenmodus as its own view 'oefenmodus' (2026-11-14): top bar (‹ Werkblad, title, Opslaan, Delen), OefenSidebar left, session cards with live OefenSample in the middle, OefenInspector right; replaces OefenBuilderModal
+    ├── oefenen/useOefenBuilder.ts                         # §15 the builder state as a hook (rows, draft blocks, settings, buildSessie, ids by content, save); the only state source of the workspace
+    ├── oefenen/OefenInspector.tsx                         # §15 design-A inspector: Oefening N (Kans, Ander voorbeeld; Wat oefenen ze, Hoeveel, Antwoord) | Hele sessie (Sessie, Tijd en aantal, Feedback, Hulp, Delen)
+    ├── oefenen/OefenSample.tsx                            # §15 a live kiosk ExerciseCard in a half-size iPad frame (what the pupil sees)
     ├── layout/topBarStages.ts                             # TOPBAR_STAGE_COUNT = 6 + the per-stage flags table (stage 4 folds Genereer alles into Meer, stage 5 undo/redo too)
     ├── viewer/NumberText.tsx                              # nowrap number span through formatMathNumber (geld tables, deelbaarheid, patronen terms); numbers never split at a thousands space
-    ├── oefenen/OefenCatalogue.tsx                         # §15 the builder's type picker: Zoek oefening… + leerjaar chips (the sidebar's rules), kiosk-capable leaves only
+    ├── oefenen/OefenSidebar.tsx                           # §15 the workspace catalogue: Eenvoudig cards + Uitgebreid tree (layout/SidebarTree.tsx, sidebarStyles.ts, sidebarTreeModel.ts; eenvoudig/EenvoudigDrawer.tsx, drawerHooks.ts), kiosk-capable only; onAdd(leafId, constraints?, label?)
     ├── oefenen/oefenBuild.ts                              # pure: listOefenLeaves (+ searchText / minGrade), filterOefenLeaves, rowYields / deadRows (pre-flight), buildSessie (unsupported rows excluded, weights → whole %), rowsFromSessie, LIMIT_STEPS / TIMER_STEPS
     ├── oefenen/OefenShareModal.tsx                        # §15 summary chips + own-exercises note, link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
     ├── eenvoudig/               # Eenvoudig mode UI: EenvoudigPane (leerjaar + topics), EenvoudigPanelHost (no-print portal on body beside the sidebar, driven by `eenvoudigPanel`), TopicPanel (range row + fixed-size one-exercise cards + pills), ComboBuilder + comboModel (Combinatie / Zelf samenstellen on hr-std-gemengd), addCard (the one add path) (§13)
@@ -2381,7 +2384,7 @@ Plan and owner decisions: `~/.claude/plans/oefen-app-kiosk.md` (K1–K5, Phase C
 ### Entry points
 
 - **Teacher:** sidebar-foot **Oefenmodus** button (the row above the wordmark; hidden in a locked
-  curriculum) → `OefenBuilderModal`; and **Mijn bladen › Oefensessies** (Nieuwe oefensessie,
+  curriculum) → the view `'oefenmodus'` (`openOefenmodus`, back with `closeOefenmodus`; `oefenInitial` / `oefenReturn` when opened from Mijn bladen); and **Mijn bladen › Oefensessies** (Nieuwe oefensessie,
   Delen, Bewerken, hernoemen, verwijderen).
 - **Pupil:** `oefenen.html#oefen=<payload>` — a separate Vite entry with its own React root
   ([src/oefenen/main.tsx](../../src/oefenen/main.tsx)). It never imports `App`, the worksheet
@@ -2392,7 +2395,7 @@ Plan and owner decisions: `~/.claude/plans/oefen-app-kiosk.md` (K1–K5, Phase C
 ### Data flow
 
 ```
-OefenBuilderModal ── OefenCatalogue (Zoek oefening… + leerjaar chips, the sidebar's rules) → rows: leaf (seeded by `seedRowConstraints(leaf, grade)` = `seedLeafConstraints` at the store's `selectedGrade` when the row is added, + the leaf's `kioskSeed`; at Leerjaar 1 "Optellen · natuurlijk" starts at tot 20) +
+OefenWorkspace (useOefenBuilder) ── OefenSidebar (Eenvoudig cards / Uitgebreid tree, kiosk-capable only) → rows: leaf (seeded by `seedRowConstraints(leaf, grade)` = `seedLeafConstraints` at the store's `selectedGrade` when the row is added, + the leaf's `kioskSeed`; at Leerjaar 1 "Optellen · natuurlijk" starts at tot 20) +
    │ draft block (store.draftBlocks, real Config) + limit + kans + Antwoord (exactForm, breuk rows only)
    │ pre-flight per row: rowYields / deadRows (one draw through nextExercise) → red note, Delen off; ≤ 20 rows
    │ buildSessie (oefenBuild.ts): drop rows whose descriptor.supported(c) is false, weights → whole %
