@@ -747,7 +747,7 @@ html:has(.oefen-body),
   background: var(--kid-go);
   font-family: var(--kid-font);
   /* The word fits a two-wide key on a phone and on a 1024 px tablet. */
-  font-size: clamp(16px, 1.4vmin + 10px, 24px);
+  font-size: clamp(16px, 2vmin + 8px, 26px);
   font-weight: 900;
 }
 .kiosk-key-check:disabled,
