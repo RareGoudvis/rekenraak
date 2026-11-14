@@ -9,6 +9,8 @@ import Pinguintoren from '../oefenen/spelen/skins/pinguintoren/Pinguintoren';
 import { towerScale } from '../oefenen/spelen/skins/pinguintoren/tower';
 import Zombies from '../oefenen/spelen/skins/zombies/Zombies';
 import { ZOMBIE, joinAt, stepCloser, walk, zombieSpeed } from '../oefenen/spelen/skins/zombies/walk';
+import Ballonnen from '../oefenen/spelen/skins/ballonnen/Ballonnen';
+import { FLOAT, floatAt, floatPace, floatPath, phaseAt, readableAt, type FloatGeom } from '../oefenen/spelen/skins/ballonnen/float';
 
 // The skins as components: each registry entry renders, and the session's phase, progress and events
 // drive what is drawn (blocks, wobble, the falling block, the paused look).
@@ -196,6 +198,106 @@ describe('Spelen skins', () => {
             rerender(<Zombies {...at(events, { reducedMotion: true, phase: 'right' })} />);
             expect(container.querySelector('.zb-root.is-still .zb-zombie.is-flop')).not.toBeNull();
             expect(container.querySelector('.zb-smoke')).toBeNull();
+        });
+    });
+
+    describe('Ballonnen float', () => {
+        // Measured stages: iPad landscape (1024 × 768, 1180 × 820), iPad portrait, phone upright and on its side.
+        const STAGES: Record<string, FloatGeom> = {
+            '1024x768': { w: 1024, h: 714, bw: 143, bh: 229, numAt: 77, numHalf: 22, top: 152 },
+            '1180x820': { w: 1180, h: 764, bw: 150, bh: 240, numAt: 81, numHalf: 23, top: 157 },
+            '768x1024': { w: 768, h: 970, bw: 107, bh: 171, numAt: 58, numHalf: 18, top: 152 },
+            '390x844': { w: 390, h: 796, bw: 68, bh: 109, numAt: 37, numHalf: 12, top: 118 },
+            '740x360': { w: 740, h: 306, bw: 64, bh: 102, numAt: 34, numHalf: 12, top: 120 },
+        };
+
+        test.each(Object.keys(STAGES))('%s: at least three numbers readable at every moment of a long round', key => {
+            const g = STAGES[key];
+            const path = floatPath(g);
+            for (let tau = 0; tau < 400; tau += 0.05) {
+                const n = [0, 1, 2, 3].filter(i => readableAt(path, i, tau)).length;
+                if (n < 3) throw new Error(`${key}: ${n} readable at ${tau.toFixed(2)} s`);
+            }
+        });
+
+        test('a loop rises bottom to top and wraps out of sight; steady in the band; a crossing takes 8 to 12 s', () => {
+            const g = STAGES['1024x768'];
+            const path = floatPath(g);
+            // Starts just under the stage, ends just over it: the wrap is never on screen.
+            expect(path.yAt(0)).toBeCloseTo(g.h, 0);
+            expect(path.yAt(0.9999)).toBeLessThan(-g.bh + 2);
+            const ys = Array.from({ length: 200 }, (_, k) => path.yAt(k / 200));
+            expect(ys.every((y, k) => k === 0 || y < ys[k - 1])).toBe(true);
+            // A steady pace inside the band (no speed-up while the number can be read).
+            const [d0, d1] = path.band;
+            const inBand = Array.from({ length: 198 }, (_, k) => k / 200).filter(p => path.dAt(p) > d0 + 2 && path.dAt(p + 0.005) < d1 - 2);
+            const steps = inBand.map(p => path.dAt(p + 0.005) - path.dAt(p));
+            expect(Math.max(...steps) - Math.min(...steps)).toBeLessThan(0.05 * Math.max(...steps));
+            // A loop is a crossing plus the quick wrap; faster with the streak, at most 20 %.
+            expect(FLOAT.loopS / floatPace(0)).toBeGreaterThanOrEqual(8);
+            expect(FLOAT.loopS / floatPace(0)).toBeLessThanOrEqual(12);
+            expect(FLOAT.loopS / floatPace(100)).toBeGreaterThanOrEqual(8);
+            expect(floatPace(5)).toBeGreaterThan(floatPace(0));
+        });
+
+        test('each balloon keeps its own lane and pace; reduced motion stands still inside the band', () => {
+            const g = STAGES['1024x768'];
+            const path = floatPath(g);
+            const xs = [0, 1, 2, 3].map(i => floatAt(g, path, i, 3).x);
+            expect(xs.every((x, i) => i === 0 || x - xs[i - 1] > g.bw)).toBe(true);
+            // Different paces: the four phase steps over one second are not all the same.
+            const step = [0, 1, 2, 3].map(i => +((phaseAt(i, 4) - phaseAt(i, 3) + 1) % 1).toFixed(3));
+            expect(new Set(step).size).toBeGreaterThan(1);
+            for (const i of [0, 1, 2, 3]) {
+                const d = g.h - floatAt(g, path, i, null).y;
+                expect(d).toBeGreaterThan(path.band[0]);
+                expect(d).toBeLessThan(path.band[1]);
+            }
+        });
+    });
+
+    describe('Ballonnen skin', () => {
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] });
+            // jsdom has no layout: give the sky and the balloons a size.
+            vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(700);
+            vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1000);
+            vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) { return this.classList.contains('bal') ? 224 : 40; });
+            vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(140);
+        });
+        const ys = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('.bal-slot')].map(el => Number(el.dataset.y));
+        const wait = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+
+        test('the balloons rise while the sum waits and freeze under help', () => {
+            const { container, rerender } = render(<Ballonnen {...propsWith()} />);
+            const a = ys(container);
+            expect(a.every(Number.isFinite)).toBe(true);
+            wait(1000);
+            const b = ys(container);
+            expect(b.filter((y, i) => y < a[i]).length).toBeGreaterThanOrEqual(3);
+            rerender(<Ballonnen {...propsWith({ phase: 'help' })} />);
+            wait(16);
+            const c = ys(container);
+            wait(3000);
+            expect(ys(container)).toEqual(c);
+            expect(container.querySelector('.bal-sky.is-paused')).not.toBeNull();
+        });
+
+        test('a tap counts on pointer down; the next question keeps the balloons and swaps the numbers; the popped one comes back', () => {
+            const onAnswer = vi.fn();
+            const { container, rerender } = render(<Ballonnen {...propsWith({ onAnswer })} />);
+            const slots = [...container.querySelectorAll('.bal-slot')];
+            fireEvent.pointerDown(container.querySelectorAll('.bal')[0], { button: 0 });
+            expect(onAnswer).toHaveBeenCalledWith('12');
+            rerender(<Ballonnen {...propsWith({ onAnswer, phase: 'right', feedback: { given: '12', expected: '12', correct: true } })} />);
+            expect(container.querySelector('.bal-slot.is-popped')).toBe(slots[0]);
+            rerender(<Ballonnen {...propsWith({ onAnswer, question: { key: 'q2', text: '8 + 5 = ?', index: 1 }, choices: ['14', '13', '3', '12'] })} />);
+            expect([...container.querySelectorAll('.bal-slot')]).toEqual(slots);
+            expect([...container.querySelectorAll('.bal-num')].map(n => n.textContent)).toEqual(['14', '13', '3', '12']);
+            expect(container.querySelector('.bal-slot.is-fresh')).toBe(slots[0]);
+            // Keys 1–4 still pick by balloon number.
+            fireEvent.keyDown(window, { key: '2' });
+            expect(onAnswer).toHaveBeenLastCalledWith('13');
         });
     });
 });

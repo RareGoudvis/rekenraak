@@ -6,6 +6,7 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { SKINS } from '../oefenen/spelen/skins/registry';
 import { resetKiosk } from './helpers/oefenKiosk';
+import { SOUND_KEY, setSoundOn } from '../oefenen/spelen/sound';
 
 // The page flow: a + / − card at leerjaar 1–3 asks Oefenen or Spelen; Spelen shows the game tiles,
 // Ballonnen plays 20 questions, the end screen offers Nakijken, Opnieuw spelen and Ander spel.
@@ -23,7 +24,7 @@ beforeEach(() => {
     // jsdom has no matchMedia; the shell reads prefers-reduced-motion through it.
     window.matchMedia ??= ((q: string) => ({ matches: false, media: q, addEventListener: () => { }, removeEventListener: () => { } })) as unknown as typeof window.matchMedia;
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); setSoundOn(false); });
 
 async function toGames(grade: string, section: string, name: string, choice: RegExp) {
     render(<OefenApp />);
@@ -143,6 +144,12 @@ describe('Spelen flow', () => {
         click('Spelen');
         click('Ballonnen');
         await screen.findByRole('group', { name: 'Kies het antwoord' });
+        // The speaker in the game bar: off by default, remembered per device.
+        const speaker = screen.getByRole('button', { name: 'Geluid uit' });
+        expect(speaker.getAttribute('aria-pressed')).toBe('false');
+        fireEvent.click(speaker);
+        expect(screen.getByRole('button', { name: 'Geluid aan' }).getAttribute('aria-pressed')).toBe('true');
+        expect(localStorage.getItem(SOUND_KEY)).toBe('1');
         const q = sp().question!;
         fireEvent.keyDown(window, { key: String(q.choices.indexOf(q.answer) + 1) });
         expect(sp().score).toBe(1);

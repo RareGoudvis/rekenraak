@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Spelen: de ballonnen zweven nu omhoog, en er zijn zachte geluidjes (standaard uit, knop met luidspreker).' },
             { kind: 'nieuw', text: 'Nieuw (beta): Spelen bij Zelf oefenen. Optellen en aftrekken in leerjaar 1 tot 3 als Ballonnen, Pinguïntoren of Zombies, met hulp en Nakijken.' },
             { kind: 'nieuw', text: 'Bij sommen als 3 + 4 of 7 − 3 zien leerlingen van leerjaar 1 tot 3 na een fout de MAB-blokjes stap voor stap.' },
             { kind: 'nieuw', text: 'Tussenstappen nu ook voor kleine sommen: 8 + 5 = (8 + 2) + 3, 53 − 7 = (53 − 3) − 4, 14 + 3 = 10 + (4 + 3).' },

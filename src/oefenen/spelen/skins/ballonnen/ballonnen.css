@@ -1,8 +1,8 @@
 /* Ballonnen skin. Flat fills under a thick dark outline (spelen.css tokens), transforms and opacity only
    (old school laptops), and nothing moves under prefers-reduced-motion. */
 .bal-sky {
-  /* One balloon's width: four fit side by side on a phone, and the whole balloon fits the stage height. */
-  --bal-w: clamp(64px, min(19vw, 24vh), 176px);
+  /* One balloon's width: four lanes side by side with room to sway, small enough to rise past the sign. */
+  --bal-w: clamp(64px, min(14vw, 19vh), 150px);
   position: absolute;
   inset: 0;
   display: flex;
@@ -91,28 +91,25 @@
 }
 
 /* ── Balloons ─────────────────────────────────────────────────────────────── */
-.bal-row {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: clamp(8px, 3vw, 44px);
-  padding: 0 var(--sp-3) 7vh;
+/* The whole sky is the field: the balloons pass behind the sign (z-index) and out over the top. */
+.bal-field { position: absolute; inset: 0; z-index: 1; }
+/* Placed by the skin's loop (a transform per frame); off-stage until the first measure. */
+.bal-slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate3d(-200vw, 0, 0);
+  will-change: transform;
 }
-/* Two balloons a little higher than the others, so the row looks like a bunch, not a fence. */
-.bal-slot:nth-child(even) { margin-bottom: calc(var(--bal-w) * .28); }
-
-.bal-rise { animation: bal-rise 2.6s var(--ease-out) both; animation-delay: calc(var(--i) * 160ms); }
-@keyframes bal-rise { from { transform: translateY(80vh); } to { transform: translateY(0); } }
 
 .bal-bob { position: relative; animation: bal-bob 3.2s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.8s); }
 @keyframes bal-bob {
   from { transform: translateY(0) rotate(-2deg); }
   to { transform: translateY(-10px) rotate(2deg); }
 }
+/* "Hoe los ik dit op?": the clouds and the bob wait too. */
+.bal-sky.is-paused *,
+.bal-sky.is-paused *::before { animation-play-state: paused; }
 
 .bal {
   position: relative;
@@ -153,6 +150,16 @@
   line-height: 1.25;
   white-space: nowrap;
 }
+
+/* A new question: the number fades in on the same balloon (keyed per question), no jump. */
+.bal-num { animation: bal-swap 260ms var(--ease-out) both; }
+@keyframes bal-swap {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+/* The balloon that popped or floated away is blown up again where it was. */
+.bal-slot.is-fresh .bal { animation: bal-fresh 420ms var(--ease-spring) both; transform-origin: 50% 35%; }
+@keyframes bal-fresh { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
 
 /* Keys 1–4: a small hint at the string's end, only where a keyboard is likely. */
 .bal-key {
@@ -225,27 +232,17 @@
 
 /* A landscape phone: the sign and the balloons share very little height. */
 @media (max-height: 420px) {
-  .bal-sky { --bal-w: clamp(56px, 22vh, 120px); }
-  .bal-row { padding-bottom: 4vh; }
+  .bal-sky { --bal-w: clamp(56px, 20vh, 110px); }
   .bal-cloud-c { display: none; }
 }
 
-/* A phone upright: two rows of two, so each balloon gets twice the width. */
+/* A phone upright: four narrow lanes, each balloon as wide as its lane allows. */
 @media (orientation: portrait) and (max-width: 600px) {
-  .bal-sky { --bal-w: clamp(64px, min(34vw, 20vh), 150px); }
-  .bal-row {
-    display: grid;
-    grid-template-columns: repeat(2, auto);
-    justify-content: center;
-    align-content: end;
-    column-gap: 12vw;
-    row-gap: var(--sp-2);
-  }
-  .bal-slot:nth-child(even) { margin-bottom: 0; margin-top: calc(var(--bal-w) * .3); }
+  .bal-sky { --bal-w: clamp(64px, 20vw, 110px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bal-cloud, .bal-rise, .bal-bob, .bal-ring, .bal-sign-answer, .bal-ribbon { animation: none; }
+  .bal-cloud, .bal-bob, .bal-ring, .bal-sign-answer, .bal-ribbon, .bal-num, .bal-slot.is-fresh .bal { animation: none; }
   .bal-slot.is-popped .bal-art,
   .bal-slot.is-popped .bal-num,
   .bal-slot.is-popped .bal-key,

@@ -87,10 +87,22 @@
 }
 .spel-score svg { color: var(--spel-star); stroke: var(--spel-ink); }
 .spel-help-btn { min-height: var(--spel-tap); white-space: nowrap; }
+/* Doubled class: the game's 48 px target wins over .kiosk-btn's own size and padding. */
+.kiosk-btn.spel-sound-btn {
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.spel-sound-btn svg { width: 24px; height: 24px; }
+.spel-sound-btn[aria-pressed='true'] svg { color: var(--accent); }
 .spel-help-btn svg { color: var(--accent); }
 /* A phone in portrait: the icon alone, its name stays for screen readers through the button text. */
 @media (max-width: 560px) {
-  .spel-help-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .spel-help-btn span,
+  .spel-topbar [data-stop='arm'] span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 
 .spel-stage {

@@ -7,18 +7,18 @@ import type { SkinEntry } from './types';
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends.
-        meta: { id: 'pinguintoren', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 } },
+        meta: { id: 'pinguintoren', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: 'splash' } },
         icon: Bird,
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
     },
     {
-        meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 } },
+        meta: { id: 'ballonnen', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' } },
         icon: Balloon,
         Component: lazy(() => import('./ballonnen/Ballonnen')),
     },
     {
         // About 3 minutes; the zombies speed up with the streak (progress.streak).
-        meta: { id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 } },
+        meta: { id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, sounds: { correct: 'poef', wrong: 'plop', miss: 'boing' } },
         icon: Ghost,
         Component: lazy(() => import('./zombies/Zombies')),
     },
