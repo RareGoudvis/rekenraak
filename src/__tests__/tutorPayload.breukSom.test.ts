@@ -61,7 +61,8 @@ describe('breuken sums in the stappenhulp QR', () => {
             });
         }
         expect(checked).toBeGreaterThan(10);
-    });
+    // Three generator runs: under a loaded pre-commit gate (several worktrees at once) this passed the 5 s default.
+    }, 30_000);
 
     it('in refuses broken data', () => {
         const c = codecById('bs')!;
