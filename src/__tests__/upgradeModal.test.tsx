@@ -14,7 +14,7 @@ const OLD = 'v0.5-2026-05-31';
 beforeEach(() => {
     localStorage.clear();
     window.location.hash = '';
-    useWorksheetStore.setState({ curriculum: null, view: 'editor', oefenBuilderOpen: false });
+    useWorksheetStore.setState({ curriculum: null, view: 'editor', oefenInitial: null });
 });
 afterEach(() => {
     cleanup();
@@ -75,10 +75,10 @@ describe('upgrade modal content', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    test('Probeer Oefenmodus opens the builder and closes', () => {
+    test('Probeer Oefenmodus opens the Oefenmodus workspace on a new session and closes', () => {
         const { onClose } = open();
         fireEvent.click(screen.getByRole('button', { name: 'Probeer Oefenmodus' }));
-        expect(useWorksheetStore.getState().oefenBuilderOpen).toBe(true);
+        expect(useWorksheetStore.getState()).toMatchObject({ view: 'oefenmodus', oefenInitial: null, oefenReturn: 'editor' });
         expect(onClose).toHaveBeenCalled();
     });
 
