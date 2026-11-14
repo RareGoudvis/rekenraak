@@ -25,10 +25,14 @@ interface Props {
     hoverOf?: (leaf: TreeLeaf) => Record<string, unknown>;
     // Extra content after a leaf's label (the Oefenmodus count badge).
     leafEnd?: (leafId: string) => ReactNode;
+    // The leaf's tooltip; the editor's says it adds one exercise to the sheet.
+    leafTitle?: (label: string) => string;
 }
 
+const sheetTitle = (label: string) => `${label} toevoegen (één oefening)`;
+
 // The Uitgebreid tree: domain bands, subdomain rows with a count, type accordions and leaves.
-export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafEnd }: Props) {
+export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafEnd, leafTitle = sheetTitle }: Props) {
     const { openSubdomain, openTypes, toggleSubdomain, toggleType } = open;
     const isSearching = search.trim().length > 0;
     return (<>
@@ -89,7 +93,7 @@ export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafE
                                                                         key={type.id}
                                                                         className="sidebar-leaf"
                                                                         style={S.leafBtn}
-                                                                        title={`${type.label} toevoegen (één oefening)`}
+                                                                        title={leafTitle(type.label)}
                                                                         onClick={() => onLeaf(leaf)}
                                                                         {...hoverOf?.(leaf)}
                                                                     >
@@ -127,7 +131,7 @@ export default function SidebarTree({ tree, search, open, onLeaf, hoverOf, leafE
                                                                                         key={leaf.id}
                                                                                         className="sidebar-leaf"
                                                                                         style={S.leafBtn}
-                                                                                        title={`${leaf.label} toevoegen (één oefening)`}
+                                                                                        title={leafTitle(leaf.label)}
                                                                                         onClick={() => onLeaf(leaf)}
                                                                                         {...hoverOf?.(leaf)}
                                                                                     >

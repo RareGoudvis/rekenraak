@@ -24,7 +24,7 @@ const accentStyle = (a: string) => ({ ['--ez-line' as string]: `var(--domain-${a
 // A pick hands on the variant; without one the card adds itself to the sheet.
 type Pick = (v: CardVariant) => void;
 
-function TypeCard({ x, accent, onPick = addCardToSheet, badge }: { x: CardType; accent: string; onPick?: Pick; badge?: number }) {
+function TypeCard({ x, accent, onPick = addCardToSheet }: { x: CardType; accent: string; onPick?: Pick }) {
     const first = x.vars[0];
     const resolved = useMemo(() => { try { return resolveCard(first); } catch { return null; } }, [first]);
     const pills = useMemo(() => planPills(x), [x]);
@@ -43,7 +43,7 @@ function TypeCard({ x, accent, onPick = addCardToSheet, badge }: { x: CardType; 
             onClick={() => onPick(first)}
             onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onPick(first); } }}
         >
-            <div className="ez-tc-h"><b>{x.name}</b>{!!badge && <span style={badgeStyle}>{badge}×</span>}</div>
+            <div className="ez-tc-h"><b>{x.name}</b></div>
             <div className="ez-tc-p">
                 <ExercisePreview typeId={resolved.typeId} constraints={resolved.constraints} height={100} fitOne unclamped showSolutions={false} onInk={onInk} />
             </div>
@@ -60,18 +60,10 @@ function TypeCard({ x, accent, onPick = addCardToSheet, badge }: { x: CardType; 
     );
 }
 
-// SYNC: the count badge of EenvoudigPane / sidebar.tsx countBadge.
-const badgeStyle: CSSProperties = {
-    flexShrink: 0, marginLeft: 'auto', padding: '0 6px', minWidth: '20px', textAlign: 'center',
-    borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--accent-soft)',
-    color: 'var(--accent)', fontSize: 'var(--text-xs)', fontWeight: 600, lineHeight: '17px',
-};
-
 // Oefenmodus: only the variants `keep` passes, picks go to `onPick`, no "Zelf samenstellen" (it makes sheet blocks).
 export interface TopicPanelFilter {
     keep: (v: CardVariant) => boolean;
     onPick: Pick;
-    badgeOf?: (card: CardType) => number;
 }
 
 // Same card objects in, same filtered objects out, so TypeCard's memos hold across renders.
@@ -133,7 +125,7 @@ export default function TopicPanel({ topicId, data, filter }: { topicId: string;
                 <div key={s || 'main'}>
                     {s && <div className="ez-sec">{s}</div>}
                     <div className="ez-grid">
-                        {cards.filter(c => c.section === s).map(c => <TypeCard key={c.vars[0].id} x={c} accent={accent} onPick={filter?.onPick} badge={filter?.badgeOf?.(c)} />)}
+                        {cards.filter(c => c.section === s).map(c => <TypeCard key={c.vars[0].id} x={c} accent={accent} onPick={filter?.onPick} />)}
                         {s === lastSection && ownCard}
                     </div>
                 </div>
