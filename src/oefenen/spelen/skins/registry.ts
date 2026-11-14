@@ -7,7 +7,8 @@ import { ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react
 // keypad gets a second field; until then they say number only.
 const KEYPAD_NUMBER: SkinAccepts = { kinds: ['number'] };
 // Tap skins show the options on their targets: session distractors for a number, or the exercise's own choices.
-const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 4 };
+// Measured 2026-11-14 at 1180×820: "89 991" stays readable on a balloon, mole and parcel (the label scales with the target).
+const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 5 };
 
 // Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
@@ -142,7 +143,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // Pasen: nine eggs in the grass, the answer and eight distractors (choiceCount). Untimed. Number only:
-        // an exercise's own choices are too few for nine eggs.
+        // an exercise's own choices are too few for nine eggs. Four characters: "89 991" sticks out past the egg (measured 2026-11-14).
         meta: {
             id: 'eieren', label: 'Eieren zoeken', input: 'choice', choiceCount: 9, timed: false, round: { questions: 15 }, season: 'pasen',
             accepts: { kinds: ['number'], maxAnswerChars: 4 }, sounds: { correct: 'piep', wrong: 'plop' },

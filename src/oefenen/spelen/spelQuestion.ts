@@ -6,8 +6,9 @@ import type { ZelfChoice } from '../zelf/zelfSessie';
 import { choicesOf, mulberry32, seedOf, type SumFacts } from './distractors';
 import { NUMBER_CONTENT, type SpelContent } from './accepts';
 import type { AnswerKind } from './skins/types';
+import { answerCharsOf } from './answerChars';
 
-// What a game may ask (owner 2026-11-14): hoofdrekenen + − and the maal- en deeltafels with natural numbers, leerjaar 1–3.
+// What a game may ask (owner 2026-11-14): hoofdrekenen + − (leerjaar 1–3) and × : (leerjaar 1–4) with natural numbers.
 // Keyed by leaf: the same typeId also serves decimals and breuken, which have no game yet.
 export const SPEL_LEAVES: Readonly<Record<string, SumFacts['op']>> = {
     'hr-std-optellen-nat': '+',
@@ -20,15 +21,24 @@ export const SPEL_LEAVES: Readonly<Record<string, SumFacts['op']>> = {
 const playableVariant = (v: ZelfChoice['vars'][number]) => v.leafId in SPEL_LEAVES && v.ov?.multiplicationMode !== 'met_rest';
 
 export const SPEL_MAX_GRADE = 3;
+// × and : also play in leerjaar 4 (owner 2026-11-14: × / : 1000, E × DHTE); + and − stay at 3 until their leerjaar-4 cards are reviewed.
+export const SPEL_MAX_GRADE_MULDIV = 4;
 
-/** Whether a Zelf oefenen choice can be played as a game: every variant a leaf above (no met rest), at leerjaar 1–3. */
+const isMulDiv = (v: ZelfChoice['vars'][number]) => SPEL_LEAVES[v.leafId] === 'x' || SPEL_LEAVES[v.leafId] === ':';
+
+/** Whether a Zelf oefenen choice can be played as a game: every variant a leaf above (no met rest), at leerjaar 1–3 (× and : alone: 1–4). */
 export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
-    return grade <= SPEL_MAX_GRADE && choice.vars.length > 0 && choice.vars.every(playableVariant);
+    if (!choice.vars.length || !choice.vars.every(playableVariant)) return false;
+    return grade <= (choice.vars.every(isMulDiv) ? SPEL_MAX_GRADE_MULDIV : SPEL_MAX_GRADE);
 }
 
-/** What a playable choice asks of a game (the picker filters on it): today always a whole number. */
+/** What a playable choice asks of a game (the picker filters on it): a whole number, as long as its settings allow. */
 export const spelContentOf = (choice: ZelfChoice, grade: number): SpelContent | null =>
-    (choiceCanPlay(choice, grade) ? { ...NUMBER_CONTENT, ops: [...new Set(choice.vars.map(v => SPEL_LEAVES[v.leafId]))] } : null);
+    (choiceCanPlay(choice, grade) ? {
+        ...NUMBER_CONTENT,
+        ops: [...new Set(choice.vars.map(v => SPEL_LEAVES[v.leafId]))],
+        answerChars: answerCharsOf(choice.vars, v => SPEL_LEAVES[v.leafId]),
+    } : null);
 
 // One question of a game: the exercise exactly as the kiosk made it, plus what the skins show.
 export interface SpelQuestion {

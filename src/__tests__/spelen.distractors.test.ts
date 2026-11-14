@@ -45,10 +45,10 @@ describe('distractors', () => {
         expect(c).toContain(57);
     });
 
-    test('over many generated + and − sums of every playable choice (leerjaar 1 to 3)', async () => {
+    test('over many generated sums of every playable choice (leerjaar 1 to 4)', async () => {
         const data = await loadEenvoudigData();
         let sums = 0;
-        for (const g of [1, 2, 3] as const) {
+        for (const g of [1, 2, 3, 4] as const) {
             for (const topic of usableVariants(data, g).keys()) {
                 for (const choice of choicesFor(data, g, topic)) {
                     if (!choiceCanPlay(choice, g)) continue;
