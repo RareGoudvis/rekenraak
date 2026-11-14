@@ -9,13 +9,14 @@ import type { HandigStrategy, StepLine } from '../../services/math/workedSteps';
 import { handigFor, stepsFor } from '../../services/stepsAvailability';
 import { buildZelfSessie, type ZelfChoice } from '../zelf/zelfSessie';
 import { useOefenStore } from '../useOefenStore';
-import { createSpelEvents, type SpelEvents } from './events';
+import { createSpelEvents, type SpelEvents, type SpelOutcome } from './events';
 import { reviewOf } from './review';
 import { spelQuestionOf, type SpelQuestion } from './spelQuestion';
 import type { SkinMeta, SkinProgress } from './skins/types';
 
 // The Spelen session: a round of one Zelf oefenen choice behind a game skin. Runtime only: never in a
-// link, a session hash or the device stats. One try per question, no steps during play, no lives.
+// link, a session hash or the device stats. One try per question, no steps during play, no lives
+// (only a meta.canFail skin may end a round early, through fail()).
 
 export type SpelPhase = 'idle' | 'play' | 'right' | 'wrong' | 'help' | 'end';
 
@@ -48,6 +49,10 @@ interface SpelState {
     // Goal rounds (meta.round.goal): the climb, +1 per right answer (met hulp too), −1 per mistake, never below 0.
     climb: number;
     mistakes: SpelMistake[];
+    // Answers that were the skin's own deadline (onMiss), met hulp or not: a zombie got through.
+    misses: number;
+    // Set when the round ends.
+    outcome: SpelOutcome | null;
     // The steps for the question on screen while paused; null lines = this sum has none.
     help: { lines: StepLine[] | null; handig: HandigStrategy[] } | null;
     // Timed rounds: the deadline, and what was left when the round paused.
@@ -63,6 +68,8 @@ interface SpelState {
     answer(given: string, now?: number): void;
     // The skin's deadline for this question ran out (a zombie at the door): a mistake with no answer.
     miss(now?: number): void;
+    // A canFail skin's friendly early end (the dam broke): the round ends now, as 'failed'.
+    fail(now?: number): void;
     openHelp(now?: number): void;
     closeHelp(now?: number): void;
     tick(now?: number): void;
@@ -75,13 +82,24 @@ interface SpelState {
 }
 
 /** What the skins read as progress. */
-export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | 'score' | 'streak' | 'bestStreak' | 'climb' | 'endsAt' | 'pausedLeft'>, now = Date.now()): SkinProgress {
+export function progressOf(st: Pick<SpelState, 'meta' | 'history' | 'sessie' | 'score' | 'streak' | 'bestStreak' | 'climb' | 'endsAt' | 'pausedLeft' | 'mistakes' | 'misses'>, now = Date.now()): SkinProgress {
     const target = st.meta?.round.goal;
+    const seconds = st.meta?.round.seconds;
     return {
         goal: target ? { count: st.climb, target } : null,
         answered: st.history.length, total: st.sessie?.total ?? null, score: st.score, streak: st.streak, bestStreak: st.bestStreak,
         msLeft: st.pausedLeft ?? (st.endsAt !== null ? Math.max(0, st.endsAt - now) : null),
+        right: st.history.filter(h => h.correct).length, mistakes: st.mistakes.length, misses: st.misses,
+        msTotal: seconds ? seconds * 1000 : null,
     };
+}
+
+/** How a round ended (see SpelOutcome). */
+export function outcomeOf(st: Pick<SpelState, 'meta' | 'climb'>, failed: boolean): SpelOutcome {
+    if (failed) return 'failed';
+    const goal = st.meta?.round.goal;
+    if (goal) return st.climb >= goal ? 'won' : st.meta?.timed ? 'lost' : 'done';
+    return st.meta?.canFail ? 'won' : 'done';
 }
 
 /** The game's session: the choice's Zelf oefenen types unchanged (a game never changes what is asked), its round from the skin. */
@@ -95,18 +113,19 @@ export const spelSessieOf = (o: SpelStart): OefenSessie => {
 
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
-    helped: 0, helpedNow: false, climb: 0, mistakes: [], help: null, endsAt: null, pausedLeft: null, shownAt: 0,
+    helped: 0, helpedNow: false, climb: 0, mistakes: [], misses: 0, outcome: null as SpelOutcome | null, help: null, endsAt: null, pausedLeft: null, shownAt: 0,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
     let flashTimer: ReturnType<typeof setTimeout> | null = null;
     const clearFlash = () => { if (flashTimer !== null) clearTimeout(flashTimer); flashTimer = null; };
 
-    const end = () => {
+    const end = (failed = false) => {
         clearFlash();
         const { score, bestStreak, mistakes, helped, events } = get();
-        set({ phase: 'end', feedback: null, help: null });
-        events.emit('end', { score, bestStreak, mistakes: mistakes.length, helped });
+        const outcome = outcomeOf(get(), failed);
+        set({ phase: 'end', feedback: null, help: null, outcome });
+        events.emit('end', { score, bestStreak, mistakes: mistakes.length, helped, outcome });
     };
 
     const timeUp = (now: number) => {
@@ -115,7 +134,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
     };
 
     // One answer (or a miss) on the question on screen: log it, score it, flash, then the next question by itself.
-    const settle = (given: string, correct: boolean, now: number) => {
+    const settle = (given: string, correct: boolean, now: number, missed = false) => {
         const st = get();
         const { sessie: s, question: q, events } = st;
         if (!s || !q) return;
@@ -125,9 +144,10 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         const counts = !st.helpedNow;
         const streak = !counts ? st.streak : correct ? st.streak + 1 : 0;
         // The climb: met hulp still builds (asking is fine), only a counted mistake takes a block off.
-        const climb = correct ? st.climb + 1 : counts ? Math.max(0, st.climb - 1) : st.climb;
+        const drop = counts && !st.meta?.round.goalKeep;
+        const climb = correct ? st.climb + 1 : drop ? Math.max(0, st.climb - 1) : st.climb;
         set({
-            history, streak, bestStreak: Math.max(st.bestStreak, streak), climb,
+            history, streak, bestStreak: Math.max(st.bestStreak, streak), climb, misses: st.misses + (missed ? 1 : 0),
             score: st.score + (counts && correct ? 1 : 0),
             mistakes: counts && !correct ? [...st.mistakes, { question: q, given }] : st.mistakes,
             feedback: { given, expected: q.answer, correct },
@@ -184,7 +204,14 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         miss(now = Date.now()) {
             const { phase, sessie: s, question: q } = get();
             if (phase !== 'play' || !s || !q) return;
-            settle('', false, now);
+            settle('', false, now, true);
+        },
+
+        fail(now = Date.now()) {
+            const { phase, meta, events } = get();
+            if (!meta?.canFail || (phase !== 'play' && phase !== 'right' && phase !== 'wrong')) return;
+            if (timeUp(now)) { events.emit('timeUp', {}); end(); return; }
+            end(true);
         },
 
         openHelp(now = Date.now()) {

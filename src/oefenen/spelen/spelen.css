@@ -232,3 +232,25 @@
 .spel-end-main { min-height: 64px; min-width: min(100%, 320px); }
 .spel-end-clean { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; color: var(--kiosk-ok); }
 .spel-end-more { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
+
+/* ── Pre-start options (SpelOptions) ──────────────────────────────────────── */
+.spel-options { width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
+.spel-options-title { margin: 0; font-size: var(--kiosk-text-xl); }
+.spel-option { width: 100%; display: flex; flex-direction: column; gap: var(--sp-2); }
+.spel-option-label { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; text-align: center; }
+.spel-option-choices { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+.spel-options-start { min-height: 64px; min-width: min(100%, 280px); }
+
+/* ── A skin's ending picture on the end screen (skins/*: Ending) ─────────── */
+.spel-ending {
+  position: relative;
+  width: min(100%, 560px);
+  height: clamp(130px, 26vh, 240px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  overflow: clip;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--spel-sky);
+}
+.spel-ending > svg { position: absolute; inset: 0; width: 100%; height: 100%; }

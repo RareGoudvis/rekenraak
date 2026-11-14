@@ -1,0 +1,197 @@
+/* Bom skin. A round cartoon bomb, flat fills under a thick dark outline (spelen.css tokens). The fuse and
+   spark follow the shell's clock through CSS transitions; every other movement is a CSS transform. */
+.bom-root,
+.bom-ending {
+  --bom-body: color-mix(in srgb, var(--spel-ink) 88%, var(--accent-bewerkingen));
+  --bom-cap: color-mix(in srgb, var(--text-muted) 55%, var(--kiosk-paper));
+  --bom-fuse: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+  --bom-screen: color-mix(in srgb, var(--accent-metendrekenen) 18%, var(--kiosk-paper));
+  --bom-done: var(--accent-metendrekenen);
+  --bom-smoke: color-mix(in srgb, var(--text-muted) 22%, var(--kiosk-paper));
+  --bom-cheek: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-paper));
+}
+.bom-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: linear-gradient(to top, var(--spel-grass) 12%, var(--spel-sky) 12%);
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* ── The bomb ─────────────────────────────────────────────────────────────── */
+.bom-world {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+}
+.bom-svg { width: 100%; height: 100%; min-height: 0; overflow: visible; }
+.bom-art * { stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.bom-shadow { fill: color-mix(in srgb, var(--spel-ink) 18%, transparent); stroke: none; }
+.bom-body { fill: var(--bom-body); }
+.bom-cap { fill: var(--bom-cap); }
+.bom-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 8; opacity: .55; }
+.bom-fuse-dim { fill: none; stroke: color-mix(in srgb, var(--text-muted) 35%, transparent); stroke-width: 4; stroke-dasharray: 4 6; }
+.bom-fuse {
+  fill: none;
+  stroke: var(--bom-fuse);
+  stroke-width: 7;
+  stroke-dasharray: 100 100;
+  transition: stroke-dashoffset 250ms linear;
+}
+.bom-display rect { fill: var(--bom-screen); }
+.bom-display text {
+  fill: var(--kiosk-ink);
+  stroke: none;
+  font-family: var(--font-sheet-math);
+  font-size: 36px;
+  font-weight: 700;
+}
+.bom-eye { fill: var(--kiosk-paper); stroke-width: 3; }
+.bom-pupil { fill: var(--spel-ink); stroke: none; }
+.bom-smile { fill: none; stroke: var(--kiosk-paper); stroke-width: 6; }
+.bom-oh { fill: var(--spel-ink); stroke: var(--kiosk-paper); stroke-width: 4; }
+.bom-cheek { fill: var(--bom-cheek); stroke: none; opacity: .8; }
+.bom-flag-pole { fill: none; stroke-width: 4; }
+.bom-flag-cloth { fill: var(--bom-done); }
+
+/* The spark rides the fuse's end (moved with the clock) and flickers; faster in the last 30 seconds. */
+.bom-spark { transition: transform 250ms linear; }
+.bom-spark-star { fill: var(--spel-star); stroke-width: 2.5; }
+.bom-spark-core { fill: var(--accent-vraagstukken); stroke: none; }
+.bom-spark-flick { animation: bom-flick 460ms ease-in-out infinite alternate; }
+.bom-root.is-hurry .bom-spark-flick { animation-duration: 200ms; }
+@keyframes bom-flick { from { transform: scale(.8) rotate(-12deg); } to { transform: scale(1.15) rotate(12deg); } }
+
+/* The last 30 seconds: the bomb breathes a little; a right answer gives a small relieved squish. */
+.bom-breathe { transform-box: fill-box; transform-origin: 50% 100%; }
+.bom-root.is-hurry .bom-breathe { animation: bom-breathe 900ms ease-in-out infinite alternate; }
+@keyframes bom-breathe { from { transform: scale(1); } to { transform: scale(1.025, .985); } }
+.bom-root .bom-breathe.is-relief { animation: bom-relief 520ms var(--ease-spring); }
+@keyframes bom-relief { 0% { transform: scale(1); } 35% { transform: scale(1.06, .92); } 100% { transform: scale(1); } }
+
+/* ── The "ontmanteld" bar ─────────────────────────────────────────────────── */
+.bom-bar {
+  justify-self: center;
+  width: min(100%, 560px);
+  display: grid;
+  grid-template-columns: repeat(var(--bom-cols), minmax(0, 1fr));
+  gap: 3px;
+  padding: var(--sp-1);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+}
+.bom-seg { height: clamp(14px, 3.2vmin, 26px); border-radius: 3px; background: color-mix(in srgb, var(--text-muted) 16%, var(--kiosk-paper)); }
+.bom-seg.is-done { background: var(--bom-done); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--spel-ink) 35%, transparent); }
+.bom-seg.is-new { animation: bom-seg 420ms var(--ease-spring) both; }
+@keyframes bom-seg { from { transform: scaleY(.2); } to { transform: scaleY(1); } }
+
+/* ── The sum and the keypad ───────────────────────────────────────────────── */
+.bom-panel {
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.bom-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.bom-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+.bom-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .bom-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; background: var(--spel-sky); }
+  .bom-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); border-top: var(--spel-line) solid var(--spel-ink); background: var(--spel-grass); }
+  .bom-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .bom-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .bom-panel { gap: var(--sp-2); }
+}
+
+/* ── The end screen picture ───────────────────────────────────────────────── */
+.bom-ending.is-won { background: var(--spel-sky); }
+.bom-ending.is-puf { background: var(--spel-sky-low); }
+.bom-hop { transform-box: fill-box; transform-origin: 50% 100%; animation: bom-hop 900ms var(--ease-out) infinite alternate; }
+@keyframes bom-hop { from { transform: translateY(0); } to { transform: translateY(-6%); } }
+.bom-cloud circle {
+  fill: var(--bom-smoke);
+  stroke: var(--spel-ink);
+  stroke-width: 4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bom-cloud 700ms var(--ease-spring) both;
+  animation-delay: calc(var(--i) * 60ms);
+}
+@keyframes bom-cloud { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.bom-puf {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6%;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-sheet-math);
+  font-size: clamp(32px, 9vmin, 64px);
+  font-weight: 800;
+  color: var(--spel-ink);
+  letter-spacing: .04em;
+  animation: bom-puf 650ms var(--ease-spring) 200ms both;
+}
+@keyframes bom-puf { from { transform: scale(.3) rotate(-8deg); opacity: 0; } to { transform: scale(1) rotate(-4deg); opacity: 1; } }
+
+.bom-confetti { position: absolute; inset: 0; pointer-events: none; }
+.bom-bit {
+  position: absolute;
+  top: -12px;
+  left: var(--x);
+  width: 10px;
+  height: 14px;
+  border: 2px solid var(--spel-ink);
+  border-radius: 2px;
+  background: var(--c);
+  animation: bom-fall 2.6s linear infinite;
+  animation-delay: calc(var(--i) * -0.17s);
+}
+@keyframes bom-fall {
+  from { transform: translateY(0) rotate(0); }
+  to { transform: translateY(clamp(150px, 28vh, 260px)) rotate(540deg); }
+}
+.bom-confetti.is-still .bom-bit { animation: none; top: calc(8% + (var(--i) * 5.3%)); }
+
+/* "Hoe los ik dit op?": everything holds still. */
+.bom-root.is-paused * { animation-play-state: paused; }
+.bom-root.is-still .bom-fuse,
+.bom-root.is-still .bom-spark { transition: none; }
+.bom-root.is-still .bom-spark-flick,
+.bom-root.is-still .bom-breathe,
+.bom-root.is-still .bom-seg.is-new,
+.bom-ending.is-still .bom-hop,
+.bom-ending.is-still .bom-cloud circle,
+.bom-ending.is-still .bom-puf { animation: none; }
+.bom-ending.is-still .bom-puf { transform: rotate(-4deg); }

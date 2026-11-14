@@ -2,7 +2,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, act } from '@testing-library/react';
 import { SKINS } from '../oefenen/spelen/skins/registry';
-import { createSpelEvents } from '../oefenen/spelen/events';
+import { createSpelEvents, type SpelOutcome } from '../oefenen/spelen/events';
 import {
     SOUND_KEY, SPEL_SOUNDS, play, resetSoundForTests, setSoundOn, soundFor, soundOn, unlockSound, useSpelSounds, type SkinSounds,
 } from '../oefenen/spelen/sound';
@@ -120,13 +120,19 @@ describe('Spelen sound', () => {
         expect(soundFor(cues('zombies'), 'correct', right)).toBe('poef');
         expect(soundFor(cues('zombies'), 'wrong', wrong)).toBe('plop');
         expect(soundFor(cues('zombies'), 'wrong', miss)).toBe('boing');
+        expect(soundFor(cues('bom'), 'correct', right)).toBe('snip');
+        // How a round ended: a cheer for a win, a soft PUF for the bomb's time up, never a buzzer for a fail.
+        const end = (outcome: SpelOutcome) => ({ score: 1, bestStreak: 1, mistakes: 0, helped: 0, outcome });
+        expect(soundFor(cues('bom'), 'end', end('won'))).toBe('cheer');
+        expect(soundFor(cues('bom'), 'end', end('lost'))).toBe('puf');
+        expect(soundFor(cues('ballonnen'), 'end', end('done'))).toBe('jingle');
         // Shared by every game: a sparkle every 5 in a row, the jingle at the end, nothing for help or time up.
         for (const { meta } of SKINS) {
             expect(soundFor(meta.sounds, 'streak', { count: 5 })).toBe('sparkle');
             expect(soundFor(meta.sounds, 'streak', { count: 10 })).toBe('sparkle');
             expect(soundFor(meta.sounds, 'streak', { count: 4 })).toBeNull();
             expect(soundFor(meta.sounds, 'streak', { count: 0 })).toBeNull();
-            expect(soundFor(meta.sounds, 'end', { score: 1, bestStreak: 1, mistakes: 0, helped: 0 })).toBe('jingle');
+            expect(soundFor(meta.sounds, 'end', { score: 1, bestStreak: 1, mistakes: 0, helped: 0, outcome: 'done' })).toBe('jingle');
             expect(soundFor(meta.sounds, 'help', {})).toBeNull();
             expect(soundFor(meta.sounds, 'timeUp', {})).toBeNull();
         }

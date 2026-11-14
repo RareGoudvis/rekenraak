@@ -1,20 +1,33 @@
+import { Suspense } from 'react';
 import { ArrowCounterClockwise, CheckCircle, GameController, Star } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../services/math/formatters';
-import { useSpelStore } from './useSpelStore';
+import { progressOf, useSpelStore } from './useSpelStore';
+import { skinById } from './skins/registry';
 
 // An empty given = a miss (the zombie reached the door before an answer).
 const num = (v: string) => v === '' ? 'geen' : formatMathNumber(Number(v));
 
 // After a round: the numbers, the mistakes, and Nakijken (the mistakes again, Oefenen-style) as the big button.
-export default function SpelEnd() {
-    const { meta, sessie, history, score, bestStreak, helped, mistakes, climb, nakijken, restart, otherGame } = useSpelStore();
+// A lost or failed round reads friendly: never red, never "verloren".
+export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boolean }) {
+    const st = useSpelStore();
+    const { meta, sessie, history, score, bestStreak, helped, mistakes, climb, outcome, nakijken, restart, otherGame } = st;
     const timed = !!meta?.timed;
     const goal = meta?.round.goal;
     // A goal round's question count is only a cap: count what was asked.
     const total = goal ? history.length : sessie?.total ?? history.length;
-    const title = timed ? 'De tijd is om!' : goal && climb >= goal ? 'De toren is af!' : 'Klaar!';
+    const title = outcome === 'failed' ? 'Oei! Nog eens?'
+        : outcome === 'lost' && goal ? `Bijna! ${climb} van ${goal}`
+        : outcome === 'won' && meta?.winTitle ? meta.winTitle
+        : timed ? 'De tijd is om!' : goal && climb >= goal ? 'De toren is af!' : 'Klaar!';
+    const Ending = meta ? skinById(meta.id)?.Ending : undefined;
     return (
         <main className="oefen-center spel-end">
+            {Ending && outcome && (
+                <Suspense fallback={null}>
+                    <Ending outcome={outcome} progress={progressOf(st)} options={meta?.chosen ?? {}} reducedMotion={reducedMotion} />
+                </Suspense>
+            )}
             <h1 className="oefen-title">{title}</h1>
             <p className="oefen-lead">{timed ? `${score} juist` : `${score} van ${total} juist`}</p>
             <dl className="spel-end-stats">

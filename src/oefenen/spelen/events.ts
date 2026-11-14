@@ -1,3 +1,7 @@
+// How a round ended: done = the questions or the clock ran out; won = the goal reached, or a canFail skin
+// held out till the clock; lost = a timed goal not reached (Bom: PUF!); failed = the friendly early end.
+export type SpelOutcome = 'done' | 'won' | 'lost' | 'failed';
+
 // What a game skin can react to; the session emits, skins only listen (a skin never changes what is asked or checked).
 export interface SpelEventMap {
     correct: { given: string; streak: number };
@@ -7,7 +11,7 @@ export interface SpelEventMap {
     // The streak of right answers in a row after an answer (0 after a wrong one).
     streak: { count: number };
     timeUp: Record<string, never>;
-    end: { score: number; bestStreak: number; mistakes: number; helped: number };
+    end: { score: number; bestStreak: number; mistakes: number; helped: number; outcome: SpelOutcome };
 }
 
 export type SpelEventName = keyof SpelEventMap;
