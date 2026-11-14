@@ -1,0 +1,28 @@
+/* Content pictures in the games (SpelVisual.tsx): a sign with a clock face, the face on a target. */
+.spel-sign-has-pic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  white-space: normal;
+}
+.spel-sign-pic { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+/* A face on the sign: at least 96 px, more on a big screen. */
+.spel-sign-pic.is-klok { width: clamp(96px, 19vmin, 160px); height: clamp(96px, 19vmin, 160px); }
+.spel-sign-text { display: inline-block; }
+
+/* Hoe los ik dit op? for a pack question: its picture with the part that matters marked, and the tip. */
+.spel-help-pic.is-klok { width: clamp(140px, 30vmin, 240px); height: clamp(140px, 30vmin, 240px); flex: none; }
+.spel-help-pic.is-digitaal { font-size: var(--kiosk-text-xl); font-weight: 700; }
+.spel-help-tip {
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--kiosk-text-lg);
+  font-weight: 700;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The end screen's foutjes table: a small face beside the question or as the answer. */
+.spel-end-pic { display: inline-flex; vertical-align: middle; margin-inline-end: var(--sp-2); }
+.spel-end-pic.is-klok { width: 64px; height: 64px; }

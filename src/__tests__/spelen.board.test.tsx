@@ -78,15 +78,15 @@ describe('board generation', () => {
         const gt = targetBoardGt(spread, 13, mulberry32(1))!;
         expect(gt.target.kind).toBe('gt');
         expect(gt.target.n % 10).toBe(0);
-        const lows = gt.cells.filter(c => !c.match).map(c => c.question.facts.answer);
+        const lows = gt.cells.filter(c => !c.match).map(c => c.question.facts!.answer);
         expect(lows.every(a => a < gt.target.n)).toBe(true);
         // The nearest ones below the line, not just any small sums.
-        const below = spread.map(q => q.facts.answer).filter(a => a < gt.target.n).sort((a, b) => b - a);
+        const below = spread.map(q => q.facts!.answer).filter(a => a < gt.target.n).sort((a, b) => b - a);
         expect([...lows].sort((a, b) => b - a)).toEqual(below.slice(0, lows.length));
         const grouped = [...spread.slice(0, 20), fake(50, 90), fake(50, 91), fake(50, 92), fake(49, 93), fake(51, 94)];
         const eq = targetBoardEq(grouped, 13, mulberry32(2))!;
         expect(eq.target).toEqual({ kind: 'eq', n: 50 });
-        expect(eq.cells.filter(c => !c.match).map(c => c.question.facts.answer)).toEqual(expect.arrayContaining([49, 51]));
+        expect(eq.cells.filter(c => !c.match).map(c => c.question.facts!.answer)).toEqual(expect.arrayContaining([49, 51]));
     });
 
     test('Hartjes sits in the registry, in Valentijn, and takes today\'s whole-number content', () => {

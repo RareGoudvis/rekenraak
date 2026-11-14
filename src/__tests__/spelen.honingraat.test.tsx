@@ -56,8 +56,8 @@ describe('honeycomb generation', () => {
                         expect(hits.length).toBeGreaterThanOrEqual(3);
                         expect(hits.length).toBeLessThanOrEqual(5);
                         for (const x of comb.cells) {
-                            expect(x.match).toBe(meetsTarget(x.question.facts.answer, t));
-                            if (!x.match) expect(x.question.facts.answer).not.toBe(t.n);
+                            expect(x.match).toBe(meetsTarget(x.question.facts!.answer, t));
+                            if (!x.match) expect(x.question.facts!.answer).not.toBe(t.n);
                         }
                         // The next comb never repeats a sum of this one.
                         const next = nextBoardOf(s, TARGET, comb, [], undefined, mulberry32(seed + 9))!;

@@ -243,3 +243,27 @@
 .ml-root.is-still .ml-hole.is-bonked .ml-mole,
 .ml-root.is-still .ml-hole.is-nope .ml-art,
 .ml-root.is-still .ml-hole.is-answer .ml-mole::after { animation: none; }
+
+/* Content packs (SpelChoiceFace): bigger moles that hold up a clock face (≥ 96 px); a phrase wraps on two lines. */
+.ml-root.has-pictures { --ml-w: clamp(64px, min(17vw, 22vh), 190px); }
+.ml-num.is-picture {
+  top: 50%;
+  width: calc(var(--ml-w) * .66);
+  height: calc(var(--ml-w) * .66);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.ml-num.is-short { font-size: calc(var(--ml-w) * .2); }
+.ml-num.is-words {
+  top: 66%;
+  width: calc(var(--ml-w) * .92);
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: var(--radius-md);
+  font-size: calc(var(--ml-w) * .13);
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+}

@@ -105,6 +105,10 @@ export function pairsBoard(pool: readonly SpelQuestion[], size: number, rng: Rng
     return out;
 }
 
+// Board rounds play number content only (a picture pack never reaches a board skin: accepts.pictures), so
+// facts is there; the typed answer is the fallback.
+const answerOf = (q: SpelQuestion): number => q.facts?.answer ?? Number(q.answer);
+
 // How near a wrong answer is to the target, as a pupil slips: ±1 first, then ±10, ±2, then by distance.
 function nearness(answer: number, target: number): number {
     const d = Math.abs(answer - target);
@@ -114,7 +118,7 @@ function nearness(answer: number, target: number): number {
 /** A target board: 3–5 sums with the target answer and the nearest other sums around them, shuffled; null when the pool has no such group. */
 export function targetBoardEq(pool: readonly SpelQuestion[], size: number, rng: Rng): { cells: BoardCell[]; target: BoardTarget } | null {
     const groups = new Map<number, SpelQuestion[]>();
-    for (const q of pool) groups.set(q.facts.answer, [...(groups.get(q.facts.answer) ?? []), q]);
+    for (const q of pool) groups.set(answerOf(q), [...(groups.get(answerOf(q)) ?? []), q]);
     const rest = size - TARGET_MATCHES.min;
     const fits = shuffle([...groups.keys()], rng).filter(n => groups.get(n)!.length >= TARGET_MATCHES.min && pool.length - groups.get(n)!.length >= rest);
     if (!fits.length) return null;
@@ -122,15 +126,15 @@ export function targetBoardEq(pool: readonly SpelQuestion[], size: number, rng: 
     const n = fits.reduce((best, k) => (groups.get(k)!.length > groups.get(best)!.length ? k : best), fits[0]);
     const k = Math.min(TARGET_MATCHES.max, groups.get(n)!.length, TARGET_MATCHES.min + Math.floor(rng() * (TARGET_MATCHES.max - TARGET_MATCHES.min + 1)));
     const hits = shuffle(groups.get(n)!, rng).slice(0, k);
-    const near = shuffle(pool.filter(q => q.facts.answer !== n), rng)
-        .sort((a, b) => nearness(a.facts.answer, n) - nearness(b.facts.answer, n))
+    const near = shuffle(pool.filter(q => answerOf(q) !== n), rng)
+        .sort((a, b) => nearness(answerOf(a), n) - nearness(answerOf(b), n))
         .slice(0, size - k);
     return { cells: shuffle([...hits.map(q => cellOf(q, true)), ...near.map(q => cellOf(q))], rng), target: { kind: 'eq', n } };
 }
 
 /** The fallback: "groter dan" a round number, 3–5 sums above it and the nearest ones below it (never on it). */
 export function targetBoardGt(pool: readonly SpelQuestion[], size: number, rng: Rng): { cells: BoardCell[]; target: BoardTarget } | null {
-    const answers = pool.map(q => q.facts.answer);
+    const answers = pool.map(q => answerOf(q));
     const top = Math.max(0, ...answers);
     // Round numbers: tens, hundreds on a big card.
     const step = top >= 400 ? 100 : top >= 40 ? 10 : 5;
@@ -144,9 +148,9 @@ export function targetBoardGt(pool: readonly SpelQuestion[], size: number, rng: 
     // Near the middle of the card's answers, so neither side is all tiny or all huge sums.
     const mid = options.sort((a, b) => Math.abs(a - top / 2) - Math.abs(b - top / 2)).slice(0, 3);
     const n = mid[Math.floor(rng() * mid.length)];
-    const ups = shuffle(pool.filter(q => q.facts.answer > n), rng);
+    const ups = shuffle(pool.filter(q => answerOf(q) > n), rng);
     const k = Math.min(ups.length, TARGET_MATCHES.min + Math.floor(rng() * (TARGET_MATCHES.max - TARGET_MATCHES.min + 1)));
-    const lows = shuffle(pool.filter(q => q.facts.answer < n), rng).sort((a, b) => b.facts.answer - a.facts.answer).slice(0, size - k);
+    const lows = shuffle(pool.filter(q => answerOf(q) < n), rng).sort((a, b) => answerOf(b) - answerOf(a)).slice(0, size - k);
     if (lows.length < size - k) return null;
     return { cells: shuffle([...ups.slice(0, k).map(q => cellOf(q, true)), ...lows.map(q => cellOf(q))], rng), target: { kind: 'gt', n } };
 }

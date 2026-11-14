@@ -249,3 +249,24 @@
   .bal-slot.is-away .bal { animation: bal-fade 300ms linear forwards; }
 }
 @keyframes bal-fade { to { opacity: 0; } }
+
+/* Content packs (SpelChoiceFace): a clock face fills the balloon's body; a phrase wraps on two lines. */
+.bal-num.is-picture {
+  width: calc(var(--bal-w) * .72);
+  height: calc(var(--bal-w) * .72);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.bal-num.is-short { font-size: calc(var(--bal-w) * .19); }
+.bal-num.is-words {
+  width: calc(var(--bal-w) * .9);
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: var(--radius-md);
+  font-size: calc(var(--bal-w) * .14);
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+}

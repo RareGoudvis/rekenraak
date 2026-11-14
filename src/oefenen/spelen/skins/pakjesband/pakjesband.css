@@ -322,3 +322,24 @@
 .pk-root.is-still .pk-slot.is-down .pk-hop { animation: pk-fade 300ms linear forwards; }
 .pk-root.is-still .pk-slot.is-bounce .pk-hop { animation: none; opacity: .4; }
 @keyframes pk-fade { to { opacity: 0; } }
+
+/* Content packs (SpelChoiceFace): bigger parcels so a clock face reads (≥ 96 px); a phrase wraps on two lines. */
+.pk-root.has-pictures { --pk-w: clamp(60px, min(15vw, 21vh), 160px); }
+.pk-num.is-picture {
+  width: calc(var(--pk-w) * .68);
+  height: calc(var(--pk-w) * .68);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.pk-num.is-short { font-size: calc(var(--pk-w) * .2); }
+.pk-num.is-words {
+  width: calc(var(--pk-w) * .86);
+  min-width: 0;
+  padding: 2px 4px;
+  font-size: calc(var(--pk-w) * .13);
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+}

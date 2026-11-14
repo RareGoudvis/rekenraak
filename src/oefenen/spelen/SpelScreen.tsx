@@ -9,6 +9,7 @@ import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
 import type { SumFacts } from './distractors';
 import SpelEnd from './SpelEnd';
+import { SpelVisual } from './SpelVisual';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
 import './spelen.css';
@@ -68,7 +69,13 @@ function HelpPanel() {
             <div className={`spel-help-card${lines ? '' : ' is-tip'}`}>
                 <section className="spel-help-sum">
                     <h2 id="spel-help-title" className="spel-help-title">Zo los je het op</h2>
-                    <p className="spel-help-question kiosk-math">{question.text}</p>
+                    {question.help ? (
+                        // A pack question (the klok): its picture with the part that matters marked, and a short tip.
+                        <>
+                            {question.help.visual && <span className={`spel-help-pic is-${question.help.visual.kind}`}><SpelVisual visual={question.help.visual} /></span>}
+                            <p className="spel-help-tip">{question.help.tip}</p>
+                        </>
+                    ) : <p className="spel-help-question kiosk-math">{question.text}</p>}
                     {cardVisual}
                 </section>
                 <section className="spel-help-steps">
@@ -77,7 +84,7 @@ function HelpPanel() {
                             visual={visual} onVisual={onVisual} />
                     ) : (
                         <div className="kiosk-steps">
-                            <p className="kiosk-steps-lead">{helpTip(question.facts)}</p>
+                            <p className="kiosk-steps-lead">{question.facts ? helpTip(question.facts) : question.help?.tip}</p>
                             <button type="button" className="kiosk-btn kiosk-btn-big" onClick={() => closeHelp()} autoFocus>Verder spelen</button>
                         </div>
                     )}
@@ -149,11 +156,12 @@ export default function SpelScreen() {
             <main className="spel-stage">
                 <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}>
                     <Skin
-                        question={st.question ? { key: st.question.key, text: st.question.text, index: progress.answered - (phase === 'right' || phase === 'wrong' ? 1 : 0) } : null}
+                        question={st.question ? { key: st.question.key, text: st.question.text, index: progress.answered - (phase === 'right' || phase === 'wrong' ? 1 : 0), visual: st.question.visual } : null}
                         choices={st.meta.input === 'choice' ? st.question?.choices ?? null : null}
                         board={st.board}
                         onBoardPick={(cell, given, strike) => st.boardPick(cell, given, strike)}
                         onBoardFocus={st.boardFocus}
+                        views={st.meta.input === 'choice' ? st.question?.views ?? null : null}
                         phase={phase}
                         feedback={st.feedback}
                         onAnswer={st.answer}

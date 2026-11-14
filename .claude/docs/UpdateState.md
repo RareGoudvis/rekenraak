@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Spelen plays the klok (first content pack): content/pack.ts (SpelVisual: klok face / digital time; a question visual, per-choice views), content/packs.ts (SPEL_PACKS), SpelVisual / SpelChoiceFace; four directions from the cards (klok lezen in words, wijzerklok → digitaal, wijzers tekenen, digitale klok instellen); clock distractors (half-drie trap, kwart over/voor, hands swapped, ±5 min, wrong hour; never 08:15 next to 20:15); content `pictures: true` only reaches skins with `accepts.pictures` (Ballonnen, Pakjesband, Mollen). Board code reads answers through answerOf (facts is optional now).
+
 **2026-11-14** — Spelen round 3B: Kerstboom versieren (Kerst, 15 decorations + star, lights up), Verborgen prent (16 tiles over 8 code-drawn funny animals in prent/prenten/, no repeat in a row) and Schatkist (the last digits of right answers make a 4-digit lock code, 3 chests; accepts digits only). That makes 15 games.
 
 **2026-11-14** — Spelen round 3C: board rounds (several sums at once, checked per sum in the session, Nakijken intact: `round.board`, `boardPick`, `boardFocus`), Hartjes koppelen (Valentijn memory, a sum's second wrong pairing logs it) and Honingraat (Lente, find every sum that makes N, a wrong cell is a mistake). Plus the breuken content pieces, not yet in a game: BreukPicture (pizza / taart / reep / strook / cirkel, noemer 2–12) and seeded breuk questions (L2 noemer 2–4, L3 to 10, L4 to 12; options never equal in value, no onechte breuken).

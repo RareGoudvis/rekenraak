@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { Star } from '@phosphor-icons/react';
-import { formatMathNumber } from '../../../../services/math/formatters';
 import type { SkinProps } from '../types';
+import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
+import { choiceLabel, faceKind, signClass } from '../../spelChoice';
 import { floatAt, floatPace, floatPath, type FloatGeom, type FloatPath } from './float';
 import './ballonnen.css';
 
@@ -50,7 +51,7 @@ function measure(sky: HTMLDivElement): FloatGeom | null {
     };
 }
 
-export default function Ballonnen({ question, choices, phase, feedback, onAnswer, progress, events, reducedMotion }: SkinProps) {
+export default function Ballonnen({ question, choices, views, phase, feedback, onAnswer, progress, events, reducedMotion }: SkinProps) {
     const [picked, setPicked] = useState<{ key: string; index: number } | null>(null);
     const [ribbon, setRibbon] = useState<{ count: number; at: number } | null>(null);
     const options = choices ?? [];
@@ -147,7 +148,6 @@ export default function Ballonnen({ question, choices, phase, feedback, onAnswer
 
     if (!question) return <div className="bal-sky" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
 
     return (
         <div ref={sky} className={`bal-sky${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
@@ -159,10 +159,8 @@ export default function Ballonnen({ question, choices, phase, feedback, onAnswer
             </svg>
 
             <div className="bal-top">
-                <p className={`bal-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="bal-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
+                <p className={`bal-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
+                    <SpelSign question={question} feedback={feedback} flash={flash} choices={options} views={views} answerClassName="bal-sign-answer" />
                 </p>
                 {ribbon && (
                     <p key={ribbon.at} className="bal-ribbon" role="status">
@@ -174,6 +172,7 @@ export default function Ballonnen({ question, choices, phase, feedback, onAnswer
             <div className="bal-field" role="group" aria-label="Kies het antwoord">
                 {SLOTS.filter(i => options[i] !== undefined).map(i => {
                     const c = options[i];
+                    const view = views?.[i];
                     const state = pickedIdx === i ? (feedback?.correct ? ' is-popped' : ' is-away')
                         : flash && i === answerIdx && !feedback?.correct ? ' is-answer'
                         : flash ? ' is-rest'
@@ -182,14 +181,14 @@ export default function Ballonnen({ question, choices, phase, feedback, onAnswer
                         <div key={i} ref={el => { slots.current[i] = el; }} className={`bal-slot${state}`}
                             style={{ '--i': i, '--fill': `var(--spel-fill-${i})` } as CSSProperties}>
                             <div className="bal-bob">
-                                <button type="button" className="bal" disabled={phase !== 'play'} aria-label={formatMathNumber(Number(c))}
+                                <button type="button" className="bal" disabled={phase !== 'play'} aria-label={choiceLabel(c, view)}
                                     // A moving target: the tap counts where the finger lands, not where it lifts.
                                     onPointerDown={e => { if (e.button === 0) pick(i); }}
                                     onClick={() => pick(i)}>
                                     <BalloonArt />
                                     {i === answerIdx && !feedback?.correct && <span className="bal-ring" aria-hidden />}
                                     {/* Keyed per question: the new number fades in on the same balloon. */}
-                                    <span key={question.key} className="bal-num kiosk-math" aria-hidden>{formatMathNumber(Number(c))}</span>
+                                    <span key={question.key} className={`bal-num kiosk-math is-${faceKind(view)}`} aria-hidden><SpelChoiceFace value={c} view={view} /></span>
                                     <span className="bal-key" aria-hidden>{i + 1}</span>
                                 </button>
                                 {state === ' is-popped' && !reducedMotion && (

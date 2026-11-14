@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
 import type { SkinProps } from '../types';
+import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
+import { choiceLabel, faceKind, signClass } from '../../spelChoice';
 import { beltDone, beltStep, isOff, parcelAt, runStart } from './belt';
 import './pakjesband.css';
 
@@ -60,7 +61,7 @@ function Horse() {
     );
 }
 
-export default function Pakjesband({ question, choices, phase, feedback, onAnswer, onMiss, reducedMotion }: SkinProps) {
+export default function Pakjesband({ question, choices, views, phase, feedback, onAnswer, onMiss, reducedMotion }: SkinProps) {
     const [picked, setPicked] = useState<{ key: string; index: number; dx: number; dy: number } | null>(null);
     const options = choices ?? [];
     const pickedNow = picked && question && picked.key === question.key ? picked : null;
@@ -162,21 +163,18 @@ export default function Pakjesband({ question, choices, phase, feedback, onAnswe
 
     if (!question) return <div className="pk-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
     const right = phase === 'right' && pickedNow;
 
     return (
-        <div className={`pk-root${phase === 'play' && !reducedMotion ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`pk-root${views ? ' has-pictures' : ''}${phase === 'play' && !reducedMotion ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
             <span className="pk-moon" aria-hidden />
             {STARS.map(([x, y, s], k) => (
                 <span key={k} className="pk-star" style={{ left: `${x}%`, top: `${y}%`, '--s': s, '--k': k } as CSSProperties} aria-hidden><StarArt /></span>
             ))}
 
             <div className="pk-top">
-                <p className={`pk-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="pk-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
+                <p className={`pk-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
+                    <SpelSign question={question} feedback={feedback} flash={flash} choices={options} views={views} answerClassName="pk-sign-answer" />
                 </p>
             </div>
 
@@ -204,12 +202,12 @@ export default function Pakjesband({ question, choices, phase, feedback, onAnswe
                         return (
                             <div key={`${question.key}-${i}`} ref={el => { parcels.current[i] = el; }} className={`pk-slot${state}`}>
                                 <div className="pk-hop" style={{ '--fill': `var(--spel-fill-${i})`, '--dx': `${pickedNow?.index === i ? pickedNow.dx : 0}px`, '--dy': `${pickedNow?.index === i ? pickedNow.dy : 0}px` } as CSSProperties}>
-                                    <button type="button" className="pk-parcel" disabled={phase !== 'play'} aria-label={formatMathNumber(Number(c))}
+                                    <button type="button" className="pk-parcel" disabled={phase !== 'play'} aria-label={choiceLabel(c, views?.[i])}
                                         // A moving target: the tap counts where the finger lands.
                                         onPointerDown={e => { if (e.button === 0) pick(i); }}
                                         onClick={() => pick(i)}>
                                         <ParcelArt />
-                                        <span className="pk-num kiosk-math" aria-hidden>{formatMathNumber(Number(c))}</span>
+                                        <span className={`pk-num kiosk-math is-${faceKind(views?.[i])}`} aria-hidden><SpelChoiceFace value={c} view={views?.[i]} /></span>
                                         <span className="pk-key" aria-hidden>{i + 1}</span>
                                     </button>
                                 </div>

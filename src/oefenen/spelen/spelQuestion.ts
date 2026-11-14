@@ -4,8 +4,11 @@ import type { OefenExercise } from '../../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
 import type { ZelfChoice } from '../zelf/zelfSessie';
 import { choicesOf, mulberry32, seedOf, type SumFacts } from './distractors';
-import { NUMBER_CONTENT, type SpelContent } from './accepts';
+import { NUMBER_CONTENT, PICTURE_CONTENT, type SpelContent } from './accepts';
 import type { AnswerKind } from './skins/types';
+import type { KioskAnswer } from '../../services/oefenen/types';
+import type { SpelChoiceView, SpelHelp, SpelVisual } from './content/pack';
+import { packFor } from './content/packs';
 
 // What a game may ask (owner 2026-11-14): hoofdrekenen + − and the maal- en deeltafels with natural numbers, leerjaar 1–3.
 // Keyed by leaf: the same typeId also serves decimals and breuken, which have no game yet.
@@ -17,7 +20,9 @@ export const SPEL_LEAVES: Readonly<Record<string, SumFacts['op']>> = {
 };
 
 // Deling met rest has two answers (quotiënt and rest): no game takes a pair yet.
-const playableVariant = (v: ZelfChoice['vars'][number]) => v.leafId in SPEL_LEAVES && v.ov?.multiplicationMode !== 'met_rest';
+const playableNumber = (v: ZelfChoice['vars'][number]) => v.leafId in SPEL_LEAVES && v.ov?.multiplicationMode !== 'met_rest';
+// Or a content pack's leaf (content/packs.ts: the klok).
+const playableVariant = (v: ZelfChoice['vars'][number]) => playableNumber(v) || !!packFor(v.leafId);
 
 export const SPEL_MAX_GRADE = 3;
 
@@ -26,9 +31,11 @@ export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
     return grade <= SPEL_MAX_GRADE && choice.vars.length > 0 && choice.vars.every(playableVariant);
 }
 
-/** What a playable choice asks of a game (the picker filters on it): today always a whole number. */
+/** What a playable choice asks of a game (the picker filters on it): whole numbers with their operations, or picture choices once a pack plays a variant. */
 export const spelContentOf = (choice: ZelfChoice, grade: number): SpelContent | null =>
-    (choiceCanPlay(choice, grade) ? { ...NUMBER_CONTENT, ops: [...new Set(choice.vars.map(v => SPEL_LEAVES[v.leafId]))] } : null);
+    (!choiceCanPlay(choice, grade) ? null
+        : choice.vars.every(playableNumber) ? { ...NUMBER_CONTENT, ops: [...new Set(choice.vars.map(v => SPEL_LEAVES[v.leafId]))] }
+        : PICTURE_CONTENT);
 
 // One question of a game: the exercise exactly as the kiosk made it, plus what the skins show.
 export interface SpelQuestion {
@@ -42,13 +49,24 @@ export interface SpelQuestion {
     text: string;
     // The right answer as typed ("12"): skins never check, the session does.
     answer: string;
-    facts: SumFacts;
+    // Number sums only (the help's counting tip); absent on pack questions.
+    facts?: SumFacts;
     // Choice skins: the answer and its distractors (choiceCount in all, default 4), seeded by the exercise.
     choices: string[];
+    // Pack questions (content/pack.ts): the sign's picture, how each choice looks, what the kiosk check gets per choice, the help tip.
+    visual?: SpelVisual;
+    views?: SpelChoiceView[];
+    kioskAnswers?: KioskAnswer[];
+    help?: SpelHelp;
 }
 
-/** The game question for a made exercise, or null when it is not a plain whole-number + − × : sum (the session draws again). */
+/** The game question for a made exercise (a pack's, or a plain whole-number + − × : sum), or null when it has none (the session draws again). */
 export function spelQuestionOf(type: OefenType, slot: number, made: OefenExercise, choiceCount = 4): SpelQuestion | null {
+    const pack = packFor(type.leafId);
+    if (pack) {
+        const q = pack.question(type, made, choiceCount);
+        return q && { slot, exercise: made.exercise, constraints: made.constraints, key: made.key, kind: 'choice', ...q };
+    }
     const op = SPEL_LEAVES[type.leafId];
     const d = kioskFor(type.typeId);
     if (!op || !d || kioskInputOf(d, made.exercise, made.constraints) !== 'number') return null;

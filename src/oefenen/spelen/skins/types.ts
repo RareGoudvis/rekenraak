@@ -4,6 +4,7 @@ import type { SoundCue, SkinSounds } from '../sound';
 import type { SpelOutcome } from '../events';
 import type { SpelFrom } from '../useSpelStore';
 import type { BoardRound, SpelBoard } from '../board/board';
+import type { SpelChoiceView, SpelVisual } from '../content/pack';
 
 // The skin contract. A skin is presentation only: the session decides what is asked, checks the
 // answer, keeps score and runs the clock; the skin draws the question and hands back a given answer.
@@ -21,6 +22,8 @@ export interface SkinAccepts {
     digits?: boolean;
     // Only these operations (Honingraat: "find every sum that makes 20" needs + / −; one tafel has too few sums).
     ops?: readonly ('+' | '-' | 'x' | ':')[];
+    // The skin draws picture questions and picture / phrase choices (SpelSign, SpelChoiceFace): content packs like the klok.
+    pictures?: boolean;
 }
 
 export interface SkinMeta {
@@ -99,6 +102,8 @@ export interface SkinQuestion {
     text: string;
     // 0-based question number in the round.
     index: number;
+    // A content pack's picture for the sign (the clock face): draw it with <SpelSign>.
+    visual?: SpelVisual;
 }
 
 export interface SkinProgress {
@@ -134,6 +139,8 @@ export interface SkinProps {
     onBoardPick?(cell: number, given: string, strike?: boolean): void;
     // The pupil looked at this sum (turned its card): "Hoe los ik dit op?" explains it.
     onBoardFocus?(cell: number): void;
+    // Content packs: how each choice looks (same order as choices); null = plain numbers. Draw with <SpelChoiceFace>.
+    views?: SpelChoiceView[] | null;
     phase: SkinPhase;
     // Set during right / wrong: what was given and the right answer (a wrong flash shows it).
     feedback: { given: string; expected: string; correct: boolean } | null;
