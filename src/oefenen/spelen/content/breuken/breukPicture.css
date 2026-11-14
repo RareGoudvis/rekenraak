@@ -1,0 +1,59 @@
+/* Breuk pictures (BreukPicture.tsx): flat food colours from theme tokens under one thick ink outline.
+   Coloured parts are warm and saturated, the rest pale, so "how many are coloured" reads at a glance. */
+.breuk-pic {
+  --bp-ink: var(--kid-ink, var(--text-main));
+  --bp-paper: var(--kiosk-paper, var(--bg-surface));
+  /* Pizza: golden crust, a red sauce edge, yellow cheese, salami. A plain slice is bare dough. */
+  --bp-crust: color-mix(in srgb, var(--accent-vraagstukken) 62%, var(--bp-paper));
+  --bp-dough: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--bp-paper));
+  --bp-sauce: color-mix(in srgb, var(--mab-d) 85%, var(--accent-vraagstukken));
+  --bp-cheese: color-mix(in srgb, var(--mab-e) 78%, var(--bp-paper));
+  --bp-salami: color-mix(in srgb, var(--mab-d) 82%, var(--bp-ink));
+  --bp-salami-dot: color-mix(in srgb, var(--mab-d) 40%, var(--bp-paper));
+  /* Taart: pink icing with cream dots and a cherry; a plain slice shows the sponge. */
+  --bp-plate: color-mix(in srgb, var(--accent-bewerkingen) 10%, var(--bp-paper));
+  --bp-icing: color-mix(in srgb, var(--accent-getallenkennis) 30%, color-mix(in srgb, var(--accent-meetkunde) 22%, var(--bp-paper)));
+  --bp-sponge: color-mix(in srgb, var(--mab-e) 28%, var(--bp-paper));
+  --bp-cream: var(--bp-paper);
+  --bp-cherry: var(--mab-d);
+  /* Reep: milk chocolate pieces on a foil wrapper; the rest white chocolate. */
+  --bp-bar: color-mix(in srgb, var(--bp-ink) 12%, var(--bp-paper));
+  --bp-choc: color-mix(in srgb, var(--accent-vraagstukken) 42%, var(--bp-ink));
+  --bp-choc-top: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--bp-ink));
+  --bp-white: color-mix(in srgb, var(--accent-vraagstukken) 18%, var(--bp-paper));
+  --bp-white-top: color-mix(in srgb, var(--accent-vraagstukken) 7%, var(--bp-paper));
+  /* Strook and cirkel: the sheet's plain diagrams in a kid colour. */
+  --bp-strip-on: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--bp-paper));
+  --bp-pie-on: color-mix(in srgb, var(--accent-bewerkingen) 60%, var(--bp-paper));
+  display: block;
+  overflow: visible;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.breuk-pic .bp-cut { fill: none; stroke: var(--bp-ink); stroke-width: 2.2px; }
+.breuk-pic .bp-rim { fill: none; stroke: var(--bp-ink); stroke-width: 3.2px; }
+
+.bp-crust { fill: var(--bp-crust); }
+.bp-dough { fill: var(--bp-dough); }
+.bp-sauce { fill: var(--bp-sauce); }
+.bp-cheese { fill: var(--bp-cheese); }
+.bp-salami { fill: var(--bp-salami); stroke: var(--bp-ink); stroke-width: 1.2px; }
+.bp-salami-dot { fill: var(--bp-salami-dot); }
+
+.bp-plate { fill: var(--bp-plate); stroke: var(--bp-ink); stroke-width: 1.6px; }
+.bp-icing { fill: var(--bp-icing); }
+.bp-sponge { fill: var(--bp-sponge); }
+.bp-cream { fill: var(--bp-cream); }
+.bp-cherry { fill: var(--bp-cherry); stroke: var(--bp-ink); stroke-width: 1.2px; }
+.bp-shine { fill: var(--bp-paper); }
+
+.bp-bar { fill: var(--bp-bar); }
+.bp-choc { fill: var(--bp-choc); }
+.bp-choc-top { fill: var(--bp-choc-top); }
+.bp-white { fill: var(--bp-white); }
+.bp-white-top { fill: var(--bp-white-top); }
+
+.bp-strip-on { fill: var(--bp-strip-on); }
+.bp-strip-off { fill: var(--bp-paper); }
+.bp-pie-on { fill: var(--bp-pie-on); }
+.bp-pie-off { fill: var(--bp-paper); }
