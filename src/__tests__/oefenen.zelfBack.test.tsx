@@ -53,7 +53,7 @@ describe('Terug naar begin (Zelf oefenen)', () => {
         expect(document.activeElement?.textContent).toBe('Annuleer');
         fireEvent.click(screen.getByRole('button', { name: 'Ja, terug' }));
         expect(st().sessie).toBeNull();
-        expect(await screen.findByRole('heading', { name: 'Welk leerjaar?' })).toBeTruthy();
+        expect(await screen.findByRole('heading', { name: 'Wat wil je oefenen?' })).toBeTruthy();
         const stored = loadRuns(s.id);
         expect(stored).toHaveLength(1);
         expect(stored[0].done).toBe(true);

@@ -10,10 +10,11 @@ import { useSpelStore } from '../spelen/useSpelStore';
 import { choiceCanPlay, spelContentOf } from '../spelen/spelQuestion';
 import GamePicker from '../spelen/GamePicker';
 import { SECTION_TINT, topicIcon } from './topicIcons';
+import LeerjaarBar from './LeerjaarBar';
+import GameStrip from './GameStrip';
+import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choiceMayHaveMab, choicesFor, modeKey, usableVariants, type ZelfChoice, type ZelfMode } from './zelfSessie';
 
-// Each leerjaar its own badge colour (kiosk.css --kid-tint-1 … 6).
-const gradeTint = (g: number) => ({ '--tint': `var(--kid-tint-${g})` } as React.CSSProperties);
 const sectionTint = (name: string | undefined) => ({ '--tint': name ? SECTION_TINT[name] : undefined } as React.CSSProperties);
 
 const SECTION_OF_TOPIC: Record<string, string> = Object.fromEntries(EENVOUDIG_NAV.flatMap(sec => sec.topics.map(t => [t.id, sec.name])));
@@ -35,7 +36,7 @@ const SPELEN_ICON = (
     </svg>
 );
 
-// The page opened without a link: a pupil picks leerjaar and onderwerp, then on one screen the oefening,
+// The page opened without a link: a pupil picks leerjaar (the top bar, remembered) and onderwerp, then on one screen the oefening,
 // Oefenen or Spelen and how much, and starts alone.
 export default function ZelfPicker() {
     const data = useEenvoudigData();
@@ -44,7 +45,7 @@ export default function ZelfPicker() {
     // Back from a game (Ander spel, Terug): straight to the game tiles of the same choice.
     const [from] = useState(() => useSpelStore.getState().pickerAt);
     useEffect(() => { useSpelStore.getState().takePickerAt(); }, []);
-    const [grade, setGrade] = useState<Leerjaar | null>(from?.grade ?? null);
+    const [grade, setGrade] = useState<Leerjaar | null>(() => from?.grade ?? readGrade());
     const [topicId, setTopicId] = useState<string | null>(from?.topicId ?? null);
     const [choice, setChoice] = useState<ZelfChoice | null>(from?.choice ?? null);
     // A + / − choice at leerjaar 1–3 may be played instead (prototype, beta only); Oefenen is picked to start with.
@@ -67,11 +68,12 @@ export default function ZelfPicker() {
         nextRef.current?.scrollIntoView?.({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
     }, [choice]);
 
+    // Before a leerjaar is picked the topics of every leerjaar show (dimmed).
+    const anyGrade = useMemo(() => data && new Set(LEERJAREN.flatMap(g => [...usableVariants(data, g).keys()])), [data]);
     const choices = data && grade !== null && topicId !== null ? choicesFor(data, grade, topicId) : [];
     const back = () => {
         if (gamesOpen) setGamesOpen(false);
-        else if (topicId) { setTopicId(null); setChoice(null); setPlay('oefenen'); }
-        else setGrade(null);
+        else { setTopicId(null); setChoice(null); setPlay('oefenen'); }
     };
     const bar = grade !== null && (
         <div className="zelf-bar">
@@ -85,68 +87,57 @@ export default function ZelfPicker() {
         </div>
     );
 
-    if (grade === null) {
+    if (topicId === null) {
+        const shown = grade !== null ? (data ? new Set(usableVariants(data, grade).keys()) : null) : anyGrade;
+        const pickGrade = (g: Leerjaar) => { setGrade(g); saveGrade(g); };
         return (
             <>
-                <KidBackdrop extra="balloons" />
-                <main className="oefen-center zelf">
+                <KidBackdrop clouds={false} />
+                <main className="oefen-center zelf zelf-home">
                     <p className="kiosk-start-brand">RekenRaak · Zelf oefenen</p>
-                    <h1 className="oefen-title">Welk leerjaar?</h1>
-                    <p className="zelf-sub">Tik op jouw leerjaar.</p>
-                    <div className="zelf-grid zelf-grid-grades">
-                        {LEERJAREN.map(g => (
-                            <button key={g} type="button" className="zelf-choice zelf-grade" onClick={() => setGrade(g)}>
-                                <span className="zelf-badge" style={gradeTint(g)} aria-hidden>{g}</span>
-                                Leerjaar {g}
-                            </button>
-                        ))}
-                    </div>
+                    <LeerjaarBar grade={grade} onPick={pickGrade} />
+                    <GameStrip />
+                    {/* The title waits for the topics, so "Wat wil je oefenen?" always comes with them. */}
+                    {!data || !shown ? <p className="oefen-lead">Even laden…</p> : <h1 className="oefen-title zelf-home-title">Wat wil je oefenen?</h1>}
+                    {data && shown && (
+                        // No leerjaar yet: every topic shows, dimmed and out of reach until a number is picked.
+                        <div className={`zelf-topics${grade === null ? ' is-dim' : ''}`} inert={grade === null}>
+                            {EENVOUDIG_NAV.map(section => {
+                                const list = section.topics.filter(t => shown.has(t.id));
+                                if (!list.length) return null;
+                                return (
+                                    <section key={section.name} className="zelf-section" aria-label={section.name} style={sectionTint(section.name)}>
+                                        <h2 className="zelf-section-title">{section.name}</h2>
+                                        <div className="zelf-grid zelf-grid-topics">
+                                            {list.map(t => {
+                                                const { icon, size } = topicIcon(t.id, t.label);
+                                                return (
+                                                    <button key={t.id} type="button" className="zelf-choice" disabled={grade === null} onClick={() => {
+                                                        if (grade === null) return;
+                                                        setTopicId(t.id);
+                                                        // A topic with one oefening needs no pick: the screen opens on its next step.
+                                                        const only = choicesFor(data, grade, t.id);
+                                                        setChoice(only.length === 1 ? only[0] : null);
+                                                        setPlay('oefenen');
+                                                    }}>
+                                                        <span className={`zelf-badge is-md${size}`} aria-hidden>{icon}</span>
+                                                        <span className="zelf-choice-text">{t.label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    )}
                     <p className="kiosk-start-note">Heb je een link of QR-code van je juf of meester? Open die dan.</p>
                 </main>
             </>
         );
     }
 
-    if (!data) return <><KidBackdrop /><main className="oefen-center zelf">{bar}<p className="oefen-lead">Even laden…</p></main></>;
-    const topics = usableVariants(data, grade);
-
-    if (topicId === null) {
-        return (
-            <>
-                <KidBackdrop clouds={false} />
-                <main className="oefen-center zelf">
-                    {bar}
-                    <h1 className="oefen-title">Wat wil je oefenen?</h1>
-                    {EENVOUDIG_NAV.map(section => {
-                        const list = section.topics.filter(t => topics.has(t.id));
-                        if (!list.length) return null;
-                        return (
-                            <section key={section.name} className="zelf-section" aria-label={section.name} style={sectionTint(section.name)}>
-                                <h2 className="zelf-section-title">{section.name}</h2>
-                                <div className="zelf-grid">
-                                    {list.map(t => {
-                                        const { icon, size } = topicIcon(t.id, t.label);
-                                        return (
-                                            <button key={t.id} type="button" className="zelf-choice" onClick={() => {
-                                                setTopicId(t.id);
-                                                // A topic with one oefening needs no pick: the screen opens on its next step.
-                                                const only = choicesFor(data, grade, t.id);
-                                                setChoice(only.length === 1 ? only[0] : null);
-                                                setPlay('oefenen');
-                                            }}>
-                                                <span className={`zelf-badge is-md${size}`} aria-hidden>{icon}</span>
-                                                {t.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-                        );
-                    })}
-                </main>
-            </>
-        );
-    }
+    if (!data || grade === null) return <><KidBackdrop /><main className="oefen-center zelf">{bar}<p className="oefen-lead">Even laden…</p></main></>;
 
     const topicLabel = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === topicId)?.label ?? '';
     const { icon: topicGlyph, size: topicSize } = topicIcon(topicId, topicLabel);

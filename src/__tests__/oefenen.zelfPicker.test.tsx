@@ -17,9 +17,10 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe('Zelf oefenen picker', () => {
-    test('a bare page shows the picker, a broken link still shows its error', () => {
+    test('a bare page shows the picker, a broken link still shows its error', async () => {
         render(<OefenApp />);
-        expect(screen.getByRole('heading', { name: 'Welk leerjaar?' })).toBeTruthy();
+        expect(await screen.findByRole('heading', { name: 'Wat wil je oefenen?' })).toBeTruthy();
+        expect(screen.getByRole('heading', { name: 'Kies je leerjaar' })).toBeTruthy();
         expect(screen.queryByRole('alert')).toBeNull();
         cleanup();
         st().load('#oefen=kapot');
@@ -31,11 +32,11 @@ describe('Zelf oefenen picker', () => {
         render(<OefenApp />);
         click('Leerjaar 2');
         expect(await screen.findByRole('heading', { name: 'Wat wil je oefenen?' })).toBeTruthy();
-        // Back goes one step up and the topic list is still there afterwards.
+        // Back from a topic returns to the topics with the same leerjaar.
+        topic('Hoofdrekenen', 'Optellen');
         click(/Terug/);
-        expect(screen.getByRole('heading', { name: 'Welk leerjaar?' })).toBeTruthy();
-        click('Leerjaar 2');
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        expect(screen.getByRole('button', { name: 'Leerjaar 2' }).getAttribute('aria-pressed')).toBe('true');
         topic('Hoofdrekenen', 'Optellen');
         const variants = screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''));
         expect(variants.length).toBeGreaterThan(0);
@@ -77,7 +78,9 @@ describe('Zelf oefenen picker', () => {
         // A finished run, set straight into the store (the run itself is the kiosk's own tested path).
         useOefenStore.setState({ phase: 'locked', run: { ...st().run!, done: true } });
         fireEvent.click(await screen.findByRole('button', { name: 'Andere oefening' }));
-        expect(await screen.findByRole('heading', { name: 'Welk leerjaar?' })).toBeTruthy();
+        expect(await screen.findByRole('heading', { name: 'Wat wil je oefenen?' })).toBeTruthy();
+        // The leerjaar is remembered: the topics are open at once.
+        expect(screen.getByRole('button', { name: 'Leerjaar 1' }).getAttribute('aria-pressed')).toBe('true');
         expect(st().sessie).toBeNull();
     });
 });

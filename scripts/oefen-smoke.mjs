@@ -388,14 +388,16 @@ async function runZelfCase([w, h], page0) {
     const rows = [];
     try {
         await page.goto(`${URL}/${page0}`);
-        await page.getByRole('heading', { name: 'Welk leerjaar?' }).waitFor({ timeout: 5000 });
-        for (const [i, step] of [['Welk leerjaar?', null], ['Wat wil je oefenen?', 'Leerjaar 2']].entries()) {
+        // One screen: the leerjaar bar on top (first visit: nothing picked, topics dimmed), then pick Leerjaar 2.
+        await page.getByRole('heading', { name: 'Kies je leerjaar' }).waitFor({ timeout: 5000 });
+        for (const [i, step] of [['Wat wil je oefenen?', null], ['Wat wil je oefenen?', 'Leerjaar 2']].entries()) {
             if (step[1]) await page.getByRole('button', { name: step[1], exact: true }).click();
             await page.getByRole('heading', { name: step[0] }).waitFor({ timeout: 5000 });
             const name = `${base.leafId}-w${w}-s${i}.png`;
             await page.locator('.oefen-app').screenshot({ path: join(OUT, name) });
             rows.push({ ...base, solutions: i, cellHeightPx: h, intrinsicPx: w, text: await page.locator('.oefen-app').innerText(), screenshot: name, consoleErrors: [...errors], ok: true });
         }
+        if (await page.getByRole('button', { name: 'Leerjaar 2', exact: true }).getAttribute('aria-pressed') !== 'true') throw new Error('Leerjaar 2 not pressed');
         if (errors.length) throw new Error(`console: ${errors.join(' | ')}`);
         console.log(`  ok    zelf        ${page0} @${w}x${h}`);
         return rows;
