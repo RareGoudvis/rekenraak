@@ -80,6 +80,16 @@
 .spel-shelf-title { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 800; }
 .spel-shelf.is-extra { padding: var(--sp-3); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-xl); background: color-mix(in srgb, var(--spel-star) 22%, var(--kiosk-paper)); }
 .spel-shelf.is-extra .spel-tile { background: var(--kiosk-paper); }
+/* A lone seasonal game keeps a tile's size. */
+.spel-shelf-tiles { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.spel-tile-season {
+  padding: 2px var(--sp-3);
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--spel-star);
+  font-size: var(--kiosk-text);
+  font-weight: 700;
+}
 
 /* ── Game shell ───────────────────────────────────────────────────────────── */
 /* Doubled class: wins over the kiosk's narrow-phone bar (which drops a title this bar does not have). */

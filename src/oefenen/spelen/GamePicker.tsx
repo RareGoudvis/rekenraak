@@ -3,7 +3,7 @@ import { Timer, Users } from '@phosphor-icons/react';
 import { SKINS } from './skins/registry';
 import type { SkinMeta } from './skins/types';
 import { NUMBER_CONTENT, skinsFor, type SpelContent } from './accepts';
-import { pickerToday, seasonsOn } from './seasons';
+import { SEASON_LABEL, pickerToday, seasonsOn } from './seasons';
 import SpelOptions from './SpelOptions';
 import './spelen.css';
 
@@ -17,7 +17,7 @@ interface Props {
 
 type Tile = (typeof SKINS)[number];
 
-function GameTile({ tile: { meta, icon: Icon, Component, Screen }, onPick }: { tile: Tile; onPick(meta: SkinMeta): void }) {
+function GameTile({ tile: { meta, icon: Icon, Component, Screen }, onPick, tag }: { tile: Tile; onPick(meta: SkinMeta): void; tag?: string }) {
     const ready = !!(Component || Screen);
     return (
         <button type="button" className={`spel-tile${ready ? '' : ' is-soon'}`} disabled={!ready} onClick={() => onPick(meta)}
@@ -26,6 +26,7 @@ function GameTile({ tile: { meta, icon: Icon, Component, Screen }, onPick }: { t
             <span className="spel-tile-label">{meta.label}</span>
             {meta.timed && <span className="spel-tile-timed"><Timer weight="bold" aria-hidden /> op tijd</span>}
             {meta.players === 2 && <span className="spel-tile-timed"><Users weight="bold" aria-hidden /> 2 spelers</span>}
+            {tag && <span className="spel-tile-season">{tag}</span>}
             {!ready && <span className="spel-tile-soon">binnenkort</span>}
         </button>
     );
@@ -51,8 +52,8 @@ export default function GamePicker({ onPick, content = NUMBER_CONTENT, today }: 
         <div className="spel-shelves">
             <section className="spel-shelf is-extra" aria-labelledby="spel-shelf-extra">
                 <h2 id="spel-shelf-extra" className="spel-shelf-title">Nu extra leuk</h2>
-                <div className="spel-tiles" role="group" aria-label="Nu extra leuk">
-                    {extra.map(t => <GameTile key={t.meta.id} tile={t} onPick={pick} />)}
+                <div className="spel-tiles spel-shelf-tiles" role="group" aria-label="Nu extra leuk">
+                    {extra.map(t => <GameTile key={t.meta.id} tile={t} onPick={pick} tag={t.meta.season && SEASON_LABEL[t.meta.season]} />)}
                 </div>
             </section>
             <section className="spel-shelf" aria-labelledby="spel-shelf-all">

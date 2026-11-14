@@ -5,6 +5,9 @@ import type { Season } from './skins/types';
 
 export const SEASONS: readonly Season[] = ['sinterklaas', 'kerst', 'valentijn', 'pasen', 'lente'];
 
+// The small tag on a shelf tile.
+export const SEASON_LABEL: Record<Season, string> = { sinterklaas: 'Sinterklaas', kerst: 'Kerst', valentijn: 'Valentijn', pasen: 'Pasen', lente: 'Lente' };
+
 export interface DayOf { y: number; m: number; d: number }
 
 const fmt = (() => {
