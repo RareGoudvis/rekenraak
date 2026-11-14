@@ -113,9 +113,10 @@ export const HELP_TOPICS: HelpTopic[] = [
         id: 'oefenmodus', title: 'Oefenmodus', anchor: 'oefenmodus', module: 'oefenmodus',
         bullets: [
             'Leerlingen oefenen op hun eigen toestel, één oefening per scherm, via een link of QR-code.',
-            'Klik linksonder op Oefenmodus, kies de soorten oefeningen en stel ze in. Het voorbeeld toont wat de leerling krijgt.',
-            'Kies een titel, de volgorde, een tijd, kansen, testmodus en of de stappen na een fout verschijnen.',
-            'Delen geeft de link en de QR-code: kopieer, toon groot op het bord of druk af (A5).',
+            'Klik linksonder op Oefenmodus: een eigen werkruimte opent. Met ‹ Werkblad ga je terug naar je blad.',
+            'Links kies je oefeningen (Eenvoudig of Uitgebreid). In het midden staat je sessie, elke soort met een voorbeeld zoals de leerling het ziet.',
+            'Rechts stel je in per oefening (wat en hoeveel) of voor de hele sessie (titel, volgorde, tijd, feedback, hulp na een fout).',
+            'Delen geeft de link en de QR-code: kopieer, toon groot op het bord of druk af (A5). Opslaan bewaart de sessie in Mijn bladen.',
             'Na een fout ziet de leerling de stappen, in leerjaar 1 tot 3 met MAB-blokjes. De resultaten blijven op het toestel van de leerling.',
         ],
     },
