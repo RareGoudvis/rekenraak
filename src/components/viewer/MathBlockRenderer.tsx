@@ -158,7 +158,10 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         const lines = stepsFn(ex, block.constraints as Record<string, unknown>);
         return lines ? stepsAtLevel(lines, stepLevel) : null;
     };
-    const anySteps = stepLevel !== 'uit' && block.exercises.some(ex => !!ex && stepsOf(ex) !== null);
+    const stepsById = new Map(stepLevel === 'uit' ? [] : block.exercises.flatMap(ex => (ex ? [[ex.id, stepsOf(ex)] as const] : [])));
+    const anySteps = [...stepsById.values()].some(l => l !== null);
+    // The widest step line (its "= " included), so a 2-up key only happens when the lines fit their column.
+    const stepChars = Math.max(0, ...[...stepsById.values()].flatMap(ls => ls ?? []).map(l => stepLineText(l, formatMathNumber).length));
     // Steps stack under their sum, so the key lays the block out like "Onder elkaar" (one column).
     const layout = anySteps ? 'stepped' : isPunt ? 'inline-short' : block.layoutPreset;
 
@@ -181,6 +184,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         ...hrRowStats(block.exercises, sheetPx),
         widthPx: blockPx, mathPx: sheetPx, layout, compScaffoldOn,
         labelChars: itemLabelChars(block.itemNumbering, block.exercises.length),
+        stepChars,
     });
     const {
         tight, fontScale, wrapChain, labelPx, labelColPx, termBoxPx, answerLinePx,
@@ -382,7 +386,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     const delta = tienvoud - b;
                     if (delta >= 1 && delta <= 2) compParts = { tienvoud, delta };
                 }
-                const steps = stepsOf(ex);
+                const steps = stepsById.get(ex.id) ?? null;
                 const compBlank = (v: number) => showSolutions
                     ? <span style={{ ...solutionText, padding: '0 4px' }}>{formatMathNumber(v)}</span>
                     : <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
@@ -469,10 +473,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             {steps ? (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>{steps.map((line, i) => (
                                     // A stacked breuk (via breuken) is taller than a digit line: its row gets the room and centres, so "=" meets the breukstreep.
-                                    <div key={i} style={{ display: 'flex', width: '100%', whiteSpace: 'nowrap', ...(line.tokens.some(t => t.t === 'frac') ? { alignItems: 'center', height: FRAC_ROW_H } : { alignItems: 'flex-end', height: ANSWER_ROW_H }) }}>
-                                        {!line.aside && <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>}
+                                    // minHeight + a wrapping span: a line too wide for even a 1-up column (a narrow block) wraps instead of running past the block edge.
+                                    <div key={i} style={{ display: 'flex', width: '100%', ...(line.tokens.some(t => t.t === 'frac') ? { alignItems: 'center', minHeight: FRAC_ROW_H } : { alignItems: 'flex-end', minHeight: ANSWER_ROW_H }) }}>
+                                        {!line.aside && <span style={{ marginRight: `${EQ_GAP}px`, flexShrink: 0 }}>=</span>}
                                         {/* Basis lines bold like every solution; the optional lines thinner, so a teacher sees which ones a pupil may skip. */}
-                                        <span style={{ ...atFont(styles.solutionText, 1), padding: 0, fontWeight: line.basis ? 700 : 400 }}><StepTokens tokens={line.tokens} fmt={formatMathNumber} /></span>
+                                        <span style={{ ...atFont(styles.solutionText, 1), padding: 0, minWidth: 0, fontWeight: line.basis ? 700 : 400 }}><StepTokens tokens={line.tokens} fmt={formatMathNumber} /></span>
                                     </div>
                                 ))}</div>
                             ) : !anyMissing ? (

@@ -28,6 +28,7 @@ export interface HrRowInput extends HrRowStats {
     layout: HrLayoutPreset;  // after the puntoefening override
     labelChars: number;      // widest item label ("10)" = 3), 0 = no numbering
     compScaffoldOn: boolean; // compenseren tussenstap line under the sum
+    stepChars?: number;      // widest answer-key step line ("= (412 + 400) + 20 + 5"), 0/absent = no steps
 }
 
 export interface HrRowLayout {
@@ -166,8 +167,10 @@ function geometry(inp: HrRowInput, fontScale: number, wrapChain: boolean) {
     // widest operand; in its 2-up grid the operand columns tighten (no 85px floor).
     const worklineMinPx = Math.max(80, widestTermPx + 30);
     const compactCellPx = Math.max(46, widestTermPx + 6);
+    // Answer-key step lines sit in the workline's place, so a 2-up key needs room for its widest line too.
+    const stepsPx = inp.stepChars ? Math.ceil(inp.stepChars * charPx * HR_SOLUTION_FONT) + 8 : 0;
     const steppedRowMin = maxTerms * compactCellPx + (maxTerms - 1) * COMPACT_OP_GAP
-        + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx + labelColPx;
+        + 8 + 10 /* "=" glyph + its right margin */ + Math.max(worklineMinPx, stepsPx) + labelColPx;
     const estimateTwoUp = !tight && isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= widthPx;
     // Met-rest rows ignore layout and the compenseren line is far wider than a workline:
     // both stay 1-up. Longer term chains stay eligible and fall out on width alone.

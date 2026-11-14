@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Answer key with tussenstappen: a block only goes two columns when its widest step line fits the column (`stepChars` into hrRowLayout); a line too wide for even one column wraps instead of running past the block edge.
+
 **2026-11-14** — Three follow-ups to the Oefenmodus workspace: a "sessie is vol" note above the catalogue at 20 rows (a click no longer adds nothing silently), Eenvoudig card badges count the card's own rows (`cardVar` on the row, never in the link), and the editor is `inert` under every full-screen view (Oefenmodus, Mijn bladen, Bibliotheek, Whiteboard).
 
 **2026-11-14** — Oefenmodus is its own workspace (view 'oefenmodus': OefenSidebar catalogue, session cards with live kiosk samples, design-A OefenInspector, state in useOefenBuilder; OefenBuilderModal and OefenCatalogue removed, links byte-identical), plus handleiding.html with screenshots for every mode and a larger in-app help (helpTopics.ts); faq.html no longer says tablets and the whiteboard are still to come.
