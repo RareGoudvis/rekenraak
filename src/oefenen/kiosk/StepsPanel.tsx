@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ListNumbers } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, ListNumbers } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { HandigStrategy, StepLine } from '../../services/math/workedSteps';
 import { StepLineView } from '../../components/viewer/StepTokens';
@@ -24,11 +24,14 @@ interface Props {
     nextLabel?: string;
     // The line when every step is shown; Spelen's help has no answer yet to look back at.
     doneText?: string;
+    // The kiosk after a fout: the pupil's wrong answer (struck through, grey) and Nog eens proberen.
+    given?: string | null;
+    onRetry?(): void;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead; Alle stappen shows the whole solution at once, optional lines included. Volgende moves on either way. SYNC: tutor StepsView.
-export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening', doneText = 'Klaar! Kijk nog eens naar je antwoord.' }: Props) {
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening', doneText = 'Klaar! Kijk nog eens naar je antwoord.', given, onRetry }: Props) {
     const [open, setOpen] = useState(startOpen);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
@@ -50,55 +53,74 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
     useEffect(() => { if (inCard) onVisual?.(open ? stage : null); }, [inCard, open, stage, onVisual]);
     useEffect(() => () => onVisual?.(null), [onVisual]);
 
+    // Grey and struck through, never red: what the pupil answered.
+    const givenLine = given ? <p className="kiosk-steps-given">Jouw antwoord: <span className="kiosk-math kiosk-struck">{given}</span></p> : null;
+
     return (
         <div className="kiosk-steps">
             {!open ? (
                 <>
                     {hint && <p className="kiosk-steps-hint-lead">{hint}</p>}
                     <p className="kiosk-steps-lead">{pictureOnly ? 'Fout. Wil je het zien met blokjes?' : 'Fout. Wil je zien hoe je het uitrekent?'}</p>
-                    <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big kiosk-steps-pulse" onClick={() => { setOpen(true); onSolution?.(asking ? 0 : Infinity); }} autoFocus>
+                    {givenLine}
+                    <button type="button" className="kiosk-btn kiosk-btn-help kiosk-btn-big kiosk-steps-pulse" onClick={() => { setOpen(true); onSolution?.(asking ? 0 : Infinity); }} autoFocus>
                         <ListNumbers weight="bold" aria-hidden /> {pictureOnly ? 'Toon de blokjes' : 'Toon de stappen'}
                     </button>
                 </>
-            ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
+            ) : (
                 <>
-                    {!inCard && visual?.(stage)}
-                    {!pictureOnly && (
-                        <ol className="kiosk-steps-lines" aria-live="polite">
-                            {shownLines.map(({ l, i }) => (
-                                <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>
-                                    <StepLineView line={l} fmt={formatMathNumber} />
-                                </li>
-                            ))}
-                        </ol>
+                    {onRetry && (
+                        <div className="kiosk-steps-head">
+                            <p className="kiosk-steps-cheer">Bijna! Kijk even mee.</p>
+                            {givenLine}
+                        </div>
                     )}
-                    {done
-                        ? <p className="kiosk-steps-done">{doneText}</p>
-                        : <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={() => setRevealed(r => r + 1)}>Toon de volgende stap</button>}
-                    {/* The picture has no optional lines to switch on, so Alle stappen just jumps to the end. */}
-                    {pictureOnly
-                        ? !done && <button type="button" className="kiosk-btn" onClick={() => setRevealed(total)}>Alle stappen</button>
-                        : (
-                            <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
-                                {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
+                    {asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
+                    <>
+                        {!inCard && visual?.(stage)}
+                        {!pictureOnly && (
+                            <ol className="kiosk-steps-lines" aria-live="polite">
+                                {shownLines.map(({ l, i }) => (
+                                    <li key={i} className={`kiosk-math${i === upto ? ' is-new' : ''}${l.basis ? '' : ' is-extra'}`}>
+                                        <StepLineView line={l} fmt={formatMathNumber} />
+                                    </li>
+                                ))}
+                            </ol>
+                        )}
+                        {done
+                            ? <p className="kiosk-steps-done">{doneText}</p>
+                            : <button type="button" className="kiosk-btn kiosk-btn-help kiosk-btn-big" onClick={() => setRevealed(r => r + 1)}>Toon de volgende stap</button>}
+                        {/* The picture has no optional lines to switch on, so Alle stappen just jumps to the end. */}
+                        {pictureOnly
+                            ? !done && <button type="button" className="kiosk-btn" onClick={() => setRevealed(total)}>Alle stappen</button>
+                            : (
+                                <button type="button" className="kiosk-btn" aria-pressed={alle} onClick={() => { if (!alle) setRevealed(total); setAlle(!alle); }}>
+                                    {alle ? 'Alle stappen: aan' : 'Alle stappen: uit'}
+                                </button>
+                            )}
+                        {handig.length > 0 && (
+                            <button type="button" className="kiosk-btn" aria-pressed={showHandig} onClick={() => setShowHandig(h => !h)}>
+                                {showHandig ? 'Handig rekenen: aan' : 'Handig rekenen'}
                             </button>
                         )}
-                    {handig.length > 0 && (
-                        <button type="button" className="kiosk-btn" aria-pressed={showHandig} onClick={() => setShowHandig(h => !h)}>
-                            {showHandig ? 'Handig rekenen: aan' : 'Handig rekenen'}
+                        {showHandig && handig.map(h => (
+                            <div key={h.name} className="kiosk-steps-handig">
+                                <p className="kiosk-steps-lead">{h.name}</p>
+                                <ol className="kiosk-steps-lines">
+                                    {h.lines.map((l, i) => <li key={i} className="kiosk-math"><StepLineView line={l} fmt={formatMathNumber} /></li>)}
+                                </ol>
+                            </div>
+                        ))}
+                    </>
+                    )}
+                    {onRetry && (
+                        <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={onRetry}>
+                            <ArrowCounterClockwise weight="bold" aria-hidden /> Nog eens proberen
                         </button>
                     )}
-                    {showHandig && handig.map(h => (
-                        <div key={h.name} className="kiosk-steps-handig">
-                            <p className="kiosk-steps-lead">{h.name}</p>
-                            <ol className="kiosk-steps-lines">
-                                {h.lines.map((l, i) => <li key={i} className="kiosk-math"><StepLineView line={l} fmt={formatMathNumber} /></li>)}
-                            </ol>
-                        </div>
-                    ))}
                 </>
             )}
-            <button type="button" className="kiosk-btn kiosk-btn-big" onClick={onNext}>{nextLabel}</button>
+            <button type="button" className={`kiosk-btn${onRetry ? ' kiosk-steps-next' : ' kiosk-btn-big'}`} onClick={onNext}>{nextLabel}</button>
         </div>
     );
 }

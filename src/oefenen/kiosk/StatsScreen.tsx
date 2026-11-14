@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { CheckCircle } from '@phosphor-icons/react';
 import { useOefenStore } from '../useOefenStore';
 import StorageBanner from './StorageBanner';
 import StopButton from './StopButton';
+import { STAR_PATH } from './TopBar';
 import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
-import { isZelfSessie } from '../zelf/zelfSessie';
+import { isZelfSessie, reviewSessieOf } from '../zelf/zelfSessie';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie, type OefenSummaryRow } from '../../services/oefenen/types';
 
 // The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
@@ -84,8 +86,38 @@ function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
 
 const totals = (run: OefenRun, sessie: OefenSessie) => {
     const rows = summary(run.stats, sessie);
-    return { made: rows.reduce((n, r) => n + r.made, 0), correct: rows.reduce((n, r) => n + r.correct, 0) };
+    const sum = (f: (r: OefenSummaryRow) => number) => rows.reduce((n, r) => n + f(r), 0);
+    return { made: sum(r => r.made), correct: sum(r => r.correct), wrong: sum(r => r.wrong), secondTry: sum(r => r.secondTry) };
 };
+
+// Three stars for 90 % juist, two for 60 %, one for any juist.
+const starsOf = (made: number, correct: number) => (!made || !correct ? 0 : correct / made >= 0.9 ? 3 : correct / made >= 0.6 ? 2 : 1);
+
+// The finished run at a glance (the Klaar mockup): stars, the title, the score line, Juist / Met hulp / Nog oefenen.
+function EndHero({ title, line, made, t, retries }: { title: string; line: string; made: number; t: ReturnType<typeof totals>; retries: boolean }) {
+    const stars = starsOf(made, t.correct);
+    return (
+        <div className="kiosk-end-hero">
+            {made > 0 && (
+                <div className="kiosk-end-stars" role="img" aria-label={`${stars} van de 3 sterren`}>
+                    {[0, 1, 2].map(i => (
+                        <svg key={i} viewBox="0 0 24 24" aria-hidden><path className={`kiosk-star${i < stars ? '' : ' is-empty'}`} d={STAR_PATH} /></svg>
+                    ))}
+                </div>
+            )}
+            <h1 id="kiosk-stats-title" className="kiosk-stats-title">{title}</h1>
+            <p className="kiosk-stats-total">{line}</p>
+            {made > 0 && (
+                <dl className="kiosk-counters">
+                    <div className="kiosk-counter is-ok"><dt>Juist</dt><dd>{t.correct}</dd></div>
+                    {/* Met hulp = juist na de 2e kans (2 kansen); a run without it has no such column. */}
+                    {retries && <div className="kiosk-counter"><dt>Met hulp</dt><dd>{t.secondTry}</dd></div>}
+                    <div className="kiosk-counter"><dt>Nog oefenen</dt><dd>{t.wrong}</dd></div>
+                </dl>
+            )}
+        </div>
+    );
+}
 
 // A run that stopped before its planned total (timer) says so: "7 van 8 juist (8 van 10 gemaakt)".
 function scoreText(made: number, correct: number, planned: number | null): string {
@@ -108,7 +140,8 @@ export default function StatsScreen() {
     const sessie = useOefenStore(s => s.sessie);
     const run = useOefenStore(s => s.run);
     const phase = useOefenStore(s => s.phase);
-    const { closeStats, restart, clear, load } = useOefenStore.getState();
+    const { closeStats, restart, clear, load, openReview } = useOefenStore.getState();
+    const missed = useOefenStore(s => s.missed);
     const [confirmClear, setConfirmClear] = useState(false);
     const [viewing, setViewing] = useState<OefenRun | null>(null);
     if (!sessie || !run) return null;
@@ -134,26 +167,55 @@ export default function StatsScreen() {
         );
     }
 
-    const { made, correct } = totals(run, sessie);
+    const t = totals(run, sessie);
+    const { made, correct } = t;
     const timeUp = run.timerEndsAt !== undefined && (run.stats.finishedAt ?? 0) >= run.timerEndsAt;
-    const title = !locked ? 'Resultaten' : timeUp ? 'De tijd is om!' : 'Klaar!';
+    const zelf = isZelfSessie(sessie);
+    // A pupil who chose alone gets the cheer for half or more juist; a teacher's link keeps its plain Klaar!.
+    const title = !locked ? 'Resultaten' : timeUp ? 'De tijd is om!' : zelf && made > 0 && correct * 2 >= made ? 'Knap gedaan!' : 'Klaar!';
+    const line = made === 0 ? 'Nog geen oefeningen gemaakt.' : scoreText(made, correct, planned);
+    // Nakijken: this run's fouts again (kept in memory, so not after a reload); Zelf oefenen only, a teacher reads the locked screen.
+    const review = locked && zelf && missed.length > 0;
 
     return (
         <section className="kiosk-stats" aria-labelledby="kiosk-stats-title">
             {/* Mid-run the kiosk shows the banner above the stats already. */}
             {locked && <StorageBanner />}
-            <div className="kiosk-stats-head">
-                <div>
-                    <h1 id="kiosk-stats-title" className="kiosk-stats-title">{title}</h1>
-                    <p className="kiosk-stats-total">{made === 0 ? 'Nog geen oefeningen gemaakt.' : scoreText(made, correct, planned)}</p>
-                </div>
-                {!locked && (
+            {locked ? (
+                <EndHero title={title} line={line} made={made} t={t} retries={attemptsOf(sessie) === 2 || t.secondTry > 0} />
+            ) : (
+                <div className="kiosk-stats-head">
+                    <div>
+                        <h1 id="kiosk-stats-title" className="kiosk-stats-title">{title}</h1>
+                        <p className="kiosk-stats-total">{line}</p>
+                    </div>
                     <div className="kiosk-stats-head-btns">
                         <StopButton />
                         <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={closeStats}>Verder oefenen</button>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Right under the counters, Nakijken first. Mid-run peek: Opnieuw / Wissen would let a pupil wipe the run, so they only exist on the locked screen. */}
+            {locked && (
+                <div className="kiosk-stats-actions">
+                    {review && (
+                        <button type="button" className="kiosk-btn kiosk-btn-help kiosk-btn-big" onClick={() => openReview(reviewSessieOf(sessie, missed.length), missed)}>
+                            <CheckCircle weight="bold" aria-hidden /> Nakijken
+                        </button>
+                    )}
+                    <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
+                    {zelf && <button type="button" className={`kiosk-btn${review ? '' : ' kiosk-btn-primary'}`} onClick={() => load('')}>Andere oefening</button>}
+                    {confirmClear ? (
+                        <>
+                            <button type="button" className="kiosk-btn kiosk-btn-danger is-armed" onClick={clear}>Ja, alles wissen</button>
+                            <button type="button" className="kiosk-btn kiosk-btn-quiet" onClick={() => setConfirmClear(false)}>Annuleer</button>
+                        </>
+                    ) : (
+                        <button type="button" className="kiosk-btn kiosk-btn-danger" onClick={() => setConfirmClear(true)}>Wissen</button>
+                    )}
+                </div>
+            )}
 
             <RunTables run={run} sessie={sessie} />
 
@@ -177,21 +239,6 @@ export default function StatsScreen() {
                 </>
             )}
 
-            {/* Mid-run peek: Opnieuw / Wissen would let a pupil wipe the run, so they only exist on the locked screen */}
-            {locked && (
-                <div className="kiosk-stats-actions">
-                    <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
-                    {isZelfSessie(sessie) && <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={() => load('')}>Andere oefening</button>}
-                    {confirmClear ? (
-                        <>
-                            <button type="button" className="kiosk-btn kiosk-btn-danger is-armed" onClick={clear}>Ja, alles wissen</button>
-                            <button type="button" className="kiosk-btn kiosk-btn-quiet" onClick={() => setConfirmClear(false)}>Annuleer</button>
-                        </>
-                    ) : (
-                        <button type="button" className="kiosk-btn kiosk-btn-danger" onClick={() => setConfirmClear(true)}>Wissen</button>
-                    )}
-                </div>
-            )}
         </section>
     );
 }

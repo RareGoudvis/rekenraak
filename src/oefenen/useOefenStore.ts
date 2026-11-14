@@ -28,7 +28,8 @@ export const HINT_MS = 1800;
 
 // The exercise on screen plus the constraints it was generated with: answerOf / display /
 // checkAnswer must get exactly those, and a reload must too, so they travel in the run.
-export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown> };
+// practice: Nog eens proberen after the steps, the same exercise again, never counted nor saved.
+export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown>; practice?: true };
 
 // A review round (Spelen › Nakijken): these exact exercises in this order instead of the scheduler's draws.
 export type KioskFixed = Pick<KioskCurrent, 'slot' | 'exercise' | 'exerciseKey' | 'constraints'>;
@@ -80,6 +81,8 @@ interface OefenState {
     feedbackHint: string | null;
     // A review round's exercise list (openReview), null for every other run.
     fixed: KioskFixed[] | null;
+    // This run's final fouts in order, for Nakijken on the end screen; in memory only (a reload starts it empty).
+    missed: KioskFixed[];
 
     load(hash: string): void;
     // The session is set in as if its link had been opened (load's second half).
@@ -120,6 +123,8 @@ interface OefenState {
     pressExtra(id: string): void;
     // Steps panel: the card shows the descriptor's solution, filled in as far as `answered` steps go.
     showSolution(answered: number): void;
+    // Steps panel: Nog eens proberen, the same exercise once more, uncounted; juist or fout, then the next one.
+    tryAgain(): void;
 }
 
 // A test shows nothing about juist/fout until the end, so it hides the results like statsLocked does.
@@ -399,6 +404,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         nudged: false,
         feedbackHint: null,
         fixed: null,
+        missed: [],
 
         load(hash) {
             set({ fixed: null });
@@ -419,7 +425,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const unsupported = unsupportedSlots(s);
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
             if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false, nudge: null, nudged: false, feedbackHint: null });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false, nudge: null, nudged: false, feedbackHint: null, missed: [] });
             // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
             const runs = loadRunsFor(s);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
@@ -449,7 +455,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         openReview(s, items) {
             clearFlash();
             // Not open(): an earlier stored review of this id must not resume with another list.
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false, nudge: null, nudged: false, feedbackHint: null, fixed: items });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false, nudge: null, nudged: false, feedbackHint: null, fixed: items, missed: [] });
             get().start();
         },
 
@@ -458,7 +464,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (!s) return;
             const run = newRun(s, Date.now());
             persist(run);
-            set({ run });
+            set({ run, missed: [] });
             get().next();
         },
 
@@ -581,6 +587,13 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (review?.marks) set({ interaction: { ...get().interaction, marks: { ...get().interaction.marks, ...review.marks } } });
             set({ nudge: null, feedbackHint });
             const hintMs = feedbackHint ? HINT_MS : 0;
+            // Nog eens proberen: only the flash, and the steps again after a fout; the run already counted this exercise.
+            if (cur.practice) {
+                const stepsOffer = correct ? null : stepsOrMabFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
+                set({ lastCorrect: correct, stepsOffer, handigOffer: stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints, s.grade) : [], phase: 'feedback' });
+                scheduleFlash(correct ? FLASH_MS.juist : FLASH_MS.fout + hintMs);
+                return;
+            }
             // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.
             if (!correct && attemptsOf(s) === 2 && cur.wrongFirst === undefined) {
                 const retry: KioskCurrent = { ...cur, wrongFirst: given };
@@ -597,7 +610,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // A fact without steps (3 + 4) still gets the MAB picture alone where MAB applies ([] lines).
             const stepsOffer = correct || s.testMode || s.noSteps ? null : stepsOrMabFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
             const handigOffer = stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints, s.grade) : [];
-            set({ run: updated, lastCorrect: correct, stepsOffer, handigOffer });
+            const missed = correct ? get().missed : [...get().missed, { slot: cur.slot, exercise: cur.exercise, exerciseKey: cur.exerciseKey, constraints: cur.constraints }];
+            set({ run: updated, lastCorrect: correct, stepsOffer, handigOffer, missed });
             // Testmodus: no juist/fout per exercise, straight on to the next one.
             if (s.testMode) { get().next(); return; }
             set({ phase: 'feedback' });
@@ -707,6 +721,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'steps' || !s || !cur) return;
             const solution = interactOfShown(s, cur)?.solution?.(cur.exercise, cur.constraints, answered);
             if (solution) set({ interaction: solution, activeCell: null });
+        },
+
+        tryAgain() {
+            const { phase, sessie: s, shown: cur } = get();
+            if (phase !== 'steps' || !s || !cur) return;
+            clearFlash();
+            const again: KioskCurrent = { ...cur, wrongFirst: undefined, practice: true, shownAt: Date.now() };
+            set({ shown: again, phase: 'exercise', input: fieldsFor(currentInput(s, again)), field: 0, lastCorrect: null, stepsOffer: null, handigOffer: [], interaction: EMPTY_INTERACTION, activeCell: firstCell(s, again), nudge: null, nudged: false, feedbackHint: null });
         },
 
         pressExtra(id) {

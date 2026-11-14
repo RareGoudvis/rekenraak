@@ -8,7 +8,7 @@ import type { RenderStepsVisual } from '../../components/steps/stepsVisuals';
 const LOOKS = {
     kiosk: {
         list: 'kiosk-steps-lines kiosk-steps-questions', item: 'kiosk-math kiosk-steps-q', question: 'kiosk-steps-question', hint: 'kiosk-steps-hint',
-        answer: 'kiosk-steps-answer', done: 'kiosk-steps-done', doneText: 'Klaar! Kijk nog eens naar je antwoord.', button: 'kiosk-btn kiosk-btn-primary kiosk-btn-big',
+        answer: 'kiosk-steps-answer', done: 'kiosk-steps-done', doneText: 'Klaar! Kijk nog eens naar je antwoord.', button: 'kiosk-btn kiosk-btn-help kiosk-btn-big',
     },
     tutor: {
         list: 'tutor-lines tutor-questions', item: 'tutor-q', question: 'tutor-q-question', hint: 'tutor-q-hint',

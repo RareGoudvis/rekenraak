@@ -4,6 +4,7 @@ import StartScreen from './kiosk/StartScreen';
 import Kiosk from './kiosk/Kiosk';
 import StatsScreen from './kiosk/StatsScreen';
 import ErrorScreen from './kiosk/ErrorScreen';
+import KidBackdrop from './kiosk/KidBackdrop';
 import ZelfPicker from './zelf/ZelfPicker';
 import SpelScreen from './spelen/SpelScreen';
 import { useSpelStore } from './spelen/useSpelStore';
@@ -28,9 +29,9 @@ export default function OefenApp() {
     // No link at all (no error either): the pupil picks an exercise alone. A broken link still gets its error.
     if (!error && !sessie) return <div className="oefen-app"><ZelfPicker /></div>;
     if (error || !sessie) {
-        return <div className="oefen-app"><ErrorScreen message={error} /></div>;
+        return <div className="oefen-app"><KidBackdrop /><ErrorScreen message={error} /></div>;
     }
-    if (phase === 'start') return <div className="oefen-app"><StartScreen /></div>;
-    if (phase === 'locked') return <div className="oefen-app"><main className="kiosk-scroll"><StatsScreen /></main></div>;
+    if (phase === 'start') return <div className="oefen-app"><KidBackdrop /><StartScreen /></div>;
+    if (phase === 'locked') return <div className="oefen-app"><KidBackdrop clouds={false} extra="confetti" /><main className="kiosk-scroll"><StatsScreen /></main></div>;
     return <Kiosk />;
 }
