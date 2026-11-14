@@ -5,7 +5,7 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
@@ -189,6 +189,24 @@ const RECIPES: Record<SpelSound, Recipe> = {
         tone(ac, d, t, { type: 'triangle', f0: 392, f1: 370, dur: 0.24, vol: 0.2 });
         tone(ac, d, t, { type: 'triangle', f0: 370, f1: 349, at: 0.27, dur: 0.24, vol: 0.2 });
         tone(ac, d, t, { type: 'triangle', f0: 349, f1: 262, at: 0.54, dur: 0.5, vol: 0.2, wobble: [6, 8] });
+    },
+    // Pakjesband right: a parcel slides down the chimney and lands in the soot, a soft low "whoomp".
+    whoomp: (ac, d, t) => {
+        tone(ac, d, t, { f0: 420, f1: 160, dur: 0.32, vol: 0.16 });
+        tone(ac, d, t, { f0: 110, f1: 60, at: 0.26, dur: 0.22, vol: 0.32 });
+        noise(ac, d, t, { at: 0.26, dur: 0.3, vol: 0.14, filter: 'lowpass', f0: 500, f1: 180 });
+    },
+    // Eieren right: a little shell crack and a chick's two cheeps.
+    piep: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.04, vol: 0.22, filter: 'highpass', f0: 2200 });
+        tone(ac, d, t, { f0: 2100, f1: 2600, at: 0.12, dur: 0.08, vol: 0.09 });
+        tone(ac, d, t, { f0: 2200, f1: 2800, at: 0.26, dur: 0.1, vol: 0.09 });
+    },
+    // Mollen right: a squeaky toy hammer (a soft rubber bonk and a squeak).
+    bonk: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 240, f1: 120, dur: 0.12, vol: 0.32 });
+        noise(ac, d, t, { dur: 0.05, vol: 0.12, filter: 'lowpass', f0: 900 });
+        tone(ac, d, t, { f0: 1100, f1: 1500, at: 0.07, dur: 0.14, vol: 0.1, wobble: [30, 60] });
     },
 };
 

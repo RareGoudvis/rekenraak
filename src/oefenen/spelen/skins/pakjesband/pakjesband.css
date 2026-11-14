@@ -1,0 +1,324 @@
+/* Pakjesband skin. A rooftop at dusk: flat fills under a thick dark outline (spelen.css tokens), transforms
+   and opacity only. Layers: roof, vane, horse, posts, chimney back (1) < belt and parcels (2) < chimney front (3). */
+.pk-root {
+  /* One parcel's width (and height): four on the belt with room between, small enough under the sign. */
+  --pk-w: clamp(60px, min(12vw, 17vh), 130px);
+  --pk-belt-y: 46%;
+  --pk-mouth-y: 61%;
+  --pk-roof-y: 75%;
+  --pk-sky: color-mix(in srgb, var(--accent-meetkunde) 20%, color-mix(in srgb, var(--accent-bewerkingen) 28%, var(--kiosk-paper)));
+  --pk-roof: color-mix(in srgb, var(--accent-getallenkennis) 62%, var(--spel-ink));
+  --pk-brick: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--accent-vraagstukken));
+  --pk-belt: color-mix(in srgb, var(--text-muted) 45%, var(--kiosk-paper));
+  --pk-belt-dark: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper));
+  --pk-soot: color-mix(in srgb, var(--text-muted) 30%, var(--kiosk-paper));
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  overflow: clip;
+  background: var(--pk-sky);
+}
+
+.pk-moon {
+  position: absolute;
+  top: 7%;
+  left: 7%;
+  width: clamp(36px, 7vmin, 64px);
+  aspect-ratio: 1;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+  box-shadow: inset calc(clamp(36px, 7vmin, 64px) * -.28) 0 0 color-mix(in srgb, var(--spel-star) 60%, var(--kiosk-paper));
+}
+.pk-star {
+  position: absolute;
+  width: calc(clamp(16px, 3vmin, 28px) * var(--s));
+  animation: pk-twinkle 2.6s ease-in-out infinite alternate;
+  animation-delay: calc(var(--k) * -0.7s);
+}
+.pk-star-art { display: block; width: 100%; fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+@keyframes pk-twinkle { from { transform: scale(.8); } to { transform: scale(1.1); } }
+
+/* ── The sum ──────────────────────────────────────────────────────────────── */
+.pk-top {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-3) var(--sp-3) 0;
+}
+.pk-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.pk-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: pk-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes pk-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+/* ── The house ────────────────────────────────────────────────────────────── */
+.pk-roof {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  top: var(--pk-roof-y);
+  bottom: 0;
+  width: 100%;
+  height: calc(100% - var(--pk-roof-y));
+}
+.pk-roof-tiles { fill: var(--pk-roof); stroke: var(--spel-ink); stroke-width: var(--spel-line); vector-effect: non-scaling-stroke; }
+.pk-roof-line { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 45%, var(--pk-roof)); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.pk-ridge { fill: none; stroke: var(--spel-ink); stroke-width: 8; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+.pk-vane {
+  position: absolute;
+  z-index: 1;
+  left: 15%;
+  bottom: calc(100% - var(--pk-roof-y) - 2px);
+  height: clamp(60px, 15%, 150px);
+  overflow: visible;
+}
+.pk-iron { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
+.pk-gold { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.pk-vane-line { fill: none; stroke: var(--spel-ink); stroke-width: 2; opacity: .5; }
+
+.pk-horse {
+  position: absolute;
+  z-index: 1;
+  right: 6%;
+  bottom: calc(100% - var(--pk-roof-y) - 2px);
+  width: clamp(80px, 14vmin, 150px);
+  overflow: visible;
+  fill: var(--spel-ink);
+}
+
+.pk-post {
+  position: absolute;
+  z-index: 1;
+  top: var(--pk-belt-y);
+  bottom: calc(100% - var(--pk-roof-y) - 4px);
+  width: 12px;
+  margin-left: -6px;
+  border: 3px solid var(--spel-ink);
+  border-top: 0;
+  background: var(--pk-belt-dark);
+}
+
+/* The chimney: its back (the dark opening) under the parcels, its front over them. */
+.pk-chimney,
+.pk-chimney-back {
+  position: absolute;
+  left: 60%;
+  width: calc(var(--pk-w) * 1.3);
+  margin-left: calc(var(--pk-w) * -.65);
+}
+.pk-chimney-back {
+  z-index: 1;
+  top: calc(var(--pk-mouth-y) - 12px);
+  height: 16px;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  background: var(--spel-ink);
+}
+.pk-mouth { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
+.pk-chimney {
+  z-index: 3;
+  top: var(--pk-mouth-y);
+  bottom: calc(100% - var(--pk-roof-y) - 9%);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: 0 0 4px 4px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 16px, color-mix(in srgb, var(--spel-ink) 35%, var(--pk-brick)) 16px 19px),
+    var(--pk-brick);
+}
+/* The chimney's lip, a little wider than its body. */
+.pk-chimney::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  top: -6px;
+  height: 18px;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: 4px;
+  background: var(--pk-brick);
+}
+.pk-puff {
+  position: absolute;
+  z-index: 4;
+  left: 60%;
+  top: calc(var(--pk-mouth-y) - 20px);
+  width: 0;
+  height: 0;
+}
+.pk-puff span {
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--pk-soot);
+  opacity: 0;
+  animation: pk-puff 700ms var(--ease-out) 420ms both;
+}
+.pk-puff span:nth-child(2) { --x: -22px; animation-delay: 480ms; }
+.pk-puff span:nth-child(3) { --x: 20px; animation-delay: 540ms; }
+@keyframes pk-puff {
+  from { opacity: 1; transform: translate(0, 0) scale(.4); }
+  to { opacity: 0; transform: translate(var(--x, 0), -70px) scale(1.2); }
+}
+
+/* ── The belt and the parcels ─────────────────────────────────────────────── */
+.pk-line { position: absolute; z-index: 2; left: 3%; right: 3%; top: var(--pk-belt-y); }
+.pk-field { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--pk-w); }
+.pk-belt {
+  height: clamp(16px, 3.4vh, 26px);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: repeating-linear-gradient(90deg, var(--pk-belt) 0 18px, var(--pk-belt-dark) 18px 36px);
+}
+/* The tread moves with the parcels (about the same speed as belt.ts). */
+.pk-belt.is-running { animation: pk-tread 1.3s linear infinite; }
+@keyframes pk-tread { from { background-position: 0 0; } to { background-position: 36px 0; } }
+.pk-roller { width: 8px; height: 8px; border-radius: 50%; background: var(--spel-ink); opacity: .6; }
+
+/* Placed by the skin's loop (a transform per frame). */
+.pk-slot { position: absolute; left: 0; bottom: 0; width: var(--pk-w); height: var(--pk-w); will-change: transform; }
+.pk-hop { position: relative; width: 100%; height: 100%; transform-origin: 50% 100%; }
+.pk-hop { animation: pk-arrive 360ms var(--ease-spring) both; }
+@keyframes pk-arrive { from { opacity: 0; transform: translateY(-30px); } }
+.pk-parcel {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pk-parcel:disabled { cursor: default; }
+.pk-parcel:focus-visible { outline: none; }
+.pk-parcel:focus-visible .pk-box { stroke-width: 7; }
+.pk-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pk-box { fill: var(--fill); stroke: var(--spel-ink); stroke-width: var(--spel-line); }
+.pk-box-line { stroke: var(--spel-ink); stroke-width: 3; }
+.pk-ribbon { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; }
+.pk-bow { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+
+.pk-num {
+  position: absolute;
+  top: 59%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 52%;
+  padding: 1px calc(var(--pk-w) * .06);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-paper);
+  font-size: calc(var(--pk-w) * .24);
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.pk-key {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 6px);
+  display: none;
+  min-width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+@media (hover: hover) and (pointer: fine) { .pk-key { display: inline-flex; } }
+
+/* Off the end of the belt: it tips over and drops behind the roof. */
+.pk-slot.is-off .pk-hop { animation: pk-fall 700ms ease-in forwards; }
+@keyframes pk-fall { to { transform: translate(calc(var(--pk-w) * .6), 60vh) rotate(50deg); opacity: 0; } }
+
+/* Right: a hop off the belt, over to the chimney and down into it. */
+.pk-slot.is-down .pk-hop { animation: pk-down 650ms var(--ease-out) forwards; }
+@keyframes pk-down {
+  0% { transform: none; }
+  40% { transform: translate(calc(var(--dx) * .5), calc(var(--pk-w) * -.45)) rotate(-8deg) scale(.85); }
+  70% { transform: translate(var(--dx), calc(var(--dy) - 6px)) scale(.62); }
+  100% { transform: translate(var(--dx), calc(var(--dy) + var(--pk-w))) scale(.62); }
+}
+.pk-slot.is-down .pk-key { display: none; }
+
+/* Wrong: a gentle bounce off the belt; no red, no shake. */
+.pk-slot.is-bounce .pk-hop { animation: pk-bounce 1100ms ease-in forwards; }
+@keyframes pk-bounce {
+  0% { transform: none; }
+  30% { transform: translate(8px, calc(var(--pk-w) * -.5)) rotate(-12deg); }
+  100% { transform: translate(24px, 60vh) rotate(30deg); opacity: 0; }
+}
+
+/* The right parcel lights up with a ring while the sign shows the answer. */
+.pk-slot.is-answer .pk-parcel::after,
+.pk-slot.is-missed .pk-parcel::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border: 6px solid var(--kiosk-ok);
+  border-radius: var(--radius-lg);
+  animation: pk-ring 800ms ease-in-out 2 alternate both;
+}
+@keyframes pk-ring { from { transform: scale(1); } to { transform: scale(1.08); } }
+.pk-slot.is-answer .pk-num,
+.pk-slot.is-missed .pk-num { color: var(--kiosk-ok); }
+.pk-slot.is-rest .pk-parcel { opacity: .45; transition: opacity var(--dur-slow) var(--ease-out); }
+
+/* "Hoe los ik dit op?": everything waits. */
+.pk-root.is-paused *,
+.pk-root.is-paused *::after { animation-play-state: paused; }
+
+@media (max-height: 420px) {
+  .pk-root { --pk-belt-y: 50%; --pk-mouth-y: 64%; --pk-roof-y: 78%; }
+  .pk-vane, .pk-horse { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pk-star, .pk-belt.is-running, .pk-hop, .pk-sign-answer, .pk-slot.is-answer .pk-parcel::after, .pk-slot.is-missed .pk-parcel::after { animation: none; }
+  .pk-slot.is-down .pk-hop, .pk-slot.is-off .pk-hop { animation: pk-fade 300ms linear forwards; }
+  .pk-slot.is-bounce .pk-hop { animation: none; opacity: .4; }
+}
+.pk-root.is-still .pk-star,
+.pk-root.is-still .pk-hop,
+.pk-root.is-still .pk-sign-answer { animation: none; }
+.pk-root.is-still .pk-slot.is-down .pk-hop { animation: pk-fade 300ms linear forwards; }
+.pk-root.is-still .pk-slot.is-bounce .pk-hop { animation: none; opacity: .4; }
+@keyframes pk-fade { to { opacity: 0; } }

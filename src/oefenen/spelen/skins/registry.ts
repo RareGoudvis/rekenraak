@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Balloon, Bird, Bomb, CarProfile, FlagPennant, Ghost, Log, type Icon } from '@phosphor-icons/react';
+import { Balloon, Bird, Bomb, CarProfile, FlagPennant, Ghost, Gift, Log, type Icon } from '@phosphor-icons/react';
 import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
@@ -71,6 +71,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'touwtrekken', label: 'Touwtrekken', input: 'keypad', timed: false, players: 2, round: {}, accepts: KEYPAD_NUMBER },
         icon: FlagPennant,
         Screen: lazy(() => import('./touwtrekken/Touwtrekken')),
+    },
+    {
+        // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
+        // belt's end is a miss (pakjesband/belt.ts: about 12 s per sum).
+        meta: {
+            id: 'pakjesband', label: 'Pakjesband', input: 'choice', timed: false, round: { questions: 20 }, season: 'sinterklaas', accepts: TAP_CHOICE,
+            sounds: { correct: 'whoomp', wrong: 'boing', miss: 'plop' },
+        },
+        icon: Gift,
+        Component: lazy(() => import('./pakjesband/Pakjesband')),
     },
 ];
 
