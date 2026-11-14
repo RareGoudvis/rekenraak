@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Small batch (owner items 1–7, three agents, merged through the gate): Zelf oefenen "Terug naar begin", compact Zelf card with the QR in a dialog, breuk van een hoeveelheid key with groups + leerjaar defaults (gradeDefaults, tafel cap), no whole-valued breuken terms, sheet-wide `docSettings.solutionStepsAll`, toolbar (eye icon, Oefeningen toevoegen in the Menu, Whiteboard), MAB colours yellow/green/blue/red everywhere.
+
 **2026-11-13** — "Alle stappen" now shows the whole solution at once in Oefenmodus and the stappenhulp, and the steps MAB is gekleurd (yellow E, green T, blue H, red D via theme `--mab-*`, new pieces a heavy outline).
 
 **2026-11-13** — Oefenmodus MAB moved from the side panel into the idle exercise card (steps visual `kioskSlot: 'card'`, 50/50 columns in landscape), about three times the room; MAB also hidden on a phone held sideways.

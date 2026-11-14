@@ -942,7 +942,7 @@ clips at 1280, BUGS.md "Bordmodus"). Real `mouse.move/down/up` for every drag (w
 bar, resize grip, clock hands, geld palette) — the board runs on pointer events.
 
 1. **Enter** — either `page.goto('/bord.html')` (boots straight in, no welcome modal) or
-   `/` → the sidebar-foot button `within(aside).getByRole('button', { name: /Bordmodus/ })`. The overlay is `[data-whiteboard]`; the page is `[data-board-canvas]`.
+   `/` → the sidebar-foot button `within(aside).getByRole('button', { name: /Whiteboard/ })`. The overlay is `[data-whiteboard]`; the page is `[data-board-canvas]`.
 2. **Add widgets** — `getByLabel('Toevoegen aan bord')` → "RekenRaak blok…" opens the add
    panel: type in `Zoeken…` (e.g. "klok"), click a variant → one exercise card. Klasmanagement /
    Organisatie / Wiskunde-gereedschap add tool cards; add six or more and check they land on
