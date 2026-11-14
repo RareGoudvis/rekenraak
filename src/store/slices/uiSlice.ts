@@ -14,8 +14,8 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     activeBlockId: null,
     sidebarTab: 'oefeningen',
     eenvoudigPanel: null,
-    inspectorTab: 'oefening',
-    bladSection: 'koptekst',
+    inspectorScope: 'block',
+    inspectorSections: { block: null, blad: 'koptekst' },
     oefenBuilderOpen: false,
     showSolutions: false,
     view: initialView(),
@@ -25,18 +25,17 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     blockPages: {},
     debugIgnoreMinWidth: false,
 
-    // Selecting a real block opens its content. Picking a block while the panel sat on
-    // Blad used to leave you on Blad, so every selection cost an extra click to get to
-    // what you actually came for. 'document'/null keep whatever tab was open, since the
-    // block tabs are disabled without a selection anyway.
+    // Selecting a real block opens its scope. Picking a block while the panel sat on
+    // Heel het blad used to leave you there, so every selection cost an extra click.
+    // 'document'/null keep the scope, since the block scope is disabled without a selection.
     setActiveSelection: (id) => set(id && id !== 'document'
-        ? { activeBlockId: id, inspectorTab: 'oefening' }
+        ? { activeBlockId: id, inspectorScope: 'block' }
         : { activeBlockId: id }),
     // Pure view state, like the other UI toggles: never pushed to history.
     setSidebarTab: (t) => set({ sidebarTab: t }),
     setEenvoudigPanel: (panel) => set({ eenvoudigPanel: panel }),
-    setInspectorTab: (t) => set({ inspectorTab: t }),
-    setBladSection: (s) => set({ bladSection: s }),
+    setInspectorScope: (scope) => set({ inspectorScope: scope }),
+    setInspectorSection: (scope, section) => set((st) => ({ inspectorScope: scope, inspectorSections: { ...st.inspectorSections, [scope]: section } })),
     setOefenBuilderOpen: (open) => set({ oefenBuilderOpen: open }),
     setShowSolutions: (show) => set({ showSolutions: show }),
     setView: (view) => {
