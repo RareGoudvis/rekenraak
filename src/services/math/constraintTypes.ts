@@ -240,6 +240,8 @@ export type FractionConstraints = {
         | 'met-berekening' | 'zonder-berekening';
     objectShape: 'circle' | 'square';
     maxTotal: number;
+    // Hoeveelheid: the most objects in one group (total / noemer), so the sum stays in the tafels; absent = no cap.
+    maxGroupSize?: number;
     groupingMode?: 'standaard' | 'gebalanceerd' | 'per-deel';  // concreet object row layout
     drawBoxW?: number;                 // schematisch draw box width (cm); 0/undefined = full width
     drawBoxH?: number;                 // schematisch draw box height (cm)

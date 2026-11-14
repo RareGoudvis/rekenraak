@@ -173,6 +173,8 @@ const fractionSpace: OptionSpace = {
     // 2 sits below a noemer of 3: the edge where no multiple of the noemer fits.
     // 100 = the leerjaar 3+ seed (tafels up to 10 × 10).
     maxTotal: [2, 10, 20, 60, 100],
+    // The leerjaar 1-3 seed: at most 10 per group (tafels).
+    maxGroupSize: [3, 10],
     maxAbstractN3: [100, 1000],
     minLineLength: [2, 4],
     maxLineLength: [8, 12, 20],

@@ -8,11 +8,11 @@ export type InstructionFn = (c: BlockConstraints) => string;
 export type GradeDefaults = Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Record<string, unknown>>>;
 
 // Breuk van een hoeveelheid follows the tafels (owner 2026-11-14): leerjaar 2 helft / kwart of up to 20,
-// from leerjaar 3 noemers up to 10 and totals up to 10 × 10.
+// from leerjaar 3 noemers up to 10 and totals up to 10 × 10; up to leerjaar 3 a group holds at most 10 (no 1/2 van 100).
 const HOEVEELHEID_GRADES: GradeDefaults = {
-    1: { maxDenominator: 4, maxTotal: 20 },
-    2: { maxDenominator: 4, maxTotal: 20 },
-    3: { maxDenominator: 10, maxTotal: 100 },
+    1: { maxDenominator: 4, maxTotal: 20, maxGroupSize: 10 },
+    2: { maxDenominator: 4, maxTotal: 20, maxGroupSize: 10 },
+    3: { maxDenominator: 10, maxTotal: 100, maxGroupSize: 10 },
     4: { maxDenominator: 10, maxTotal: 100 },
     5: { maxDenominator: 10, maxTotal: 100 },
     6: { maxDenominator: 10, maxTotal: 100 },

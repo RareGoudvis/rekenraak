@@ -622,6 +622,8 @@ const breukenSpec: TypeSpec<FractionExercise> = {
             || e.coloredIndices.some(i => i < 0 || i >= (e.wholes ?? 1) * e.denominator))) push('answer-key', e.coloredIndices.join(','), `distinct 0..${(e.wholes ?? 1) * e.denominator - 1}`, ex);
         if ((e.subType === 'hoeveelheid' || e.subType === 'hoeveelheid-rechthoek') && e.total !== undefined) {
             if (over(e.total, n(c.maxTotal, 20))) push('total>maxTotal', e.total, n(c.maxTotal, 20), ex);
+            // maxGroupSize caps each group, unless even one per group would pass maxTotal.
+            if (c.maxGroupSize !== undefined && e.total / e.denominator > Math.max(1, n(c.maxGroupSize, Infinity))) push('group>maxGroupSize', e.total / e.denominator, n(c.maxGroupSize, Infinity), ex);
         }
         if (e.subType === 'hoeveelheid-abstract' && e.total !== undefined && n(c.level, 1) === 3 && over(e.total, n(c.maxAbstractN3, 1000))) {
             push('total>maxTotal', e.total, n(c.maxAbstractN3, 1000), ex);

@@ -55,6 +55,22 @@ describe('breuk van een hoeveelheid: the leerjaar seeds noemer and total', () =>
         }
     });
 
+    test('leerjaar 1-3 cap a group at 10 (the tafels); later leerjaren, no leerjaar and old links have no cap', () => {
+        for (const g of [1, 2, 3] as const) expect(seedLeafConstraints(ID, g)!.constraints.maxGroupSize).toBe(10);
+        for (const g of [4, 5, 6] as const) expect(seedLeafConstraints(ID, g)!.constraints.maxGroupSize).toBeUndefined();
+        expect(seedLeafConstraints(ID, null)!.constraints.maxGroupSize).toBeUndefined();
+        const c = seedLeafConstraints(ID, 3)!.constraints;
+        let halves = 0;
+        for (let s = 0; s < 80; s++) {
+            const block = makeBlock('breuken', { leafId: ID, constraints: c, block: { numberOfExercises: 8 } });
+            for (const ex of REGISTRY.breuken.generate(block) as FractionExercise[]) {
+                expect(ex.total! / ex.denominator, `${ex.numerator}/${ex.denominator} van ${ex.total}`).toBeLessThanOrEqual(10);
+                if (ex.denominator === 2) halves++;
+            }
+        }
+        expect(halves).toBeGreaterThan(0);
+    });
+
     test('the generator stays inside noemer 10 and total 100, total a multiple of the noemer', () => {
         const c = seedLeafConstraints(ID, 3)!.constraints;
         const seen = new Set<number>();
