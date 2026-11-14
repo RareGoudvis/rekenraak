@@ -103,6 +103,7 @@ import { GetallenrijenStyleConfig } from '../components/configurator/plugins/Get
 import { PatroonStyleConfig } from '../components/configurator/plugins/PatroonConfig';
 import { MetenStyleConfig } from '../components/configurator/plugins/MetenConfig';
 import { HerleidingenStyleConfig, HerleidingenAdvancedConfig } from '../components/configurator/plugins/HerleidingenConfig';
+import * as SUM from '../components/configurator/plugins/summaries';
 import { ControlerenStyleConfig } from '../components/configurator/plugins/ControlerenConfig';
 import { TemperatuurStyleConfig } from '../components/configurator/plugins/TemperatuurConfig';
 import { WeegschaalStyleConfig } from '../components/configurator/plugins/WeegschaalConfig';
@@ -126,6 +127,8 @@ export interface ExerciseUIDef {
     StyleConfig?: ConfigComponent;
     /** Verbetersleutel rows: settings that only change the answer key, never the pupil's sheet. */
     SolutionConfig?: ConfigComponent;
+    /** One short Dutch line of the key content settings, e.g. "Tot 1.000 · 2 termen · vrij · brug T moet". */
+    summary?: (block: MathBlock) => string;
     /** Opdrachtblok rows under Aantal oefeningen (how the block's exercises are laid out). */
     AppearanceConfig?: ConfigComponent;
     /** Body of the Geavanceerd accordion for this family. Its presence is what shows the accordion. */
@@ -138,53 +141,53 @@ export interface ExerciseUIDef {
 
 export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     // Mental math — shared viewer, operation-specific config.
-    'hr-std-optellen':         { Viewer: MathBlockRenderer, Config: AdditionConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig },
-    'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig },
-    'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig, StyleConfig: MulDivStyleConfig, SolutionConfig: HrSolutionConfig },
-    'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig, StyleConfig: MulDivStyleConfig, SolutionConfig: HrSolutionConfig },
-    'hr-std-gemengd':          { Viewer: MathBlockRenderer, Config: GemengdConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig },
+    'hr-std-optellen':         { Viewer: MathBlockRenderer, Config: AdditionConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig, summary: SUM.addSubSummary },
+    'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig, summary: SUM.addSubSummary },
+    'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig, StyleConfig: MulDivStyleConfig, SolutionConfig: HrSolutionConfig, summary: SUM.mulDivSummary },
+    'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig, StyleConfig: MulDivStyleConfig, SolutionConfig: HrSolutionConfig, summary: SUM.mulDivSummary },
+    'hr-std-gemengd':          { Viewer: MathBlockRenderer, Config: GemengdConfig, StyleConfig: AddSubStyleConfig, SolutionConfig: HrSolutionConfig, summary: SUM.gemengdSummary },
 
     // Cijferen — shared viewer + config across all 8 leaves.
-    'cijferen-optellen-nat':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-optellen-dec':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-aftrekken-nat':        { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-aftrekken-dec':        { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-vermenigvuldigen-nat': { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-vermenigvuldigen-dec': { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-delen-nat':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
-    'cijferen-delen-dec':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-optellen-nat':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-optellen-dec':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-aftrekken-nat':        { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-aftrekken-dec':        { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-vermenigvuldigen-nat': { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-vermenigvuldigen-dec': { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-delen-nat':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
+    'cijferen-delen-dec':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig, summary: SUM.cijferSummary },
 
-    'klok-kloklezen': { Viewer: ClockViewer,    Config: ClockConfig },
-    'breuken':        { Viewer: FractionViewer, Config: FractionConfig, StyleConfig: FractionStyleConfig, SolutionConfig: FractionSolutionConfig, AdvancedConfig: FractionAdvancedConfig, advancedApplies: fractionAdvancedApplies },
-    'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig, StyleConfig: SplitsenStyleConfig, AdvancedConfig: SplitsenAdvancedConfig },
+    'klok-kloklezen': { Viewer: ClockViewer,    Config: ClockConfig, summary: SUM.clockSummary },
+    'breuken':        { Viewer: FractionViewer, Config: FractionConfig, StyleConfig: FractionStyleConfig, SolutionConfig: FractionSolutionConfig, AdvancedConfig: FractionAdvancedConfig, advancedApplies: fractionAdvancedApplies, summary: SUM.fractionSummary },
+    'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig, StyleConfig: SplitsenStyleConfig, AdvancedConfig: SplitsenAdvancedConfig, summary: SUM.splitsenSummary },
 
     'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
     'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
     'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
     // No AdvancedConfig: geld-teruggeven has no Geavanceerd settings, and the accordion
     // only appears for rows that register one.
-    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig, TrayPiece: GeldTrayPiece },
+    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig, TrayPiece: GeldTrayPiece, summary: SUM.geldTeruggevenSummary },
 
     'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AppearanceConfig: MabAppearanceConfig, AdvancedConfig: MabAdvancedConfig },
     'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AppearanceConfig: MabAppearanceConfig, AdvancedConfig: MabAdvancedConfig, TrayPiece: MabTrayPiece },
 
     'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig, StyleConfig: OrdenenStyleConfig },
-    'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig },
+    'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig, summary: SUM.breukBewerkSummary },
     'breuken-rangschikken': { Viewer: OrdenenViewer,     Config: BreukenRangschikkenConfig, StyleConfig: BreukenRangschikkenStyleConfig },
     'deelbaarheid': { Viewer: DeelbaarheidViewer, Config: DeelbaarheidConfig },
     'getalpatronen': { Viewer: PatroonViewer, Config: PatroonConfig, StyleConfig: PatroonStyleConfig },
     'deelbaarheid-kleuren': { Viewer: DeelbaarheidKleurViewer, Config: DeelbaarheidKleurConfig, StyleConfig: DeelbaarheidKleurStyleConfig },
-    'getallenas':   { Viewer: GetallenasViewer,   Config: GetallenasConfig },
-    'getallenrijen':{ Viewer: GetallenrijenViewer, Config: GetallenrijenConfig, StyleConfig: GetallenrijenStyleConfig },
+    'getallenas':   { Viewer: GetallenasViewer,   Config: GetallenasConfig, summary: SUM.getallenasSummary },
+    'getallenrijen':{ Viewer: GetallenrijenViewer, Config: GetallenrijenConfig, StyleConfig: GetallenrijenStyleConfig, summary: SUM.getallenrijSummary },
     'lengte-meten': { Viewer: MetenViewer, Config: MetenConfig, StyleConfig: MetenStyleConfig },
     'omtrek':       { Viewer: MetenViewer, Config: MetenConfig, StyleConfig: MetenStyleConfig },
     'temperatuur':  { Viewer: TemperatuurViewer,  Config: TemperatuurConfig, StyleConfig: TemperatuurStyleConfig },
     'plaatswaarde': { Viewer: PlaatswaardeViewer, Config: PlaatswaardeConfig },
     'even-oneven':  { Viewer: EvenOnevenViewer,   Config: EvenOnevenConfig, StyleConfig: EvenOnevenStyleConfig },
     'vergelijken':  { Viewer: VergelijkenViewer,  Config: VergelijkenConfig },
-    'afronden':     { Viewer: AfrondenViewer,     Config: AfrondenConfig },
+    'afronden':     { Viewer: AfrondenViewer,     Config: AfrondenConfig, summary: SUM.afrondenSummary },
     'romeinse-cijfers': { Viewer: RomeinseViewer, Config: RomeinseConfig },
-    'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig, StyleConfig: HerleidingenStyleConfig, AdvancedConfig: HerleidingenAdvancedConfig },
+    'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig, StyleConfig: HerleidingenStyleConfig, AdvancedConfig: HerleidingenAdvancedConfig, summary: SUM.herleidingenSummary },
 
     'schattend': { Viewer: SchattendViewer, Config: SchattendConfig, StyleConfig: SchattendStyleConfig },
 
@@ -192,7 +195,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'procenten': { Viewer: ProcentenViewer, Config: ProcentenConfig },
 
     'maateenheid':  { Viewer: MaateenheidViewer, Config: MaateenheidConfig },
-    'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig, AdvancedConfig: GeldAdvancedConfig },
+    'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig, AdvancedConfig: GeldAdvancedConfig, summary: SUM.geldRekenenSummary },
 
     'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig, StyleConfig: RekenvolgordeStyleConfig },
     'layout-sectie':        { Viewer: LayoutBlockViewer, Config: LayoutConfig },
