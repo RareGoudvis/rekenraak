@@ -76,6 +76,8 @@ export interface DocSettings {
     tutorQr?: boolean;
     // The short line beside the QR that tells pupils what it is for. Absent = shown.
     tutorQrCaption?: boolean;
+    // The teacher's own words for that line (owner 2026-11-14); absent or empty = TUTOR_QR_CAPTION.
+    tutorQrCaptionText?: string;
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
     // Vertical rule in the gutter between blocks that share a row. showDividers is the

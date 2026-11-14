@@ -1865,9 +1865,10 @@ under `src/board/`. Touchpoints with the main app are exactly five:
    overlay when `view === 'whiteboard'` (like the library views: the editor stays mounted
    underneath, so switching back loses nothing). Under every full-screen view the editor's
    `.print-root` is `inert`, so its buttons leave the Tab order and the accessibility tree.
-3. **Sidebar-foot button** — "Bordmodus" (Chalkboard icon) in the mode row directly above the
-   wordmark ([sidebar.tsx](../../src/components/layout/sidebar.tsx)), beside Oefenmodus, both with the
-   secondary IconButton chrome and the centred `BetaCaption` line under them; nothing in
+3. **Sidebar-foot button** — "Whiteboard" (text only since 2026-11-14) in the mode row directly above the
+   wordmark ([sidebar.tsx](../../src/components/layout/sidebar.tsx)), under the Oefenmodus | Zelf oefenen split
+   control (the second half opens kind.html in a new tab; their icons drop in a narrow sidebar via a container
+   query), all with the secondary IconButton chrome and the centred `BetaCaption` line under them; nothing in
    the TopBar, so its fold stages are the pre-whiteboard ones.
 4. **GeldViewer exports** — `EuroCoin` / `CentCoin` are exported (`Bill` already was) so the
    board's geld palette and geld-item widgets draw the same money as the sheet.

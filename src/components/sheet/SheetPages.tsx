@@ -145,6 +145,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                   payload={encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade })}
                   lean={encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade: selectedGrade })}
                   caption={docSettings.tutorQrCaption !== false}
+                  captionText={docSettings.tutorQrCaptionText}
                 />
               </div>
             );

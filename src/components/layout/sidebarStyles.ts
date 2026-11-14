@@ -29,7 +29,11 @@ export const S = {
     } as React.CSSProperties,
 
     // SYNC: padding/font match leafBtn so a mode button is exactly one sidebar row tall.
-    modeRow: { flex: 'none', display: 'flex', gap: 'var(--sp-1)', padding: 'var(--sp-1) var(--sp-2)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
+    modeRow: { flex: 'none', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', padding: 'var(--sp-1) var(--sp-2)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
+    // Oefenmodus | Zelf oefenen as one split control: two halves sharing a border.
+    modeSplit: { display: 'flex', minWidth: 0 } as React.CSSProperties,
+    modeSplitLeft: { borderTopRightRadius: 0, borderBottomRightRadius: 0 } as React.CSSProperties,
+    modeSplitRight: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: 'none', textDecoration: 'none' } as React.CSSProperties,
     modeBtn: {
         flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
         // Same chrome as the TopBar's secondary IconButtons (Menu, Bewaren): a

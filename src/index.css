@@ -990,3 +990,9 @@ button.ez-pill:hover { background: var(--bg-active); }
   font-family: var(--font-ui); font-size: 10px; color: var(--danger);
   border: 1px dashed var(--danger); border-radius: var(--radius-xs); padding: 4px;
 }
+
+/* Sidebar foot: Oefenmodus | Zelf oefenen. The icons keep their size, and a narrow sidebar (a 1024 px window)
+   drops them so both labels fit (they were squeezed to a dot: BUGS 2026-11-14). */
+.mode-row { container-type: inline-size; }
+.mode-row .mode-icon { flex-shrink: 0; }
+@container (max-width: 250px) { .mode-row .mode-icon { display: none; } }

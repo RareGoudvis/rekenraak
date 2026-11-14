@@ -27,6 +27,7 @@ import Switch from '../ui/Switch';
 import { F } from './plugins/shared/fieldStyles';
 import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
 import QuickBlock from './QuickBlock';
+import { TUTOR_QR_CAPTION, TUTOR_QR_CAPTION_MAX } from '../sheet/TutorQr';
 import { effectiveSidebarTab } from '../../services/eenvoudigMode';
 
 // The two optional registry slots the Inspector reads besides the configs: a one-line
@@ -419,6 +420,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             <span style={S.switchText}>Uitleg naast de QR-code</span>
                             <Switch checked={docSettings.tutorQrCaption !== false} onChange={(v) => updateDocSettings({ tutorQrCaption: v })} aria-label="Uitleg naast de QR-code" />
                         </div>
+                    )}
+                    {docSettings.tutorQr && docSettings.tutorQrCaption !== false && (
+                        <input type="text" style={{ ...S.input, width: '100%', margin: '0 0 var(--sp-2)' }} maxLength={TUTOR_QR_CAPTION_MAX}
+                            value={docSettings.tutorQrCaptionText ?? ''} placeholder={TUTOR_QR_CAPTION} aria-label="Tekst naast de QR-code"
+                            onChange={(e) => updateDocSettings({ tutorQrCaptionText: e.target.value })} />
                     )}
                 </>) : (
                     <p style={{ ...S.hintText, margin: '0 0 var(--sp-2)' }}>De stappenhulp-QR verschijnt hier zodra er een som met stappen op het blad staat.</p>

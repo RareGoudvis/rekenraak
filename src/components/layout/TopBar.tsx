@@ -413,15 +413,11 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
               </div>
 
-              {/* Middle track: sheet name + autosave status. The beta chip is the cheapest
-                  thing to shed (stage 1); the name+dot are the last things in the row to
+              {/* Middle track: sheet name + autosave status (the beta chip went, owner 2026-11-14); the name+dot are the last things in the row to
                   go (stage 2) because they're the only thing here that identifies the
                   document — at that point they reappear as a thin line under the bar
                   (see .topbar-line2 below) instead of disappearing outright. */}
               <div style={S.centreTrack}>
-                {!iconOnly && (
-                    <span style={S.betaChip} title="RekenRaak is nog in ontwikkeling — bewaar je bladen ook als bestand.">beta</span>
-                )}
                 {nameInRow && (
                     <>
                         <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
@@ -589,11 +585,6 @@ const S = {
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
     flashLine: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
-    betaChip: {
-        padding: '2px 8px', borderRadius: 'var(--radius-pill)', flexShrink: 0,
-        border: '1px solid var(--separator)', color: 'var(--text-muted)',
-        fontSize: 'var(--text-xs)', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'default',
-    } as React.CSSProperties,
     saveChip: {
         display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0,
         fontSize: 'var(--text-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', cursor: 'default',

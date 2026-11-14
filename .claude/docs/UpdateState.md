@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-14** — Editor (owner): the beta chip left the top bar; the sidebar foot is Oefenmodus | Zelf oefenen (kind.html in a new tab) as one split control above a text-only Whiteboard (icons drop in a narrow sidebar via a container query, which fixes the 1024 px squeeze); the stappenhulp QR is 23 mm (was 26) and its caption is editable (`docSettings.tutorQrCaptionText`, 70 chars, empty = the default line).
+
 **2026-11-14** — The maal- en deeltafels join Spelen (leerjaar 1–3; deling met rest stays out): tafel distractors (a neighbouring row, the sum, ±1; for delen one jump off or the deler) and a help tip with the jumps ("Tel in sprongen van 7: 7, 14, 21, …").
 
 **2026-11-14** — Spelen round 3A: skins declare the content they accept (`meta.accepts`: number / choice / pair; GamePicker hides what does not fit, the Zelf picker passes `spelContentOf`), a "Nu extra leuk" seasonal shelf (seasons.ts, Brussels date, Easter computed; `?spelDatum=` in dev only), and Pakjesband (Sinterklaas), Eieren zoeken (Pasen) and Mollen meppen.

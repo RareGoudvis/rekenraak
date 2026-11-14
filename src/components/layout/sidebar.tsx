@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, MagnifyingGlass, Student, Chalkboard } from '@phosphor-icons/react';
+import { Plus, MagnifyingGlass, Student, ChalkboardTeacher } from '@phosphor-icons/react';
 import { APP_STRUCTURE } from '../../config/appstructure';
 import { useWorksheetStore, type AddBlockOpts } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
@@ -176,16 +176,24 @@ export default function Sidebar() {
             {/* The two app modes sit at the foot of the list, not in the TopBar: there they
                 pushed stage 0 (all labels) past 1920 px. A locked curriculum hides Oefenmodus
                 (it would offer exercises outside the whitelist) but keeps Bordmodus. */}
-            <div style={S.modeRow}>
+            <div className="mode-row" style={S.modeRow}>
+                {/* Owner 2026-11-14: Oefenmodus split in the teacher's workspace and the pupils' own page (kind.html,
+                    a new tab), so teachers find the kids' page; Whiteboard as plain text, which also fits a 1024 px window. */}
                 {!locked && (
-                    <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => openOefenmodus()}
-                        title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
-                        <Student size={16} aria-hidden="true" /><span>Oefenmodus</span>
-                    </button>
+                    <div role="group" aria-label="Oefenen" style={S.modeSplit}>
+                        <button type="button" className="ui-icon-btn" style={{ ...S.modeBtn, ...S.modeSplitLeft }} onClick={() => openOefenmodus()}
+                            title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
+                            <ChalkboardTeacher className="mode-icon" size={16} aria-hidden="true" /><span>Oefenmodus</span>
+                        </button>
+                        <a className="ui-icon-btn" style={{ ...S.modeBtn, ...S.modeSplitRight }} href="/kind.html" target="_blank" rel="noopener"
+                            title="Zelf oefenen: de pagina voor leerlingen (opent in een nieuw tabblad)" aria-label="Zelf oefenen: de pagina voor leerlingen, opent in een nieuw tabblad">
+                            <Student className="mode-icon" size={16} aria-hidden="true" /><span>Zelf oefenen</span>
+                        </a>
+                    </div>
                 )}
-                <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setView('whiteboard')}
+                <button type="button" className="ui-icon-btn" style={{ ...S.modeBtn, flex: 'none' }} onClick={() => setView('whiteboard')}
                     title="Whiteboard: oefeningen en hulpmiddelen op het digibord" aria-label="Whiteboard: oefeningen en hulpmiddelen op het digibord">
-                    <Chalkboard size={16} aria-hidden="true" /><span>Whiteboard</span>
+                    <span>Whiteboard</span>
                 </button>
             </div>
             <BetaCaption />
