@@ -105,6 +105,9 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
         'Breuken': 'Breuken',
     },
     'Cijferen · Vermenigvuldigen': {
+        'TE × TE': 'Twee cijfers keer twee',
+        'HTE × TE': 'Drie cijfers keer twee',
+        'DHTE × E': 'Vier cijfers keer één',
         'Gewone getallen': 'Hele getallen',
         'Kommagetallen': 'Kommagetallen',
     },

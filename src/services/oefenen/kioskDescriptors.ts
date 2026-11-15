@@ -8,7 +8,7 @@ import type {
 } from '../math/types';
 import { distinctJumps } from '../getallenas/jumps';
 import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskExtraKey, type KioskInput, type KioskInteract, type KioskKey } from './types';
-import { cijferCheck, cijferGiven, cijferKioskGrid, cijferLenen, type CijferCheck } from '../cijferen/cijferCells';
+import { cijferCheck, cijferGiven, cijferKioskGrid, cijferLenen, cijferScratch, type CijferCheck } from '../cijferen/cijferCells';
 import { cijferDp } from '../cijferen/cijferLayout';
 import { gcd, isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
@@ -238,8 +238,8 @@ export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
 
 // SYNC: cijferCells.ts keys: a = answer digit, p = partial product, q = quotient digit, m / v / n =
 // a staartdeling's product, difference and digit brought down (one digit each, a full ruitje hands
-// on); c = carry, b = exchanged top digit (scratch, tapped); r = rest.
-const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, m: { length: 1 }, v: { length: 1 }, n: { length: 1 }, c: { length: 1, scratch: true }, b: { length: 2, scratch: true }, r: {} };
+// on); c = carry, b = exchanged top digit (scratch for + and −, see cijferScratch); r = rest.
+const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, m: { length: 1 }, v: { length: 1 }, n: { length: 1 }, c: { length: 1 }, b: { length: 2 }, r: {} };
 
 // Aftrekken: the pupil can let the kiosk do a column's exchange (inwisselen) instead of typing
 // the new top digits; it exchanges whether or not the column needs it (cijferLenen).
@@ -272,7 +272,7 @@ export function cijferKiosk({ strictCarries = true }: CijferKioskOptions = {}): 
         interact: {
             kind: 'fill-cells',
             keys: (ex, c) => cijferKioskGrid(ex, cijferDp(ex, c)).cells.map(k => k.key),
-            cellOf: (key) => CIJFER_CELL[key[0]] ?? {},
+            cellOf: (key, ex) => ({ ...CIJFER_CELL[key[0]], ...(cijferScratch(ex, key) && { scratch: true }) }),
             answerOf: interactAnswer,
             fromState: (st, ex, c) => cijferGiven(chk(ex, c), st.cells)?.join(INTERACT_SEP) ?? '',
             show: (answer, ex, c) => cijferShow(chk(ex, c), answer),

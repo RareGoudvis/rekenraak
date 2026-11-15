@@ -322,7 +322,7 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const multiplicand = ex.operands[0];
     const multiplier = ex.operands[1];
 
-    const { mdp, tdp, partialProducts, digitCols, n, multiplierDigits } = mulLayout(ex, dp);
+    const { mdp, tdp, partialProducts, digitCols, n } = mulLayout(ex, dp);
     // Whole-number rows are right-aligned over digitCols; each row's comma sits after its own integer part
     const maxInt = digitCols - tdp;
     const mcInt = digitCols - dp;
@@ -341,16 +341,18 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const gridCols = mulGridCols(ex, dp, extraCols);
     const gridW = gridCols * CELL;
     const gridH = totalRows * CELL;
-    // Card only: the carry-row names stand right of the E column, outside the ruitjes.
-    const namesW = kiosk && n >= 2 && kiosk.carryRowOf.size > 0 ? CELL : 0;
+    // Card only: each row's onthoudcijfers stand right of the grid on that row's line (cijferCells mulCarries).
+    const kioskCells = cells ? cijferKioskGrid(ex, dp).cells : [];
+    const carryCells = kioskCells.filter(cell => cell.role === 'carry');
+    const carryW = Math.max(0, ...carryCells.map(cell => (cell.col + 1) * CELL - gridW));
 
     return (
-        <div style={{ position: 'relative', width: gridW + namesW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
+        <div style={{ position: 'relative', width: gridW + carryW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
             {/* One px wider and taller than the grid, and every line offset half a stroke:
                 a line drawn exactly at gridW/gridH sits half outside the viewport and is
                 clipped away on screen (it survives at print DPI, so the sheet and the paper
                 disagreed about the closing line of every grid). */}
-            <svg width={gridW + 1} height={gridH + 1} shapeRendering="crispEdges" style={{ position: 'absolute', top: 0, left: 0 }}>
+            <svg width={gridW + carryW + 1} height={gridH + 1} shapeRendering="crispEdges" style={{ position: 'absolute', top: 0, left: 0 }}>
                 {Array.from({ length: totalRows + 1 }, (_, r) => (
                     <line key={`h${r}`} x1={0} y1={r * CELL + 0.5} x2={gridW} y2={r * CELL + 0.5} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
@@ -364,6 +366,9 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                         <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
+                {carryCells.map(cell => (
+                    <rect key={`cb${cell.key}`} x={cell.col * CELL + 0.5} y={cell.row * CELL + 0.5} width={CELL} height={CELL} fill="none" stroke={GRID_COLOR} strokeWidth={0.5} />
+                ))}
             </svg>
 
             {/* Place value headers */}
@@ -425,20 +430,7 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />
             )}
 
-            {/* Card only: each carry row is named by what that partial product multiplies by ("×3", "×90"),
-                so the pupil knows which row a carry goes in; right of the E column (owner), a long name shrinks to fit. */}
-            {kiosk && n >= 2 && [...kiosk.carryRowOf].map(([r, row]) => {
-                const name = `×${multiplierDigits[r]}${'0'.repeat(r)}`;
-                return (
-                    <div key={`cl${r}`} style={{
-                        position: 'absolute', left: gridW, top: row * CELL, width: CELL, height: CELL,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.44 * Math.min(1, 3 / name.length), fontFamily: 'var(--font-sheet-math)',
-                        color: 'var(--text-muted)', userSelect: 'none', pointerEvents: 'none',
-                    }}>{name}</div>
-                );
-            })}
-            {cells && cijferKioskGrid(ex, dp).cells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}
+            {kioskCells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}
             {cells && tdp > 0 && <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />}
         </div>
     );
@@ -501,9 +493,7 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                     <>
                         {/* Vertical separator: left section | right section (full height) */}
                         <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="currentColor" strokeWidth={2} />
-                        {/* Divisor box top (right section only) */}
-                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="currentColor" strokeWidth={2} />
-                        {/* Divisor box bottom = quotient separator */}
+                        {/* Under the divisor = quotient separator; no line above it (owner 2026-11-15: not how the method is written) */}
                         <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
