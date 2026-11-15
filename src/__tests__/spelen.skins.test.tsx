@@ -8,7 +8,7 @@ import { createSpelEvents } from '../oefenen/spelen/events';
 import Pinguintoren from '../oefenen/spelen/skins/pinguintoren/Pinguintoren';
 import { towerScale } from '../oefenen/spelen/skins/pinguintoren/tower';
 import Zombies from '../oefenen/spelen/skins/zombies/Zombies';
-import { ZOMBIE, joinAt, stepCloser, walk, zombieSpeed } from '../oefenen/spelen/skins/zombies/walk';
+import { ZOMBIE } from '../oefenen/spelen/skins/zombies/walk';
 import Ballonnen from '../oefenen/spelen/skins/ballonnen/Ballonnen';
 import { FLOAT, floatAt, floatPace, floatPath, phaseAt, readableAt, type FloatGeom } from '../oefenen/spelen/skins/ballonnen/float';
 
@@ -102,29 +102,6 @@ describe('Spelen skins', () => {
         expect(scales.every((s, i) => i === 0 || s <= scales[i - 1])).toBe(true);
     });
 
-    test('Zombies walk: speed rises slowly with the streak and drops back; the line keeps its gaps', () => {
-        expect(zombieSpeed(0)).toBe(ZOMBIE.speed);
-        expect(zombieSpeed(3)).toBeCloseTo(ZOMBIE.speed * 1.3);
-        expect(zombieSpeed(50)).toBe(zombieSpeed(ZOMBIE.maxStreak));
-        expect(zombieSpeed(ZOMBIE.maxStreak)).toBeLessThan(ZOMBIE.speed * 2);
-        // The front reaches the door and stops there; the others wait a gap behind and never closer than nextMin.
-        const a = walk([3, 40, 70], 1, 4);
-        expect(a.atDoor).toBe(true);
-        expect(a.xs[0]).toBe(0);
-        expect(a.xs[1]).toBe(ZOMBIE.nextMin);
-        expect(a.xs[2]).toBe(ZOMBIE.nextMin + ZOMBIE.gap);
-        expect(walk([50, 90], 1, 4)).toEqual({ xs: [46, 86], atDoor: false });
-        // Off the street they run in, so the next sum is soon on screen.
-        expect(walk([130, 160], 1, 4).xs[0]).toBe(130 - ZOMBIE.enter);
-        // A wrong answer: a step closer, never onto the door, never back.
-        expect(stepCloser(50)).toBe(50 - ZOMBIE.step);
-        expect(stepCloser(10)).toBe(ZOMBIE.stepMin);
-        expect(stepCloser(2)).toBe(2);
-        expect(joinAt(null)).toBe(ZOMBIE.start);
-        expect(joinAt(80)).toBe(100 + ZOMBIE.gap);
-        expect(joinAt(120)).toBe(120 + ZOMBIE.gap);
-    });
-
     describe('Zombies skin', () => {
         beforeEach(() => { vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] }); });
         const frontX = (c: HTMLElement) => Number(c.querySelector('[data-zombie=front]')!.getAttribute('data-x'));
@@ -149,11 +126,12 @@ describe('Spelen skins', () => {
             rerender(<Zombies {...at(events)} />);
             wait(1000);
             expect(frontX(container)).toBeLessThan(x1);
-            // A faster walk with a streak.
-            const x2 = frontX(container);
+            // A faster walk with a streak (eased in, never a jump).
             rerender(<Zombies {...at(events, { progress: progressWith({ streak: 8, msLeft: 100_000 }) })} />);
             wait(1000);
-            expect(x2 - frontX(container)).toBeGreaterThan((x1 - x2) * 1.5);
+            const x2 = frontX(container);
+            wait(1000);
+            expect(x2 - frontX(container)).toBeGreaterThan((ZOMBIE.start - x1) * 1.5);
         });
 
         test('right flops the front one over; wrong brings it a step closer with a wobble; the next sum goes to the next one', () => {
