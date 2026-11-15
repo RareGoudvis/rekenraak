@@ -16,7 +16,7 @@ const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 5
 // Tap skins that also draw content pictures (SpelSign, SpelChoiceFace): the klok's faces, times and phrases.
 const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
-// Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
+// Bever, Zombies and Zeehondjes: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
 // Zombies also has Makkelijk: Normaal's defence at a steady speed (zombies/walk.ts speedAt).
 const ZOMBIE_NIVEAU: SkinOption = { ...NIVEAU, choices: [{ value: 'makkelijk', label: 'Makkelijk' }, ...NIVEAU.choices] };
@@ -46,14 +46,15 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // Calm, for the youngest: four seals on ice floes hold up the options; the right one gets a fish (15 sums,
-        // untimed). Answers up to 5 characters and pack pictures (a clock face on the sign).
+        // untimed). Answers up to 5 characters and pack pictures (a clock face on the sign). Moeilijk: the floes drift.
         meta: {
             music: 'weide',
-            id: 'zeehond', label: 'Zeehondjes voeren', input: 'choice', timed: false, round: { questions: 15 },
+            id: 'zeehond', label: 'Zeehondjes voeren', input: 'choice', timed: false, round: { questions: 15 }, options: [NIVEAU],
             accepts: { kinds: ['number', 'choice'], pictures: true, maxAnswerChars: 5 }, sounds: { correct: 'ork', wrong: 'plons' },
         },
         icon: Fish,
         Component: lazy(() => import('./zeehond/Zeehond')),
+        Ending: lazy(() => import('./zeehond/Zeehond').then(m => ({ default: m.ZeehondEnding }))),
     },
     {
         // About 3 minutes; the zombies speed up with the streak (progress.streak). Survivors behind barricades

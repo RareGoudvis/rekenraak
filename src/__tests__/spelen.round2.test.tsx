@@ -58,8 +58,8 @@ beforeEach(() => {
 afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe('Pre-start options', () => {
-    test('only Bom, Bever, Zombies, Voetbal, Kasteel, Schatkist, Race and Hartjes have options; picks patch the round, unknown picks fall back to the default', () => {
-        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'schatkist', 'race', 'hartjes'].includes(s.meta.id))).toEqual([]);
+    test('only Bom, Bever, Zombies, Voetbal, Kasteel, Schatkist, Race, Hartjes and Zeehondjes have options; picks patch the round, unknown picks fall back to the default', () => {
+        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'schatkist', 'race', 'hartjes', 'zeehond'].includes(s.meta.id))).toEqual([]);
         const bom = meta('bom');
         expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: 3000 });
         const big = resolveMeta(bom, { tijd: '5', doel: '50' });
