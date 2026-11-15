@@ -38,7 +38,7 @@ function shuffle<T>(list: T[], rng: Rng): T[] {
 }
 
 // 34 → 43 (the tens and ones swapped); 3-digit answers swap their last two digits (152 → 125).
-function digitSwap(n: number): number | null {
+export function digitSwap(n: number): number | null {
     if (n < 10) return null;
     const s = String(n);
     const swapped = `${s.slice(0, -2)}${s.at(-1)}${s.at(-2)}`;
@@ -66,7 +66,7 @@ function families(facts: SumFacts): number[][] {
     const p = op === 'x' ? powerOfTen(facts) : null;
     if (p !== null) { const b = p === y ? x : y; return [[(b + 1) * p, (b - 1) * p], [a + 10, a - 10]]; }
     // The sum for the product is a tafel slip (7 + 8 for 7 × 8); next to 4 × 155 = 620 a 159 is no option.
-    if (op === 'x') return [[x * (y + 1), x * (y - 1), (x + 1) * y, (x - 1) * y], x <= 12 && y <= 12 ? [x + y] : [], [a + 1, a - 1], [a + 10, a - 10]];
+    if (op === 'x') return [[x * (y + 1), x * (y - 1), (x + 1) * y, (x - 1) * y], x <= 12 && y <= 12 ? [x + y] : [], [a + 1, a - 1], [a + 10, a - 10], ...bigSlips(a)];
     if (op === ':') return [[a + 1, a - 1], [y], [a + 2, a - 2], [a * 10]];
     // + read as − (and back): the pupil did the other operation.
     const other = op === '+' ? Math.abs(x - y) : x + y;
@@ -76,7 +76,38 @@ function families(facts: SumFacts): number[][] {
         [a + 10, a - 10],
         [other],
         swap === null ? [] : [swap],
+        ...bigSlips(a),
     ];
+}
+
+// Leerjaar 5–6 answers (owner 2026-11-15): from 1 000 on, a slip in the hundreds or thousands is as likely as ±1.
+const bigSlips = (a: number): number[][] => (a >= 1000 ? [[a + 100, a - 100, a + 1000, a - 1000]] : []);
+
+/**
+ * Options for a whole-number answer that is no plain two-term sum (the tekst pack: afronden, herleidingen, a 3-term
+ * sum): the answer and count − 1 wrong ones. near = the leaf's own slips, one family each, first; then ±step, ±10 step,
+ * ±100 step and ±1000 step (from that size on) and a digit swap. step = the answer's own grain (afronden op H: 100).
+ * min / max = the smallest and biggest option (0; a negative getallenrij allows less; max keeps a slip as short as the answers can be).
+ */
+export function numberChoicesOf(answer: number, rng: Rng, count = 4, near: readonly (readonly number[])[] = [], step = 1, min = 0, max = Infinity): number[] {
+    const a = answer;
+    const ok = (v: number, taken: readonly number[]) => Number.isInteger(v) && v >= min && v <= max && v !== a && !taken.includes(v);
+    const generic: number[][] = [[a + step, a - step], [a + 10 * step, a - 10 * step]];
+    if (Math.abs(a) >= 100 * step) generic.push([a + 100 * step, a - 100 * step]);
+    if (Math.abs(a) >= 1000 * step) generic.push([a + 1000 * step, a - 1000 * step]);
+    const swap = step === 1 && a >= 0 ? digitSwap(a) : null;
+    if (swap !== null) generic.push([swap]);
+    const out: number[] = [];
+    // The leaf's slips in their own order, a random one per family; then the generic families shuffled.
+    for (const f of [...near.map(f => shuffle([...f], rng)), ...shuffle(generic, rng).map(f => shuffle(f, rng))]) {
+        if (out.length >= count - 1) break;
+        const pick = f.find(v => ok(v, out));
+        if (pick !== undefined) out.push(pick);
+    }
+    for (let d = 2; out.length < count - 1 && d < 1000; d++) {
+        for (const v of shuffle([a + d * step, a - d * step], rng)) if (out.length < count - 1 && ok(v, out)) out.push(v);
+    }
+    return shuffle([a, ...out], rng);
 }
 
 /** Three wrong options from typical mistakes (±1, ±10, the other operation, a digit swap, a zero too many or too few), unique, never the answer, never negative; near numbers fill in. */

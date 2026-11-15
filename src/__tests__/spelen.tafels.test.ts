@@ -13,17 +13,17 @@ const variant = (leafId: string, ov: Record<string, unknown> = {}): CardVariant 
 const choice = (...vars: CardVariant[]): ZelfChoice => ({ key: 'k', label: 'k', vars });
 
 describe('tafels in Spelen', () => {
-    test('maal- and deeltafels leaves are playable at leerjaar 1–4, met rest is not', () => {
+    test('maal- and deeltafels leaves are playable at leerjaar 1–6, met rest is not', () => {
         expect(SPEL_LEAVES['hr-std-vermenigvuldigen-nat']).toBe('x');
         expect(SPEL_LEAVES['hr-std-delen-nat']).toBe(':');
         expect(choiceCanPlay(choice(variant('hr-std-vermenigvuldigen-nat')), 2)).toBe(true);
         expect(choiceCanPlay(choice(variant('hr-std-delen-nat')), 3)).toBe(true);
         expect(choiceCanPlay(choice(variant('hr-std-delen-nat', { multiplicationMode: 'met_rest' })), 3)).toBe(false);
-        // × and : reach leerjaar 4; + and − stay at 3.
+        // Owner 2026-11-15: + − × : reach leerjaar 6 (they stopped at 3 and 4 before).
         expect(choiceCanPlay(choice(variant('hr-std-vermenigvuldigen-nat')), 4)).toBe(true);
-        expect(choiceCanPlay(choice(variant('hr-std-vermenigvuldigen-nat')), 5)).toBe(false);
-        expect(choiceCanPlay(choice(variant('hr-std-optellen-nat')), 4)).toBe(false);
-        expect(choiceCanPlay(choice(variant('hr-std-optellen-nat'), variant('hr-std-delen-nat')), 4)).toBe(false);
+        expect(choiceCanPlay(choice(variant('hr-std-vermenigvuldigen-nat')), 6)).toBe(true);
+        expect(choiceCanPlay(choice(variant('hr-std-optellen-nat')), 5)).toBe(true);
+        expect(choiceCanPlay(choice(variant('hr-std-optellen-nat'), variant('hr-std-delen-nat')), 6)).toBe(true);
     });
 
     test('× distractors: a neighbouring row of the tafel, the sum, ±1; never the answer, unique, not negative', () => {

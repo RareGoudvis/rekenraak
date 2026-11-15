@@ -158,6 +158,19 @@
   font-size: var(--kiosk-text-xl);
 }
 
+/* A long sign line (spelChoice signSize: the tekst pack, leerjaar 6 sums): every skin's one-line sign
+   (.xx-sign, never its -sign-answer part or a picture sign) gets smaller and may wrap inside the stage. */
+.spel-stage[data-sign="long"] [class*="-sign"]:not([class*="-sign-"]),
+.tt-sign[data-sign="long"] {
+  max-width: min(100%, 92vw);
+  font-size: clamp(18px, 3.6vmin, 34px);
+  white-space: normal;
+  text-wrap: balance;
+  text-align: center;
+}
+/* A zombie's sign stands in its narrow column: it may grow past it (centred on the pole), not taller than two lines. */
+.spel-stage[data-sign="long"] .zb-sign.is-front { width: max-content; max-width: min(40vw, 22ch); }
+
 /* ── End screen ───────────────────────────────────────────────────────────── */
 .spel-end-stats {
   margin: 0;

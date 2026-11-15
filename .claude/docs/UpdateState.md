@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-15** — Spelen reaches far more content: + − × : and tafels to leerjaar 6 (keypads take 12 digits, ±100 / ±1000 distractors), and the tekst pack (content/tekst/) plays any variant whose kiosk asks one value on a one-line sign (afronden, schatten, splitsen, getallenrijen, herleidingen, procenten, geld teruggeven, tijdsduur, vergelijken, deelbaarheid, even/oneven, romeinse cijfers …; commas, minus signs and words in the tap games only). Coverage L1–L6 went from 8/20/32/13/0/0 to 17/42/61/58/53/56 playable choices. Topic cards fall back to the first fitting game when their preferred one doesn't fit.
+
 **2026-11-15** — Zelf start, the owner's version: picture topic cards (a fitting game's thumbnail via topicGames.ts, else an Oefenmodus screenshot public/spelen/thumbs/oefen-<slug>.webp) with "games" / "oefenen" badges; the title folded into the leerjaar bar; one Keuze screen with "Tot hoeveel?" per leerjaar (L1 10/20, L4 10 000/100 000 where cards differ), "Welke tafels?" toggles (L2 1–10, L3 1–15 + 25/50/100) and Maal / Deel / Allebei, then the "Automatiseren" bar and a row of every fitting game (GameThumb); the Speel meteen row and GamePicker are gone.
 
 **2026-11-15** — Kasteel: every stone is thrown by the catapult (wind-up, a swing against the stop bar, a parabola from the bucket to the hit block computed in scene units by kasteel/throw.ts, reload); the hit lands exactly when the stone arrives.

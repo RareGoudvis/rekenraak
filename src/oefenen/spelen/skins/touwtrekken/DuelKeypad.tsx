@@ -9,7 +9,8 @@ interface Props {
     onAnswer(given: string): void;
 }
 
-const MAX_DIGITS = 6;
+// Leerjaar 6 sums reach 10 digits; 12 as SpelKeypad.
+const MAX_DIGITS = 12;
 const DIGITS = ['7', '8', '9', '4', '5', '6', '1', '2', '3'];
 
 // One player's keypad. Keys act on pointerdown: two children tap at the same moment and a multi-touch

@@ -10,6 +10,7 @@ import type { SkinPhase } from './skins/types';
 import { powerOfTen, type SumFacts } from './distractors';
 import SpelEnd from './SpelEnd';
 import { SpelVisual } from './SpelVisual';
+import { signSize } from './spelChoice';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
 import { formatMathNumber } from '../../services/math/formatters';
@@ -156,7 +157,7 @@ export default function SpelScreen() {
                     )}
                 </span>
             </header>
-            <main className="spel-stage">
+            <main className="spel-stage" data-sign={signSize(st.question?.text)}>
                 <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}>
                     <Skin
                         question={st.question ? { key: st.question.key, text: st.question.text, index: progress.answered - (phase === 'right' || phase === 'wrong' ? 1 : 0), visual: st.question.visual } : null}

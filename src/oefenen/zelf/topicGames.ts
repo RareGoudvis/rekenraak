@@ -9,8 +9,8 @@ import { choicesFor } from './zelfSessie';
 
 type Skin = (typeof SKINS)[number];
 
-// The picture on a topic card: one game per topic (owner 2026-11-15). A test checks that the game plays every
-// playable choice of the topic wherever it shows (oefenen.zelfStart.test.tsx); where nothing plays, the card shows its Oefenmodus picture.
+// The picture on a topic card: a preferred game per topic (owner 2026-11-15); where it doesn't fit, topicGameOf picks
+// another game that does (oefenen.zelfStart.test.tsx); where nothing plays, the card shows its Oefenmodus picture.
 export const TOPIC_GAME: Readonly<Record<string, string>> = {
     'Hoofdrekenen · Optellen': 'ballonnen',
     'Hoofdrekenen · Aftrekken': 'pinguintoren',
@@ -25,15 +25,26 @@ export const TOPIC_GAME: Readonly<Record<string, string>> = {
 
 const playable = (s: Skin | null): s is Skin => !!s && !!(s.Component || s.Screen);
 
-/** The game whose picture the topic card shows at this leerjaar: its TOPIC_GAME line when that game plays one of its choices there; else null (the icon). */
-export function topicGameOf(data: EenvoudigData, grade: Leerjaar, topicId: string): Skin | null {
-    const skin = TOPIC_GAME[topicId] ? skinById(TOPIC_GAME[topicId]) : null;
-    if (!playable(skin)) return null;
-    const fits = choicesFor(data, grade, topicId).some(c => {
+// Whether this game plays at least one choice of the topic at this leerjaar.
+function playsTopic(data: EenvoudigData, grade: Leerjaar, topicId: string, skin: Skin): boolean {
+    return choicesFor(data, grade, topicId).some(c => {
         const content = choiceCanPlay(c, grade) ? spelContentOf(c, grade) : null;
         return !!content && skinsFor([skin], content).length > 0;
     });
-    return fits ? skin : null;
+}
+
+/**
+ * The game whose picture the topic card shows at this leerjaar: its TOPIC_GAME line when that game plays one of the
+ * topic's choices there, else the first calm game (registry order) that does, else any game that does; null when no
+ * game plays the topic there (the card shows its Oefenmodus picture). Since games reach many topics up to leerjaar 6
+ * (2026-11-15), most topics get a game picture without a line of their own.
+ */
+export function topicGameOf(data: EenvoudigData, grade: Leerjaar, topicId: string): Skin | null {
+    const preferred = TOPIC_GAME[topicId] ? skinById(TOPIC_GAME[topicId]) : null;
+    if (playable(preferred) && playsTopic(data, grade, topicId, preferred)) return preferred;
+    const ready = SKINS.filter(playable);
+    return ready.find(s => !s.meta.timed && playsTopic(data, grade, topicId, s))
+        ?? ready.find(s => playsTopic(data, grade, topicId, s)) ?? null;
 }
 
 /** Whether any game plays one of the topic's choices at this leerjaar (the controller badge on its card). */

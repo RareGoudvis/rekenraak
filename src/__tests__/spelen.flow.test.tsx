@@ -45,7 +45,7 @@ describe('Spelen flow', () => {
         expect(SKINS.find(s => s.meta.id === 'ballonnen')!.meta).toMatchObject({ input: 'choice', round: { questions: 20 } });
     });
 
-    test('the games bar only where a game plays the choice (+ and − at leerjaar 1 to 3); Automatiseren always', async () => {
+    test('the games bar only where a game plays the choice (+ and − up to leerjaar 6 since 2026-11-15, not cijferen); Automatiseren always', async () => {
         await toGames('2', 'Hoofdrekenen', 'Optellen', /Met brug/);
         expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
         expect(screen.getByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
@@ -56,7 +56,7 @@ describe('Spelen flow', () => {
         cleanup();
         await toGames('4', 'Hoofdrekenen', 'Optellen', /Met brug/);
         expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
-        expect(screen.queryByRole('region', { name: 'Of speel een spel' })).toBeNull();
+        expect(screen.getByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
         cleanup();
         await toGames('3', 'Cijferen', 'Optellen', /Met brug/);
         expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();

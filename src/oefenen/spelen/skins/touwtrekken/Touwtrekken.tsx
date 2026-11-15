@@ -6,6 +6,7 @@ import SoundToggle from '../../SoundToggle';
 import { play } from '../../sound';
 import type { SkinScreenProps } from '../types';
 import DuelKeypad from './DuelKeypad';
+import { signSize } from '../../spelChoice';
 import { DUEL, SIDES, useDuelStore, type DuelSide, type Side } from './duelStore';
 import '../../spelen.css';
 import './touwtrekken.css';
@@ -172,7 +173,7 @@ export default function Touwtrekken({ meta, from, onExit }: SkinScreenProps) {
                                     <span className="tt-team-name">{TEAM[side]}</span>
                                     <span className="tt-team-score" aria-label={`${me.score} juist`}><Star weight="fill" aria-hidden /> {me.score}</span>
                                 </p>
-                                <p className={`tt-sign kiosk-math${closed ? ' is-solved' : ''}`} aria-live="polite">{signOf(me, closed)}</p>
+                                <p className={`tt-sign kiosk-math${closed ? ' is-solved' : ''}`} data-sign={signSize(me.question?.text)} aria-live="polite">{signOf(me, closed)}</p>
                                 <p className="tt-note" aria-live="polite">
                                     {got ? 'Trek!' : waiting ? 'Nu mag de ander.' : closed && me.feedback ? 'Bijna!' : ' '}
                                 </p>

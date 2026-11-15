@@ -126,6 +126,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Spelen werkt nu voor veel meer onderwerpen: afronden, vergelijken, deelbaarheid, meten, geld en tijd, en sommen tot leerjaar 6.' },
             { kind: 'nieuw', text: 'Zelf oefenen: onderwerpen als prentkaarten, kies tot hoeveel en welke tafels, dan oefenen of meteen een passend spel spelen.' },
             { kind: 'nieuw', text: 'Kies meteen een spel: op de startpagina staan per leerjaar kant-en-klare spelletjes met een prent. Tik en speel!' },
             { kind: 'nieuw', text: 'Kinderen kiezen hun leerjaar met grote cijfers bovenaan, zien alle spellen meteen en krijgen een eigen achtergrond per leerjaar.' },

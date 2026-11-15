@@ -60,7 +60,7 @@ describe('Topic cards: the config', () => {
     beforeAll(async () => { data = await loadEenvoudigData(); });
     const topics = EENVOUDIG_NAV.flatMap(sec => sec.topics);
 
-    test('every topic → game line plays every playable choice of that topic wherever it shows', () => {
+    test('every topic → game line is a real topic and game, and shows wherever it plays one of the topic choices', () => {
         for (const [topic, skinId] of Object.entries(TOPIC_GAME)) {
             expect(topics.some(t => t.id === topic), topic).toBe(true);
             const skin = skinById(skinId)!;
@@ -69,18 +69,22 @@ describe('Topic cards: the config', () => {
             for (const grade of LEERJAREN) {
                 if (!usableVariants(data, grade).has(topic)) continue;
                 const playable = choicesFor(data, grade, topic).filter(c => choiceCanPlay(c, grade));
-                for (const c of playable) expect({ grade, topic, choice: c.label, fits: skinsFor([skin], spelContentOf(c, grade)!).length > 0 }).toMatchObject({ fits: true });
-                if (playable.length) { shownWithGame++; expect(topicGameOf(data, grade, topic)).toBe(skin); }
-                else expect(topicGameOf(data, grade, topic)).toBeNull();
+                const fitsOne = playable.some(c => skinsFor([skin], spelContentOf(c, grade)!).length > 0);
+                if (fitsOne) { shownWithGame++; expect(topicGameOf(data, grade, topic)).toBe(skin); }
             }
             expect(shownWithGame, topic).toBeGreaterThan(0);
         }
     });
 
-    test('a topic that plays a game at some leerjaar has a picture game', () => {
-        for (const t of topics) {
-            const plays = LEERJAREN.some(g => usableVariants(data, g).has(t.id) && topicHasGame(data, g, t.id));
-            expect({ topic: t.id, mapped: plays ? t.id in TOPIC_GAME : true }).toEqual({ topic: t.id, mapped: true });
+    test('a topic that plays a game at a leerjaar shows a game picture there, and that game plays one of its choices', () => {
+        for (const t of topics) for (const g of LEERJAREN) {
+            if (!usableVariants(data, g).has(t.id)) continue;
+            const game = topicGameOf(data, g, t.id);
+            expect({ topic: t.id, g, picture: !!game }).toEqual({ topic: t.id, g, picture: topicHasGame(data, g, t.id) });
+            if (game) {
+                const plays = choicesFor(data, g, t.id).filter(c => choiceCanPlay(c, g)).some(c => skinsFor([game], spelContentOf(c, g)!).length > 0);
+                expect({ topic: t.id, g, game: game.meta.id, plays }).toMatchObject({ plays: true });
+            }
         }
     });
 
@@ -98,8 +102,13 @@ describe('Topic cards: the config', () => {
 
     test('the card per leerjaar: a game picture where it fits, else the Oefenmodus picture; the controller only with a game', () => {
         expect(topicCardOf(data, 2, 'Hoofdrekenen · Optellen')).toMatchObject({ game: { meta: { id: 'ballonnen' } }, hasGame: true });
-        expect(topicCardOf(data, 4, 'Hoofdrekenen · Optellen')).toEqual({ game: null, hasGame: false });
-        expect(topicCardOf(data, 2, 'Geld')).toEqual({ game: null, hasGame: false });
+        // Since games reach leerjaar 6 (2026-11-15), Optellen at L4 has a game too.
+        expect(topicCardOf(data, 4, 'Hoofdrekenen · Optellen')).toMatchObject({ hasGame: true });
+        // The picture and the controller always go together.
+        for (const topic of ['Geld', 'Meten en herleiden', 'Figuren']) for (const g of [2, 4, 6] as const) {
+            const card = topicCardOf(data, g, topic);
+            expect({ topic, g, picture: !!card.game }).toEqual({ topic, g, picture: card.hasGame });
+        }
         expect(topicCardOf(data, 4, 'Breuken')).toMatchObject({ game: { meta: { id: 'pakjesband' } }, hasGame: true });
         // No leerjaar yet: any leerjaar counts.
         expect(topicCardOf(data, null, 'Klok en kalender')).toMatchObject({ game: { meta: { id: 'zeehond' } }, hasGame: true });
@@ -135,9 +144,11 @@ describe('Topic cards and the Keuze screen', () => {
         expect(optellen.querySelector('.zelf-topic-mark.is-game')!.getAttribute('title')).toBe('Er zijn spelletjes');
         expect(optellen.querySelector('.zelf-topic-mark.is-oefen')!.getAttribute('title')).toBe('Je kan oefenen');
         expect(optellen.getAttribute('aria-describedby')).toBeTruthy();
+        // Geld: a game picture when a game plays one of its L2 choices (geld teruggeven, 2026-11-15), else its Oefenmodus picture.
         const geld = card('Meten', 'Geld');
-        expect(geld.querySelector('img')!.getAttribute('src')).toMatch(/thumbs\/oefen-geld\.webp$/);
-        expect(geld.querySelector('.zelf-topic-mark.is-game')).toBeNull();
+        const geldCard = topicCardOf(await loadEenvoudigData(), 2, 'Geld');
+        expect(geld.querySelector('img')!.getAttribute('src')).toMatch(geldCard.game ? new RegExp(`thumbs/${geldCard.game.meta.id}\\.webp$`) : /thumbs\/oefen-geld\.webp$/);
+        expect(!!geld.querySelector('.zelf-topic-mark.is-game')).toBe(geldCard.hasGame);
         expect(geld.querySelector('.zelf-topic-mark.is-oefen')).not.toBeNull();
         // The R badge and "Zelf oefenen" sit in the leerjaar bar: no second header.
         expect(document.querySelector('.kiosk-start-brand')).toBeNull();
