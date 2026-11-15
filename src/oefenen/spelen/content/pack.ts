@@ -4,6 +4,8 @@ import type { CardVariant } from '../../../config/eenvoudig/cards';
 import type { BreukKind } from './breuken/breukGeometry';
 import type { SpelQuestion } from '../spelQuestion';
 import type { PackTarget } from '../board/board';
+import type { AnswerKind } from '../skins/types';
+import type { SpelContent } from '../accepts';
 
 // Content packs: non-number game content (the klok, the breuken). A pack turns a made kiosk exercise
 // into a 'choice' question with pictures; the session, Nakijken and the kiosk check stay the kiosk's own.
@@ -41,13 +43,17 @@ export interface SpelPackQuestion {
     answer: string;
     // Unique values, the answer included, in display order; what a skin hands back through onAnswer.
     choices: string[];
-    // Per choice (same order): how it looks, and what the kiosk check gets for it.
+    // Per choice (same order): how it looks, and what the kiosk check gets for it; both empty for a tekst number (shown and checked as typed).
     views: SpelChoiceView[];
     kioskAnswers: KioskAnswer[];
     help?: SpelHelp;
     // The kiosk exercise behind the question when the game asks a part of the made one (breuken vergelijken:
     // two of its breuken); the session checks it and Nakijken replays it. Absent = the made exercise.
     exercise?: unknown;
+    // The kiosk settings that go with that exercise (the tekst pack asks an afronden rooster as one simpel number). Absent = the made ones.
+    constraints?: Record<string, unknown>;
+    // 'number' = a whole number every game can take (typed or tapped); absent = 'choice' (tap games only).
+    kind?: AnswerKind;
     // Memory boards (Hartjes): the two cards of this question, when they are not "sum" and its answer text.
     pair?: { sum: SpelChoiceView; answer: SpelChoiceView };
     // Questions with the same `same` count as one answer on a board ("2/4" and "1/2"): never two on one memory board.
@@ -64,8 +70,10 @@ export interface SpelPack {
     question(type: OefenType, made: OefenExercise, choiceCount: number): SpelPackQuestion | null;
     // A card variant of one of the leaves that still has no game form (the card's settings); absent = every variant plays.
     plays?(v: CardVariant): boolean;
-    // The highest leerjaar it plays at; absent = SPEL_MAX_GRADE.
+    // The highest leerjaar it plays at; absent = PACK_MAX_GRADE (spelQuestion.ts).
     maxGrade?: number;
+    // What a variant asks of a game when it is not pictures (the tekst pack: numbers or words on the sign); absent = pictures.
+    contentOf?(v: CardVariant): SpelContent;
     // A choice that mixes this pack's cards with cards no game plays (breuken kleuren beside herkennen) plays this pack's part.
     partial?: boolean;
     // The board rounds a variant fills; absent = none (a board skin never gets it).

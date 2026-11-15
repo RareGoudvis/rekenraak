@@ -54,12 +54,12 @@ describe('Spelen with × / : 10, 100, 1000', () => {
         }
     });
 
-    test('leerjaar 4: × and : choices play, + and − do not', () => {
+    test('leerjaar 4: × and : choices play, and since 2026-11-15 + and − too', () => {
         const playable = (g: 3 | 4, t: string) => choicesFor(data, g, t).filter(c => choiceCanPlay(c, g));
         expect(playable(4, 'Hoofdrekenen · Vermenigvuldigen').map(c => c.label)).toContain('Hele getallen');
         expect(playable(4, 'Hoofdrekenen · Delen').length).toBeGreaterThan(0);
-        expect(playable(4, 'Hoofdrekenen · Optellen')).toEqual([]);
-        expect(playable(4, 'Hoofdrekenen · Aftrekken')).toEqual([]);
+        expect(playable(4, 'Hoofdrekenen · Optellen').length).toBeGreaterThan(0);
+        expect(playable(4, 'Hoofdrekenen · Aftrekken').length).toBeGreaterThan(0);
         expect(playable(3, 'Hoofdrekenen · Vermenigvuldigen').map(c => c.label)).toContain('Keer 10 en 100');
     });
 

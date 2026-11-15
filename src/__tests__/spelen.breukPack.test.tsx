@@ -92,19 +92,20 @@ describe('the card → type mapping', () => {
 });
 
 describe('Spelen at leerjaar 4: only the breuken', () => {
-    test('breuken choices play at leerjaar 2–4 (a mixed choice plays its breuken part), never at 5; sums stop at 3', () => {
+    test('breuken choices play at leerjaar 2–4 (a mixed choice plays its breuken part), never at 5; sums go on to 6', () => {
         expect(choiceCanPlay(byLabel(2, 'Welk deel is gekleurd?'), 2)).toBe(true);
         expect(choiceCanPlay(byLabel(3, 'Breuk in een figuur'), 3)).toBe(true);
         for (const label of ['Deel van een geheel', 'Breuken vergelijken', 'Alles door elkaar']) expect(choiceCanPlay(byLabel(4, label), 4), label).toBe(true);
-        // Breuken vergelijken without its getallenas card; Deel van een geheel is herkennen only.
+        // Breuken vergelijken without its getallenas card; Deel van een geheel is herkennen plus the tekst pack's "2/3 van 18".
         expect(spelVarsOf(byLabel(4, 'Breuken vergelijken'), 4).map(v => v.leafId).every(isBreukLeaf)).toBe(true);
-        expect(new Set(spelVarsOf(byLabel(4, 'Deel van een geheel'), 4).map(v => v.leafId))).toEqual(new Set(['breuken-herkennen']));
+        expect(new Set(spelVarsOf(byLabel(4, 'Deel van een geheel'), 4).map(v => v.leafId))).toEqual(new Set(['breuken-herkennen', 'breuken-hoeveelheid']));
         expect(choiceCanPlay(byLabel(4, 'Breuken vergelijken'), 5)).toBe(false);
         // Kleuren alone has no game; neither has any number card at leerjaar 4.
         expect(choiceCanPlay(byLabel(3, 'Breuk kleuren'), 3)).toBe(false);
+        // Owner 2026-11-15: the whole-number sums play to leerjaar 6 (the breuken sums still have no game).
         const sums = choicesFor(data, 4, 'Hoofdrekenen · Optellen');
-        expect(sums.length).toBeGreaterThan(0);
-        expect(sums.every(c => !choiceCanPlay(c, 4))).toBe(true);
+        expect(sums.find(c => c.label === 'Met brug') && choiceCanPlay(sums.find(c => c.label === 'Met brug')!, 4)).toBe(true);
+        expect(choiceCanPlay(sums.find(c => c.label === 'Breuken')!, 4)).toBe(false);
     });
 
     test('the picker: picture games for herkennen, plus Hartjes; Gelijkwaardige breuken also Honingraat; no keypad game', () => {
@@ -134,7 +135,8 @@ describe('the question types', () => {
     const ofType = (re: RegExp) => qs.filter(x => re.test(x.q.text));
 
     test('every question: the answer once among unique choices, and only the answer passes the kiosk check', () => {
-        expect(qs.length).toBeGreaterThan(800);
+        // The tekst pack's "2/3 van 18" takes some slots of the mixed choices.
+        expect(qs.length).toBeGreaterThan(600);
         for (const x of qs) {
             const { q } = x;
             expect(new Set(q.choices).size, q.text).toBe(q.choices.length);

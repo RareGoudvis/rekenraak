@@ -3,7 +3,8 @@ import { loadEenvoudigData } from '../config/eenvoudig/cards';
 import { buildZelfSessie, choicesFor, usableVariants } from '../oefenen/zelf/zelfSessie';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { choicesOf, distractors, mulberry32, type SumFacts } from '../oefenen/spelen/distractors';
-import { choiceCanPlay, spelQuestionOf } from '../oefenen/spelen/spelQuestion';
+import { choiceCanPlay, spelChoiceOf, spelQuestionOf } from '../oefenen/spelen/spelQuestion';
+import { TEKST_LEAVES } from '../oefenen/spelen/content/tekst/tekstLeaves';
 import { BREUK_LEAVES } from '../oefenen/spelen/content/breuken/breukPack';
 
 const check = (f: SumFacts, ds: number[]) => {
@@ -46,15 +47,18 @@ describe('distractors', () => {
         expect(c).toContain(57);
     });
 
-    test('over many generated sums of every playable choice (leerjaar 1 to 4)', async () => {
+    test('over many generated sums of every playable choice (leerjaar 1 to 6)', async () => {
         const data = await loadEenvoudigData();
         let sums = 0;
-        for (const g of [1, 2, 3, 4] as const) {
+        for (const g of [1, 2, 3, 4, 5, 6] as const) {
             for (const topic of usableVariants(data, g).keys()) {
                 for (const choice of choicesFor(data, g, topic)) {
                     // Breuken have their own suite (spelen.breukPack.test.ts): a picture stops at 12 parts, so some made exercises have no game form.
                     if (!choiceCanPlay(choice, g) || choice.vars.some(v => (BREUK_LEAVES as readonly string[]).includes(v.leafId))) continue;
-                    const s = buildZelfSessie(choice, { kind: 'count', n: 10 }, 0, g);
+                    // The tekst pack has its own suite too (spelen.tekst.test.ts): some of its exercises have no text form.
+                    const played = spelChoiceOf(choice, g).vars.filter(v => !(v.leafId in TEKST_LEAVES));
+                    if (!played.length) continue;
+                    const s = buildZelfSessie({ ...choice, vars: played }, { kind: 'count', n: 10 }, 0, g);
                     const rng = mulberry32(g * 1000 + sums);
                     for (let i = 0; i < 40; i++) {
                         const slot = i % s.types.length;
@@ -76,11 +80,13 @@ describe('distractors', () => {
 
     test('hoofdrekenen + − and the tafels with natural numbers at leerjaar 1 to 3 can be played, cijferen not', async () => {
         const data = await loadEenvoudigData();
-        const playable = (g: 1 | 2 | 3 | 4, t: string) => choicesFor(data, g, t).filter(c => choiceCanPlay(c, g)).length;
+        const playable = (g: 1 | 2 | 3 | 4 | 6, t: string) => choicesFor(data, g, t).filter(c => choiceCanPlay(c, g)).length;
         expect(playable(2, 'Hoofdrekenen · Optellen')).toBeGreaterThan(0);
         expect(playable(1, 'Hoofdrekenen · Aftrekken')).toBeGreaterThan(0);
         expect(playable(3, 'Cijferen · Optellen')).toBe(0);
-        expect(playable(4, 'Hoofdrekenen · Optellen')).toBe(0);
+        // Owner 2026-11-15: the sums go on to leerjaar 6.
+        expect(playable(4, 'Hoofdrekenen · Optellen')).toBeGreaterThan(0);
+        expect(playable(6, 'Hoofdrekenen · Optellen')).toBeGreaterThan(0);
         // Owner 2026-11-14: the maal- en deeltafels joined the games.
         const tafels = [...usableVariants(data, 2).keys()].find(t => /tafels$/.test(t));
         if (tafels) expect(playable(2, tafels)).toBeGreaterThan(0);

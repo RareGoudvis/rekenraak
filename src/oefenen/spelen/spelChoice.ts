@@ -20,5 +20,8 @@ export const choiceLabel = (value: string, view?: SpelChoiceView) => view?.label
 /** The skin root's extra class when breuk pictures stand on the targets: they get bigger targets (≥ 120 px pictures). */
 export const pictureClass = (views: readonly SpelChoiceView[] | null | undefined) => (views?.some(v => v.visual?.kind === 'breuk') ? ' has-breuk' : '');
 
+/** A sign line too long for the big one-line sign (the tekst pack, leerjaar 6 sums): spelen.css shrinks and wraps it. */
+export const signSize = (text: string | undefined): 'long' | undefined => ((text?.length ?? 0) > 18 ? 'long' : undefined);
+
 /** The sign's extra class: a picture question lays out as a row. */
 export const signClass = (question: { visual?: SpelVisual } | null) => (question?.visual ? ' spel-sign-has-pic' : '');
