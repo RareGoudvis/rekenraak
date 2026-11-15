@@ -16,6 +16,8 @@ const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
 // Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
+// Zombies also has Makkelijk: Normaal's defence at a steady speed (zombies/walk.ts speedAt).
+const ZOMBIE_NIVEAU: SkinOption = { ...NIVEAU, choices: [{ value: 'makkelijk', label: 'Makkelijk' }, ...NIVEAU.choices] };
 // Kasteel: 1 speler against the computer (Normaal / Moeilijk) or 2 spelers on one screen (Samen tegelijk / Om beurten).
 const KASTEEL_OPTIONS: SkinOption[] = [
     { id: 'spelers', label: 'Hoeveel spelers?', default: '1', choices: [{ value: '1', label: '1 speler' }, { value: '2', label: '2 spelers' }] },
@@ -54,7 +56,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // (zombies/defence.ts); all caught = the early end. The skin voices a barricade or a catch itself (miss: null).
         meta: {
             music: 'griezel',
-            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [NIVEAU], accepts: KEYPAD_NUMBER,
+            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [ZOMBIE_NIVEAU], accepts: KEYPAD_NUMBER,
             sounds: { correct: 'poef', wrong: 'plop', miss: null, barricade: 'krak', caught: 'wahwah', win: 'cheer', fail: 'wahwah' },
         },
         icon: Ghost,

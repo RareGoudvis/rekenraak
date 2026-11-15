@@ -326,7 +326,7 @@ describe('Bever', () => {
 
 describe('Zombies: survivors behind barricades', () => {
     test('Normaal: three barricades first, then five survivors; Moeilijk: three survivors, no barricades', () => {
-        expect(DEFENCE).toEqual({ normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 } });
+        expect(DEFENCE).toEqual({ makkelijk: { survivors: 5, barricades: 3 }, normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 } });
         expect([1, 2, 3, 4, 5, 6, 7, 8].map(h => hitOf('normaal', h))).toEqual(['barricade', 'barricade', 'barricade', 'caught', 'caught', 'caught', 'caught', 'last']);
         expect([1, 2, 3].map(h => hitOf('moeilijk', h))).toEqual(['caught', 'caught', 'last']);
         expect(defenceAfter('normaal', 4)).toEqual({ barricades: 0, survivors: 4, caught: 1 });

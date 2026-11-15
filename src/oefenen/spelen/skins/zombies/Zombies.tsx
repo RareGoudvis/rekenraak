@@ -408,7 +408,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             const { track, zombie } = size.current;
             const walking = st.line.filter(z => z.mood === 'walk');
             if (walking.length) {
-                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak) * speedAt(played.current), offStreetAt(track, zombie));
+                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak) * speedAt(played.current, st.level), offStreetAt(track, zombie));
                 walking.forEach((z, i) => walkers.current.set(z.id, step.line[i]));
                 // At the door during a flash it waits there; the bump counts once the next sum is up.
                 if (step.atDoor && st.phase === 'play') {
@@ -453,7 +453,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const [lhs] = question.text.split('?');
 
     return (
-        <div className={`zb-root is-${level}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--zb-hit': `${reducedMotion ? 0 : DART_MS}ms` } as CSSProperties}>
+        <div data-niveau={level} className={`zb-root is-${level === 'moeilijk' ? 'moeilijk' : 'normaal'}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--zb-hit': `${reducedMotion ? 0 : DART_MS}ms` } as CSSProperties}>
             <div className="zb-street" ref={street}>
                 <Graveyard />
                 <div className="zb-ground" aria-hidden />
