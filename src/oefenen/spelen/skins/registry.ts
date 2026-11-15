@@ -37,7 +37,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
     },
     {
-        meta: { id: 'ballonnen', music: 'weide', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: TAP_PICTURES },
+        meta: { id: 'ballonnen', music: 'weide', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'pfff', flip: 'piep' }, accepts: TAP_PICTURES },
         icon: Balloon,
         Component: lazy(() => import('./ballonnen/Ballonnen')),
     },

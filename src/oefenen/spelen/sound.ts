@@ -5,7 +5,7 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. On by default (owner 2026-11-15); a device that turned it off keeps that choice.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit', 'zwoesj', 'blok', 'nana'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit', 'zwoesj', 'blok', 'nana', 'pfff'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
@@ -262,6 +262,11 @@ const RECIPES: Record<SpelSound, Recipe> = {
         tone(ac, d, t, { type: 'triangle', f0: 170, f1: 85, dur: 0.16, vol: 0.34 });
         noise(ac, d, t, { dur: 0.08, vol: 0.18, filter: 'lowpass', f0: 800 });
         noise(ac, d, t, { at: 0.12, dur: 0.22, vol: 0.12, filter: 'bandpass', f0: 1200, f1: 500, q: 0.9 });
+    },
+    // Ballonnen wrong: a balloon lets its air go, a hissing pfff with a silly flutter falling away.
+    pfff: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.5, vol: 0.2, filter: 'bandpass', f0: 2600, f1: 900, q: 1.4 });
+        tone(ac, d, t, { type: 'triangle', f0: 300, f1: 140, at: 0.05, dur: 0.55, vol: 0.1, wobble: [24, 30] });
     },
 };
 
