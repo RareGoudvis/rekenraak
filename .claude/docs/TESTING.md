@@ -785,7 +785,7 @@ Regenerates `public/spelen/thumbs/<skinId>.webp` (a game's picture on its card) 
 ```bash
 npm run dev
 npm run spel:thumbs -- --url http://localhost:5173/
-# options: --only ballonnen,oefen-geld  --out <dir> (default public/spelen/thumbs)  --raw <dir> (keep the full-size PNGs)  --dump (print every element with a digit, per game)
+# options: --only ballonnen,oefen-geld  --out <dir> (default public/spelen/thumbs)  --raw <dir> (keep the full-size PNGs)  --dump (print every element still showing a digit, per game)  --topics-only
 ```
 
 How: each game is played at leerjaar 2 Optellen up to a few right answers; the script then injects CSS (`COMMON_CSS`: the keypad, topbar, `.kiosk-math`, `*-sign` and `*-key` hint badges are hidden; `SKIN_CSS[id]`: that skin's svg texts / HUD / scores) and screenshots the scene (keypad games on a 1640 px window: the `-world` box is 16:10). The oefen pictures are the first exercise of every topic, blurred. A new skin = one `GAMES` row and, if its scene shows a number the common rules miss, one `SKIN_CSS` line (`--dump` lists what shows digits). Review the contact sheet by eye before committing the webps.
