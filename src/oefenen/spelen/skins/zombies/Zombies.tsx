@@ -1,16 +1,17 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { ZOMBIE, joinAt, stepCloser, walk, zombieSpeed } from './walk';
+import { SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker } from './walk';
 import { DEFENCE, defenceAfter, hitOf, zombieLevelOf, type ZombieLevel } from './defence';
+import Graveyard, { FrontFog } from './Graveyard';
 import './zombies.css';
 
 // Zombies: silly round zombies shuffle in from the right, the front one holding the sum on a sign. A right
 // answer flops it over in a puff of smoke; a wrong one brings it a step closer. At the barricade it bumps
 // (a boing) and that sum counts as a mistake: a small barricade breaks (Normaal), else one survivor is
 // caught and turns into a silly green zombie. All caught = the friendly early end; survivors left at the end cheer.
-// One small rAF loop moves them (positions live outside React); everything else is CSS.
+// One small rAF loop moves them and drives their shamble (positions and poses live outside React); the rest is CSS.
 
 type Mood = 'walk' | 'flop' | 'boing';
 interface Zombie { id: number; mood: Mood }
@@ -18,39 +19,90 @@ interface Zombie { id: number; mood: Mood }
 const PUFFS = 6;
 const START: Zombie[] = Array.from({ length: ZOMBIE.count }, (_, id) => ({ id, mood: 'walk' }));
 
+// What the loop moves per zombie: its lane, the parts of its body and the sign it holds.
+interface Rig { lane: HTMLDivElement; held: HTMLElement | null; plate: HTMLElement | null; plateW: number; parts: Record<string, SVGGElement | null> }
+// The street in px: the track (a lane's 100 %), where it starts, the whole street and one zombie.
+interface Size { track: number; left: number; street: number; zombie: number }
+const PARTS = ['legA', 'legB', 'upper', 'head', 'armA', 'armB'] as const;
+// The walk cycle per zombie: p = cycles walked, amp = how far into a stride (0 = standing), lag = a step still gliding (%).
+interface Gait { p: number; amp: number; lag: number }
+
+function rigOf(lane: HTMLDivElement): Rig {
+    const parts: Rig['parts'] = {};
+    for (const k of PARTS) parts[k] = lane.querySelector<SVGGElement>(`[data-part=${k}]`);
+    const plate = lane.querySelector<HTMLElement>('.zb-plate');
+    return { lane, held: lane.querySelector<HTMLElement>('.zb-held'), plate, plateW: plate?.offsetWidth ?? 0, parts };
+}
+
 // Moves one zombie's lane; data-x is its spot on the street (tests, debugging).
-function place(el: HTMLDivElement | undefined, x: number | undefined) {
-    if (!el || x === undefined) return;
-    el.style.transform = `translateX(${x}%)`;
-    el.dataset.x = x.toFixed(1);
+function place(rig: Rig | undefined, x: number, shown: number) {
+    if (!rig) return;
+    rig.lane.style.transform = `translateX(${shown.toFixed(3)}%)`;
+    rig.lane.dataset.x = x.toFixed(1);
+}
+
+// Hips, shoulders and neck in the art's own units (viewBox 0 0 100 130).
+function pose(rig: Rig | undefined, g: Gait, size: Size, shown: number) {
+    if (!rig) return;
+    const o = shamble(g.p, g.amp);
+    const set = (k: (typeof PARTS)[number], t: string) => rig.parts[k]?.setAttribute('transform', t);
+    set('legA', `translate(0 ${o.liftA.toFixed(2)}) rotate(${o.legA.toFixed(2)} 40 98)`);
+    set('legB', `translate(0 ${o.liftB.toFixed(2)}) rotate(${o.legB.toFixed(2)} 61 98)`);
+    set('upper', `translate(0 ${o.bob.toFixed(2)}) rotate(${o.lean.toFixed(2)} 50 98)`);
+    set('head', `rotate(${o.head.toFixed(2)} 50 62)`);
+    set('armA', `rotate(${o.armA.toFixed(2)} 38 72)`);
+    set('armB', `rotate(${o.armB.toFixed(2)} 40 84)`);
+    // The sign stays level and readable; it only follows the top of the head sideways.
+    if (rig.held) {
+        const rad = Math.PI / 180;
+        const dx = 87 * Math.sin(o.lean * rad) + 51 * Math.sin(o.head * rad);
+        const follow = (dx / 100) * size.zombie;
+        rig.held.style.transform = `translateX(${follow.toFixed(2)}px)`;
+        // A wide sum near either end of the street slides in, so it is never cut off.
+        if (rig.plate && size.street > 0) {
+            const centre = size.left + (shown / 100) * size.track + size.zombie / 2 + follow;
+            const half = rig.plateW / 2;
+            const edge = 6;
+            const shift = Math.min(0, size.street - edge - (centre + half)) || Math.max(0, edge - (centre - half));
+            rig.plate.style.transform = shift ? `translateX(${shift.toFixed(2)}px)` : '';
+        }
+    }
 }
 
 function ZombieArt() {
     return (
         <svg className="zb-art" viewBox="0 0 100 130" aria-hidden>
-            <g className="zb-leg zb-leg-a">
-                <rect className="zb-pants" x="33" y="96" width="14" height="26" rx="6" />
-                <ellipse className="zb-shoe" cx="36" cy="124" rx="11" ry="5" />
-            </g>
-            <g className="zb-leg zb-leg-b">
-                <rect className="zb-pants" x="54" y="96" width="14" height="26" rx="6" />
+            <g data-part="legB">
+                <rect className="zb-pants is-back" x="54" y="94" width="14" height="28" rx="6" />
                 <ellipse className="zb-shoe" cx="57" cy="124" rx="11" ry="5" />
             </g>
-            <ellipse className="zb-skin" cx="50" cy="76" rx="27" ry="27" />
-            <path className="zb-shirt" d="M23 78 Q50 62 77 78 L78 94 L71 101 L64 94 L57 102 L50 94 L43 102 L36 94 L29 101 L22 94 Z" />
-            <circle className="zb-skin" cx="50" cy="38" r="27" />
-            <path className="zb-hair" d="M42 13 Q47 3 53 11 Q57 4 62 12" />
-            <circle className="zb-eye" cx="38" cy="35" r="10" />
-            <circle className="zb-eye" cx="61" cy="32" r="8" />
-            <circle className="zb-pupil" cx="34" cy="38" r="4.5" />
-            <circle className="zb-pupil" cx="63" cy="29" r="3.5" />
-            <path className="zb-mouth" d="M36 53 Q48 62 61 51" />
-            <rect className="zb-tooth" x="44" y="55" width="6" height="6" rx="1" />
-            {/* Arms out front, the zombie way: an outline stroke under a skin stroke. */}
-            <path className="zb-arm-line" d="M38 72 L6 68" />
-            <path className="zb-arm-skin" d="M38 72 L6 68" />
-            <path className="zb-arm-line" d="M40 84 L9 84" />
-            <path className="zb-arm-skin" d="M40 84 L9 84" />
+            <g data-part="legA">
+                <rect className="zb-pants" x="33" y="94" width="14" height="28" rx="6" />
+                <ellipse className="zb-shoe" cx="36" cy="124" rx="11" ry="5" />
+            </g>
+            <g data-part="upper">
+                {/* The far arm behind the body, the near one in front: arms out, the zombie way. */}
+                <g data-part="armB">
+                    <path className="zb-arm-line" d="M40 84 L9 84" />
+                    <path className="zb-arm-skin is-back" d="M40 84 L9 84" />
+                </g>
+                <ellipse className="zb-skin" cx="50" cy="76" rx="27" ry="27" />
+                <path className="zb-shirt" d="M23 78 Q50 62 77 78 L78 94 L71 101 L64 94 L57 102 L50 94 L43 102 L36 94 L29 101 L22 94 Z" />
+                <g data-part="head">
+                    <circle className="zb-skin" cx="50" cy="38" r="27" />
+                    <path className="zb-hair" d="M42 13 Q47 3 53 11 Q57 4 62 12" />
+                    <circle className="zb-eye" cx="38" cy="35" r="10" />
+                    <circle className="zb-eye" cx="61" cy="32" r="8" />
+                    <circle className="zb-pupil" cx="34" cy="38" r="4.5" />
+                    <circle className="zb-pupil" cx="63" cy="29" r="3.5" />
+                    <path className="zb-mouth" d="M36 53 Q48 62 61 51" />
+                    <rect className="zb-tooth" x="44" y="55" width="6" height="6" rx="1" />
+                </g>
+                <g data-part="armA">
+                    <path className="zb-arm-line" d="M38 72 L6 68" />
+                    <path className="zb-arm-skin" d="M38 72 L6 68" />
+                </g>
+            </g>
         </svg>
     );
 }
@@ -133,8 +185,18 @@ function Camp({ level, hits, reducedMotion }: { level: ZombieLevel; hits: number
                     {BARRICADES.slice(0, bars).map((kind, b) => {
                         const broken = b >= d.barricades;
                         return (
-                            <span key={b} className={`zb-bar${broken ? ' is-broken' : ''}${broken && reducedMotion ? ' is-gone' : ''}`} data-barricade={broken ? 'broken' : 'up'}>
-                                <Barricade kind={kind} />
+                            <span key={b} className={`zb-bar${broken ? ' is-broken' : ''}`} data-barricade={broken ? 'broken' : 'up'}>
+                                <span className="zb-bar-up"><Barricade kind={kind} /></span>
+                                {/* What is left: planks on the ground, so the pupil sees which one fell. */}
+                                {broken && (
+                                    <svg className="zb-rubble" viewBox="0 0 44 14" aria-hidden>
+                                        <rect className="zb-wood" x="2" y="6" width="26" height="6" rx="2" transform="rotate(-6 15 9)" />
+                                        <rect className="zb-wood" x="16" y="3" width="24" height="6" rx="2" transform="rotate(9 28 6)" />
+                                    </svg>
+                                )}
+                                {broken && !reducedMotion && (
+                                    <span className="zb-splinters">{[0, 1, 2, 3].map(s => <span key={s} className="zb-splinter" style={{ '--s': s } as CSSProperties} />)}</span>
+                                )}
                             </span>
                         );
                     })}
@@ -170,23 +232,61 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     }
     const [wobble, setWobble] = useState({ n: 0, id: -1 });
 
-    // Positions in % of the street, outside React: the loop writes them straight to the lanes.
-    const xs = useRef(new Map<number, number>());
-    const lanes = useRef(new Map<number, HTMLDivElement>());
-    const live = useRef({ phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line });
-    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line }; });
+    // The walk lives outside React: each zombie's spot and pace, its gait, its rig, and the street's size in px.
+    const walkers = useRef(new Map<number, Walker>());
+    const gaits = useRef(new Map<number, Gait>());
+    const rigs = useRef(new Map<number, Rig>());
+    const size = useRef<Size>({ track: 0, left: 0, street: 0, zombie: 0 });
+    const live = useRef({ phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line, reducedMotion });
+    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line, reducedMotion }; });
 
-    const attach = (id: number, el: HTMLDivElement | null) => {
-        if (!el) { lanes.current.delete(id); return; }
-        lanes.current.set(id, el);
-        if (!xs.current.has(id)) xs.current.set(id, joinAt(xs.current.size ? Math.max(...xs.current.values()) : null));
-        place(el, xs.current.get(id));
-    };
+    const mounted = useRef(false);
+    useEffect(() => { mounted.current = true; }, []);
+    // One stable ref callback for every lane (its zombie id rides on data-zid): a re-render never re-attaches a lane.
+    const attachLane = useCallback((el: HTMLDivElement | null) => {
+        if (!el) return;
+        const id = Number(el.dataset.zid);
+        const rig = rigOf(el);
+        rigs.current.set(id, rig);
+        if (!walkers.current.has(id)) {
+            const xs = [...walkers.current.values()].map(w => w.x);
+            const last = xs.length ? Math.max(...xs) : null;
+            // The first line stands on the street, a gap apart; a newcomer comes in from off screen.
+            const x = mounted.current ? joinAt(last, offStreetAt(size.current.track, size.current.zombie)) : last === null ? ZOMBIE.start : last + ZOMBIE.gap;
+            walkers.current.set(id, { x, v: targetSpeed(xs.length, paceOf(id), zombieSpeed(live.current.streak)), pace: paceOf(id) });
+            // Out of step with the others from the first frame.
+            gaits.current.set(id, { p: (id * 0.37) % 1, amp: 0, lag: 0 });
+        }
+        const w = walkers.current.get(id)!;
+        place(rig, w.x, w.x);
+        pose(rig, gaits.current.get(id)!, size.current, w.x);
+        return () => { rigs.current.delete(id); };
+    }, []);
+    // A new sum or the answer on the sign changes its width: the edge clamp needs it.
+    useLayoutEffect(() => { for (const rig of rigs.current.values()) rig.plateW = rig.plate?.offsetWidth ?? 0; });
     // Forget the zombies that left.
     useEffect(() => {
         const ids = new Set(line.map(z => z.id));
-        for (const id of [...xs.current.keys()]) if (!ids.has(id)) xs.current.delete(id);
+        for (const map of [walkers.current, gaits.current]) for (const id of [...map.keys()]) if (!ids.has(id)) map.delete(id);
     }, [line]);
+
+    // The street's size: a lane's % becomes px for the stride, and the edge where a zombie comes into view.
+    const street = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        const el = street.current;
+        if (!el) return;
+        const measure = () => {
+            const track = el.querySelector<HTMLElement>('.zb-track');
+            const zombie = el.querySelector<HTMLElement>('.zb-zombie');
+            size.current = { track: track?.clientWidth ?? 0, left: track?.offsetLeft ?? 0, street: el.clientWidth, zombie: zombie?.offsetWidth ?? 0 };
+            for (const rig of rigs.current.values()) rig.plateW = rig.plate?.offsetWidth ?? 0;
+        };
+        measure();
+        if (typeof ResizeObserver === 'undefined') return;
+        const ro = new ResizeObserver(measure);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
 
     useEffect(() => {
         const offRight = events.on('correct', () => setLine(l => l.map((z, i) => (i === 0 ? { ...z, mood: 'flop' } : z))));
@@ -194,9 +294,15 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             const front = live.current.line[0];
             // An empty answer is the bump at the door: that zombie already says boing.
             if (!front || given === '') return;
-            xs.current.set(front.id, stepCloser(xs.current.get(front.id) ?? ZOMBIE.start));
-            place(lanes.current.get(front.id), xs.current.get(front.id));
-            setWobble(w => ({ n: w.n + 1, id: front.id }));
+            const w = walkers.current.get(front.id);
+            const g = gaits.current.get(front.id);
+            if (!w || !g) return;
+            const x = stepCloser(w.x);
+            // The game spot moves at once; the drawn zombie lunges after it (at once under reduced motion).
+            if (!live.current.reducedMotion) g.lag += w.x - x;
+            w.x = x;
+            place(rigs.current.get(front.id), w.x, w.x + g.lag);
+            setWobble(v => ({ n: v.n + 1, id: front.id }));
         });
         return () => { offRight(); offWrong(); };
     }, [events]);
@@ -210,22 +316,45 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             const dt = last === null ? 0 : Math.min(0.1, Math.max(0, (t - last) / 1000));
             last = t;
             const st = live.current;
-            // Only while the sum waits for an answer: still during a flash and under "Hoe los ik dit op?".
-            if (st.phase !== 'play') return;
+            // Under "Hoe los ik dit op?" everything holds, mid-stride.
+            if (st.phase === 'help' || !dt) return;
+            const { track, zombie } = size.current;
             const walking = st.line.filter(z => z.mood === 'walk');
-            if (!walking.length) return;
-            const step = walk(walking.map(z => xs.current.get(z.id) ?? ZOMBIE.start), dt, zombieSpeed(st.streak));
-            walking.forEach((z, i) => { xs.current.set(z.id, step.xs[i]); place(lanes.current.get(z.id), step.xs[i]); });
-            if (step.atDoor) {
-                const front = walking[0].id;
-                // Stop at once; the session's wrong flash follows from onMiss.
-                live.current = { ...st, phase: 'wrong', misses: st.misses + 1, line: st.line.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)) };
-                setLine(l => l.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)));
-                const hit = hitOf(st.level, st.misses + 1);
-                st.onMiss();
-                // The last survivor: the end screen voices it (the fail cue).
-                if (hit === 'last') st.onFail();
-                else st.sound(hit === 'barricade' ? 'barricade' : 'caught');
+            if (st.phase === 'play' && walking.length) {
+                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak), offStreetAt(track, zombie));
+                walking.forEach((z, i) => walkers.current.set(z.id, step.line[i]));
+                if (step.atDoor) {
+                    const front = walking[0].id;
+                    // Stop at once; the session's wrong flash follows from onMiss.
+                    live.current = { ...st, phase: 'wrong', misses: st.misses + 1, line: st.line.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)) };
+                    setLine(l => l.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)));
+                    const hit = hitOf(st.level, st.misses + 1);
+                    st.onMiss();
+                    // The last survivor: the end screen voices it (the fail cue).
+                    if (hit === 'last') st.onFail();
+                    else st.sound(hit === 'barricade' ? 'barricade' : 'caught');
+                }
+            }
+            const going = live.current.phase === 'play';
+            for (const z of live.current.line) {
+                const w = walkers.current.get(z.id);
+                const g = gaits.current.get(z.id);
+                if (!w || !g) continue;
+                // A lunge (a wrong answer's step) glides out quickly, with quick steps of its own.
+                let lunged = 0;
+                if (g.lag > 0) {
+                    lunged = g.lag < 0.05 ? g.lag : g.lag * (1 - Math.exp(-dt * 9));
+                    g.lag -= lunged;
+                }
+                if (st.reducedMotion) g.amp = 0;
+                else {
+                    const stepping = z.mood === 'walk' && (going || g.lag > 0.5);
+                    g.p += shambleRate(going && z.mood === 'walk' ? w.v : 0, track, zombie) * dt + strideOf(lunged, track, zombie);
+                    g.amp += ((stepping ? 1 : 0) - g.amp) * Math.min(1, dt / SHAMBLE.settle);
+                }
+                const rig = rigs.current.get(z.id);
+                place(rig, w.x, w.x + g.lag);
+                pose(rig, g, size.current, w.x + g.lag);
             }
         };
         raf = requestAnimationFrame(frame);
@@ -237,9 +366,9 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const [lhs] = question.text.split('?');
 
     return (
-        <div className={`zb-root is-${level}${phase === 'play' ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <div className="zb-street">
-                <span className="zb-moon" aria-hidden />
+        <div className={`zb-root is-${level}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+            <div className="zb-street" ref={street}>
+                <Graveyard />
                 <div className="zb-ground" aria-hidden />
                 <Camp level={level} hits={progress.misses} reducedMotion={reducedMotion} />
                 <div className="zb-track">
@@ -247,16 +376,20 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                         const front = i === 0;
                         const wob = front && z.mood === 'walk' && wobble.id === z.id ? ` is-wobble-${wobble.n % 2}` : '';
                         return (
-                            <div key={z.id} ref={el => attach(z.id, el)} className="zb-lane" data-zombie={front ? 'front' : 'back'}
+                            <div key={z.id} ref={attachLane} data-zid={z.id} className="zb-lane" data-zombie={front ? 'front' : 'back'}
                                 style={{ zIndex: ZOMBIE.count - i }}>
                                 <div className={`zb-zombie is-${z.mood}${wob}`} style={{ '--zb-shirt': `var(--spel-fill-${z.id % 6})` } as CSSProperties}>
                                     <div className="zb-body">
-                                        <p className={`zb-sign kiosk-math${front ? ' is-front' : ''}`} aria-live={front ? 'polite' : undefined} aria-hidden={!front}>
-                                            {!front ? '?'
-                                                : flash && feedback ? <>{lhs}<span className="zb-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                                                : question.text}
-                                        </p>
-                                        <span className="zb-pole" aria-hidden />
+                                        <div className="zb-held">
+                                            <div className="zb-plate">
+                                                <p className={`zb-sign kiosk-math${front ? ' is-front' : ''}`} aria-live={front ? 'polite' : undefined} aria-hidden={!front}>
+                                                    {!front ? '?'
+                                                        : flash && feedback ? <>{lhs}<span className="zb-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
+                                                        : question.text}
+                                                </p>
+                                            </div>
+                                            <span className="zb-pole" aria-hidden />
+                                        </div>
                                         <ZombieArt />
                                         {z.mood === 'boing' && !reducedMotion && (
                                             <span className="zb-dizzy" aria-hidden>{[0, 1, 2].map(s => <Star key={s} i={s} />)}</span>
@@ -272,6 +405,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                         );
                     })}
                 </div>
+                <FrontFog />
             </div>
             <div className="zb-controls">
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
@@ -287,7 +421,7 @@ export function ZombiesEnding({ outcome, progress, options, reducedMotion }: Ski
     const caught = outcome === 'failed' ? total : defenceAfter(level, progress.misses).caught;
     return (
         <div className={`spel-ending zb-ending${reducedMotion ? ' is-still' : ''}`}>
-            <span className="zb-moon" aria-hidden />
+            <Graveyard small />
             <div className="zb-ground" aria-hidden />
             <div className="zb-party">
                 {Array.from({ length: total }, (_, k) => {

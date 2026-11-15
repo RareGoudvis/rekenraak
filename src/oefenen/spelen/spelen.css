@@ -57,6 +57,9 @@
 }
 .spel-sound-btn svg { width: 24px; height: 24px; }
 .spel-sound-btn[aria-pressed='true'] svg { color: var(--accent); }
+/* Geluid + muziek: the speaker a little smaller with a note beside it, the button keeps its size. */
+.spel-sound-btn.is-muziek svg { width: 20px; height: 20px; }
+.spel-sound-btn.is-muziek .spel-sound-note { width: 15px; height: 15px; margin-left: -4px; translate: 0 -6px; }
 .spel-help-btn svg { color: var(--accent); }
 /* A phone in portrait: the icon alone, its name stays for screen readers through the button text. */
 @media (max-width: 560px) {

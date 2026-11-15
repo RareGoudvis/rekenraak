@@ -3,6 +3,7 @@ import { ArrowCounterClockwise, ArrowUUpLeft, GameController, Star, Timer, Users
 import { formatMathNumber } from '../../../../services/math/formatters';
 import TwoTapButton from '../../../kiosk/TwoTapButton';
 import SoundToggle from '../../SoundToggle';
+import { useSpelMusic } from '../../music';
 import { play } from '../../sound';
 import type { SkinScreenProps } from '../types';
 import DuelKeypad from './DuelKeypad';
@@ -117,6 +118,7 @@ export default function Touwtrekken({ meta, from, onExit }: SkinScreenProps) {
     // A fresh pre-start screen for this choice before the first paint (never last game's end screen).
     useState(() => useDuelStore.getState().setup({ meta, from }));
     const st = useDuelStore();
+    useSpelMusic(meta.music, st.phase === 'play');
     const [now, setNow] = useState(() => Date.now());
     // Who pulled last, per side: restarts that bear's heave.
     const [pulls, setPulls] = useState<Record<Side, number>>({ left: 0, right: 0 });
