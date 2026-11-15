@@ -1,11 +1,21 @@
 /* Pinguïntoren skin. Flat fills under a thick dark outline (spelen.css tokens); the outlines keep their
    width while the camera zooms out (non-scaling stroke). Transforms only, nothing moves under reduced motion. */
-.pt-root {
-  --pt-ice: color-mix(in srgb, var(--accent-bewerkingen) 16%, var(--kiosk-paper));
+.pt-root, .pt-ending {
+  --pt-ice-0: color-mix(in srgb, var(--accent-bewerkingen) 11%, var(--kiosk-paper));
+  --pt-ice-1: color-mix(in srgb, var(--accent-bewerkingen) 20%, var(--kiosk-paper));
   --pt-ice-2: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper));
+  --pt-ice-3: color-mix(in srgb, var(--accent-metendrekenen) 16%, var(--pt-ice-1));
   --pt-sea: color-mix(in srgb, var(--accent-bewerkingen) 60%, var(--kiosk-paper));
   --pt-body: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--spel-ink));
   --pt-orange: var(--accent-vraagstukken);
+  --pt-cheek: color-mix(in srgb, var(--accent-getallenkennis) 32%, var(--kiosk-paper));
+  --pt-mouth: color-mix(in srgb, var(--accent-getallenkennis) 45%, var(--spel-ink));
+  --pt-fish: color-mix(in srgb, var(--mab-e) 80%, var(--kiosk-paper));
+  --pt-crab: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper));
+  --pt-seal: color-mix(in srgb, var(--accent-bewerkingen) 14%, var(--text-muted));
+  --pt-muzzle: color-mix(in srgb, var(--text-muted) 22%, var(--kiosk-paper));
+}
+.pt-root {
   position: absolute;
   inset: 0;
   display: grid;
@@ -15,23 +25,51 @@
   overflow: clip;
 }
 
-/* ── The tower ────────────────────────────────────────────────────────────── */
-.pt-world { position: relative; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
-.pt-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pt-svg * { vector-effect: non-scaling-stroke; }
+/* Sky, sea and snow span the scene's row: the whole screen side by side, the tower's part when upright. */
+/* Explicit end lines: an abspos item's auto line is the container's edge. */
+.pt-root > .pt-sky, .pt-root > .pt-snow, .pt-sea { grid-row: 1 / 2; grid-column: 1 / -1; }
+/* One waterline for the whole scene, 8% up (the SVG's WATER sits exactly there, the floe drawn over it). */
+.pt-sea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8%;
+  box-sizing: border-box;
+  border-top: 3px solid var(--spel-ink);
+  background: var(--pt-sea);
+}
 
-.pt-cloud { fill: var(--spel-cloud); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
-.pt-cloud.is-far { opacity: .8; }
-.pt-sea { fill: var(--pt-sea); stroke: var(--spel-ink); stroke-width: 3px; }
+/* ── The tower ────────────────────────────────────────────────────────────── */
+.pt-world { position: relative; grid-row: 1; grid-column: 1; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
+/* The view keeps the SVG's shape at the world's full height, so its waterline is the sea band's. */
+.pt-stage { position: absolute; top: 0; left: 50%; height: 100%; aspect-ratio: 240 / 300; translate: -50% 0; }
+.pt-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pt-svg *, .pt-ending svg * { vector-effect: non-scaling-stroke; }
+
 .pt-cam {
   transform-origin: 120px 270px;
   transition: transform 700ms var(--ease-out);
 }
 .pt-floe { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.pt-floe.is-under { fill: color-mix(in srgb, var(--pt-sea) 45%, var(--kiosk-paper)); }
 
-.pt-ice { fill: var(--pt-ice); stroke: var(--spel-ink); stroke-width: 3px; }
-.pt-ice.is-alt { fill: var(--pt-ice-2); }
+.pt-ice { stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.pt-ice.is-0 { fill: var(--pt-ice-0); }
+.pt-ice.is-1 { fill: var(--pt-ice-1); }
+.pt-ice.is-2 { fill: var(--pt-ice-2); }
+.pt-ice.is-3 { fill: var(--pt-ice-3); }
+.pt-ice.is-glaze { fill-opacity: .35; }
 .pt-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; stroke-linecap: round; }
+.pt-frost { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
+.pt-frost-patch { fill: var(--kiosk-paper); opacity: .75; }
+.pt-speck { fill: var(--kiosk-paper); }
+.pt-bubble { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.8px; }
+
+.pt-fine { fill: none; stroke: var(--spel-ink); stroke-width: 1.4px; stroke-linecap: round; }
+.pt-fish { fill: var(--pt-fish); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.pt-crab { fill: var(--pt-crab); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.pt-glass { fill: color-mix(in srgb, var(--kiosk-paper) 60%, transparent); stroke: var(--spel-ink); stroke-width: 1.3px; }
 
 /* The goal: a dashed line with a flag and its number. */
 .pt-goal-line { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-dasharray: 6 6; opacity: .55; }
@@ -44,11 +82,20 @@
   font-weight: 700;
 }
 
+/* ── The penguin ──────────────────────────────────────────────────────────── */
 .pt-feet, .pt-beak { fill: var(--pt-orange); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
 .pt-body, .pt-flipper { fill: var(--pt-body); stroke: var(--spel-ink); stroke-width: 3px; }
 .pt-belly { fill: var(--kiosk-paper); }
 .pt-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
 .pt-pupil { fill: var(--spel-ink); }
+.pt-glint { fill: var(--kiosk-paper); }
+.pt-cheek { fill: var(--pt-cheek); }
+.pt-mouth { fill: var(--pt-mouth); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.pt-smile { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linecap: round; }
+/* On the dark head: light strokes. */
+.pt-happy-eye { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; stroke-linecap: round; }
+.pt-brow { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-linecap: round; }
+.pt-drop { fill: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.8px; }
 
 /* The penguin rides the top of the stack; a landed block makes it hop, a fallen one lands it softly. */
 .pt-penguin { transition: transform 420ms var(--ease-out); }
@@ -65,6 +112,28 @@
   0% { transform: scale(1); }
   40% { transform: scale(1.12, .86); }
   100% { transform: scale(1); }
+}
+/* Near the flag: a little dance, flippers waving. */
+.pt-dance { transform-origin: 0 0; animation: pt-dance 900ms ease-in-out infinite; }
+@keyframes pt-dance {
+  0%, 50%, 100% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-4px, -9px) rotate(-9deg); }
+  75% { transform: translate(4px, -9px) rotate(9deg); }
+}
+.pt-dance .pt-flap { transform-origin: 0 0; animation: pt-flap 450ms ease-in-out infinite alternate; }
+.pt-dance .pt-flap.is-right { animation-delay: -225ms; }
+@keyframes pt-flap { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+/* A fright: a quick shiver. */
+.pt-shiver { animation: pt-shiver 120ms linear 6; }
+@keyframes pt-shiver { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1.4px); } 75% { transform: translateX(1.4px); } }
+/* The tower dropped under him: he lands and totters. */
+.pt-totter { transform-origin: 0 0; animation: pt-totter 1000ms ease-in-out 620ms both; }
+@keyframes pt-totter {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: scale(1.1, .88); }
+  35% { transform: rotate(-11deg); }
+  60% { transform: rotate(8deg); }
+  80% { transform: rotate(-4deg); }
 }
 
 .pt-block.is-new { animation: pt-drop 420ms var(--ease-spring) both; }
@@ -87,17 +156,63 @@
   70% { transform: rotate(-1.2deg); }
 }
 
-/* ...and the top block slides off into the sea. */
-.pt-fall { transform-box: fill-box; transform-origin: center; animation: pt-fall 1100ms ease-in forwards; }
-@keyframes pt-fall {
-  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
-  25% { transform: translate(26px, -6px) rotate(12deg); opacity: 1; }
-  85% { opacity: 1; }
-  100% { transform: translate(96px, var(--drop)) rotate(70deg); opacity: 0; }
+/* ── Cracks, the break and the repair ─────────────────────────────────────── */
+/* The broken blocks shake whole for a moment, then only their halves are left, flying apart into the sea. */
+.pt-shatter-whole { animation: pt-gone 1ms linear 300ms forwards; }
+@keyframes pt-gone { to { opacity: 0; } }
+.pt-half, .pt-tumble { transform-box: fill-box; transform-origin: center; }
+.pt-half { animation: pt-half 820ms cubic-bezier(.4, .1, .75, .55) calc(300ms + var(--hd)) both; }
+@keyframes pt-half {
+  0% { transform: translate(0, 0) rotate(0); }
+  30% { transform: translate(calc(var(--hx) * .45), -18px) rotate(calc(var(--hr) * .4)); }
+  100% { transform: translate(var(--hx), 120px) rotate(var(--hr)); }
+}
+.pt-tumble { animation: pt-tumble 1000ms cubic-bezier(.4, .1, .75, .55) calc(300ms + var(--hd)) both; }
+@keyframes pt-tumble {
+  0% { transform: translate(0, 0) rotate(0); }
+  35% { transform: translate(calc(var(--hx) * .4), -46px) rotate(calc(var(--hr) * .4)); }
+  100% { transform: translate(var(--hx), 130px) rotate(var(--hr)); }
+}
+/* The tower above comes down by the broken blocks, with a little bounce. */
+.pt-settle { animation: pt-settle 560ms ease-in 300ms both; }
+@keyframes pt-settle {
+  0% { transform: translateY(calc(var(--drop) * -1)); }
+  62% { transform: translateY(0); }
+  80% { transform: translateY(-5px); animation-timing-function: ease-in; }
+  100% { transform: translateY(0); }
+}
+/* A right answer on cracked ice: the cracks fade, frozen shut. */
+.pt-healing { animation: pt-heal 900ms ease-in forwards; }
+@keyframes pt-heal { from { opacity: 1; } to { opacity: 0; } }
+
+/* ── The seal ─────────────────────────────────────────────────────────────── */
+.pt-seal-spot { transition: transform 700ms var(--ease-out); }
+.pt-seal { fill: var(--pt-seal); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.pt-muzzle { fill: var(--pt-muzzle); stroke: var(--spel-ink); stroke-width: 1.4px; }
+.pt-ripple { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-linecap: round; }
+/* Now and then (two seals, 10 s apart in a 20 s cycle): up, a look left and right, back under. */
+.pt-seal-pop { transform: translateY(40px); animation: pt-seal 20s ease-in-out infinite; }
+.pt-seal-pop.is-right { animation-delay: -10s; }
+@keyframes pt-seal {
+  0%, 22% { transform: translateY(40px); }
+  25.5%, 43% { transform: translateY(0); }
+  46%, 100% { transform: translateY(40px); }
+}
+.pt-seal-face { animation: pt-look 20s ease-in-out infinite; }
+.pt-seal-pop.is-right .pt-seal-face { animation-delay: -10s; }
+@keyframes pt-look {
+  0%, 27% { transform: translateX(0); }
+  29%, 33% { transform: translateX(-3px); }
+  35.5%, 39.5% { transform: translateX(3px); }
+  41.5%, 100% { transform: translateX(0); }
 }
 
 /* ── The sum and the keypad ───────────────────────────────────────────────── */
 .pt-panel {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+  grid-column: 2;
   width: min(46vw, 440px);
   min-height: 0;
   display: flex;
@@ -106,18 +221,25 @@
   justify-content: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+  container-type: inline-size;
 }
 .pt-sign {
+  box-sizing: border-box;
+  max-width: 100%;
   margin: 0;
   padding: var(--sp-2) var(--sp-5);
   border: var(--spel-line) solid var(--spel-ink);
   border-radius: var(--radius-lg);
   background: var(--kiosk-paper);
   color: var(--kiosk-ink);
-  font-size: clamp(28px, 6vmin, 52px);
+  /* One size for the sum and its answer: the panel's width shared by the longest line's characters (a
+     monospace digit ≈ .62em, the answer's own padding included); a long text prompt wraps at the floor. */
+  font-size: max(20px, min(clamp(28px, 6vmin, 52px), calc((100cqi - 2 * var(--sp-5) - 2 * var(--spel-line) - 2 * var(--sp-2)) / (var(--pt-chars, 12) * .62))));
   font-weight: 700;
   line-height: 1.15;
-  white-space: nowrap;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: break-word;
 }
 .pt-sign-answer {
   display: inline-block;
@@ -133,18 +255,17 @@
 /* Upright (a phone, a tablet on its side in a stand): the tower on top, the sum and keypad below. */
 @media (orientation: portrait) {
   .pt-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  .pt-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .pt-panel { grid-row: 2; grid-column: 1; width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
   .pt-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
-}
-/* Side by side: the sea runs on under the keypad (the floe's waterline sits 8% up from the bottom). */
-@media (orientation: landscape) {
-  .pt-root { background: linear-gradient(to top, var(--pt-sea) 8%, var(--spel-ink) 8%, var(--spel-ink) calc(8% + 3px), var(--spel-sky) calc(8% + 3px)); }
 }
 /* A short landscape screen: smaller keys so the keypad fits beside the tower. */
 @media (orientation: landscape) and (max-height: 640px) {
   .pt-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
   .pt-panel { gap: var(--sp-2); }
 }
+
+/* ── The end screen ───────────────────────────────────────────────────────── */
+.pt-ending-sea { fill: var(--pt-sea); stroke: var(--spel-ink); stroke-width: 3px; }
 
 /* "Hoe los ik dit op?": everything holds still. */
 .pt-root.is-paused * { animation-play-state: paused; }
@@ -154,6 +275,12 @@
 .pt-root.is-still .pt-penguin-art,
 .pt-root.is-still .pt-hop,
 .pt-root.is-still .pt-land,
+.pt-root.is-still .pt-dance,
+.pt-root.is-still .pt-flap,
+.pt-root.is-still .pt-shiver,
 .pt-root.is-still .pt-block.is-new,
 .pt-root.is-still .pt-tower,
-.pt-root.is-still .pt-sign-answer { animation: none; }
+.pt-root.is-still .pt-sign-answer,
+.pt-ending.is-still .pt-penguin-art,
+.pt-ending.is-still .pt-dance,
+.pt-ending.is-still .pt-flap { animation: none; }

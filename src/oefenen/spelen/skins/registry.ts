@@ -28,10 +28,12 @@ const KASTEEL_OPTIONS: SkinOption[] = [
 // session, the shell and the picker never change. No Component (or Screen) = shown as "binnenkort".
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
-        // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends.
-        meta: { id: 'pinguintoren', music: 'ijs', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: 'splash' }, accepts: KEYPAD_NUMBER },
+        // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends. The skin
+        // voices its mistakes (wrong: null): a crack (barricade), the splash of a break (hit), else a plop (miss).
+        meta: { id: 'pinguintoren', music: 'ijs', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: null, miss: 'plop', barricade: 'krak', hit: 'splash' }, accepts: KEYPAD_NUMBER },
         icon: Bird,
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
+        Ending: lazy(() => import('./pinguintoren/Pinguintoren').then(m => ({ default: m.PinguintorenEnding }))),
     },
     {
         meta: { id: 'ballonnen', music: 'weide', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: TAP_PICTURES },
