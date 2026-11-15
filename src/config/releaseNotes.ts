@@ -38,6 +38,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'Zelf oefenen: elk leerjaar heeft een nieuwe, getekende wereld met weer (bloesem, bellen, vonkjes, regen, sneeuw, zand) en dieren die voorbij komen.' },
             { kind: 'gewijzigd', text: 'Zelf oefenen: de kaarten schuiven niet meer over de grond van de achtergrond, en de titel bovenaan is weg voor meer ruimte.' },
             { kind: 'opgelost', text: 'Op een breed scherm vullen de tekeningen nu de ruimte naast de kaarten.' },
+            { kind: 'gewijzigd', text: 'De zes leerjaar-tegels bovenaan tonen nu een klein stukje van hun nieuwe wereld.' },
         ],
     },
     {

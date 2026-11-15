@@ -1530,22 +1530,29 @@ html:has(.oefen-body),
   cursor: pointer;
 }
 /* Each world's palette: sky, ground, two accents, its selected-border colour (the backdrops' pastels, a shade deeper). */
-.zelf-year.is-1 { --w-sky: #D8EDFF; --w-ground: #A9E2A4; --w-a: #FCE08A; --w-b: #F3C14B; --w-ring: #C98F00; }
-.zelf-year.is-2 { --w-sky: #E5E4FF; --w-ground: #B7E5D0; --w-a: #A3E0D2; --w-b: #F9C4DA; --w-ring: #0E9F8E; }
-.zelf-year.is-3 { --w-sky: #FFE7CF; --w-ground: #F2C7A2; --w-a: #FB923C; --w-b: #E3C0A2; --w-ring: #E2531A; }
-.zelf-year.is-4 { --w-sky: #DCF2E4; --w-ground: #93D6A4; --w-a: #5FBF7A; --w-b: #82CB97; --w-ring: #1E8E4E; }
-.zelf-year.is-5 { --w-sky: #E4EEF9; --w-ground: #FFFFFF; --w-a: #A9CBF5; --w-b: #93D1A9; --w-ring: #3B82D6; }
-.zelf-year.is-6 { --w-sky: #FFF0D6; --w-ground: #F5DAA4; --w-a: #E9C793; --w-b: #FDE9A0; --w-ring: #B7791F; }
-.zy-art { position: absolute; inset: 0; width: 100%; height: 100%; }
-.zy-art * { stroke: color-mix(in srgb, var(--kid-ink) 45%, transparent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.zy-ground { fill: var(--w-ground); }
-.zy-a { fill: var(--w-a); }
-.zy-b { fill: var(--w-b); }
-.zy-w { fill: var(--kid-card); }
-.zy-dark { fill: color-mix(in srgb, var(--kid-ink) 75%, transparent); stroke: none; }
-.zy-cactus { fill: #9FD5A5; }
-.zy-line { fill: none; }
-/* The number sits on top, big, on the sky above each tile's art. */
+.zelf-year.is-1 { --w-sky: #D8EDFF; --ks-sky-top: #BBDDFD; --ks-ground: #A9E2A4; --ks-ground-back: #C8EEC2; --ks-far1: #CBEDC4; --w-ring: #C98F00; }
+.zelf-year.is-2 { --w-sky: #E5E4FF; --ks-sky-top: #CFCBFB; --ks-ground: #B7E5D0; --ks-ground-back: #D4D2F6; --ks-far1: #DAD7F8; --w-ring: #0E9F8E; }
+.zelf-year.is-3 { --w-sky: #FFE7CF; --ks-sky-top: #FFD6B4; --ks-ground: #F2C7A2; --ks-ground-back: #F8DABF; --ks-far1: #F6D3B8; --w-ring: #E2531A; }
+.zelf-year.is-4 { --w-sky: #DCF2E4; --ks-sky-top: #C2E7D1; --ks-ground: #93D6A4; --ks-ground-back: #BDE8C6; --ks-far1: #C4E8CD; --w-ring: #1E8E4E; }
+.zelf-year.is-5 { --w-sky: #E4EEF9; --ks-sky-top: #CCDDF3; --ks-ground: #FFFFFF; --ks-ground-back: #EEF4FB; --ks-far1: #CCDBEE; --w-ring: #3B82D6; }
+.zelf-year.is-6 { --w-sky: #FFF0D6; --ks-sky-top: #FFE1AE; --ks-ground: #F5DAA4; --ks-ground-back: #FAE8C4; --ks-far1: #F7E0B6; --w-ring: #B7791F; }
+.zelf-year[class*="is-"] { background: linear-gradient(180deg, var(--ks-sky-top) 0%, var(--w-sky) 70%); }
+.zy-art { position: absolute; inset: 0; width: 100%; height: 100%; --ks-line: color-mix(in srgb, var(--kid-ink) 45%, var(--w-sky)); }
+.zy-art * { stroke: var(--ks-line); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+/* Sticker (backdrops/parts.tsx): an outline layer under the fills, so overlapping parts read as one figure. */
+.zy-art .ks-under * { fill: var(--ks-line); stroke: var(--ks-line); stroke-width: 3.4; }
+.zy-art .ks-under .ks-rope { fill: none; stroke-width: 5.5; }
+.zy-art .ks-over * { stroke: none; }
+.zy-art .ks-over .ks-rope { fill: none; stroke: var(--rope); stroke-width: 2.6; }
+.zy-art :is(.ks-ns, .ks-eye, .ks-cheek) { stroke: none; }
+.zy-art .ks-eye { fill: var(--ks-eye); }
+.zy-art .ks-cheek { fill: var(--ks-cheek); }
+.zy-art .ks-shade { fill: color-mix(in srgb, var(--kid-ink) 9%, transparent); stroke: none; }
+.zy-art .ks-fine { fill: none; stroke: color-mix(in srgb, var(--kid-ink) 26%, transparent); stroke-width: 1; }
+.zy-art .ks-rain { fill: none; stroke: var(--ks-rain); stroke-width: 1.6; }
+.zy-ground { fill: var(--ks-ground); }
+.zy-ground-back { fill: var(--ks-ground-back); }
+.zy-art .zy-ray { fill: none; stroke: var(--ks-glow); stroke-width: 2.4; }
 .zy-num {
   position: relative;
   font-family: var(--font-sheet-math);

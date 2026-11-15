@@ -2,7 +2,8 @@
    softened outline, drawn only along the bottom and the far edges, so the middle stays sky and the text keeps its
    contrast. Alive but slow: weather, clouds and animals crossing, small loops per character; all of it rests in place
    under reduced motion. */
-.kid-backdrop.is-theme {
+/* The scene palette, shared with the leerjaar tiles (LeerjaarBar), which draw a small version of each world. */
+.kid-backdrop.is-theme, .zelf-years {
   --ks-eye: color-mix(in srgb, var(--kid-ink) 72%, transparent);
   --ks-white: #FFFFFF;
   --ks-honey: #FCE08A;
@@ -37,6 +38,8 @@
   --ks-snowshade: #D3E1F2;
   --ks-shine-c: #FFFFFF;
   --ks-rain: #8FB3E0;
+}
+.kid-backdrop.is-theme {
   --ks-ground-h: clamp(40px, 9vh, 84px);
   /* An opaque line colour: two lines crossing (a vein over an outline) leave no darker spot. */
   --ks-line: color-mix(in srgb, var(--kid-ink) 40%, var(--ks-sky));
