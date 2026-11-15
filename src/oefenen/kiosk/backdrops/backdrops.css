@@ -1,8 +1,8 @@
 /* The leerjaar scenes behind the pupil pages (KidBackdrop with a grade). Sticker style but calm: pastel fills and a
    softened outline, drawn only along the bottom and the far edges, so the middle stays sky and the text keeps its
-   contrast. Static, apart from one slow bob per scene (off under reduced motion). */
+   contrast. Alive but slow: weather, clouds and animals crossing, small loops per character; all of it rests in place
+   under reduced motion. */
 .kid-backdrop.is-theme {
-  --ks-line: color-mix(in srgb, var(--kid-ink) 42%, transparent);
   --ks-eye: color-mix(in srgb, var(--kid-ink) 72%, transparent);
   --ks-white: #FFFFFF;
   --ks-honey: #FCE08A;
@@ -23,27 +23,44 @@
   --ks-sun: #FDE9A0;
   --ks-cactus: #9FD5A5;
   --ks-camel: #E9C793;
+  --ks-camel-dark: #D8B077;
+  --ks-wood-dark: #C99A6B;
+  --ks-belly: #FFF1D6;
+  --ks-dino: #9FD89A;
+  --ks-dino-dark: #7FC487;
+  --ks-fern: #8CCF98;
+  --ks-glow: #FFE29A;
+  --ks-smoke: #F7F1EC;
+  --ks-ember: #FDA45C;
+  --ks-frog: #A6DC8E;
+  --ks-hibiscus: #F79AB8;
+  --ks-snowshade: #D3E1F2;
+  --ks-shine-c: #FFFFFF;
+  --ks-rain: #8FB3E0;
   --ks-ground-h: clamp(40px, 9vh, 84px);
-  background: var(--ks-sky);
+  /* An opaque line colour: two lines crossing (a vein over an outline) leave no darker spot. */
+  --ks-line: color-mix(in srgb, var(--kid-ink) 40%, var(--ks-sky));
+  background: linear-gradient(180deg, var(--ks-sky-top) 0%, var(--ks-sky) 70%);
 }
 /* Per leerjaar: the sky and the two ground layers. */
-.kid-backdrop.ks-1 { --ks-sky: #D8EDFF; --ks-ground: #A9E2A4; --ks-ground-back: #C8EEC2; }
-.kid-backdrop.ks-2 { --ks-sky: #E5E4FF; --ks-ground: #B7E5D0; --ks-ground-back: #D4D2F6; }
-.kid-backdrop.ks-3 { --ks-sky: #FFE7CF; --ks-ground: #F2C7A2; --ks-ground-back: #F8DABF; }
-.kid-backdrop.ks-4 { --ks-sky: #DCF2E4; --ks-ground: #93D6A4; --ks-ground-back: #BDE8C6; }
-.kid-backdrop.ks-5 { --ks-sky: #E4EEF9; --ks-ground: #FFFFFF; --ks-ground-back: #EEF4FB; }
-.kid-backdrop.ks-6 { --ks-sky: #FFF0D6; --ks-ground: #F5DAA4; --ks-ground-back: #FAE8C4; }
+.kid-backdrop.ks-1 { --ks-sky-top: #BBDDFD; --ks-sky: #D8EDFF; --ks-ground: #A9E2A4; --ks-ground-back: #C8EEC2; --ks-far1: #CBEDC4; --ks-far2: #B5E3AE; }
+.kid-backdrop.ks-2 { --ks-sky-top: #CFCBFB; --ks-sky: #E5E4FF; --ks-ground: #B7E5D0; --ks-ground-back: #D4D2F6; --ks-far1: #DAD7F8; --ks-far2: #C3E6D6; }
+.kid-backdrop.ks-3 { --ks-sky-top: #FFD6B4; --ks-sky: #FFE7CF; --ks-ground: #F2C7A2; --ks-ground-back: #F8DABF; --ks-far1: #F6D3B8; --ks-far2: #F3C8A8; }
+.kid-backdrop.ks-4 { --ks-sky-top: #C2E7D1; --ks-sky: #DCF2E4; --ks-ground: #93D6A4; --ks-ground-back: #BDE8C6; --ks-far1: #C4E8CD; --ks-far2: #AEDEBB; }
+.kid-backdrop.ks-5 { --ks-sky-top: #CCDDF3; --ks-sky: #E4EEF9; --ks-ground: #FFFFFF; --ks-ground-back: #EEF4FB; --ks-far1: #CCDBEE; --ks-far2: #F4F8FD; }
+.kid-backdrop.ks-6 { --ks-sky-top: #FFE1AE; --ks-sky: #FFF0D6; --ks-ground: #F5DAA4; --ks-ground-back: #FAE8C4; --ks-far1: #F7E0B6; --ks-far2: #F1D39F; }
 
 .kid-backdrop.is-theme svg * { stroke: var(--ks-line); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .ks-ground { left: 0; bottom: 0; width: 100%; height: var(--ks-ground-h); }
 .ks-ground path { fill: var(--ks-ground); }
 .ks-ground.is-back { height: calc(var(--ks-ground-h) * 1.5); }
 .ks-ground.is-back path { fill: var(--ks-ground-back); }
-.ks-corner { bottom: calc(var(--ks-ground-h) * 0.4); width: clamp(100px, 18vw, 260px); height: auto; }
+/* The corner drawings fill the free sky beside the content on a wide screen (1140 px ≈ the widest page column). */
+.ks-corner { bottom: calc(var(--ks-ground-h) * 0.4); width: clamp(100px, max(18vw, calc((100vw - 1140px) / 2)), 560px); height: auto; }
 .ks-corner-l { left: 0.5%; }
 .ks-corner-r { right: 0.5%; }
 /* The top corners beside the brand pill: free sky on a tablet or laptop. */
-.ks-air { top: 4px; width: clamp(90px, 13vw, 170px); height: auto; }
+.ks-air { top: 4px; width: clamp(90px, max(13vw, calc((100vw - 1140px) / 2.6)), 340px); height: auto; }
 .ks-air-l { left: 2%; }
 .ks-air-r { right: 2%; }
 @media (max-width: 699px), (max-height: 560px) {
@@ -86,3 +103,184 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+
+/* ── Leerjaar 3–6: merged stickers, shading, the far layer and a few slow loops ── */
+.kid-backdrop.is-theme .ks-under * { fill: var(--ks-line); stroke: var(--ks-line); stroke-width: 5.5; }
+.kid-backdrop.is-theme .ks-under .ks-rope { fill: none; stroke-width: 10; }
+.kid-backdrop.is-theme .ks-over * { stroke: none; }
+.kid-backdrop.is-theme .ks-over .ks-rope { fill: none; stroke: var(--rope); stroke-width: 5; }
+.ks-rope.is-wood { --rope: var(--ks-wood-dark); }
+.ks-rope.is-leaf { --rope: var(--ks-leaf-dark); }
+.ks-rope.is-camel { --rope: var(--ks-camel); }
+.ks-rope.is-snow { --rope: var(--ks-white); }
+.ks-rope.is-fern { --rope: var(--ks-fern); }
+.ks-rope.is-red { --rope: var(--ks-red); }
+
+.ks-camel-dark { fill: var(--ks-camel-dark); }
+.ks-wood-dark { fill: var(--ks-wood-dark); }
+.ks-belly { fill: var(--ks-belly); }
+.ks-dino { fill: var(--ks-dino); }
+.ks-dino-dark { fill: var(--ks-dino-dark); }
+.ks-fern { fill: var(--ks-fern); }
+.ks-glow { fill: var(--ks-glow); }
+.ks-smoke { fill: var(--ks-smoke); }
+.ks-ember { fill: var(--ks-ember); }
+.ks-frog { fill: var(--ks-frog); }
+.ks-hibiscus { fill: var(--ks-hibiscus); }
+.ks-snowshade { fill: var(--ks-snowshade); }
+.ks-far1 { fill: var(--ks-far1); }
+.ks-far2 { fill: var(--ks-far2); }
+
+.ks-far { bottom: calc(var(--ks-ground-h) * 0.95); width: clamp(240px, 40vw, 1100px); height: auto; }
+.ks-far-l { left: 0; }
+.ks-far-r { right: 0; }
+.kid-backdrop.is-theme .ks-far * { stroke: color-mix(in srgb, var(--kid-ink) 22%, var(--ks-sky)); stroke-width: 2; }
+.kid-backdrop.is-theme .ks-far .ks-ns { stroke: none; }
+
+.kid-backdrop.is-theme .ks-shade { fill: color-mix(in srgb, var(--kid-ink) 9%, transparent); stroke: none; }
+.kid-backdrop.is-theme .ks-far .ks-shade { fill: color-mix(in srgb, var(--kid-ink) 6%, transparent); }
+.kid-backdrop.is-theme .ks-shine { fill: color-mix(in srgb, var(--ks-shine-c) 60%, transparent); stroke: none; }
+.kid-backdrop.is-theme .ks-gloss { fill: none; stroke: color-mix(in srgb, var(--ks-shine-c) 70%, transparent); stroke-width: 4; }
+.kid-backdrop.is-theme .ks-line { fill: none; stroke: var(--ks-line); stroke-width: 2.5; }
+.kid-backdrop.is-theme .ks-fine { fill: none; stroke: color-mix(in srgb, var(--kid-ink) 24%, transparent); stroke-width: 1.6; }
+.kid-backdrop.is-theme .ks-stripe-w { fill: none; stroke: var(--ks-white); stroke-width: 3; }
+.kid-backdrop.is-theme .ks-lavaline { fill: none; stroke: var(--ks-ember); stroke-width: 2.5; }
+.kid-backdrop.is-theme .ks-ray { fill: none; stroke: var(--ks-glow); stroke-width: 5; }
+.kid-backdrop.is-theme .ks-mouthfill { fill: var(--ks-eye); stroke: none; }
+.kid-backdrop.is-theme .ks-ns { stroke: none; }
+
+/* The weather layer (Weather.tsx): one shared path animation, each particle's start and end in custom properties;
+   a particle rests at --rest when motion is reduced, and frozen rain is left out. */
+.ks-weather { left: 0; top: 0; width: 100%; height: 100%; }
+.kid-backdrop.is-theme .kw-p { transform: var(--rest); transform-origin: 0 0; opacity: var(--o); }
+.kid-backdrop.is-theme .ks-weather.is-rain { display: none; }
+.kid-backdrop.is-theme .kw-snow { fill: var(--ks-white); stroke: var(--ks-snowshade); stroke-width: 1.2; }
+.kid-backdrop.is-theme .kw-petal { fill: var(--ks-pink); stroke: color-mix(in srgb, var(--kid-ink) 22%, transparent); stroke-width: 1.2; }
+.kid-backdrop.is-theme .kw-petal.is-white { fill: var(--ks-white); }
+.kid-backdrop.is-theme .kw-bubble { fill: color-mix(in srgb, var(--ks-white) 35%, transparent); stroke: color-mix(in srgb, var(--kid-ink) 24%, transparent); stroke-width: 1.5; }
+.kid-backdrop.is-theme .kw-bubble-shine { fill: color-mix(in srgb, var(--ks-white) 90%, transparent); stroke: none; }
+.kid-backdrop.is-theme .kw-ember { fill: var(--ks-ember); stroke: color-mix(in srgb, var(--ks-glow) 70%, transparent); stroke-width: 2; }
+.kid-backdrop.is-theme .kw-rain { fill: none; stroke: var(--ks-rain); stroke-width: 2; }
+.kid-backdrop.is-theme .kw-sand { fill: var(--ks-camel-dark); stroke: none; }
+.kid-backdrop.is-theme .kw-wind { fill: none; stroke: color-mix(in srgb, var(--ks-white) 85%, transparent); stroke-width: 2.5; }
+.kid-backdrop.is-theme .ks-rise { transform: var(--rest); }
+
+/* Travellers (Trav in parts.tsx): cross the whole width; rest at --at when motion is reduced. */
+.ks-trav { left: 0; height: auto; transform: translateX(var(--at)); }
+.ks-trav.is-rev { transform: translateX(var(--at)) scaleX(-1); }
+.kid-backdrop.is-theme .ks-cloud { fill: var(--ks-white); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ks-trav { animation: ks-cross var(--dur) linear var(--delay) infinite; }
+  .ks-trav.is-rev { animation-name: ks-cross-rev; }
+  .ks-peek { animation: ks-peek 11s ease-in-out infinite; }
+  .ks-look { animation: ks-look 7s ease-in-out infinite; }
+  .ks-hop { animation: ks-hop 6s ease-in-out infinite; }
+  .ks-nod { animation: ks-nod 5s ease-in-out infinite; }
+  .ks-roll { animation: ks-roll 1.6s linear infinite; transform-box: fill-box; transform-origin: center; }
+  .ks-bounce { animation: ks-bounce 0.8s ease-in-out infinite alternate; }
+  .ks-pulse { animation: ks-pulse 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .ks-buzz { animation: ks-buzz 7s ease-in-out infinite; }
+  .ks-wing-beat { animation: ks-wing-beat 5s ease-in-out infinite; }
+  .ks-sway-l { animation: ks-sway 5s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
+  .kid-backdrop.is-theme .kw-p { animation: ks-move var(--dur) linear var(--delay) infinite; }
+  .kid-backdrop.is-theme .ks-weather.is-rain { display: block; }
+  .kid-backdrop.is-theme .ks-rise { animation: ks-rise 6s ease-out var(--delay) infinite; }
+  .ks-blink { animation: ks-blink 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .ks-sway { animation: ks-sway 6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  .ks-swish { animation: ks-swish 3.2s ease-in-out infinite; }
+  .ks-wave { animation: ks-wave 2.6s ease-in-out infinite; }
+  .ks-tilt { animation: ks-tilt 4.5s ease-in-out infinite; }
+  .ks-flap { animation: ks-flap 0.45s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+  .ks-spin { animation: ks-spin 50s linear infinite; transform-box: fill-box; transform-origin: center; }
+  .ks-drift { animation: ks-drift 16s ease-in-out infinite; }
+}
+@keyframes ks-move {
+  0% { transform: translate(var(--x0), var(--y0)) rotate(0deg); opacity: 0; }
+  8%, 88% { opacity: var(--o); }
+  100% { transform: translate(var(--x1), var(--y1)) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes ks-rise {
+  0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(10px, -80px) scale(1.5); opacity: 0; }
+}
+@keyframes ks-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes ks-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes ks-swish {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(12deg); }
+}
+@keyframes ks-wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-14deg); }
+}
+@keyframes ks-tilt {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes ks-flap {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.35); }
+}
+@keyframes ks-spin { to { transform: rotate(360deg); } }
+@keyframes ks-cross {
+  from { transform: translateX(-25vw); }
+  to { transform: translateX(110vw); }
+}
+@keyframes ks-cross-rev {
+  from { transform: translateX(110vw) scaleX(-1); }
+  to { transform: translateX(-25vw) scaleX(-1); }
+}
+@keyframes ks-peek {
+  0%, 50%, 100% { transform: translateY(0); }
+  60%, 78% { transform: translateY(70px); }
+}
+@keyframes ks-look {
+  0%, 20%, 100% { transform: translate(0, 0); }
+  30%, 45% { transform: translate(-3px, 1px); }
+  55%, 75% { transform: translate(3px, -1px); }
+}
+@keyframes ks-hop {
+  0%, 70%, 86%, 100% { transform: translateY(0) scale(1, 1); }
+  74% { transform: translateY(0) scale(1.06, 0.92); }
+  79% { transform: translateY(-22px) scale(0.96, 1.05); }
+  84% { transform: translateY(0) scale(1.05, 0.94); }
+}
+@keyframes ks-nod {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  70% { transform: rotate(-6deg); }
+  80% { transform: rotate(3deg); }
+}
+@keyframes ks-roll { to { transform: rotate(360deg); } }
+@keyframes ks-bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-14px); }
+}
+@keyframes ks-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.75; }
+}
+@keyframes ks-buzz {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(26px, -18px); }
+  50% { transform: translate(52px, 0); }
+  75% { transform: translate(26px, 12px); }
+}
+@keyframes ks-wing-beat {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  74%, 82% { transform: rotate(-28deg); }
+  78%, 86% { transform: rotate(4deg); }
+}
+@keyframes ks-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+}
+.kid-backdrop.is-theme .ks-far .ks-line { stroke: color-mix(in srgb, var(--kid-ink) 24%, var(--ks-sky)); stroke-width: 2; }
+.kid-backdrop.is-theme .ks-twig { fill: none; stroke: var(--ks-wood-dark); stroke-width: 2.5; }

@@ -31,6 +31,16 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
+        version: '2.0.1',
+        date: '2026-11',
+        summary: 'Zelf oefenen: levendige achtergronden per leerjaar, met weer en dieren die voorbij komen.',
+        items: [
+            { kind: 'gewijzigd', text: 'Zelf oefenen: elk leerjaar heeft een nieuwe, getekende wereld met weer (bloesem, bellen, vonkjes, regen, sneeuw, zand) en dieren die voorbij komen.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen: de kaarten schuiven niet meer over de grond van de achtergrond, en de titel bovenaan is weg voor meer ruimte.' },
+            { kind: 'opgelost', text: 'Op een breed scherm vullen de tekeningen nu de ruimte naast de kaarten.' },
+        ],
+    },
+    {
         version: '2.0.0',
         date: '2026-11',
         summary: 'Nieuw: Zelf oefenen met 18 rekenspelletjes, stappenhulp via een QR-code op je blad, en Eenvoudig: een blad maken met kaarten.',

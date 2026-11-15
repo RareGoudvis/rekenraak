@@ -1390,6 +1390,14 @@ html:has(.oefen-body),
 
 /* ── Zelf oefenen (picker on the bare page): sticker tiles on the sky ───────── */
 .zelf { justify-content: flex-start; padding-bottom: clamp(56px, 12vh, 110px); }
+/* Over a leerjaar scene the cards scroll above the ground and fade out where it starts, so the floor and its
+   drawings stay in view; the bottom padding lets the last row come to rest above it. */
+.kid-backdrop.is-theme ~ .zelf {
+  --zelf-floor: clamp(52px, 11vh, 120px);
+  padding-bottom: calc(var(--zelf-floor) + 24px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--zelf-floor) - 28px), transparent calc(100% - var(--zelf-floor)));
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--zelf-floor) - 28px), transparent calc(100% - var(--zelf-floor)));
+}
 .zelf-bar {
   width: 100%;
   display: flex;
@@ -1481,7 +1489,8 @@ html:has(.oefen-body),
 /* The topics screen: the leerjaar bar, then the topic cards. Tighter than the other screens, so the
    bar and the first row of topics show without scrolling at 1024×768. */
 .zelf-home { gap: 14px; padding-top: var(--sp-4); }
-.zelf-home-title { margin-top: 4px; font-size: clamp(26px, 3vmin + 12px, 40px); }
+/* Read out, not shown: the leerjaar bar and the cards say it already. */
+.zelf-home-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
 
 /* Leerjaar: six rounded tiles, each a little world of its leerjaar (backdrops/); the chosen one grows and gets a thick border in its world's colour. */
 .zelf-years {

@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-16** — v2.0.1 "kids UI background fixes": the six leerjaar scenes behind Zelf oefenen redrawn (merged sticker outlines, shading, far layer, weather per leerjaar, clouds and animals crossing, small character loops; all still under reduced motion), corners scale into the side space on wide screens, the picker title is screen-reader-only and the card list fades above the ground.
+
 **2026-11-15** — Spelen round 4 (owner review of all 18 games): every game polished with livelier scenes, friendly failure states and modes (Race Benzine, Voetbal 5 v 5 with possession, Zombies Makkelijk + speed ramp, Speelgoedfabriek replaces Pakjesband, Honingraat comb/meadow + wasp, Hartjes 12/16 + voetballen, Zeehondjes Moeilijk, Schatkist timed, Prent with Comedy Wildlife photos), a shared scene kit, CC0 music, sound on by default, comma/minus keys, one question/answer presentation layer, the games grid + world tiles on kind.html, an exit-fullscreen button, the Oefenmodus staartdeling + × carry rows, and a footsteps mark on the print for sums the stappenhulp-QR opens. Plan: PLAN-spelen.local.md Round 4.
 
 **2026-11-15** — Spelen reaches far more content: + − × : and tafels to leerjaar 6 (keypads take 12 digits, ±100 / ±1000 distractors), and the tekst pack (content/tekst/) plays any variant whose kiosk asks one value on a one-line sign (afronden, schatten, splitsen, getallenrijen, herleidingen, procenten, geld teruggeven, tijdsduur, vergelijken, deelbaarheid, even/oneven, romeinse cijfers …; commas, minus signs and words in the tap games only). Coverage L1–L6 went from 8/20/32/13/0/0 to 17/42/61/58/53/56 playable choices. Topic cards fall back to the first fitting game when their preferred one doesn't fit.

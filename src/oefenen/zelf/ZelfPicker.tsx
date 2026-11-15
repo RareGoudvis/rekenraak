@@ -138,7 +138,7 @@ export default function ZelfPicker() {
                 <KidBackdrop clouds={false} grade={grade} />
                 <main key="home" className="oefen-center zelf zelf-home">
                     <LeerjaarBar grade={grade} onPick={pickGrade} />
-                    {/* The title waits for the topics, so "Wat wil je oefenen?" always comes with them. */}
+                    {/* The page title for screen readers only (owner, 2026-11-16: obvious on screen, the room goes to the cards); it waits for the topics. */}
                     {!data || !shown ? <p className="oefen-lead">Even laden…</p> : <h1 className="oefen-title zelf-home-title">Wat wil je oefenen?</h1>}
                     {data && shown && (
                         // No leerjaar yet: every topic shows, dimmed and out of reach until a number is picked.
