@@ -5,6 +5,7 @@ import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { useOefenStore } from '../useOefenStore';
 import { tryFullscreen } from '../kiosk/fullscreen';
+import FullscreenExitButton from '../kiosk/FullscreenExitButton';
 import KidBackdrop from '../kiosk/KidBackdrop';
 import { useSpelStore, type SpelStart } from '../spelen/useSpelStore';
 import { choiceCanPlay, spelContentOf } from '../spelen/spelQuestion';
@@ -126,6 +127,7 @@ export default function ZelfPicker() {
                 <span className="zelf-badge is-sm" style={gradeTint(grade)} aria-hidden>{grade}</span>
                 Leerjaar {grade}
             </span>
+            <FullscreenExitButton />
         </div>
     );
 

@@ -6,6 +6,7 @@ import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
 import { SpelChoiceFace, SpelVisual } from './SpelVisual';
 import { viewFor } from './spelChoice';
+import FullscreenExitButton from '../kiosk/FullscreenExitButton';
 import type { SpelMistake } from './useSpelStore';
 
 // An empty given = a miss (the zombie reached the door before an answer); a board's claim reads as words ("meer dan 50").
@@ -81,6 +82,7 @@ export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boo
                 <button type="button" className="kiosk-btn" onClick={otherGame}>
                     <GameController aria-hidden /> Ander spel
                 </button>
+                <FullscreenExitButton />
                 {result?.wipe && !wiped && (
                     <TwoTapButton label={<><Trash aria-hidden /> <span>Wis mijn scores</span></>} groupLabel="Mijn scores op dit toestel wissen"
                         confirm="Ja, wissen" onConfirm={() => { result.wipe?.(); setWiped(true); }} />

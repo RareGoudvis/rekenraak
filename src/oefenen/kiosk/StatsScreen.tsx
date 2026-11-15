@@ -3,6 +3,7 @@ import { CheckCircle } from '@phosphor-icons/react';
 import { useOefenStore } from '../useOefenStore';
 import StorageBanner from './StorageBanner';
 import StopButton from './StopButton';
+import FullscreenExitButton from './FullscreenExitButton';
 import { STAR_PATH } from './TopBar';
 import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
@@ -205,6 +206,7 @@ export default function StatsScreen() {
                         </button>
                     )}
                     <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
+                    <FullscreenExitButton />
                     {zelf && <button type="button" className={`kiosk-btn${review ? '' : ' kiosk-btn-primary'}`} onClick={() => load('')}>Andere oefening</button>}
                     {confirmClear ? (
                         <>

@@ -14,6 +14,7 @@ import { signSize } from './spelChoice';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
 import { useSpelMusic } from './music';
+import FullscreenExitButton from '../kiosk/FullscreenExitButton';
 import { formatMathNumber } from '../../services/math/formatters';
 import './spelen.css';
 
@@ -145,6 +146,7 @@ export default function SpelScreen() {
                     </span>
                 )}
                 <span className="kiosk-topbar-right">
+                    <FullscreenExitButton />
                     {progress.msLeft !== null && (
                         <span className="kiosk-timer" role="timer" aria-label={`Nog ${formatClock(progress.msLeft)}`}>
                             <Timer aria-hidden /> {formatClock(progress.msLeft)}

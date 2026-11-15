@@ -8,6 +8,7 @@ import KidBackdrop from './kiosk/KidBackdrop';
 import ZelfPicker from './zelf/ZelfPicker';
 import SpelScreen from './spelen/SpelScreen';
 import { useSpelStore } from './spelen/useSpelStore';
+import { exitFullscreen } from './kiosk/fullscreen';
 
 // Root of the pupil kiosk (oefenen.html). Routed by the URL hash: #oefen=<payload>.
 export default function OefenApp() {
@@ -23,6 +24,10 @@ export default function OefenApp() {
         window.addEventListener('hashchange', onHash);
         return () => window.removeEventListener('hashchange', onHash);
     }, [load]);
+
+    // Back on the picker (after an oefening or a game): the browser chrome returns; starting the next one goes fullscreen again.
+    const onPicker = !error && !sessie && spelPhase === 'idle';
+    useEffect(() => { if (onPicker) exitFullscreen(); }, [onPicker]);
 
     // A game runs on its own (Zelf oefenen › Spelen); Nakijken hands over to the kiosk below.
     if (spelPhase !== 'idle' && !sessie) return <SpelScreen />;
