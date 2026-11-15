@@ -1175,6 +1175,7 @@ html:has(.oefen-body),
   .kiosk-pill { padding: 4px 10px; }
   /* Zelf oefenen: Terug naar begin says just Terug and Resultaten keeps its icon, so the bar fits at 360 px. */
   .kiosk-back-long { display: none; }
+  .kiosk-fs-text { display: none; }
   .kiosk-topbar:has(.kiosk-back-long) .kiosk-stats-text { display: none; }
   .kiosk-table { font-size: var(--text-lg); }
   /* With 2 kansen the per-type table has seven columns: smaller headers keep it within a phone. */

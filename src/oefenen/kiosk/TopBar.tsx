@@ -3,6 +3,7 @@ import { resultsHidden, useOefenStore } from '../useOefenStore';
 import { viablePlannedTotal } from '../../services/oefenen/stats';
 import StopButton from './StopButton';
 import BackToPickerButton from './BackToPickerButton';
+import FullscreenExitButton from './FullscreenExitButton';
 
 interface Props {
     now: number;
@@ -60,6 +61,7 @@ export default function TopBar({ now }: Props) {
                 <span>{total !== null ? `${shownAt} / ${total}` : shownAt}</span>
             </span>
             <span className="kiosk-topbar-right">
+                <FullscreenExitButton />
                 {left !== null && (
                     <span className={`kiosk-timer kiosk-pill${lastMinute ? ' is-low' : ''}`} role="timer" aria-label={`Nog ${formatClock(left)}`}>
                         <Timer aria-hidden /> {formatClock(left)}
