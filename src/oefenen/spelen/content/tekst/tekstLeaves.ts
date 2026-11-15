@@ -96,6 +96,10 @@ const NB = ' ';
 // The whole-number place keys, high to low (a decimal mask's highest one bounds its operand).
 const INT_PLACES = ['M', 'HD', 'TD', 'D', 'H', 'T', 'E'];
 
+// The rounding place in words on a game sign; the sheet's own shorthand for the millions (1M … 1MLD, owner 2026-09-27) is no game line.
+const MILLIONS: Readonly<Record<string, string>> = { '1M': 'miljoen', '10M': 'tien miljoen', '100M': 'honderd miljoen', '1MLD': 'miljard' };
+const placeWords = (text: string, label: string) => text.replace(/\(op [^)]*\)$/, `(op ${MILLIONS[label] ?? label})`);
+
 // ── afronden (simpel, and a rooster asked one number at a time) ─────────────
 
 function afrondenTargets(c: C) {
@@ -123,7 +127,7 @@ const AFRONDEN: TekstLeaf = {
         const down = roundTo(n - t.weight / 2 + 1e-9, t.weight), up = down + t.weight;
         // Rounded the wrong way, to the wrong place (never 0: 497 op D is no slip a pupil makes), or not at all.
         const near = [[Number((answer === down ? up : down).toFixed(dp))], [roundTo(n, t.weight * 10), ...(dp < 3 && t.weight > 1e-3 ? [roundTo(n, t.weight / 10)] : [])].filter(v => v > 0), [n]];
-        return { kind: 'number', text: d.display(asked, askedC), answer, dp, step: t.weight, near, exercise: asked, constraints: askedC };
+        return { kind: 'number', text: placeWords(d.display(asked, askedC), t.label), answer, dp, step: t.weight, near, exercise: asked, constraints: askedC };
     },
 };
 
@@ -144,7 +148,7 @@ const SCHATTEND: TekstLeaf = {
         const exact = ex.operator === '+' ? ex.a + ex.b : ex.operator === '-' ? ex.a - ex.b : ex.operator === 'x' ? ex.a * ex.b : ex.a / ex.b;
         const dp = Math.max(decimalsOf(answer), decimalsOf(t.weight));
         // The exact result, and the estimate one rounding step off. The place in words, as afronden says it ("op H" is sheet shorthand).
-        return { kind: 'number', text: d.display(ex, c).replace(/\(op [^)]*\)$/, `(op ${t.label})`), answer, dp, step: t.weight, near: [[Number(exact.toFixed(dp))], [answer + t.weight, answer - t.weight]] };
+        return { kind: 'number', text: placeWords(d.display(ex, c), t.label), answer, dp, step: t.weight, near: [[Number(exact.toFixed(dp))], [answer + t.weight, answer - t.weight]] };
     },
 };
 

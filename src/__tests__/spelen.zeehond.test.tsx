@@ -42,7 +42,7 @@ beforeEach(() => {
 });
 afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); });
 
-const start = () => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('zeehond')!.meta }));
+const start = (now?: number) => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('zeehond')!.meta, now }));
 
 function Wired({ reducedMotion = false, niveau }: { reducedMotion?: boolean; niveau?: string }) {
     const st = useSpelStore();
@@ -266,7 +266,8 @@ describe('Zeehondjes voeren', () => {
     });
 
     test('a new question swaps the signs, not the seals; the fed seal grows; no key badges', () => {
-        start();
+        // A fixed session seed: the same sums every run (the seals' looks stay random).
+        start(20261115);
         const { container } = render(<Wired reducedMotion />);
         expect(container.querySelector('.zh-key')).toBeNull();
         const before = seals();
@@ -291,11 +292,16 @@ describe('Zeehondjes voeren', () => {
         tapValue(wrongOf());
         expect(girths().reduce((a, b) => a + b)).toBe(1);
         act(() => sp().next());
+        // Each fish goes to the seal holding the answer; a seal stops growing at GROW_STEPS (one seal can get five
+        // of seven fish), so the expected girths come from the fish per seal, not from a plain sum.
+        const fish = [0, 0, 0, 0];
+        fish[fedSeal] = 1;
         for (let k = 0; k < 6; k++) {
+            fish[sp().question!.choices.indexOf(sp().question!.answer)]++;
             tapValue(sp().question!.answer);
             act(() => sp().next());
         }
-        expect(girths().reduce((a, b) => a + b)).toBe(7);
+        expect(girths()).toEqual(fish.map(girthOf));
         expect(Math.max(...girths())).toBeLessThanOrEqual(GROW_STEPS);
     });
 

@@ -556,7 +556,8 @@
   width: calc(var(--pk-w) * .86);
   min-width: 0;
   padding: 2px 4px;
-  font-size: calc(var(--pk-w) * .13);
+  /* A long word or measure (--face-chars, spelChoice faceChars) shrinks until its longest part fits. */
+  font-size: min(calc(var(--pk-w) * .13), calc((var(--pk-w) * .86 - 8px) / (var(--face-chars, 1) * .6)));
   line-height: 1.1;
   text-align: center;
   white-space: normal;

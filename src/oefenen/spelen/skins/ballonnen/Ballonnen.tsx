@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { Star } from '@phosphor-icons/react';
 import type { SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, pictureClass, signClass } from '../../spelChoice';
+import { choiceLabel, faceChars, faceKind, pictureClass, signClass } from '../../spelChoice';
 import { Burst, Clouds, replay } from '../../scene';
 import { floatAt, floatPace, floatPath, type FloatGeom, type FloatPath } from './float';
 import { birdAt, birdFlight, birdPerch, nextLand, slotState, type Land } from './scenery';
@@ -236,7 +236,7 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
                                         onClick={() => pick(i)}>
                                         <BalloonArt />
                                         {/* Keyed per question: the new number fades in on the same balloon. */}
-                                        <span key={question.key} className={`bal-num kiosk-math is-${faceKind(view)}`} aria-hidden><SpelChoiceFace value={c} view={view} /></span>
+                                        <span key={question.key} className={`bal-num kiosk-math is-${faceKind(view)}`} style={{ '--face-chars': faceChars(view) } as CSSProperties} aria-hidden><SpelChoiceFace value={c} view={view} /></span>
                                     </button>
                                     {state === 'popped' && !reducedMotion && (
                                         <span className="bal-burst" aria-hidden>

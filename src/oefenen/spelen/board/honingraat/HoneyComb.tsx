@@ -2,8 +2,8 @@ import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { Burst, CrackLines, type CrackStage } from '../../scene';
 import { Bee, Branch } from './art';
 import { combDecor, combLayout, COMB_RIM, type DecorKind } from './comb';
-import { BoardBee, Top } from './parts';
-import { BEE_START, cellTexts, HEX, usePicks, type ViewProps } from './view';
+import { BoardBee, CellTexts, Top } from './parts';
+import { BEE_START, boardChars, cellTexts, HEX, usePicks, type ViewProps } from './view';
 
 // The honeycomb board: a wild comb hanging from a branch, its cells to find inside a rim of wax with honey,
 // eggs and larvae, honey dripping off the bottom and worker bees busy round it. A right cell fills with honey
@@ -115,8 +115,6 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
 
     const toFind = board.cells.filter(c => c.match);
     const cleared = toFind.every(c => c.state === 'solved');
-    // One size for every sum on the comb: the longest decides.
-    const long = board.cells.some((_, i) => cellTexts(board, i, '').sum.length > 7);
     const pick = (i: number) => {
         if (!active || phase !== 'play' || board.cells[i].state !== 'open') return;
         onBoardPick?.(i, '');
@@ -128,8 +126,8 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
         <>
             <Top board={board} view="comb" />
             <div className="hx-comb-wrap">
-                <div className={`hx-comb${cleared ? ' is-cleared' : ''}${long ? ' is-long' : ''}${fresh !== null ? ' is-thud' : ''}`} role="group" aria-label="Honingraat"
-                    style={{ '--hx-cols': layout.width, '--hx-rows-h': layout.height } as CSSProperties}>
+                <div className={`hx-comb${cleared ? ' is-cleared' : ''}${fresh !== null ? ' is-thud' : ''}`} role="group" aria-label="Honingraat"
+                    style={{ '--hx-cols': layout.width, '--hx-rows-h': layout.height, '--hx-chars': boardChars(board) } as CSSProperties}>
                     <span className="hx-branch-wrap" aria-hidden><Branch /></span>
                     {/* After the branch: the trunk hides where the branch is cut off. */}
                     <span className="hx-trunk" aria-hidden />
@@ -157,8 +155,7 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
                                     </g>
                                     <polygon className="hx-rim" points={HEX} />
                                 </svg>
-                                <span className="hx-sum kiosk-math" aria-hidden>{sum}</span>
-                                {showOwn && <span className="hx-own kiosk-math" aria-hidden>= {own}</span>}
+                                <CellTexts sum={sum} own={showOwn ? own : undefined} />
                             </button>
                         );
                     })}

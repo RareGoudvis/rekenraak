@@ -164,6 +164,12 @@ describe('the content behind the sign', () => {
         }
     });
 
+    test('afronden at leerjaar 6 names the millions in words ("op miljard"), never the sheet shorthand 1MLD', () => {
+        const qs = questions(6, 'Vergelijken, ordenen, afronden', 'Afronden', 60);
+        expect(qs.length).toBeGreaterThan(20);
+        for (const q of qs) expect(q.text, q.text).not.toMatch(/\(op \d+M(LD)?\)/);
+    });
+
     test('schatten names the place in words, never the sheet letter', () => {
         for (const q of questions(3, 'Schatten en controleren', 'Schatten')) expect(q.text, q.text).toMatch(/\(op (tiental|honderdtal|duizendtal)\)$/);
     });

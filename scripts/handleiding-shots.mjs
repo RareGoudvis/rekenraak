@@ -403,16 +403,40 @@ async function shotsZelf() {
         await p.goto(`${BASE}/kind.html`);
         await settle(p, 1200);
         await p.getByRole('button', { name: 'Leerjaar 2', exact: true }).click();
-        await settle(p, 500);
+        await settle(p, 800);
         await shot(p, 'zelf-onderwerp');
         await p.getByRole('button', { name: 'Optellen', exact: true }).click();
         await settle(p, 500);
         await p.getByRole('button', { name: /Met brug/ }).first().click();
         await settle(p, 500);
+        await p.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach(e => { if (e.scrollTop) e.scrollTop = 0; }); });
+        await shot(p, 'zelf-keuze');
         // The choice, Automatiseren (how much) and the games bar share one screen.
         await p.getByRole('button', { name: '5 oefeningen' }).click();
         await settle(p, 300);
-        await shot(p, 'zelf-hoeveel');
+        // The same screen scrolled to the games, then one game in play (Ballonnen: tap the right balloon).
+        await p.getByRole('group', { name: 'Kies een spel' }).scrollIntoViewIfNeeded();
+        await settle(p, 500);
+        await shot(p, 'zelf-spellen');
+        await p.getByRole('button', { name: /^Ballonnen/ }).click();
+        await settle(p, 400);
+        const start = p.getByRole('button', { name: /^(Start|Begin|Spelen|Speel)/ }).first();
+        if (await start.count()) { await start.click(); await settle(p, 400); }
+        await settle(p, 2500);
+        await shot(p, 'zelf-spel');
+        await p.mouse.click(90, 35);
+        await settle(p, 600);
+        await p.getByRole('button', { name: /^Ja, stoppen/ }).click({ timeout: 3000 }).catch(() => {});
+        await settle(p, 800);
+        const five = p.getByRole('button', { name: '5 oefeningen' });
+        if (!(await five.count())) {
+            await p.getByRole('button', { name: 'Optellen', exact: true }).click();
+            await settle(p, 500);
+            await p.getByRole('button', { name: /Met brug/ }).first().click();
+            await settle(p, 500);
+        }
+        await p.getByRole('button', { name: '5 oefeningen' }).click();
+        await settle(p, 300);
         await p.getByRole('button', { name: /Begin met oefenen/ }).click();
         await settle(p, 1200);
         await wrongUntilSteps(p);
