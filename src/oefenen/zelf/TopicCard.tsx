@@ -36,7 +36,7 @@ interface Props {
 export default function TopicCard({ id, label, game, hasGame, disabled, onPick }: Props) {
     const uid = useId();
     return (
-        <button type="button" className="zelf-topic" disabled={disabled} onClick={onPick} aria-describedby={`${uid}-d`}>
+        <button type="button" className="zelf-topic" data-topic={id} disabled={disabled} onClick={onPick} aria-describedby={`${uid}-d`}>
             <span className="zelf-topic-pic" aria-hidden>
                 {game ? <GameThumb skin={game} className="zelf-topic-thumb" /> : <OefenThumb id={id} label={label} />}
                 <span className="zelf-topic-marks">

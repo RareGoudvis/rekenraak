@@ -71,6 +71,22 @@ export function gamesFor(content: SpelContent | null, today: Date): GameCardOf[]
     return games.map((g, i) => ({ g, i })).sort((a, b) => rank(a.g) - rank(b.g) || a.i - b.i).map(x => x.g);
 }
 
+export type GameGroupId = 'rustig' | 'tijd' | 'samen' | 'zoeken';
+export const GAME_GROUPS: readonly { id: GameGroupId; label: string }[] = [
+    { id: 'rustig', label: 'Rustig spelen' },
+    { id: 'tijd', label: 'Op tijd' },
+    { id: 'samen', label: 'Samen spelen' },
+    { id: 'zoeken', label: 'Zoeken en koppelen' },
+];
+
+// The category comes from the skin's meta: a board round, else a fixed two-player game, else timed, else calm (Kasteel 1-2 is timed, so "Op tijd").
+export const gameGroupOf = (meta: Skin['meta']): GameGroupId =>
+    meta.input === 'board' ? 'zoeken' : meta.players === 2 ? 'samen' : meta.timed ? 'tijd' : 'rustig';
+
+/** The games by category (empty ones left out); inside a category gamesFor's order holds, so in-season games lead. */
+export const groupGames = (games: GameCardOf[]) =>
+    GAME_GROUPS.map(g => ({ ...g, games: games.filter(x => gameGroupOf(x.skin.meta) === g.id) })).filter(g => g.games.length > 0);
+
 /** "Hoofdrekenen · Optellen" → "hoofdrekenen-optellen": the topic's part of its Oefenmodus picture's file name. */
 export const topicSlug = (topicId: string) =>
     topicId.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

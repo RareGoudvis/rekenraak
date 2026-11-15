@@ -94,8 +94,8 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('./race/Race')),
     },
     {
-        // A match of 3 or 5 minutes in two halves (a short "Rust!" holds the clock). Four right answers are four passes,
-        // a wrong one a friendly tap-away; the fifth sum is the shot on its own 10 s ring (onMiss = the keeper's catch).
+        // A match of 3 or 5 minutes in two halves (a short "Rust!" holds the clock). Right answers pass, a wrong one hands
+        // the black bears the ball (their passes and shot come on wrong answers); our shot has its own 10 s ring (onMiss).
         meta: {
             music: 'sport',
             id: 'voetbal', label: 'Voetbal', input: 'keypad', timed: true, round: { seconds: 180, cap: 200 }, accepts: KEYPAD_NUMBER,

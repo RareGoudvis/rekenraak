@@ -1481,14 +1481,14 @@ html:has(.oefen-body),
 .zelf-home { gap: 14px; padding-top: var(--sp-4); }
 .zelf-home-title { margin-top: 4px; font-size: clamp(26px, 3vmin + 12px, 40px); }
 
-/* Leerjaar: six big numbers in their colours; the chosen one grows and gets the ring. */
+/* Leerjaar: six rounded tiles, each a little world of its leerjaar (backdrops/); the chosen one grows and gets a thick border in its world's colour. */
 .zelf-years {
-  --year: clamp(46px, 8.4vmin, 76px);
+  --year: clamp(64px, min(13.5vmin, 12.5vw), 108px);
   width: min(100%, 1100px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px 24px;
   padding: 12px 24px 14px;
   border: var(--kid-line) solid var(--kid-ink);
@@ -1497,98 +1497,98 @@ html:has(.oefen-body),
   box-shadow: var(--kid-drop);
 }
 .zelf-years-label { margin: 0; font-size: var(--kiosk-text); font-weight: 900; color: var(--kid-muted); }
-/* The page's one header sits in the bar: the R badge and "Zelf oefenen" on the left. */
-.zelf-years-brand { margin: 0 auto 0 0; display: inline-flex; align-items: center; gap: 10px; font-size: var(--kiosk-text); font-weight: 900; color: var(--kid-ink); white-space: nowrap; }
-.zelf-years-logo {
-  width: 34px;
-  height: 34px;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2.5px solid var(--kid-ink);
-  border-radius: 50%;
-  background: var(--kid-ring);
-  font-family: var(--font-sheet-math);
-  font-size: 17px;
-}
-.zelf-years-pick { margin-right: auto; display: flex; align-items: center; gap: 10px 24px; }
 .zelf-years.is-unset .zelf-years-label { font-size: var(--kiosk-text-lg); color: var(--kid-ink); }
-.zelf-years-row { display: flex; gap: clamp(8px, 1.8vw, 20px); }
+.zelf-years-row { display: flex; gap: clamp(10px, 2vw, 22px); padding: 4px; }
 .zelf-year {
   --kid-sh: var(--kid-drop-sm);
+  --w-sky: var(--kid-tint-3);
+  position: relative;
   width: var(--year);
   height: var(--year);
   flex: none;
   padding: 0;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: var(--kid-line) solid var(--kid-ink);
-  border-radius: 50%;
-  background: var(--tint);
+  border-radius: 20%;
+  background: var(--w-sky);
   box-shadow: var(--kid-sh);
   color: var(--kid-ink);
-  font-family: var(--font-sheet-math);
-  font-size: calc(var(--year) * 0.6);
-  font-weight: 700;
-  line-height: 1;
   cursor: pointer;
 }
+/* Each world's palette: sky, ground, two accents, its selected-border colour (the backdrops' pastels, a shade deeper). */
+.zelf-year.is-1 { --w-sky: #D8EDFF; --w-ground: #A9E2A4; --w-a: #FCE08A; --w-b: #F3C14B; --w-ring: #C98F00; }
+.zelf-year.is-2 { --w-sky: #E5E4FF; --w-ground: #B7E5D0; --w-a: #A3E0D2; --w-b: #F9C4DA; --w-ring: #0E9F8E; }
+.zelf-year.is-3 { --w-sky: #FFE7CF; --w-ground: #F2C7A2; --w-a: #FB923C; --w-b: #E3C0A2; --w-ring: #E2531A; }
+.zelf-year.is-4 { --w-sky: #DCF2E4; --w-ground: #93D6A4; --w-a: #5FBF7A; --w-b: #82CB97; --w-ring: #1E8E4E; }
+.zelf-year.is-5 { --w-sky: #E4EEF9; --w-ground: #FFFFFF; --w-a: #A9CBF5; --w-b: #93D1A9; --w-ring: #3B82D6; }
+.zelf-year.is-6 { --w-sky: #FFF0D6; --w-ground: #F5DAA4; --w-a: #E9C793; --w-b: #FDE9A0; --w-ring: #B7791F; }
+.zy-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.zy-art * { stroke: color-mix(in srgb, var(--kid-ink) 45%, transparent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.zy-ground { fill: var(--w-ground); }
+.zy-a { fill: var(--w-a); }
+.zy-b { fill: var(--w-b); }
+.zy-w { fill: var(--kid-card); }
+.zy-dark { fill: color-mix(in srgb, var(--kid-ink) 75%, transparent); stroke: none; }
+.zy-cactus { fill: #9FD5A5; }
+.zy-line { fill: none; }
+/* The number sits on top, big, on the sky above each tile's art. */
+.zy-num {
+  position: relative;
+  font-family: var(--font-sheet-math);
+  /* Above the art strip at the bottom, on the clean sky. */
+  margin-bottom: 22%;
+  font-size: calc(var(--year) * 0.52);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--kid-ink);
+}
 .zelf-year:active:not([aria-pressed="true"]) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
-/* The chosen number: a ring in a darker shade of its own colour (zelfGrade.ts gradeTint sets --tint-ring). */
-.zelf-year[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--tint-ring, var(--kid-ring)), var(--kid-drop-sm); transform: scale(1.18); }
+.zelf-year:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
+.zelf-year[aria-pressed="true"] { border: 5px solid var(--w-ring); --kid-sh: 0 0 0 2px var(--kid-ink), var(--kid-drop-sm); transform: scale(1.12); }
 @media (prefers-reduced-motion: no-preference) {
   .zelf-year { transition: transform 0.12s ease-out; }
-  /* First visit: the bar glows gently until a number is picked (reduced motion: the words alone). */
+  /* First visit: the bar glows gently until a tile is picked (reduced motion: the words alone). */
   .zelf-years.is-unset { animation: zelf-glow 1.8s ease-in-out infinite; }
 }
 @keyframes zelf-glow {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--kid-ring) 0%, transparent), var(--kid-drop); }
   50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--kid-ring) 60%, transparent), var(--kid-drop); }
 }
-@media (max-width: 899px) {
-  .zelf-years-pick { flex-direction: column; gap: 8px; }
-}
 @media (max-width: 599px) {
-  /* The badge and the label on one line, the numbers below; the words "Zelf oefenen" stay for screen readers only. */
-  .zelf-years { gap: 8px; padding: 10px 12px 14px; }
-  .zelf-years-pick { display: contents; }
-  .zelf-years-brand { margin: 0; }
-  .zelf-years-brand-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .zelf-years-label { margin-right: auto; }
-  .zelf-years-row { flex-basis: 100%; justify-content: center; }
-  .zelf-years-row { gap: 10px; }
-  .zelf-year[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--tint-ring, var(--kid-ring)), var(--kid-drop-sm); transform: scale(1.12); }
+  .zelf-years { --year: 46px; gap: 6px; padding: 8px 8px 10px; }
+  .zelf-years-row { gap: 8px; }
+  .zelf-year[aria-pressed="true"] { transform: scale(1.1); }
 }
 
 /* The topics screen's link hint: one small muted line at the very bottom, so the bar and the topics get the room. */
 .zelf-home-note { margin: 4px 0 0; color: var(--kid-muted); font-size: var(--text-sm); font-weight: 700; text-align: center; }
 
-/* The Keuze screen's games bar: a row of picture cards (thumbnail on top, name below); more scroll sideways. */
+/* The Keuze screen's games: picture cards (thumbnail on top, name below) in a grid per category. */
 .zelf-play {
   position: relative;
   width: 100%;
   min-width: 0;
-}
-.zelf-play-row {
-  margin: 0 -6px;
-  /* Room for the drop shadow and the tilted ribbon; the end padding lets the last card scroll clear of the fade. */
-  padding: 12px 48px 14px 6px;
   display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
-  /* The far edge fades: there are more games to the side. */
-  mask-image: linear-gradient(to right, black calc(100% - 44px), transparent);
+  flex-direction: column;
+  gap: 8px;
+}
+.zelf-play-group { display: flex; flex-direction: column; gap: 4px; }
+.zelf-play-head { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 900; line-height: 1.2; text-align: left; }
+/* Room for the drop shadow and the tilted ribbon. */
+.zelf-play-grid {
+  padding: 12px 6px 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
 }
 .zelf-play-tile {
   --kid-sh: var(--kid-drop);
   position: relative;
   flex: none;
-  scroll-snap-align: start;
-  width: 204px;
+  min-width: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -1625,10 +1625,10 @@ html:has(.oefen-body),
 .zelf-topic-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .zelf-play-title { padding: 8px 12px 10px; font-size: var(--kiosk-text); font-weight: 800; line-height: 1.15; }
 /* A clock (op tijd) or two pupils (2 spelers) on the picture's corner. */
-.zelf-play-marks { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.zelf-play-marks { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .zelf-play-mark {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1636,7 +1636,7 @@ html:has(.oefen-body),
   border-radius: 50%;
   background: var(--kid-card);
 }
-.zelf-play-mark svg { width: 18px; height: 18px; }
+.zelf-play-mark svg { width: 22px; height: 22px; }
 /* In season: a tilted "nu!" ribbon. */
 .zelf-play-nu {
   position: absolute;
@@ -1652,30 +1652,11 @@ html:has(.oefen-body),
   line-height: 1.2;
   transform: rotate(-12deg);
 }
-/* The arrow on the faded edge: more games (hidden at the end of the row). */
-.zelf-play-more {
-  --kid-sh: var(--kid-drop-sm);
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2.5px solid var(--kid-ink);
-  border-radius: 50%;
-  background: var(--kid-card);
-  box-shadow: var(--kid-sh);
-  color: var(--kid-ink);
-  cursor: pointer;
+@media (max-width: 899px) {
+  .zelf-play-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 }
-.zelf-play-more svg { width: 24px; height: 24px; }
-.zelf-play-more:active { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
 @media (max-width: 599px) {
-  .zelf-play-tile { width: 184px; }
-  .zelf-play-row { gap: 12px; }
+  .zelf-play-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 }
 
 /* The topics: picture cards, four per row on a tablet or laptop, three on a small tablet, two on a phone. */

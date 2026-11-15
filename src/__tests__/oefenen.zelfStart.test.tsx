@@ -5,7 +5,7 @@ import { existsSync, statSync } from 'node:fs';
 import OefenApp from '../oefenen/OefenApp';
 import { gameBlurb, GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import GameThumb from '../oefenen/spelen/GameThumb';
-import { TOPIC_GAME, gamesFor, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
+import { TOPIC_GAME, gamesFor, groupGames, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
 import { choicesFor, usableVariants } from '../oefenen/zelf/zelfSessie';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
@@ -150,9 +150,9 @@ describe('Topic cards and the Keuze screen', () => {
         expect(geld.querySelector('img')!.getAttribute('src')).toMatch(geldCard.game ? new RegExp(`thumbs/${geldCard.game.meta.id}\\.webp$`) : /thumbs\/oefen-geld\.webp$/);
         expect(!!geld.querySelector('.zelf-topic-mark.is-game')).toBe(geldCard.hasGame);
         expect(geld.querySelector('.zelf-topic-mark.is-oefen')).not.toBeNull();
-        // The R badge and "Zelf oefenen" sit in the leerjaar bar: no second header.
-        expect(document.querySelector('.kiosk-start-brand')).toBeNull();
-        expect(screen.getByText('Zelf oefenen')).toBeTruthy();
+        // A kids' page: no R badge or "Zelf oefenen" title, only the leerjaar tiles.
+        expect(document.querySelector('.kiosk-start-brand, .zelf-years-logo')).toBeNull();
+        expect(screen.queryByText('Zelf oefenen')).toBeNull();
     });
 
     test('Optellen L2: Automatiseren, then exactly the games that accept the choice; a card starts that game with it', async () => {
@@ -166,7 +166,7 @@ describe('Topic cards and the Keuze screen', () => {
         expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
         const data = await loadEenvoudigData();
         const choice = choicesFor(data, 2, 'Hoofdrekenen · Optellen', 100).find(c => c.label === 'Met brug')!;
-        const want = gamesFor(spelContentOf(choice, 2), pickerToday()).map(g => g.skin.meta.label);
+        const want = groupGames(gamesFor(spelContentOf(choice, 2), pickerToday())).flatMap(g => g.games.map(x => x.skin.meta.label));
         const row = within(screen.getByRole('region', { name: 'Of speel een spel' })).getByRole('group', { name: 'Kies een spel' });
         const shown = within(row).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
         expect(shown).toEqual(want);

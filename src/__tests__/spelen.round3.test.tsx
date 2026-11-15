@@ -5,7 +5,7 @@ import type { ComponentType } from 'react';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import type { SkinPhase, SkinProps } from '../oefenen/spelen/skins/types';
 import GameRow from '../oefenen/zelf/GameRow';
-import { gamesFor } from '../oefenen/zelf/topicGames';
+import { GAME_GROUPS, gameGroupOf, gamesFor } from '../oefenen/zelf/topicGames';
 import { NUMBER_CONTENT, skinAccepts, skinsFor } from '../oefenen/spelen/accepts';
 import { brusselsDay, easterSunday, seasonsOn } from '../oefenen/spelen/seasons';
 import { loadEenvoudigData } from '../config/eenvoudig/cards';
@@ -27,8 +27,8 @@ import { resetKiosk } from './helpers/oefenKiosk';
 const day = (iso: string) => new Date(`${iso}T12:00:00Z`);
 const OFF_SEASON = day('2026-10-01');
 const labels = (group: HTMLElement) => within(group).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
-// The games bar's order out of season: calm games, then timed ones (registry order within).
-const calmFirst = (list: typeof SKINS) => [...list.filter(s => !s.meta.timed), ...list.filter(s => s.meta.timed)].map(s => s.meta.label);
+// The games grid's order out of season: by category (Rustig, Op tijd, Samen, Zoeken), registry order within.
+const calmFirst = (list: typeof SKINS) => GAME_GROUPS.flatMap(g => list.filter(s => gameGroupOf(s.meta) === g.id)).map(s => s.meta.label);
 
 let choice: ZelfChoice;
 const sp = () => useSpelStore.getState();
@@ -163,8 +163,10 @@ describe('seasons', () => {
             render(<GameRow games={games} onPlay={vi.fn()} />);
             const first = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').filter(b => /nu extra leuk$/.test(b.getAttribute('aria-label')!));
             expect(first.map(b => b.querySelector('.zelf-play-title')!.textContent)).toContain(s.meta.label);
-            // In-season games lead the row; every game is still there.
+            // In-season games lead their category; every game is still there.
             expect(games.findIndex(g => !g.nu)).toBe(games.filter(g => g.nu).length);
+            const own = within(screen.getByRole('region', { name: GAME_GROUPS.find(x => x.id === gameGroupOf(s.meta))!.label })).getAllByRole('button');
+            expect(own[0].getAttribute('aria-label')).toMatch(/nu extra leuk$/);
             expect(games).toHaveLength(SKINS.length);
             cleanup();
         }

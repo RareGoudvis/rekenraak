@@ -4,6 +4,7 @@
 .vb-ending {
   --vb-grass: var(--spel-grass);
   --vb-grass-2: color-mix(in srgb, var(--accent-metendrekenen) 62%, var(--kiosk-paper));
+  --vb-apron: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--spel-ink));
   --vb-white: var(--kiosk-paper);
   --vb-ijs-muzzle: color-mix(in srgb, var(--mab-e) 14%, var(--kiosk-paper));
   --vb-zwart: color-mix(in srgb, var(--spel-ink) 78%, var(--kiosk-paper));
@@ -11,6 +12,8 @@
   --vb-blue: var(--accent-bewerkingen);
   --vb-orange: var(--accent-vraagstukken);
   --vb-gold: var(--spel-star);
+  --vb-stand: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink));
+  --vb-step: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--spel-ink));
 }
 .vb-root {
   position: absolute;
@@ -22,31 +25,58 @@
   overflow: clip;
 }
 
-/* ── The pitch ───────────────────────────────────────────────────────────── */
-.vb-world { position: relative; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
+/* ── The stadium ─────────────────────────────────────────────────────────── */
+/* The world fits beside the keypad: the svg is pinned to its bottom, the stand grows upward on tall screens. */
+.vb-world { position: relative; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; background: var(--spel-sky); }
 .vb-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
+.vb-stand-back { fill: var(--vb-stand); }
+.vb-roof { fill: color-mix(in srgb, var(--spel-ink) 70%, var(--vb-stand)); stroke: var(--spel-ink); stroke-width: 3px; }
 .vb-cloud { fill: var(--spel-cloud); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
-.vb-cloud.is-far { opacity: .8; }
-.vb-boards { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 3px; }
-.vb-board-ad { stroke: var(--spel-ink); stroke-width: 2px; }
-.vb-board-ad.is-0 { fill: var(--vb-blue); }
-.vb-board-ad.is-1 { fill: var(--vb-gold); }
-.vb-board-ad.is-2 { fill: var(--vb-orange); }
-.vb-grass { fill: var(--vb-grass); stroke: var(--spel-ink); stroke-width: 3px; }
-.vb-stripe { fill: var(--vb-grass-2); }
-.vb-line { fill: none; stroke: var(--vb-white); stroke-width: 3px; stroke-linejoin: round; }
+.vb-step { fill: var(--vb-step); }
+.vb-crowd-head { fill: color-mix(in srgb, var(--vb-white) 70%, var(--vb-stand)); }
+.vb-crowd-head.is-dark { fill: color-mix(in srgb, var(--vb-zwart) 70%, var(--vb-stand)); }
+.vb-crowd-body { fill: color-mix(in srgb, var(--vb-orange) 55%, var(--vb-stand)); }
+.vb-crowd-body.is-blue { fill: color-mix(in srgb, var(--vb-blue) 55%, var(--vb-stand)); }
 
-.vb-net-line { fill: none; stroke: var(--spel-ink); stroke-width: .9px; opacity: .45; }
-.vb-net-back { stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
-.vb-net { transform-box: fill-box; transform-origin: left center; }
-.vb-net.is-bulge-0 { animation: vb-bulge-0 700ms var(--ease-spring); }
-.vb-net.is-bulge-1 { animation: vb-bulge-1 700ms var(--ease-spring); }
-@keyframes vb-bulge-0 { 0%, 100% { transform: scale(1); } 35% { transform: scale(1.22, 1.06); } }
-@keyframes vb-bulge-1 { 0%, 100% { transform: scale(1); } 35% { transform: scale(1.22, 1.06); } }
-.vb-post-edge { fill: none; stroke: var(--spel-ink); stroke-width: 9px; stroke-linejoin: round; }
-.vb-post { fill: none; stroke: var(--vb-white); stroke-width: 4.5px; stroke-linejoin: round; }
-.vb-goal-line { fill: none; stroke: var(--spel-ink); stroke-width: 2px; opacity: .5; }
+.vb-fan-fur { fill: var(--vb-zwart); stroke: var(--spel-ink); stroke-width: 1.1px; }
+.vb-fan.is-ijs .vb-fan-fur { fill: var(--vb-white); }
+.vb-fan-muzzle { fill: var(--vb-zwart-muzzle); }
+.vb-fan.is-ijs .vb-fan-muzzle { fill: var(--vb-ijs-muzzle); }
+.vb-fan-body { fill: var(--vb-orange); stroke: var(--spel-ink); stroke-width: 1.1px; }
+.vb-fan-body.is-blue { fill: var(--vb-blue); }
+.vb-fan-up { display: none; }
+.vb-fan-wave { transform-box: fill-box; transform-origin: 50% 100%; animation: vb-wave-arm 700ms ease-in-out infinite alternate; animation-delay: calc(var(--d) * -1); }
+@keyframes vb-wave-arm { from { transform: rotate(-30deg); } to { transform: rotate(20deg); } }
+/* A goal: every fan throws both paws up and the stand jumps in a wave from left to right. */
+.vb-stand.is-goal .vb-fan-up { display: inline; }
+.vb-stand.is-goal .vb-fan-wave { display: none; }
+.vb-stand.is-goal .vb-fan-jump { animation: vb-fan-jump 360ms var(--ease-out) 4 alternate both; animation-delay: calc(var(--d) * .35); }
+@keyframes vb-fan-jump { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+
+.vb-wall { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 3px; }
+.vb-board-frame { fill: var(--spel-ink); stroke: var(--vb-white); stroke-width: 2.5px; }
+.vb-board-num { fill: var(--vb-gold); font-family: var(--font-sheet-math); font-size: 24px; font-weight: 700; }
+.vb-half-tag { fill: var(--spel-ink); }
+.vb-half { fill: var(--vb-white); font-family: var(--kid-font, inherit); font-size: 11px; font-weight: 900; }
+
+/* ── The pitch ───────────────────────────────────────────────────────────── */
+.vb-apron { fill: var(--vb-apron); }
+.vb-grass { fill: var(--vb-grass); stroke: none; }
+.vb-stripe { fill: var(--vb-grass-2); }
+.vb-line { fill: none; stroke: var(--vb-white); stroke-width: 2.4px; stroke-linejoin: round; }
+.vb-spot { fill: var(--vb-white); }
+
+.vb-net-line { fill: none; stroke: var(--spel-ink); stroke-width: .7px; opacity: .55; }
+.vb-net { stroke: color-mix(in srgb, var(--spel-ink) 60%, var(--vb-white)); stroke-width: 1px; stroke-linejoin: round; }
+.vb-net-floor { fill: color-mix(in srgb, var(--vb-apron) 70%, var(--spel-ink)); }
+.vb-back-frame { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 55%, var(--vb-white)); stroke-width: 1.6px; stroke-linejoin: round; }
+.vb-post-edge { fill: none; stroke: var(--spel-ink); stroke-width: 6.5px; stroke-linejoin: round; stroke-linecap: round; }
+.vb-post { fill: none; stroke: var(--vb-white); stroke-width: 3.5px; stroke-linejoin: round; stroke-linecap: round; }
+.vb-goal-net { transform-box: fill-box; transform-origin: left center; }
+.vb-goal-net.is-left { transform-origin: right center; }
+.vb-goal-net.is-bulge { animation: vb-bulge 700ms var(--ease-spring) 200ms; }
+@keyframes vb-bulge { 0%, 100% { transform: scale(1); } 35% { transform: scale(1.35, 1.04); } }
 
 /* ── The bears ───────────────────────────────────────────────────────────── */
 .vb-fur { stroke: var(--spel-ink); stroke-width: 2.5px; }
@@ -66,90 +96,83 @@
 .vb-bottle-cap { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 1.5px; }
 .vb-bottle-band { fill: none; stroke: var(--vb-white); stroke-width: 2.5px; }
 
-.vb-player, .vb-keeper, .vb-ball-at { transition: transform 480ms var(--ease-out); }
+/* Every bear glides to its spot: a pass's receiver runs to meet the ball, the team shifts with the attack. */
+.vb-fig { transition: transform 520ms var(--ease-out); }
+.vb-figs.is-shot .vb-fig { transition-duration: 380ms; }
+.vb-figs.is-reset .vb-fig { transition-duration: 900ms; }
 /* A gentle idle bob, out of step per bear. */
 .vb-bob { animation: vb-bob 1.6s ease-in-out infinite alternate; animation-delay: var(--d, 0s); }
 @keyframes vb-bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+.vb-fig.is-jump .vb-jump { animation: vb-jump 380ms var(--ease-out) 4 alternate both; animation-delay: var(--d, 0ms); }
+@keyframes vb-jump { from { transform: translateY(0); } to { transform: translateY(-16px); } }
 
-.vb-player.is-cheer-0 > .vb-bob, .vb-player.is-cheer-1 > .vb-bob { animation: vb-cheer 420ms var(--ease-out) 3 alternate; }
-@keyframes vb-cheer { from { transform: translateY(0); } to { transform: translateY(-14px); } }
-
-.vb-keeper.is-dive-0 > .vb-bob, .vb-keeper.is-dive-1 > .vb-bob { animation: vb-dive 900ms var(--ease-out) both; }
-@keyframes vb-dive {
-  0% { transform: translate(0, 0) rotate(0); }
-  40%, 70% { transform: translate(6px, 2px) rotate(32deg); }
-  100% { transform: translate(0, 0) rotate(0); }
-}
-
-.vb-ball { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 2px; }
+/* ── The ball ────────────────────────────────────────────────────────────── */
+.vb-ball { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 1.8px; }
 .vb-patch { fill: var(--spel-ink); }
-.vb-roll { transition: transform 480ms var(--ease-out); }
+.vb-shadow { fill: var(--spel-ink); opacity: .28; }
+.vb-ball-at, .vb-shadow { transition: transform 520ms var(--ease-out); }
+.vb-roll { transition: transform 520ms var(--ease-out); }
+.vb-ball-move.is-roll .vb-ball-at, .vb-ball-move.is-roll .vb-shadow, .vb-ball-move.is-roll .vb-roll { transition-duration: 640ms; }
+.vb-ball-move.is-nudge .vb-ball-at, .vb-ball-move.is-nudge .vb-shadow, .vb-ball-move.is-nudge .vb-roll { transition-duration: 300ms; }
+.vb-ball-move.is-shot .vb-ball-at, .vb-ball-move.is-shot .vb-shadow { transition: transform 420ms cubic-bezier(.25, .7, .35, 1); }
+.vb-ball-move.is-drop .vb-ball-at { transition: transform 360ms cubic-bezier(.5, 0, .9, .6); }
+.vb-ball-move.is-reset .vb-ball-at, .vb-ball-move.is-reset .vb-shadow, .vb-ball-move.is-reset .vb-roll { transition: none; }
+/* The flight's lift on top of the straight glide: up and down again over the same time. */
+.vb-arc.is-on { animation: vb-arc 520ms ease-in-out both; }
+.vb-ball-move.is-shot .vb-arc.is-on { animation-duration: 420ms; }
+@keyframes vb-arc { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--arc)); } }
+.vb-arc.is-reset { animation: vb-pop 380ms var(--ease-spring) 300ms both; transform-box: fill-box; transform-origin: center; }
 
 .vb-five-star { fill: var(--vb-gold); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
-.vb-five { animation: vb-pop 500ms var(--ease-spring) 300ms both; }
-.vb-five-star { transform: scale(1.4); }
+.vb-five { animation: vb-pop 500ms var(--ease-spring) 250ms both; }
 .vb-bubble { animation: vb-pop 300ms var(--ease-spring) both; }
 .vb-bubble rect, .vb-bubble path { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
 .vb-bubble path { stroke-width: 0; }
-.vb-bubble text { fill: var(--spel-ink); font-family: var(--kid-font, inherit); font-size: 14px; font-weight: 900; }
+.vb-bubble text { fill: var(--spel-ink); font-family: var(--kid-font, inherit); font-size: 12px; font-weight: 900; }
 @keyframes vb-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .vb-five, .vb-bubble { transform-box: fill-box; transform-origin: center bottom; }
 
-/* ── The score, the pass dots and the shot ring ───────────────────────────── */
+/* ── The pass dots and the shot ring ─────────────────────────────────────── */
 .vb-hud {
   position: absolute;
-  top: var(--sp-3);
-  left: var(--sp-3);
-  right: var(--sp-3);
+  top: var(--sp-2);
+  left: var(--sp-2);
+  right: var(--sp-2);
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
   pointer-events: none;
 }
 .vb-score {
-  margin: 0;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.vb-dots {
   display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3);
-  border: var(--spel-line) solid var(--spel-ink);
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 3px solid var(--spel-ink);
   border-radius: var(--radius-lg);
   background: var(--vb-white);
-  color: var(--spel-ink);
-  font-size: var(--kiosk-text-lg);
-  font-weight: 900;
-  box-shadow: var(--kid-drop-sm, none);
 }
-.vb-score-num {
-  min-width: 1.6em;
-  padding: 0 var(--sp-1);
-  border-radius: var(--radius-sm);
-  background: var(--vb-blue);
-  color: var(--vb-white);
-  font-family: var(--font-sheet-math);
-  text-align: center;
-}
-.vb-score-num.is-new { animation: vb-pop 420ms var(--ease-spring); }
-.vb-half {
-  align-self: center;
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--vb-white) 80%, transparent);
-  color: var(--spel-ink);
-  font-size: var(--kiosk-text);
-  font-weight: 800;
-}
-.vb-dots { align-self: center; display: inline-flex; gap: var(--sp-1); margin-left: auto; }
 .vb-dot {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border: 3px solid var(--spel-ink);
   border-radius: 50%;
-  background: var(--vb-white);
+  background: color-mix(in srgb, var(--spel-ink) 12%, var(--vb-white));
 }
 .vb-dot.is-on { background: var(--vb-gold); animation: vb-pop 300ms var(--ease-spring); }
+/* The black bears have the ball: their passes count in their orange. */
+.vb-dots.is-zwart { background: color-mix(in srgb, var(--vb-orange) 22%, var(--vb-white)); }
+.vb-dots.is-zwart .vb-dot.is-on { background: var(--vb-orange); }
 
-.vb-ring { position: relative; width: clamp(72px, 12vmin, 104px); aspect-ratio: 1; flex: 0 0 auto; }
+.vb-ring { position: relative; width: clamp(64px, 11vmin, 96px); aspect-ratio: 1; flex: 0 0 auto; margin-left: auto; }
 .vb-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .vb-ring-track { fill: var(--vb-white); stroke: color-mix(in srgb, var(--spel-ink) 18%, var(--kiosk-paper)); stroke-width: 10px; }
 .vb-ring-left {
@@ -167,7 +190,7 @@
   place-items: center;
   color: var(--spel-ink);
   font-family: var(--font-sheet-math);
-  font-size: clamp(26px, 5vmin, 40px);
+  font-size: clamp(24px, 4.6vmin, 38px);
   font-weight: 700;
 }
 .vb-ring::after {
@@ -178,11 +201,11 @@
   border-radius: 50%;
 }
 
-/* GOAL! and the catch: a big friendly shout over the pitch. */
+/* GOAL! and the catch: a big friendly shout over the middle of the pitch that pops up and fades away. */
 .vb-shout {
   position: absolute;
   left: 50%;
-  top: 34%;
+  top: 56%;
   margin: 0;
   padding: var(--sp-2) var(--sp-4);
   border: var(--spel-line) solid var(--spel-ink);
@@ -192,12 +215,18 @@
   font-size: var(--kiosk-text-xl);
   font-weight: 900;
   white-space: nowrap;
-  transform: translateX(-50%);
-  animation: vb-shout 500ms var(--ease-spring) both;
+  transform: translate(-50%, -50%);
+  animation: vb-shout 1700ms var(--ease-out) both;
   pointer-events: none;
 }
-.vb-shout.is-save { background: var(--vb-white); font-size: var(--kiosk-text-lg); }
-@keyframes vb-shout { from { transform: translateX(-50%) scale(.4); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+.vb-shout.is-save, .vb-shout.is-against { background: var(--vb-white); font-size: var(--kiosk-text-lg); }
+.vb-shout.is-against { border-color: var(--vb-orange); }
+@keyframes vb-shout {
+  0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; }
+  14% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  24%, 72% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -62%) scale(1); opacity: 0; }
+}
 
 /* Half time: a card over the pitch, the bears drink on the bench. */
 .vb-rust {
@@ -238,14 +267,16 @@
 
 /* ── The sum and the keypad ───────────────────────────────────────────────── */
 .vb-panel {
-  width: min(46vw, 440px);
+  width: min(44vw, 430px);
   min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
+  background: var(--spel-sky-low);
+  border-left: var(--spel-line) solid var(--spel-ink);
 }
 .vb-tag {
   margin: 0;
@@ -258,6 +289,7 @@
   visibility: hidden;
 }
 .vb-tag.is-on { visibility: visible; animation: vb-pop 300ms var(--ease-spring); }
+.vb-tag.is-zwart { background: var(--vb-white); box-shadow: inset 0 0 0 3px var(--vb-orange); }
 .vb-sign {
   margin: 0;
   padding: var(--sp-2) var(--sp-5);
@@ -281,13 +313,10 @@
 }
 .vb-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
 
-/* Side by side: the grass runs on under the keypad. */
-@media (orientation: landscape) {
-  .vb-root { background: linear-gradient(to top, var(--vb-grass) 12%, var(--spel-ink) 12%, var(--spel-ink) calc(12% + 3px), var(--spel-sky) calc(12% + 3px)); }
-}
+/* Stacked on a phone: the pitch above, the keypad below. */
 @media (orientation: portrait) {
   .vb-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  .vb-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+  .vb-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); border-left: 0; border-top: var(--spel-line) solid var(--spel-ink); }
   .vb-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
 }
 @media (orientation: landscape) and (max-height: 640px) {
@@ -302,6 +331,8 @@
 .vb-hop { animation: vb-cheer 520ms var(--ease-out) infinite alternate; }
 .vb-hop.is-late { animation-delay: -260ms; }
 .vb-hop.is-mid { animation-delay: -130ms; }
+@keyframes vb-cheer { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+.vb-ending .vb-stand.is-goal .vb-fan-jump { animation-iteration-count: infinite; }
 .vb-confetti { position: absolute; inset: 0; pointer-events: none; }
 .vb-bit {
   position: absolute;
