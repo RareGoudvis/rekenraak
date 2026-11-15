@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, screen } from '@testing-library/react';
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { SKINS } from '../oefenen/spelen/skins/registry';
-import { resetSoundForTests, setSoundOn, unlockSound } from '../oefenen/spelen/sound';
+import { SOUND_KEY, resetSoundForTests, setSoundOn, unlockSound } from '../oefenen/spelen/sound';
 import {
     MUSIC_IDS, MUSIC_KEY, NEXT_LEVEL, levelOf, MUSIC_TRACKS, XFADE_S, musicOn, musicUrl, resetMusicForTests, setGameMusic, setMusicOn, useSpelMusic, type MusicId,
 } from '../oefenen/spelen/music';
@@ -55,6 +55,9 @@ const playingNow = () => music().filter(s => !s.stopped);
 
 beforeEach(() => {
     localStorage.clear();
+    // Each test starts from a device that turned both off (the default is on).
+    localStorage.setItem(SOUND_KEY, '0');
+    localStorage.setItem(MUSIC_KEY, '0');
     log.sources = [];
     log.decoded = 0;
     fetched = [];
@@ -79,7 +82,12 @@ afterEach(() => {
 });
 
 describe('Spelen music', () => {
-    test('off by default and kept per device', () => {
+    test('on by default and kept per device', () => {
+        localStorage.clear();
+        resetMusicForTests();
+        expect(musicOn()).toBe(true);
+        setMusicOn(false);
+        resetMusicForTests();
         expect(musicOn()).toBe(false);
         setMusicOn(true);
         expect(localStorage.getItem(MUSIC_KEY)).toBe('1');

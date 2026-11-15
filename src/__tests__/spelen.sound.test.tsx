@@ -7,7 +7,7 @@ import {
     SOUND_KEY, SPEL_SOUNDS, cueSound, play, resetSoundForTests, setSoundOn, soundFor, soundOn, unlockSound, useSpelSounds, type SkinSounds,
 } from '../oefenen/spelen/sound';
 
-// Spelen sounds: off by default and kept per device; silent when off, before a gesture or without Web Audio;
+// Spelen sounds: on by default and kept per device (each test starts from a device that turned it off); silent when off, before a gesture or without Web Audio;
 // each skin's events map to its own sound; the game shell voices them.
 
 // A Web Audio stand-in that counts what a sound builds.
@@ -41,6 +41,7 @@ class FakeAudioContext {
 const g = globalThis as unknown as { AudioContext?: unknown };
 beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem(SOUND_KEY, '0');
     made.contexts = 0;
     made.sources = 0;
     g.AudioContext = FakeAudioContext;
@@ -49,7 +50,13 @@ beforeEach(() => {
 afterEach(() => { cleanup(); delete g.AudioContext; vi.restoreAllMocks(); });
 
 describe('Spelen sound', () => {
-    test('off by default; the choice is kept per device', () => {
+    test('on by default; the choice is kept per device', () => {
+        localStorage.clear();
+        resetSoundForTests();
+        expect(soundOn()).toBe(true);
+        setSoundOn(false);
+        expect(localStorage.getItem(SOUND_KEY)).toBe('0');
+        resetSoundForTests();
         expect(soundOn()).toBe(false);
         setSoundOn(true);
         expect(localStorage.getItem(SOUND_KEY)).toBe('1');
@@ -60,13 +67,13 @@ describe('Spelen sound', () => {
         expect(soundOn()).toBe(false);
     });
 
-    test('storage that throws: off, and turning it on still works for this visit', () => {
+    test('storage that throws: on, and turning it off still works for this visit', () => {
         vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
         vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
         resetSoundForTests();
-        expect(soundOn()).toBe(false);
-        expect(() => setSoundOn(true)).not.toThrow();
         expect(soundOn()).toBe(true);
+        expect(() => setSoundOn(false)).not.toThrow();
+        expect(soundOn()).toBe(false);
     });
 
     test('silent while off: no AudioContext is made, nothing plays', () => {

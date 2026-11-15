@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 
 // Spelen sounds, synthesised with Web Audio: no audio files, works offline. Soft, short and low, never a
-// buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
+// buzzer or a "fout" sound. On by default (owner 2026-11-15); a device that turned it off keeps that choice.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
 export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit', 'zwoesj', 'blok', 'nana'] as const;
@@ -28,7 +28,7 @@ export const SOUND_KEY = 'rekenraak_spelen_geluid_v1';
 const listeners = new Set<() => void>();
 
 function readOn(): boolean {
-    try { return globalThis.localStorage?.getItem(SOUND_KEY) === '1'; } catch { return false; }
+    try { return globalThis.localStorage?.getItem(SOUND_KEY) !== '0'; } catch { return true; }
 }
 let on = readOn();
 

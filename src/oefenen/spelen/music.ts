@@ -41,7 +41,7 @@ const MP3_DELAY_S = 1105 / 44100;
 export const MUSIC_KEY = 'rekenraak_spelen_muziek_v1';
 const listeners = new Set<() => void>();
 function readOn(): boolean {
-    try { return globalThis.localStorage?.getItem(MUSIC_KEY) === '1'; } catch { return false; }
+    try { return globalThis.localStorage?.getItem(MUSIC_KEY) !== '0'; } catch { return true; }
 }
 let on = readOn();
 
