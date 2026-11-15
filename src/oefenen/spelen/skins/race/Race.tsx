@@ -1,148 +1,229 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Timer } from '@phosphor-icons/react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { GasPump, Gauge, Timer } from '@phosphor-icons/react';
 import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
-import type { SkinProps } from '../types';
-import { RACE, boostCar, brakeCar, drive, formatRaceTime, ghostAt, isTurbo, startCar, type RaceCar } from './track';
-import { loadBest, raceResult, saveIfBest } from './records';
+import type { SkinEndingProps, SkinProps } from '../types';
+import { RACE, boostCar, drive, formatRaceTime, ghostAt, glideCar, isTurbo, resumeCar, startCar, stopCar, type RaceCar } from './track';
+import { benzineResult, loadBest, loadBestKm, raceResult, saveIfBest, saveIfFarther } from './records';
+import { FUEL, askLeft, formatKm, fuelRight, fuelStation, fuelTakesAnswers, fuelTick, fuelWrong, isStationQuestion, startFuel, stationProgress, type Fuel } from './benzine';
+import { LAND_LABEL, gateOf, landOf, pinnedOf, raceModeOf, routeOf, segmentAt, type Gate } from './route';
+import { Can, CarArt, Flame, Puff } from './Car';
+import { Landscape, Sun, Weather } from './Scenery';
+import { GateArt, Station } from './Gates';
 import './race.css';
+import './scenery.css';
 
-// Race: the car drives on its own; a right answer is a boost, 5 in a row a turbo with a flame, a mistake a
-// short stop. No countdown: the time to the finish is the score, against the pupil's own best run on this
-// device (the see-through ghost car). One rAF loop moves the scene (outside React); the rest is CSS.
+// Race in two modes (options.modus). Tijdrit: to the finish, the time is the score against the pupil's own best
+// run (the see-through ghost car); a mistake stops the car until the next right answer. Benzine: no finish, three
+// jerrycans as lives, petrol stations with one timed sum (benzine.ts), the distance is the score. Both drive
+// through landscapes (route.ts) with a gate between them. One rAF loop moves the scene, outside React.
 
-// Pixels per metre on the road, and how fast the far layers follow (parallax).
-const PPM = 14;
-const HILLS = 0.2;
-const TREES = 0.55;
-// Tile widths of the repeating layers (race.css draws them at these sizes), and how many tiles each strip
-// holds: shifted by up to one tile, a strip still reaches past the right edge of a 2560 px wide screen.
-const HILL_TILE = 800;
-const TREE_TILE = 600;
-const HILL_TILES = [0, 1, 2, 3, 4];
-const TREE_TILES = [0, 1, 2, 3, 4, 5];
-const DASH = 80;
+// Pixels per metre on the road.
+const PPM = 20;
+// The old landscape fades out this long after the car passed its gate (scenery.css rc-fade-out).
+const SWAP_MS = 1000;
+// The landscape changes once the whole car is past the gate's middle (inside the tunnel, on the bridge).
+const SWAP_LEAD = 3;
 // The car rolls over the line before the end screen comes.
 const FINISH_HOLD_MS = 1400;
+// Spin per metre: the wheel's radius as a share of the car's width. SYNC: Car.tsx (r 18 in a 220 wide box).
+const WHEEL_SHARE = 18 / 220;
+// The middle line's dash period in px (race.css .rc-lines).
+const DASH = 80;
+// Benzine: the car rolls this far on its last drops.
+const SPUTTER_M = 6;
 
-type Fx = { kind: 'boost' | 'brake' | null; n: number };
+type FxKind = 'boost' | 'brake' | 'cough' | 'refill' | 'station' | 'sputter';
+type Fx = { kind: FxKind | null; n: number };
+type Speed = 'stop' | 'cruise' | 'fast';
 
-function CarArt({ ghost = false }: { ghost?: boolean }) {
-    return (
-        <svg className={`rc-car-art${ghost ? ' is-ghost' : ''}`} viewBox="0 0 160 80" aria-hidden>
-            <path className="rc-car-body" d="M8 52 Q8 38 22 36 L46 34 L62 16 Q66 12 74 12 L106 12 Q114 12 118 18 L130 34 L146 38 Q156 41 156 52 L156 58 Q156 62 150 62 L14 62 Q8 62 8 56 Z" />
-            <path className="rc-car-window" d="M68 20 L104 20 Q108 20 110 24 L118 34 L60 34 Z" />
-            <circle className="rc-driver" cx="90" cy="27" r="8" />
-            <path className="rc-car-stripe" d="M20 46 L148 46" />
-            <circle className="rc-car-light" cx="150" cy="46" r="4" />
-            <g className="rc-wheel" style={{ transformOrigin: '40px 62px' }}>
-                <circle className="rc-tyre" cx="40" cy="62" r="14" />
-                <circle className="rc-hub" cx="40" cy="62" r="5" />
-                <path className="rc-spoke" d="M40 50 L40 74 M28 62 L52 62" />
-            </g>
-            <g className="rc-wheel" style={{ transformOrigin: '124px 62px' }}>
-                <circle className="rc-tyre" cx="124" cy="62" r="14" />
-                <circle className="rc-hub" cx="124" cy="62" r="5" />
-                <path className="rc-spoke" d="M124 50 L124 74 M112 62 L136 62" />
-            </g>
-        </svg>
-    );
-}
 
-function Flame() {
-    return (
-        <svg className="rc-flame" viewBox="0 0 60 30" aria-hidden>
-            <path className="rc-flame-out" d="M60 15 Q40 0 4 8 Q18 15 4 22 Q40 30 60 15 Z" />
-            <path className="rc-flame-in" d="M60 15 Q46 7 24 11 Q32 15 24 19 Q46 23 60 15 Z" />
-        </svg>
-    );
-}
+const devPins = () => (import.meta.env.DEV && typeof location !== 'undefined' ? pinnedOf(location.search) : { lands: [], gate: null });
 
-function Hills() {
-    return (
-        <svg className="rc-hill-tile" viewBox={`0 0 ${HILL_TILE} 120`} preserveAspectRatio="none" aria-hidden>
-            {/* Fill and outline apart: the tile edges get no stroke, so the tiles join without a seam. */}
-            <path className="rc-hill" d={`M0 120 L0 70 Q100 10 200 60 Q300 110 400 50 Q500 0 600 55 Q700 100 ${HILL_TILE} 70 L${HILL_TILE} 120 Z`} />
-            <path className="rc-hill-line" d={`M0 70 Q100 10 200 60 Q300 110 400 50 Q500 0 600 55 Q700 100 ${HILL_TILE} 70`} />
-        </svg>
-    );
-}
-
-function Trees() {
-    return (
-        <svg className="rc-tree-tile" viewBox={`0 0 ${TREE_TILE} 90`} aria-hidden>
-            {[60, 250, 430].map(x => (
-                <g key={x}>
-                    <rect className="rc-trunk" x={x - 5} y="56" width="10" height="30" rx="3" />
-                    <circle className="rc-leaves" cx={x} cy="40" r="26" />
-                </g>
-            ))}
-            <path className="rc-bush" d="M140 86 Q140 66 160 68 Q172 56 186 68 Q204 66 204 86 Z" />
-            <path className="rc-bush" d="M520 86 Q520 70 536 70 Q548 60 560 70 Q576 70 576 86 Z" />
-        </svg>
-    );
-}
-
-export default function Race({ question, phase, feedback, onAnswer, progress, events, reducedMotion, runKey, onFinish }: SkinProps) {
-    // The best run so far on this device: the ghost (read once; a new record shows from the next run).
-    const [ghost] = useState(() => (runKey ? loadBest(runKey) : null));
+export default function Race({ question, phase, feedback, onAnswer, onMiss, onFail, onReport, progress, events, reducedMotion, runKey, onFinish, options }: SkinProps) {
+    const mode = raceModeOf(options);
+    const benzine = mode === 'benzine';
+    const [route] = useState(() => { const pin = devPins(); return routeOf(mode, Math.random, pin.lands, pin.gate); });
+    // Tijdrit: the best run so far on this device (the ghost); Benzine: the farthest run. Read once per run.
+    const [ghost] = useState(() => (!benzine && runKey ? loadBest(runKey) : null));
+    const [bestKm] = useState(() => (benzine && runKey ? loadBestKm(runKey) : null));
+    const [seg, setSeg] = useState(0);
+    const [leaving, setLeaving] = useState<{ seg: number; gate: Gate | null } | null>(null);
+    const [fuel, setFuel] = useState<Fuel>(startFuel);
+    const [stationX, setStationX] = useState<number | null>(null);
     const [fx, setFx] = useState<Fx>({ kind: null, n: 0 });
     const [done, setDone] = useState(false);
     const car = useRef<RaceCar>(startCar());
-    // The layers the loop moves; written straight to the DOM, never through React.
+    const fuelNow = useRef<Fuel>(startFuel());
     const root = useRef<HTMLDivElement>(null);
-    const hills = useRef<HTMLDivElement>(null);
-    const trees = useRef<HTMLDivElement>(null);
-    const lines = useRef<HTMLDivElement>(null);
-    const finishLine = useRef<HTMLDivElement>(null);
+    const panel = useRef<HTMLDivElement>(null);
+    const meCar = useRef<HTMLDivElement>(null);
     const ghostCar = useRef<HTMLDivElement>(null);
-    const meCar = useRef<HTMLSpanElement>(null);
-    const meGhost = useRef<HTMLSpanElement>(null);
-    const clock = useRef<HTMLSpanElement>(null);
-    const live = useRef({ phase, onFinish, runKey, reducedMotion });
-    useLayoutEffect(() => { live.current = { phase, onFinish, runKey, reducedMotion }; });
+    const meDot = useRef<HTMLSpanElement>(null);
+    const ghostDot = useRef<HTMLSpanElement>(null);
+    const readout = useRef<HTMLSpanElement>(null);
+    const lines = useRef<HTMLDivElement>(null);
+    // What the loop moves, re-read after every render (renders are rare: a gate, a phase, an effect).
+    const nodes = useRef<{ strips: HTMLElement[]; movers: HTMLElement[]; wheels: SVGGElement[]; ghostWheels: SVGGElement[] }>({ strips: [], movers: [], wheels: [], ghostWheels: [] });
+    const live = useRef({ phase, onFinish, onFail, onReport, onMiss, runKey, reducedMotion, qKey: question?.key ?? '', helpedKey: '' });
+    useLayoutEffect(() => { live.current = { ...live.current, phase, onFinish, onFail, onReport, onMiss, runKey, reducedMotion, qKey: question?.key ?? '' }; });
+    useLayoutEffect(() => {
+        const el = root.current;
+        if (!el) return;
+        nodes.current = {
+            strips: [...el.querySelectorAll<HTMLElement>('.rc-strip')],
+            movers: [...el.querySelectorAll<HTMLElement>('[data-wx]')],
+            wheels: [...el.querySelectorAll<SVGGElement>('.rc-car.is-me .rc-spin')],
+            ghostWheels: [...el.querySelectorAll<SVGGElement>('.rc-car.is-ghost .rc-spin')],
+        };
+    });
+
+    const setFuelBoth = (f: Fuel) => { fuelNow.current = f; setFuel(f); };
+
+    // A station question on screen: the car pulls in at a pump that comes in from the right edge.
+    const qKey = question?.key;
+    const qIndex = question?.index ?? -1;
+    useEffect(() => {
+        if (!benzine || !qKey || !isStationQuestion(qIndex)) return;
+        const f = fuelNow.current;
+        const next = fuelStation(f);
+        if (next === f) return;
+        const nose = (meCar.current?.offsetLeft ?? 0) + (meCar.current?.offsetWidth ?? 0);
+        const width = root.current?.offsetWidth ?? 1280;
+        const metres = live.current.reducedMotion ? 1 : Math.max(24, (width - nose) / PPM + 8);
+        car.current = glideCar(car.current, metres, FUEL.pullMs / 1000);
+        fuelNow.current = next;
+        setFuel(next);
+        setStationX(car.current.glide?.to ?? car.current.x);
+    }, [benzine, qKey, qIndex]);
 
     useEffect(() => {
         let fxTimer = 0;
-        const flash = (kind: 'boost' | 'brake', ms: number) => {
+        const flash = (kind: FxKind, ms: number) => {
             setFx(f => ({ kind, n: f.n + 1 }));
             window.clearTimeout(fxTimer);
             fxTimer = window.setTimeout(() => setFx(f => ({ ...f, kind: null })), ms);
         };
-        const offRight = events.on('correct', ({ streak }) => { car.current = boostCar(car.current, streak); flash('boost', 900); });
-        const offWrong = events.on('wrong', () => { car.current = brakeCar(car.current); flash('brake', RACE.brakeSec * 1000); });
-        return () => { offRight(); offWrong(); window.clearTimeout(fxTimer); };
-    }, [events]);
+        const offHelp = events.on('help', () => { live.current.helpedKey = live.current.qKey; });
+        const offRight = events.on('correct', ({ streak }) => {
+            const f = fuelNow.current;
+            // At the pump the car waits for the fuel (the loop drives it off when the refill is done).
+            if (benzine && f.phase === 'ask') { setFuelBoth(fuelRight(f)); flash('refill', FUEL.refillMs); return; }
+            car.current = boostCar(car.current, streak);
+            flash('boost', 900);
+        });
+        const offWrong = events.on('wrong', ({ given }) => {
+            if (!benzine) { car.current = stopCar(car.current); flash('brake', 1400); return; }
+            const f = fuelNow.current;
+            const counted = live.current.helpedKey !== live.current.qKey;
+            const next = fuelWrong(f, counted, given === '');
+            if (next === f) return;
+            setFuelBoth(next);
+            if (f.phase === 'ask') { car.current = resumeCar(car.current); flash('station', 1600); }
+            else if (next.phase === 'sputter') { car.current = glideCar(car.current, SPUTTER_M, FUEL.sputterMs / 1000); flash('sputter', FUEL.sputterMs + FUEL.emptyMs); }
+            else flash('cough', 1000);
+        });
+        return () => { offHelp(); offRight(); offWrong(); window.clearTimeout(fxTimer); };
+    }, [events, benzine]);
 
     useEffect(() => {
         let raf = 0;
         let last: number | null = null;
-        let shownTenth = -1;
+        let shown = '';
+        let shownSec = -1;
         let finishTimer = 0;
-        const move = (el: HTMLElement | null | undefined, px: number) => { if (el) el.style.transform = `translate3d(${px.toFixed(1)}px, 0, 0)`; };
-        const meter = (el: HTMLElement | null | undefined, x: number) => { if (el) el.style.setProperty('--p', (x / RACE.length).toFixed(4)); };
+        let swapTimer = 0;
+        let segNow = 0;
+        let speed = 0;
+        let speedShown: Speed | null = null;
+        let missSent = false;
+        let failed = false;
+        const tiles = new WeakMap<Element, number>();
+        const onResize = () => { for (const s of nodes.current.strips) tiles.delete(s); };
+        window.addEventListener('resize', onResize);
+        const tileOf = (strip: HTMLElement) => {
+            let w = tiles.get(strip);
+            if (w === undefined) { w = (strip.firstElementChild as HTMLElement | null)?.offsetWidth ?? 0; tiles.set(strip, w); }
+            return w;
+        };
+        const report = (empty: boolean) => {
+            const st = live.current;
+            const m = car.current.x;
+            if (st.runKey) saveIfFarther(st.runKey, m);
+            st.onReport?.(benzineResult(m, bestKm, empty));
+        };
         const frame = (t: number) => {
             raf = requestAnimationFrame(frame);
-            const dt = last === null ? 0 : (t - last) / 1000;
+            const dt = last === null ? 0 : Math.min(RACE.maxDt, (t - last) / 1000);
             last = t;
             const st = live.current;
-            // Under "Hoe los ik dit op?" the car and the clock wait.
-            if (st.phase === 'help' || car.current.finishedAt !== null) return;
-            const c = drive(car.current, dt);
+            // Under "Hoe los ik dit op?" the car, the clock and the pump's timer wait.
+            if (st.phase === 'help' || car.current.finishedAt !== null || failed) return;
+            const prevX = car.current.x;
+
+            if (benzine) {
+                const f0 = fuelNow.current;
+                const f = fuelTick(f0, dt * 1000);
+                fuelNow.current = f;
+                if (f.phase !== f0.phase) setFuel(f);
+                // Full tank: off it goes with a boost (unless a right answer already drove it off).
+                if (f0.phase === 'refill' && f.phase === 'drive' && car.current.stopped) car.current = boostCar(car.current, 1);
+                // The pump's time ran out: a miss (the session logs it; the 'wrong' event drives the car on).
+                if (f.phase === 'ask' && askLeft(f) <= 0 && !missSent && st.phase === 'play') { missSent = true; st.onMiss(); }
+                if (fuelNow.current.phase !== 'ask') missSent = false;
+                if (fuelNow.current.phase === 'empty' && fuelNow.current.ms >= FUEL.emptyMs) {
+                    failed = true;
+                    report(true);
+                    setDone(true);
+                    st.onFail();
+                    return;
+                }
+                if (panel.current) panel.current.style.setProperty('--left', (askLeft(fuelNow.current) / FUEL.askMs).toFixed(3));
+            }
+
+            const c = drive(car.current, dt, benzine ? Infinity : RACE.length);
             car.current = c;
-            const tenth = Math.floor(c.t * 10);
-            if (tenth !== shownTenth && clock.current) { shownTenth = tenth; clock.current.textContent = formatRaceTime(c.t * 1000); }
+            const s = segmentAt(route, c.x - SWAP_LEAD);
+            if (s !== segNow) {
+                const gate = gateOf(route, s);
+                segNow = s;
+                setSeg(s);
+                setLeaving({ seg: s - 1, gate });
+                window.clearTimeout(swapTimer);
+                swapTimer = window.setTimeout(() => setLeaving(null), SWAP_MS);
+            }
+
+            // The readout: Tijdrit's clock per tenth, Benzine's kilometres per 10 m.
+            const text = benzine ? formatKm(c.x) : formatRaceTime(c.t * 1000);
+            if (text !== shown && readout.current) { shown = text; readout.current.textContent = text; }
+            if (benzine && Math.floor(c.t) !== shownSec) { shownSec = Math.floor(c.t); report(false); }
+
             const gx = ghost ? ghostAt(ghost, c.t) : null;
-            meter(meCar.current, c.x);
-            if (gx !== null) meter(meGhost.current, gx);
+            if (meDot.current) meDot.current.style.setProperty('--p', (c.x / RACE.length).toFixed(4));
+            if (gx !== null && ghostDot.current) ghostDot.current.style.setProperty('--p', (gx / RACE.length).toFixed(4));
             if (root.current) root.current.dataset.x = c.x.toFixed(2);
+
+            if (dt > 0) speed = speed * 0.8 + ((c.x - prevX) / dt) * 0.2;
+            const sp: Speed = c.stopped || speed < 0.3 ? 'stop' : speed > RACE.base * 2.5 ? 'fast' : 'cruise';
+            if (sp !== speedShown && meCar.current) { speedShown = sp; meCar.current.dataset.speed = sp; }
+
             if (!st.reducedMotion) {
                 const px = c.x * PPM;
-                move(hills.current, -((px * HILLS) % HILL_TILE));
-                move(trees.current, -((px * TREES) % TREE_TILE));
-                move(lines.current, -(px % DASH));
-                move(finishLine.current, (RACE.length - c.x) * PPM);
-                if (gx !== null) move(ghostCar.current, (gx - c.x) * PPM);
+                const { strips, movers, wheels, ghostWheels } = nodes.current;
+                for (const strip of strips) {
+                    const w = tileOf(strip);
+                    const par = Number(strip.dataset.par);
+                    if (w > 0) strip.style.transform = `translate3d(${(-((px * par) % w)).toFixed(1)}px, 0, 0)`;
+                }
+                if (lines.current) lines.current.style.transform = `translate3d(${(-(px % DASH)).toFixed(1)}px, 0, 0)`;
+                for (const m of movers) m.style.transform = `translate3d(${((Number(m.dataset.wx) - c.x) * PPM).toFixed(1)}px, 0, 0)`;
+                const r = (meCar.current?.offsetWidth ?? 200) * WHEEL_SHARE;
+                const turn = (x: number) => `rotate(${((x * PPM / Math.max(1, r)) * 180 / Math.PI % 360).toFixed(1)}deg)`;
+                for (const w of wheels) w.style.transform = turn(c.x);
+                if (gx !== null) {
+                    for (const w of ghostWheels) w.style.transform = turn(gx);
+                    if (ghostCar.current) ghostCar.current.style.transform = `translate3d(${((gx - c.x) * PPM).toFixed(1)}px, 0, 0)`;
+                }
             }
             if (c.finishedAt !== null) {
                 const ms = Math.round(c.finishedAt * 1000);
@@ -152,56 +233,123 @@ export default function Race({ question, phase, feedback, onAnswer, progress, ev
             }
         };
         raf = requestAnimationFrame(frame);
-        return () => { cancelAnimationFrame(raf); window.clearTimeout(finishTimer); };
-    }, [ghost]);
+        return () => { cancelAnimationFrame(raf); window.clearTimeout(finishTimer); window.clearTimeout(swapTimer); window.removeEventListener('resize', onResize); };
+    }, [ghost, benzine, route, bestKm]);
 
     if (!question) return <div className="rc-root" />;
-    const flash = phase === 'right' || phase === 'wrong';
+    const land = landOf(route, seg);
+    const flashing = phase === 'right' || phase === 'wrong';
     const [lhs] = question.text.split('?');
-    const turbo = isTurbo(progress.streak);
+    const atPump = benzine && (fuel.phase === 'pull' || fuel.phase === 'ready');
+    // No turbo flame while pulling in or standing at the pump.
+    const turbo = isTurbo(progress.streak) && !(benzine && ['pull', 'ready', 'ask', 'refill'].includes(fuel.phase));
+    const asking = benzine && fuel.phase === 'ask';
+    const takes = !benzine || fuelTakesAnswers(fuel);
+    const gates = [seg, seg + 1].filter(i => gateOf(route, i) !== null);
+    const showStation = benzine && stationX !== null && (!reducedMotion || ['pull', 'ready', 'ask', 'refill'].includes(fuel.phase));
+    const next = stationProgress(progress.answered);
+    const badge = done && !benzine ? 'Finish!'
+        : benzine && (fuel.phase === 'sputter' || fuel.phase === 'empty') ? 'De tank is leeg!'
+        : fuel.phase === 'pull' && benzine ? 'Tankstation!'
+        : fuel.phase === 'ready' && benzine ? 'Maak je klaar!'
+        : fx.kind === 'refill' ? 'Vol getankt!'
+        : fx.kind === 'station' ? (fuel.lastStation === 'laat' ? 'Te laat! Rij maar verder.' : 'Net niet! Rij maar verder.')
+        : turbo && !done ? 'Turbo!' : null;
+    const carFx = fx.kind ? ` is-${fx.kind}` : '';
     return (
-        <div ref={root} className={`rc-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${done ? ' is-done' : ''}`}>
-            <div className="rc-world">
-                <div className="rc-sky" aria-hidden>
-                    <span className="rc-sun" />
-                    <span className="rc-cloud is-a" />
-                    <span className="rc-cloud is-b" />
-                </div>
-                <div className="rc-hills" aria-hidden><div ref={hills} className="rc-strip">{HILL_TILES.map(k => <Hills key={k} />)}</div></div>
-                <div className="rc-trees" aria-hidden><div ref={trees} className="rc-strip">{TREE_TILES.map(k => <Trees key={k} />)}</div></div>
+        <div ref={root} data-land={land} data-mode={mode}
+            className={`rc-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${done ? ' is-done' : ''}`}>
+            <div className="rc-world" role="img" aria-label={LAND_LABEL[land]}>
+                {!reducedMotion && leaving && leaving.seg >= 0 && <Landscape key={leaving.seg} land={landOf(route, leaving.seg)} leaving />}
+                <Landscape key={seg} land={land} leaving={false} />
                 <div className="rc-road" aria-hidden>
                     <div ref={lines} className="rc-lines" />
-                    <div ref={finishLine} className="rc-finish" />
+                    {!benzine && <div className="rc-finish" data-wx={RACE.length} />}
+                    {benzine && bestKm !== null && <div className="rc-recordflag" data-wx={bestKm}><span>Record</span></div>}
+                    {!reducedMotion && gates.map(i => (
+                        <div key={`b${i}`} className={`rc-gate is-${gateOf(route, i)} is-back`} data-wx={i * route.segment}>
+                            <GateArt gate={gateOf(route, i)!} part="back" next={landOf(route, i)} />
+                        </div>
+                    ))}
+                    {showStation && (
+                        <div className="rc-station" data-wx={reducedMotion ? undefined : stationX}>
+                            <Station busy={fx.kind === 'refill'} />
+                        </div>
+                    )}
                     {ghost && <div ref={ghostCar} className="rc-car is-ghost"><CarArt ghost /></div>}
-                    <div className={`rc-car is-me${fx.kind ? ` is-${fx.kind}` : ''}${turbo ? ' is-turbo' : ''}`} data-fx={fx.kind ?? undefined}>
+                    <div ref={meCar} className={`rc-car is-me${carFx}${turbo ? ' is-turbo' : ''}`} data-fx={fx.kind ?? undefined}>
+                        {!reducedMotion && <span className="rc-speedlines" />}
                         {turbo && <Flame />}
-                        {fx.kind === 'boost' && !reducedMotion && <span key={fx.n} className="rc-speed" />}
                         <CarArt />
-                        {fx.kind === 'brake' && !reducedMotion && <span key={fx.n} className="rc-skid" />}
+                        {!reducedMotion && (fx.kind === 'brake' || fx.kind === 'cough' || fx.kind === 'sputter') && <Puff key={fx.n} className={`is-${fx.kind}`} />}
+                        {fx.kind === 'refill' && <span key={fx.n} className="rc-drops" aria-hidden><i /><i /><i /></span>}
                     </div>
+                    {!reducedMotion && gates.map(i => (
+                        <div key={`f${i}`} className={`rc-gate is-${gateOf(route, i)} is-front`} data-wx={i * route.segment}>
+                            <GateArt gate={gateOf(route, i)!} part="front" next={landOf(route, i)} />
+                        </div>
+                    ))}
                 </div>
-                {/* The whole track at a glance: the car, the ghost, the finish. Under reduced motion this is the race. */}
-                <div className="rc-meter" role="img" aria-label="Hoe ver je bent">
-                    <span className="rc-meter-track" />
-                    <span className="rc-meter-flag" />
-                    {ghost && <span ref={meGhost} className="rc-meter-dot is-ghost" />}
-                    <span ref={meCar} className="rc-meter-dot is-me" />
-                </div>
-                <p className="rc-clock" role="timer" aria-label="Je tijd">
-                    <Timer weight="bold" aria-hidden /> <span ref={clock}>0:00,0</span>
+                <Weather key={`w${land}`} land={land} />
+
+                {benzine ? (
+                    <div className="rc-hud is-benzine">
+                        <div className={`rc-cans${fx.kind === 'refill' ? ' is-filling' : ''}${fx.kind === 'cough' ? ' is-losing' : ''}`} role="img" aria-label={`Nog ${fuel.cans} van ${FUEL.cans} jerrycans benzine`}>
+                            {Array.from({ length: FUEL.cans }, (_, i) => <span key={i} className={`rc-can-slot${i === fuel.cans && (fx.kind === 'cough' || fx.kind === 'sputter') ? ' is-lost' : ''}`} style={{ '--i': i } as CSSProperties}><Can full={i < fuel.cans} /></span>)}
+                        </div>
+                        <div className="rc-next" role="img" aria-label="Hoe ver tot het tankstation">
+                            <GasPump weight="fill" aria-hidden />
+                            <span className="rc-next-bar"><span style={{ '--p': Math.min(1, next.done / next.of) } as CSSProperties} /></span>
+                        </div>
+                    </div>
+                ) : (
+                    // The whole track at a glance: the car, the ghost, the finish, the three landscapes. Under reduced motion this is the race.
+                    <div className="rc-meter" role="img" aria-label="Hoe ver je bent">
+                        <span className="rc-meter-track">
+                            {route.lands.map((l, i) => <span key={i} className="rc-meter-seg" data-land={l} />)}
+                        </span>
+                        <span className="rc-meter-flag" />
+                        {ghost && <span ref={ghostDot} className="rc-meter-dot is-ghost" />}
+                        <span ref={meDot} className="rc-meter-dot is-me" />
+                    </div>
+                )}
+                <p className="rc-readout" role={benzine ? undefined : 'timer'} aria-label={benzine ? 'Gereden afstand' : 'Je tijd'}>
+                    {benzine ? <Gauge weight="bold" aria-hidden /> : <Timer weight="bold" aria-hidden />}
+                    {' '}<span ref={readout}>{benzine ? formatKm(0) : '0:00,0'}</span>
+                    {benzine && bestKm !== null && <small className="rc-best">Record {formatKm(bestKm)}</small>}
                 </p>
-                {turbo && !done && <p className="rc-badge" aria-live="polite">Turbo!</p>}
-                {done && <p className="rc-badge is-finish" aria-live="polite">Finish!</p>}
+                {badge && <p key={badge} className={`rc-badge${badge === 'Finish!' ? ' is-finish' : ''}${fuel.phase === 'sputter' || fuel.phase === 'empty' ? ' is-empty' : ''}`} aria-live="polite">{badge}</p>}
             </div>
 
-            <div className="rc-panel">
-                <p className={`rc-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="rc-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
-                </p>
-                <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play' || done} />
+            <div ref={panel} className={`rc-panel${asking ? ' is-asking' : ''}`}>
+                {atPump ? (
+                    <p className="rc-sign is-wait" aria-live="polite"><GasPump weight="fill" aria-hidden /> Maak je klaar!</p>
+                ) : (
+                    <p className={`rc-sign kiosk-math${flashing ? ' is-solved' : ''}`} aria-live="polite">
+                        {flashing && feedback
+                            ? <>{lhs}<span className="rc-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
+                            : question.text}
+                    </p>
+                )}
+                {asking && <span className="rc-askbar" role="timer" aria-label="Tijd aan de pomp"><span /></span>}
+                <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play' || done || !takes} />
             </div>
+        </div>
+    );
+}
+
+/** The end screen's picture: the car under the chequered flag, or beside its empty jerrycan with a smile. */
+export function RaceEnding({ outcome, options, reducedMotion }: SkinEndingProps) {
+    const empty = raceModeOf(options) === 'benzine' && outcome === 'failed';
+    return (
+        <div className={`spel-ending rc-ending${empty ? ' is-empty' : ''}${reducedMotion ? ' is-still' : ''}`} data-land="platteland">
+            <div className="rc-sky" />
+            <Sun className="rc-ending-sun" />
+            <div className="rc-ending-road" />
+            <div className="rc-ending-car"><CarArt />{empty && !reducedMotion && <Puff className="is-sputter" />}</div>
+            {empty
+                ? <span className="rc-ending-can"><Can full={false} /></span>
+                : <span className="rc-ending-flag" aria-hidden />}
         </div>
     );
 }

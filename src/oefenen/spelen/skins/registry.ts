@@ -91,10 +91,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./bever/Bever').then(m => ({ default: m.BeverEnding }))),
     },
     {
-        // To the finish (Race's own end, onFinish); no countdown: the time is the score. 60 questions at most, unseen.
-        meta: { id: 'race', music: 'race', label: 'Race', input: 'keypad', timed: false, round: { cap: 60 }, sounds: { correct: 'pop', wrong: 'plop' }, accepts: KEYPAD_NUMBER },
+        // Tijdrit: to the finish (Race's own end, onFinish), the time is the score; 60 questions at most, unseen.
+        // Benzine: three jerrycans, petrol stations, the distance is the score; an empty tank = the early end (onFail).
+        meta: {
+            id: 'race', music: 'race', label: 'Race', input: 'keypad', timed: false, round: { cap: 60 }, canFail: true, failTitle: 'De tank is leeg!', accepts: KEYPAD_NUMBER,
+            options: [{ id: 'modus', label: 'Welke race?', default: 'tijdrit', choices: [{ value: 'tijdrit', label: 'Tijdrit', round: { cap: 60 } }, { value: 'benzine', label: 'Benzine', round: { cap: 80 } }] }],
+            sounds: { correct: 'pop', wrong: 'plop', fail: 'puf' },
+        },
         icon: CarProfile,
         Component: lazy(() => import('./race/Race')),
+        Ending: lazy(() => import('./race/Race').then(m => ({ default: m.RaceEnding }))),
     },
     {
         // A match of 3 or 5 minutes in two halves (a short "Rust!" holds the clock). Right answers pass, a wrong one hands

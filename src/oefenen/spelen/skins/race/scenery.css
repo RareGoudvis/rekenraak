@@ -1,0 +1,248 @@
+/* Race landscapes (Scenery.tsx): one palette per landscape on [data-land], mixed from the theme tokens. The root
+   carries the current landscape too, so the road and the verge follow it. */
+[data-land] {
+  --rc-ink: var(--spel-ink);
+  --rc-paper: var(--kiosk-paper);
+  --rc-asphalt: color-mix(in srgb, var(--spel-ink) 62%, var(--kiosk-paper));
+  --rc-line: var(--kiosk-paper);
+  --rc-cloud: var(--kiosk-paper);
+  --rc-cloud-shade: color-mix(in srgb, var(--accent-bewerkingen) 16%, var(--kiosk-paper));
+  --rc-trunk: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+}
+[data-land='platteland'] {
+  --rc-sky-top: color-mix(in srgb, var(--accent-bewerkingen) 42%, var(--kiosk-paper));
+  --rc-sky-low: color-mix(in srgb, var(--accent-bewerkingen) 10%, var(--kiosk-paper));
+  --rc-far1: color-mix(in srgb, var(--accent-metendrekenen) 32%, var(--kiosk-paper));
+  --rc-far2: color-mix(in srgb, var(--accent-metendrekenen) 58%, var(--kiosk-paper));
+  --rc-leaf: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--spel-ink));
+  --rc-leaf2: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--mab-e));
+  --rc-verge: color-mix(in srgb, var(--accent-metendrekenen) 75%, var(--kiosk-paper));
+  --rc-hint: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--kiosk-paper));
+}
+[data-land='woestijn'] {
+  --rc-sky-top: color-mix(in srgb, var(--accent-vraagstukken) 38%, var(--kiosk-paper));
+  --rc-sky-low: color-mix(in srgb, var(--mab-e) 30%, var(--kiosk-paper));
+  --rc-far1: color-mix(in srgb, var(--accent-vraagstukken) 72%, var(--accent-getallenkennis));
+  --rc-far2: color-mix(in srgb, color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--mab-e)) 62%, var(--kiosk-paper));
+  --rc-leaf: color-mix(in srgb, var(--accent-metendrekenen) 68%, var(--spel-ink));
+  --rc-verge: color-mix(in srgb, color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--mab-e)) 55%, var(--kiosk-paper));
+  --rc-asphalt: color-mix(in srgb, var(--spel-ink) 52%, color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--kiosk-paper)));
+  --rc-hint: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-paper));
+}
+[data-land='sneeuw'] {
+  --rc-sky-top: color-mix(in srgb, var(--accent-bewerkingen) 28%, var(--kiosk-paper));
+  --rc-sky-low: color-mix(in srgb, var(--accent-bewerkingen) 6%, var(--kiosk-paper));
+  --rc-far1: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--spel-ink)) 52%, var(--kiosk-paper));
+  --rc-far2: color-mix(in srgb, var(--accent-bewerkingen) 6%, var(--kiosk-paper));
+  --rc-leaf: color-mix(in srgb, var(--accent-metendrekenen) 52%, var(--spel-ink));
+  --rc-verge: color-mix(in srgb, var(--accent-bewerkingen) 8%, var(--kiosk-paper));
+  --rc-asphalt: color-mix(in srgb, var(--spel-ink) 58%, color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)));
+  --rc-cloud-shade: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--kiosk-paper));
+  --rc-hint: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--kiosk-paper));
+}
+[data-land='stad'] {
+  --rc-sky-top: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink));
+  --rc-sky-low: color-mix(in srgb, var(--accent-meetkunde) 40%, color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink)));
+  --rc-far1: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink));
+  --rc-far2: color-mix(in srgb, var(--accent-bewerkingen) 42%, var(--spel-ink));
+  --rc-verge: color-mix(in srgb, var(--spel-ink) 45%, var(--kiosk-paper));
+  --rc-asphalt: color-mix(in srgb, var(--spel-ink) 84%, var(--accent-bewerkingen));
+  --rc-line: color-mix(in srgb, var(--mab-e) 70%, var(--kiosk-paper));
+  --rc-hint: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--spel-ink));
+}
+[data-land='strand'] {
+  --rc-sky-top: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper));
+  --rc-sky-low: color-mix(in srgb, var(--accent-bewerkingen) 14%, var(--kiosk-paper));
+  --rc-far1: color-mix(in srgb, var(--accent-bewerkingen) 78%, var(--accent-metendrekenen));
+  --rc-far2: color-mix(in srgb, var(--mab-e) 40%, var(--kiosk-paper));
+  --rc-leaf: color-mix(in srgb, var(--accent-metendrekenen) 78%, var(--spel-ink));
+  --rc-verge: color-mix(in srgb, var(--mab-e) 48%, var(--kiosk-paper));
+  --rc-hint: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper));
+}
+[data-land='herfst'] {
+  --rc-sky-top: color-mix(in srgb, var(--spel-ink) 38%, var(--kiosk-paper));
+  --rc-sky-low: color-mix(in srgb, var(--spel-ink) 14%, var(--kiosk-paper));
+  --rc-far1: color-mix(in srgb, var(--accent-vraagstukken) 22%, color-mix(in srgb, var(--spel-ink) 38%, var(--kiosk-paper)));
+  --rc-far2: color-mix(in srgb, var(--accent-vraagstukken) 38%, color-mix(in srgb, var(--accent-metendrekenen) 45%, var(--spel-ink)));
+  --rc-leaf: var(--accent-vraagstukken);
+  --rc-leaf2: var(--mab-e);
+  --rc-leaf3: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--accent-vraagstukken));
+  --rc-verge: color-mix(in srgb, var(--accent-vraagstukken) 50%, color-mix(in srgb, var(--accent-metendrekenen) 40%, var(--spel-ink)));
+  --rc-asphalt: color-mix(in srgb, var(--spel-ink) 72%, var(--kiosk-paper));
+  --rc-cloud: color-mix(in srgb, var(--spel-ink) 26%, var(--kiosk-paper));
+  --rc-cloud-shade: color-mix(in srgb, var(--spel-ink) 42%, var(--kiosk-paper));
+  --rc-hint: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--kiosk-paper));
+}
+
+/* ── Layers ──────────────────────────────────────────────────────────────── */
+.rc-land { position: absolute; inset: 0; }
+.rc-land.is-leaving { z-index: 1; animation: rc-fade-out 900ms ease-in-out both; }
+@keyframes rc-fade-out { to { opacity: 0; } }
+.rc-sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--rc-sky-top), var(--rc-sky-low) 66%); }
+.rc-layer { position: absolute; left: 0; right: 0; pointer-events: none; }
+.rc-strip { position: absolute; top: 0; bottom: 0; left: 0; display: flex; will-change: transform; }
+.rc-tile { flex: none; height: 100%; }
+.rc-tile > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* SYNC: Scenery.tsx FAR_W / MID_W / NEAR_W / CLOUD_W (tile widths in scene units). */
+.rc-far { bottom: var(--rc-road-h); height: min(calc(var(--rc-u) * 260), 44%); }
+.rc-far .rc-tile { width: calc(var(--rc-u) * 1000); }
+.rc-mid { bottom: calc(var(--rc-road-h) - var(--rc-u) * 2); height: calc(var(--rc-u) * 140); }
+.rc-mid .rc-tile { width: calc(var(--rc-u) * 900); }
+.rc-near { bottom: calc(var(--rc-road-h) - var(--rc-u) * 4); height: calc(var(--rc-u) * 160); }
+.rc-near .rc-tile { width: calc(var(--rc-u) * 480); }
+.rc-clouds { top: calc(var(--sp-3) + 44px); height: calc(var(--rc-u) * 220); }
+.rc-clouds .rc-tile { width: calc(var(--rc-u) * 1400); }
+
+/* ── Shared drawing: merged outlines, tubes, ridge lines ─────────────────── */
+.rc-ol { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 6px; stroke-linejoin: round; }
+.rc-tube-ol { fill: none; stroke: var(--spel-ink); stroke-linecap: round; stroke-linejoin: round; }
+.rc-tube { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.rc-ridge-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.rc-ridge-line.is-thin { stroke-width: 2px; }
+.rc-hill-back { fill: var(--rc-far1); }
+.rc-hill-front { fill: var(--rc-far2); }
+.rc-trunk { fill: var(--rc-trunk); }
+.rc-leaf { fill: var(--rc-leaf); }
+.rc-leaf-2 { fill: var(--rc-leaf2, var(--rc-leaf)); }
+.rc-leaf-3 { fill: var(--rc-leaf3, var(--rc-leaf)); }
+.rc-leaf-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; stroke-linecap: round; opacity: .5; }
+.rc-dot { fill: var(--spel-ink); }
+.rc-dot.is-light { fill: var(--kiosk-paper); }
+.rc-tuft { fill: none; stroke: color-mix(in srgb, var(--rc-verge) 55%, var(--spel-ink)); stroke-width: 3px; stroke-linecap: round; }
+.rc-door { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink)); }
+
+/* Platteland */
+.rc-field-line { fill: none; stroke: color-mix(in srgb, var(--rc-far2) 70%, var(--spel-ink)); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.rc-barn { fill: color-mix(in srgb, var(--accent-getallenkennis) 82%, var(--spel-ink)); }
+.rc-barn-roof { fill: color-mix(in srgb, var(--accent-getallenkennis) 45%, var(--spel-ink)); }
+.rc-barn-door { fill: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-ink)); stroke: var(--kiosk-paper); stroke-width: 3px; }
+.rc-barn-x { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; }
+.rc-hay { fill: color-mix(in srgb, var(--mab-e) 75%, var(--accent-vraagstukken)); }
+.rc-hay-line { fill: none; stroke: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--spel-ink)); stroke-width: 2.5px; }
+.rc-flower { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.rc-flower.is-2 { fill: var(--mab-e); }
+.rc-fence { fill: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+/* Woestijn */
+.rc-mesa { fill: var(--rc-far1); }
+.rc-mesa-line { fill: none; stroke: color-mix(in srgb, var(--rc-far1) 70%, var(--spel-ink)); stroke-width: 3px; vector-effect: non-scaling-stroke; }
+.rc-dune { fill: var(--rc-far2); }
+.rc-cactus { fill: var(--rc-leaf); }
+.rc-tube.rc-cactus { stroke: var(--rc-leaf); }
+.rc-cactus-rib { fill: none; stroke: color-mix(in srgb, var(--rc-leaf) 60%, var(--spel-ink)); stroke-width: 2.5px; stroke-linecap: round; }
+.rc-bloom { fill: color-mix(in srgb, var(--accent-meetkunde) 45%, var(--kiosk-paper)); }
+.rc-rock { fill: color-mix(in srgb, var(--accent-vraagstukken) 28%, color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper))); }
+.rc-weed { fill: color-mix(in srgb, var(--accent-vraagstukken) 35%, color-mix(in srgb, var(--spel-ink) 20%, var(--kiosk-paper))); }
+.rc-weed-line { fill: none; stroke: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink)); stroke-width: 2px; }
+
+/* Sneeuw */
+.rc-mtn { fill: var(--rc-far1); }
+.rc-mtn-snow { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.rc-snowfield { fill: var(--rc-far2); }
+.rc-pine { fill: var(--rc-leaf); }
+.rc-snowcap { fill: var(--kiosk-paper); }
+.rc-snow-ledge { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; stroke-linecap: round; }
+.rc-snowman { fill: var(--kiosk-paper); }
+.rc-hat { fill: color-mix(in srgb, var(--spel-ink) 85%, var(--kiosk-paper)); }
+.rc-carrot { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.rc-scarf { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.rc-snowbank { fill: var(--kiosk-paper); }
+.rc-post { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.rc-post-band { fill: var(--spel-ink); }
+
+/* Stad bij nacht */
+.rc-bld { fill: var(--rc-far1); }
+.rc-bld-line { fill: none; stroke: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)); stroke-width: 2px; vector-effect: non-scaling-stroke; opacity: .4; }
+.rc-window { fill: var(--mab-e); }
+.rc-window.is-near { stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-house { fill: var(--rc-far2); }
+.rc-glow { fill: var(--mab-e); opacity: .16; }
+.rc-glow.is-in { opacity: .3; }
+.rc-pole { fill: color-mix(in srgb, var(--spel-ink) 55%, var(--kiosk-paper)); }
+.rc-lamp { fill: var(--mab-e); }
+.rc-moon { position: absolute; top: calc(var(--sp-3) + var(--rc-u) * 70); left: calc((100% - var(--rc-panel-w, 0px)) * .6); width: calc(var(--rc-u) * 90); overflow: visible; }
+.rc-moon-disc { fill: color-mix(in srgb, var(--mab-e) 35%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-moon-inner { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-moon-crater { fill: color-mix(in srgb, var(--mab-e) 50%, var(--spel-ink)); opacity: .35; }
+.rc-stars { position: absolute; inset: 0 var(--rc-panel-w, 0px) 40% 0; }
+.rc-star { position: absolute; fill: var(--mab-e); animation: rc-twinkle 2.2s ease-in-out infinite alternate; }
+@keyframes rc-twinkle { from { opacity: .45; transform: scale(.8); } to { opacity: 1; transform: scale(1.1); } }
+
+/* Strand */
+.rc-sea { fill: var(--rc-far1); }
+.rc-wave { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: .8; }
+.rc-island { fill: var(--rc-far2); }
+.rc-hull { fill: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--spel-ink)); }
+.rc-sail { fill: var(--kiosk-paper); }
+.rc-sand-far { fill: var(--rc-far2); }
+.rc-tube.rc-palm-trunk { stroke: color-mix(in srgb, var(--accent-vraagstukken) 45%, color-mix(in srgb, var(--spel-ink) 45%, var(--kiosk-paper))); }
+.rc-palm-ring { fill: none; stroke: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink)); stroke-width: 2.5px; stroke-linecap: round; }
+.rc-palm-leaf { fill: var(--rc-leaf); }
+.rc-coco { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink)); }
+.rc-pole-line { fill: none; stroke: var(--spel-ink); stroke-width: 4px; stroke-linecap: round; }
+.rc-parasol { fill: var(--accent-getallenkennis); }
+.rc-parasol-stripe { fill: var(--kiosk-paper); }
+.rc-castle { fill: color-mix(in srgb, var(--mab-e) 55%, var(--kiosk-paper)); }
+.rc-castle-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.rc-flag { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.rc-ball { fill: var(--kiosk-paper); }
+.rc-ball-stripe { fill: var(--accent-getallenkennis); }
+.rc-ball-stripe.is-2 { fill: var(--accent-bewerkingen); }
+.rc-shell { fill: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-gulls { position: absolute; top: 22%; left: 18%; width: calc(var(--rc-u) * 150); fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Herfst */
+.rc-mush { fill: var(--accent-getallenkennis); }
+.rc-mush-stem { fill: var(--kiosk-paper); }
+.rc-leafpile { fill: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--accent-getallenkennis)); }
+.rc-fallen { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 1.5px; }
+
+/* ── The sky kit ─────────────────────────────────────────────────────────── */
+.rc-cloud-fill { fill: var(--rc-cloud); }
+.rc-cloud-shade { fill: var(--rc-cloud-shade); }
+.rc-cloud-line { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.rc-sun { position: absolute; top: calc(var(--sp-3) + var(--rc-u) * 56); left: calc((100% - var(--rc-panel-w, 0px)) * .56); width: calc(var(--rc-u) * 120); overflow: visible; }
+.rc-sun-rays { transform-box: fill-box; transform-origin: 50% 50%; animation: rc-turn 40s linear infinite; }
+@keyframes rc-turn { to { transform: rotate(360deg); } }
+.rc-ray-ol { fill: none; stroke: var(--spel-ink); stroke-width: 12px; stroke-linecap: round; }
+.rc-ray { fill: none; stroke: var(--mab-e); stroke-width: 6px; stroke-linecap: round; }
+.rc-sun-disc { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-sun-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; stroke-linecap: round; opacity: .75; }
+
+/* ── Weather: over the whole scene, road included ────────────────────────── */
+.rc-weather { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; animation: rc-fade-in 1s ease-out both; }
+@keyframes rc-fade-in { from { opacity: 0; } }
+.rc-flake, .rc-drop, .rc-fall-leaf { position: absolute; top: -6%; animation-timing-function: linear; animation-iteration-count: infinite; }
+.rc-flake {
+  width: max(4px, calc(var(--s) * var(--rc-u) * 1.3));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--kiosk-paper);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
+  animation-name: rc-snow;
+}
+@keyframes rc-snow { from { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(-24px, 55vh, 0); } to { transform: translate3d(-40px, 110vh, 0); } }
+.rc-drop {
+  width: max(2px, calc(var(--rc-u) * 3));
+  height: calc(var(--s) * var(--rc-u));
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper));
+  animation-name: rc-rain;
+}
+@keyframes rc-rain { from { transform: translate3d(0, 0, 0) rotate(8deg); } to { transform: translate3d(-15vh, 110vh, 0) rotate(8deg); } }
+.rc-fall-leaf {
+  width: calc(var(--rc-u) * 18);
+  height: calc(var(--rc-u) * 11);
+  border: 2px solid var(--spel-ink);
+  border-radius: 0 100% 0 100%;
+  background: var(--accent-vraagstukken);
+  animation-name: rc-leaf-fall;
+}
+.rc-fall-leaf:nth-child(even) { background: var(--mab-e); }
+@keyframes rc-leaf-fall { 0% { transform: translate3d(0, 0, 0) rotate(0); } 50% { transform: translate3d(-9vw, 55vh, 0) rotate(200deg); } 100% { transform: translate3d(-4vw, 110vh, 0) rotate(380deg); } }
+/* Reduced motion: the weather stands still where it is. */
+.rc-root.is-still .rc-flake, .rc-root.is-still .rc-drop, .rc-root.is-still .rc-fall-leaf { top: var(--y); }
+/* Phone upright: the HUD fills the top corners, so the sun and the moon sit smaller, between and below them. */
+@media (orientation: portrait) {
+  .rc-sun, .rc-moon { top: calc(var(--sp-3) + var(--rc-u) * 120); left: 40%; width: calc(var(--rc-u) * 90); }
+}

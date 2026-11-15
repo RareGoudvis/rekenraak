@@ -8,7 +8,7 @@ export const GAME_BLURB: Record<string, string> = {
     zombies: 'Hou de zombies tegen met juiste antwoorden en red iedereen.',
     bom: 'Haal de draadjes los voor de tijd op is. Elk juist antwoord helpt.',
     bever: 'Help de bever. Juiste antwoorden houden het water achter de dam.',
-    race: 'Rij naar de finish. Elk juist antwoord geeft gas.',
+    race: 'Race naar de finish, of rij zo ver als je benzine reikt.',
     voetbal: 'Speel een match. Vier juiste antwoorden en dan mag je op doel schieten!',
     kasteel: 'Schiet met je katapult. Elk juist antwoord raakt het andere kasteel.',
     touwtrekken: 'Speel met z\'n tweeën. Wie juist antwoordt, trekt aan het touw.',
