@@ -593,7 +593,7 @@ build / drag** = the pupil answers ON the exercise through `interact` (§15 Phas
 | Row(s) | Descriptor | What the pupil gives |
 |---|---|---|
 | `hr-std-optellen` · `-aftrekken` · `-vermenigvuldigen` · `-delen` · `-gemengd` | `HR_KIOSK` | the answer; a puntoefening asks the blank (`missing-operand`), met rest asks quotiënt + rest (`number+rest`); keys follow numberType (`,` / `/` + space / `−`) |
-| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, one carry row per multiplier digit of 2 or more (labelled ×3, ×90), the staartdeling worked step by step (quotient digit, product `m`, difference `v`, brought-down digit `n`, in the method's order), quotient digits, rest; a NEEDED carry / exchanged digit left blank is fout (owner rule 2026-10-08; columns that need nothing take blank or 0; `strictCarries: false` is for tests only); decimal leaves get `,`; aftrekken also gets the **Lenen** key (`extraKeys`: always present, always exchanges, no hint) |
+| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, the onthoudcijfers of each partial-product row in cells right of the grid on that row's line, only as many as the row carries, typed after the digit that makes them (`cijferFocusOrder`; owner's class method, 124 × 18: 2, 3, 9, 1, 9), the staartdeling worked step by step (quotient digit, product `m`, difference `v`, brought-down digit `n`, in the method's order), quotient digits, rest; a NEEDED carry / exchanged digit left blank is fout (owner rule 2026-10-08; columns that need nothing take blank or 0; `strictCarries: false` is for tests only); decimal leaves get `,`; aftrekken also gets the **Lenen** key (`extraKeys`: always present, always exchanges, no hint) |
 | `procenten` | `PROCENTEN_KIOSK` | only nemen / welk-percent: one number |
 | `verbanden` | `VERBANDEN_KIOSK` | one captioned field per asked representation (breuk / kommagetal / procent without `%`) |
 | `afronden` | `AFRONDEN_KIOSK` | only simpel: the rounded number (a rooster is a table, not one answer) the free natural draw starts at 5 and simpel redraws a number that would round to 0 on its target |
@@ -1529,7 +1529,7 @@ src/
 │   ├── splitsen/{splitsenGenerator.ts,dutchWords.ts}   # basic/splitsboom/verliefde-harten/positie-*
 │   ├── cijferen/cijferGenerator.ts
 │   ├── cijferen/cijferLayout.ts   # pure column geometry shared by CijferViewer and the kiosk descriptor (cijferDp, getDigitCols, mulLayout, add/sub carries)
-│   ├── cijferen/cijferCells.ts    # the kiosk grid's ruitjes (key a/p/q/c/b/r + staartdeling m/v/n, carry rows per × digit; roles) + cijferCheck: which cell holds which digit, needed carries must be written (strictCarries default true, §15)
+│   ├── cijferen/cijferCells.ts    # the kiosk grid's ruitjes (key a/p/q/c/b/r + staartdeling m/v/n, × carries right of their row; roles) + cijferCheck: which cell holds which digit, needed carries must be written (strictCarries default true, §15)
 │   ├── geld/{geldGenerator.ts,geldRekenenGenerator.ts}   # herkennen/tekenen, wissel, teruggeven; korting/winst/intrest (formatEuro)
 │   ├── mab/mabGenerator.ts
 │   ├── ordenen/{ordenenGenerator.ts,breukenRangschikkenGenerator.ts}   # rangschikken → OrdenenExercise[] (fractions)
