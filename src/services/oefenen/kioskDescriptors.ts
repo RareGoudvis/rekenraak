@@ -236,9 +236,10 @@ export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
 
 // ── Cijferen (Phase C2: the pupil fills the grid itself on the card) ─────────
 
-// SYNC: cijferCells.ts keys: a = answer digit, p = partial product, q = quotient digit (one digit
-// each, a full ruitje hands on); c = carry, b = exchanged top digit (scratch, tapped); r = rest.
-const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, c: { length: 1, scratch: true }, b: { length: 2, scratch: true }, r: {} };
+// SYNC: cijferCells.ts keys: a = answer digit, p = partial product, q = quotient digit, m / v / n =
+// a staartdeling's product, difference and digit brought down (one digit each, a full ruitje hands
+// on); c = carry, b = exchanged top digit (scratch, tapped); r = rest.
+const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, m: { length: 1 }, v: { length: 1 }, n: { length: 1 }, c: { length: 1, scratch: true }, b: { length: 2, scratch: true }, r: {} };
 
 // Aftrekken: the pupil can let the kiosk do a column's exchange (inwisselen) instead of typing
 // the new top digits; it exchanges whether or not the column needs it (cijferLenen).
@@ -289,19 +290,20 @@ function cijferShow(chk: CijferCheck, answer: string): string {
     const byCell = new Map<string, string>();
     const pps: string[] = [];
     const scratch: string[] = [];
-    let quotient = '', rest = '';
     chk.parts.forEach((p, i) => {
         const v = parts[i] ?? '';
-        if ('rest' in p) rest = v;
-        else if ('kind' in p) { if (p.kind === 'pp') pps.push(v); else quotient = v; }
+        if ('rest' in p) return;
+        if ('kind' in p) pps.push(v);
         else if (/^[cb]/.test(p.cell)) { if (v) scratch.push(v); }
         else byCell.set(p.cell, v);
     });
-    if (chk.parts.some(p => 'rest' in p)) return `${quotient.replace('.', ',')} r ${rest.replace('.', ',')}`;
     const digits = chk.answerCells.map(k => byCell.get(k) || '_');
     const int = digits.slice(0, chk.answerInt).join('').replace(/^_+/, '') || '0';
     const dec = digits.slice(chk.answerInt).join('').replace(/_+$/, '');
     const row = dec ? `${int},${dec}` : int;
+    // A staartdeling: the quotient row and the rest (its working rows are the method, not the answer).
+    const rest = chk.parts.findIndex(p => 'rest' in p);
+    if (rest >= 0) return `${row} r ${(parts[rest] ?? '').replace('.', ',')}`;
     const sum = pps.length ? `${pps.join(' + ')} = ${row}` : row;
     return scratch.length ? `${sum} (onthouden ${scratch.join(' ')})` : sum;
 }

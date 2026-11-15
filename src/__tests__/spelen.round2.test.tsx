@@ -58,8 +58,8 @@ beforeEach(() => {
 afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe('Pre-start options', () => {
-    test('only Bom, Bever, Zombies, Voetbal and Kasteel have options; picks patch the round, unknown picks fall back to the default', () => {
-        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel'].includes(s.meta.id))).toEqual([]);
+    test('only Bom, Bever, Zombies, Voetbal, Kasteel and Schatkist have options; picks patch the round, unknown picks fall back to the default', () => {
+        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'schatkist'].includes(s.meta.id))).toEqual([]);
         const bom = meta('bom');
         expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: 3000 });
         const big = resolveMeta(bom, { tijd: '5', doel: '50' });
@@ -130,7 +130,8 @@ describe('The friendly early end', () => {
             sp().fail();
             expect(sp().phase).toBe('play');
         }
-        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'kasteel'].includes(s.meta.id))).toEqual([]);
+        // Owner-approved early ends; the Speelgoedfabriek's machine sputters (2026-11-15).
+        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'kasteel', 'pakjesband'].includes(s.meta.id))).toEqual([]);
         sp().start(startWith(CAN_FAIL));
         sp().openHelp();
         sp().fail();
@@ -344,7 +345,7 @@ describe('Bever', () => {
 
 describe('Zombies: survivors behind barricades', () => {
     test('Normaal: three barricades first, then five survivors; Moeilijk: three survivors, no barricades', () => {
-        expect(DEFENCE).toEqual({ normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 } });
+        expect(DEFENCE).toEqual({ makkelijk: { survivors: 5, barricades: 3 }, normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 } });
         expect([1, 2, 3, 4, 5, 6, 7, 8].map(h => hitOf('normaal', h))).toEqual(['barricade', 'barricade', 'barricade', 'caught', 'caught', 'caught', 'caught', 'last']);
         expect([1, 2, 3].map(h => hitOf('moeilijk', h))).toEqual(['caught', 'caught', 'last']);
         expect(defenceAfter('normaal', 4)).toEqual({ barricades: 0, survivors: 4, caught: 1 });

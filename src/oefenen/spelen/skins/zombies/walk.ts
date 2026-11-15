@@ -1,3 +1,5 @@
+import type { ZombieLevel } from './defence';
+
 // How the zombies walk, in % of the street (0 = the door, 100 = the right edge). Pure, so the speeds are testable.
 
 export const ZOMBIE = {
@@ -33,6 +35,13 @@ export interface Walker { x: number; v: number; pace: number }
 export function zombieSpeed(streak: number): number {
     return ZOMBIE.speed * (1 + ZOMBIE.perStreak * Math.min(Math.max(streak, 0), ZOMBIE.maxStreak));
 }
+
+// Over the game the zombies slowly speed up (owner 2026-11-15): 100 % at the start, 150 % at 2:00, 200 % at 4:00, then capped.
+export const RAMP = { perMs: 0.5 / 120_000, max: 2 } as const;
+
+/** The speed factor after elapsedMs of play: linear, capped at RAMP.max; Makkelijk stays at a steady 100 %. */
+export const speedAt = (elapsedMs: number, level: ZombieLevel = 'normaal') =>
+    level === 'makkelijk' ? 1 : Math.min(RAMP.max, 1 + Math.max(0, elapsedMs) * RAMP.perMs);
 
 /** The pace a zombie heads for: the front one at the streak speed, the ones behind a bit slower, each at its own pace. */
 export const targetSpeed = (i: number, pace: number, speed: number) => speed * pace * (i === 0 ? 1 : ZOMBIE.follow);

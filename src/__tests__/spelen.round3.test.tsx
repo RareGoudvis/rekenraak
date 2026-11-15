@@ -182,8 +182,9 @@ describe('seasons', () => {
 });
 
 describe('the three new skins', () => {
-    test('registry: Pakjesband (Sinterklaas), Eieren zoeken (Pasen, nine options), Mollen meppen (two minutes)', () => {
-        expect(skinById('pakjesband')!.meta).toMatchObject({ input: 'choice', timed: false, round: { questions: 20 }, season: 'sinterklaas' });
+    test('registry: Speelgoedfabriek (year-round, can sputter), Eieren zoeken (Pasen, nine options), Mollen meppen (two minutes)', () => {
+        expect(skinById('pakjesband')!.meta).toMatchObject({ label: 'Speelgoedfabriek', input: 'choice', timed: false, round: { questions: 20 }, canFail: true });
+        expect(skinById('pakjesband')!.meta.season).toBeUndefined();
         expect(skinById('eieren')!.meta).toMatchObject({ input: 'choice', choiceCount: 9, timed: false, round: { questions: 15 }, season: 'pasen' });
         expect(skinById('mollen')!.meta).toMatchObject({ input: 'choice', timed: true, round: { seconds: 120 } });
         expect(skinById('mollen')!.meta.season).toBeUndefined();

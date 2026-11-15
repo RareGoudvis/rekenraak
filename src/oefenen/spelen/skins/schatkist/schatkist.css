@@ -8,7 +8,18 @@
   --sk-gold: var(--spel-star);
   --sk-leaf: var(--accent-metendrekenen);
   --sk-paper: color-mix(in srgb, var(--mab-e) 22%, var(--kiosk-paper));
+  --sk-crab: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--accent-vraagstukken));
+  /* The sky: the day sky with dawn (peach, rose) or sunset (orange, violet) mixed in, set per frame by the skin. */
+  --sk-dawn: 0%;
+  --sk-dusk: 0%;
+  --sk-dawn-top: color-mix(in srgb, var(--accent-meetkunde) 22%, var(--kiosk-paper));
+  --sk-dawn-low: color-mix(in srgb, var(--accent-vraagstukken) 38%, var(--kiosk-paper));
+  --sk-dusk-top: color-mix(in srgb, var(--accent-meetkunde) 55%, var(--accent-bewerkingen));
+  --sk-dusk-low: color-mix(in srgb, var(--accent-vraagstukken) 80%, var(--accent-getallenkennis));
+  --sk-top: color-mix(in srgb, var(--sk-dusk-top) var(--sk-dusk), color-mix(in srgb, var(--sk-dawn-top) var(--sk-dawn), var(--spel-sky)));
+  --sk-low: color-mix(in srgb, var(--sk-dusk-low) var(--sk-dusk), color-mix(in srgb, var(--sk-dawn-low) var(--sk-dawn), var(--spel-sky-low)));
   background: var(--spel-sky);
+  background: linear-gradient(to bottom, var(--sk-top), var(--sk-low));
 }
 .sk-root {
   position: absolute;
@@ -25,9 +36,33 @@
 .sk-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .sk-root .sk-scene { overflow: visible; }
 
-.sk-sea { fill: var(--sk-sea); stroke: var(--spel-ink); stroke-width: 3px; }
+/* The sea takes a little of the sunset's glow. */
+.sk-sea { fill: color-mix(in srgb, var(--sk-dusk-top) calc(var(--sk-dusk) * .35), var(--sk-sea)); stroke: var(--spel-ink); stroke-width: 3px; }
 .sk-wave { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; stroke-linecap: round; }
-.sk-sun { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 3px; }
+/* Gentle water: the wave marks rock to and fro all the time. */
+.sk-wave { animation: sk-rock 5.5s ease-in-out infinite alternate; }
+.sk-wave.is-b { animation-duration: 7s; animation-direction: alternate-reverse; }
+@keyframes sk-rock { from { translate: -7px 1px; } to { translate: 7px -1px; } }
+/* Now and then a small swell rises, rolls a little way and sinks again (long cycles, each its own rhythm). */
+.sk-swell-body { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.sk-swell > path { scale: 1.3; opacity: 0; transform-origin: 0 4px; animation: sk-swell 11s ease-in-out infinite; }
+.sk-swell.is-1 > path { animation-duration: 13s; animation-delay: -4s; }
+.sk-swell.is-2 > path { animation-duration: 17s; animation-delay: -9s; }
+.sk-swell.is-3 > path { animation-duration: 15s; animation-delay: -2s; }
+.sk-swell.is-4 > path { animation-duration: 19s; animation-delay: -13s; }
+@keyframes sk-swell {
+  0%, 62% { opacity: 0; transform: translateX(-10px) scale(.3, 0); }
+  70% { opacity: 1; transform: translateX(-2px) scale(1, 1); }
+  84% { opacity: 1; transform: translateX(12px) scale(1.1, .8); }
+  94%, 100% { opacity: 0; transform: translateX(20px) scale(.6, 0); }
+}
+/* The sun follows the clock (a timed round): four steps a second, eased in between. */
+.sk-sun { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 3px; transition: transform 260ms linear; }
+.sk-root.is-timed .sk-sun { fill: color-mix(in srgb, var(--accent-vraagstukken) calc(var(--sk-dawn) * .5 + var(--sk-dusk) * .6), var(--sk-gold)); }
+.sk-ending .sk-sun { fill: color-mix(in srgb, var(--accent-vraagstukken) calc(var(--sk-dusk) * .6), var(--sk-gold)); }
+
+/* The sky behind the island: the kit's clouds. */
+.sk-sky { position: absolute; inset: 0; pointer-events: none; }
 .sk-sand { fill: var(--sk-sand); stroke: var(--spel-ink); stroke-width: 4px; }
 .sk-trunk { fill: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
 .sk-leaf { fill: var(--sk-leaf); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
@@ -43,6 +78,54 @@
 .sk-coin circle { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 3px; }
 .sk-coin .sk-coin-ring { fill: none; stroke-width: 2px; }
 .sk-glint { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+
+/* ── The heap beside the chest, the dropped coins and the crab ─────────────── */
+.sk-heap-shadow { fill: var(--spel-ink); opacity: .16; }
+.sk-loot { transition: transform 420ms var(--ease-out); }
+.sk-heap-coin ellipse { fill: var(--sk-gold); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.sk-heap-coin .sk-coin-side { fill: color-mix(in srgb, var(--sk-gold) 70%, var(--sk-wood)); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.sk-heap-coin .sk-coin-ring { fill: none; stroke-width: 1.5px; }
+.sk-gem path { stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.sk-gem > path:first-child { fill: color-mix(in srgb, var(--accent-bewerkingen) 70%, var(--kiosk-paper)); }
+.sk-gem.is-1 > path:first-child { fill: color-mix(in srgb, var(--accent-metendrekenen) 75%, var(--kiosk-paper)); }
+.sk-gem.is-2 > path:first-child { fill: color-mix(in srgb, var(--accent-meetkunde) 70%, var(--kiosk-paper)); }
+.sk-gem .sk-gem-cut { fill: none; stroke-width: 1.5px; opacity: .55; }
+/* A new coin or gem hops over in an arc from the chest and lands with a little clink. */
+.sk-fly-x { animation: sk-fly-x 620ms linear both; }
+.sk-fly-y { animation: sk-fly-y 620ms both; }
+@keyframes sk-fly-x { from { translate: var(--fx) 0; } to { translate: 0 0; } }
+@keyframes sk-fly-y {
+  0% { translate: 0 var(--fy); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  42% { translate: 0 calc(min(var(--fy), 0px) - 38px); animation-timing-function: cubic-bezier(.6, 0, .9, .5); }
+  86% { translate: 0 0; animation-timing-function: ease-out; }
+  93% { translate: 0 -4px; animation-timing-function: ease-in; }
+  100% { translate: 0 0; }
+}
+.sk-hoard.is-settled .sk-fly-x,
+.sk-hoard.is-settled .sk-fly-y { animation: none; }
+
+/* The crab: out of the sea to the heap, with the coin across the sand to beside the chest, off into the sea. */
+.sk-crab-shell { fill: var(--sk-crab); stroke: var(--spel-ink); stroke-width: 3px; }
+.sk-crab-claw { fill: var(--sk-crab); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.sk-crab-leg, .sk-crab-arm, .sk-crab-stalk { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
+.sk-crab-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.sk-crab-pupil { fill: var(--spel-ink); }
+.sk-crab-grin { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-linecap: round; }
+.sk-crab { translate: var(--tx) var(--ty); }
+.sk-crab.is-come { animation: sk-crab-come 1500ms ease-in-out both; }
+.sk-crab.is-carry { animation: sk-crab-carry 2000ms ease-in-out both; }
+.sk-crab.is-leave { animation: sk-crab-leave 1600ms ease-in both; }
+@keyframes sk-crab-come { from { translate: 470px 274px; } 85%, to { translate: var(--hx) 274px; } }
+@keyframes sk-crab-carry { from { translate: var(--hx) 274px; } 90%, to { translate: var(--tx) var(--ty); } }
+@keyframes sk-crab-leave { from { translate: var(--tx) var(--ty); } to { translate: -90px 280px; } }
+/* It scuttles sideways: a quick bob, legs and claws clicking. */
+.sk-crab:not(.is-still) .sk-crab-body { animation: sk-scuttle 220ms ease-in-out infinite alternate; }
+@keyframes sk-scuttle { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -3px; rotate: 4deg; } }
+.sk-crab-claw { transform-box: fill-box; transform-origin: 50% 100%; animation: sk-snip 300ms ease-in-out infinite alternate; }
+@keyframes sk-snip { from { rotate: -8deg; } to { rotate: 10deg; } }
+/* The coin it carries pops up into its claws. */
+.sk-crab-coin { animation: sk-pick 300ms var(--ease-spring) both; }
+@keyframes sk-pick { from { opacity: 0; translate: -16px 20px; } to { opacity: 1; translate: 0 0; } }
 
 /* The lock shakes on a wrong code (two copies so the next one restarts it). */
 .sk-lock { transform-origin: 200px 196px; }
@@ -155,7 +238,7 @@
 
 .sk-root.is-paused * { animation-play-state: paused; }
 .sk-root.is-still *,
-.sk-ending.is-still * { animation: none; }
+.sk-ending.is-still * { animation: none; transition: none; }
 @media (prefers-reduced-motion: reduce) {
-  .sk-root *, .sk-ending * { animation: none; }
+  .sk-root *, .sk-ending * { animation: none; transition: none; }
 }

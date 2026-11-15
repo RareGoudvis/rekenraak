@@ -134,7 +134,7 @@ describe('Spelen skins', () => {
             expect(x2 - frontX(container)).toBeGreaterThan((ZOMBIE.start - x1) * 1.5);
         });
 
-        test('right flops the front one over; wrong brings it a step closer with a wobble; the next sum goes to the next one', () => {
+        test('right flops the front one over; wrong brings it a step closer (no stun); the next sum goes to the next one', () => {
             const events = createSpelEvents();
             const { container, rerender } = render(<Zombies {...at(events)} />);
             wait(500);
@@ -142,7 +142,8 @@ describe('Spelen skins', () => {
             act(() => events.emit('wrong', { given: '11', expected: '12' }));
             rerender(<Zombies {...at(events, { phase: 'wrong', feedback: { given: '11', expected: '12', correct: false } })} />);
             expect(frontX(container)).toBeCloseTo(x - ZOMBIE.step, 1);
-            expect(container.querySelector('[data-zombie=front] .zb-zombie.is-wobble-1')).not.toBeNull();
+            // No wobble: a wrong answer stuns no zombie (owner 2026-11-15); it only steps closer.
+            expect(container.querySelector('.zb-zombie[class*=wobble]')).toBeNull();
             // The flash shows the right answer on the sign.
             expect(container.querySelector('.zb-sign.is-front')!.textContent).toBe('7 + 5 = 12');
             // Same zombie, next sum.
@@ -156,7 +157,7 @@ describe('Spelen skins', () => {
             expect(container.querySelectorAll('.zb-smoke .zb-puff').length).toBeGreaterThan(0);
             rerender(<Zombies {...at(events, { question: { key: 'q3', text: '9 + 5 = ?', index: 2 } })} />);
             expect(container.querySelector('[data-zombie=front]')).not.toBe(id);
-            expect(container.querySelectorAll('.zb-lane')).toHaveLength(ZOMBIE.count);
+            expect(container.querySelectorAll('.zb-lane:not([data-zombie=down])')).toHaveLength(ZOMBIE.count);
             expect(container.querySelector('.zb-sign.is-front')!.textContent).toBe('9 + 5 = ?');
         });
 

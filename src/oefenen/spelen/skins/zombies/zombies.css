@@ -184,8 +184,56 @@
 .zb-sv-arm { fill: none; stroke: var(--zb-human); stroke-width: 5; }
 .zb-sv-arm.is-green { stroke: var(--zb-skin); }
 .zb-sv-open { fill: var(--spel-ink); }
+.zb-sv-brow { fill: none; stroke-width: 2.5; }
+.zb-sv-sweat { fill: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--kiosk-paper)); stroke-width: 2; }
+.zb-tube { fill: var(--zb-wood); stroke-width: 2.5; }
+/* Worried: a quicker sway; scared: trembling and huddled close (two or fewer left). */
+.zb-root:not(.is-still) .zb-crew.is-worried .zb-sv:not(.is-caught) .zb-sv-body { animation-duration: .9s; }
+.zb-root:not(.is-still) .zb-crew.is-scared .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-tremble 130ms linear infinite alternate; }
+@keyframes zb-tremble { from { transform: translateX(-1.5%) rotate(-1deg); } to { transform: translateX(1.5%) rotate(1deg); } }
+.zb-crew.is-scared .zb-sv:not(.is-caught) { margin-right: calc(var(--zb-sv-w) * -.4); transition: margin-right 500ms var(--ease-out); }
+/* A streak: the group gives a little hop on each right answer. */
+.zb-root:not(.is-still) .zb-crew.is-cheery .zb-sv:not(.is-caught):not(.is-shooting) .zb-sv-body { animation: zb-hop 520ms var(--ease-out); }
+@keyframes zb-hop { 0%, 100% { transform: none; } 40% { transform: translateY(-14%); } }
+/* The shooter steps up for its puff: the tube comes up, a little "pfft" floats off. */
+.zb-root:not(.is-still) .zb-sv.is-shooting .zb-sv-body { animation: zb-puff-up 600ms var(--ease-out); }
+@keyframes zb-puff-up { 0% { transform: none; } 30% { transform: translateY(-6%) scale(1.04, .96); } 45% { transform: translateY(-6%) scale(.96, 1.06); } 100% { transform: none; } }
+.zb-pfft {
+  position: absolute;
+  left: 70%;
+  top: -12%;
+  padding: 0 var(--sp-1);
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(11px, calc(var(--zb-w) * .1), 16px);
+  font-weight: 800;
+  line-height: 1.2;
+  pointer-events: none;
+  animation: zb-pfft 600ms var(--ease-out) both;
+}
+@keyframes zb-pfft { 0% { opacity: 0; transform: scale(.4); } 25% { opacity: 1; transform: scale(1.1); } 70% { opacity: 1; transform: translateY(-30%); } 100% { opacity: 0; transform: translateY(-60%); } }
+/* The dart: straight from the tube to the zombie's head in --zb-hit. */
+.zb-dart {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  animation: zb-dart var(--zb-hit, 260ms) linear both, zb-dart-gone 200ms linear calc(var(--zb-hit, 260ms) + 80ms) forwards;
+}
+.zb-dart-art { position: absolute; left: calc(var(--zb-w) * -.24); top: calc(var(--zb-w) * -.06); width: calc(var(--zb-w) * .4); overflow: visible; transform: rotate(var(--ang)); transform-origin: 85% 50%; }
+.zb-dart-art * { stroke: var(--spel-ink); stroke-width: 1.6; stroke-linejoin: round; }
+.zb-dart-feather { fill: var(--spel-fill-0); }
+.zb-dart-shaft { fill: var(--zb-wood); }
+.zb-dart-cork { fill: var(--zb-hair); }
+@keyframes zb-dart { from { transform: translate(var(--fx), var(--fy)); } to { transform: translate(var(--tx), var(--ty)); } }
+@keyframes zb-dart-gone { to { opacity: 0; } }
 /* Calm and brave: a slow sway while the zombies come. */
-.zb-root .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-sv-sway 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.4s); }
+.zb-root:not(.is-still) .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-sv-sway 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.4s); }
 @keyframes zb-sv-sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
 /* Caught: a silly spin into a green zombie, then it shuffles off along the street. */
 .zb-sv.is-caught { z-index: 1; animation: zb-sv-off 9s linear 900ms forwards; }
@@ -310,32 +358,23 @@
 }
 .zb-sign.is-front + .zb-pole { height: calc(var(--zb-w) * .2 + var(--zb-lift)); }
 
-/* A wrong answer: a gentle wobble (two copies so the next one restarts). */
-.zb-zombie.is-wobble-0 .zb-body { animation: zb-wobble-0 650ms ease-in-out; }
-.zb-zombie.is-wobble-1 .zb-body { animation: zb-wobble-1 650ms ease-in-out; }
-@keyframes zb-wobble-0 {
-  0%, 100% { transform: rotate(0); }
-  25% { transform: rotate(-7deg); }
-  55% { transform: rotate(5deg); }
-  80% { transform: rotate(-2deg); }
-}
-@keyframes zb-wobble-1 {
-  0%, 100% { transform: rotate(0); }
-  25% { transform: rotate(-7deg); }
-  55% { transform: rotate(5deg); }
-  80% { transform: rotate(-2deg); }
-}
-
-/* Right: it flops over backwards into a puff of smoke; the sign shows the answer, then floats off. */
-.zb-zombie.is-flop .zb-art { transform-origin: 50% 100%; animation: zb-flop 650ms var(--ease-out) forwards; }
+/* Right: the dart lands (after --zb-hit), the zombie wobbles under circling stars, then flops over backwards
+   into a puff of smoke; the sign shows the answer, then floats off before the next sum. */
+.zb-zombie.is-flop .zb-art { transform-origin: 50% 100%; animation: zb-flop 1000ms var(--ease-out) var(--zb-hit, 0ms) both; }
 .zb-zombie.is-flop .zb-sign,
-.zb-zombie.is-flop .zb-pole { animation: zb-sign-off 600ms ease-in 250ms forwards; }
+.zb-zombie.is-flop .zb-pole { animation: zb-sign-off 380ms ease-in var(--zb-hit, 0ms) forwards; }
+.zb-lane[data-zombie=down] .zb-held { visibility: hidden; }
 @keyframes zb-sign-off { to { transform: translateY(-30%); opacity: 0; } }
 @keyframes zb-flop {
   0% { transform: rotate(0); opacity: 1; }
-  45% { transform: rotate(80deg) translateY(4%); opacity: 1; }
+  12% { transform: rotate(-9deg); }
+  26% { transform: rotate(7deg); }
+  40% { transform: rotate(-3deg); opacity: 1; }
+  75% { transform: rotate(84deg) translateY(4%); opacity: 1; }
   100% { transform: rotate(90deg) translateY(8%); opacity: 0; }
 }
+.zb-zombie.is-flop .zb-dizzy { animation: zb-dizzy-brief 760ms linear var(--zb-hit, 0ms) both; }
+@keyframes zb-dizzy-brief { 0% { opacity: 0; } 10%, 70% { opacity: 1; } 100% { opacity: 0; } }
 .zb-smoke { position: absolute; left: 50%; bottom: 35%; width: 0; height: 0; }
 .zb-puff {
   position: absolute;
@@ -347,7 +386,7 @@
   border-radius: 50%;
   background: var(--zb-smoke);
   opacity: 0;
-  animation: zb-puff 700ms var(--ease-out) 120ms both;
+  animation: zb-puff 700ms var(--ease-out) calc(var(--zb-hit, 0ms) + 420ms) forwards;
 }
 @keyframes zb-puff {
   from { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(.4); }

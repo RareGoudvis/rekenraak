@@ -17,6 +17,8 @@ const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
 // Bever and Zombies: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
+// Zombies also has Makkelijk: Normaal's defence at a steady speed (zombies/walk.ts speedAt).
+const ZOMBIE_NIVEAU: SkinOption = { ...NIVEAU, choices: [{ value: 'makkelijk', label: 'Makkelijk' }, ...NIVEAU.choices] };
 // Kasteel: 1 speler against the computer (Normaal / Moeilijk) or 2 spelers on one screen (Samen tegelijk / Om beurten).
 const KASTEEL_OPTIONS: SkinOption[] = [
     { id: 'spelers', label: 'Hoeveel spelers?', default: '1', choices: [{ value: '1', label: '1 speler' }, { value: '2', label: '2 spelers' }] },
@@ -55,7 +57,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // (zombies/defence.ts); all caught = the early end. The skin voices a barricade or a catch itself (miss: null).
         meta: {
             music: 'griezel',
-            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [NIVEAU], accepts: KEYPAD_NUMBER,
+            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [ZOMBIE_NIVEAU], accepts: KEYPAD_NUMBER,
             sounds: { correct: 'poef', wrong: 'plop', miss: null, barricade: 'krak', caught: 'wahwah', win: 'cheer', fail: 'wahwah' },
         },
         icon: Ghost,
@@ -171,10 +173,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Each right answer reveals the last digit of its answer; four make the lock's code, typed on the same keypad.
         // Three chests end the round (the skin's onFinish); a wrong sum or code costs nothing. 60 questions at most, unseen.
+        // Met tijd (3 / 5 minuten): chests until the clock runs out (resolveMeta makes the round timed).
         // Chest open = the skin's 'win' cue, a wrong code = its 'lost' cue (the session never ends this round as won or lost).
         meta: {
             music: 'zee',
             id: 'schatkist', label: 'Schatkist', input: 'keypad', timed: false, round: { cap: 60 }, accepts: { kinds: ['number'], digits: true },
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: 'geen', choices: [{ value: 'geen', label: 'Zonder tijd' }, { value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
             sounds: { correct: 'snip', wrong: 'plop', win: 'jingle', lost: 'boing' },
         },
         icon: TreasureChest,
@@ -182,23 +186,26 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./schatkist/Schatkist').then(m => ({ default: m.SchatkistEnding }))),
     },
     {
-        // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
-        // belt's end is a miss (pakjesband/belt.ts: about 12 s per sum).
+        // Speelgoedfabriek (year-round; id kept for links and thumbs): presents on a belt, the right one into the crate.
+        // The rightmost present reaching the belt's end is a miss (pakjesband/belt.ts: about 12 s per sum). Mistakes heat
+        // the machine's pressure gauge, right answers cool it (pakjesband/pressure.ts); too hot = it sputters (canFail).
         meta: {
             music: 'fabriek',
-            id: 'pakjesband', label: 'Pakjesband', input: 'choice', timed: false, round: { questions: 20 }, season: 'sinterklaas', accepts: TAP_PICTURES,
-            sounds: { correct: 'whoomp', wrong: 'boing', miss: 'plop' },
+            id: 'pakjesband', label: 'Speelgoedfabriek', input: 'choice', timed: false, round: { questions: 20 }, accepts: TAP_PICTURES,
+            canFail: true, winTitle: 'Alle pakjes zijn klaar!', failTitle: 'Oei! De machine sputtert. Nog eens?',
+            sounds: { correct: 'ting', wrong: 'boing', miss: 'plop', win: 'cheer', fail: 'puf' },
         },
         icon: Gift,
         Component: lazy(() => import('./pakjesband/Pakjesband')),
+        Ending: lazy(() => import('./pakjesband/Pakjesband').then(m => ({ default: m.FabriekEnding }))),
     },
     {
         // Kerst: a bare fir tree; each right answer hangs the next bauble or garland, the 15th is the star on top.
-        // A mistake never takes one off (goalKeep); 30 questions at most. The finished tree lights up.
+        // A mistake never takes one off (goalKeep); two in a row knock a bauble to the floor (hit = its tink). 30 questions at most.
         meta: {
             music: 'kerst',
             id: 'kerstboom', label: 'Kerstboom versieren', input: 'keypad', timed: false, round: { questions: 30, goal: 15, goalKeep: true }, season: 'kerst',
-            winTitle: 'De boom is klaar!', accepts: KEYPAD_NUMBER, sounds: { correct: 'sparkle', wrong: 'plop', win: 'jingle' },
+            winTitle: 'De boom is klaar!', accepts: KEYPAD_NUMBER, sounds: { correct: 'sparkle', wrong: 'plop', win: 'jingle', hit: 'ting' },
         },
         icon: TreeEvergreen,
         Component: lazy(() => import('./kerstboom/Kerstboom')),

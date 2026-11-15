@@ -192,9 +192,12 @@ describe('cijfer cells have a name per role and column', () => {
         expect(many.at(-1)).toBe('Antwoord duizendtallen');
     });
 
-    test('delen: quotient columns, then the rest', () => {
+    test('delen: per step the quotient digit, its product and difference, the digit brought down; then the rest', () => {
         expect(labelsOf('cijferen-delen-nat', ex(':', [845, 5], 169))).toEqual([
-            'Quotiënt honderdtallen', 'Quotiënt tientallen', 'Quotiënt eenheden', 'Rest',
+            'Quotiënt honderdtallen', 'Product 1 honderdtallen', 'Verschil 1 honderdtallen',
+            'Bijhalen tientallen', 'Quotiënt tientallen', 'Product 2 tientallen', 'Product 2 honderdtallen', 'Verschil 2 tientallen', 'Verschil 2 honderdtallen',
+            'Bijhalen eenheden', 'Quotiënt eenheden', 'Product 3 eenheden', 'Product 3 tientallen', 'Verschil 3 eenheden', 'Verschil 3 tientallen',
+            'Rest',
         ]);
     });
 });

@@ -9,7 +9,7 @@ import { SOL, solutionText } from './solutionStyle';
 import { monoTextPx } from '../../services/layout/blockLayout';
 import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
 import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, decimalsOf, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
-import { cijferKioskGrid, divQuotientInt, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
+import { cijferKioskGrid, divKioskLayout, divQuotientInt, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
 import { borrowedProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 
@@ -322,13 +322,13 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const multiplicand = ex.operands[0];
     const multiplier = ex.operands[1];
 
-    const { mdp, tdp, partialProducts, digitCols, n } = mulLayout(ex, dp);
+    const { mdp, tdp, partialProducts, digitCols, n, multiplierDigits } = mulLayout(ex, dp);
     // Whole-number rows are right-aligned over digitCols; each row's comma sits after its own integer part
     const maxInt = digitCols - tdp;
     const mcInt = digitCols - dp;
     const mlInt = digitCols - mdp;
     // SYNC: cijferCells kioskMulRows — the card keeps only the rows the pupil fills.
-    const kiosk = cells ? kioskMulRows(n) : null;
+    const kiosk = cells ? kioskMulRows(ex, dp) : null;
     const multiplicandRow = kiosk?.multiplicand ?? 2;
     const multiplierRow = kiosk?.multiplier ?? 3;
     const lineRow1 = kiosk?.ppStart ?? 4;
@@ -423,6 +423,19 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />
             )}
 
+            {/* Card only: each carry row is named by what that partial product multiplies by ("×3", "×90"),
+                so the pupil knows which row a carry goes in; a long name shrinks to stay in its ruitje. */}
+            {kiosk && n >= 2 && [...kiosk.carryRowOf].map(([r, row]) => {
+                const name = `×${multiplierDigits[r]}${'0'.repeat(r)}`;
+                return (
+                    <div key={`cl${r}`} style={{
+                        position: 'absolute', left: 0, top: row * CELL, width: CELL, height: CELL,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: CELL * 0.44 * Math.min(1, 3 / name.length), fontFamily: 'var(--font-sheet-math)',
+                        color: 'var(--text-muted)', userSelect: 'none', pointerEvents: 'none',
+                    }}>{name}</div>
+                );
+            })}
             {cells && cijferKioskGrid(ex, dp).cells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}
             {cells && tdp > 0 && <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />}
         </div>
@@ -449,13 +462,15 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
     // Whole part and decimals from one exact string: rounding the whole part drew 336,6 as "337,60".
     const [dividendWhole, dividendDecStr = ''] = dividend.toFixed(dp).split('.');
-    const leftCols = dividendIntCols + workingDecCols;
-    const rightContentCols = Math.max(divisorCols, quotientIntCols + dp);
+    // SYNC: cijferCells divKioskLayout — the card draws exactly the rows and cells of the pupil's staartdeling.
+    const kiosk = cells ? divKioskLayout(ex, dp) : null;
+    const leftCols = kiosk?.leftCols ?? dividendIntCols + workingDecCols;
+    const rightContentCols = Math.max(divisorCols, quotientIntCols + dp, kiosk?.qCells ?? 0);
     const rightCols = rightContentCols;
     const totalCols = leftCols + rightCols + extraCols;
 
-    // The card keeps one working row: the pupil cannot write the subtractions on a screen.
-    const workingRows = cells ? 1 : leftCols * 2 + 1;
+    // The card keeps the product and difference row of every step that subtracts.
+    const workingRows = kiosk ? Math.max(1, kiosk.workRows) : leftCols * 2 + 1;
     const totalRows = 1 + workingRows + extraRows;
 
     // A staartdeling's working rows carry a subtraction written UNDER the digits above it,
@@ -490,6 +505,10 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                         <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
+                {/* Card only: the line under each product, drawn before the pupil subtracts. */}
+                {kiosk?.lines.map(l => (
+                    <line key={`sub${l.row}`} x1={l.from * CELL} y1={(l.row + 1) * ROW_H} x2={(l.to + 1) * CELL} y2={(l.row + 1) * ROW_H} stroke="currentColor" strokeWidth={2} />
+                ))}
             </svg>
 
             {/* Dividend integer digits (left, row 0) */}
@@ -522,9 +541,9 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                 <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} rowH={ROW_H} />
             )}
 
-            {cells && cijferKioskGrid(ex, dp).cells.filter(cell => cell.role === 'quotient')
+            {cells && cijferKioskGrid(ex, dp).cells.filter(cell => cell.role !== 'rest')
                 .map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} rowH={ROW_H} />)}
-            {cells && dp > 0 && <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} rowH={ROW_H} />}
+            {kiosk && kiosk.qCommaAfter !== null && <CommaEdge afterGridCol={leftCols + kiosk.qCommaAfter} row={1} CELL={CELL} rowH={ROW_H} />}
         </div>
     );
 }

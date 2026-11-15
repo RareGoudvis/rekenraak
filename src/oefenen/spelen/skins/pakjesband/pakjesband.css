@@ -1,49 +1,106 @@
-/* Pakjesband skin. A rooftop at dusk: flat fills under a thick dark outline (spelen.css tokens), transforms
-   and opacity only. Layers: roof, vane, horse, posts, chimney back (1) < belt and parcels (2) < chimney front (3). */
+/* Speelgoedfabriek skin (id pakjesband). A cheerful toy factory: flat fills under a thick dark outline (spelen.css
+   tokens), transforms and opacity only. Layers: wall, floor, machine (1) < belt and presents (2) < crate back, bin,
+   robot (2–3) < a present in flight (3) < crate front (4) < sign, sputter (5). */
 .pk-root {
-  /* One parcel's width (and height): four on the belt with room between, small enough under the sign. */
+  /* One present's slot (width and height): four on the belt with room between, small enough under the sign. */
   --pk-w: clamp(60px, min(12vw, 17vh), 130px);
-  --pk-belt-y: 46%;
-  --pk-mouth-y: 61%;
-  --pk-roof-y: 75%;
-  --pk-sky: color-mix(in srgb, var(--accent-meetkunde) 20%, color-mix(in srgb, var(--accent-bewerkingen) 28%, var(--kiosk-paper)));
-  --pk-roof: color-mix(in srgb, var(--accent-getallenkennis) 62%, var(--spel-ink));
-  --pk-brick: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--accent-vraagstukken));
-  --pk-belt: color-mix(in srgb, var(--text-muted) 45%, var(--kiosk-paper));
-  --pk-belt-dark: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper));
-  --pk-soot: color-mix(in srgb, var(--text-muted) 30%, var(--kiosk-paper));
+  /* Shares of the scene's height (unitless, so the CSS that throws things across the scene can use them too). */
+  --pk-belt: .56;
+  --pk-floor: .79;
+  --pk-stand: 4%;
+  --pk-mw: clamp(84px, calc(var(--pk-w) * 1.45), 220px);
+  --pk-door-h: calc(var(--pk-w) * 1.14);
+  --pk-crate-w: clamp(96px, calc(var(--pk-w) * 1.4), 200px);
+  --pk-robot-w: clamp(64px, var(--pk-w), 140px);
+  --pk-wall: color-mix(in srgb, var(--mab-e) 13%, var(--kiosk-paper));
+  --pk-wall-line: color-mix(in srgb, var(--spel-ink) 7%, var(--pk-wall));
+  --pk-floor-c: color-mix(in srgb, var(--accent-bewerkingen) 12%, color-mix(in srgb, var(--text-muted) 32%, var(--kiosk-paper)));
+  --pk-machine: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--accent-metendrekenen));
+  --pk-machine-dark: color-mix(in srgb, var(--pk-machine) 72%, var(--spel-ink));
+  --pk-metal: color-mix(in srgb, var(--text-muted) 32%, var(--kiosk-paper));
+  --pk-metal-dark: color-mix(in srgb, var(--text-muted) 68%, var(--kiosk-paper));
+  --pk-wood: color-mix(in srgb, var(--accent-vraagstukken) 42%, color-mix(in srgb, var(--spel-ink) 14%, var(--kiosk-paper)));
+  --pk-robot-c: var(--accent-vraagstukken);
+  --pk-steam: color-mix(in srgb, var(--spel-cloud) 85%, var(--spel-ink));
   position: absolute;
   inset: 0;
   isolation: isolate;
   overflow: hidden;
   overflow: clip;
-  background: var(--pk-sky);
+  background: var(--pk-wall);
 }
 
-.pk-moon {
+/* ── The hall ─────────────────────────────────────────────────────────────── */
+.pk-wall {
   position: absolute;
-  top: 7%;
-  left: 7%;
-  width: clamp(36px, 7vmin, 64px);
-  aspect-ratio: 1;
-  border: 3px solid var(--spel-ink);
-  border-radius: 50%;
-  background: var(--spel-star);
-  box-shadow: inset calc(clamp(36px, 7vmin, 64px) * -.28) 0 0 color-mix(in srgb, var(--spel-star) 60%, var(--kiosk-paper));
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 62px, var(--pk-wall-line) 62px 65px);
 }
-.pk-star {
+.pk-pipe {
   position: absolute;
-  width: calc(clamp(16px, 3vmin, 28px) * var(--s));
-  animation: pk-twinkle 2.6s ease-in-out infinite alternate;
-  animation-delay: calc(var(--k) * -0.7s);
+  left: 0;
+  right: 0;
+  top: 3%;
+  height: clamp(12px, 2.4vmin, 22px);
+  border-block: 3px solid var(--spel-ink);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 150px, var(--pk-metal-dark) 150px 166px),
+    var(--pk-metal);
 }
-.pk-star-art { display: block; width: 100%; fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
-@keyframes pk-twinkle { from { transform: scale(.8); } to { transform: scale(1.1); } }
+.pk-gear { position: absolute; overflow: visible; }
+.pk-gear.is-big { right: 3%; top: 13%; width: clamp(64px, 15vmin, 150px); animation: pk-spin 14s linear infinite; }
+.pk-gear.is-small { right: calc(3% + clamp(64px, 15vmin, 150px) * .78); top: calc(13% + clamp(64px, 15vmin, 150px) * .5); width: clamp(42px, 9vmin, 92px); animation: pk-spin 8.6s linear infinite reverse; }
+.pk-gear-body { fill: var(--pk-metal); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-gear-ring { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 30%, var(--pk-metal)); stroke-width: 4; }
+.pk-gear-hole { fill: var(--pk-metal-dark); stroke: var(--spel-ink); stroke-width: 4; }
+@keyframes pk-spin { to { rotate: 360deg; } }
+.pk-root.is-high .pk-gear.is-big { animation-duration: 5s; }
+.pk-root.is-high .pk-gear.is-small { animation-duration: 3s; }
+
+/* Two lamps on cords, swaying a little. */
+.pk-cord {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 10%;
+  margin-left: -1.5px;
+  background: var(--spel-ink);
+}
+.pk-cord.is-a { left: 24%; }
+.pk-cord.is-b { left: 76%; }
+.pk-hanging {
+  position: absolute;
+  top: 10%;
+  width: clamp(44px, 8vmin, 84px);
+  margin-left: calc(clamp(44px, 8vmin, 84px) * -.5);
+  overflow: visible;
+  transform-origin: 50% -40%;
+  animation: pk-sway 4.2s ease-in-out infinite alternate;
+}
+.pk-hanging.is-a { left: 24%; }
+.pk-hanging.is-b { left: 76%; animation-delay: -2s; }
+@keyframes pk-sway { from { rotate: -3deg; } to { rotate: 3deg; } }
+.pk-lamp-shade { fill: var(--accent-metendrekenen); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-lamp-bulb { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; }
+.pk-lamp-glow { fill: color-mix(in srgb, var(--spel-star) 30%, transparent); }
+
+.pk-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: calc(var(--pk-floor) * 100%);
+  border-top: var(--spel-line) solid var(--spel-ink);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 88px, color-mix(in srgb, var(--spel-ink) 14%, var(--pk-floor-c)) 88px 91px),
+    var(--pk-floor-c);
+}
 
 /* ── The sum ──────────────────────────────────────────────────────────────── */
 .pk-top {
   position: relative;
-  z-index: 4;
+  /* Over the sputter's flying toys: the sum always reads. */
+  z-index: 6;
   display: flex;
   justify-content: center;
   padding: var(--sp-3) var(--sp-3) 0;
@@ -70,144 +127,181 @@
 }
 @keyframes pk-grow { from { transform: scale(.6); } to { transform: scale(1); } }
 
-/* ── The house ────────────────────────────────────────────────────────────── */
-.pk-roof {
+/* ── The wrapping machine ─────────────────────────────────────────────────── */
+/* Its head sits right above the door the presents come out of; its body stands on the floor. */
+.pk-machine {
   position: absolute;
   z-index: 1;
-  left: 0;
-  right: 0;
-  top: var(--pk-roof-y);
-  bottom: 0;
-  width: 100%;
-  height: calc(100% - var(--pk-roof-y));
+  left: .5%;
+  width: var(--pk-mw);
+  top: calc(var(--pk-belt) * 100% - var(--pk-door-h) - var(--pk-mw));
+  bottom: calc((1 - var(--pk-floor)) * 100% - 3%);
 }
-.pk-roof-tiles { fill: var(--pk-roof); stroke: var(--spel-ink); stroke-width: var(--spel-line); vector-effect: non-scaling-stroke; }
-.pk-roof-line { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 45%, var(--pk-roof)); stroke-width: 3; vector-effect: non-scaling-stroke; }
-.pk-ridge { fill: none; stroke: var(--spel-ink); stroke-width: 8; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-
-.pk-vane {
-  position: absolute;
-  z-index: 1;
-  left: 15%;
-  bottom: calc(100% - var(--pk-roof-y) - 2px);
-  height: clamp(60px, 15%, 150px);
-  overflow: visible;
-}
-.pk-iron { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
-.pk-gold { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
-.pk-vane-line { fill: none; stroke: var(--spel-ink); stroke-width: 2; opacity: .5; }
-
-.pk-horse {
-  position: absolute;
-  z-index: 1;
-  right: 6%;
-  bottom: calc(100% - var(--pk-roof-y) - 2px);
-  width: clamp(80px, 14vmin, 150px);
-  overflow: visible;
-  fill: var(--spel-ink);
-}
-
-.pk-post {
-  position: absolute;
-  z-index: 1;
-  top: var(--pk-belt-y);
-  bottom: calc(100% - var(--pk-roof-y) - 4px);
-  width: 12px;
-  margin-left: -6px;
-  border: 3px solid var(--spel-ink);
+.pk-machine-rattle { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.pk-head-art { display: block; flex: 0 0 auto; width: 100%; height: var(--pk-mw); overflow: visible; }
+.pk-mbody {
+  position: relative;
+  flex: 1 1 auto;
+  margin-top: -1px;
+  border: var(--spel-line) solid var(--spel-ink);
   border-top: 0;
-  background: var(--pk-belt-dark);
-}
-
-/* The chimney: its back (the dark opening) under the parcels, its front over them. */
-.pk-chimney,
-.pk-chimney-back {
-  position: absolute;
-  left: 60%;
-  width: calc(var(--pk-w) * 1.3);
-  margin-left: calc(var(--pk-w) * -.65);
-}
-.pk-chimney-back {
-  z-index: 1;
-  top: calc(var(--pk-mouth-y) - 12px);
-  height: 16px;
-  border: var(--spel-line) solid var(--spel-ink);
-  border-bottom: 0;
-  border-radius: 4px 4px 0 0;
-  background: var(--spel-ink);
-}
-.pk-mouth { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
-.pk-chimney {
-  z-index: 3;
-  top: var(--pk-mouth-y);
-  bottom: calc(100% - var(--pk-roof-y) - 9%);
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: 0 0 4px 4px;
+  border-radius: 0 0 10px 10px;
   background:
-    repeating-linear-gradient(0deg, transparent 0 16px, color-mix(in srgb, var(--spel-ink) 35%, var(--pk-brick)) 16px 19px),
-    var(--pk-brick);
+    radial-gradient(circle at 12px 14px, var(--pk-machine-dark) 3px, transparent 3.5px) 0 0 / 100% 40px,
+    var(--pk-machine);
 }
-/* The chimney's lip, a little wider than its body. */
-.pk-chimney::before {
-  content: '';
+.pk-door {
+  position: absolute;
+  top: 0;
+  left: 8%;
+  width: 84%;
+  height: var(--pk-door-h);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: 12px 12px 0 0;
+  background:
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--spel-ink) 70%, var(--pk-machine)) 0 14px, var(--spel-ink) 14px 17px);
+}
+.pk-machine-fill { fill: var(--pk-machine); }
+.pk-machine-line { fill: none; stroke: var(--spel-ink); stroke-width: 4; vector-effect: non-scaling-stroke; }
+.pk-metal { fill: var(--pk-metal); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-metal-dark { fill: var(--pk-metal-dark); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-metal-line { fill: none; stroke: var(--spel-ink); stroke-width: 4; stroke-linecap: round; }
+.pk-hopper { fill: var(--pk-metal); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-hopper-in { fill: color-mix(in srgb, var(--spel-ink) 75%, var(--pk-metal)); }
+.pk-hopper-rim { fill: var(--pk-metal-dark); stroke: var(--spel-ink); stroke-width: 4; transform-box: fill-box; transform-origin: 30% 100%; }
+.pk-rivet { fill: var(--pk-machine-dark); }
+.pk-lamp-dome { fill: var(--pk-metal); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-root.is-warm .pk-lamp-dome,
+.pk-root.is-high .pk-lamp-dome,
+.pk-root.is-sputter .pk-lamp-dome { fill: var(--accent-vraagstukken); animation: pk-blink 900ms steps(2, jump-none) infinite; }
+.pk-root.is-high .pk-lamp-dome, .pk-root.is-sputter .pk-lamp-dome { animation-duration: 420ms; }
+@keyframes pk-blink { from { opacity: 1; } to { opacity: .35; } }
+.pk-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-pupil { fill: var(--spel-ink); }
+.pk-glint { fill: var(--kiosk-paper); }
+.pk-brow { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
+.pk-sweat { fill: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; }
+.pk-spiral { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.pk-happy-eye { fill: none; stroke: var(--spel-ink); stroke-width: 6; stroke-linecap: round; }
+.pk-gauge { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 5; }
+.pk-zone { fill: none; stroke-width: 11; }
+.pk-zone.is-green { stroke: var(--accent-metendrekenen); }
+.pk-zone.is-yellow { stroke: var(--spel-star); }
+.pk-zone.is-orange { stroke: var(--accent-vraagstukken); }
+.pk-tick { stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.pk-needle { fill: var(--spel-ink); transition: transform 600ms var(--ease-spring); }
+.pk-hub { fill: var(--spel-ink); }
+/* Orange: the needle quivers and the whole machine trembles. */
+.pk-root.is-high .pk-needle path, .pk-root.is-sputter .pk-needle path { animation: pk-quiver 120ms linear infinite alternate; transform-box: view-box; transform-origin: 100px 148px; }
+@keyframes pk-quiver { from { rotate: -4deg; } to { rotate: 4deg; } }
+.pk-root.is-high .pk-machine-rattle { animation: pk-tremble 160ms linear infinite alternate; }
+@keyframes pk-tremble { from { translate: -1px 0; } to { translate: 1.5px -1px; } }
+
+/* Steam from the valve while the pressure is up. */
+.pk-valve-puff { position: absolute; left: 84.5%; top: calc(var(--pk-mw) * .02); width: 0; height: 0; }
+.pk-valve-puff span {
   position: absolute;
   left: -12px;
-  right: -12px;
-  top: -6px;
-  height: 18px;
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: 4px;
-  background: var(--pk-brick);
-}
-.pk-puff {
-  position: absolute;
-  z-index: 4;
-  left: 60%;
-  top: calc(var(--pk-mouth-y) - 20px);
-  width: 0;
-  height: 0;
-}
-.pk-puff span {
-  position: absolute;
-  left: -16px;
-  top: -16px;
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--spel-ink);
+  top: -12px;
+  width: 24px;
+  height: 24px;
+  border: 2px solid color-mix(in srgb, var(--spel-ink) 35%, transparent);
   border-radius: 50%;
-  background: var(--pk-soot);
+  background: var(--pk-steam);
   opacity: 0;
-  animation: pk-puff 700ms var(--ease-out) 420ms both;
+  animation: pk-puff 1500ms var(--ease-out) infinite;
 }
-.pk-puff span:nth-child(2) { --x: -22px; animation-delay: 480ms; }
-.pk-puff span:nth-child(3) { --x: 20px; animation-delay: 540ms; }
+.pk-valve-puff span + span { animation-delay: 750ms; }
+.pk-root.is-high .pk-valve-puff span { animation-duration: 800ms; }
+.pk-root.is-high .pk-valve-puff span + span { animation-delay: 400ms; }
 @keyframes pk-puff {
-  from { opacity: 1; transform: translate(0, 0) scale(.4); }
-  to { opacity: 0; transform: translate(var(--x, 0), -70px) scale(1.2); }
+  0% { opacity: .95; transform: translate(0, 0) scale(.4); }
+  100% { opacity: 0; transform: translate(10px, -52px) scale(1.5); }
 }
 
-/* ── The belt and the parcels ─────────────────────────────────────────────── */
-.pk-line { position: absolute; z-index: 2; left: 3%; right: 3%; top: var(--pk-belt-y); }
+/* The feed pipe from the ceiling: toys drop out of it into the hopper. */
+.pk-feed {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: calc(.5% + var(--pk-mw) * .41 - var(--pk-mw) * .1);
+  width: calc(var(--pk-mw) * .2);
+  height: calc(var(--pk-belt) * 100% - var(--pk-door-h) - var(--pk-mw) - var(--pk-mw) * .05);
+}
+.pk-feed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  background: var(--pk-metal);
+}
+.pk-feed-toy {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  opacity: 0;
+  animation: pk-feed 3.6s ease-in infinite;
+  animation-delay: calc(var(--k) * 1.2s);
+}
+.pk-feed-toy > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes pk-feed {
+  0% { opacity: 1; transform: translateY(-20%) rotate(0); }
+  22% { opacity: 1; transform: translateY(calc(100% + var(--pk-mw) * .1)) rotate(25deg); }
+  30%, 100% { opacity: 0; transform: translateY(calc(100% + var(--pk-mw) * .16)) rotate(30deg) scale(.7); }
+}
+
+/* Toys (the feed, the sputter, the end screen). */
+.pk-toy * { stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.pk-toy-brown { fill: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink)); }
+.pk-toy-light { fill: var(--kiosk-paper); }
+.pk-toy-ink { fill: var(--spel-ink); }
+.pk-toy-a { fill: var(--accent-getallenkennis); }
+.pk-toy-b { fill: var(--accent-bewerkingen); }
+.pk-toy-yellow { fill: var(--spel-star); }
+.pk-toy-orange { fill: var(--accent-vraagstukken); }
+.pk-toy-none { fill: none; }
+
+/* ── The belt and the presents ────────────────────────────────────────────── */
+.pk-line { position: absolute; z-index: 2; left: 3%; right: 3%; top: calc(var(--pk-belt) * 100%); }
 .pk-field { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--pk-w); }
 .pk-belt {
+  position: relative;
+  z-index: 1;
   height: clamp(16px, 3.4vh, 26px);
   display: flex;
   align-items: center;
   justify-content: space-around;
   border: var(--spel-line) solid var(--spel-ink);
-  border-radius: var(--radius-pill);
-  background: repeating-linear-gradient(90deg, var(--pk-belt) 0 18px, var(--pk-belt-dark) 18px 36px);
+  /* Square on the left: the belt runs on inside the machine. */
+  border-radius: 4px var(--radius-pill) var(--radius-pill) 4px;
+  background: repeating-linear-gradient(90deg, var(--pk-metal) 0 18px, var(--pk-metal-dark) 18px 36px);
 }
-/* The tread moves with the parcels (about the same speed as belt.ts). */
+/* The tread moves with the presents (about the same speed as belt.ts). */
 .pk-belt.is-running { animation: pk-tread 1.3s linear infinite; }
 @keyframes pk-tread { from { background-position: 0 0; } to { background-position: 36px 0; } }
 .pk-roller { width: 8px; height: 8px; border-radius: 50%; background: var(--spel-ink); opacity: .6; }
+.pk-post {
+  position: absolute;
+  top: 100%;
+  width: 12px;
+  height: calc(var(--rh, 400px) * (var(--pk-floor) - var(--pk-belt)) + 6px);
+  margin-left: -6px;
+  border: 3px solid var(--spel-ink);
+  border-top: 0;
+  background: var(--pk-metal-dark);
+}
 
 /* Placed by the skin's loop (a transform per frame). */
 .pk-slot { position: absolute; left: 0; bottom: 0; width: var(--pk-w); height: var(--pk-w); will-change: transform; }
 .pk-hop { position: relative; width: 100%; height: 100%; transform-origin: 50% 100%; }
-.pk-hop { animation: pk-arrive 360ms var(--ease-spring) both; }
-@keyframes pk-arrive { from { opacity: 0; transform: translateY(-30px); } }
+/* A new sum: the presents roll out of the machine one after the other. */
+.pk-hop { animation: pk-arrive 420ms var(--ease-spring) both; animation-delay: calc(var(--i) * 70ms); }
+@keyframes pk-arrive { from { opacity: 0; transform: translateY(-18%) scale(.6); } }
 .pk-parcel {
   position: relative;
   display: block;
@@ -225,16 +319,23 @@
 }
 .pk-parcel:disabled { cursor: default; }
 .pk-parcel:focus-visible { outline: none; }
-.pk-parcel:focus-visible .pk-box { stroke-width: 7; }
-.pk-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pk-box { fill: var(--fill); stroke: var(--spel-ink); stroke-width: var(--spel-line); }
-.pk-box-line { stroke: var(--spel-ink); stroke-width: 3; }
-.pk-ribbon { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; }
-.pk-bow { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.pk-parcel:focus-visible .pk-edge > * { stroke-width: 7; }
 
+.pk-art { position: absolute; overflow: visible; }
+.pk-paper > * { fill: var(--fill); }
+.pk-paper > .pk-lid { fill: color-mix(in srgb, var(--fill) 78%, var(--kiosk-paper)); }
+.pk-pattern > * { stroke: none; }
+.pk-pat { fill: color-mix(in srgb, var(--fill) 45%, var(--kiosk-paper)); }
+.pk-pat-line { fill: none; stroke: color-mix(in srgb, var(--fill) 45%, var(--kiosk-paper)); stroke-width: 3; }
+.pk-edge > * { fill: none; stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-depth { fill: color-mix(in srgb, var(--fill) 60%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-ribbon > * { fill: var(--ribbon); stroke: var(--spel-ink); stroke-width: 2.5; }
+.pk-bow > path:first-child, .pk-bow > circle { fill: var(--ribbon); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.pk-bow-tail { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+
+/* The answer on a calm label on the present's front. */
 .pk-num {
   position: absolute;
-  top: 59%;
   left: 50%;
   transform: translate(-50%, -50%);
   min-width: 52%;
@@ -247,47 +348,63 @@
   line-height: 1.25;
   white-space: nowrap;
 }
-.pk-key {
+
+/* The factory's star stamp: right presents get one before they fly. */
+.pk-stamp {
   position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translate(-50%, 6px);
-  display: none;
-  min-width: 26px;
-  height: 26px;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--spel-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kiosk-paper);
-  font-size: var(--text-sm);
-  font-weight: 700;
+  right: -8%;
+  top: 2%;
+  width: 46%;
+  aspect-ratio: 1;
+  rotate: -14deg;
 }
-@media (hover: hover) and (pointer: fine) { .pk-key { display: inline-flex; } }
+.pk-stamp svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pk-stamp circle { fill: color-mix(in srgb, var(--kiosk-ok) 12%, var(--kiosk-paper)); stroke: var(--kiosk-ok); stroke-width: 3.5; }
+.pk-stamp path { fill: var(--kiosk-ok); }
 
-/* Off the end of the belt: it tips over and drops behind the roof. */
-.pk-slot.is-off .pk-hop { animation: pk-fall 700ms ease-in forwards; }
-@keyframes pk-fall { to { transform: translate(calc(var(--pk-w) * .6), 60vh) rotate(50deg); opacity: 0; } }
-
-/* Right: a hop off the belt, over to the chimney and down into it. */
-.pk-slot.is-down .pk-hop { animation: pk-down 650ms var(--ease-out) forwards; }
-@keyframes pk-down {
-  0% { transform: none; }
-  40% { transform: translate(calc(var(--dx) * .5), calc(var(--pk-w) * -.45)) rotate(-8deg) scale(.85); }
-  70% { transform: translate(var(--dx), calc(var(--dy) - 6px)) scale(.62); }
-  100% { transform: translate(var(--dx), calc(var(--dy) + var(--pk-w))) scale(.62); }
+/* Right: the present lifts, spins, gets its stamp and flies into the crate (a copy outside the belt, .pk-flyer). */
+.pk-slot.is-down .pk-hop { visibility: hidden; }
+.pk-root.is-still .pk-slot.is-down .pk-hop { visibility: visible; }
+.pk-flyer {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  animation: pk-fly 1100ms both;
 }
-.pk-slot.is-down .pk-key { display: none; }
-
-/* Wrong: a gentle bounce off the belt; no red, no shake. */
-.pk-slot.is-bounce .pk-hop { animation: pk-bounce 1100ms ease-in forwards; }
-@keyframes pk-bounce {
-  0% { transform: none; }
-  30% { transform: translate(8px, calc(var(--pk-w) * -.5)) rotate(-12deg); }
-  100% { transform: translate(24px, 60vh) rotate(30deg); opacity: 0; }
+.pk-flyer .pk-stamp { animation: pk-stamp 1100ms both; }
+@keyframes pk-fly {
+  0% { transform: translate(0, 0) rotate(0) scale(1); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  24% { transform: translate(0, -55%) rotate(0) scale(1.1); animation-timing-function: ease-in-out; }
+  48% { transform: translate(0, -70%) rotate(360deg) scale(1.14); }
+  64% { transform: translate(0, -70%) rotate(360deg) scale(1.14); animation-timing-function: cubic-bezier(.5, 0, .8, .6); }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(372deg) scale(.42); }
+}
+@keyframes pk-stamp {
+  0%, 46% { opacity: 0; scale: 2.4; }
+  54% { opacity: 1; scale: .9; }
+  60%, 100% { opacity: 1; scale: 1; }
 }
 
-/* The right parcel lights up with a ring while the sign shows the answer. */
+/* Wrong: a boing up and back down on the belt (no red, no shake), squashing as it lands. */
+.pk-slot.is-bounce .pk-hop { animation: pk-boing 900ms both; }
+@keyframes pk-boing {
+  0% { transform: translateY(0) scale(1, 1); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  28% { transform: translateY(-62%) rotate(-10deg) scale(.94, 1.08); animation-timing-function: cubic-bezier(.6, 0, .9, .4); }
+  48% { transform: translateY(0) scale(1.18, .8); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  64% { transform: translateY(-20%) rotate(6deg) scale(.96, 1.05); animation-timing-function: cubic-bezier(.6, 0, .9, .4); }
+  78% { transform: translateY(0) scale(1.08, .92); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+.pk-slot.is-bounce .pk-parcel { opacity: .6; transition: opacity 400ms var(--ease-out) 700ms; }
+
+/* Off the end of the belt: it tips over into the bin. */
+.pk-slot.is-off .pk-hop { animation: pk-drop 700ms ease-in forwards; }
+@keyframes pk-drop {
+  30% { transform: translate(calc(var(--pk-w) * .3), -6%) rotate(20deg); }
+  100% { transform: translate(calc(var(--pk-w) * .55), calc(var(--rh, 600px) * (.94 - var(--pk-belt)) - var(--pk-w) * .2)) rotate(60deg) scale(.7); opacity: 0; }
+}
+
+/* The right present lights up with a ring while the sign shows the answer. */
 .pk-slot.is-answer .pk-parcel::after,
 .pk-slot.is-missed .pk-parcel::after {
   content: '';
@@ -302,28 +419,129 @@
 .pk-slot.is-missed .pk-num { color: var(--kiosk-ok); }
 .pk-slot.is-rest .pk-parcel { opacity: .45; transition: opacity var(--dur-slow) var(--ease-out); }
 
+/* ── The crate, the robot, the bin ────────────────────────────────────────── */
+.pk-crate {
+  position: absolute;
+  left: calc(62% - var(--pk-crate-w) / 2);
+  bottom: var(--pk-stand);
+  width: var(--pk-crate-w);
+  aspect-ratio: 125 / 100;
+}
+.pk-crate > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pk-crate-back { z-index: 2; }
+.pk-crate-front-art { z-index: 4; }
+.pk-crate-mouth { position: absolute; left: 10%; right: 10%; top: 30%; height: 16%; }
+.pk-crate.is-bump { animation: pk-bump 380ms var(--ease-spring); }
+@keyframes pk-bump { 40% { scale: 1.06 .94; } }
+.pk-crate-inside { fill: color-mix(in srgb, var(--spel-ink) 78%, var(--pk-wood)); stroke: var(--spel-ink); stroke-width: 3; }
+.pk-pile rect { fill: var(--fill); stroke: var(--spel-ink); stroke-width: 2.5; }
+.pk-pile-ribbon { stroke: var(--spel-ink); stroke-width: 3; }
+.pk-wood { fill: var(--pk-wood); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-wood-dark { fill: color-mix(in srgb, var(--pk-wood) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.pk-wood-line { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 40%, var(--pk-wood)); stroke-width: 3; }
+.pk-wood-cross { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 30%, var(--pk-wood)); stroke-width: 5; stroke-linecap: round; }
+.pk-crate-star { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+
+.pk-robot-art {
+  position: absolute;
+  z-index: 3;
+  left: calc(62% - var(--pk-crate-w) / 2 - var(--pk-robot-w) * .8);
+  bottom: var(--pk-stand);
+  width: var(--pk-robot-w);
+  overflow: visible;
+}
+.pk-robot-paint { fill: var(--pk-robot-c); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-robot-face { fill: var(--pk-metal); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-robot-smile { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.pk-robot-tip { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 3; }
+.pk-robot-lower, .pk-robot-upper, .pk-robot-hand { transform-box: view-box; }
+.pk-robot-lower { transform-origin: 38px 136px; animation: pk-arm 3.4s ease-in-out infinite alternate; }
+.pk-robot-upper { transform-origin: 38px 72px; animation: pk-arm 2.6s ease-in-out infinite alternate-reverse; }
+@keyframes pk-arm { from { rotate: -4deg; } to { rotate: 4deg; } }
+/* A present landed: the robot cheers (a quick nod of its head). */
+.pk-robot-art.is-cheer .pk-robot-hand { transform-origin: 86px 38px; animation: pk-cheer 700ms var(--ease-spring); }
+@keyframes pk-cheer { 30% { rotate: -22deg; translate: 0 -6px; } 60% { rotate: 12deg; } }
+
+.pk-bin-art {
+  position: absolute;
+  z-index: 3;
+  right: 1.5%;
+  bottom: var(--pk-stand);
+  width: calc(var(--pk-w) * 1.15);
+  overflow: visible;
+}
+.pk-bin-body { fill: var(--pk-metal); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.pk-bin-line { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 35%, var(--pk-metal)); stroke-width: 3; }
+.pk-bin-rim { fill: var(--pk-metal-dark); stroke: var(--spel-ink); stroke-width: 4; }
+
+/* ── Too much pressure: the machine sputters, toys pop out everywhere ─────── */
+.pk-root.is-sputter .pk-machine-rattle { animation: pk-rattle 90ms linear infinite alternate; }
+@keyframes pk-rattle { from { translate: -3px 1px; rotate: -1deg; } to { translate: 3px -2px; rotate: 1deg; } }
+.pk-root.is-sputter .pk-hopper-rim { animation: pk-lid 900ms cubic-bezier(.2, .8, .4, 1) forwards; }
+@keyframes pk-lid { to { translate: -30px -70px; rotate: -50deg; } }
+.pk-pops { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.pk-pop-toy {
+  --toy: clamp(28px, calc(var(--pk-w) * .45), 58px);
+  --ex: calc(var(--rw, 800px) * (var(--tx) - .005) - var(--pk-mw) * .41);
+  --ey: calc(var(--rh, 600px) * (var(--ty) - var(--pk-belt)) + var(--pk-door-h) + var(--pk-mw) * .95 - var(--toy));
+  position: absolute;
+  left: calc(.5% + var(--pk-mw) * .41 - var(--toy) / 2);
+  top: calc(var(--pk-belt) * 100% - var(--pk-door-h) - var(--pk-mw) * .95);
+  width: var(--toy);
+  aspect-ratio: 1;
+  animation: pk-pop 1100ms both;
+  animation-delay: calc(var(--k) * 45ms);
+}
+.pk-pop-toy > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes pk-pop {
+  0% { transform: translate(0, 0) rotate(0) scale(.3); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  38% { transform: translate(calc(var(--ex) * .5), calc(var(--rh, 600px) * -.1)) rotate(calc(var(--tr) * .5)) scale(1); animation-timing-function: cubic-bezier(.6, 0, .9, .5); }
+  78% { transform: translate(var(--ex), var(--ey)) rotate(var(--tr)) scale(1); animation-timing-function: ease-out; }
+  89% { transform: translate(var(--ex), calc(var(--ey) - 16px)) rotate(var(--tr)) scale(1); animation-timing-function: ease-in; }
+  100% { transform: translate(var(--ex), var(--ey)) rotate(var(--tr)) scale(1); }
+}
+
 /* "Hoe los ik dit op?": everything waits. */
 .pk-root.is-paused *,
 .pk-root.is-paused *::after { animation-play-state: paused; }
 
-@media (max-height: 420px) {
-  .pk-root { --pk-belt-y: 50%; --pk-mouth-y: 64%; --pk-roof-y: 78%; }
-  .pk-vane, .pk-horse { display: none; }
+/* Portrait (phones): the belt a little higher, the floor nearer, the crate and robot in the middle. */
+@media (max-aspect-ratio: 4/5) {
+  .pk-root { --pk-belt: .5; --pk-floor: .72; --pk-mw: clamp(84px, 27vw, 140px); --pk-crate-w: clamp(100px, 30vw, 200px); --pk-robot-w: clamp(64px, 19vw, 120px); }
+}
+@media (max-height: 460px) {
+  .pk-root { --pk-belt: .6; --pk-floor: .84; --pk-mw: clamp(70px, calc(var(--pk-w) * 1.2), 150px); }
+  .pk-hanging, .pk-cord, .pk-gear.is-small, .pk-robot-art { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pk-star, .pk-belt.is-running, .pk-hop, .pk-sign-answer, .pk-slot.is-answer .pk-parcel::after, .pk-slot.is-missed .pk-parcel::after { animation: none; }
-  .pk-slot.is-down .pk-hop, .pk-slot.is-off .pk-hop { animation: pk-fade 300ms linear forwards; }
-  .pk-slot.is-bounce .pk-hop { animation: none; opacity: .4; }
+  .pk-gear, .pk-hanging, .pk-belt.is-running, .pk-hop, .pk-sign-answer, .pk-robot-lower, .pk-robot-upper, .pk-robot-hand,
+  .pk-root .pk-machine-rattle, .pk-lamp-dome, .pk-needle path, .pk-hopper-rim, .pk-crate,
+  .pk-slot.is-answer .pk-parcel::after, .pk-slot.is-missed .pk-parcel::after { animation: none !important; }
+  .pk-needle { transition: none; }
+  .pk-slot.is-off .pk-hop { animation: pk-fade 300ms linear forwards; }
+  .pk-slot.is-bounce .pk-hop { animation: none; }
+  .pk-pop-toy { animation: none; transform: translate(var(--ex), var(--ey)) rotate(var(--tr)); }
 }
-.pk-root.is-still .pk-star,
+.pk-root.is-still .pk-gear,
+.pk-root.is-still .pk-hanging,
 .pk-root.is-still .pk-hop,
-.pk-root.is-still .pk-sign-answer { animation: none; }
-.pk-root.is-still .pk-slot.is-down .pk-hop { animation: pk-fade 300ms linear forwards; }
-.pk-root.is-still .pk-slot.is-bounce .pk-hop { animation: none; opacity: .4; }
+.pk-root.is-still .pk-sign-answer,
+.pk-root.is-still .pk-robot-lower,
+.pk-root.is-still .pk-robot-upper,
+.pk-root.is-still .pk-robot-hand,
+.pk-root.is-still .pk-machine-rattle,
+.pk-root.is-still .pk-lamp-dome,
+.pk-root.is-still .pk-needle path,
+.pk-root.is-still .pk-hopper-rim,
+.pk-root.is-still .pk-crate { animation: none; }
+.pk-root.is-still .pk-needle { transition: none; }
+.pk-root.is-still .pk-slot.is-off .pk-hop { animation: pk-fade 300ms linear forwards; }
+.pk-root.is-still .pk-pop-toy { animation: none; transform: translate(var(--ex), var(--ey)) rotate(var(--tr)); }
+.pk-root.is-still.is-sputter .pk-hopper-rim { translate: -30px -70px; rotate: -50deg; }
 @keyframes pk-fade { to { opacity: 0; } }
 
-/* Content packs (SpelChoiceFace): bigger parcels so a clock face reads (≥ 96 px); a phrase wraps on two lines. */
+/* Content packs (SpelChoiceFace): bigger presents so a clock face reads (≥ 96 px); a phrase wraps on two lines. */
 .pk-root.has-pictures { --pk-w: clamp(60px, min(15vw, 21vh), 160px); }
 .pk-num.is-picture {
   width: calc(var(--pk-w) * .68);
@@ -344,7 +562,46 @@
   white-space: normal;
 }
 
-/* Breuk pictures on the parcels: bigger parcels so a pizza of tienden reads (≥ 120 px). */
-/* 15vw: the belt spaces the parcels by a share of its length (belt.ts gap), so wider parcels would touch. */
+/* Breuk pictures on the presents: bigger presents so a pizza of tienden reads (≥ 120 px). */
+/* 15vw: the belt spaces the presents by a share of its length (belt.ts gap), so wider presents would touch. */
 .pk-root.has-breuk { --pk-w: clamp(60px, min(15vw, 26vh), 200px); }
 .pk-root.has-breuk .pk-num.is-picture { width: calc(var(--pk-w) * .8); height: calc(var(--pk-w) * .8); }
+
+/* ── The end screen ───────────────────────────────────────────────────────── */
+.pk-ending {
+  --pk-machine: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--accent-metendrekenen));
+  --pk-machine-dark: color-mix(in srgb, var(--pk-machine) 72%, var(--spel-ink));
+  --pk-metal: color-mix(in srgb, var(--text-muted) 32%, var(--kiosk-paper));
+  --pk-metal-dark: color-mix(in srgb, var(--text-muted) 68%, var(--kiosk-paper));
+  --pk-wood: color-mix(in srgb, var(--accent-vraagstukken) 42%, color-mix(in srgb, var(--spel-ink) 14%, var(--kiosk-paper)));
+  --pk-steam: color-mix(in srgb, var(--spel-cloud) 85%, var(--spel-ink));
+}
+.pk-end-wall { fill: color-mix(in srgb, var(--mab-e) 13%, var(--kiosk-paper)); }
+.pk-end-floor { fill: color-mix(in srgb, var(--accent-bewerkingen) 12%, color-mix(in srgb, var(--text-muted) 32%, var(--kiosk-paper))); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-end-body { fill: var(--pk-machine); stroke: var(--spel-ink); stroke-width: 4; }
+.pk-end-steam { fill: var(--pk-steam); stroke: color-mix(in srgb, var(--spel-ink) 35%, transparent); stroke-width: 2; animation: pk-end-steam 2.4s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.8s); transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes pk-end-steam { from { translate: 0 4px; scale: .92; } to { translate: 6px -6px; scale: 1.06; } }
+.pk-ending.is-failed .pk-end-machine { animation: pk-end-wobble 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes pk-end-wobble { from { rotate: -2deg; } to { rotate: 2deg; } }
+.pk-ending.is-still .pk-end-steam,
+.pk-ending.is-still .pk-end-machine { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pk-end-steam, .pk-end-machine { animation: none; } }
+
+/* The stack of finished presents on the floor, between the machine and the robot. */
+.pk-stack {
+  position: absolute;
+  z-index: 2;
+  left: calc(.5% + var(--pk-mw) + 3%);
+  bottom: var(--pk-stand);
+  width: calc(var(--pk-w) * 2.1);
+  height: calc(var(--pk-w) * 1.4);
+}
+.pk-stack > .pk-art { width: 34%; height: 50%; bottom: 0; }
+.pk-stack > .is-0 { left: 0; }
+.pk-stack > .is-1 { left: 33%; }
+.pk-stack > .is-2 { left: 66%; }
+.pk-stack > .is-3 { left: 16%; bottom: 46%; }
+.pk-stack > .is-4 { left: 50%; bottom: 46%; }
+.pk-stack > .is-5 { left: 33%; bottom: 92%; width: 30%; height: 44%; }
+/* No room beside the machine on a phone. */
+@media (max-aspect-ratio: 4/5) { .pk-stack { display: none; } }
