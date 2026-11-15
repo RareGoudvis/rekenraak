@@ -31,6 +31,7 @@
     "height:audit": "node scripts/height-audit.mjs",
     "catalogue": "node scripts/catalogue.mjs",
     "handleiding:shots": "node scripts/handleiding-shots.mjs",
+    "promo:video": "node scripts/promo-video.mjs",
     "oefen:smoke": "node scripts/oefen-smoke.mjs",
     "bignum:audit": "node scripts/bignum-audit.mjs",
     "sweep": "node scripts/full-sweep.mjs",
