@@ -126,11 +126,16 @@
 .rc-skirt { fill: var(--rc-car-dark); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
 .rc-wing { fill: var(--rc-car-dark); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
 .rc-wing-strut { fill: none; stroke: var(--spel-ink); stroke-width: 4px; stroke-linecap: round; }
-.rc-car-glass { fill: var(--rc-glass); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
-.rc-glass-shine { fill: var(--kiosk-paper); opacity: .45; }
-.rc-helmet { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
-.rc-helmet-stripe { fill: none; stroke: var(--accent-getallenkennis); stroke-width: 2.5px; stroke-linecap: round; }
+.rc-car-glass { fill: var(--rc-glass); }
+.rc-glass-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-glass-shine { fill: var(--kiosk-paper); opacity: .35; }
+.rc-helmet { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
 .rc-visor { fill: var(--spel-ink); }
+.rc-well { fill: var(--spel-ink); }
+.rc-shine { fill: none; stroke: color-mix(in srgb, var(--rc-car-fill) 45%, var(--kiosk-paper)); stroke-width: 3px; stroke-linecap: round; }
+.rc-door { fill: none; stroke: color-mix(in srgb, var(--rc-car-fill) 55%, var(--spel-ink)); stroke-width: 1.8px; stroke-linecap: round; }
+.rc-mirror { fill: var(--rc-car-dark); stroke: var(--spel-ink); stroke-width: 1.5px; stroke-linejoin: round; }
+.rc-grille { fill: var(--spel-ink); }
 .rc-intake { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
 .rc-slat { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 55%, var(--kiosk-paper)); stroke-width: 2px; }
 .rc-crease { fill: none; stroke: color-mix(in srgb, var(--rc-car-fill) 55%, var(--kiosk-paper)); stroke-width: 3px; stroke-linecap: round; }
@@ -146,7 +151,8 @@
 .rc-car-art.is-ghost .rc-car-body,
 .rc-car-art.is-ghost .rc-wing { fill: var(--spel-cloud); stroke-dasharray: 8 5; }
 .rc-car-art.is-ghost .rc-skirt,
-.rc-car-art.is-ghost .rc-helmet { fill: var(--spel-cloud); }
+.rc-car-art.is-ghost .rc-helmet,
+.rc-car-art.is-ghost .rc-mirror { fill: var(--spel-cloud); }
 
 /* A bump on the road while it drives: quicker when fast, still when stopped. */
 .rc-body-g { transform-box: view-box; }
