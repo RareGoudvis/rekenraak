@@ -144,33 +144,32 @@ describe('Topic cards and the Keuze screen', () => {
         expect(screen.getByText('Zelf oefenen')).toBeTruthy();
     });
 
-    test('Maaltafels L3: Automatiseren, then exactly the games that accept the choice; a card starts that game with it', async () => {
-        localStorage.setItem(GRADE_KEY, '3');
+    test('Optellen L2: Automatiseren, then exactly the games that accept the choice; a card starts that game with it', async () => {
+        localStorage.setItem(GRADE_KEY, '2');
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
-        fireEvent.click(card('Hoofdrekenen', 'Maaltafels'));
+        fireEvent.click(card('Hoofdrekenen', 'Optellen'));
         expect(screen.queryByRole('region', { name: 'Automatiseren' })).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Alles door elkaar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Met brug' }));
         expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
         expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
         const data = await loadEenvoudigData();
-        const choice = choicesFor(data, 3, 'Hoofdrekenen · Maaltafels').find(c => c.label === 'Alles door elkaar')!;
-        const want = gamesFor(spelContentOf(choice, 3), pickerToday()).map(g => g.skin.meta.label);
+        const choice = choicesFor(data, 2, 'Hoofdrekenen · Optellen', 100).find(c => c.label === 'Met brug')!;
+        const want = gamesFor(spelContentOf(choice, 2), pickerToday()).map(g => g.skin.meta.label);
         const row = within(screen.getByRole('region', { name: 'Of speel een spel' })).getByRole('group', { name: 'Kies een spel' });
         const shown = within(row).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
         expect(shown).toEqual(want);
-        // Honingraat plays + and − only.
-        expect(shown).not.toContain('Honingraat');
+        expect(shown).toContain('Honingraat');
         expect(row.querySelector('img')!.getAttribute('src')).toMatch(/spelen\/thumbs\/\w+\.webp$/);
         fireEvent.click(within(row).getByRole('button', { name: 'Ballonnen' }));
         expect(sp().phase).toBe('play');
         expect(sp().meta!.id).toBe('ballonnen');
-        expect(sp().from).toMatchObject({ grade: 3, topicId: 'Hoofdrekenen · Maaltafels', choice: { key: choice.key } });
-        expect(sp().question!.text).toMatch(/×/);
+        expect(sp().from).toMatchObject({ grade: 2, topicId: 'Hoofdrekenen · Optellen', choice: { key: choice.key } });
+        expect(sp().question!.text).toMatch(/\+/);
         // Ander spel: back on the Keuze screen of that choice.
         act(() => sp().otherGame());
         expect(await screen.findByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'Alles door elkaar' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Met brug' }).getAttribute('aria-pressed')).toBe('true');
     });
 
     test('a game with options shows its options screen (with its picture) first; Ander spel there returns to the Keuze screen', async () => {

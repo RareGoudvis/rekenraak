@@ -1769,6 +1769,43 @@ html:has(.oefen-body),
 }
 .zelf-step .zelf-grid { width: 100%; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .zelf-step .zelf-choice { justify-content: center; text-align: center; min-height: 84px; font-size: var(--kiosk-text-lg); font-weight: 900; }
+/* Tot hoeveel: two big range buttons (leerjaar 1 and 4), else the range as a fixed pill under the title. */
+.zelf-range { margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px; }
+.zelf-range-label { font-size: var(--kiosk-text-lg); font-weight: 900; }
+.zelf-range .zelf-range-btn { min-height: 60px; padding: 0 24px; justify-content: center; font-size: var(--kiosk-text-lg); font-weight: 900; white-space: nowrap; }
+.zelf-range-pill { font-size: var(--kiosk-text); font-weight: 900; }
+/* Welke tafels: round number stickers to toggle, Alle / Geen beside them. */
+.zelf-tafels { display: flex; flex-wrap: wrap; gap: 12px; }
+.zelf-tafel {
+  --kid-sh: var(--kid-drop-sm);
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--kid-card);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-muted);
+  font-family: var(--font-sheet-math);
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zelf-tafel[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--kid-ring), var(--kid-drop-sm); background: var(--kid-pick); color: var(--kid-ink); }
+.zelf-tafel:active { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.zelf-tafels-quick { display: flex; gap: 10px; }
+.zelf-step .zelf-ops { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.zelf-hint { margin: 0; font-size: var(--kiosk-text); font-weight: 800; color: var(--kid-muted); text-align: right; }
+@media (max-width: 599px) {
+  .zelf-tafels { gap: 8px; }
+  .zelf-tafel { width: 52px; height: 52px; font-size: 21px; }
+  .zelf-step .zelf-ops .zelf-choice { min-height: 64px; padding: 6px; font-size: var(--kiosk-text); }
+  .zelf-range .zelf-range-btn { min-height: 52px; padding: 0 14px; font-size: var(--kiosk-text); }
+}
+
 /* Automatiseren and the games bar: two sticker panels, a drawn icon and the title on top. */
 .zelf-panel {
   padding: 14px 18px 18px;

@@ -31,6 +31,8 @@ async function toGames(grade: string, section: string, name: string, choice: Reg
     click(`Leerjaar ${grade}`);
     await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
     topic(section, name);
+    // Leerjaar 1 starts on "tot 10" (no brug there): these flows play the tot 20 sums.
+    if (grade === '1') click('tot 20');
     click(choice);
 }
 
