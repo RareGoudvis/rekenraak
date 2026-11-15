@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, pictureClass, signClass, viewFor } from '../../spelChoice';
+import { choiceLabel, faceChars, faceKind, pictureClass, signClass, viewFor } from '../../spelChoice';
 import { MOLE, molePace, newField, stepField, viewOf, type MoleField } from './moles';
 import './mollen.css';
 
@@ -144,7 +144,7 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
                                     onPointerDown={e => { if (e.button === 0) tap(h); }}
                                     onClick={() => tap(h)}>
                                     <MoleArt />
-                                    {m && <span className={`ml-num kiosk-math is-${faceKind(face)}`} aria-hidden><SpelChoiceFace value={m.value} view={face} /></span>}
+                                    {m && <span className={`ml-num kiosk-math is-${faceKind(face)}`} style={{ '--face-chars': faceChars(face) } as CSSProperties} aria-hidden><SpelChoiceFace value={m.value} view={face} /></span>}
                                 </button>
                             </div>
                             <span className="ml-rim" aria-hidden />

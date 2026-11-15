@@ -3,6 +3,7 @@ import { mulberry32 } from '../../distractors';
 import type { SpelQuestion } from '../../spelQuestion';
 import type { SkinProps } from '../../skins/types';
 import { Burst } from '../../scene';
+import { SpelLine, SpelText } from '../../SpelVisual';
 import { Bee, Wasp } from './art';
 import { HEX } from './view';
 import { WASP, WASP_MS, waspChoices, waspVerdict, type WaspVerdict } from './hive';
@@ -82,14 +83,14 @@ export default function WaspChallenge({ sums, pool, seed, reducedMotion, sound, 
                     <>
                         <p className="hx-wasp-title" aria-live="polite">Een wesp! Jaag hem weg.</p>
                         <p className="hx-wasp-rule">{WASP.need} van de {WASP.sums} juist</p>
-                        <p className="hx-wasp-sum kiosk-math" key={q.key}>{q.text}</p>
+                        <p className="hx-wasp-sum kiosk-math" key={q.key}><SpelLine text={q.text} /></p>
                         <div className="hx-drops" role="group" aria-label="Kies het antwoord">
                             {choices[at]?.map(c => {
                                 const state = picked === null ? '' : c.value === rightValue ? ' is-right' : c.value === picked ? ' is-wrong' : ' is-dim';
                                 return (
                                     <button key={`${q.key}-${c.value}`} type="button" className={`hx-drop-btn${state}`} onClick={() => tap(c.value)} disabled={picked !== null} aria-label={c.text}>
                                         <svg viewBox="0 0 80 100" aria-hidden><path className="hx-drop-art" d="M40 4 C52 26 72 44 72 64 C72 84 58 96 40 96 C22 96 8 84 8 64 C8 44 28 26 40 4 Z" /><ellipse className="hx-drop-shine" cx="27" cy="58" rx="6" ry="10" transform="rotate(20 27 58)" /></svg>
-                                        <span className="kiosk-math" aria-hidden>{c.text}</span>
+                                        <span className="kiosk-math" aria-hidden><SpelText text={c.text} /></span>
                                     </button>
                                 );
                             })}

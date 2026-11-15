@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { SkinProps } from '../../skins/types';
-import { answerFace, sumFace, type BoardFace, type SpelBoard } from '../board';
+import { answerFace, cardLines, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
 
 // The comb's and the meadow's shared rules: a cell's texts and how the bee follows the session's verdicts.
 
@@ -18,6 +18,9 @@ export interface ViewProps extends Pick<SkinProps, 'phase' | 'onBoardPick' | 're
     // The scene scrolls this board away: its bee has already flown off.
     leaving?: boolean;
 }
+
+/** One size for every sum on a board: its widest line decides (--hx-chars). */
+export const boardChars = (board: SpelBoard) => Math.max(...board.cells.map(c => lineChars(cardLines(faceText(sumFace(c.question))))));
 
 /** The cell's own texts: its sum, and after a wrong tap what it really is. */
 export function cellTexts(board: SpelBoard, i: number, found: string) {

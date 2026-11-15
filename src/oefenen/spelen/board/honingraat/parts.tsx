@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { formatMathNumber } from '../../../../services/math/formatters';
-import type { BoardTarget, SpelBoard } from '../board';
+import { cardLines, isLoneBreuk, type BoardTarget, type SpelBoard } from '../board';
+import { SpelText } from '../../SpelVisual';
 import { Bee, type BeeMood } from './art';
 import type { HiveView } from './hive';
 import { HEX } from './view';
@@ -10,9 +11,19 @@ import { HEX } from './view';
 export function Sign({ target, cleared, view }: { target: BoardTarget; cleared: boolean; view: HiveView }) {
     if (cleared) return <p className="hx-sign" aria-live="polite">{view === 'comb' ? 'Alle honing is binnen!' : 'Alle nectar is binnen!'}</p>;
     // A pack's comb (the breuken): its own words before the target.
-    if (target.kind === 'pack') return <p className="hx-sign" aria-live="polite">{target.lead} <span className="hx-sign-n kiosk-math">{target.n}</span></p>;
+    if (target.kind === 'pack') return <p className="hx-sign" aria-live="polite">{target.lead} <span className="hx-sign-n kiosk-math"><SpelText text={target.n} /></span></p>;
     const n = <span className="hx-sign-n kiosk-math">{formatMathNumber(target.n)}</span>;
     return <p className="hx-sign" aria-live="polite">{target.kind === 'eq' ? <>Zoek alle sommen die {n} zijn</> : <>Zoek alle sommen groter dan {n}</>}</p>;
+}
+
+/** A cell's sum, a long one as a column sum ("5 918" over "− 2 499"), a breuk stacked; after a wrong tap its own answer under it. */
+export function CellTexts({ sum, own }: { sum: string; own?: string }) {
+    return (
+        <span className="hx-texts kiosk-math" aria-hidden>
+            <span className={`hx-sum${isLoneBreuk(sum) ? ' is-breuk' : ''}`}>{cardLines(sum).map((l, i) => <span key={i} className="hx-line"><SpelText text={l} /></span>)}</span>
+            {own !== undefined && <span className="hx-own">= <SpelText text={own} /></span>}
+        </span>
+    );
 }
 
 /** The sign and one pip per cell to find. */

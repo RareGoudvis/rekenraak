@@ -133,11 +133,17 @@
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: calc(var(--hj-w) * .15);
+  /* Every sum on the board one size: the widest line (--hj-chars) fits the heart's belly. */
+  font-size: min(calc(var(--hj-w) * .15), calc(var(--hj-w) * .76 / (var(--hj-chars, 1) * .6)));
   font-weight: 700;
   line-height: 1.1;
+  /* A column sum: its lines right-aligned, units under units. */
+  text-align: right;
   white-space: nowrap;
 }
+.hj-line { display: block; }
+/* A lone breuk stacks narrow: as big as an answer. */
+.hj-card .hj-text.is-breuk { font-size: calc(var(--hj-w) * .3); }
 .hj-card.is-answer .hj-text { font-size: calc(var(--hj-w) * .22); }
 /* A pack's picture card (a breuk as a pizza): bigger hearts so the picture reads (about 120 px). */
 .hj-root.has-pictures { --hj-max: 230px; }
@@ -149,7 +155,6 @@
   height: 64%;
   transform: translate(-50%, -50%);
 }
-.hj-grid.is-long .hj-card.is-sum .hj-text { font-size: calc(var(--hj-w) * .125); }
 
 /* ── A broken heart: two halves along a jagged crack, tilted apart; a plaster once paired ── */
 .hj-half { transform-box: view-box; transform-origin: 50px 93px; }

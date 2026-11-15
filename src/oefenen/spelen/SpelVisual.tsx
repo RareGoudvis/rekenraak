@@ -2,6 +2,7 @@ import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { SpelChoiceView, SpelVisual as Visual } from './content/pack';
 import { answerTextOf, formatSpelNumber, isOperator, rijFoldOf, rijText, signChunks, viewOfValue, type AnswerContext } from './spelFormat';
 import { useSpelStore } from './useSpelStore';
+import { faceText } from './spelChoice';
 import KlokFace, { DigitaalFace } from './content/klok/KlokFace';
 import BreukPicture from './content/breuken/BreukPicture';
 import './spelVisual.css';
@@ -37,7 +38,8 @@ export function SpelText({ text }: { text: string }): ReactNode {
 /** What a choice shows on its target (a balloon, a parcel, a mole). */
 export function SpelChoiceFace({ value, view }: { value: string; view?: SpelChoiceView }): ReactNode {
     if (view?.visual) return <SpelVisual visual={view.visual} />;
-    if (view?.text !== undefined) return <SpelText text={view.text} />;
+    // A phrase wraps between its words (and inside a long number word), never inside "2 u 15 min"; words read in the pupil font.
+    if (view?.text !== undefined) return <span className="spel-face-text"><SpelLine text={faceText(view.text)} /></span>;
     return formatSpelNumber(value);
 }
 

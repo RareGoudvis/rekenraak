@@ -30,8 +30,10 @@
   will-change: transform;
 }
 .spel-clouds.is-left .spel-cloud-track { animation-direction: reverse; }
-/* Still: each cloud stays where its delay put it, spread over the sky. */
+/* Paused: each cloud waits where it is. Reduced motion: each stands where its delay put it (--p), spread over the sky,
+   as a plain transform: a paused animation would land off-screen once prefers-reduced-motion collapses its duration. */
 .spel-clouds.is-still .spel-cloud-track { animation-play-state: paused; }
+.spel-clouds.is-fixed .spel-cloud-track { animation-name: none; transform: translateX(calc((100% + var(--cw)) * var(--p))); }
 .spel-cloud-track > .spel-cloud {
   position: absolute;
   left: calc(-1 * var(--cw));
@@ -84,6 +86,9 @@
 }
 .spel-snow.is-still .spel-flake-fall,
 .spel-snow.is-still .spel-flake { animation-play-state: paused; }
+/* Reduced motion: each flake hangs where its delay put it (--p), as a plain transform (see the clouds). */
+.spel-snow.is-fixed .spel-flake-fall { animation-name: none; transform: translateY(calc(-100% * (1 - var(--p)) + 12px * var(--p))); }
+.spel-snow.is-fixed .spel-flake { animation-name: none; }
 @keyframes spel-snow-fall {
   from { transform: translateY(-100%); }
   to { transform: translateY(calc(0% + 12px)); }
@@ -221,7 +226,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .spel-shake, .spel-bounce, .spel-wiggle, .spel-pop { animation: none; }
-  .spel-cloud-track, .spel-flake-fall, .spel-flake { animation-play-state: paused; }
+  .spel-cloud-track, .spel-flake-fall, .spel-flake { animation-name: none; }
+  .spel-cloud-track { transform: translateX(calc((100% + var(--cw)) * var(--p))); }
+  .spel-flake-fall { transform: translateY(calc(-100% * (1 - var(--p)) + 12px * var(--p))); }
   .spel-burst { display: none; }
   .spel-crack { animation: none; }
 }

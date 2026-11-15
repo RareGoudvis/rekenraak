@@ -227,7 +227,8 @@
   min-height: calc(var(--zh-w) * .46);
   padding: 4px 6px;
   font-family: var(--kid-font);
-  font-size: calc(var(--zh-w) * .16);
+  /* A long word or measure (--face-chars, spelChoice faceChars) shrinks until its longest part fits. */
+  font-size: min(calc(var(--zh-w) * .16), calc((var(--zh-w) * .96 - 12px) / (var(--face-chars, 1) * .6)));
   font-weight: 800;
   text-align: center;
   white-space: normal;

@@ -40,12 +40,12 @@ export default function Snow({
     const settle = (e: AnimationEvent<HTMLSpanElement>) => {
         if (stopping.current && e.target === e.currentTarget) e.currentTarget.style.visibility = 'hidden';
     };
-    const cls = ['spel-snow', paused || still ? 'is-still' : '', className ?? ''].filter(Boolean).join(' ');
+    const cls = ['spel-snow', paused || still ? 'is-still' : '', still ? 'is-fixed' : '', className ?? ''].filter(Boolean).join(' ');
     return (
         <div className={cls} aria-hidden>
             {flakes.map(f => (
                 <span key={`${gen.n}-${f.key}`} className="spel-flake-fall" onAnimationIteration={settle} onAnimationStart={settle}
-                    style={{ left: `${f.left}%`, animationDuration: `${f.duration}s`, animationDelay: `${f.delay}s` }}>
+                    style={{ left: `${f.left}%`, animationDuration: `${f.duration}s`, animationDelay: `${f.delay}s`, '--p': ((-f.delay / f.duration) % 1 + 1) % 1 } as CSSProperties}>
                     <i className="spel-flake" style={{ width: f.size, height: f.size, opacity: f.opacity, '--sway': `${f.sway}px`, animationDelay: `${f.delay}s` } as CSSProperties} />
                 </span>
             ))}
