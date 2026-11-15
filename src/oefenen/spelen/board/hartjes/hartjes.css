@@ -1,11 +1,15 @@
-/* Hartjes koppelen skin (Valentijn). Sticker look: flat fills under a thick dark outline (spelen.css tokens),
-   CSS-only flips, nothing moves under prefers-reduced-motion. */
+/* Hartjes koppelen skin (Valentijn), and its Voetballen look. Sticker look: flat fills under a thick dark
+   outline (spelen.css tokens), CSS-only flips, nothing moves under prefers-reduced-motion. */
 .hj-root {
-  /* One heart's width; its height is .94 ×. Four across, three down at 1024 × 768. */
-  --hj-w: clamp(72px, min(18.5vw, 23vh), 210px);
   --hj-pink: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper));
   --hj-pink-soft: color-mix(in srgb, var(--accent-getallenkennis) 14%, var(--kiosk-paper));
   --hj-pink-mid: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--kiosk-paper));
+  --hj-grass-2: color-mix(in srgb, var(--accent-metendrekenen) 62%, var(--kiosk-paper));
+  --hj-plaster: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--kiosk-paper));
+  /* The largest heart; picture boards may go a little bigger. */
+  --hj-max: 210px;
+  /* The sign and the pair counter above the board. */
+  --hj-top-h: 92px;
   position: absolute;
   inset: 0;
   display: flex;
@@ -15,6 +19,7 @@
   padding: var(--sp-3) var(--sp-4);
   overflow: hidden;
   overflow: clip;
+  container-type: size;
   background: color-mix(in srgb, var(--accent-getallenkennis) 8%, var(--kiosk-paper));
 }
 .hj-deco {
@@ -38,33 +43,58 @@
   box-shadow: 0 4px 0 var(--spel-ink);
   font-size: var(--kiosk-text-lg);
   font-weight: 800;
+  text-align: center;
 }
 .hj-count { display: inline-flex; gap: 4px; }
 .hj-dot { width: 26px; height: 24px; fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 7; }
 .hj-dot.is-on { fill: var(--hj-pink); animation: hj-pop 360ms var(--ease-spring) both; }
+.hj-dot.is-ball { opacity: .5; }
+.hj-dot.is-ball.is-on { fill: var(--kiosk-paper); opacity: 1; }
+.hj-dot-patch { fill: var(--spel-ink); stroke: none; }
 @keyframes hj-pop { from { transform: scale(.4); } }
 
-/* ── The hearts ───────────────────────────────────────────────────────────── */
+/* ── The board: cards per row from gridOf (hearts.ts), sized to the stage ─── */
 .hj-grid {
+  --hj-cols: var(--hj-cols-l);
+  --hj-rows: var(--hj-rows-l);
+  /* A card's width; its height is .94 ×, its slot 1.08 × 1.02. */
+  --hj-w: max(var(--spel-tap), min(var(--hj-max), calc((100cqw - 2 * var(--sp-4)) / var(--hj-cols) / 1.08), calc((100cqh - var(--hj-top-h)) / var(--hj-rows) / 1.02)));
   position: relative;
   z-index: 1;
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(4, calc(var(--hj-w) * 1.08));
-  grid-auto-rows: calc(var(--hj-w) * 1.02);
+  width: calc(var(--hj-cols) * var(--hj-w) * 1.08);
+  display: flex;
+  flex-wrap: wrap;
   align-content: center;
   justify-content: center;
-  justify-items: center;
-  align-items: center;
 }
-.hj-slot { width: var(--hj-w); height: calc(var(--hj-w) * .94); perspective: 900px; animation: hj-in 320ms var(--ease-spring) both; animation-delay: calc(var(--k) * 22ms); }
+@container (orientation: portrait) {
+  .hj-grid { --hj-cols: var(--hj-cols-p); --hj-rows: var(--hj-rows-p); }
+}
+/* A tall phone: three across gives bigger cards than four, even with one card alone on the last row. */
+@container (max-aspect-ratio: 1 / 2) {
+  .hj-grid { --hj-cols: var(--hj-cols-t); --hj-rows: var(--hj-rows-t); }
+}
+@container (orientation: landscape) and (max-height: 380px) {
+  .hj-grid { --hj-cols: var(--hj-cols-s); --hj-rows: var(--hj-rows-s); }
+}
+.hj-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--hj-w) * 1.08);
+  height: calc(var(--hj-w) * 1.02);
+  perspective: 900px;
+  animation: hj-in 320ms var(--ease-spring) both;
+  animation-delay: calc(var(--k) * 22ms);
+}
 @keyframes hj-in { from { opacity: 0; transform: scale(.6); } }
 .hj-card {
   position: relative;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: var(--hj-w);
+  height: calc(var(--hj-w) * .94);
   min-width: var(--spel-tap);
   min-height: var(--spel-tap);
   padding: 0;
@@ -77,8 +107,12 @@
 }
 .hj-card:disabled { cursor: default; }
 .hj-card:focus-visible { outline: none; }
-.hj-card:focus-visible .hj-heart path:first-child { stroke-width: 9; }
+.hj-card:focus-visible .hj-heart path:first-child,
+.hj-card:focus-visible .hj-ball-rim { stroke-width: 9; }
 .hj-card:not(:disabled):active .hj-flip { transform: scale(.96); }
+/* A sum and a wrong answer: a little "no" shake once both have turned. */
+.hj-card.is-nope { animation: hj-nope 420ms 400ms ease-in-out both; }
+@keyframes hj-nope { 20% { translate: -5px 0; } 40% { translate: 5px 0; } 60% { translate: -3px 0; } 80% { translate: 3px 0; } }
 .hj-flip {
   position: absolute;
   inset: 0;
@@ -106,9 +140,7 @@
 }
 .hj-card.is-answer .hj-text { font-size: calc(var(--hj-w) * .22); }
 /* A pack's picture card (a breuk as a pizza): bigger hearts so the picture reads (about 120 px). */
-@media (orientation: landscape) and (min-height: 461px) {
-  .hj-root.has-pictures { --hj-w: clamp(72px, min(18.5vw, 26vh), 230px); }
-}
+.hj-root.has-pictures { --hj-max: 230px; }
 .hj-pic {
   position: absolute;
   top: 44%;
@@ -119,29 +151,88 @@
 }
 .hj-grid.is-long .hj-card.is-sum .hj-text { font-size: calc(var(--hj-w) * .125); }
 
+/* ── A broken heart: two halves along a jagged crack, tilted apart; a plaster once paired ── */
+.hj-half { transform-box: view-box; transform-origin: 50px 93px; }
+.hj-heart.is-broken .hj-half.is-l { transform: rotate(-6deg) translateX(-1.5px); animation: hj-break-l 460ms var(--ease-spring) both; }
+.hj-heart.is-broken .hj-half.is-r { transform: rotate(6deg) translateX(1.5px); animation: hj-break-r 460ms var(--ease-spring) both; }
+.hj-heart.is-patched .hj-half.is-l { animation: hj-mend-l 380ms var(--ease-out) both; }
+.hj-heart.is-patched .hj-half.is-r { animation: hj-mend-r 380ms var(--ease-out) both; }
+@keyframes hj-break-l { from { transform: none; } }
+@keyframes hj-break-r { from { transform: none; } }
+@keyframes hj-mend-l { from { transform: rotate(-6deg) translateX(-1.5px); } }
+@keyframes hj-mend-r { from { transform: rotate(6deg) translateX(1.5px); } }
+.hj-crack-edge { fill: none; stroke: var(--spel-ink); stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; }
+.hj-heart.is-patched .hj-crack-edge { stroke-width: 4; }
+.hj-plaster { transform-box: fill-box; transform-origin: center; animation: hj-plaster 520ms 160ms var(--ease-spring) both; }
+@keyframes hj-plaster { from { scale: 0; rotate: -50deg; opacity: 0; } }
+.hj-plaster-band { fill: var(--hj-plaster); stroke: var(--spel-ink); stroke-width: 2.5; }
+.hj-plaster-pad { fill: color-mix(in srgb, var(--kiosk-paper) 60%, var(--hj-plaster)); stroke: color-mix(in srgb, var(--spel-ink) 35%, var(--hj-plaster)); stroke-width: 1; }
+.hj-plaster-dot { fill: color-mix(in srgb, var(--spel-ink) 35%, var(--hj-plaster)); }
+
 /* A pair found: a few small stars twinkle around both hearts. */
 .hj-sparkle { position: absolute; inset: -14%; width: 128%; height: 128%; overflow: visible; pointer-events: none; }
 .hj-sparkle path { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: hj-twinkle 800ms var(--ease-out) both; animation-delay: calc(var(--i) * 60ms); }
 @keyframes hj-twinkle { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: scale(.8); } }
 
+/* ── Voetballen: footballs on a mown pitch ────────────────────────────────── */
+.hj-root.is-ball { background: repeating-linear-gradient(90deg, var(--spel-grass) 0 12.5%, var(--hj-grass-2) 12.5% 25%); }
+.hj-pitch { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hj-pitch path, .hj-pitch circle { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: .6; vector-effect: non-scaling-stroke; }
+.hj-pitch .hj-pitch-spot { fill: var(--kiosk-paper); }
+.hj-ball-back, .hj-ball-front { fill: var(--kiosk-paper); }
+.hj-ball-patch { fill: var(--spel-ink); }
+.hj-front .hj-ball-patch { fill: color-mix(in srgb, var(--spel-ink) 12%, var(--kiosk-paper)); }
+.hj-ball-seam { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.hj-ball-rim { fill: none; stroke: var(--spel-ink); stroke-width: 5; }
+.hj-card.is-solved .hj-ball-front { fill: color-mix(in srgb, var(--spel-star) 38%, var(--kiosk-paper)); }
+/* A ball logged as a mistake goes flat on the grass; paired later it pumps up round again under its plaster. */
+.hj-ball-body { transform-box: view-box; transform-origin: 50px 90px; }
+.hj-ball.is-broken .hj-ball-body { transform: scale(1.1, .66); animation: hj-deflate 520ms var(--ease-out) both; }
+.hj-ball.is-patched .hj-ball-body { animation: hj-pump 460ms var(--ease-spring) both; }
+@keyframes hj-deflate { from { transform: none; } }
+@keyframes hj-pump { from { transform: scale(1.1, .66); } }
+.hj-ball-crease { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.hj-root.is-ball .hj-card.is-broken .hj-text { top: 64%; }
+.hj-root.is-ball .hj-card.is-broken .hj-pic { top: 64%; height: 48%; }
+/* A pair of balls: "Goal!" over the board and a burst of confetti. */
+.hj-goal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+  margin: 0;
+  padding: var(--sp-1) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--spel-star);
+  box-shadow: 0 6px 0 var(--spel-ink);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 900;
+  translate: -50% -50%;
+  rotate: -6deg;
+  pointer-events: none;
+  animation: hj-goal 900ms var(--ease-spring) both;
+}
+@keyframes hj-goal { 0% { scale: .3; opacity: 0; } 25% { scale: 1.12; opacity: 1; } 75% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; } }
+
 /* "Hoe los ik dit op?": everything waits. */
 .hj-root.is-paused *,
 .hj-root.is-paused *::after { animation-play-state: paused; }
 
+@container (orientation: portrait) {
+  .hj-top { max-width: 100%; }
+}
 @media (orientation: portrait) {
-  .hj-root { --hj-w: clamp(64px, min(28vw, 14vh), 180px); }
-  .hj-grid { grid-template-columns: repeat(3, calc(var(--hj-w) * 1.08)); }
+  .hj-root { --hj-top-h: 118px; }
 }
 @media (max-height: 460px) {
-  .hj-root { --hj-w: clamp(56px, 22vh, 110px); padding-top: var(--sp-2); }
-  .hj-grid { grid-template-columns: repeat(6, calc(var(--hj-w) * 1.08)); }
+  .hj-root { padding-top: var(--sp-2); --hj-top-h: 60px; }
   .hj-deco { display: none; }
 }
 
+/* Reduced motion: every state at once, nothing moves. */
 @media (prefers-reduced-motion: reduce) {
-  .hj-slot, .hj-dot.is-on, .hj-sparkle path { animation: none; }
-  .hj-flip { transition: none; }
+  .hj-root *, .hj-root *::after { animation: none !important; transition: none !important; }
 }
-.hj-root.is-still .hj-slot,
-.hj-root.is-still .hj-dot.is-on { animation: none; }
-.hj-root.is-still .hj-flip { transition: none; }
+.hj-root.is-still *,
+.hj-root.is-still *::after { animation: none !important; transition: none !important; }

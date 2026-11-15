@@ -123,7 +123,11 @@ describe('Spelen sound', () => {
         expect(soundFor(cues('ballonnen'), 'correct', right)).toBe('pop');
         expect(soundFor(cues('ballonnen'), 'wrong', wrong)).toBe('pfff');
         expect(soundFor(cues('pinguintoren'), 'correct', right)).toBe('plok');
-        expect(soundFor(cues('pinguintoren'), 'wrong', wrong)).toBe('splash');
+        // Pinguïntoren voices its own mistakes: a crack, the splash of a break, or a plop.
+        expect(soundFor(cues('pinguintoren'), 'wrong', wrong)).toBeNull();
+        expect(cueSound(cues('pinguintoren'), 'barricade')).toBe('krak');
+        expect(cueSound(cues('pinguintoren'), 'hit')).toBe('splash');
+        expect(cueSound(cues('pinguintoren'), 'miss')).toBe('plop');
         expect(soundFor(cues('zombies'), 'correct', right)).toBe('poef');
         expect(soundFor(cues('zombies'), 'wrong', wrong)).toBe('plop');
         // A zombie through: the skin voices the barricade or the catch itself (cueSound), the session stays quiet.

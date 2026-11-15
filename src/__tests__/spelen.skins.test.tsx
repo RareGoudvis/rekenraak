@@ -52,9 +52,9 @@ describe('Spelen skins', () => {
         }
     });
 
-    test('Pinguïntoren: a block per climb step; right stacks with a drop-in, wrong wobbles and drops the top block', () => {
+    test('Pinguïntoren: a block per climb step; right stacks with a drop-in, wrong wobbles and cracks the lowest blocks', () => {
         const events = createSpelEvents();
-        const at = (count: number, over: Partial<SkinProps> = {}) => propsWith({ events, choices: null, progress: progressWith({ goal: { count, target: 20 } }), ...over });
+        const at = (count: number, over: Partial<SkinProps> = {}, mistakes = 0) => propsWith({ events, choices: null, progress: progressWith({ goal: { count, target: 20 }, mistakes }), ...over });
         const { container, rerender } = render(<Pinguintoren {...at(3)} />);
         const blocks = () => container.querySelectorAll('.pt-tower .pt-block').length;
         expect(blocks()).toBe(3);
@@ -65,19 +65,21 @@ describe('Spelen skins', () => {
         expect(container.querySelector('.pt-hop')).not.toBeNull();
         // The sign shows the sum with its answer during the flash.
         expect(container.querySelector('.pt-sign-answer')?.textContent).toBe('12');
+        // A counted mistake (the climb one down): the two lowest blocks crack; the block it owes stays (spelen.pinguintoren.test.tsx).
         act(() => events.emit('wrong', { given: '11', expected: '12' }));
-        rerender(<Pinguintoren {...at(3, { phase: 'wrong', feedback: { given: '11', expected: '12', correct: false } })} />);
-        expect(blocks()).toBe(3);
+        rerender(<Pinguintoren {...at(3, { phase: 'wrong', feedback: { given: '11', expected: '12', correct: false } }, 1)} />);
+        expect(blocks()).toBe(4);
         expect(container.querySelector('.pt-tower.is-wobble-1')).not.toBeNull();
-        expect(container.querySelectorAll('.pt-fall .pt-block')).toHaveLength(1);
+        expect(container.querySelectorAll('.pt-tower .spel-cracks')).toHaveLength(2);
         expect(container.querySelector('.is-new')).toBeNull();
         // A second mistake restarts the wobble with the other copy of the animation.
         act(() => events.emit('wrong', { given: '11', expected: '12' }));
         expect(container.querySelector('.pt-tower.is-wobble-0')).not.toBeNull();
-        // Paused under "Hoe los ik dit op?"; still under reduced motion (no falling block).
-        rerender(<Pinguintoren {...at(2, { phase: 'help', reducedMotion: true })} />);
+        // Paused under "Hoe los ik dit op?"; still under reduced motion (the break without flying halves).
+        rerender(<Pinguintoren {...at(2, { phase: 'help', reducedMotion: true }, 2)} />);
         expect(container.querySelector('.pt-root.is-paused.is-still')).not.toBeNull();
-        expect(container.querySelector('.pt-fall')).toBeNull();
+        expect(blocks()).toBe(2);
+        expect(container.querySelector('.pt-half')).toBeNull();
     });
 
     test('Pinguïntoren: the keypad answers through the session, only while playing', () => {

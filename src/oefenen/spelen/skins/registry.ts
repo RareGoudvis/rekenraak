@@ -5,6 +5,7 @@ import { CastleTurret, ImageSquare, TreasureChest, TreeEvergreen } from '@phosph
 import { Fish } from '@phosphor-icons/react';
 import { SoccerBall } from '@phosphor-icons/react';
 import { WRONG_PENALTY_MS } from './bom/penalty';
+import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -31,10 +32,12 @@ const KASTEEL_OPTIONS: SkinOption[] = [
 // session, the shell and the picker never change. No Component (or Screen) = shown as "binnenkort".
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
-        // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends.
-        meta: { id: 'pinguintoren', music: 'ijs', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: 'splash' }, accepts: KEYPAD_NUMBER },
+        // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends. The skin
+        // voices its mistakes (wrong: null): a crack (barricade), the splash of a break (hit), else a plop (miss).
+        meta: { id: 'pinguintoren', music: 'ijs', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: null, miss: 'plop', barricade: 'krak', hit: 'splash' }, accepts: KEYPAD_NUMBER },
         icon: Bird,
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
+        Ending: lazy(() => import('./pinguintoren/Pinguintoren').then(m => ({ default: m.PinguintorenEnding }))),
     },
     {
         meta: { id: 'ballonnen', music: 'weide', label: 'Ballonnen', input: 'choice', timed: false, round: { questions: 20 }, sounds: { correct: 'pop', wrong: 'pfff', flip: 'piep' }, accepts: TAP_PICTURES },
@@ -139,14 +142,15 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./kasteel/Kasteel').then(m => ({ default: m.KasteelEnding }))),
     },
     {
-        // Valentijn: memory with 6 sums and their answers on 12 hearts, 2 boards. A sum card turned first and then
-        // a wrong answer, twice for the same sum, logs that sum once (board/session.ts). Answers up to 5 characters
-        // ("10/12") fit a card; breuken pair a picture with its breuk, or a breuk with its vereenvoudigde breuk.
+        // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
+        // first and then a wrong answer, twice for the same sum, logs that sum once (board/session.ts) and breaks its
+        // heart (the skin voices it: hit; a ball going flat: caught). Answers up to 5 characters ("10/12") fit a card;
+        // breuken pair a picture with its breuk, or a breuk with its vereenvoudigde breuk. Voetballen is a look option.
         meta: {
             music: 'zacht',
-            id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn',
-            round: { board: { kind: 'pairs', boards: 2, size: 6, strikes: 2 } }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
-            sounds: { correct: 'ting', wrong: 'plop', flip: 'flip', nomatch: 'plop' },
+            id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn', options: HARTJES_OPTIONS,
+            round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
+            sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop', hit: 'krak', caught: 'whoosh' },
         },
         icon: Heart,
         Component: lazy(() => import('../board/hartjes/Hartjes')),
