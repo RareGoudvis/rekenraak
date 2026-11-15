@@ -4,8 +4,9 @@ import { render, cleanup, act } from '@testing-library/react';
 import type { SkinProgress, SkinProps } from '../oefenen/spelen/skins/types';
 import { createSpelEvents } from '../oefenen/spelen/events';
 import Zombies from '../oefenen/spelen/skins/zombies/Zombies';
+import { fearOf, shooterOf } from '../oefenen/spelen/skins/zombies/defence';
 import {
-    SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker,
+    RAMP, SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker,
 } from '../oefenen/spelen/skins/zombies/walk';
 
 // Zombies (round 4): every zombie walks on at its own pace (owner: "if they go too far, the others wait?"),
@@ -237,5 +238,125 @@ describe('Zombies skin: the walk on screen', () => {
         const x = xOf(front);
         act(() => events.emit('wrong', { given: '1', expected: '12' }));
         expect(shownOf(front)).toBeCloseTo(x - ZOMBIE.step, 1);
+    });
+});
+
+describe('Zombies follow-up (owner 2026-11-15): no stun on a wrong answer, a speed ramp, fear and the blowdart', () => {
+    test('speedAt: 100 % at the start, 150 % at 2:00, 200 % at 4:00, linear between, capped', () => {
+        expect(speedAt(0)).toBe(1);
+        expect(speedAt(60_000)).toBeCloseTo(1.25);
+        expect(speedAt(120_000)).toBeCloseTo(1.5);
+        expect(speedAt(180_000)).toBeCloseTo(1.75);
+        expect(speedAt(240_000)).toBeCloseTo(2);
+        expect(speedAt(600_000)).toBe(RAMP.max);
+        expect(speedAt(-5)).toBe(1);
+    });
+
+    test('fear follows who is left: calm, worried after a catch, scared with two or fewer; the safe ones take turns with the dart', () => {
+        expect([0, 3, 4, 5, 6, 7].map(h => fearOf('normaal', h))).toEqual(['calm', 'calm', 'worried', 'worried', 'scared', 'scared']);
+        expect([0, 1, 2].map(h => fearOf('moeilijk', h))).toEqual(['calm', 'scared', 'scared']);
+        expect([0, 1, 2, 3, 4, 5].map(n => shooterOf(5, n))).toEqual([0, 1, 2, 3, 4, 0]);
+        expect([0, 1, 2].map(n => shooterOf(2, n))).toEqual([0, 1, 0]);
+        expect(shooterOf(0, 3)).toBe(-1);
+    });
+
+    describe('on screen', () => {
+        beforeEach(() => {
+            vi.spyOn(console, 'error').mockImplementation(() => { });
+            vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] });
+        });
+        afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
+        const wait = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+        const xs = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('.zb-lane:not([data-zombie=down])')].map(l => Number(l.dataset.x));
+
+        test('a wrong answer stuns no zombie: through the wrong flash every one walks on, the front one too', () => {
+            const events = createSpelEvents();
+            const { container, rerender } = render(<Zombies {...propsWith({ events })} />);
+            wait(500);
+            act(() => events.emit('wrong', { given: '11', expected: '12' }));
+            rerender(<Zombies {...propsWith({ events, phase: 'wrong', feedback: { given: '11', expected: '12', correct: false } })} />);
+            const before = xs(container);
+            wait(300);
+            xs(container).forEach((x, i) => expect(x).toBeLessThan(before[i]));
+            expect(container.querySelector('.zb-dizzy')).toBeNull();
+        });
+
+        test('a right answer stops only the zombie it hits (a dart, stars); the rest walk on', () => {
+            const events = createSpelEvents();
+            const { container, rerender } = render(<Zombies {...propsWith({ events })} />);
+            wait(500);
+            act(() => events.emit('correct', { given: '12', streak: 1 }));
+            rerender(<Zombies {...propsWith({ events, phase: 'right', feedback: { given: '12', expected: '12', correct: true } })} />);
+            const before = xs(container);
+            wait(300);
+            const after = xs(container);
+            expect(after[0]).toBe(before[0]);
+            expect(after[1]).toBeLessThan(before[1]);
+            expect(after[2]).toBeLessThan(before[2]);
+            expect(container.querySelector('[data-zombie=front] .zb-zombie.is-flop .zb-dizzy')).not.toBeNull();
+            expect(container.querySelector('.zb-dart')).not.toBeNull();
+            expect(container.querySelector('.zb-sv.is-shooting')!.getAttribute('data-k')).toBe('0');
+            // The next right answer: the next survivor in turn; the one knocked down lies on a moment, then goes.
+            rerender(<Zombies {...propsWith({ events, question: { key: 'q2', text: '8 + 5 = ?', index: 1 } })} />);
+            expect(container.querySelectorAll('[data-zombie=down]')).toHaveLength(1);
+            act(() => events.emit('correct', { given: '13', streak: 2 }));
+            rerender(<Zombies {...propsWith({ events, phase: 'right', question: { key: 'q2', text: '8 + 5 = ?', index: 1 }, feedback: { given: '13', expected: '13', correct: true } })} />);
+            expect(container.querySelector('.zb-sv.is-shooting')!.getAttribute('data-k')).toBe('1');
+            wait(1500);
+            expect(container.querySelector('.zb-sv.is-shooting')).toBeNull();
+            rerender(<Zombies {...propsWith({ events, question: { key: 'q3', text: '9 + 5 = ?', index: 2 } })} />);
+            wait(1500);
+            expect(container.querySelectorAll('[data-zombie=down]')).toHaveLength(0);
+        });
+
+        test('reduced motion: an instant hit, no dart flight; the group shows its fear and huddles when two are left', () => {
+            const events = createSpelEvents();
+            const { container } = render(<Zombies {...propsWith({ events, reducedMotion: true })} />);
+            act(() => events.emit('correct', { given: '12', streak: 1 }));
+            expect(container.querySelector('.zb-dart')).toBeNull();
+            expect(container.querySelector('.zb-pfft')).toBeNull();
+            expect((container.querySelector('.zb-root') as HTMLElement).style.getPropertyValue('--zb-hit')).toBe('0ms');
+            cleanup();
+            const crew = (misses: number) => {
+                const r = render(<Zombies {...propsWith({ progress: progressWith({ misses }) })} />);
+                const el = r.container.querySelector('.zb-crew')!;
+                const out = { cls: el.className, sweat: el.querySelectorAll('[data-survivor=safe] .zb-sv-sweat').length };
+                r.unmount();
+                return out;
+            };
+            expect(crew(0).cls).toContain('is-calm');
+            expect(crew(4).cls).toContain('is-worried');
+            const scared = crew(6);
+            expect(scared.cls).toContain('is-scared');
+            expect(scared.sweat).toBe(2);
+        });
+    });
+
+    test('balance with the ramp (owner numbers kept): a 6 s pupil never loses one in 3 minutes, an 8 s one not before 2 minutes, a 12 s one not in the first half minute', () => {
+        const missesAt = (every: number) => {
+            const DT2 = 1 / 30;
+            const off = offStreetAt(600, 160);
+            let line = [0, 1, 2].map(i => ({ x: ZOMBIE.start + i * ZOMBIE.gap, pace: paceOf(i), v: targetSpeed(i, paceOf(i), ZOMBIE.speed) }));
+            let id = 3;
+            let clock = 0;
+            const misses: number[] = [];
+            for (let t = 0; t < 180; t += DT2) {
+                const s = walk(line, DT2, ZOMBIE.speed * speedAt(t * 1000), off);
+                line = s.line;
+                clock += DT2;
+                if (s.atDoor || clock >= every) {
+                    if (s.atDoor) misses.push(t);
+                    clock = 0;
+                    const rest = line.slice(1);
+                    rest.push({ x: joinAt(Math.max(...rest.map(z => z.x)), off), pace: paceOf(id), v: targetSpeed(2, paceOf(id), ZOMBIE.speed) });
+                    id++;
+                    line = rest;
+                }
+            }
+            return misses;
+        };
+        expect(missesAt(6)).toEqual([]);
+        expect(missesAt(8).every(t => t > 120)).toBe(true);
+        expect(missesAt(12)[0]).toBeGreaterThan(30);
     });
 });

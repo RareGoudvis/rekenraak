@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker } from './walk';
-import { DEFENCE, defenceAfter, hitOf, zombieLevelOf, type ZombieLevel } from './defence';
+import { SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker } from './walk';
+import { DEFENCE, defenceAfter, fearOf, hitOf, shooterOf, zombieLevelOf, type Fear, type ZombieLevel } from './defence';
 import Graveyard, { FrontFog } from './Graveyard';
 import './zombies.css';
 
@@ -17,6 +17,11 @@ type Mood = 'walk' | 'flop' | 'boing';
 interface Zombie { id: number; mood: Mood }
 
 const PUFFS = 6;
+// SYNC: zombies.css --zb-hit: the dart's flight; the zombie it hits goes down after it.
+const DART_MS = 260;
+// How long the shooter holds the tube up, and how long a knocked-down zombie lies before it goes.
+const SHOT_MS = 650;
+const FALLEN_MS = 1100;
 const START: Zombie[] = Array.from({ length: ZOMBIE.count }, (_, id) => ({ id, mood: 'walk' }));
 
 // What the loop moves per zombie: its lane, the parts of its body and the sign it holds.
@@ -108,16 +113,32 @@ function ZombieArt() {
 }
 
 // A survivor: a round little person. Caught = the same one as a silly green zombie (googly eyes, arms out).
+// Standing, the face and arms follow the group's fear; hug = arms round the neighbour(s); shooting = a blowdart tube.
 type Pose = 'stand' | 'cheer' | 'zombie';
+type Hug = 'none' | 'left' | 'right' | 'self';
 const HAIR = [
     'M10 22 Q12 6 30 6 Q48 6 50 22 Q40 14 30 16 Q20 14 10 22 Z',
     'M9 24 Q10 4 30 5 Q50 4 51 24 L46 18 L40 22 L34 16 L28 22 L22 16 L16 22 Z',
     'M12 20 Q14 4 32 6 Q48 8 48 20 Q44 12 36 12 Q34 20 24 14 Q18 14 12 20 Z',
 ];
+const STAND_ARMS: Record<Fear, string> = {
+    calm: 'M16 52 L10 72 M44 52 L50 72',
+    // Hands wringing in front.
+    worried: 'M16 52 L25 66 M44 52 L35 66',
+    // Hands up by the cheeks.
+    scared: 'M16 52 L11 36 M44 52 L49 36',
+};
+const HUG_ARMS: Record<Exclude<Hug, 'none'>, string> = {
+    left: 'M16 52 L-4 60 M44 52 L49 36',
+    right: 'M16 52 L11 36 M44 52 L64 60',
+    self: 'M16 52 L40 64 M44 52 L20 64',
+};
 
-export function SurvivorArt({ i, pose }: { i: number; pose: Pose }) {
+export function SurvivorArt({ i, pose, fear = 'calm', hug = 'none', shooting = false }: { i: number; pose: Pose; fear?: Fear; hug?: Hug; shooting?: boolean }) {
     const z = pose === 'zombie';
-    const arms = pose === 'cheer' ? 'M16 52 L6 30 M44 52 L54 30' : z ? 'M18 52 L56 46 M20 62 L58 60' : 'M16 52 L10 72 M44 52 L50 72';
+    const arms = pose === 'cheer' ? 'M16 52 L6 30 M44 52 L54 30' : z ? 'M18 52 L56 46 M20 62 L58 60'
+        : shooting ? 'M16 52 L38 38 M44 52 L54 36' : hug !== 'none' ? HUG_ARMS[hug] : STAND_ARMS[fear];
+    const face = pose === 'cheer' ? 'cheer' : shooting ? 'calm' : fear;
     return (
         <svg className="zb-sv-art" viewBox="0 0 60 100" aria-hidden>
             <rect className="zb-pants" x="18" y="74" width="10" height="20" rx="4" />
@@ -137,9 +158,16 @@ export function SurvivorArt({ i, pose }: { i: number; pose: Pose }) {
                 </>
             ) : (
                 <>
-                    <circle className="zb-pupil" cx="23" cy="26" r="2.6" />
-                    <circle className="zb-pupil" cx="37" cy="26" r="2.6" />
-                    <path className={pose === 'cheer' ? 'zb-sv-open' : 'zb-mouth'} d={pose === 'cheer' ? 'M22 33 Q30 44 38 33 Z' : 'M23 34 Q30 39 37 34'} />
+                    {face !== 'calm' && face !== 'cheer' && <path className="zb-sv-brow" d={face === 'scared' ? 'M17 21 L26 16 M34 16 L43 21' : 'M18 20 L26 18 M34 18 L42 20'} />}
+                    <circle className="zb-pupil" cx="23" cy="26" r={face === 'scared' ? 2 : 2.6} />
+                    <circle className="zb-pupil" cx="37" cy="26" r={face === 'scared' ? 2 : 2.6} />
+                    {face === 'cheer' ? <path className="zb-sv-open" d="M22 33 Q30 44 38 33 Z" />
+                        : face === 'scared' ? <ellipse className="zb-sv-open" cx="30" cy="37" rx="3.6" ry="4.6" />
+                        : face === 'worried' ? <path className="zb-mouth" d="M23 37 Q26.5 34 30 37 Q33.5 40 37 37" />
+                        : !shooting && <path className="zb-mouth" d="M23 34 Q30 39 37 34" />}
+                    {face === 'scared' && <path className="zb-sv-sweat" d="M47 12 Q51 19 47 21 Q43 19 47 12 Z" />}
+                    {/* The blowdart: a plain tube at the lips, pointing at the zombies. */}
+                    {shooting && <rect className="zb-tube" x="30" y="31" width="34" height="6" rx="3" transform="rotate(-8 30 34)" />}
                 </>
             )}
         </svg>
@@ -164,18 +192,26 @@ function Barricade({ kind }: { kind: 'crate' | 'fence' }) {
 
 const BARRICADES = ['crate', 'fence', 'crate'] as const;
 
-function Camp({ level, hits, reducedMotion }: { level: ZombieLevel; hits: number; reducedMotion: boolean }) {
+interface Shot { n: number; k: number; from: [number, number]; to: [number, number] }
+
+function Camp({ level, hits, reducedMotion, shot, cheery }: { level: ZombieLevel; hits: number; reducedMotion: boolean; shot: Shot | null; cheery: boolean }) {
     const { survivors: total, barricades: bars } = DEFENCE[level];
     const d = defenceAfter(level, hits);
+    const fear = fearOf(level, hits);
+    // Two or fewer left: they hold on to each other (one alone hugs itself).
+    const hugOf = (k: number): Hug => (fear !== 'scared' ? 'none' : d.survivors === 1 ? 'self' : k === 0 ? 'right' : k === 1 ? 'left' : 'none');
     return (
         <div className="zb-camp">
-            <div className="zb-crew">
+            <div className={`zb-crew is-${fear}${cheery ? ' is-cheery' : ''}`}>
                 {Array.from({ length: total }, (_, k) => {
                     // The one nearest the barricade is caught first.
                     const caught = total - 1 - k < d.caught;
+                    const shooting = !caught && shot?.k === k;
                     return (
-                        <span key={k} className={`zb-sv${caught ? ' is-caught' : ''}`} style={{ '--k': k } as CSSProperties} data-survivor={caught ? 'caught' : 'safe'}>
-                            <span className="zb-sv-body"><SurvivorArt i={k} pose={caught ? 'zombie' : 'stand'} /></span>
+                        <span key={k} className={`zb-sv${caught ? ' is-caught' : ''}${shooting ? ' is-shooting' : ''}`} style={{ '--k': k } as CSSProperties}
+                            data-k={k} data-survivor={caught ? 'caught' : 'safe'}>
+                            <span className="zb-sv-body"><SurvivorArt i={k} pose={caught ? 'zombie' : 'stand'} fear={fear} hug={hugOf(k)} shooting={shooting} /></span>
+                            {shooting && !reducedMotion && <span key={shot.n} className="zb-pfft" aria-hidden>pfft</span>}
                         </span>
                     );
                 })}
@@ -206,6 +242,23 @@ function Camp({ level, hits, reducedMotion }: { level: ZombieLevel; hits: number
     );
 }
 
+// A friendly dart: a cork tip, a little shaft, a feather tail.
+function Dart({ shot }: { shot: Shot }) {
+    const [fx, fy] = shot.from;
+    const [tx, ty] = shot.to;
+    const angle = (Math.atan2(ty - fy, tx - fx) * 180) / Math.PI;
+    return (
+        <span className="zb-dart" aria-hidden
+            style={{ '--fx': `${fx}px`, '--fy': `${fy}px`, '--tx': `${tx}px`, '--ty': `${ty}px`, '--ang': `${angle}deg` } as CSSProperties}>
+            <svg className="zb-dart-art" viewBox="0 0 40 14">
+                <path className="zb-dart-feather" d="M2 2 L12 7 L2 12 L6 7 Z" />
+                <rect className="zb-dart-shaft" x="8" y="5.5" width="22" height="3" rx="1.5" />
+                <circle className="zb-dart-cork" cx="32" cy="7" r="5" />
+            </svg>
+        </span>
+    );
+}
+
 function Star({ i }: { i: number }) {
     return (
         <span className="zb-orbit" style={{ '--i': i } as CSSProperties}>
@@ -220,9 +273,13 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const level = zombieLevelOf(options);
     const [line, setLine] = useState<Zombie[]>(START);
     // A new question: the zombie that flopped or bumped leaves, a newcomer joins at the back.
+    // Zombies a dart knocked down lie on a moment longer than their sum (their fall outlasts the right flash).
+    const [fallen, setFallen] = useState<Zombie[]>([]);
     const [seenKey, setSeenKey] = useState(question?.key);
     if (question && question.key !== seenKey) {
         setSeenKey(question.key);
+        const down = line.filter(z => z.mood === 'flop');
+        if (down.length) setFallen(f => [...f, ...down]);
         setLine(l => {
             const stay = l.filter(z => z.mood === 'walk');
             let id = Math.max(...l.map(z => z.id)) + 1;
@@ -230,7 +287,6 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             return stay;
         });
     }
-    const [wobble, setWobble] = useState({ n: 0, id: -1 });
 
     // The walk lives outside React: each zombie's spot and pace, its gait, its rig, and the street's size in px.
     const walkers = useRef(new Map<number, Walker>());
@@ -240,6 +296,15 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const live = useRef({ phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line, reducedMotion });
     useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line, reducedMotion }; });
 
+    const [shot, setShot] = useState<Shot | null>(null);
+    const shots = useRef(0);
+    useEffect(() => {
+        if (!shot) return;
+        const t = setTimeout(() => setShot(null), SHOT_MS);
+        return () => clearTimeout(t);
+    }, [shot]);
+    // Play time so far (help pauses it): the zombies slowly speed up over the game.
+    const played = useRef(0);
     const mounted = useRef(false);
     useEffect(() => { mounted.current = true; }, []);
     // One stable ref callback for every lane (its zombie id rides on data-zid): a re-render never re-attaches a lane.
@@ -264,11 +329,16 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     }, []);
     // A new sum or the answer on the sign changes its width: the edge clamp needs it.
     useLayoutEffect(() => { for (const rig of rigs.current.values()) rig.plateW = rig.plate?.offsetWidth ?? 0; });
+    useEffect(() => {
+        if (!fallen.length) return;
+        const t = setTimeout(() => setFallen(f => f.slice(1)), FALLEN_MS);
+        return () => clearTimeout(t);
+    }, [fallen]);
     // Forget the zombies that left.
     useEffect(() => {
-        const ids = new Set(line.map(z => z.id));
+        const ids = new Set([...line, ...fallen].map(z => z.id));
         for (const map of [walkers.current, gaits.current]) for (const id of [...map.keys()]) if (!ids.has(id)) map.delete(id);
-    }, [line]);
+    }, [line, fallen]);
 
     // The street's size: a lane's % becomes px for the stride, and the edge where a zombie comes into view.
     const street = useRef<HTMLDivElement>(null);
@@ -289,7 +359,23 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     }, []);
 
     useEffect(() => {
-        const offRight = events.on('correct', () => setLine(l => l.map((z, i) => (i === 0 ? { ...z, mood: 'flop' } : z))));
+        const offRight = events.on('correct', () => {
+            const st = live.current;
+            const front = st.line[0];
+            setLine(l => l.map((z, i) => (i === 0 ? { ...z, mood: 'flop' } : z)));
+            // A survivor still safe (in turn) puffs a dart at the zombie this answer stops.
+            const k = shooterOf(defenceAfter(st.level, st.misses).survivors, shots.current++);
+            const el = street.current;
+            const sv = el?.querySelector<HTMLElement>(`.zb-sv[data-k="${k}"]`);
+            const art = front ? rigs.current.get(front.id)?.lane.querySelector('.zb-art') : null;
+            if (!el || k < 0) return;
+            const box = el.getBoundingClientRect();
+            const a = sv?.getBoundingClientRect();
+            const b = art?.getBoundingClientRect();
+            const from: [number, number] = a ? [a.right - box.left, a.top - box.top + a.height * 0.3] : [0, 0];
+            const to: [number, number] = b ? [b.left - box.left + b.width * 0.35, b.top - box.top + b.height * 0.3] : from;
+            setShot(v => ({ n: (v?.n ?? 0) + 1, k, from, to }));
+        });
         const offWrong = events.on('wrong', ({ given }) => {
             const front = live.current.line[0];
             // An empty answer is the bump at the door: that zombie already says boing.
@@ -302,7 +388,6 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             if (!live.current.reducedMotion) g.lag += w.x - x;
             w.x = x;
             place(rigs.current.get(front.id), w.x, w.x + g.lag);
-            setWobble(v => ({ n: v.n + 1, id: front.id }));
         });
         return () => { offRight(); offWrong(); };
     }, [events]);
@@ -316,14 +401,17 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             const dt = last === null ? 0 : Math.min(0.1, Math.max(0, (t - last) / 1000));
             last = t;
             const st = live.current;
-            // Under "Hoe los ik dit op?" everything holds, mid-stride.
-            if (st.phase === 'help' || !dt) return;
+            // Under "Hoe los ik dit op?" everything holds, mid-stride; a right or wrong flash never stops the walk.
+            const going = st.phase === 'play' || st.phase === 'right' || st.phase === 'wrong';
+            if (!going || !dt) return;
+            played.current += dt * 1000;
             const { track, zombie } = size.current;
             const walking = st.line.filter(z => z.mood === 'walk');
-            if (st.phase === 'play' && walking.length) {
-                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak), offStreetAt(track, zombie));
+            if (walking.length) {
+                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak) * speedAt(played.current), offStreetAt(track, zombie));
                 walking.forEach((z, i) => walkers.current.set(z.id, step.line[i]));
-                if (step.atDoor) {
+                // At the door during a flash it waits there; the bump counts once the next sum is up.
+                if (step.atDoor && st.phase === 'play') {
                     const front = walking[0].id;
                     // Stop at once; the session's wrong flash follows from onMiss.
                     live.current = { ...st, phase: 'wrong', misses: st.misses + 1, line: st.line.map(z => (z.id === front ? { ...z, mood: 'boing' } : z)) };
@@ -335,7 +423,6 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                     else st.sound(hit === 'barricade' ? 'barricade' : 'caught');
                 }
             }
-            const going = live.current.phase === 'play';
             for (const z of live.current.line) {
                 const w = walkers.current.get(z.id);
                 const g = gaits.current.get(z.id);
@@ -348,8 +435,8 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                 }
                 if (st.reducedMotion) g.amp = 0;
                 else {
-                    const stepping = z.mood === 'walk' && (going || g.lag > 0.5);
-                    g.p += shambleRate(going && z.mood === 'walk' ? w.v : 0, track, zombie) * dt + strideOf(lunged, track, zombie);
+                    const stepping = z.mood === 'walk';
+                    g.p += shambleRate(stepping ? w.v : 0, track, zombie) * dt + strideOf(lunged, track, zombie);
                     g.amp += ((stepping ? 1 : 0) - g.amp) * Math.min(1, dt / SHAMBLE.settle);
                 }
                 const rig = rigs.current.get(z.id);
@@ -366,19 +453,19 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const [lhs] = question.text.split('?');
 
     return (
-        <div className={`zb-root is-${level}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`zb-root is-${level}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--zb-hit': `${reducedMotion ? 0 : DART_MS}ms` } as CSSProperties}>
             <div className="zb-street" ref={street}>
                 <Graveyard />
                 <div className="zb-ground" aria-hidden />
-                <Camp level={level} hits={progress.misses} reducedMotion={reducedMotion} />
+                <Camp level={level} hits={progress.misses} reducedMotion={reducedMotion} shot={shot} cheery={phase === 'right' && progress.streak >= 3} />
                 <div className="zb-track">
-                    {line.map((z, i) => {
+                    {[...line, ...fallen].map((z, i) => {
+                        const down = i >= line.length;
                         const front = i === 0;
-                        const wob = front && z.mood === 'walk' && wobble.id === z.id ? ` is-wobble-${wobble.n % 2}` : '';
                         return (
-                            <div key={z.id} ref={attachLane} data-zid={z.id} className="zb-lane" data-zombie={front ? 'front' : 'back'}
+                            <div key={z.id} ref={attachLane} data-zid={z.id} className="zb-lane" data-zombie={down ? 'down' : front ? 'front' : 'back'}
                                 style={{ zIndex: ZOMBIE.count - i }}>
-                                <div className={`zb-zombie is-${z.mood}${wob}`} style={{ '--zb-shirt': `var(--spel-fill-${z.id % 6})` } as CSSProperties}>
+                                <div className={`zb-zombie is-${z.mood}`} style={{ '--zb-shirt': `var(--spel-fill-${z.id % 6})` } as CSSProperties}>
                                     <div className="zb-body">
                                         <div className="zb-held">
                                             <div className="zb-plate">
@@ -391,7 +478,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                                             <span className="zb-pole" aria-hidden />
                                         </div>
                                         <ZombieArt />
-                                        {z.mood === 'boing' && !reducedMotion && (
+                                        {(z.mood === 'boing' || z.mood === 'flop') && !reducedMotion && (
                                             <span className="zb-dizzy" aria-hidden>{[0, 1, 2].map(s => <Star key={s} i={s} />)}</span>
                                         )}
                                     </div>
@@ -405,6 +492,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                         );
                     })}
                 </div>
+                {shot && !reducedMotion && <Dart key={shot.n} shot={shot} />}
                 <FrontFog />
             </div>
             <div className="zb-controls">
