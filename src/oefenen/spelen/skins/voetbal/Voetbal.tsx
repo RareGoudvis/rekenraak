@@ -1,19 +1,19 @@
-import { memo, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import {
-    KICKOFF, VOETBAL, beatsOf, goalsLine, halfTimeDue, isShot, loadBest, newMatch, passArc, playOf, saveBest, sceneOf, shotStep,
+    KICKOFF, VOETBAL, beatsOf, endTitle, halfTimeDue, isShot, loadBest, newMatch, passArc, playOf, saveBest, sceneOf, scoreLine, shotStep,
     type Beat, type Fig, type Match, type Pose,
 } from './match';
-import { FAN_ROWS, fans, goalArt, pitchLines, type Fan } from './pitch';
+import { DEPTH, FAN_ROWS, STAND, depthFor, fans, geoOf, goalArt, pitchLines, viewHeight, type Fan, type Geo } from './pitch';
 import './voetbal.css';
 
-// Voetbal: the polar bears (blue scarves) play the friendly black bears (orange scarves), 5 against 5 on a small
-// pitch seen from the stand. Each right answer is a pass up the pitch (untimed); a wrong one lets a black bear nip
-// in, "Oeps!", and the ball rolls back one bear. After four passes the sum is the shot, on a gentle 10 s ring
-// (onMiss): GOAL! or the keeper's catch and a high five. The match clock is the session's; at its half the skin
-// holds it for a short "Rust!". match.ts decides where everybody stands per beat; this file only draws it.
+// Voetbal: the polar bears (blue scarves) play the black bears (orange scarves), 5 against 5 (1-1-2-1) on a small
+// pitch seen from the stand. With the ball, a right answer is a pass up the pitch (untimed) and a wrong one lets the
+// black bears take it ("Oeps!"); then their passes come on wrong answers and a right one wins it back ("Hebbes!").
+// Our fifth sum is the shot on a gentle 10 s ring (onMiss); theirs goes in. The match clock is the session's; at its
+// half the skin holds it for a short "Rust!". match.ts decides where everybody stands per beat; this file draws it.
 
 // A round sticker bear, feet at 0 0, facing right (face -1 mirrors it).
 export function Bear({ kind, face = 1, pose = 'stand', gloves = false }: { kind: 'ijs' | 'zwart'; face?: 1 | -1; pose?: Pose; gloves?: boolean }) {
@@ -129,12 +129,10 @@ function FanArt({ f }: { f: Fan }) {
 }
 
 const FANS = fans();
-// The stand's roof edge (viewBox y): only tall scenes (an iPad beside the keypad) show it and the sky above.
-const ROOF = -150;
 
-// The stand behind the far touchline: a tall crowd (it fills whatever height the screen gives), the front rows of
-// waving fans, the low wall, and the scoreboard with the goals and the half.
-const Stand = memo(function Stand({ crowdId, goals, half }: { crowdId: string; goals: number; half: 1 | 2 }) {
+// The stand: a fixed strip behind the far touchline (scoreboard, three rows of waving fans, the low wall). A scene
+// taller than the deepest pitch shows the roof and a bit of sky above it.
+const Stand = memo(function Stand({ crowdId, goals, against, half }: { crowdId: string; goals: number; against: number; half: 1 | 2 }) {
     return (
         <>
             <defs>
@@ -146,31 +144,31 @@ const Stand = memo(function Stand({ crowdId, goals, half }: { crowdId: string; g
                     <path className="vb-crowd-body" d="M9 18 Q9 11 13 11 Q17 11 17 18 Z" />
                 </pattern>
             </defs>
-            <path className="vb-cloud" d="M60 -190 Q50 -190 52 -199 Q54 -206 64 -204 Q67 -215 79 -213 Q87 -221 97 -215 Q108 -218 110 -207 Q121 -207 121 -198 Q122 -190 111 -190 Z" />
-            <path className="vb-cloud" d="M270 -214 Q263 -214 264 -220 Q266 -225 272 -224 Q274 -232 283 -230 Q289 -236 296 -232 Q305 -234 307 -226 Q316 -227 316 -220 Q317 -214 308 -214 Z" />
-            <rect className="vb-stand-back" x={-600} y={ROOF} width={1600} height={110 - ROOF} />
-            <rect className="vb-crowd" x={-600} y={ROOF + 10} width={1600} height={FAN_ROWS[0] - 28 - ROOF} style={{ fill: `url(#${crowdId})` }} />
-            <rect className="vb-roof" x={-600} y={ROOF - 6} width={1600} height={16} />
+            <path className="vb-cloud" d="M60 -40 Q50 -40 52 -49 Q54 -56 64 -54 Q67 -65 79 -63 Q87 -71 97 -65 Q108 -68 110 -57 Q121 -57 121 -48 Q122 -40 111 -40 Z" />
+            <path className="vb-cloud" d="M270 -64 Q263 -64 264 -70 Q266 -75 272 -74 Q274 -82 283 -80 Q289 -86 296 -82 Q305 -84 307 -76 Q316 -77 316 -70 Q317 -64 308 -64 Z" />
+            <rect className="vb-stand-back" x={-600} y={0} width={1600} height={STAND.apron} />
+            <rect className="vb-crowd" x={-600} y={0} width={1600} height={FAN_ROWS[0] - 18} style={{ fill: `url(#${crowdId})` }} />
+            <rect className="vb-roof" x={-600} y={-8} width={1600} height={10} />
             {FAN_ROWS.map(y => <rect key={y} className="vb-step" x={-600} y={y - 4} width={1600} height={6} />)}
             {FANS.map(f => <FanArt key={`${f.row}-${f.x}`} f={f} />)}
-            <rect className="vb-wall" x={-600} y={92} width={1600} height={12} />
+            <rect className="vb-wall" x={-600} y={STAND.wall} width={1600} height={STAND.apron - STAND.wall} />
             <g className="vb-board" transform="translate(200 0)">
-                <rect className="vb-board-post" x={-3} y={42} width={6} height={12} />
-                <rect className="vb-board-frame" x={-66} y={2} width={132} height={42} rx={7} />
-                <g transform="translate(-46 38) scale(.48)"><Bear kind="ijs" /></g>
-                <text className="vb-board-num" x={-16} y={32} textAnchor="middle">{goals}</text>
-                <path className="vb-board-split" d="M4 10 L4 36" />
-                <text className="vb-half" x={35} y={27} textAnchor="middle">{half === 1 ? '1e helft' : '2e helft'}</text>
+                <rect className="vb-board-frame" x={-62} y={3} width={124} height={32} rx={6} />
+                <g transform="translate(-46 31) scale(.36)"><Bear kind="ijs" /></g>
+                <text className="vb-board-num" x={-18} y={28} textAnchor="middle">{goals}</text>
+                <text className="vb-board-num" x={0} y={27} textAnchor="middle">:</text>
+                <text className="vb-board-num" x={18} y={28} textAnchor="middle">{against}</text>
+                <g transform="translate(46 31) scale(.36)"><Bear kind="zwart" face={-1} /></g>
+                <rect className="vb-half-tag" x={-26} y={35} width={52} height={13} rx={4} />
+                <text className="vb-half" x={0} y={45} textAnchor="middle">{half === 1 ? '1e helft' : '2e helft'}</text>
             </g>
         </>
     );
 });
 
-const LINES = pitchLines();
-const GOALS = [goalArt(0), goalArt(1)] as const;
-
 // The grass around the pitch, the pitch with its lines and both goals; nothing runs off the pitch.
-const Pitch = memo(function Pitch({ netId }: { netId: string }) {
+const Pitch = memo(function Pitch({ netId, geo }: { netId: string; geo: Geo }) {
+    const lines = useMemo(() => pitchLines(geo), [geo]);
     return (
         <>
             <defs>
@@ -178,22 +176,22 @@ const Pitch = memo(function Pitch({ netId }: { netId: string }) {
                     <path className="vb-net-line" d="M0 0 L4 4 M4 0 L0 4" />
                 </pattern>
             </defs>
-            <rect className="vb-apron" x={-600} y={104} width={1600} height={600} />
-            <path className="vb-grass" d={LINES.lines[0]} />
-            {LINES.stripes.map(d => <path key={d} className="vb-stripe" d={d} />)}
-            {LINES.lines.map(d => <path key={d} className="vb-line" d={d} />)}
-            {LINES.spots.map(p => <circle key={`${p.x}`} className="vb-spot" cx={p.x} cy={p.y} r={2.2 * p.s} />)}
+            <rect className="vb-apron" x={-600} y={STAND.apron} width={1600} height={900} />
+            <path className="vb-grass" d={lines.lines[0]} />
+            {lines.stripes.map(d => <path key={d} className="vb-stripe" d={d} />)}
+            {lines.lines.map(d => <path key={d} className="vb-line" d={d} />)}
+            {lines.spots.map(p => <circle key={`${p.x}`} className="vb-spot" cx={p.x} cy={p.y} r={2.2 * p.s} />)}
         </>
     );
 });
 
-function Goal({ side, netId, bulge }: { side: 0 | 1; netId: string; bulge: number }) {
-    const g = GOALS[side];
+function Goal({ side, netId, bulge, geo }: { side: 0 | 1; netId: string; bulge: number; geo: Geo }) {
+    const g = useMemo(() => goalArt(side, geo), [side, geo]);
     const net = { fill: `url(#${netId})` };
     return (
         <g className="vb-goal">
             <path className="vb-net-floor" d={g.floor} />
-            <g key={bulge} className={`vb-goal-net${bulge && side ? ' is-bulge' : ''}`}>
+            <g key={bulge} className={`vb-goal-net${bulge ? ' is-bulge' : ''}${side ? '' : ' is-left'}`}>
                 <path className="vb-net" d={g.back} style={net} />
                 <path className="vb-net" d={g.sideFar} style={net} />
                 <path className="vb-net" d={g.top} style={net} />
@@ -225,11 +223,23 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
     const [beat, setBeat] = useState<Shown>(START);
     const shown = useRef(START);
     // The last play's shout (GOAL!, Gevangen!), keyed per play; null when it has faded.
-    const [shout, setShout] = useState<{ play: 'goal' | 'save'; n: number } | null>(null);
+    const [shout, setShout] = useState<{ play: 'goal' | 'zgoal' | 'save'; n: number } | null>(null);
     const [rust, setRust] = useState(false);
     const [shot, setShot] = useState({ id: '', left: VOETBAL.shotMs as number });
     const bestKey = `${runKey ?? 'voetbal'}|${options.tijd ?? '3'}`;
     const [bestBefore] = useState(() => loadBest(bestKey));
+    // The pitch's depth follows the scene's shape: a tall scene gets a deeper pitch, not a taller stand.
+    const world = useRef<HTMLDivElement>(null);
+    const [depth, setDepth] = useState<number>(DEPTH.base);
+    const drawn = question !== null;
+    useEffect(() => {
+        const el = world.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const ro = new ResizeObserver(() => setDepth(depthFor(el.clientWidth, el.clientHeight)));
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [drawn]);
+    const geo = useMemo(() => geoOf(depth), [depth]);
     const timers = useRef<number[]>([]);
     const later = (ms: number, fn: () => void) => { timers.current.push(window.setTimeout(fn, ms)); };
     useEffect(() => () => { timers.current.forEach(t => window.clearTimeout(t)); }, []);
@@ -238,15 +248,15 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
     const live = useRef({ sound, onMiss, onHold, onReport, bestKey, bestBefore });
     useLayoutEffect(() => { live.current = { sound, onMiss, onHold, onReport, bestKey, bestBefore }; });
 
-    const report = (goals: number) => live.current.onReport?.({
-        title: 'Wat een wedstrijd!', lead: goalsLine(goals),
+    const report = (goals: number, against: number) => live.current.onReport?.({
+        title: endTitle(goals, against), lead: scoreLine(goals, against),
         detail: goals > 0 && goals > live.current.bestBefore ? 'Nieuw record!' : undefined,
     });
 
-    // Kick-off: the whistle, and the end lines from the start (0 goals).
+    // Kick-off: the whistle, and the end lines from the start (0 - 0).
     useEffect(() => {
         live.current.sound('whistle');
-        report(0);
+        report(0, 0);
     }, []);
 
     useEffect(() => {
@@ -261,17 +271,14 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
                 if (step.at === 0) show(step.beat);
                 else later(step.at, () => { if (matchRef.current.n === m.n) show(step.beat); });
             }
-            if (m.last === 'goal' || m.last === 'save') {
-                setShout({ play: m.last, n: m.n });
+            const last = m.last;
+            if (last === 'goal' || last === 'zgoal' || last === 'save') {
+                setShout({ play: last, n: m.n });
                 later(1700, () => setShout(s => s?.n === m.n ? null : s));
+                later(VOETBAL.flightMs - 60, () => live.current.sound(last === 'goal' ? 'win' : 'caught'));
             }
-            if (m.last === 'goal') {
-                later(VOETBAL.flightMs - 60, () => live.current.sound('win'));
-                saveBest(live.current.bestKey, m.goals);
-                report(m.goals);
-            } else if (m.last === 'save') {
-                later(VOETBAL.flightMs - 60, () => live.current.sound('caught'));
-            }
+            if (last === 'goal') saveBest(live.current.bestKey, m.goals);
+            if (last === 'goal' || last === 'zgoal') report(m.goals, m.against);
         };
         const offs = [events.on('correct', () => onPlay(true)), events.on('wrong', () => onPlay(false))];
         return () => offs.forEach(off => off());
@@ -316,7 +323,7 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
         return () => window.clearInterval(id);
     }, [running, shotId]);
 
-    const scene = sceneOf(beat.beat);
+    const scene = sceneOf(beat.beat, geo);
     const arc = beat.arc;
 
     if (!question) return <div className="vb-root" />;
@@ -324,19 +331,20 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
     const [lhs] = question.text.split('?');
     const showRing = shooting && (phase === 'play' || phase === 'help');
     const passDots = Math.min(match.passes, VOETBAL.passes);
+    const theirs = match.side === 'zwart';
     const b = scene.ball;
     const flightKey = `${beat.n}-${beat.beat.kind}`;
 
     return (
         <div className={`vb-root${phase === 'help' || rust ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <div className="vb-world">
-                <svg className="vb-svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax meet" aria-hidden>
+            <div className="vb-world" ref={world}>
+                <svg className="vb-svg" viewBox={`0 0 400 ${viewHeight(geo)}`} preserveAspectRatio="xMidYMax meet" aria-hidden>
                     <g className={`vb-stand${scene.crowd === 'goal' ? ' is-goal' : ''}`}>
-                        <Stand crowdId={`${uid}c`} goals={match.goals} half={match.half} />
+                        <Stand crowdId={`${uid}c`} goals={match.goals} against={match.against} half={match.half} />
                     </g>
-                    <Pitch netId={`${uid}n`} />
-                    <Goal side={0} netId={`${uid}n`} bulge={0} />
-                    <Goal side={1} netId={`${uid}n`} bulge={scene.bulge ? match.goals : 0} />
+                    <Pitch netId={`${uid}n`} geo={geo} />
+                    <Goal side={0} netId={`${uid}n`} bulge={scene.bulge === 0 ? beat.n : 0} geo={geo} />
+                    <Goal side={1} netId={`${uid}n`} bulge={scene.bulge === 1 ? beat.n : 0} geo={geo} />
                     <g className={`vb-figs is-${scene.move}`}>
                         {scene.figs.map(f => (
                             <g key={f.id} className={`vb-fig${f.jump ? ' is-jump' : ''}`} style={{ transform: figTransform(f) }}>
@@ -365,18 +373,19 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
                     )}
                     {scene.bubble && (
                         <g transform={`translate(${scene.bubble.x.toFixed(1)} ${scene.bubble.y.toFixed(1)})`}>
-                            <g key={`oeps-${beat.n}`} className="vb-bubble">
-                                <rect x="-22" y="-12" width="44" height="21" rx="9" />
+                            <g key={`bubble-${beat.n}`} className="vb-bubble">
+                                <rect x="-27" y="-12" width="54" height="21" rx="9" />
                                 <path d="M-4 9 L0 16 L5 9 Z" />
-                                <text x="0" y="4" textAnchor="middle">Oeps!</text>
+                                <text x="0" y="4" textAnchor="middle">{scene.bubble.text}</text>
                             </g>
                         </g>
                     )}
                 </svg>
 
                 <div className="vb-hud">
-                    <p className="vb-score" aria-label={goalsLine(match.goals)}>{goalsLine(match.goals)}</p>
-                    <span className="vb-dots" role="img" aria-label={showRing ? 'Schieten!' : `${passDots} van ${VOETBAL.passes} passes`}>
+                    <p className="vb-score" aria-label={scoreLine(match.goals, match.against)}>{scoreLine(match.goals, match.against)}</p>
+                    <span className={`vb-dots${theirs ? ' is-zwart' : ''}`} role="img"
+                        aria-label={showRing ? 'Schieten!' : `${theirs ? 'Zwarte beren' : 'IJsberen'}: ${passDots} van ${VOETBAL.passes} passes`}>
                         {Array.from({ length: VOETBAL.passes }, (_, i) => <span key={i} className={`vb-dot${i < passDots ? ' is-on' : ''}`} />)}
                     </span>
                     {showRing && (
@@ -392,6 +401,7 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
                 </div>
 
                 {shout?.play === 'goal' && <p key={`g${shout.n}`} className="vb-shout is-goal" aria-live="polite">GOAL!</p>}
+                {shout?.play === 'zgoal' && <p key={`z${shout.n}`} className="vb-shout is-against" aria-live="polite">Goal zwarte beren!</p>}
                 {shout?.play === 'save' && <p key={`s${shout.n}`} className="vb-shout is-save" aria-live="polite">Gevangen! Hoge vijf!</p>}
                 {rust && (
                     <div className="vb-rust" role="status">
@@ -409,7 +419,9 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
             </div>
 
             <div className="vb-panel">
-                <p className={`vb-tag${showRing ? ' is-on' : ''}`} aria-hidden={!showRing}>Schiet op doel!</p>
+                <p className={`vb-tag${showRing || theirs ? ' is-on' : ''}${theirs ? ' is-zwart' : ''}`} aria-hidden={!showRing && !theirs}>
+                    {theirs ? 'Pak de bal terug!' : 'Schiet op doel!'}
+                </p>
                 <p className={`vb-sign kiosk-math${showRing ? ' is-shot' : ''}`} aria-live="polite">
                     {flash && feedback
                         ? <>{lhs}<span className="vb-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
@@ -429,11 +441,11 @@ export function VoetbalEnding({ reducedMotion }: SkinEndingProps) {
     return (
         <div className={`spel-ending vb-ending${reducedMotion ? ' is-still' : ''}`}>
             <svg viewBox="0 0 300 130" preserveAspectRatio="xMidYMax meet" aria-hidden>
-                <g className="vb-stand is-goal" transform="translate(0 -6)">
-                    <rect className="vb-stand-back" x={-300} y={40} width={900} height={66} />
+                <g className="vb-stand is-goal" transform="translate(0 26)">
+                    <rect className="vb-stand-back" x={-300} y={14} width={900} height={66} />
                     {FAN_ROWS.slice(1).map(y => <rect key={y} className="vb-step" x={-300} y={y - 4} width={900} height={6} />)}
                     {END_FANS.map(f => <FanArt key={`${f.row}-${f.x}`} f={f} />)}
-                    <rect className="vb-wall" x={-300} y={92} width={900} height={12} />
+                    <rect className="vb-wall" x={-300} y={STAND.wall} width={900} height={STAND.apron - STAND.wall} />
                 </g>
                 <rect className="vb-apron" x={-300} y={98} width={900} height={200} />
                 <path className="vb-line" d="M-300 110 L600 110" />

@@ -27,7 +27,7 @@
 
 /* ── The stadium ─────────────────────────────────────────────────────────── */
 /* The world fits beside the keypad: the svg is pinned to its bottom, the stand grows upward on tall screens. */
-.vb-world { position: relative; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; background: var(--spel-sky); container-type: size; }
+.vb-world { position: relative; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; background: var(--spel-sky); }
 .vb-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
 .vb-stand-back { fill: var(--vb-stand); }
@@ -55,11 +55,10 @@
 @keyframes vb-fan-jump { from { transform: translateY(0); } to { transform: translateY(-5px); } }
 
 .vb-wall { fill: var(--vb-white); stroke: var(--spel-ink); stroke-width: 3px; }
-.vb-board-post { fill: var(--spel-ink); }
 .vb-board-frame { fill: var(--spel-ink); stroke: var(--vb-white); stroke-width: 2.5px; }
-.vb-board-split { stroke: color-mix(in srgb, var(--vb-white) 40%, var(--spel-ink)); stroke-width: 1.5px; }
-.vb-board-num { fill: var(--vb-gold); font-family: var(--font-sheet-math); font-size: 28px; font-weight: 700; }
-.vb-half { fill: var(--vb-white); font-family: var(--kid-font, inherit); font-size: 12px; font-weight: 900; }
+.vb-board-num { fill: var(--vb-gold); font-family: var(--font-sheet-math); font-size: 24px; font-weight: 700; }
+.vb-half-tag { fill: var(--spel-ink); }
+.vb-half { fill: var(--vb-white); font-family: var(--kid-font, inherit); font-size: 11px; font-weight: 900; }
 
 /* ── The pitch ───────────────────────────────────────────────────────────── */
 .vb-apron { fill: var(--vb-apron); }
@@ -75,6 +74,7 @@
 .vb-post-edge { fill: none; stroke: var(--spel-ink); stroke-width: 6.5px; stroke-linejoin: round; stroke-linecap: round; }
 .vb-post { fill: none; stroke: var(--vb-white); stroke-width: 3.5px; stroke-linejoin: round; stroke-linecap: round; }
 .vb-goal-net { transform-box: fill-box; transform-origin: left center; }
+.vb-goal-net.is-left { transform-origin: right center; }
 .vb-goal-net.is-bulge { animation: vb-bulge 700ms var(--ease-spring) 200ms; }
 @keyframes vb-bulge { 0%, 100% { transform: scale(1); } 35% { transform: scale(1.35, 1.04); } }
 
@@ -168,6 +168,9 @@
   background: color-mix(in srgb, var(--spel-ink) 12%, var(--vb-white));
 }
 .vb-dot.is-on { background: var(--vb-gold); animation: vb-pop 300ms var(--ease-spring); }
+/* The black bears have the ball: their passes count in their orange. */
+.vb-dots.is-zwart { background: color-mix(in srgb, var(--vb-orange) 22%, var(--vb-white)); }
+.vb-dots.is-zwart .vb-dot.is-on { background: var(--vb-orange); }
 
 .vb-ring { position: relative; width: clamp(64px, 11vmin, 96px); aspect-ratio: 1; flex: 0 0 auto; margin-left: auto; }
 .vb-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -198,12 +201,11 @@
   border-radius: 50%;
 }
 
-/* GOAL! and the catch: a big friendly shout over the pitch. */
-/* Its foot sits on the stand's wall: the scene is 400 x 300 pinned to the world's bottom, the wall at y 100. */
+/* GOAL! and the catch: a big friendly shout over the middle of the pitch that pops up and fades away. */
 .vb-shout {
   position: absolute;
   left: 50%;
-  bottom: calc(min(100cqh, 75cqw) * 2 / 3);
+  top: 56%;
   margin: 0;
   padding: var(--sp-2) var(--sp-4);
   border: var(--spel-line) solid var(--spel-ink);
@@ -213,12 +215,18 @@
   font-size: var(--kiosk-text-xl);
   font-weight: 900;
   white-space: nowrap;
-  transform: translateX(-50%);
-  animation: vb-shout 500ms var(--ease-spring) both;
+  transform: translate(-50%, -50%);
+  animation: vb-shout 1700ms var(--ease-out) both;
   pointer-events: none;
 }
-.vb-shout.is-save { background: var(--vb-white); font-size: var(--kiosk-text-lg); }
-@keyframes vb-shout { from { transform: translateX(-50%) scale(.4); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+.vb-shout.is-save, .vb-shout.is-against { background: var(--vb-white); font-size: var(--kiosk-text-lg); }
+.vb-shout.is-against { border-color: var(--vb-orange); }
+@keyframes vb-shout {
+  0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; }
+  14% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  24%, 72% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -62%) scale(1); opacity: 0; }
+}
 
 /* Half time: a card over the pitch, the bears drink on the bench. */
 .vb-rust {
@@ -281,6 +289,7 @@
   visibility: hidden;
 }
 .vb-tag.is-on { visibility: visible; animation: vb-pop 300ms var(--ease-spring); }
+.vb-tag.is-zwart { background: var(--vb-white); box-shadow: inset 0 0 0 3px var(--vb-orange); }
 .vb-sign {
   margin: 0;
   padding: var(--sp-2) var(--sp-5);
