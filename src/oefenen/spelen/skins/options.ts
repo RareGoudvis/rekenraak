@@ -18,7 +18,8 @@ export function resolveMeta(meta: SkinMeta, picked: SkinChoices = {}): SkinMeta 
     const chosen = choicesOf(meta, picked);
     let round = { ...meta.round };
     for (const o of meta.options) round = { ...round, ...o.choices.find(c => c.value === chosen[o.id])?.round };
-    return { ...meta, round, chosen };
+    // A pick with a clock (Schatkist's 3 minuten) makes an untimed game timed.
+    return { ...meta, round, chosen, timed: meta.timed || !!round.seconds };
 }
 
 function readAll(): Record<string, SkinChoices> {

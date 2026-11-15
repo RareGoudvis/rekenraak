@@ -1,5 +1,6 @@
 // Schatkist: the code hunt, pure. Each right answer gives the last digit of that answer; four digits make the
-// lock's code, always in the order they came (it is about care, not memory). Three chests make a round.
+// lock's code, always in the order they came (it is about care, not memory). Three chests make a round; a timed
+// round (the Met tijd option) opens chests until the clock runs out.
 
 export const CODE_LEN = 4;
 export const CHESTS = 3;
@@ -39,8 +40,8 @@ export function tryCode(h: Hunt, code: string): Hunt {
     return code === codeOf(h) ? { ...h, stage: 'open' } : { ...h, misses: h.misses + 1 };
 }
 
-/** After the coins: the next chest, or done after the last one. */
-export function nextChest(h: Hunt): Hunt {
+/** After the coins: the next chest, or done after the last one (chests = Infinity: a timed round never runs out). */
+export function nextChest(h: Hunt, chests = CHESTS): Hunt {
     if (h.stage !== 'open') return h;
-    return h.chest + 1 >= CHESTS ? { ...h, stage: 'done' } : { ...newHunt(), chest: h.chest + 1 };
+    return h.chest + 1 >= chests ? { ...h, stage: 'done' } : { ...newHunt(), chest: h.chest + 1 };
 }

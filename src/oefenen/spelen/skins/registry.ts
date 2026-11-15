@@ -170,10 +170,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Each right answer reveals the last digit of its answer; four make the lock's code, typed on the same keypad.
         // Three chests end the round (the skin's onFinish); a wrong sum or code costs nothing. 60 questions at most, unseen.
+        // Met tijd (3 / 5 minuten): chests until the clock runs out (resolveMeta makes the round timed).
         // Chest open = the skin's 'win' cue, a wrong code = its 'lost' cue (the session never ends this round as won or lost).
         meta: {
             music: 'zee',
             id: 'schatkist', label: 'Schatkist', input: 'keypad', timed: false, round: { cap: 60 }, accepts: { kinds: ['number'], digits: true },
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: 'geen', choices: [{ value: 'geen', label: 'Zonder tijd' }, { value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
             sounds: { correct: 'snip', wrong: 'plop', win: 'jingle', lost: 'boing' },
         },
         icon: TreasureChest,

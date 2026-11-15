@@ -1,19 +1,25 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent, type CSSProperties, type ReactNode } from 'react';
 import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
+import { Clouds } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { CHESTS, CODE_LEN, newHunt, nextChest, reveal, tryCode, type Hunt } from './code';
+import { coinsOf, drop, dropSpot, gem, grab, heapSlot, newHeap, right, wrong, HEAP_X, HEAP_Y, type Heap, type Loot } from './heap';
+import { DAY, SUNSET, skyFor, type Sky } from './sky';
 import './schatkist.css';
 
 // Schatkist: a pirate island and a chest with a 4-digit lock. Each right answer reveals one digit of the code
-// (the last digit of that answer, shown on the parchment); after four, the pupil types the code into the lock on
-// the same keypad. A wrong code shakes the lock, the digits stay in view. The chest opens with gold coins; three
-// chests make the round (the skin's own finish). A wrong sum costs nothing but gives no digit. Untimed.
+// (the last digit of that answer, shown on the parchment) and a coin hops onto the heap beside the chest; after
+// four, the pupil types the code into the lock on the same keypad. A wrong code shakes the lock, the digits stay in
+// view. The chest opens with gold coins and a gem for the heap. Untimed: three chests make the round (the skin's
+// own finish). Met tijd: as many chests as the clock allows, the sun rising and setting with it. A wrong sum gives
+// no digit; three in a row bring a crab that carries one coin off the heap and drops it beside the chest.
 
 // How long the open chest shows its coins before the next chest.
 const OPEN_MS = 1900;
-// Chests opened in the last round, for its end screen (same chunk).
+// The last round, for its end screen (same chunk): chests opened and the heap as it was left.
 let opened = 0;
+let lastHeap: Heap = newHeap();
 
 // A pile in the chest's mouth, bulging over the rim.
 const COINS: [number, number, number][] = [[148, 178, 0], [172, 172, 1], [196, 176, 2], [220, 172, 3], [246, 178, 4], [160, 158, 5], [184, 154, 6], [210, 156, 7], [236, 160, 8], [198, 138, 9]];
@@ -61,12 +67,99 @@ export function Chest({ open, shown = '', shake = 0 }: { open: boolean; shown?: 
     );
 }
 
-function Island({ children }: { children: ReactNode }) {
+// A flat coin seen from the side, and a cut gem; both centred on 0 0.
+function LootShape({ kind, n }: { kind: Loot['kind']; n: number }) {
+    if (kind === 'gem') {
+        return (
+            <g className={`sk-gem is-${n % 3}`}>
+                <path d="M-9 -4 L-5 -10 L5 -10 L9 -4 L0 8 Z" />
+                <path className="sk-gem-cut" d="M-9 -4 L9 -4 M-4 -4 L0 8 L4 -4 M-5 -10 L-2 -4 M5 -10 L2 -4" />
+            </g>
+        );
+    }
+    return (
+        <g className="sk-heap-coin">
+            <path className="sk-coin-side" d="M-10 0 V3.5 A10 5.5 0 0 0 10 3.5 V0" />
+            <ellipse rx="10" ry="5.5" />
+            <ellipse className="sk-coin-ring" rx="5" ry="2.6" />
+        </g>
+    );
+}
+
+// Where a new coin or gem hops from: the chest's lock for a coin, its open mouth for a gem.
+const FROM = { coin: { x: 200, y: 150 }, gem: { x: 200, y: 160 } };
+
+/** The heap beside the chest and the coins the crab dropped beside it. */
+export function Hoard({ heap, settled }: { heap: Heap; settled?: boolean }) {
+    let gems = 0;
+    return (
+        <g className={`sk-hoard${settled ? ' is-settled' : ''}`}>
+            <ellipse className="sk-heap-shadow" cx={HEAP_X} cy={HEAP_Y + 4} rx={heap.items.length ? Math.min(62, 16 + heap.items.length * 2.2) : 0} ry="6" />
+            {Array.from({ length: heap.dropped }, (_, i) => {
+                const p = dropSpot(i);
+                return <g key={`d${i}`} className="sk-loot is-dropped" style={{ transform: `translate(${p.x}px, ${p.y}px)` }}><LootShape kind="coin" n={i} /></g>;
+            })}
+            {/* Gems after the coins, so a coin landing higher up never hides one. */}
+            {heap.items.map((l, i) => ({ l, i, n: l.kind === 'gem' ? gems++ : 0 })).sort((a, b) => Number(a.l.kind === 'gem') - Number(b.l.kind === 'gem')).map(({ l, i, n }) => {
+                const p = heapSlot(i);
+                const from = FROM[l.kind];
+                return (
+                    <g key={l.id} className="sk-loot" style={{ transform: `translate(${p.x}px, ${p.y}px)` }}>
+                        <g className="sk-fly-x" style={{ '--fx': `${from.x - p.x}px` } as CSSProperties}>
+                            <g className="sk-fly-y" style={{ '--fy': `${from.y - p.y}px` } as CSSProperties}>
+                                <LootShape kind={l.kind} n={n} />
+                            </g>
+                        </g>
+                    </g>
+                );
+            })}
+        </g>
+    );
+}
+
+// The crab's trip: in from the sea to the heap, with the coin to the sand beside the chest, off again.
+type CrabTrip = { coin: Loot; phase: 'come' | 'carry' | 'leave' | 'still'; at: { x: number; y: number }; to: { x: number; y: number }; forKey: string };
+
+function Crab({ trip, onStep }: { trip: CrabTrip; onStep(e: AnimationEvent<SVGGElement>): void }) {
+    const style = { '--hx': `${trip.at.x + 26}px`, '--tx': `${trip.to.x + 24}px`, '--ty': `${trip.to.y - 6}px` } as CSSProperties;
+    return (
+        <g className={`sk-crab is-${trip.phase}`} style={style} onAnimationEnd={onStep}>
+            <g className="sk-crab-body" transform="scale(1.2)">
+                <path className="sk-crab-leg" d="M-14 2 L-24 8 L-27 14 M-12 6 L-20 13 L-21 19 M14 2 L24 8 L27 14 M12 6 L20 13 L21 19" />
+                <path className="sk-crab-arm" d="M-12 -4 L-20 -12 M12 -4 L20 -12" />
+                <path className="sk-crab-claw" d="M-20 -12 Q-30 -16 -26 -26 L-21 -20 L-16 -24 Q-14 -14 -20 -12 Z M20 -12 Q30 -16 26 -26 L21 -20 L16 -24 Q14 -14 20 -12 Z" />
+                <ellipse className="sk-crab-shell" cx="0" cy="0" rx="16" ry="11" />
+                <path className="sk-crab-stalk" d="M-5 -9 L-6 -17 M5 -9 L6 -17" />
+                <circle className="sk-crab-eye" cx="-6" cy="-19" r="4" />
+                <circle className="sk-crab-eye" cx="6" cy="-19" r="4" />
+                <circle className="sk-crab-pupil" cx="-5" cy="-19" r="1.6" />
+                <circle className="sk-crab-pupil" cx="7" cy="-19" r="1.6" />
+                <path className="sk-crab-grin" d="M-5 3 Q0 7 5 3" />
+                {trip.phase === 'carry' && <g className="sk-crab-coin" transform="translate(0 -30)"><LootShape kind="coin" n={0} /></g>}
+            </g>
+        </g>
+    );
+}
+
+// A few small swells now and then on the open sea (CSS cycles; hidden under reduced motion).
+// Placed where the sea shows on every screen: left of the island, right of it before the keypad, and further out on wide ones.
+const SWELLS: [number, number, number][] = [[34, 203, 0], [362, 204, 1], [-64, 214, 2], [398, 217, 3], [470, 240, 4]];
+
+function Island({ children, sky }: { children: ReactNode; sky: Sky }) {
     return (
         <svg className="sk-svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax meet" aria-hidden>
+            {/* The sun sits behind the sea so it can rise out of it and set into it. */}
+            <circle className="sk-sun" cx={0} cy={0} r="26" style={{ transform: `translate(${sky.x}px, ${sky.y}px)` }} />
             <rect className="sk-sea" x={-2000} y={190} width={4400} height={1000} />
-            <path className="sk-wave" d="M-200 214 Q-180 206 -160 214 M330 222 Q350 214 370 222 M20 236 Q40 228 60 236 M370 262 Q390 254 410 262" />
-            <circle className="sk-sun" cx="352" cy="56" r="26" />
+            <g className="sk-waves">
+                <path className="sk-wave" d="M-200 214 Q-180 206 -160 214 M330 222 Q350 214 370 222 M20 236 Q40 228 60 236 M370 262 Q390 254 410 262" />
+                <path className="sk-wave is-b" d="M-120 250 Q-100 242 -80 250 M420 230 Q440 222 460 230 M-20 212 Q0 204 20 212 M480 270 Q500 262 520 270" />
+            </g>
+            {SWELLS.map(([x, y, i]) => (
+                <g key={i} className={`sk-swell is-${i}`} style={{ transform: `translate(${x}px, ${y}px)` }}>
+                    <path className="sk-swell-body" d="M-22 4 Q-12 -10 2 -9 Q12 -8 14 -1 Q8 -5 4 -1 Q10 3 22 4 Z" />
+                </g>
+            ))}
             <path className="sk-sand" d="M-60 300 Q-40 222 80 220 Q200 206 320 220 Q440 224 460 300 Z" />
             {/* A palm tree. */}
             <path className="sk-trunk" d="M58 236 Q50 170 76 112 L88 116 Q66 172 74 236 Z" />
@@ -78,17 +171,61 @@ function Island({ children }: { children: ReactNode }) {
     );
 }
 
-export default function Schatkist({ question, phase, feedback, onAnswer, onFinish, sound, progress, reducedMotion }: SkinProps) {
-    const [hunt, setHunt] = useState<Hunt>(newHunt);
-    // The question whose right answer gave the latest digit (one digit per question).
-    const [revealedFor, setRevealedFor] = useState<string | null>(null);
-    const [typed, setTyped] = useState('');
-    if (question && phase === 'right' && feedback?.correct && revealedFor !== question.key) {
-        setRevealedFor(question.key);
-        setHunt(h => reveal(h, feedback.expected));
-    }
+// The sky colours as custom properties (dawn and sunset mixed into the day sky).
+const skyStyle = (sky: Sky): CSSProperties => ({ '--sk-dawn': `${Math.round(sky.dawn * 100)}%`, '--sk-dusk': `${Math.round(sky.dusk * 100)}%` } as CSSProperties);
 
-    useEffect(() => { opened = 0; }, []);
+const chestsLine = (n: number) => (n === 0 ? 'Nog geen schatkist open' : `${n} ${n === 1 ? 'schatkist' : 'schatkisten'} open`);
+
+export default function Schatkist({ question, phase, feedback, onAnswer, onFinish, onReport, sound, progress, reducedMotion }: SkinProps) {
+    const timed = progress.msTotal !== null;
+    const chests = timed ? Infinity : CHESTS;
+    const [hunt, setHunt] = useState<Hunt>(newHunt);
+    const [heap, setHeap] = useState<Heap>(newHeap);
+    const [crab, setCrab] = useState<CrabTrip | null>(null);
+    // The question whose answer was handled (one digit, one coin or one step of the crab's run per question).
+    const [seenFor, setSeenFor] = useState<string | null>(null);
+    const [scoreSeen, setScoreSeen] = useState(progress.score);
+    const [typed, setTyped] = useState('');
+    if (question && feedback && (phase === 'right' || phase === 'wrong') && seenFor !== question.key) {
+        setSeenFor(question.key);
+        setScoreSeen(progress.score);
+        if (feedback.correct) {
+            setHunt(h => reveal(h, feedback.expected));
+            setHeap(h => right(h, progress.score > scoreSeen));
+        } else {
+            const next = wrong(heap, crab !== null);
+            setHeap(next.heap);
+            if (next.crab) {
+                const at = heapSlot(heap.items.findIndex(l => l.id === next.crab!.id));
+                const to = dropSpot(heap.dropped);
+                // Reduced motion: no walk; the coin lies beside the chest at once and the crab stands by it.
+                if (reducedMotion) {
+                    setHeap(drop(grab(next.heap, next.crab.id)));
+                    setCrab({ coin: next.crab, phase: 'still', at, to, forKey: question.key });
+                } else setCrab({ coin: next.crab, phase: 'come', at, to, forKey: question.key });
+            }
+        }
+    }
+    // A still crab (reduced motion) leaves with the next question.
+    if (crab?.phase === 'still' && question && crab.forKey !== question.key) setCrab(null);
+
+    const onCrabStep = (e: AnimationEvent<SVGGElement>) => {
+        if (e.target !== e.currentTarget || !crab) return;
+        if (crab.phase === 'come') {
+            setHeap(h => grab(h, crab.coin.id));
+            setCrab({ ...crab, phase: 'carry' });
+        } else if (crab.phase === 'carry') {
+            setHeap(drop);
+            setCrab({ ...crab, phase: 'leave' });
+        } else if (crab.phase === 'leave') setCrab(null);
+    };
+
+    useEffect(() => { opened = 0; lastHeap = newHeap(); }, []);
+    // The end screen shows the heap as it is; a coin still on its way with the crab already lies beside the chest.
+    useEffect(() => {
+        const carried = crab && (crab.phase === 'carry' || crab.phase === 'come') ? crab.coin.id : null;
+        lastHeap = carried === null ? heap : drop(grab(heap, carried));
+    }, [heap, crab]);
     // The open chest shows its coins, then the next chest; after the last one the round ends.
     const finish = useRef(onFinish);
     useLayoutEffect(() => { finish.current = onFinish; });
@@ -96,15 +233,23 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     useLayoutEffect(() => { score.current = progress.score; });
     useEffect(() => {
         if (hunt.stage !== 'open') return;
-        const last = hunt.chest + 1 >= CHESTS;
+        const last = hunt.chest + 1 >= chests;
         const id = window.setTimeout(() => {
-            if (last) finish.current?.({ title: 'De schat is van jou!', lead: `${CHESTS} schatkisten open, ${score.current} juist` });
-            else setHunt(nextChest);
+            if (last) finish.current?.({ title: 'De schat is van jou!', lead: `${chestsLine(CHESTS)}, ${score.current} juist` });
+            else setHunt(h => nextChest(h, chests));
         }, last ? OPEN_MS - 500 : OPEN_MS);
         return () => window.clearTimeout(id);
-    }, [hunt.stage, hunt.chest]);
+    }, [hunt.stage, hunt.chest, chests]);
+    // A timed round ends on the clock: its end screen counts the chests.
+    const report = useRef(onReport);
+    useLayoutEffect(() => { report.current = onReport; });
+    const openedNow = hunt.chest + (hunt.stage === 'open' || hunt.stage === 'done' ? 1 : 0);
+    useEffect(() => {
+        if (timed) report.current?.({ lead: `${chestsLine(openedNow)}, ${progress.score} juist` });
+    }, [timed, openedNow, progress.score]);
 
-    if (!question) return <div className="sk-root" />;
+    const sky = timed ? skyFor(progress.msLeft, progress.msTotal) : DAY;
+    if (!question) return <div className="sk-root" style={skyStyle(sky)} />;
     const flash = phase === 'right' || phase === 'wrong';
     const coding = hunt.stage === 'code' && phase === 'play';
     const open = hunt.stage === 'open' || hunt.stage === 'done';
@@ -115,8 +260,9 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
         setTyped('');
         if (next.stage === 'open') {
             opened = hunt.chest + 1;
+            setHeap(gem);
             // The last chest's coins sound with the end screen.
-            if (hunt.chest + 1 < CHESTS) sound('win');
+            if (hunt.chest + 1 < chests) sound('win');
         } else sound('lost');
         setHunt(next);
     };
@@ -127,12 +273,18 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
         : hunt.last ? <>Het antwoord was <b className="kiosk-math">{formatMathNumber(Number(hunt.last.answer))}</b>, dus het cijfer is <b className="kiosk-math">{hunt.last.digit}</b>.</>
         : 'Elk juist antwoord geeft een cijfer van de code.';
     const newest = phase === 'right' ? hunt.digits.length - 1 : -1;
+    const paused = phase === 'help';
 
     return (
-        <div className={`sk-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${coding ? ' is-code' : ''}${open ? ' is-open' : ''}`}>
+        <div className={`sk-root${paused ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${coding ? ' is-code' : ''}${open ? ' is-open' : ''}${timed ? ' is-timed' : ''}`}
+            style={skyStyle(sky)} data-coins={coinsOf(heap)}>
             <div className="sk-world">
+                <div className="sk-sky">
+                    <Clouds layer="far" outline={false} count={3} band={[4, 26]} size={[90, 150]} speed={80} seed={7} paused={paused} reducedMotion={reducedMotion} />
+                    <Clouds layer="near" count={2} band={[8, 30]} size={[110, 170]} speed={55} seed={3} paused={paused} reducedMotion={reducedMotion} />
+                </div>
                 <div className={`sk-parchment${coding && hunt.misses ? ` is-look-${hunt.misses % 2}` : ''}`}>
-                    <p className="sk-chests">Kist {hunt.chest + 1} van {CHESTS}</p>
+                    <p className="sk-chests">{timed ? `Kist ${hunt.chest + 1}` : `Kist ${hunt.chest + 1} van ${CHESTS}`}</p>
                     <p className="sk-note" aria-live="polite"><span>{note}</span></p>
                     <div className="sk-digits" role="img" aria-label={`De code tot nu toe: ${hunt.digits.join(' ') || 'nog geen cijfers'}`}>
                         {Array.from({ length: CODE_LEN }, (_, i) => (
@@ -141,8 +293,10 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
                     </div>
                 </div>
                 <div className="sk-scene">
-                    <Island>
+                    <Island sky={sky}>
                         <Chest key={hunt.chest} open={open} shown={coding ? typed : ''} shake={hunt.misses} />
+                        <Hoard heap={heap} settled={reducedMotion} />
+                        {crab && <Crab trip={crab} onStep={onCrabStep} />}
                     </Island>
                 </div>
             </div>
@@ -168,12 +322,14 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     );
 }
 
-/** The end screen: the open chest full of coins (or a closed one when the round ran out first). */
-export function SchatkistEnding({ reducedMotion }: SkinEndingProps) {
+/** The end screen: the chest (open, or closed when the round ran out first), the heap, and a sunset after a timed round. */
+export function SchatkistEnding({ progress, reducedMotion }: SkinEndingProps) {
+    const sky = progress.msTotal !== null ? SUNSET : DAY;
     return (
-        <div className={`spel-ending sk-ending${reducedMotion ? ' is-still' : ''}`}>
-            <Island>
+        <div className={`spel-ending sk-ending${reducedMotion ? ' is-still' : ''}`} style={skyStyle(sky)}>
+            <Island sky={sky}>
                 <Chest open={opened > 0} />
+                <Hoard heap={lastHeap} settled />
             </Island>
         </div>
     );
