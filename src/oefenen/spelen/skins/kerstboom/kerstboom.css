@@ -1,93 +1,194 @@
-/* Kerstboom versieren. Flat fills under a thick dark outline (spelen.css tokens). Transforms and opacity only;
-   nothing moves under reduced motion and everything holds still under "Hoe los ik dit op?". */
+/* Kerstboom versieren: a warm living room at evening. Flat fills under a thick dark outline (spelen.css tokens).
+   Transforms and opacity only; nothing loops under reduced motion and everything holds still under "Hoe los ik dit op?". */
 .kb-root {
   position: absolute;
   inset: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  background: var(--kb-wall);
   overflow: hidden;
   overflow: clip;
 }
 .kb-root,
 .kb-ending {
-  --kb-wall: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--kiosk-paper));
-  --kb-floor: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper));
-  --kb-night: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--spel-ink));
-  --kb-tree: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--spel-ink));
-  --kb-wood: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
+  --kb-wall: color-mix(in srgb, var(--accent-getallenkennis) 34%, color-mix(in srgb, var(--accent-meetkunde) 8%, var(--spel-ink)));
+  --kb-wall-stripe: color-mix(in srgb, var(--kb-wall) 86%, var(--spel-ink));
+  --kb-wall-dot: color-mix(in srgb, var(--kb-wall) 70%, var(--spel-star));
+  --kb-lamp: color-mix(in srgb, var(--spel-star) 80%, var(--accent-vraagstukken));
+  --kb-wood: color-mix(in srgb, var(--accent-vraagstukken) 42%, var(--spel-ink));
+  --kb-wood-line: color-mix(in srgb, var(--kb-wood) 70%, var(--spel-ink));
+  --kb-night: color-mix(in srgb, var(--accent-bewerkingen) 38%, var(--spel-ink));
+  --kb-night-low: color-mix(in srgb, var(--accent-bewerkingen) 30%, color-mix(in srgb, var(--accent-meetkunde) 20%, var(--spel-ink)));
+  --kb-tree: color-mix(in srgb, var(--accent-metendrekenen) 46%, var(--spel-ink));
+  --kb-tree-shade: color-mix(in srgb, var(--kb-tree) 78%, var(--spel-ink));
+  --kb-trunk: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--spel-ink));
+  --kb-curtain: color-mix(in srgb, var(--spel-star) 50%, color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--spel-ink)));
+  --kb-rug: color-mix(in srgb, var(--accent-bewerkingen) 34%, var(--spel-ink));
+  --kb-rug-edge: color-mix(in srgb, var(--spel-star) 55%, var(--kiosk-paper));
+  --kb-snow: var(--kiosk-paper);
   --kb-gold: var(--spel-star);
-  --kb-ball-0: var(--spel-fill-0);
-  --kb-ball-1: var(--spel-fill-1);
-  --kb-ball-2: var(--spel-fill-2);
-  --kb-ball-3: var(--spel-fill-4);
+  --kb-cat: color-mix(in srgb, var(--accent-vraagstukken) 72%, var(--kiosk-paper));
+  --kb-cat-stripe: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-ink));
+  --kb-scarf: color-mix(in srgb, var(--accent-getallenkennis) 85%, var(--kiosk-paper));
+  --kb-ball-0: var(--accent-getallenkennis);
+  --kb-ball-1: var(--spel-star);
+  --kb-ball-2: var(--accent-bewerkingen);
+  --kb-ball-3: var(--accent-meetkunde);
+  --kb-ball-4: color-mix(in srgb, var(--spel-ink) 12%, var(--kiosk-paper));
+  --kb-bulb-0: var(--spel-star);
+  --kb-bulb-1: color-mix(in srgb, var(--accent-getallenkennis) 80%, var(--kiosk-paper));
+  --kb-bulb-2: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper));
+  --kb-bulb-3: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--kiosk-paper));
+  --kb-paper-0: var(--accent-getallenkennis);
+  --kb-paper-1: var(--spel-star);
+  --kb-paper-2: color-mix(in srgb, var(--accent-bewerkingen) 75%, var(--kiosk-paper));
+  --kb-paper-3: color-mix(in srgb, var(--accent-meetkunde) 80%, var(--kiosk-paper));
+  --kb-paper-4: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--kiosk-paper));
   background: var(--kb-wall);
 }
-.kb-ending .kb-svg { padding: var(--sp-2) 0 0; }
 
 /* The world does not clip: the wall and floor run on under the keypad (the root clips). */
 .kb-world { position: relative; min-width: 0; min-height: 0; }
+/* The square stage holds the scene's viewBox exactly, bottom-centred, so the HTML snow lines up with the window. */
+.kb-scene { position: absolute; inset: 0; container-type: size; }
+.kb-stage { position: absolute; bottom: 0; left: 50%; translate: -50% 0; height: min(100cqh, 100cqw); aspect-ratio: 1; }
 .kb-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.kb-ending .kb-scene { inset: var(--sp-2) 0 0; }
 
+/* ── The room ── */
 .kb-wall { fill: var(--kb-wall); }
-.kb-floor { fill: var(--kb-floor); stroke: var(--spel-ink); stroke-width: 3px; }
-.kb-rug { fill: color-mix(in srgb, var(--spel-fill-0) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-wall-stripe { fill: var(--kb-wall-stripe); }
+.kb-wall-dot { fill: var(--kb-wall-dot); }
+.kb-lamp-stop-0 { stop-color: var(--kb-lamp); stop-opacity: .5; }
+.kb-lamp-stop-1 { stop-color: var(--kb-lamp); stop-opacity: 0; }
+.kb-tree-light { opacity: 0; transition: opacity 1.2s ease-out; }
+.kb-scene.is-lit .kb-tree-light { opacity: .75; }
+.kb-floor { fill: var(--kb-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-plank { fill: none; stroke: var(--kb-wood-line); stroke-width: 2px; }
+.kb-skirting { fill: color-mix(in srgb, var(--kb-wood) 80%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kb-rug { fill: var(--kb-rug); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-rug-edge { fill: none; stroke: var(--kb-rug-edge); stroke-width: 2px; stroke-dasharray: 5 5; }
 
-.kb-window rect:first-child { fill: var(--kb-night); stroke: var(--spel-ink); stroke-width: 4px; }
-.kb-moon { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 2.5px; }
-.kb-snow { fill: var(--kiosk-paper); }
-.kb-frame { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
-.kb-sill { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-sky-stop-0 { stop-color: var(--kb-night); }
+.kb-sky-stop-1 { stop-color: var(--kb-night-low); }
+.kb-moon { fill: color-mix(in srgb, var(--spel-star) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.kb-outside-hill, .kb-window-snow { fill: var(--kb-snow); }
+.kb-outside-fir { fill: color-mix(in srgb, var(--kb-tree) 60%, var(--kb-night)); }
+.kb-snow-pane { position: absolute; overflow: hidden; }
+.kb-snow-pane .spel-flake { box-shadow: none; }
+.kb-frame { fill: none; stroke: var(--spel-ink); stroke-width: 6px; }
+.kb-frame-bar { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.kb-sill { fill: color-mix(in srgb, var(--kb-wood) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-curtain { fill: var(--kb-curtain); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.kb-rail { fill: var(--kb-trunk); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kb-sconce-arm { fill: none; stroke: var(--spel-ink); stroke-width: 4px; stroke-linecap: round; }
+.kb-sconce-plate { fill: var(--kb-trunk); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kb-sconce-shade { fill: color-mix(in srgb, var(--kb-lamp) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
 
-.kb-trunk { fill: var(--kb-wood); stroke: var(--spel-ink); stroke-width: 3px; }
-.kb-pot, .kb-pot-rim { fill: var(--spel-fill-0); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
-.kb-tier { fill: var(--kb-tree); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+/* ── The cat: ginger, asleep, in a red scarf ── */
+.kb-cat-fur, .kb-cat-ear { fill: var(--kb-cat); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.kb-cat-tail-line { fill: none; stroke: var(--spel-ink); stroke-width: 11px; stroke-linecap: round; }
+.kb-cat-tail { fill: none; stroke: var(--kb-cat); stroke-width: 5px; stroke-linecap: round; }
+.kb-cat-stripe { fill: none; stroke: var(--kb-cat-stripe); stroke-width: 2.5px; stroke-linecap: round; }
+.kb-cat-eye { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-linecap: round; }
+.kb-cat-eye-open circle { fill: var(--spel-ink); }
+.kb-cat-nose { fill: var(--spel-ink); }
+.kb-scarf, .kb-scarf-end { fill: var(--kb-scarf); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.kb-zz { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 75%, transparent); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; }
+.kb-cat-breathe { transform-box: fill-box; transform-origin: 50% 100%; animation: kb-breathe 3.4s ease-in-out infinite; }
+@keyframes kb-breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.02 1.06; } }
+.kb-zz { animation: kb-zz 3.4s ease-in-out infinite; }
+@keyframes kb-zz { 0%, 100% { opacity: .2; translate: 0 2px; } 50% { opacity: 1; translate: 0 -3px; } }
+.kb-cat-ear.is-twitch { transform-box: fill-box; transform-origin: 70% 100%; animation: kb-twitch 500ms ease-in-out 520ms both; }
+@keyframes kb-twitch { 0%, 100% { rotate: 0deg; } 30% { rotate: -16deg; } 60% { rotate: 6deg; } }
+
+/* ── The tree ── */
+.kb-trunk { fill: var(--kb-trunk); stroke: var(--spel-ink); stroke-width: 3px; }
+.kb-tier { fill: var(--kb-tree); }
+.kb-tier-shade { fill: var(--kb-tree-shade); }
+.kb-tier-line { fill: none; stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+.kb-skirt { fill: var(--kb-snow); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
 
 .kb-hook { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
 .kb-cap { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 2px; }
-.kb-ball { stroke: var(--spel-ink); stroke-width: 3px; }
-.kb-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-linecap: round; }
+.kb-ball { stroke: none; }
+.kb-ball-rim { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.kb-pat-band { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 80%, transparent); stroke-width: 3.5px; }
+.kb-pat-line { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 85%, transparent); stroke-width: 2.5px; stroke-linejoin: round; }
+.kb-pat-dot { fill: color-mix(in srgb, var(--kiosk-paper) 85%, transparent); }
+.kb-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-linecap: round; opacity: .85; }
 
 .kb-tinsel path { fill: none; stroke-linecap: round; }
-.kb-tinsel-edge { stroke: var(--spel-ink); stroke-width: 11px; }
-.kb-tinsel-gold { stroke: var(--kb-gold); stroke-width: 6px; }
-.kb-tinsel-glint { stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-dasharray: 1 5; }
+.kb-tinsel-edge { stroke: var(--spel-ink); stroke-width: 10px; }
+.kb-tinsel-gold { stroke: var(--kb-gold); stroke-width: 5.5px; }
+.kb-tinsel-glint { stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-dasharray: 1 6; }
 
-.kb-star path { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
-.kb-star { transform-origin: 160px 40px; }
+.kb-wire { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.kb-socket { fill: var(--spel-ink); }
+.kb-bulb-glass { stroke: var(--spel-ink); stroke-width: 1.5px; }
+.kb-bulb-glow { opacity: .5; }
+.kb-bulb .kb-bulb-glow { animation: kb-twinkle 1.8s ease-in-out infinite alternate; animation-delay: calc(var(--t) * -360ms); }
+.kb-bulb .kb-bulb-glass { animation: kb-glass 1.8s ease-in-out infinite alternate; animation-delay: calc(var(--t) * -360ms); }
+@keyframes kb-twinkle { from { opacity: .12; } to { opacity: .75; } }
+@keyframes kb-glass { from { opacity: .75; } to { opacity: 1; } }
+.kb-scene.is-lit .kb-bulb-glow { opacity: .7; }
 
-.kb-present rect { stroke: var(--spel-ink); stroke-width: 3px; }
-.kb-ribbon, .kb-bow { fill: none; stroke: var(--kb-gold); stroke-width: 4px; stroke-linecap: round; }
-.kb-presents { animation: kb-pop 500ms var(--ease-spring) both; transform-origin: 160px 330px; }
+.kb-cane path { fill: none; stroke-linecap: round; }
+.kb-cane-edge { stroke: var(--spel-ink); stroke-width: 8px; }
+.kb-cane-white { stroke: var(--kiosk-paper); stroke-width: 4.5px; }
+.kb-cane-red { stroke: var(--accent-getallenkennis); stroke-width: 4.5px; stroke-dasharray: 4 4; }
 
-/* ── New decorations: a bauble swings in on its hook, a garland is drawn along, the star pops. ── */
+.kb-starlet-body, .kb-star-body { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.kb-star-body { stroke-width: 3.5px; }
+.kb-star-rays { fill: color-mix(in srgb, var(--kb-gold) 40%, transparent); }
+
+.kb-box, .kb-box-lid { fill: var(--paper); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.kb-box-lid { fill: color-mix(in srgb, var(--paper) 82%, var(--spel-ink)); }
+.kb-ribbon { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; }
+.kb-bow { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+
+/* ── New decorations: a bauble swings in on its hook, a garland or light string is drawn along, the rest pop. ── */
+.kb-bauble { transform-origin: 0 -23px; }
 .kb-bauble.is-new { animation: kb-swing 900ms var(--ease-out) both; }
 @keyframes kb-swing {
-  0% { transform: translateY(-40px) rotate(0); opacity: 0; }
-  30% { transform: translateY(0) rotate(14deg); opacity: 1; }
-  55% { transform: rotate(-8deg); }
-  78% { transform: rotate(4deg); }
-  100% { transform: rotate(0); }
+  0% { translate: 0 -40px; rotate: 0deg; opacity: 0; }
+  30% { translate: 0 0; rotate: 14deg; opacity: 1; }
+  55% { rotate: -8deg; }
+  78% { rotate: 4deg; }
+  100% { rotate: 0deg; }
 }
-.kb-tinsel.is-new path { stroke-dasharray: 100 100; animation: kb-draw 700ms var(--ease-out) both; }
-.kb-tinsel.is-new .kb-tinsel-glint { stroke-dasharray: 1 5; animation: none; }
+.kb-tinsel.is-new .kb-tinsel-edge, .kb-tinsel.is-new .kb-tinsel-gold, .kb-lights.is-new .kb-wire { stroke-dasharray: 100 100; animation: kb-draw 700ms var(--ease-out) both; }
+.kb-tinsel.is-new .kb-tinsel-glint { animation: kb-fade 300ms 500ms both; }
+.kb-lights.is-new .kb-bulb { transform-box: fill-box; transform-origin: 50% 0; animation: kb-pop 380ms var(--ease-spring) both; animation-delay: calc(200ms + var(--b) * 80ms); }
 @keyframes kb-draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
-.kb-star.is-new { animation: kb-pop 600ms var(--ease-spring) both; }
-@keyframes kb-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes kb-fade { from { opacity: 0; } to { opacity: 1; } }
+.kb-cane.is-new, .kb-starlet.is-new, .kb-star.is-new, .kb-present.is-new { transform-box: fill-box; transform-origin: 50% 50%; animation: kb-pop 520ms var(--ease-spring) both; }
+.kb-present.is-new { transform-origin: 50% 100%; animation-delay: 250ms; }
+.kb-star.is-new { animation-duration: 700ms; }
+@keyframes kb-pop { from { scale: 0; } to { scale: 1; } }
 
-/* ── The finished tree: a warm glow and twinkling fairy lights. ── */
-.kb-glow { fill: var(--kb-gold); opacity: .18; }
-.kb-light { fill: var(--kb-gold); stroke: var(--spel-ink); stroke-width: 1.5px; animation: kb-twinkle 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -230ms); }
-.kb-light:nth-child(3n) { fill: var(--kiosk-paper); }
-.kb-light:nth-child(3n + 1) { fill: color-mix(in srgb, var(--spel-fill-0) 60%, var(--kiosk-paper)); }
-@keyframes kb-twinkle { from { opacity: .35; } to { opacity: 1; } }
+/* ── A fallen bauble: down to the floor, a bounce, then it rolls to its spot and stays. ── */
+.kb-fall { animation: kb-fall 1400ms both; }
+@keyframes kb-fall {
+  0% { translate: var(--dx) var(--dy); animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+  40% { translate: var(--dx) 0; animation-timing-function: ease-out; }
+  50% { translate: var(--dx) -12px; animation-timing-function: ease-in; }
+  60% { translate: var(--dx) 0; animation-timing-function: ease-out; }
+  65% { translate: var(--dx) -3px; animation-timing-function: ease-in; }
+  70% { translate: var(--dx) 0; animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+  100% { translate: 0 0; }
+}
+.kb-roll { rotate: var(--spin); animation: kb-roll 1400ms both; }
+@keyframes kb-roll {
+  0%, 70% { rotate: 0deg; animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+  100% { rotate: var(--spin); }
+}
 
-/* A mistake: the tree sways a little (two copies so the next one restarts it); nothing falls off. */
+/* A mistake: the tree sways a little (two copies so the next one restarts it). */
 .kb-tree { transform-origin: 160px 304px; }
 .kb-root.is-sway-0 .kb-tree { animation: kb-sway-0 800ms ease-in-out; }
 .kb-root.is-sway-1 .kb-tree { animation: kb-sway-1 800ms ease-in-out; }
-@keyframes kb-sway-0 { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-1.6deg); } 60% { transform: rotate(1.1deg); } }
-@keyframes kb-sway-1 { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-1.6deg); } 60% { transform: rotate(1.1deg); } }
+@keyframes kb-sway-0 { 0%, 100% { rotate: 0deg; } 25% { rotate: -1.6deg; } 60% { rotate: 1.1deg; } }
+@keyframes kb-sway-1 { 0%, 100% { rotate: 0deg; } 25% { rotate: -1.6deg; } 60% { rotate: 1.1deg; } }
 
 /* ── The sum and the keypad ───────────────────────────────────────────────── */
 .kb-panel {
@@ -122,7 +223,7 @@
   color: var(--kiosk-ok);
   animation: kb-grow var(--dur-slow) var(--ease-spring) both;
 }
-@keyframes kb-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+@keyframes kb-grow { from { scale: .6; } to { scale: 1; } }
 .kb-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
 
 @media (orientation: portrait) {
@@ -135,10 +236,10 @@
   .kb-panel { gap: var(--sp-2); }
 }
 
-.kb-root.is-paused * { animation-play-state: paused; }
-
-.kb-root.is-still *,
-.kb-ending.is-still * { animation: none; }
+/* The skin's own motions (the kit's layers pause and still themselves). */
+.kb-root.is-paused :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-fall, .kb-roll, .kb-decor, .kb-decor *, .kb-present, .kb-tree, .kb-cat-ear) { animation-play-state: paused; }
+.kb-root.is-still :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-fall, .kb-roll, .kb-decor, .kb-decor *, .kb-present, .kb-tree, .kb-cat-ear, .kb-sign-answer),
+.kb-ending.is-still :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-decor, .kb-decor *, .kb-present) { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .kb-root *, .kb-ending * { animation: none; }
+  :is(.kb-root, .kb-ending) :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-fall, .kb-roll, .kb-decor, .kb-decor *, .kb-present, .kb-tree, .kb-cat-ear, .kb-sign-answer) { animation: none; }
 }

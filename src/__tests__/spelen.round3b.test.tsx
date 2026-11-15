@@ -84,7 +84,8 @@ describe('Kerstboom versieren', () => {
             input: 'keypad', timed: false, season: 'kerst', round: { questions: 30, goal: 15, goalKeep: true }, accepts: { kinds: ['number'] },
         });
         expect(DECOR_ALL).toBe(15);
-        expect(DECOR.filter(d => d.kind === 'tinsel')).toHaveLength(3);
+        // Since round 4 the garlands are one tinsel and two light strings (spelen.kerstboom.test.tsx has the rest).
+        expect(DECOR.filter(d => d.kind === 'tinsel' || d.kind === 'lights')).toHaveLength(3);
     });
 
     test('hungFor: one decoration per right answer, the star at the goal; another goal is scaled', () => {
@@ -98,7 +99,7 @@ describe('Kerstboom versieren', () => {
     test('a decoration per right answer (met hulp too), none lost on a mistake; the star and the lights at 15, then the round ends', () => {
         start('kerstboom');
         const { container } = render(<Wired Skin={Kerstboom} />);
-        const hung = () => container.querySelectorAll('.kb-bauble, .kb-tinsel').length;
+        const hung = () => container.querySelectorAll('.kb-decor').length;
         expect(hung()).toBe(0);
         right();
         right();
@@ -116,7 +117,7 @@ describe('Kerstboom versieren', () => {
         expect(container.querySelector('.kb-star')).toBeNull();
         act(() => sp().answer(sp().question!.answer));
         expect(container.querySelector('.kb-star')).not.toBeNull();
-        expect(container.querySelector('.kb-tree.is-lit .kb-light')).not.toBeNull();
+        expect(container.querySelector('.kb-scene.is-lit .kb-star-rays')).not.toBeNull();
         act(() => sp().next());
         expect(sp().phase).toBe('end');
         expect(sp().outcome).toBe('won');
@@ -138,10 +139,10 @@ describe('Kerstboom versieren', () => {
     test('the ending: the tree as far as it got, lit only when finished', () => {
         const progress = (count: number) => progressOf({ ...sp(), meta: skinById('kerstboom')!.meta, climb: count });
         const { container, rerender } = render(<KerstboomEnding outcome="won" progress={progress(15)} options={{}} reducedMotion={false} />);
-        expect(container.querySelector('.kb-tree.is-lit .kb-star')).not.toBeNull();
+        expect(container.querySelector('.kb-scene.is-lit .kb-star')).not.toBeNull();
         rerender(<KerstboomEnding outcome="done" progress={progress(6)} options={{}} reducedMotion />);
-        expect(container.querySelector('.kb-tree.is-lit')).toBeNull();
-        expect(container.querySelectorAll('.kb-bauble, .kb-tinsel')).toHaveLength(6);
+        expect(container.querySelector('.kb-scene.is-lit')).toBeNull();
+        expect(container.querySelectorAll('.kb-decor')).toHaveLength(6);
         expect(container.querySelector('.kb-ending.is-still')).not.toBeNull();
     });
 });

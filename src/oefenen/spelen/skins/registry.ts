@@ -193,11 +193,11 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // Kerst: a bare fir tree; each right answer hangs the next bauble or garland, the 15th is the star on top.
-        // A mistake never takes one off (goalKeep); 30 questions at most. The finished tree lights up.
+        // A mistake never takes one off (goalKeep); two in a row knock a bauble to the floor (hit = its tink). 30 questions at most.
         meta: {
             music: 'kerst',
             id: 'kerstboom', label: 'Kerstboom versieren', input: 'keypad', timed: false, round: { questions: 30, goal: 15, goalKeep: true }, season: 'kerst',
-            winTitle: 'De boom is klaar!', accepts: KEYPAD_NUMBER, sounds: { correct: 'sparkle', wrong: 'plop', win: 'jingle' },
+            winTitle: 'De boom is klaar!', accepts: KEYPAD_NUMBER, sounds: { correct: 'sparkle', wrong: 'plop', win: 'jingle', hit: 'ting' },
         },
         icon: TreeEvergreen,
         Component: lazy(() => import('./kerstboom/Kerstboom')),
