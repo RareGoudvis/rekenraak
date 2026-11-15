@@ -58,8 +58,8 @@ beforeEach(() => {
 afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe('Pre-start options', () => {
-    test('only Bom, Bever, Zombies, Voetbal and Kasteel have options; picks patch the round, unknown picks fall back to the default', () => {
-        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel'].includes(s.meta.id))).toEqual([]);
+    test('only Bom, Bever, Zombies, Voetbal, Kasteel and Honingraat have options; picks patch the round, unknown picks fall back to the default', () => {
+        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'honingraat'].includes(s.meta.id))).toEqual([]);
         const bom = meta('bom');
         expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true });
         const big = resolveMeta(bom, { tijd: '5', doel: '50' });
@@ -130,7 +130,8 @@ describe('The friendly early end', () => {
             sp().fail();
             expect(sp().phase).toBe('play');
         }
-        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'kasteel'].includes(s.meta.id))).toEqual([]);
+        // Honingraat since round 4: the wasp can claim the nest in Moeilijk.
+        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'kasteel', 'honingraat'].includes(s.meta.id))).toEqual([]);
         sp().start(startWith(CAN_FAIL));
         sp().openHelp();
         sp().fail();

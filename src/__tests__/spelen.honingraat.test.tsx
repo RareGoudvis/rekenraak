@@ -5,7 +5,11 @@ import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards
 import { buildZelfSessie, choicesFor, usableVariants, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { choiceCanPlay, spelContentOf } from '../oefenen/spelen/spelQuestion';
 import { useOefenStore } from '../oefenen/useOefenStore';
-import { SPEL_BOARD_PAUSE_MS, useSpelStore } from '../oefenen/spelen/useSpelStore';
+import { progressOf, SPEL_BOARD_PAUSE_MS, useSpelStore } from '../oefenen/spelen/useSpelStore';
+import Honingraat, { SCROLL_MS } from '../oefenen/spelen/board/honingraat/Honingraat';
+import { WASP_MS } from '../oefenen/spelen/board/honingraat/hive';
+import { resolveMeta } from '../oefenen/spelen/skins/options';
+import type { SkinProps } from '../oefenen/spelen/skins/types';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { skinAccepts, skinsFor, NUMBER_CONTENT } from '../oefenen/spelen/accepts';
 import { meetsTarget, type NumberTarget } from '../oefenen/spelen/board/board';
@@ -16,7 +20,8 @@ import SpelScreen from '../oefenen/spelen/SpelScreen';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Honingraat: a board round (find every sum that makes the target). A wrong cell is a mistake at once,
-// three combs, and Nakijken replays exactly the wrong cells.
+// three boards (comb, meadow, comb), and Nakijken replays exactly the wrong cells. Moeilijk: five boards and
+// a wasp now and then (its own little fight, never logged), which can claim the nest (the early end).
 
 let data: EenvoudigData;
 let choice: ZelfChoice;
@@ -142,5 +147,114 @@ describe('Honingraat on the shell', () => {
         expect(buttons[hit].classList.contains('is-honey')).toBe(true);
         expect(sp().score).toBe(1);
         expect(sp().mistakes).toHaveLength(1);
+    });
+});
+
+describe('Honingraat round 4: the meadow, the scroll, the wasp', () => {
+    // The skin on its own, fed from the store as SpelScreen feeds it (no lazy chunk, fake timers throughout).
+    const props = (niveau: string, onFail = vi.fn()): SkinProps => ({
+        question: null, choices: null, board: sp().board, onBoardPick: (cell, given, strike) => sp().boardPick(cell, given, strike),
+        phase: sp().phase === 'end' ? 'play' : sp().phase as SkinProps['phase'], feedback: null, onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(),
+        onFail, sound: vi.fn(), progress: progressOf(sp()), options: { niveau }, events: sp().events, reducedMotion: false,
+    });
+    const startAt = (niveau: string) => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(HONING(), { niveau }) });
+    const fillBoard = () => cells().forEach((c, i) => { if (c.match) sp().boardPick(i, ''); });
+    const solve = (text: string) => {
+        const m = text.replace(/−/g, '-').replace(/\s/g, '').match(/^(\d+)([+-])(\d+)=/)!;
+        return m[2] === '+' ? Number(m[1]) + Number(m[3]) : Number(m[1]) - Number(m[3]);
+    };
+    const dropValue = (d: HTMLElement) => Number(d.getAttribute('aria-label')!.replace(/\s/g, ''));
+
+    // Fills the board, waits the session's pause, then the scroll to the next one.
+    function nextBoard(rerender: (ui: React.ReactElement) => void, niveau: string, onFail = vi.fn()) {
+        act(() => fillBoard());
+        act(() => { vi.advanceTimersByTime(SPEL_BOARD_PAUSE_MS); });
+        rerender(<Honingraat {...props(niveau, onFail)} />);
+        act(() => { vi.advanceTimersByTime(SCROLL_MS); });
+        rerender(<Honingraat {...props(niveau, onFail)} />);
+    }
+
+    test('the second board is a flower meadow: the old board scrolls away, a wrong flower wilts, a right one opens', () => {
+        vi.useFakeTimers();
+        act(() => startAt('normaal'));
+        const { rerender, container } = render(<Honingraat {...props('normaal')} />);
+        expect(screen.getByRole('group', { name: 'Honingraat' })).toBeTruthy();
+        act(() => fillBoard());
+        act(() => { vi.advanceTimersByTime(SPEL_BOARD_PAUSE_MS); });
+        rerender(<Honingraat {...props('normaal')} />);
+        // Both boards on screen while the scene scrolls, the bee flying between; the new one takes no taps yet.
+        expect(container.querySelector('.hx-view.is-leaving')).toBeTruthy();
+        expect(container.querySelector('.hx-traveller')).toBeTruthy();
+        const flowers = within(screen.getByRole('group', { name: 'Bloemenweide' })).getAllByRole('button') as HTMLButtonElement[];
+        expect(flowers).toHaveLength(13);
+        expect(flowers.every(f => f.disabled)).toBe(true);
+        act(() => { vi.advanceTimersByTime(SCROLL_MS); });
+        rerender(<Honingraat {...props('normaal')} />);
+        expect(container.querySelector('.hx-view.is-leaving')).toBeNull();
+        const miss = cells().findIndex(c => !c.match);
+        const hit = cells().findIndex(c => c.match);
+        const flower = (i: number) => within(screen.getByRole('group', { name: 'Bloemenweide' })).getAllByRole('button')[i];
+        fireEvent.click(flower(miss));
+        rerender(<Honingraat {...props('normaal')} />);
+        fireEvent.click(flower(hit));
+        rerender(<Honingraat {...props('normaal')} />);
+        expect(flower(miss).classList.contains('is-wilted')).toBe(true);
+        expect(flower(miss).getAttribute('aria-label')).toContain(` is ${cells()[miss].question.answer}`);
+        expect(flower(hit).classList.contains('is-open')).toBe(true);
+        expect(sp().mistakes).toHaveLength(1);
+        // Normaal: no wasp before the third board, a comb again.
+        nextBoard(rerender, 'normaal');
+        expect(screen.getByRole('group', { name: 'Honingraat' })).toBeTruthy();
+        expect(screen.queryByLabelText('Een wesp!')).toBeNull();
+    });
+
+    test('Moeilijk: five boards; before the third a wasp brings five sums, four right chases it off and nothing is logged', () => {
+        vi.useFakeTimers();
+        act(() => startAt('moeilijk'));
+        expect(progressOf(sp()).board).toEqual({ index: 0, total: 5 });
+        const { rerender, container } = render(<Honingraat {...props('moeilijk')} />);
+        nextBoard(rerender, 'moeilijk');
+        expect(screen.queryByLabelText('Een wesp!')).toBeNull();
+        nextBoard(rerender, 'moeilijk');
+        expect(sp().board!.index).toBe(2);
+        const card = screen.getByLabelText('Een wesp!');
+        expect(within(card).getByText('Een wesp! Jaag hem weg.')).toBeTruthy();
+        expect(container.querySelector('.hx-view.is-under-attack')!.hasAttribute('inert')).toBe(true);
+        const before = sp().history.length;
+        for (let k = 0; k < 4; k++) {
+            const sum = container.querySelector('.hx-wasp-sum')!.textContent!;
+            const drops = within(card).getAllByRole('button');
+            expect(drops).toHaveLength(3);
+            fireEvent.click(drops.find(d => dropValue(d) === solve(sum))!);
+            act(() => { vi.advanceTimersByTime(WASP_MS.right); });
+        }
+        expect(within(card).getByText('Weggejaagd!')).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(WASP_MS.chased); });
+        expect(screen.queryByLabelText('Een wesp!')).toBeNull();
+        expect(sp().history).toHaveLength(before);
+        expect(sp().phase).toBe('play');
+        const comb = within(screen.getByRole('group', { name: 'Honingraat' })).getAllByRole('button') as HTMLButtonElement[];
+        expect(comb.some(b => !b.disabled)).toBe(true);
+    });
+
+    test('Moeilijk: two wrong drops and the wasp claims the nest, the friendly early end', () => {
+        vi.useFakeTimers();
+        act(() => startAt('moeilijk'));
+        const onFail = vi.fn(() => sp().fail());
+        const { rerender, container } = render(<Honingraat {...props('moeilijk', onFail)} />);
+        nextBoard(rerender, 'moeilijk', onFail);
+        nextBoard(rerender, 'moeilijk', onFail);
+        const card = screen.getByLabelText('Een wesp!');
+        for (let k = 0; k < 2; k++) {
+            const sum = container.querySelector('.hx-wasp-sum')!.textContent!;
+            fireEvent.click(within(card).getAllByRole('button').find(d => dropValue(d) !== solve(sum))!);
+            act(() => { vi.advanceTimersByTime(WASP_MS.wrong); });
+        }
+        expect(within(card).getByText('De wesp pakt het nest!')).toBeTruthy();
+        expect(onFail).not.toHaveBeenCalled();
+        act(() => { vi.advanceTimersByTime(WASP_MS.claimed); });
+        expect(onFail).toHaveBeenCalledTimes(1);
+        expect(sp().phase).toBe('end');
+        expect(sp().outcome).toBe('failed');
     });
 });
