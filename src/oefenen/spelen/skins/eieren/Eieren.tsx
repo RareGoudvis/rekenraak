@@ -1,7 +1,8 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
 import type { SkinProps } from '../types';
 import { Burst } from '../../scene';
+import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
+import { choiceLabel, signClass } from '../../spelChoice';
 import { GardenBack, GardenFront } from './Garden';
 import { eggLooks, eggState, type EggPattern } from './looks';
 import './eieren.css';
@@ -134,7 +135,6 @@ export default function Eieren({ question, choices, phase, feedback, onAnswer, p
     const looks = useMemo(() => eggLooks(question?.key ?? ''), [question?.key]);
     if (!question) return <div className="egg-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
 
     return (
         <div className={`egg-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
@@ -143,10 +143,8 @@ export default function Eieren({ question, choices, phase, feedback, onAnswer, p
             <div className="egg-grass" aria-hidden />
             <GardenFront />
             <div className="egg-top">
-                <p className={`egg-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="egg-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
+                <p className={`egg-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
+                    <SpelSign question={question} feedback={feedback} flash={flash} choices={options} answerClassName="egg-sign-answer" />
                 </p>
             </div>
             <div className="egg-field" role="group" aria-label="Kies het antwoord">
@@ -157,10 +155,10 @@ export default function Eieren({ question, choices, phase, feedback, onAnswer, p
                     return (
                         <div key={`${question.key}-${i}`} className={`egg-spot is-${st}`}
                             style={{ '--fill': `var(--egg-c${look.base})`, '--accent': `var(--egg-s${look.accent})`, '--i': i } as CSSProperties}>
-                            <button type="button" className="egg" disabled={phase !== 'play'} aria-label={formatMathNumber(Number(c))} onClick={() => pick(i)}>
+                            <button type="button" className="egg" disabled={phase !== 'play'} aria-label={choiceLabel(c)} onClick={() => pick(i)}>
                                 {st === 'chick' && <Chick className="is-out" />}
                                 <EggArt open={open} decor={look.pattern} />
-                                {!(st === 'chick') && <span className="egg-num kiosk-math" aria-hidden>{formatMathNumber(Number(c))}</span>}
+                                {!(st === 'chick') && <span className="egg-num kiosk-math" aria-hidden><SpelChoiceFace value={c} /></span>}
                                 {open && <Burst key={`${question.key}-${i}`} kind={st === 'chick' ? 'sparkle' : 'smoke'} x="50%" y={st === 'chick' ? '40%' : '58%'} spread={st === 'chick' ? 90 : 44} count={st === 'chick' ? 10 : undefined} seed={i + 3} reducedMotion={reducedMotion} />}
                             </button>
                             <Tuft />

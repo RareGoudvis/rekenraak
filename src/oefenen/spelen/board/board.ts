@@ -4,6 +4,7 @@ import { formatMathNumber } from '../../../services/math/formatters';
 import { spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import type { Rng } from '../distractors';
 import type { SpelChoiceView, SpelVisual } from '../content/pack';
+import { answerTextOf, isOperator } from '../spelFormat';
 
 // Board rounds (Hartjes koppelen, Honingraat): several sums on screen at once. The session draws a board
 // up front from the card's own generator, the pupil picks, the session checks each pick per sum, so a
@@ -200,4 +201,30 @@ export const sumFace = (q: SpelQuestion): BoardFace => (q.pair ? viewFace(q.pair
 
 /** The answer side of a cell (memory's answer card). */
 export const answerFace = (q: SpelQuestion): BoardFace => (q.pair ? viewFace(q.pair.answer)
-    : { kind: 'text', text: /^\d+$/.test(q.answer) ? formatMathNumber(Number(q.answer)) : q.answer });
+    : { kind: 'text', text: answerTextOf(q, q.answer) });
+
+/**
+ * A card's text in lines short enough for a heart or a cell, the way a column sum stands: "5 918 − 2 499" → "5 918" over
+ * "− 2 499" (each operator starts a line). A short text, a breuk or a word stays whole.
+ */
+export function cardLines(text: string, max = 7): string[] {
+    if (text.length <= max) return [text];
+    // Terms: the first number, then each operator with its number.
+    const terms: string[] = [];
+    for (const w of text.split(' ')) {
+        if (!terms.length || isOperator(w)) terms.push(w);
+        else terms[terms.length - 1] += ` ${w}`;
+    }
+    const lines: string[] = [];
+    for (const t of terms) {
+        if (lines.length && lines[lines.length - 1].length + 1 + t.length <= max) lines[lines.length - 1] += ` ${t}`;
+        else lines.push(t);
+    }
+    return lines;
+}
+
+/** A card that is one breuk ("3/4"): it stacks narrow, so it can stand bigger than a sum. */
+export const isLoneBreuk = (text: string) => /^\d+\/\d+$/.test(text);
+
+/** The widest line of a card, in characters (a narrow space counts half): the skins fit their font to it. */
+export const lineChars = (lines: readonly string[]) => Math.max(1, ...lines.map(l => l.length - (l.match(/\u202F/g)?.length ?? 0) / 2));

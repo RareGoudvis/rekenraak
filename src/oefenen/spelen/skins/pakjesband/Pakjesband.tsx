@@ -1,7 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, pictureClass, signClass } from '../../spelChoice';
+import { choiceLabel, faceChars, faceKind, pictureClass, signClass } from '../../spelChoice';
 import type { SpelChoiceView } from '../../content/pack';
 import { Burst, replay } from '../../scene';
 import { beltDone, beltStep, isOff, parcelAt, runStart } from './belt';
@@ -52,7 +52,7 @@ function Present({ look, uid, value, view, stamped }: { look: PresentLook; uid: 
     return (
         <>
             <PresentArt look={look} uid={uid} style={{ left: `${side}%`, top: `${(1 - look.size) * 100}%`, width: `${look.size * 100}%`, height: `${look.size * 100}%` }} />
-            <span className={`pk-num kiosk-math is-${faceKind(view)}`} style={{ top: `${labelTop}%` }} aria-hidden><SpelChoiceFace value={value} view={view} /></span>
+            <span className={`pk-num kiosk-math is-${faceKind(view)}`} style={{ top: `${labelTop}%`, '--face-chars': faceChars(view) } as CSSProperties} aria-hidden><SpelChoiceFace value={value} view={view} /></span>
             {stamped && <Stamp />}
         </>
     );

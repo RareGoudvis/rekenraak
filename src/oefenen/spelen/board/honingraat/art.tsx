@@ -59,16 +59,30 @@ export function Wasp({ mood = 'cheeky' }: { mood?: WaspMood }) {
 // Petal colours, in turn per flower (honingraat.css --hx-petal-N).
 export const PETALS = 5;
 
-/** A flower head (100 × 100): eight petals round a cream heart where the sum sits. */
+/** A flower head (100 × 100): a ring of short petals round a big cream heart, room for a sum of two lines and its answer. */
 export function FlowerHead({ tone }: { tone: number }) {
     return (
         <svg className="hx-head" viewBox="0 0 100 100" style={{ '--petal': `var(--hx-petal-${tone % PETALS})` } as CSSProperties} aria-hidden>
             <g className="hx-petals">
-                {[0, 45, 90, 135, 180, 225, 270, 315].map(a => (
-                    <ellipse key={a} className="hx-petal" cx="50" cy="17" rx="15" ry="19" transform={`rotate(${a} 50 50)`} />
+                {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map(a => (
+                    <ellipse key={a} className="hx-petal" cx="50" cy="14" rx="12" ry="14" transform={`rotate(${a} 50 50)`} />
                 ))}
             </g>
-            <circle className="hx-heart" cx="50" cy="50" r="35" />
+            <circle className="hx-heart" cx="50" cy="50" r="39" />
+        </svg>
+    );
+}
+
+/** A flower's stem (50 × 100), from the heart down: a leaf on one side, a tuft of grass where it meets the bed. */
+export function FlowerStem({ flip }: { flip: boolean }) {
+    return (
+        <svg className="hx-stem-art" viewBox="0 0 50 100" aria-hidden>
+            <g transform={flip ? 'translate(50 0) scale(-1 1)' : undefined}>
+                <path className="hx-stem-rim" d="M25 0 C27 34 22 62 25 92" />
+                <path className="hx-stem" d="M25 0 C27 34 22 62 25 92" />
+                <path className="hx-stem-leaf" d="M25 62 C30 50 42 46 49 52 C42 62 32 64 25 62 Z" />
+                <path className="hx-stem-tuft" d="M12 98 L17 84 L21 96 L25 80 L29 96 L33 84 L38 98 Z" />
+            </g>
         </svg>
     );
 }

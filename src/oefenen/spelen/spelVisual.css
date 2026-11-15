@@ -83,3 +83,5 @@
 .spel-frac-bar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* In the narrow foutjes table a sentence may wrap between its words; a sum or a measure (4 u 45 min) never breaks. */
 .spel-end-errors .spel-line-chunk.is-word:not(.is-whole) { white-space: normal; }
+/* A phrase on a target (SpelChoiceFace): its words may wrap, and a long number word at its soft hyphen ("honderd-tallen"). */
+.spel-face-text .spel-line-chunk.is-word:not(.is-whole) { white-space: normal; }

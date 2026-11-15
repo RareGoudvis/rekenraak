@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
-import { answerFace, sumFace, type BoardFace, type SpelBoard } from '../board';
-import { SpelVisual } from '../../SpelVisual';
+import { answerFace, cardLines, isLoneBreuk, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
+import { SpelText, SpelVisual } from '../../SpelVisual';
 import { Burst } from '../../scene';
 import { BallArt, CountMark, HEART, HeartArt } from './Art';
 import { cardLook, gridOf, lookOf, type CardLook } from './hearts';
@@ -37,7 +37,8 @@ const faceText = (face: BoardFace) => (face.kind === 'text' ? face.text : face.l
 // A sum or answer as text, or a pack's picture (a breuk as a pizza) through the shared <SpelVisual>.
 function Face({ face }: { face: BoardFace }) {
     if (face.kind === 'picture') return <span className={`hj-pic is-${face.visual.kind}`}><SpelVisual visual={face.visual} /></span>;
-    return <span className="hj-text kiosk-math">{face.text}</span>;
+    // A long sum stands as a column sum ("5 918" over "− 2 499"); a breuk stacks.
+    return <span className={`hj-text kiosk-math${isLoneBreuk(face.text) ? ' is-breuk' : ''}`}>{cardLines(face.text).map((l, i) => <span key={i} className="hj-line"><SpelText text={l} /></span>)}</span>;
 }
 
 function Sparkle() {
@@ -149,14 +150,15 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
     const nope = up.length === 2 && isSum(up[0]) !== isSum(up[1]) && !up.some(solved);
     const found = board.cells.filter(c => c.state === 'solved').length;
     const cleared = found === board.cells.length;
-    // One size for every sum on the board: the longest decides (a picture has no length).
-    const long = board.cells.some(c => { const f = sumFace(c.question); return f.kind === 'text' && f.text.length > 7; });
+    // One size for every sum on the board: its widest line decides (a picture has no length).
+    const chars = Math.max(...board.cells.map(c => { const f = sumFace(c.question); return f.kind === 'text' ? lineChars(cardLines(f.text)) : 1; }));
     // A pack's pairs (a pizza and its breuk, a breuk and its vereenvoudigde breuk) are no sum and answer.
     const pairs = board.cells.some(c => c.question.pair);
     const grid = gridOf(order.length);
     const shape = {
         '--hj-cols-l': grid.landscape.cols, '--hj-rows-l': grid.landscape.rows, '--hj-cols-p': grid.portrait.cols,
         '--hj-rows-p': grid.portrait.rows, '--hj-cols-t': grid.tall.cols, '--hj-rows-t': grid.tall.rows, '--hj-cols-s': grid.short.cols, '--hj-rows-s': grid.short.rows,
+        '--hj-chars': chars,
     } as CSSProperties;
     return (
         <>
@@ -166,7 +168,7 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
                     {board.cells.map((c, i) => <CountMark key={i} ball={ball} on={c.state === 'solved'} />)}
                 </span>
             </div>
-            <div className={`hj-grid${long ? ' is-long' : ''}`} style={shape} role="group" aria-label={ball ? 'Ballen' : 'Hartjes'}>
+            <div className="hj-grid" style={shape} role="group" aria-label={ball ? 'Ballen' : 'Hartjes'}>
                 {order.map((id, k) => (
                     <div key={id} className="hj-slot" style={{ '--k': k } as CSSProperties}>
                         <Card id={id} board={board} ball={ball} up={up.includes(id)} nope={nope && up.includes(id)} onTap={() => tap(id)} disabled={phase !== 'play'}

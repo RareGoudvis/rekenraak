@@ -61,15 +61,17 @@ export function installAudit() {
             return out;
         },
         /** A real game screen: the skin on question qi of the choice, in play, the wrong flash, or the end screen with qi..qi+3 as mistakes. */
-        show(p: Pick & { skin: string; phase: 'play' | 'wrong' | 'end'; qi?: number; seed?: number }) {
+        show(p: Pick & { skin: string; phase: 'play' | 'wrong' | 'end'; qi?: number; seed?: number; chosen?: Record<string, string>; boardIndex?: number }) {
             const choice = choiceOf(p);
             const entry = skinById(p.skin);
             if (!choice || !entry) return `missing ${!choice ? 'choice' : 'skin'}`;
-            const meta = resolveMeta(entry.meta);
+            const meta = resolveMeta(entry.meta, p.chosen);
             const st = useSpelStore.getState();
             st.start({ choice, grade: p.grade as Leerjaar, topicId: p.topic, meta, now: p.seed ?? 1 });
             if (meta.input === 'board') {
                 if (p.phase === 'end') return 'board end: use a choice skin';
+                // A later board's look (Honingraat: the meadow is board 2).
+                if (p.boardIndex) useSpelStore.setState(s => ({ board: s.board && { ...s.board, index: p.boardIndex! } }));
                 return 'ok';
             }
             const qs = questionsOf(choice, p.grade, (p.qi ?? 0) + 4, 1000 + p.grade, meta.choiceCount);

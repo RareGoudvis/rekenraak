@@ -135,7 +135,7 @@
 }
 /* Room for the branch above the wax and the drips below it. */
 .hx-comb { margin: calc(var(--hx-w) * .62) 0 calc(var(--hx-w) * .52); }
-.hx-meadow { margin: calc(var(--hx-w) * .08) 0 calc(var(--hx-w) * .55); }
+.hx-meadow { --hx-head: 1.12; margin: calc(var(--hx-w) * .08) 0 calc(var(--hx-w) * .55); }
 
 /* The branch: bark from off the left edge to just past the comb, which hangs under it. */
 .hx-branch-wrap {
@@ -231,17 +231,27 @@
 .hx-rim { fill: none; stroke: var(--spel-ink); stroke-width: 6; stroke-linejoin: round; }
 .hx-honey { fill: var(--hx-honey); transform: translateY(100%); }
 .hx-shine { fill: var(--kiosk-paper); opacity: 0; }
-.hx-sum {
+.hx-texts {
   position: absolute;
-  top: 50%;
   left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  font-size: calc(var(--hx-w) * .17);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Every sum on the board one size: the widest line (--hx-chars) fits the cell. */
+  font-size: min(calc(var(--hx-w) * .17), calc(var(--hx-w) * .84 / (var(--hx-chars, 1) * .6)));
   font-weight: 800;
   line-height: 1.1;
   white-space: nowrap;
 }
-.is-long .hx-sum { font-size: calc(var(--hx-w) * .13); }
+/* A column sum: its lines right-aligned, units under units. */
+.hx-sum { text-align: right; }
+.hx-line { display: block; }
+/* A lone breuk stacks narrow: bigger than a sum. */
+.hx-sum.is-breuk { font-size: 1.5em; }
+/* What a wrong cell really is, under its sum. */
+.hx-own { font-size: .82em; color: var(--hx-muted); }
 
 /* Right: honey rises in the cell. */
 .hx-cell.is-honey .hx-honey { transform: translateY(0); transition: transform 700ms var(--ease-out) 380ms; }
@@ -249,8 +259,7 @@
 
 /* Wrong: the cell cracks with a shake and rests, cracked and pale, its own answer under the sum. No red. */
 .hx-cell.is-missed .hx-wax { fill: var(--hx-missed); }
-.hx-cell.is-missed .hx-sum { top: 38%; color: var(--hx-muted); }
-.hx-own { position: absolute; top: 64%; left: 50%; transform: translate(-50%, -50%); font-size: calc(var(--hx-w) * .14); font-weight: 800; color: var(--hx-muted); white-space: nowrap; }
+.hx-cell.is-missed .hx-sum { color: var(--hx-muted); }
 /* Halo round the texts on a crack, so a line through a digit never hides it. */
 .hx-cell.is-missed .hx-sum, .hx-cell.is-missed .hx-own { text-shadow: 0 0 3px var(--hx-missed), 0 0 3px var(--hx-missed), 0 0 6px var(--hx-missed); }
 .hx-cell.is-bzz { animation: hx-bzz 520ms ease-in-out both; }
@@ -347,30 +356,37 @@
 }
 @keyframes hx-loop { 0%, 30% { rotate: 0deg; } 70%, 100% { rotate: -360deg; } }
 
-/* ── The meadow board: flowers in a raised bed ─────────────────────────────── */
-.hx-bed-art {
+/* ── The meadow board: flowers on a clear grid on a grassy hill ─────────────── */
+/* The hill behind the whole bed: the top row's heads stand against the sky, the rest against the grass. */
+.hx-hill-bed {
   position: absolute;
-  left: calc(var(--bl) * var(--hx-w) * -1);
-  top: calc(var(--bt) * var(--hx-w) * -1);
-  width: calc(var(--bw) * var(--hx-w));
-  height: calc(var(--bh) * var(--hx-w));
-  overflow: visible;
+  left: calc(var(--hx-w) * -.55);
+  right: calc(var(--hx-w) * -.55);
+  top: calc(var(--hx-w) * .55);
+  bottom: calc(var(--hx-w) * -.62);
+  border: 5px solid var(--spel-ink);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0 / 60% 60% 0 0;
+  background: var(--hx-bed);
   pointer-events: none;
 }
-.hx-bed-ground { fill: var(--hx-bed); stroke: var(--spel-ink); stroke-width: 5; stroke-linejoin: round; }
+/* A stem behind its head, shorter than a row: it ends in a tuft between the heads below. */
+.hx-stem-wrap { position: absolute; left: 25%; top: 50%; width: 50%; height: 92%; pointer-events: none; }
+.hx-stem-art { display: block; width: 100%; height: 100%; overflow: visible; }
 .hx-stem-rim { fill: none; stroke: var(--spel-ink); stroke-width: 11; stroke-linecap: round; }
 .hx-stem { fill: none; stroke: var(--hx-stem); stroke-width: 6; stroke-linecap: round; }
-.hx-stem-leaf { fill: var(--hx-leaf); stroke: var(--spel-ink); stroke-width: 3; }
-.hx-plant.is-wilted .hx-stem { stroke: color-mix(in srgb, var(--hx-stem) 45%, var(--hx-wilt)); }
-.hx-plant.is-wilted .hx-stem-leaf { fill: color-mix(in srgb, var(--hx-leaf) 40%, var(--hx-wilt)); }
+.hx-stem-leaf { fill: var(--hx-leaf); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.hx-stem-tuft { fill: var(--hx-leaf); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.hx-flower.is-wilted .hx-stem { stroke: color-mix(in srgb, var(--hx-stem) 45%, var(--hx-wilt)); }
+.hx-flower.is-wilted .hx-stem-leaf { fill: color-mix(in srgb, var(--hx-leaf) 40%, var(--hx-wilt)); }
 
 .hx-flower {
   position: absolute;
   z-index: 2;
-  left: calc((var(--x) - .5) * var(--hx-w));
-  top: calc((var(--y) - .5) * var(--hx-w));
-  width: var(--hx-w);
-  height: var(--hx-w);
+  left: calc((var(--x) - var(--hx-head) / 2) * var(--hx-w));
+  top: calc((var(--y) - var(--hx-head) / 2) * var(--hx-w));
+  width: calc(var(--hx-head) * var(--hx-w));
+  height: calc(var(--hx-head) * var(--hx-w));
   min-width: var(--spel-tap);
   min-height: var(--spel-tap);
   padding: 0;
@@ -391,11 +407,11 @@
 .hx-flower-art { position: absolute; inset: 0; display: block; transition: transform 600ms var(--ease-out); }
 .hx-flower:not(:disabled):active .hx-flower-art { transform: scale(.94); }
 .hx-head { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.hx-petals { transform-box: view-box; transform-origin: 50% 50%; transform: scale(.84) rotate(0deg); transition: transform 600ms var(--ease-spring); }
+.hx-petals { transform-box: view-box; transform-origin: 50% 50%; transform: scale(.96) rotate(0deg); transition: transform 600ms var(--ease-spring); }
 .hx-petal { fill: var(--petal); stroke: var(--spel-ink); stroke-width: 3.5; transition: fill 500ms linear; }
 .hx-heart { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 4.5; transition: fill 400ms linear; }
 /* Right: the flower opens wide, its heart goes golden and a drop of nectar rises for the bee. */
-.hx-flower.is-open .hx-petals { transform: scale(1.02) rotate(14deg); }
+.hx-flower.is-open .hx-petals { transform: scale(1.04) rotate(18deg); }
 /* An open flower's petals go under its neighbours' hearts; a wilted one stays on top, its texts readable. */
 .hx-flower.is-open { z-index: 1; }
 .hx-flower.is-wilted { z-index: 3; }
@@ -418,21 +434,19 @@
   45% { transform: translateY(-60%) scale(1.1); opacity: 1; }
   100% { transform: translateY(-200%) scale(.7); opacity: 0; }
 }
-/* Wrong: the head droops, the petals dry and hang; its own answer under the sum. No red. */
-.hx-meadow .hx-sum { font-size: calc(var(--hx-w) * .145); }
-.hx-meadow.is-long .hx-sum { font-size: calc(var(--hx-w) * .12); }
-.hx-meadow .hx-own { font-size: calc(var(--hx-w) * .13); }
-/* The head hangs over and sinks; the texts go along but stay upright. */
-.hx-flower.is-wilted .hx-flower-art { transform: translate(calc(var(--droop-x) * var(--hx-w)), calc(var(--droop-y) * var(--hx-w))); }
+/* The heart is round: the widest line gets less room than in a hex cell. */
+.hx-meadow .hx-texts { font-size: min(calc(var(--hx-w) * .17), calc(var(--hx-w) * var(--hx-head) * .54 / (var(--hx-chars, 1) * .6))); }
+/* Wrong: the head droops a little, the petals dry and hang; its own answer under the sum. No red. */
+.hx-flower.is-wilted .hx-flower-art { transform: translate(calc(var(--hx-w) * .03), calc(var(--hx-w) * .08)); }
 /* A halo keeps the texts readable where they reach over the dry petals. */
 .hx-flower.is-wilted .hx-sum, .hx-flower.is-wilted .hx-own { text-shadow: 0 0 3px var(--hx-missed), 0 0 3px var(--hx-missed), 0 0 6px var(--hx-missed); }
-.hx-head { transform-origin: 50% 100%; transition: transform 600ms var(--ease-out); }
-.hx-flower.is-wilted .hx-head { transform: rotate(16deg); }
+.hx-head { transform-origin: 50% 50%; transition: transform 600ms var(--ease-out); }
+/* Turned round its own heart, so the texts stay inside it. */
+.hx-flower.is-wilted .hx-head { transform: rotate(12deg); }
 .hx-flower.is-wilted .hx-petals { transform: scale(.94, .86) rotate(-8deg); }
 .hx-flower.is-wilted .hx-petal { fill: var(--hx-wilt); }
 .hx-flower.is-wilted .hx-heart { fill: var(--hx-missed); }
-.hx-flower.is-wilted .hx-sum { top: 40%; color: var(--hx-muted); }
-.hx-flower.is-wilted .hx-own { top: 63%; }
+.hx-flower.is-wilted .hx-sum { color: var(--hx-muted); }
 .hx-flower.is-wilting .hx-flower-art { transition: transform 900ms cubic-bezier(.5, -0.4, .6, 1.4); }
 .hx-flower.is-wilting { animation: spel-shake .45s ease-in-out both; }
 .hx-meadow.is-cleared .hx-flower.is-open .hx-heart { stroke: var(--hx-honey-dark); }
@@ -577,6 +591,10 @@
   .hx-guard { width: clamp(44px, 12vw, 70px); }
   .hx-guard:nth-child(2) { margin: 0; }
   .hx-skep-wrap { left: calc(var(--hx-w) * -.4); bottom: calc(var(--hx-w) * -1.1); width: calc(var(--hx-w) * .8); }
+  /* Rows of 3 and 2 (Meadow.tsx): bigger flowers than the comb's cells. */
+  .hx-meadow { --hx-w: clamp(56px, min(23vw, 10.5vh), 130px); }
+  /* The bed fills a phone's width: no room for the skep beside it. */
+  .hx-meadow .hx-skep-wrap { display: none; }
 }
 @media (max-height: 460px) {
   .hx-root { --hx-w: clamp(48px, 18vh, 90px); }
@@ -588,7 +606,7 @@
 @media (prefers-reduced-motion: reduce) {
   .hx-root *:not(.spel-cloud-track), .hx-ending * { animation: none !important; transition: none !important; }
 }
-/* The kit's clouds stay where their paused drift put them (spread over the sky); the nectar drop never shows. */
+/* The nectar drop never shows. */
 .hx-root.is-still .hx-nectar { display: none; }
 @media (prefers-reduced-motion: reduce) { .hx-nectar { display: none; } }
 .hx-root.is-still *:not(.spel-cloud-track), .hx-ending.is-still * { animation: none !important; transition: none !important; }

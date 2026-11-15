@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from 'react';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
-import { choiceLabel, faceKind, signClass } from '../../spelChoice';
+import { choiceLabel, faceChars, faceKind, signClass } from '../../spelChoice';
 import { Burst, Clouds } from '../../scene';
 import { mulberry32 } from '../../distractors';
 import { fishLeft, flightOf, type Flight } from './feed';
@@ -249,7 +249,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
                             <div className="zh-bob">
                                 <button type="button" className="zh-seal" disabled={phase !== 'play'} aria-label={choiceLabel(c, face)} onClick={() => choose(i)}>
                                     <span className="zh-board-wrap">
-                                        <span key={question.key} className={`zh-board kiosk-math is-${boardKind(face)}`} aria-hidden><SpelChoiceFace value={c} view={face} /></span>
+                                        <span key={question.key} className={`zh-board kiosk-math is-${boardKind(face)}`} style={{ '--face-chars': faceChars(face) } as CSSProperties} aria-hidden><SpelChoiceFace value={c} view={face} /></span>
                                         <span className="zh-pole" aria-hidden />
                                     </span>
                                     <span className="zh-body-wrap">
