@@ -1564,30 +1564,29 @@ html:has(.oefen-body),
 /* The topics screen's link hint: one small muted line at the very bottom, so the bar and the topics get the room. */
 .zelf-home-note { margin: 4px 0 0; color: var(--kid-muted); font-size: var(--text-sm); font-weight: 700; text-align: center; }
 
-/* The Keuze screen's games bar: a row of picture cards (thumbnail on top, name below); more scroll sideways. */
+/* The Keuze screen's games: picture cards (thumbnail on top, name below) in a grid per category. */
 .zelf-play {
   position: relative;
   width: 100%;
   min-width: 0;
-}
-.zelf-play-row {
-  margin: 0 -6px;
-  /* Room for the drop shadow and the tilted ribbon; the end padding lets the last card scroll clear of the fade. */
-  padding: 12px 48px 14px 6px;
   display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
-  /* The far edge fades: there are more games to the side. */
-  mask-image: linear-gradient(to right, black calc(100% - 44px), transparent);
+  flex-direction: column;
+  gap: 8px;
+}
+.zelf-play-group { display: flex; flex-direction: column; gap: 4px; }
+.zelf-play-head { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 900; line-height: 1.2; text-align: left; }
+/* Room for the drop shadow and the tilted ribbon. */
+.zelf-play-grid {
+  padding: 12px 6px 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
 }
 .zelf-play-tile {
   --kid-sh: var(--kid-drop);
   position: relative;
   flex: none;
-  scroll-snap-align: start;
-  width: 204px;
+  min-width: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -1624,10 +1623,10 @@ html:has(.oefen-body),
 .zelf-topic-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .zelf-play-title { padding: 8px 12px 10px; font-size: var(--kiosk-text); font-weight: 800; line-height: 1.15; }
 /* A clock (op tijd) or two pupils (2 spelers) on the picture's corner. */
-.zelf-play-marks { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.zelf-play-marks { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .zelf-play-mark {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1635,7 +1634,7 @@ html:has(.oefen-body),
   border-radius: 50%;
   background: var(--kid-card);
 }
-.zelf-play-mark svg { width: 18px; height: 18px; }
+.zelf-play-mark svg { width: 22px; height: 22px; }
 /* In season: a tilted "nu!" ribbon. */
 .zelf-play-nu {
   position: absolute;
@@ -1651,30 +1650,11 @@ html:has(.oefen-body),
   line-height: 1.2;
   transform: rotate(-12deg);
 }
-/* The arrow on the faded edge: more games (hidden at the end of the row). */
-.zelf-play-more {
-  --kid-sh: var(--kid-drop-sm);
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2.5px solid var(--kid-ink);
-  border-radius: 50%;
-  background: var(--kid-card);
-  box-shadow: var(--kid-sh);
-  color: var(--kid-ink);
-  cursor: pointer;
+@media (max-width: 899px) {
+  .zelf-play-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 }
-.zelf-play-more svg { width: 24px; height: 24px; }
-.zelf-play-more:active { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
 @media (max-width: 599px) {
-  .zelf-play-tile { width: 184px; }
-  .zelf-play-row { gap: 12px; }
+  .zelf-play-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 }
 
 /* The topics: picture cards, four per row on a tablet or laptop, three on a small tablet, two on a phone. */

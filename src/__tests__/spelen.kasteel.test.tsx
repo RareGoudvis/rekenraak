@@ -425,3 +425,15 @@ describe('Kasteel: 2 players', () => {
         expect(du().rule).toEqual({ seconds: 120 });
     });
 });
+
+describe('games grid categories', () => {
+    test('derived from meta: Touwtrekken samen, Kasteel op tijd with both marks, boards zoeken, empty groups hidden', () => {
+        render(<GameRow games={gamesFor(NUMBER_CONTENT, new Date(2026, 6, 1))} onPlay={() => { }} />);
+        const heads = screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent);
+        expect(heads).toEqual(['Rustig spelen', 'Op tijd', 'Samen spelen', 'Zoeken en koppelen']);
+        const has = (region: string, name: RegExp) => within(screen.getByRole('region', { name: region })).getAllByRole('button').some(b => name.test(b.getAttribute('aria-label')!));
+        expect(has('Samen spelen', /^Touwtrekken/)).toBe(true);
+        expect(has('Op tijd', /^Kasteel/)).toBe(true);
+        expect(has('Zoeken en koppelen', /^Honingraat/)).toBe(true);
+    });
+});

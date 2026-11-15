@@ -5,7 +5,7 @@ import { existsSync, statSync } from 'node:fs';
 import OefenApp from '../oefenen/OefenApp';
 import { gameBlurb, GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import GameThumb from '../oefenen/spelen/GameThumb';
-import { TOPIC_GAME, gamesFor, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
+import { TOPIC_GAME, gamesFor, groupGames, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
 import { choicesFor, usableVariants } from '../oefenen/zelf/zelfSessie';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
@@ -166,7 +166,7 @@ describe('Topic cards and the Keuze screen', () => {
         expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
         const data = await loadEenvoudigData();
         const choice = choicesFor(data, 2, 'Hoofdrekenen · Optellen', 100).find(c => c.label === 'Met brug')!;
-        const want = gamesFor(spelContentOf(choice, 2), pickerToday()).map(g => g.skin.meta.label);
+        const want = groupGames(gamesFor(spelContentOf(choice, 2), pickerToday())).flatMap(g => g.games.map(x => x.skin.meta.label));
         const row = within(screen.getByRole('region', { name: 'Of speel een spel' })).getByRole('group', { name: 'Kies een spel' });
         const shown = within(row).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
         expect(shown).toEqual(want);
