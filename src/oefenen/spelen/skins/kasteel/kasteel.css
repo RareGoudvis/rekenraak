@@ -1,5 +1,5 @@
 /* Kasteel skin: two castles on a field, a catapult on each wall. Flat fills under a thick dark outline
-   (spelen.css tokens). Stones fly on two nested CSS transforms; blocks, cracks, towers and the flag change
+   (spelen.css tokens). Stones leave the catapult's bucket and fly on nested CSS transforms; blocks, cracks, towers and the flag change
    by class. Only transforms and opacity animate (light for old laptops); reduced motion = state changes only. */
 .ks-root,
 .ks-ending,
@@ -102,24 +102,48 @@
 .ks-dust { animation: ks-dust 800ms var(--ease-out) both; }
 @keyframes ks-dust { 0% { transform: scale(.3); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
 
-/* ── Stones in the air: across on one transform, up and down on the other ── */
-.ks-fly-x { animation: ks-fly-x var(--dur) linear both; }
-.ks-fly-y { animation: ks-fly-y var(--dur) linear both; }
+/* ── Stones in the air: a true parabola. x and y linear, the arc on a third transform (two quadratic
+   halves: the exact ease-out / ease-in of t²). Hidden in the bucket's place until the release (--wait). ── */
+.ks-fly { visibility: hidden; animation: ks-show var(--dur) var(--wait) forwards; }
+@keyframes ks-show { from, to { visibility: visible; } }
+.ks-fly-x, .ks-fly-y, .ks-fly-arc, .ks-spin { animation-duration: var(--dur); animation-delay: var(--wait); animation-fill-mode: both; animation-timing-function: linear; }
+.ks-fly-x { animation-name: ks-fly-x; }
+.ks-fly-y { animation-name: ks-fly-y; }
+.ks-fly-arc { animation-name: ks-fly-arc; }
+.ks-spin { animation-name: ks-spin; }
 @keyframes ks-fly-x { from { transform: translateX(0); } to { transform: translateX(var(--dx)); } }
-@keyframes ks-fly-y {
-  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
-  45% { transform: translateY(var(--peak)); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
-  100% { transform: translateY(var(--dy)); }
+@keyframes ks-fly-y { from { transform: translateY(0); } to { transform: translateY(var(--dy)); } }
+@keyframes ks-fly-arc {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.3333, .6667, .6667, 1); }
+  50% { transform: translateY(var(--arc)); animation-timing-function: cubic-bezier(.3333, 0, .6667, .3333); }
+  100% { transform: translateY(0); }
 }
-.ks-spin { animation: ks-spin 600ms linear infinite; }
-@keyframes ks-spin { to { transform: rotate(360deg); } }
+@keyframes ks-spin { from { transform: rotate(0); } to { transform: rotate(var(--turn)); } }
 .ks-ball { fill: var(--ks-brick); }
 .ks-ball.is-big { fill: var(--ks-hole); }
 .ks-ball-line { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
 
-/* The catapult throws: the arm swings up and settles back. */
-.ks-arm.is-fire { animation: ks-throw 520ms var(--ease-out); }
-@keyframes ks-throw { 0% { transform: rotate(0); } 30% { transform: rotate(105deg); } 100% { transform: rotate(0); } }
+/* The catapult throws (--ks-throw long, RELEASE_AT = the 20% frame in art.tsx): wind-up, the fast swing
+   against the stop bar (the stone leaves), a bounce, a short hold, the arm back, then a new stone. */
+.ks-catapult .ks-stop { stroke-width: 6px; }
+.ks-pad { fill: var(--ks-wood); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ks-arm.is-fire { animation: ks-throw var(--ks-throw) linear; }
+@keyframes ks-throw {
+  0% { transform: rotate(0); animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
+  12% { transform: rotate(-14deg); animation-timing-function: cubic-bezier(.7, 0, 1, .6); }
+  20% { transform: rotate(var(--ks-r)); animation-timing-function: ease-out; }
+  25% { transform: rotate(calc(var(--ks-r) - 9deg)); animation-timing-function: ease-in; }
+  30% { transform: rotate(var(--ks-r)); }
+  42% { transform: rotate(var(--ks-r)); animation-timing-function: ease-in-out; }
+  84%, 100% { transform: rotate(0); }
+}
+.ks-load-out { animation: ks-load-out var(--ks-throw) both; }
+@keyframes ks-load-out { 20%, 100% { visibility: hidden; } }
+.ks-load-in { animation: ks-load-in var(--ks-throw) both; }
+@keyframes ks-load-in {
+  0%, 86% { transform: scale(.2); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 /* ── The life bars ────────────────────────────────────────────────────────── */
 .ks-bar { --ks-team: var(--ks-blue); --ks-fill: var(--ks-ok); }
@@ -238,6 +262,8 @@
 .is-still .ks-puff,
 .is-still .ks-call { opacity: 0; }
 .is-still .ks-tower.is-down { visibility: hidden; }
+/* Still: the arm stays at rest with its next stone loaded. */
+.is-still .ks-load-out { visibility: hidden; }
 /* The computer's clock ring still fills: it tells when the next stone comes. */
 .ks-root.is-still .ks-reload-fill { animation: ks-reload var(--dur) linear both !important; }
 .ks-ending .ks-scene { position: absolute; inset: 0; }

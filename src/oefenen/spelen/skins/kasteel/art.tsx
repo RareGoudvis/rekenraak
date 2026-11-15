@@ -1,9 +1,11 @@
 import { useState, type CSSProperties } from 'react';
 import { BLOCKS, hpTone, isGone, stageOf, type Part, type TowerState } from './castle';
+import { PIVOT, RELEASE_DEG, THROW_MS, flightTiming, launchOf, seatOf, stoneR } from './throw';
 
 // The Kasteel scene, shared by 1 and 2 players: two castles on a field, each with a catapult on its wall
 // and a life bar above it. Code-drawn SVG, flat fills under a thick outline. Everything moves by CSS
-// (stones fly on two nested transforms); nothing here runs a loop. Stones hit walls: no people, no fire.
+// (a throw: the arm swings, the stone leaves its bucket and flies a true parabola on nested transforms);
+// nothing here runs a loop. Stones hit walls: no people, no fire.
 
 export type SideKey = 'left' | 'right';
 export type Team = 'blue' | 'orange';
@@ -12,9 +14,6 @@ export type Team = 'blue' | 'orange';
 const VIEW = { w: 640, h: 460, ground: 400 } as const;
 const LEFT_X = 12;
 const RIGHT_X = 628;
-// The catapult's pivot and the spot a stone leaves from (castle units).
-const PIVOT = { x: 146, y: -162 };
-const LAUNCH = { x: 154, y: -214 };
 const BAR_Y = 54;
 const BAR_W = 180;
 
@@ -34,6 +33,8 @@ export interface CastleView {
     hit: number;
     // Stones fired so far: restarts the catapult's swing.
     fired: number;
+    // The stone of the latest throw is a big one (it rides the arm big until it leaves).
+    big?: boolean;
     // The winner: the flag goes up high and two kids cheer in front.
     won?: boolean;
 }
@@ -107,14 +108,37 @@ function Tower({ part, state, pivot, x, w, top, hp, lives, cracked, window: win 
     );
 }
 
-function Catapult({ fired }: { fired: number }) {
+// A stone with its mark, centred on (0, 0): the same in the bucket and in the air.
+function Ball({ big }: { big: boolean }) {
+    return (
+        <>
+            <circle className={`ks-stone ks-ball${big ? ' is-big' : ''}`} r={stoneR(big)} />
+            <path className="ks-ball-line" d={big ? 'M-8 -4 L4 -9 M-3 6 L9 2' : 'M-5 -2 L4 -5'} />
+        </>
+    );
+}
+
+// A stone in the bucket; `className` times it to the throw (out = leaves at the release, in = the reload).
+function Loaded({ big, className }: { big: boolean; className?: string }) {
+    const at = seatOf(big);
+    return <g transform={`translate(${at.x} ${at.y})`}><g className={className}><Ball big={big} /></g></g>;
+}
+
+// At rest the arm lies pulled back, a stone in its bucket. A throw (keyed per stone): a short wind-up,
+// the fast swing against the stop bar with a bounce (the stone leaves there), the arm back, a new stone.
+function Catapult({ fired, big = false }: { fired: number; big?: boolean }) {
+    const style = { '--ks-r': `${RELEASE_DEG}deg`, '--ks-throw': `${THROW_MS}ms` } as CSSProperties;
     return (
         <g className="ks-catapult" transform={`translate(${PIVOT.x} ${PIVOT.y})`}>
+            <path className="ks-wood ks-stop" d="M20 38 L10 -22" />
             <path className="ks-wood" d="M-20 38 L0 0 L20 38" />
-            <g key={fired} className={`ks-arm${fired ? ' is-fire' : ''}`}>
-                <path className="ks-wood ks-beam" d="M6 -2 L-50 6" />
-                <path className="ks-cup" d="M-58 -2 Q-56 12 -44 10 L-46 0 Z" />
+            <g key={fired} className={`ks-arm${fired ? ' is-fire' : ''}`} style={style}>
+                <path className="ks-wood ks-beam" d="M8 -2 L-44 4" />
+                {fired > 0 && <Loaded big={big} className="ks-load-out" />}
+                <Loaded big={false} className={fired ? 'ks-load-in' : undefined} />
+                <path className="ks-cup" d="M-67 -2 Q-66 10 -54 10 Q-42 10 -41 -2 Z" />
             </g>
+            <circle className="ks-pad" cx="9.5" cy="-26" r="5" />
             <circle className="ks-axle" cx="0" cy="0" r="5" />
         </g>
     );
@@ -136,7 +160,7 @@ export function CastleArt({ v }: { v: CastleView }) {
                             <path className="ks-cloth" d="M0 0 q14 -6 28 0 t28 0 v22 q-14 6 -28 0 t-28 0 Z" />
                         </g>
                     </g>
-                    <Catapult fired={v.fired} />
+                    <Catapult fired={v.fired} big={v.big} />
                     <rect className="ks-stone" x="50" y="-124" width="126" height="124" />
                     {blocksOf('wall').map(i => <BlockShape key={i} i={i} hp={hp} lives={lives} />)}
                     <path className="ks-gate" d="M94 0 V-34 A18 18 0 0 1 130 -34 V0 Z" />
@@ -217,20 +241,24 @@ function ReloadRing({ r }: { r: Reload }) {
     );
 }
 
-// A stone from one castle's catapult to its aim on the other.
+// A stone from the arm tip at the release to its aim on the other castle (scene units, so every screen
+// size and the duel's viewBox agree): x and y run linearly, a third transform adds the arc 4h·t(1−t).
 function Stone({ f }: { f: Flight }) {
-    const from = toScene(f.from, LAUNCH);
+    const from = toScene(f.from, launchOf(f.big));
     const to = toScene(f.from === 'left' ? 'right' : 'left', f.aim);
-    const style = { '--dx': `${to.x - from.x}px`, '--dy': `${to.y - from.y}px`, '--peak': `${-110 - (f.big ? 20 : 0)}px`, '--dur': `${f.ms}ms` } as CSSProperties;
+    const dx = to.x - from.x;
+    const { wait, fly } = flightTiming(f.ms);
+    const arc = Math.min(170, Math.max(90, Math.abs(dx) * 0.3 + 40)) + (f.big ? 12 : 0);
+    const style = {
+        '--dx': `${dx}px`, '--dy': `${to.y - from.y}px`, '--arc': `${-arc}px`,
+        '--turn': `${(f.from === 'left' ? 1 : -1) * (f.big ? 180 : 260)}deg`, '--wait': `${wait}ms`, '--dur': `${fly}ms`,
+    } as CSSProperties;
     return (
         <g transform={`translate(${from.x} ${from.y})`}>
-            <g className="ks-fly-x" style={style}>
-                <g className="ks-fly-y" style={style}>
-                    <g className="ks-spin">
-                        <circle className={`ks-stone ks-ball${f.big ? ' is-big' : ''}`} r={f.big ? 18 : 11} />
-                        <path className="ks-ball-line" d={f.big ? 'M-9 -5 L4 -10 M-3 7 L10 2' : 'M-5 -2 L4 -6'} />
-                    </g>
-                </g>
+            <g className="ks-fly" style={style}>
+                <g className="ks-fly-x"><g className="ks-fly-y"><g className="ks-fly-arc"><g className="ks-spin">
+                    <Ball big={f.big} />
+                </g></g></g></g>
             </g>
         </g>
     );
@@ -277,7 +305,7 @@ export function Scene({ left, right, flights, debris, reload, bigCall, view, bar
             {bars && <LifeBar side="right" v={right} />}
             {reload && <ReloadRing key={`reload-${reload.key}`} r={reload} />}
             {bigCall && (
-                <g key={`big-${bigCall.key}`} transform={`translate(${toScene(bigCall.side, LAUNCH).x} ${toScene(bigCall.side, LAUNCH).y - 40})`}>
+                <g key={`big-${bigCall.key}`} transform={`translate(${toScene(bigCall.side, launchOf(false)).x} ${toScene(bigCall.side, launchOf(false)).y - 40})`}>
                     <g className="ks-call"><rect className="ks-call-bg" x="-70" y="-22" width="140" height="34" rx="17" /><text className="ks-call-text" x="0" y="2" textAnchor="middle">Grote steen!</text></g>
                 </g>
             )}

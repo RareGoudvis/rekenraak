@@ -16,6 +16,7 @@ import Kasteel from '../oefenen/spelen/skins/kasteel/Kasteel';
 import KasteelDuel from '../oefenen/spelen/skins/kasteel/KasteelDuel';
 import { KASTEEL, advance, clockShotAt, endDue, isBig, launch, levelOf, livesOf, siegeOf, type KasteelLevel, type Siege } from '../oefenen/spelen/skins/kasteel/siege';
 import { BLOCKS, aimAt, knockedOff, stageOf, standing } from '../oefenen/spelen/skins/kasteel/castle';
+import { RELEASE_MS, flightTiming } from '../oefenen/spelen/skins/kasteel/throw';
 import { useDuelStore, targetWinnerOf } from '../oefenen/spelen/skins/touwtrekken/duelStore';
 import type { SpelFrom } from '../oefenen/spelen/useSpelStore';
 
@@ -246,6 +247,32 @@ describe('Kasteel: the 1-player skin', () => {
         act(() => events.emit('wrong', { given: '13', expected: '12' }));
         tick(KASTEEL.flightMs + 60);
         expect(hp(container, 'blue')).toBe(9);
+    });
+
+    test('a throw: the stone rides the arm until the release, then flies; the hit comes only when it arrives', () => {
+        const { container } = render(<Kasteel {...propsWith()} />);
+        // Both catapults wait with a stone in the bucket.
+        expect(container.querySelectorAll('.ks-arm .ks-ball')).toHaveLength(2);
+        act(() => events.emit('correct', { given: '12', streak: 1 }));
+        expect(container.querySelector('.ks-arm.is-fire .ks-load-out .ks-ball')).toBeTruthy();
+        const fly = container.querySelector<SVGGElement>('.ks-fly')!;
+        const ms = (v: string) => parseFloat(fly.style.getPropertyValue(v));
+        expect(ms('--wait')).toBe(RELEASE_MS);
+        expect(ms('--wait') + ms('--dur')).toBe(KASTEEL.flightMs);
+        expect(ms('--dur')).toBeGreaterThanOrEqual(600);
+        expect(ms('--dur')).toBeLessThanOrEqual(900);
+        expect(flightTiming(0)).toEqual({ wait: 0, fly: 0 });
+        tick(KASTEEL.flightMs - 60);
+        expect(hp(container, 'orange')).toBe(10);
+        expect(container.querySelectorAll('.ks-chunk')).toHaveLength(0);
+        tick(120);
+        expect(hp(container, 'orange')).toBe(9);
+        expect(container.querySelectorAll('.ks-chunk').length).toBeGreaterThan(0);
+        expect(container.querySelector('.ks-fly')).toBeNull();
+        // A big stone is big in the bucket and in the air.
+        act(() => events.emit('correct', { given: '12', streak: 5 }));
+        expect(container.querySelector('.ks-load-out .ks-ball.is-big')).toBeTruthy();
+        expect(container.querySelector('.ks-fly .ks-ball.is-big')).toBeTruthy();
     });
 
     test("the computer's clock fires on its own and stops under help", () => {

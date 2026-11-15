@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-15** — Kasteel: every stone is thrown by the catapult (wind-up, a swing against the stop bar, a parabola from the bucket to the hit block computed in scene units by kasteel/throw.ts, reload); the hit lands exactly when the stone arrives.
+
 **2026-11-15** — Zelf start: "Speel meteen" picture tiles per leerjaar (src/oefenen/zelf/speelMeteen.ts, 12 per leerjaar 1–4, each a game × a Zelf choice, tested to resolve and fit) with a thumbnail per game (public/spelen/thumbs/) replace the icon strip; a tap starts that game with that oefening. The link hint is a small line at the bottom; the chosen leerjaar's ring is a darker shade of its own colour.
 
 **2026-11-14** — Zelf oefenen opens on one screen: a leerjaar bar with six big numbers (remembered per device; a first visit glows "Kies je leerjaar" and dims the topics), a "Je kan ook spelen!" strip built from SKINS (gameBlurbs.ts, a "nu!" ribbon in season), topics in 4 columns, and a scene per leerjaar (kiosk/backdrops/: bijen, monstertjes, lavaland, jungle, sneeuw, woestijn) on the topics screen and the kiosk start/end screens.
