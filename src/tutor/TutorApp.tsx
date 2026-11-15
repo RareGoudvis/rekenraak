@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CaretRight, QrCode } from '@phosphor-icons/react';
+import { ArrowLeft, CaretRight, Play, QrCode } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
-import { decodeTutor, TUTOR_HASH_PREFIX, tutorStepsOf, type TutorItem, type TutorSheet } from '../services/oefenen/tutorPayload';
+import { decodeTutor, TUTOR_HASH_PREFIX, tutorStepsOf, type TutorGroup, type TutorItem, type TutorSheet } from '../services/oefenen/tutorPayload';
+import { tutorOefenHref } from '../services/oefenen/tutorOefenLink';
 import { handigSteps, type StepLine } from '../services/math/workedSteps';
 import { formatMathNumber, opGlyph } from '../services/math/formatters';
 import { itemLabel } from '../components/viewer/itemNumbering';
@@ -79,6 +80,17 @@ function CodecCard({ item, lines }: { item: CodecItem; lines: StepLine[] }) {
     );
 }
 
+// The block's own settings in Oefenmodus, new sums every time (same tab, so the browser's back returns here).
+function MoreButton({ group, grade }: { group: TutorGroup; grade?: number }) {
+    if (!group.oefen) return null;
+    return (
+        <a className="tutor-btn tutor-more" href={tutorOefenHref(group.oefen, grade)}
+            aria-label={`Nog meer van deze oefening${group.n ? ` (opdracht ${group.n})` : ''}`}>
+            <Play weight="fill" aria-hidden /> Nog meer van deze oefening
+        </a>
+    );
+}
+
 export default function TutorApp() {
     const [state, setState] = useState<Loaded>(() => load(window.location.hash));
     const [open, setOpen] = useState<{ g: number; i: number } | null>(null);
@@ -127,6 +139,7 @@ export default function TutorApp() {
                         ? <StepsView key={`${open.g}-${open.i}`} sum={sumText(current.eq)} lines={currentSteps} handig={handigSteps(current.eq, undefined, { grade })}
                             visual={stepsVisualFor(SUM_TYPE_ID, current.eq, currentSteps, 'tutor', { grade })} />
                         : <CodecCard key={`${open.g}-${open.i}`} item={current} lines={currentSteps} />}
+                    <MoreButton group={g} grade={grade} />
                 </main>
             </div>
         );
@@ -165,6 +178,7 @@ export default function TutorApp() {
                                 );
                             })}
                         </ul>
+                        <MoreButton group={g} grade={grade} />
                     </section>
                 ))}
                 <button type="button" className="tutor-btn" onClick={() => setScanning(true)}>Een ander blad scannen</button>

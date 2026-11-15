@@ -78,6 +78,9 @@ export interface DocSettings {
     tutorQrCaption?: boolean;
     // The teacher's own words for that line (owner 2026-11-14); absent or empty = TUTOR_QR_CAPTION.
     tutorQrCaptionText?: string;
+    // The stappenhulp's "Nog meer van deze oefening" button: the QR also carries each block's Oefenmodus
+    // settings when they fit. Absent = on (a sheet saved before it gets the button); false = steps only.
+    tutorMoreOefenen?: boolean;
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
     // Vertical rule in the gutter between blocks that share a row. showDividers is the

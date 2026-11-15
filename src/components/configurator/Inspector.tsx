@@ -416,6 +416,13 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <Switch checked={!!docSettings.tutorQr} onChange={(v) => updateDocSettings({ tutorQr: v })} aria-label="Stappenhulp-QR onderaan elke pagina" />
                     </div>
                     <p style={{ ...S.hintText, margin: '0 0 var(--sp-2)' }}>Leerlingen scannen de QR en zien hoe ze de sommen van die pagina stap voor stap uitrekenen. Een opdracht of som met <StepsGlyph /> heeft stappen, de rest niet. Zet dit uit bij een toets: de QR verklapt de antwoorden.</p>
+                    {docSettings.tutorQr && (<>
+                        <div style={S.switchRow}>
+                            <span style={S.switchText}>Leerlingen kunnen meer van dezelfde oefening maken</span>
+                            <Switch checked={docSettings.tutorMoreOefenen !== false} onChange={(v) => updateDocSettings({ tutorMoreOefenen: v })} aria-label="Leerlingen kunnen meer van dezelfde oefening maken" />
+                        </div>
+                        <p style={{ ...S.hintText, margin: '0 0 var(--sp-2)' }}>In de stappenhulp verschijnt een knop die nieuwe oefeningen van dezelfde soort opent in Oefenmodus, met de instellingen van dat blok.</p>
+                    </>)}
                     {docSettings.tutorQr && (
                         <div style={S.switchRow}>
                             <span style={S.switchText}>Uitleg naast de QR-code</span>

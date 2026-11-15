@@ -12,6 +12,7 @@ import SheetFooter from './SheetFooter';
 import TutorQr from './TutorQr';
 import { tutorQrPick } from './tutorQrPick';
 import { encodeTutorPage, tutorPageMarks } from '../../services/oefenen/tutorPayload';
+import { tutorOefenRow } from './tutorOefen';
 import { blockHasTutorSteps, exercisesOf, stepsFor } from '../../services/stepsAvailability';
 import EmptySheetHero from './EmptySheetHero';
 import type { MathBlock } from '../../services/math/types';
@@ -93,18 +94,24 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
     () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasTutorSteps(block))),
     [docSettings.tutorQr, packedPages],
   );
+  const tutorMoreOefenen = docSettings.tutorMoreOefenen !== false;
   // Per page: the QR payloads and, per block, which sums the stappenhulp opens with steps ('all' = every one,
   // a '0101' mask = some, '' = none). Read from the payload the QR really carries, so a mark never promises more.
   const tutorPages = useMemo(() => {
     if (!tutorQr) return null;
     return packedPages.map(page => {
-      const tutorBlocks = page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises: exercisesOf(block) }));
+      const tutorBlocks = page.blocks.map(({ block }) => ({
+        block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises: exercisesOf(block),
+        // "Nog meer van deze oefening" (absent = on): the block's Oefenmodus settings, only for blocks the QR carries.
+        oefen: tutorMoreOefenen && blockHasTutorSteps(block) ? tutorOefenRow(block) : null,
+      }));
       const payload = encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade });
       const lean = encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade: selectedGrade });
-      const pick = tutorQrPick(payload, lean);
+      const more = tutorMoreOefenen ? encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade, oefen: true }) : null;
+      const pick = tutorQrPick(payload, lean, more);
       const marks = new Map<string, string>();
       if (pick) {
-        tutorPageMarks(tutorBlocks, tutorHasSteps, { greyed: pick === 'full' }).forEach((mask, i) => {
+        tutorPageMarks(tutorBlocks, tutorHasSteps, { greyed: pick !== 'lean' }).forEach((mask, i) => {
           if (!mask.some(Boolean)) return;
           const block = tutorBlocks[i].block;
           // A hidden title has nowhere to carry the block mark, so its sums carry their own.
@@ -112,9 +119,9 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           marks.set(block.id, titled && mask.every(Boolean) ? 'all' : mask.map(m => (m ? '1' : '0')).join(''));
         });
       }
-      return { payload, lean, marks };
+      return { payload, lean, more, marks };
     });
-  }, [tutorQr, packedPages, blockOrder, selectedGrade]);
+  }, [tutorQr, tutorMoreOefenen, packedPages, blockOrder, selectedGrade]);
   return (
     <>
       {packedPages.map((page, pi) => (
@@ -165,6 +172,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                 <TutorQr
                   payload={tutorPages[pi].payload}
                   lean={tutorPages[pi].lean}
+                  more={tutorPages[pi].more}
                   caption={docSettings.tutorQrCaption !== false}
                   captionText={docSettings.tutorQrCaptionText}
                   legend
