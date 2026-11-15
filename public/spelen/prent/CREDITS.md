@@ -2,7 +2,7 @@
 
 The hidden pictures of the game Verborgen prent (src/oefenen/spelen/skins/prent/, manifest photos.ts). All photos
 are winners or highly commended entries of the Nikon Comedy Wildlife Photography Awards
-(https://www.comedywildlifephoto.com/), used with permission. Copyright stays with each photographer; these files
+(https://www.comedywildlifephoto.com/). Copyright stays with each photographer; these files
 may not be reused outside RekenRaak. Converted for the web: WebP, at most 1200 px on the long side, quality 80,
 metadata stripped. The photographer's own watermark in the corner is kept.
 
