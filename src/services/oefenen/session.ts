@@ -1,5 +1,5 @@
 import { inflateSync, strFromU8, strToU8 } from 'fflate';
-import { fromBase32, packText } from './packText';
+import { OEFEN_HASH_PREFIX, OEFEN_PAGE, fnv1a, fromBase32, packText } from './packText';
 import { OEFEN_VERSION, attemptsOf, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from './types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { DEFAULT_BASE, seedConstraints } from '../../config/baseSettings';
@@ -27,8 +27,8 @@ export const MAX_TYPES = 20;
 const MAX_LABEL = 80, MAX_INSTRUCTION = 200, MAX_ID = 60;
 // Far above the builder's sliders (limit 50, timer 30 min); only absurd values are refused.
 const MAX_LIMIT = 1000, MAX_TOTAL = 10_000, MAX_TIMER_MIN = 24 * 60;
-export const OEFEN_HASH_PREFIX = '#oefen=';
-export const OEFEN_PAGE = '/oefenen.html';
+// In packText.ts so the stappenhulp can build an oefenlink without this module's REGISTRY import.
+export { OEFEN_HASH_PREFIX, OEFEN_PAGE, fnv1a };
 
 const MODES: readonly OefenMode[] = ['afwisselen', 'willekeurig'];
 const ID_RE = /^[a-z0-9_-]{1,40}$/;
@@ -132,13 +132,6 @@ function canon(v: unknown): string {
     return JSON.stringify(v) ?? 'null';
 }
 
-// FNV-1a 32-bit: short and stable; it only has to tell apart the contents shipped under one session id on one device.
-export function fnv1a(text: string): string {
-    let h = 0x811c9dc5;
-    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-    return h.toString(16).padStart(8, '0');
-}
-
 /** What a pupil practises, as a fingerprint: id, title and createdAt left out (a rename keeps it), attempts as the kiosk reads them. */
 export function sessieContentHash(s: OefenSessie): string {
     const { types, mode, allowRepeatType, timerMin, testMode, statsLocked, total } = s;
@@ -176,6 +169,9 @@ function rowOut(t: OefenType, slot: number, n: number): WireRow {
         t.exactForm === undefined ? null : t.exactForm ? 1 : 0,
     ]);
 }
+
+/** One type alone in a session, as its wire row (weight = the equal split, so it stays out): the stappenhulp QR carries it. */
+export const sessieRowWire = (t: OefenType): WireRow => rowOut({ ...t, weight: 100 }, 0, 1);
 
 /** The positional wire form (exported for the size tests). */
 export function toWire(s: OefenSessie): OefenWire {

@@ -33,6 +33,13 @@ html:has(.tutor-body) { overflow-y: auto; }
 }
 .tutor-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); font-size: 20px; font-weight: 700; min-height: 60px; }
 .tutor-btn-quiet { border-color: transparent; background: transparent; color: var(--accent); }
+/* "Nog meer van deze oefening": the way on to Oefenmodus, in the juist green so it never reads as the next step. */
+.tutor-more {
+  box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-3);
+  border-color: var(--tutor-ok); background: color-mix(in srgb, var(--tutor-ok) 12%, var(--bg-surface)); color: var(--tutor-ok);
+  text-decoration: none; text-align: center; line-height: 1.25; padding: var(--sp-2) var(--sp-4);
+}
+.tutor-more svg { flex: none; }
 .tutor-group h2 { margin: var(--sp-2) 0; font-size: 17px; }
 .tutor-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
 .tutor-item {

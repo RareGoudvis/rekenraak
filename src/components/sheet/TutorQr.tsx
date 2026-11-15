@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { QR_QUIET } from '../../services/qr';
-import { tutorQrMatrix } from './tutorQrPick';
+import { tutorQrMatrix, tutorQrPayloadOf, tutorQrPick } from './tutorQrPick';
 import StepsGlyph from '../viewer/StepsGlyph';
 
 // 23 mm at 96 dpi (23 / 25.4 × 96 ≈ 87; was 26 mm, owner 2026-11-14 "a bit smaller"): a full A4 page of sums
@@ -14,9 +14,13 @@ export const TUTOR_QR_CAPTION_MAX = 70;
 // The stappenhulp QR in a page's footer. Every page reserves the box, even without sums, so
 // switching pages never changes a footer's height (the packer would chase its own tail).
 // lean: the same page without its no-steps sums, used when the full list does not fit.
+// more: the full list plus the blocks' Oefenmodus settings, preferred when it fits (tutorQrPick).
 // legend: the footsteps mark sits on the sheet's sums, so the caption says what it means (glyph alone without a caption).
-export default function TutorQr({ payload, lean, caption = true, captionText, legend = false }: { payload: string | null; lean?: string | null; caption?: boolean; captionText?: string; legend?: boolean }) {
-    const matrix = useMemo(() => (payload ? tutorQrMatrix(payload) ?? (lean ? tutorQrMatrix(lean) : null) : null), [payload, lean]);
+export default function TutorQr({ payload, lean, more, caption = true, captionText, legend = false }: { payload: string | null; lean?: string | null; more?: string | null; caption?: boolean; captionText?: string; legend?: boolean }) {
+    const matrix = useMemo(() => {
+        const data = tutorQrPayloadOf(tutorQrPick(payload, lean ?? null, more ?? null), { payload, lean, more });
+        return data ? tutorQrMatrix(data) : null;
+    }, [payload, lean, more]);
     const tooBig = !!payload && !matrix;
     const box = { width: `${QR_PX}px`, height: `${QR_PX}px`, flex: 'none' as const, position: 'relative' as const };
     // The frame (border + caption) is drawn on every page, so all footers keep one height.

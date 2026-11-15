@@ -2,13 +2,17 @@ import type { Equation, MathBlock } from '../math/types';
 import { packText, unpackText } from './packText';
 import { codecById, codecsForType } from '../steps/tutorCodecs';
 import { workedSteps, type StepLine } from '../math/workedSteps';
+import { tutorOefenRowIn } from './tutorOefenLink';
 
 type ItemNumberingMode = MathBlock['itemNumbering'];
 
 // The tutor QR (stappenhulp): one page's hoofdrekenen sums, so tutor.html can list them and show
 // their worked steps without reading any print. Exact numbers, never a seed: teachers edit
 // operands by hand and generators change between releases.
-//   wire: [1, groups, leerjaar?] (leerjaar 1–6 for handig rekenen: ontbinden from 6)   group: [opdracht number | 0, title, numbering, items]
+//   wire: [v, groups, leerjaar?] (leerjaar 1–6 for handig rekenen: ontbinden from 6)   group: [opdracht number | 0, title, numbering, items, oefen?]
+//   v 1: every QR before 2026-11-15, and still every QR that carries no settings (so those stay byte-identical).
+//   v 2: a group may add `oefen`, the block's settings as one Oefenmodus wire row (session.ts sessieRowWire),
+//         for the stappenhulp's "Nog meer van deze oefening" button.
 //   item: [a, b] for a plain a + b (most of a page, so it stays short), [a, b, op] for another plain sum, else
 //         [ops, operands, missing index | -1, answer?, variant?], or ['@', codec id, data] for any other
 //         type (src/services/steps/codecs; breuk van een hoeveelheid used to travel as ['h', t, n, g],
@@ -27,7 +31,9 @@ export const TUTOR_URL = 'https://rekenraak.be/tutor.html';
 export function tutorUrlFor(origin: string): string {
     return origin.startsWith('https://') ? `${origin}/tutor.html` : TUTOR_URL;
 }
-const TUTOR_VERSION = 1;
+const TUTOR_VERSION = 2;
+// The settings-less form every QR printed before v2 used; written still when no group carries settings.
+const TUTOR_VERSION_PLAIN = 1;
 // Generous for one A4 page (≈ 50 sums ≈ 1 kB of JSON); the cap stops a hand-made deflate bomb.
 const MAX_JSON = 20_000;
 const MAX_TITLE = 60;
@@ -53,6 +59,8 @@ export interface TutorGroup {
     numbering: ItemNumberingMode;
     // null: a placeholder that keeps the next sum on its printed label.
     items: (TutorItem | null)[];
+    // The block's settings as an Oefenmodus wire row (v2), for "Nog meer van deze oefening"; absent = no button.
+    oefen?: unknown[];
 }
 
 export interface TutorSheet {
@@ -137,7 +145,8 @@ function itemOut(block: MathBlock, ex: unknown, steps: boolean, greyed: boolean)
     return { wire: wire !== 0 && !steps ? [wire] : wire, steps: wire !== 0 && steps };
 }
 
-type TutorPageBlock = { block: MathBlock; n: number | null; title: string; exercises?: unknown[] };
+// oefen: the block's Oefenmodus wire row (editor side, tutorOefenRow), null / absent = the kiosk cannot practise it.
+export type TutorPageBlock = { block: MathBlock; n: number | null; title: string; exercises?: unknown[]; oefen?: unknown[] | null };
 
 // Each block's wire items, or null for a block the QR leaves out (none of its sums has steps).
 function pageItems(blocks: TutorPageBlock[], hasSteps: (block: MathBlock, ex: unknown) => boolean, greyed: boolean): (unknown[] | null)[] {
@@ -148,20 +157,27 @@ function pageItems(blocks: TutorPageBlock[], hasSteps: (block: MathBlock, ex: un
     });
 }
 
-/** One page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on it has steps.
+/** Some of a page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on them has steps.
  *  `exercises` is the block's own list (its registry field); absent = the hoofdrekenen `exercises`.
- *  greyed false leaves the sums without steps out (a 0 each), for a page too full for the QR otherwise. */
+ *  greyed false leaves the sums without steps out (a 0 each), for a page too full for the QR otherwise.
+ *  oefen true adds each block's `oefen` row (v2), and gives null when no carried block has one: nothing to add. */
 export function encodeTutorPage(
     blocks: TutorPageBlock[],
     hasSteps: (block: MathBlock, ex: unknown) => boolean,
-    { greyed = true, grade }: { greyed?: boolean; grade?: number | null } = {},
+    { greyed = true, grade, oefen = false }: { greyed?: boolean; grade?: number | null; oefen?: boolean } = {},
 ): string | null {
     const items = pageItems(blocks, hasSteps, greyed);
     const groups = blocks
-        .map(({ block, n, title }, i) => (items[i] ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items[i]] : null))
+        .map(({ block, n, title, oefen: row }, i) => {
+            if (!items[i]) return null;
+            const group: unknown[] = [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items[i]];
+            return oefen && row ? [...group, row] : group;
+        })
         .filter(g => g !== null);
+    const withRows = groups.some(g => g.length === 5);
+    if (oefen && !withRows) return null;
     const g = grade != null && Number.isInteger(grade) && grade >= 1 && grade <= 6 ? [grade] : [];
-    return groups.length ? packText(JSON.stringify([TUTOR_VERSION, groups, ...g])) : null;
+    return groups.length ? packText(JSON.stringify([withRows ? TUTOR_VERSION : TUTOR_VERSION_PLAIN, groups, ...g])) : null;
 }
 
 // The lines the stappenhulp opens for an item, MAB aside: a sum is worked out on the page itself (a sheet printed
@@ -249,13 +265,16 @@ export function decodeTutor(hash: string): TutorSheet {
     try { parsed = JSON.parse(json); } catch { return bad('geen geldige inhoud'); }
     if (!Array.isArray(parsed) || typeof parsed[0] !== 'number') return bad('versie ontbreekt');
     if (parsed[0] > TUTOR_VERSION) throw new Error('Deze QR-code komt uit een nieuwere versie van RekenRaak. Vernieuw de pagina.');
-    if (parsed[0] !== TUTOR_VERSION || !Array.isArray(parsed[1])) return bad('versie');
+    const v = parsed[0];
+    if ((v !== TUTOR_VERSION && v !== TUTOR_VERSION_PLAIN) || !Array.isArray(parsed[1])) return bad('versie');
     const groups = parsed[1].map((g: unknown): TutorGroup => {
-        if (!Array.isArray(g) || g.length !== 4 || !Array.isArray(g[3])) return bad('opdracht');
-        const [n, title, numbering, items] = g;
+        if (!Array.isArray(g) || !(g.length === 4 || (v >= 2 && g.length === 5)) || !Array.isArray(g[3])) return bad('opdracht');
+        const [n, title, numbering, items, oefenRaw] = g;
         if (typeof n !== 'number' || typeof title !== 'string') return bad('opdracht');
         if (numbering !== null && numbering !== 'cijfer' && numbering !== 'letter' && numbering !== 'geen') return bad('nummering');
-        return { n: n > 0 ? n : null, title, numbering: (numbering ?? undefined) as ItemNumberingMode, items: items.map(itemIn) };
+        // A row that is not even shaped like one only costs the button; the steps keep working.
+        const oefen = g.length === 5 ? tutorOefenRowIn(oefenRaw) : null;
+        return { n: n > 0 ? n : null, title, numbering: (numbering ?? undefined) as ItemNumberingMode, items: items.map(itemIn), ...(oefen && { oefen }) };
     });
     const grade = parsed[2];
     if (grade !== undefined && !(Number.isInteger(grade) && grade >= 1 && grade <= 6)) return bad('leerjaar');
