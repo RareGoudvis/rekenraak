@@ -33,3 +33,6 @@ scripts/width-matrix.result.only*
 
 # Local-only notes (review tables etc.)
 *.local.md
+
+# Promo video renders (npm run promo:video): the script and promo/README.md are committed, the output is not.
+promo/out/
