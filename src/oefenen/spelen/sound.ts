@@ -5,7 +5,7 @@ import type { SpelEventMap, SpelEventName, SpelEvents } from './events';
 // buzzer or a "fout" sound. Off by default (a class full of iPads); the choice is kept per device.
 // Without Web Audio (jsdom, an old browser, autoplay refused) every call is simply silent.
 
-export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit', 'zwoesj', 'blok'] as const;
+export const SPEL_SOUNDS = ['pop', 'plop', 'plok', 'splash', 'poef', 'boing', 'jingle', 'sparkle', 'snip', 'puf', 'cheer', 'whoosh', 'blub', 'krak', 'wahwah', 'whoomp', 'piep', 'bonk', 'flip', 'ting', 'bzz', 'drup', 'ork', 'plons', 'tok', 'plof', 'fluit', 'zwoesj', 'blok', 'nana'] as const;
 export type SpelSound = typeof SPEL_SOUNDS[number];
 
 // What a skin may voice: a right answer, a wrong one, its own deadline running out (a zombie at the door),
@@ -227,6 +227,11 @@ const RECIPES: Record<SpelSound, Recipe> = {
     },
     // Zeehondjes wrong: a soft little "plons" in the water; neutral, never a buzzer.
     plons: (ac, d, t) => { tone(ac, d, t, { f0: 560, f1: 200, dur: 0.14, vol: 0.16 }); noise(ac, d, t, { at: 0.04, dur: 0.26, vol: 0.12, filter: 'lowpass', f0: 1200, f1: 300 }); },
+    // Mollen wrong: a cheeky sing-song "na-na-na" (a soft rubbery plop, then high-high-low); teasing, never a buzzer.
+    nana: (ac, d, t) => {
+        tone(ac, d, t, { f0: 420, f1: 200, dur: 0.1, vol: 0.14 });
+        for (const [at, f] of [[0.1, 760], [0.24, 760], [0.38, 600]] as const) tone(ac, d, t, { type: 'triangle', f0: f, f1: f * 0.97, at, dur: 0.12, vol: 0.14, wobble: [26, 14] });
+    },
     // Voetbal pass: a soft leather "tok" on the ball.
     tok: (ac, d, t) => { tone(ac, d, t, { type: 'triangle', f0: 190, f1: 95, dur: 0.09, vol: 0.34 }); noise(ac, d, t, { dur: 0.03, vol: 0.12, filter: 'bandpass', f0: 1300, q: 0.9 }); },
     // Voetbal save: the ball lands in the keeper's big gloves, a muffled "plof".

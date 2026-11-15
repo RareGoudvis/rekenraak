@@ -9,6 +9,7 @@
   --ml-snout: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--kiosk-paper));
   --ml-dirt: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
   --ml-dirt-light: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-paper));
+  --ml-tongue: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--kiosk-paper));
   --ml-pace: 1;
   position: absolute;
   inset: 0;
@@ -142,24 +143,6 @@
   line-height: 1.2;
   white-space: nowrap;
 }
-.ml-key {
-  position: absolute;
-  z-index: 3;
-  right: 4%;
-  bottom: 0;
-  display: none;
-  min-width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--spel-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kiosk-paper);
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
-@media (hover: hover) and (pointer: fine) { .ml-key { display: inline-flex; } }
-
 /* Right: the toy hammer taps down, the mole squashes and sees stars. */
 .ml-hammer {
   position: absolute;
@@ -201,14 +184,54 @@
   to { transform: rotate(360deg) translateX(calc(var(--ml-w) * .38)) rotate(-360deg) scaleY(.6); }
 }
 
-/* Wrong: the mole shakes its head and stays; no red. */
-.ml-hole.is-nope .ml-art { animation: ml-nope 520ms ease-in-out both; transform-origin: 50% 100%; }
-@keyframes ml-nope {
-  0%, 100% { transform: rotate(0); }
-  25% { transform: rotate(-7deg); }
-  50% { transform: rotate(6deg); }
-  75% { transform: rotate(-3deg); }
+/* Wrong: the mole taunts (tongue out, a little dance, "Nana!") and ducks again before the next sum; no red. */
+.ml-tongue { display: none; fill: var(--ml-tongue); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.ml-hole.is-nope .ml-tongue { display: inline; }
+.ml-hole.is-nope .ml-tooth { display: none; }
+.ml-hole.is-nope .ml-art { animation: ml-dance 1000ms ease-in-out 120ms both; transform-origin: 50% 100%; }
+.ml-hole.is-nope .ml-mole { animation: ml-duck 260ms var(--ease-out) 1250ms both; }
+@keyframes ml-dance {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  12% { transform: translate(-8%, -6%) rotate(-9deg); }
+  25% { transform: translate(8%, 0) rotate(9deg); }
+  37% { transform: translate(-8%, -6%) rotate(-9deg); }
+  50% { transform: translate(8%, 0) rotate(9deg); }
+  62% { transform: translate(-6%, -5%) rotate(-7deg); }
+  75% { transform: translate(6%, 0) rotate(7deg); }
+  88% { transform: translate(0, -4%) rotate(0); }
 }
+@keyframes ml-duck { from { transform: translateY(0); } to { transform: translateY(105%); } }
+.ml-bubble {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(var(--ml-w) * 1.12);
+  padding: 2px calc(var(--ml-w) * .08);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: calc(var(--ml-w) * .2);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  transform: translateX(-30%);
+  pointer-events: none;
+  animation: ml-bubble 260ms var(--ease-spring) 200ms both;
+}
+.ml-bubble::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  bottom: -9px;
+  width: 12px;
+  height: 12px;
+  border-right: 3px solid var(--spel-ink);
+  border-bottom: 3px solid var(--spel-ink);
+  background: var(--kiosk-paper);
+  transform: rotate(45deg);
+}
+@keyframes ml-bubble { from { transform: translateX(-30%) scale(.3); opacity: 0; } to { transform: translateX(-30%) scale(1); opacity: 1; } }
 /* The mole with the answer lights up while the sign shows it. */
 .ml-hole.is-answer .ml-clip { overflow: visible; }
 .ml-hole.is-answer .ml-mole::after {
@@ -236,12 +259,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ml-mole { transition: none; }
-  .ml-sign-answer, .ml-hole.is-bonked .ml-mole, .ml-hole.is-nope .ml-art, .ml-hole.is-answer .ml-mole::after { animation: none; }
+  .ml-sign-answer, .ml-hole.is-bonked .ml-mole, .ml-hole.is-nope .ml-art, .ml-hole.is-nope .ml-mole, .ml-bubble, .ml-hole.is-answer .ml-mole::after { animation: none; }
 }
 .ml-root.is-still .ml-mole { transition: none; }
 .ml-root.is-still .ml-sign-answer,
 .ml-root.is-still .ml-hole.is-bonked .ml-mole,
 .ml-root.is-still .ml-hole.is-nope .ml-art,
+.ml-root.is-still .ml-hole.is-nope .ml-mole,
+.ml-root.is-still .ml-bubble,
 .ml-root.is-still .ml-hole.is-answer .ml-mole::after { animation: none; }
 
 /* Content packs (SpelChoiceFace): bigger moles that hold up a clock face (≥ 96 px); a phrase wraps on two lines. */

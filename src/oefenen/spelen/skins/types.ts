@@ -42,7 +42,7 @@ export interface SkinMeta {
     // cap = a limit the pupil never sees (Race ends at its finish): the bar counts without a total.
     // goalKeep: a mistake never takes one off the climb (Bom: a wrong answer only costs time).
     // board: a round of boards, each several sums at once (board/board.ts); the round ends after the last board.
-    round: { questions?: number; seconds?: number; goal?: number; cap?: number; goalKeep?: boolean; board?: BoardRound };
+    round: { questions?: number; seconds?: number; goal?: number; cap?: number; goalKeep?: boolean; wrongPenaltyMs?: number; board?: BoardRound };
     // Its sounds per cue (sound.ts): session cues and the skin's own (props.sound); absent = the defaults.
     sounds?: SkinSounds;
     // A pre-start screen with these choices (big buttons, a default preselected); absent = no screen.

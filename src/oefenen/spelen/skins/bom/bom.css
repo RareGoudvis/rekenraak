@@ -68,6 +68,15 @@
 .bom-root.is-hurry .bom-spark-flick { animation-duration: 200ms; }
 @keyframes bom-flick { from { transform: scale(.8) rotate(-12deg); } to { transform: scale(1.15) rotate(12deg); } }
 
+/* A mistake: the clock flashes (a colour state, so it stays under reduced motion), "−3 s" floats off, the spark jumps. */
+.bom-display.is-hit rect { fill: color-mix(in srgb, var(--danger) 55%, var(--kiosk-paper)); animation: bom-flash 1000ms ease-in 450ms both; }
+.bom-display.is-hit text:not(.bom-minus) { fill: var(--kiosk-paper); }
+@keyframes bom-flash { from { fill: color-mix(in srgb, var(--danger) 55%, var(--kiosk-paper)); } to { fill: var(--bom-screen); } }
+.bom-art .bom-minus { fill: var(--danger); stroke: var(--kiosk-paper); stroke-width: 6; paint-order: stroke; font-size: 34px; font-weight: 800; animation: bom-float 1100ms ease-out both; }
+@keyframes bom-float { 0% { transform: translate(0, 4px); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(34px, -56px); opacity: 0; } }
+.bom-spark-jump.is-hit { animation: bom-jump 520ms var(--ease-spring) both; }
+@keyframes bom-jump { 0% { transform: translateY(0) scale(1); } 30% { transform: translate(6px, -14px) scale(1.5); } 100% { transform: translateY(0) scale(1); } }
+
 /* The last 30 seconds: the bomb breathes a little; a right answer gives a small relieved squish. */
 .bom-breathe { transform-box: fill-box; transform-origin: 50% 100%; }
 .bom-root.is-hurry .bom-breathe { animation: bom-breathe 900ms ease-in-out infinite alternate; }
@@ -189,6 +198,8 @@
 .bom-root.is-still .bom-fuse,
 .bom-root.is-still .bom-spark { transition: none; }
 .bom-root.is-still .bom-spark-flick,
+.bom-root.is-still .bom-spark-jump,
+.bom-root.is-still .bom-display rect,
 .bom-root.is-still .bom-breathe,
 .bom-root.is-still .bom-seg.is-new,
 .bom-ending.is-still .bom-hop,

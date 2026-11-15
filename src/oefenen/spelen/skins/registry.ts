@@ -4,6 +4,7 @@ import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 import { CastleTurret, ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 import { Fish } from '@phosphor-icons/react';
 import { SoccerBall } from '@phosphor-icons/react';
+import { WRONG_PENALTY_MS } from './bom/penalty';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -60,9 +61,9 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./zombies/Zombies').then(m => ({ default: m.ZombiesEnding }))),
     },
     {
-        // N right before the clock runs out; a mistake costs only time (goalKeep). The pupil picks tijd and doel.
+        // N right before the clock runs out; a counted mistake costs 3 s of the clock (goalKeep). The pupil picks tijd and doel.
         meta: {
-            id: 'bom', label: 'Bom', input: 'keypad', timed: true, round: { seconds: 180, goal: 10, goalKeep: true }, winTitle: 'Ontmanteld!', accepts: KEYPAD_NUMBER,
+            id: 'bom', label: 'Bom', input: 'keypad', timed: true, round: { seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: WRONG_PENALTY_MS }, winTitle: 'Ontmanteld!', accepts: KEYPAD_NUMBER,
             options: [
                 { id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] },
                 { id: 'doel', label: 'Hoeveel juist?', default: '10', choices: [10, 20, 50].map(n => ({ value: String(n), label: `${n} juist`, round: { goal: n } })) },
@@ -204,7 +205,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // Two minutes; the moles pop up a little quicker with the streak (mollen/moles.ts).
-        meta: { id: 'mollen', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'plop' } },
+        meta: { id: 'mollen', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'nana' } },
         icon: Hammer,
         Component: lazy(() => import('./mollen/Mollen')),
     },
