@@ -31,3 +31,55 @@
 /* The end screen's foutjes table: a small face beside the question or as the answer. */
 .spel-end-pic { display: inline-flex; vertical-align: middle; margin-inline-end: var(--sp-2); }
 .spel-end-pic.is-klok, .spel-end-pic.is-breuk { width: 64px; height: 64px; }
+
+/* A sign line (SpelLine) wraps only between its parts: a sum, "€ 7,50" or "6 cm" never breaks inside. */
+.spel-line-chunk { white-space: nowrap; }
+/* A sentence on a sign (the tekst pack) reads in the pupil font, its numbers, € and the slot in the sheet's number font. */
+.spel-line-chunk.is-word, .spel-line-gap { font-family: var(--kid-font); }
+.spel-line-num { font-family: var(--font-sheet-math); }
+
+/* A getallenrij / patroon as number tiles (SpelRij): one row, the open tile dashed; is-fold = two even rows on a
+   narrow screen, is-two = two rows everywhere (big numbers). Sizes follow the sign's own font. */
+.spel-rij {
+  display: inline-grid;
+  grid-auto-flow: column;
+  justify-content: center;
+  gap: .22em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.spel-rij.is-two { grid-auto-flow: row; grid-template-columns: repeat(var(--rij-half), auto); }
+@media (max-width: 640px) {
+  .spel-rij.is-fold { grid-auto-flow: row; grid-template-columns: repeat(var(--rij-half), auto); }
+}
+.spel-rij-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45em;
+  padding: .06em .26em;
+  border: var(--kid-line) solid var(--spel-ink);
+  border-radius: .28em;
+  background: var(--kid-key);
+  line-height: 1.15;
+}
+.spel-rij-tile.is-open { border-style: dashed; background: var(--kid-pick); }
+.spel-rij-tile.is-filled { padding: 0; border-style: solid; background: var(--kiosk-ok-soft); }
+.spel-rij-tile.is-filled > * { padding: .06em .26em; }
+/* The end screen's table and the help: the same tiles, at the text's size. */
+.spel-end-errors .spel-rij, .spel-help-question .spel-rij { font-size: .9em; }
+
+/* A breuk in a line or on a face (SpelText): stacked teller over noemer, as on the sheet; the slash stays for aria. */
+.spel-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 .08em;
+  font-size: .72em;
+  line-height: 1.05;
+}
+.spel-frac-n { padding: 0 .12em; border-bottom: .09em solid currentColor; }
+.spel-frac-bar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* In the narrow foutjes table a sentence may wrap between its words; a sum or a measure (4 u 45 min) never breaks. */
+.spel-end-errors .spel-line-chunk.is-word:not(.is-whole) { white-space: normal; }

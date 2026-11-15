@@ -155,10 +155,12 @@ describe('a few leaves by hand', () => {
         expect(q.kioskAnswers![i]).toHaveLength(2);
     });
 
-    test('plaatswaarde names the digit by its value only when it is there once', () => {
+    test('plaatswaarde names the digit by its value only when it is there once, else by its place in words', () => {
         const qs = tekstQuestions(choice(3, 'Getallen lezen en plaatswaarde', 'Plaatswaarde'), 3, 60);
         for (const { q } of qs) {
-            const m = /^In ([\d ]+) (?:is|staat) de (\d) /.exec(q.text);
+            // A repeated digit with its place ("In 667 is de 6 bij de tientallen ? waard") is just as clear; never "op T".
+            expect(q.text, q.text).not.toMatch(/op [EeTHDthd]{1,2} = \?/);
+            const m = /^In ([\d ]+) (?:is|staat) de (\d) (?!bij de \S+ \? waard)/.exec(q.text);
             if (!m) continue;
             expect(m[1].replace(/\s/g, '').split(m[2]).length - 1, q.text).toBe(1);
         }

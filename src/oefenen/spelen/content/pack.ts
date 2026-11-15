@@ -18,7 +18,9 @@ export type SpelVisual =
     // A digitale klok display ("08:15").
     | { kind: 'digitaal'; text: string }
     // A breuk as a picture (BreukPicture): n of d equal parts coloured; with = a second one beside it (the vergelijken help).
-    | { kind: 'breuk'; n: number; d: number; shape: BreukKind; with?: { n: number; d: number } };
+    | { kind: 'breuk'; n: number; d: number; shape: BreukKind; with?: { n: number; d: number } }
+    // A getallenrij or patroon as number tiles, '?' = the tile to fill (the sign's whole question; spelFormat rijFoldOf).
+    | { kind: 'rij'; items: string[] };
 
 // How one choice is shown: a picture, or a phrase / time as text. label = its accessible name.
 export interface SpelChoiceView {

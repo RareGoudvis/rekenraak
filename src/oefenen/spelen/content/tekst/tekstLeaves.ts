@@ -12,6 +12,8 @@ import { plaatsView } from '../../../../services/plaatswaarde/plaatswaardeGenera
 import { ladderFor } from '../../../../services/herleidingen/herleidingenGenerator';
 import { toRoman } from '../../../../services/romeinse/romeinseGenerator';
 import type { SpelKey } from '../../accepts';
+import type { SpelVisual } from '../pack';
+import { rijText } from '../../spelFormat';
 
 // The tekst pack's leaves (tekstPack.ts): Zelf oefenen content whose kiosk exercise asks ONE value that a plain
 // line of text can carry ("491 ≈ ? (op tiental)", "Een hoek van 62° is een ?"). Each entry says how its answers
@@ -34,6 +36,8 @@ interface AskBase {
     // The kiosk exercise and settings actually asked, when the game asks a part of the made one.
     exercise?: unknown;
     constraints?: C;
+    // How the sign draws the question instead of the line (a rij as number tiles); the line stays for aria and text-only signs.
+    visual?: SpelVisual;
 }
 // A number: the answer with dp decimals; near = the leaf's own slips (each list one family, in that order);
 // step = the answer's grain for the generic ±1 / ±10 slips (afronden op H: 100); min = the smallest option.
@@ -139,8 +143,8 @@ const SCHATTEND: TekstLeaf = {
         const t = targetsFor(nt(c)).find(x => x.key === ex.targetKey) ?? targetsFor(nt(c))[0];
         const exact = ex.operator === '+' ? ex.a + ex.b : ex.operator === '-' ? ex.a - ex.b : ex.operator === 'x' ? ex.a * ex.b : ex.a / ex.b;
         const dp = Math.max(decimalsOf(answer), decimalsOf(t.weight));
-        // The exact result, and the estimate one rounding step off.
-        return { kind: 'number', text: d.display(ex, c), answer, dp, step: t.weight, near: [[Number(exact.toFixed(dp))], [answer + t.weight, answer - t.weight]] };
+        // The exact result, and the estimate one rounding step off. The place in words, as afronden says it ("op H" is sheet shorthand).
+        return { kind: 'number', text: d.display(ex, c).replace(/\(op [^)]*\)$/, `(op ${t.label})`), answer, dp, step: t.weight, near: [[Number(exact.toFixed(dp))], [answer + t.weight, answer - t.weight]] };
     },
 };
 
@@ -230,8 +234,10 @@ const PLAATSWAARDE: TekstLeaf = {
             if (answer === null) return null;
             const digit = leadDigit(answer);
             const dp = decimalsOf(answer);
-            // "In 659 516 is de 9 ? waard" when the digit is there once; else the kiosk's place letter.
-            const text = digit && onlyOnce(ex.number, digit) ? `In ${show(ex.number)} is de ${digit} ? waard` : d.display(ex, c);
+            // "In 659 516 is de 9 ? waard" when the digit is there once; else its place in words (never the sheet's "op H").
+            const place = PLAATS_ORDER[PLAATS_ORDER.indexOf('eenheden') - Math.floor(Math.log10(answer) + 1e-9)];
+            const text = digit && onlyOnce(ex.number, digit) ? `In ${show(ex.number)} is de ${digit} ? waard`
+                : digit && place ? `In ${show(ex.number)} is de ${digit} bij de ${place} ? waard` : d.display(ex, c);
             const near = digit ? [[Number(digit)], [Number((answer * 10).toFixed(dp)), Number((answer / 10).toFixed(dp + 1))]] : [];
             return { kind: 'number', text, answer, dp, near };
         }
@@ -301,34 +307,42 @@ const rijChars = (c: C) => {
     const dp = nt(c) === 'decimal' ? Math.max(decimalsOf(step), Number(c.maxDecimals ?? 1)) : 0;
     return len(Math.max(num(c.maxGetal, 20), 20) * 2) + dp + (nt(c) === 'geheel' ? 1 : 0);
 };
+// A row as number tiles with its one open place ('?'); its line reads "3, 4, ?, 6" (never the kiosk's "3 | 4" bars or
+// "3 – 4" dashes, which read as minus signs).
+const rijOf = (values: readonly unknown[], open: number): Pick<NumberAsk, 'text' | 'visual'> | null => {
+    if (!values.every(v => typeof v === 'number')) return null;
+    const items = values.map((v, j) => (j === open ? '?' : show(v as number)));
+    return { text: rijText(items), visual: { kind: 'rij', items } };
+};
 // The neighbours in the row (one jump too far or too short) first.
-function rijAsk(values: readonly (number | unknown)[], i: number, text: string, asked: unknown, nat: boolean): NumberAsk | null {
+function rijAsk(values: readonly (number | unknown)[], i: number, asked: unknown, nat: boolean): NumberAsk | null {
     const v = values[i];
-    if (typeof v !== 'number') return null;
+    const rij = rijOf(values, i);
+    if (typeof v !== 'number' || !rij) return null;
     const others = values.filter((x, j): x is number => typeof x === 'number' && j !== i);
     const jump = others.length >= 2 ? Math.abs(Number(((values[i === 0 ? 1 : i - 1] as number) - (values[i === 0 ? 2 : i] as number)).toFixed(6))) : 1;
     const dp = Math.max(decimalsOf(v), decimalsOf(jump));
-    return { kind: 'number', text: minus(text), answer: v, dp, near: [[v + jump, v - jump].map(x => Number(x.toFixed(dp)))], min: nat ? 0 : -1e9, exercise: asked };
+    return { kind: 'number', ...rij, answer: v, dp, near: [[v + jump, v - jump].map(x => Number(x.toFixed(dp)))], min: nat ? 0 : -1e9, exercise: asked };
 }
 const GETALLENRIJ: TekstLeaf = {
     playsAs: rijPlay,
     chars: rijChars,
     keys: rijKeys,
-    ask: (raw, c, rng, d) => {
+    ask: (raw, c, rng) => {
         const ex = raw as GetallenasExercise;
         const values = ex.values ?? [];
         const one = oneBlank(ex, values, rng);
-        return one && rijAsk(values, one.i, d.display(one.asked, c), one.asked, nt(c) === 'natural');
+        return one && rijAsk(values, one.i, one.asked, nt(c) === 'natural');
     },
 };
 const PATROON: TekstLeaf = {
     playsAs: c => (c.showArrows && !(c.showOperators) ? null : rijPlay(c)),
     chars: rijChars,
     keys: rijKeys,
-    ask: (raw, c, rng, d) => {
+    ask: (raw, c, rng) => {
         const ex = raw as PatroonExercise;
         const one = oneBlank(ex, ex.values, rng);
-        return one && rijAsk(ex.values, one.i, d.display(one.asked, c), one.asked, nt(c) === 'natural');
+        return one && rijAsk(ex.values, one.i, one.asked, nt(c) === 'natural');
     },
 };
 
@@ -338,7 +352,7 @@ const PATROON: TekstLeaf = {
 const VEELVOUDEN: TekstLeaf = {
     playsAs: c => ((c.layout ?? 'tabel') === 'veelvouden' ? 'number' : (c.layout ?? 'tabel') === 'tabel' ? 'tap' : null),
     chars: c => ((c.layout ?? 'tabel') === 'veelvouden' ? len(num(c.maxGetal, 100) * 2) : undefined),
-    ask: (raw, c, rng, d) => {
+    ask: (raw, c, rng) => {
         const ex = raw as DeelbaarheidExercise;
         if ((c.layout ?? 'tabel') === 'veelvouden') {
             const seq = ex.sequence ?? [];
@@ -347,7 +361,8 @@ const VEELVOUDEN: TekstLeaf = {
             const asked: DeelbaarheidExercise = { ...ex, sequence: seq.slice(0, given + 1) };
             const answer = seq[given];
             const base = given >= 2 ? seq[1] - seq[0] : 1;
-            return { kind: 'number', text: d.display(asked, c), answer, near: [[answer + base, seq[given - 1] ?? answer - 1]], exercise: asked };
+            const rij = rijOf(asked.sequence!, given);
+            return rij && { kind: 'number', ...rij, answer, near: [[answer + base, seq[given - 1] ?? answer - 1]], exercise: asked };
         }
         // Tabel: one divisor of the row, ja or nee (the kiosk row with that one column).
         const divisors = Array.isArray(c.divisors) ? (c.divisors as number[]) : [2, 5, 10];
