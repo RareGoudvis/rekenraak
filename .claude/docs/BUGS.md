@@ -79,4 +79,3 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 - Flaky test steps.herleiding "every generated oppervlakte exercise has steps": a random samengesteld-enkel km² + mm² → mm² exercise (toParts value 1000000000000749) gets null steps, about 1 run in many. Seen by the gate 2026-11-14.
-- **Spelen 2026-11-15, Touwtrekken sign:** at 390×844 Touwtrekken's sign drops the "?" outside its box on long sums ("0,421 × 2 = ?").

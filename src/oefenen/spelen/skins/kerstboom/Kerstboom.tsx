@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import { Burst, Snow } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
@@ -308,7 +308,6 @@ export default function Kerstboom({ question, phase, feedback, onAnswer, progres
 
     if (!question) return <div className="kb-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [before, after = ''] = question.text.split('?');
     const lit = hung >= DECOR_ALL;
 
     return (
@@ -318,11 +317,7 @@ export default function Kerstboom({ question, phase, feedback, onAnswer, progres
                     paused={phase === 'help'} reducedMotion={reducedMotion} />
             </div>
             <div className="kb-panel">
-                <p className={`kb-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{before}<span className="kb-sign-answer">{formatMathNumber(Number(feedback.expected))}</span>{after}</>
-                        : question.text}
-                </p>
+                <SpelSignBox className={`kb-sign${flash ? ' is-solved' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="kb-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
             </div>
         </div>

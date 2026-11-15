@@ -9,6 +9,7 @@ import { SKINS, skinById } from '../skins/registry';
 import { resolveMeta } from '../skins/options';
 import { choiceCanPlay, spelChoiceOf, spelContentOf, spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import { useSpelStore } from '../useSpelStore';
+import { useDuelStore } from '../skins/touwtrekken/duelStore';
 
 // Dev-only presentation audit (present.html): every playable Zelf choice per leerjaar, a few real questions each, shown
 // in a real skin, flash or end screen. A Playwright script drives window.__spelAudit and takes the screenshots.
@@ -61,13 +62,15 @@ export function installAudit() {
             return out;
         },
         /** A real game screen: the skin on question qi of the choice, in play, the wrong flash, or the end screen with qi..qi+3 as mistakes. */
-        show(p: Pick & { skin: string; phase: 'play' | 'wrong' | 'end'; qi?: number; seed?: number; chosen?: Record<string, string>; boardIndex?: number }) {
+        // skin 'kasteel-duel' = Kasteel for 2 (its own screen); a duel screen gets the question on both halves.
+        async show(p: Pick & { skin: string; phase: 'play' | 'wrong' | 'end'; qi?: number; seed?: number; chosen?: Record<string, string>; boardIndex?: number }) {
             const choice = choiceOf(p);
-            const entry = skinById(p.skin);
+            const duelKasteel = p.skin === 'kasteel-duel';
+            const entry = skinById(duelKasteel ? 'kasteel' : p.skin);
             if (!choice || !entry) return `missing ${!choice ? 'choice' : 'skin'}`;
-            const meta = resolveMeta(entry.meta, p.chosen);
+            const meta = resolveMeta(entry.meta, duelKasteel ? { ...p.chosen, spelers: '2' } : p.chosen);
             const st = useSpelStore.getState();
-            st.start({ choice, grade: p.grade as Leerjaar, topicId: p.topic, meta, now: p.seed ?? 1 });
+            st.start({ choice, grade: p.grade as Leerjaar, topicId: p.topic, meta, now: Date.now() });
             if (meta.input === 'board') {
                 if (p.phase === 'end') return 'board end: use a choice skin';
                 // A later board's look (Honingraat: the meadow is board 2).
@@ -78,6 +81,15 @@ export function installAudit() {
             const q = qs[p.qi ?? 0];
             if (!q) return 'no question';
             const wrong = q.choices.find(c => c !== q.answer) ?? '0';
+            if (entry.Screen && (!entry.screenWhen || meta.chosen?.[entry.screenWhen.id] === entry.screenWhen.value)) {
+                for (let i = 0; i < 100 && useDuelStore.getState().phase !== 'setup'; i++) await new Promise(r => setTimeout(r, 50));
+                await new Promise(r => setTimeout(r, 300));
+                useDuelStore.getState().start('samen');
+                const side = { question: q, feedback: p.phase === 'wrong' ? { given: wrong, expected: q.answer, correct: false } : null, locked: false };
+                const sides = useDuelStore.getState().sides;
+                useDuelStore.setState({ sides: { left: { ...sides.left, ...side }, right: { ...sides.right, ...side } } });
+                return 'ok';
+            }
             if (p.phase === 'play') useSpelStore.setState({ question: q, phase: 'play', feedback: null });
             else if (p.phase === 'wrong') useSpelStore.setState({ question: q, phase: 'wrong', feedback: { given: wrong, expected: q.answer, correct: false } });
             else {

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { SpelSignBox } from '../../SpelVisual';
 import { GasPump, Gauge, Timer } from '@phosphor-icons/react';
-import { formatMathNumber } from '../../../../services/math/formatters';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { RACE, boostCar, drive, formatRaceTime, ghostAt, glideCar, isTurbo, resumeCar, startCar, stopCar, type RaceCar } from './track';
@@ -239,7 +239,6 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
     if (!question) return <div className="rc-root" />;
     const land = landOf(route, seg);
     const flashing = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
     const atPump = benzine && (fuel.phase === 'pull' || fuel.phase === 'ready');
     // No turbo flame while pulling in or standing at the pump.
     const turbo = isTurbo(progress.streak) && !(benzine && ['pull', 'ready', 'ask', 'refill'].includes(fuel.phase));
@@ -325,11 +324,7 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
                 {atPump ? (
                     <p className="rc-sign is-wait" aria-live="polite"><GasPump weight="fill" aria-hidden /> Maak je klaar!</p>
                 ) : (
-                    <p className={`rc-sign kiosk-math${flashing ? ' is-solved' : ''}`} aria-live="polite">
-                        {flashing && feedback
-                            ? <>{lhs}<span className="rc-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                            : question.text}
-                    </p>
+                    <SpelSignBox className={`rc-sign${flashing ? ' is-solved' : ''}`} question={question} feedback={feedback} flash={flashing} answerClassName="rc-sign-answer" />
                 )}
                 {asking && <span className="rc-askbar" role="timer" aria-label="Tijd aan de pomp"><span /></span>}
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play' || done || !takes} />

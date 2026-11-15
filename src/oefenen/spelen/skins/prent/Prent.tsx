@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import type { PrentEntry } from './prenten';
@@ -83,7 +83,6 @@ export default function Prent({ question, phase, feedback, onAnswer, progress, r
 
     if (!question) return <div className="pr-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [before, after = ''] = question.text.split('?');
 
     return (
         <div className={`pr-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${done ? ' is-done' : ''}`}>
@@ -95,11 +94,7 @@ export default function Prent({ question, phase, feedback, onAnswer, progress, r
                 </div>
             </div>
             <div className="pr-panel">
-                <p className={`pr-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{before}<span className="pr-sign-answer">{formatMathNumber(Number(feedback.expected))}</span>{after}</>
-                        : question.text}
-                </p>
+                <SpelSignBox className={`pr-sign${flash ? ' is-solved' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="pr-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
             </div>
         </div>

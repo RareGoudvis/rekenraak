@@ -1,8 +1,8 @@
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { SpelChoiceView, SpelVisual as Visual } from './content/pack';
-import { answerTextOf, formatSpelNumber, isOperator, rijFoldOf, rijText, signChunks, viewOfValue, type AnswerContext } from './spelFormat';
-import { useSpelStore } from './useSpelStore';
-import { faceText } from './spelChoice';
+import { answerTextOf, formatSpelNumber, isOperator, rijFoldOf, rijText, signChunks, signFitOf, viewOfValue } from './spelFormat';
+import { faceText, signClass } from './spelChoice';
+import { useAnswerContext, type SignContextProps } from './signContext';
 import KlokFace, { DigitaalFace } from './content/klok/KlokFace';
 import BreukPicture from './content/breuken/BreukPicture';
 import './spelVisual.css';
@@ -62,8 +62,8 @@ const isWord = (w: string) => /\p{L}/u.test(w) && !/[\d€×÷]|^\?/.test(w);
  * A question line that wraps only between words (never inside "7 + 5 = ?" or "€ 7,50"), with `slot` in place of its
  * answer's "?" (no slot: the "?" itself). The end screen's table, the help and every sign use it.
  */
-export function SpelLine({ text, slot }: { text: string; slot?: ReactNode }): ReactNode {
-    const chunks = signChunks(text);
+export function SpelLine({ text, slot, breakAtRelation = false }: { text: string; slot?: ReactNode; breakAtRelation?: boolean }): ReactNode {
+    const chunks = signChunks(text, breakAtRelation);
     const slotAt = (c: string) => c.split('\u00A0').findIndex(w => /^\?[.,:;!)]*$/.test(w));
     const slotChunk = slot === undefined ? -1 : chunks.findIndex(c => slotAt(c) >= 0);
     // A ? glued to a word ("2/3?4/5"): the answer simply takes its place.
@@ -97,33 +97,44 @@ export function SpelQuestionLine({ question }: { question: { text: string; visua
     return <>{v && <span className={`spel-end-pic is-${v.kind}`}><SpelVisual visual={v} /></span>}<SpelLine text={question.text} /></>;
 }
 
-interface SignProps {
-    question: { text: string; visual?: Visual; key?: string };
-    feedback: { expected: string } | null;
+interface SignProps extends SignContextProps {
     // right / wrong: the sign shows the right answer.
     flash: boolean;
-    // A choice skin's options and how they look; a keypad skin leaves them out (the session's question knows them).
-    choices?: readonly string[] | null;
-    views?: readonly SpelChoiceView[] | null;
     // The skin's class for the answer on the sign (bal-sign-answer).
     answerClassName: string;
 }
 
 /** The sign's content: the sum ("7 + 5 = ?", the answer in place of ? after a tap), a row of tiles, or a picture question with its answer. */
-export function SpelSign({ question, feedback, flash, choices, views, answerClassName }: SignProps): ReactNode {
-    const live = useSpelStore(s => s.question);
+export function SpelSign({ question, feedback, flash, choices, views, answerClassName, breakAtRelation }: SignProps): ReactNode {
     // A keypad skin hands no choices: the session's question (the same key) says how its answers read (€ 7,50, −9).
-    const ctx: AnswerContext = choices ? { text: question.text, choices, views }
-        : live && question.key !== undefined && live.key === question.key ? live : { text: question.text, choices: [] };
+    const ctx = useAnswerContext(question, choices, views);
     const shown = flash && feedback ? feedback.expected : null;
     const view = shown === null ? undefined : viewOfValue(ctx, shown);
     const answer = shown === null ? undefined : <span className={answerClassName}><SpelText text={answerTextOf(ctx, shown)} /></span>;
     if (question.visual?.kind === 'rij') return <SpelRij items={question.visual.items} answer={answer} />;
     const pic = question.visual && <span className={`spel-sign-pic is-${question.visual.kind}`}><SpelVisual visual={question.visual} /></span>;
-    const line = (slot?: ReactNode) => <SpelLine text={question.text} slot={slot} />;
+    const line = (slot?: ReactNode) => <SpelLine text={question.text} slot={slot} breakAtRelation={breakAtRelation} />;
     if (shown === null) return pic ? <>{pic}<span className="spel-sign-text">{line()}</span></> : line();
     // A picture answer joins the question; a text answer takes the place of the prompt beside a picture (or of the ?).
     if (view?.visual) return <>{pic}<span className="spel-sign-text">{line()}</span><span className={`${answerClassName} spel-sign-pic is-${view.visual.kind}`}><SpelVisual visual={view.visual} /></span></>;
     if (pic) return <>{pic}<span className={`${answerClassName} spel-sign-text`}><SpelText text={answerTextOf(ctx, shown)} /></span></>;
     return line(answer);
+}
+
+/**
+ * A keypad skin's whole sign: the skin's own sign class (border, colours) on a line that stays inside its column at any
+ * screen, its font fitted to the longest line (the sum with its answer, the rij of tiles); a sentence wraps between words.
+ * answer = the right answer when the skin knows it without the session (a duel), so the size never jumps on the flash.
+ */
+export function SpelSignBox({ className, answer, ...sign }: SignProps & { className: string; answer?: string }): ReactNode {
+    const ctx = useAnswerContext(sign.question, sign.choices, sign.views);
+    const right = answer ?? ctx.answer ?? (sign.feedback ? sign.feedback.expected : undefined);
+    const fit = signFitOf(sign.question, right === undefined ? '' : answerTextOf(ctx, right), sign.breakAtRelation);
+    return (
+        <div className="spel-sign-box">
+            <p className={`${className} kiosk-math spel-sign-fit${fit.wrap ? ' is-wrap' : ''}${signClass(sign.question)}`} style={{ '--sign-chars': fit.chars } as CSSProperties} aria-live="polite">
+                <SpelSign {...sign} />
+            </p>
+        </div>
+    );
 }

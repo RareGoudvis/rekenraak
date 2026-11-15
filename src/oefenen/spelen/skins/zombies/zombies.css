@@ -340,6 +340,11 @@
   white-space: nowrap;
   box-shadow: 0 4px 0 var(--spel-ink);
 }
+.zb-sign.is-front {
+  /* The widest the front sign gets, and its font fitted to its longest line (useSignChars); spelen.css does the same for long lines. */
+  --zb-sign-w: min(50vw, 260px);
+  font-size: max(13px, min(clamp(22px, calc(var(--zb-w) * .26), 40px), calc((var(--zb-sign-w) - 2 * var(--sp-3) - 2 * var(--spel-line)) / (var(--sign-chars, 10) * .62))));
+}
 .zb-sign:not(.is-front) { min-width: calc(var(--zb-w) * .34); padding: 0 var(--sp-2); font-size: var(--zb-q); text-align: center; color: var(--text-muted); box-shadow: none; }
 .zb-sign-answer {
   display: inline-block;

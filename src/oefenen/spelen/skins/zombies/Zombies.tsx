@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSign } from '../../SpelVisual';
+import { useSignChars } from '../../signContext';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker } from './walk';
@@ -448,9 +449,10 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
         return () => cancelAnimationFrame(raf);
     }, []);
 
+    // The front sign's longest line (a long sum breaks before its "="): its font fits the sign's width (zombies.css).
+    const signChars = useSignChars({ question, feedback, breakAtRelation: true });
     if (!question) return <div className="zb-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
 
     return (
         <div data-niveau={level} className={`zb-root is-${level === 'moeilijk' ? 'moeilijk' : 'normaal'}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--zb-hit': `${reducedMotion ? 0 : DART_MS}ms` } as CSSProperties}>
@@ -469,10 +471,8 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                                     <div className="zb-body">
                                         <div className="zb-held">
                                             <div className="zb-plate">
-                                                <p className={`zb-sign kiosk-math${front ? ' is-front' : ''}`} aria-live={front ? 'polite' : undefined} aria-hidden={!front}>
-                                                    {!front ? '?'
-                                                        : flash && feedback ? <>{lhs}<span className="zb-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                                                        : question.text}
+                                                <p className={`zb-sign kiosk-math${front ? ' is-front' : ''}`} style={front ? { '--sign-chars': signChars } as CSSProperties : undefined} aria-live={front ? 'polite' : undefined} aria-hidden={!front}>
+                                                    {!front ? '?' : <SpelSign question={question} feedback={feedback} flash={flash} answerClassName="zb-sign-answer" breakAtRelation />}
                                                 </p>
                                             </div>
                                             <span className="zb-pole" aria-hidden />

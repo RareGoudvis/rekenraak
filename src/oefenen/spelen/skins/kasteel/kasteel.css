@@ -245,7 +245,8 @@
 }
 
 /* ── 2 players: the castles on top, the halves below (Touwtrekken's) ────── */
-.ks-duel-stage { grid-template-rows: minmax(150px, 44%) minmax(0, 1fr); }
+/* 40 %: the halves keep room for a sign of three lines (a leerjaar 6 tekst question) above the whole keypad. */
+.ks-duel-stage { grid-template-rows: minmax(150px, 40%) minmax(0, 1fr); }
 /* The field stays in its band: the halves below get no grass over them. */
 .ks-duel-world { overflow: hidden; overflow: clip; }
 .tt-end-scores .ks-end-lives { font-size: var(--kiosk-text-lg); }
