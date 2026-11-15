@@ -7,7 +7,7 @@ import './mollen.css';
 
 // Mollen meppen: six holes in a garden; moles pop up for a moment, each with a number. Tap (or 1–6) the
 // mole with the answer: a squeaky toy hammer bonks it and it sees stars. A wrong mole is a wrong answer
-// (the sign shows the right one). Two minutes; the moles get a little quicker with the streak. Game time
+// (the sign shows the right one) and it taunts: tongue out, a little dance, "Nana!", then it ducks. Two minutes; the moles get a little quicker with the streak. Game time
 // only runs while the sum waits, so "Hoe los ik dit op?" and the flashes freeze every mole.
 
 type HoleView = ReturnType<typeof viewOf>[number];
@@ -27,6 +27,8 @@ function MoleArt() {
             <ellipse className="ml-snout" cx="50" cy="54" rx="16" ry="11" />
             <ellipse className="ml-nose" cx="50" cy="49" rx="7" ry="5" />
             <path className="ml-tooth" d="M45 63 L45 70 L50 70 L50 63 M50 63 L50 70 L55 70 L55 63" />
+            {/* Shown only while the mole taunts (is-nope): a cheeky tongue out of the corner of the mouth, above the number. */}
+            <path className="ml-tongue" d="M50 60 Q66 55 76 61 Q82 69 75 73 Q66 75 52 67 Z M62 61 L67 68" />
             <ellipse className="ml-paw" cx="20" cy="104" rx="12" ry="7" />
             <ellipse className="ml-paw" cx="80" cy="104" rx="12" ry="7" />
         </svg>
@@ -146,7 +148,7 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
                                 </button>
                             </div>
                             <span className="ml-rim" aria-hidden />
-                            <span className="ml-key" aria-hidden>{h + 1}</span>
+                            {state === ' is-nope' && <span className="ml-bubble" aria-hidden>Nana!</span>}
                             {mine && phase === 'right' && !reducedMotion && (
                                 <>
                                     <Hammer />

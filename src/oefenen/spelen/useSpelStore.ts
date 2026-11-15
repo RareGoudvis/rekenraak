@@ -14,6 +14,7 @@ import { reviewOf } from './review';
 import { kioskAnswerOf, spelChoiceOf, spelQuestionOf, type SpelQuestion } from './spelQuestion';
 import type { SkinMeta, SkinProgress, SkinResult } from './skins/types';
 import { boardOpenHelp, boardPickIn, nextBoardOf, type SpelBoard } from './board/session';
+import { penalise } from './skins/bom/penalty';
 
 // The Spelen session: a round of one Zelf oefenen choice behind a game skin. Runtime only: never in a
 // link, a session hash or the device stats. One try per question, no steps during play, no lives
@@ -169,7 +170,10 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         // The climb: met hulp still builds (asking is fine), only a counted mistake takes a block off.
         const drop = counts && !st.meta?.round.goalKeep;
         const climb = correct ? st.climb + 1 : drop ? Math.max(0, st.climb - 1) : st.climb;
+        // A skin may charge time for a counted mistake (Bom: 3 s).
+        const cost = counts && !correct ? st.meta?.round.wrongPenaltyMs : undefined;
         set({
+            ...(cost && penalise({ endsAt: st.endsAt, pausedLeft: st.pausedLeft }, cost, now)),
             history, streak, bestStreak: Math.max(st.bestStreak, streak), climb, misses: st.misses + (missed ? 1 : 0),
             score: st.score + (counts && correct ? 1 : 0),
             mistakes: counts && !correct ? [...st.mistakes, { question: q, given }] : st.mistakes,

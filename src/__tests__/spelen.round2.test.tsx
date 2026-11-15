@@ -61,9 +61,9 @@ describe('Pre-start options', () => {
     test('only Bom, Bever, Zombies, Voetbal and Kasteel have options; picks patch the round, unknown picks fall back to the default', () => {
         expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel'].includes(s.meta.id))).toEqual([]);
         const bom = meta('bom');
-        expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true });
+        expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: 3000 });
         const big = resolveMeta(bom, { tijd: '5', doel: '50' });
-        expect(big.round).toEqual({ seconds: 300, goal: 50, goalKeep: true });
+        expect(big.round).toEqual({ seconds: 300, goal: 50, goalKeep: true, wrongPenaltyMs: 3000 });
         expect(big.chosen).toEqual({ tijd: '5', doel: '50' });
         expect(choicesOf(bom, { tijd: '7', doel: 'x' })).toEqual({ tijd: '3', doel: '10' });
         // A skin without options is passed through untouched.
@@ -170,6 +170,24 @@ describe('Bom', () => {
         expect(sp().history).toHaveLength(13);
         render(<SpelEnd />);
         expect(screen.getByRole('heading', { name: 'Ontmanteld!' })).toBeTruthy();
+    });
+
+    test('a counted wrong answer costs 3 s on the 3 and the 5 minute round, a right one or a helped one nothing', () => {
+        for (const tijd of ['3', '5']) {
+            const t0 = 1_000_000;
+            sp().start(startWith(resolveMeta(meta('bom'), { tijd, doel: '10' }), t0));
+            const end0 = sp().endsAt!;
+            sp().answer(wrongOf(sp().question!.answer), t0 + 1000);
+            expect(sp().endsAt).toBe(end0 - 3000);
+            sp().next(t0 + 2000);
+            sp().answer(sp().question!.answer, t0 + 3000);
+            expect(sp().endsAt).toBe(end0 - 3000);
+            sp().next(t0 + 4000);
+            sp().openHelp(t0 + 5000);
+            sp().closeHelp(t0 + 6000);
+            sp().answer(wrongOf(sp().question!.answer), t0 + 7000);
+            expect(sp().endsAt! - end0).toBe(1000 - 3000);
+        }
     });
 
     test('time up before N: lost, "Bijna! x van N"; help pauses the clock', () => {
