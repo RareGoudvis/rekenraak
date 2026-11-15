@@ -35,3 +35,11 @@ export function flippedFor(count: number, target: number): number {
     if (count >= target) return TILES;
     return Math.min(TILES - 1, Math.round((count * TILES) / target));
 }
+
+/** The drawn picture shown when a photo cannot load: the one it names, else one chosen steadily by the photo's id. */
+export function fallbackFor(photo: { id: string; fallback?: string }, drawn: readonly string[]): string {
+    if (photo.fallback && drawn.includes(photo.fallback)) return photo.fallback;
+    let h = 0;
+    for (const c of photo.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return drawn[h % drawn.length];
+}

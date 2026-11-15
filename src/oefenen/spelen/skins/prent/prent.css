@@ -48,7 +48,20 @@
 }
 .pr-world { position: relative; min-width: 0; min-height: 0; padding: var(--sp-4); }
 .pr-svg { display: block; width: 100%; height: 100%; }
-.pr-world .pr-svg { position: absolute; inset: var(--sp-4); width: calc(100% - 2 * var(--sp-4)); height: calc(100% - 2 * var(--sp-4)); }
+/* The picture keeps its own shape (a photo's or the drawing's 4:3) at the largest size that fits, the credit right
+   under it; the stage is a size container so the svg can be fitted on both axes. */
+.pr-stage {
+  position: absolute;
+  inset: var(--sp-4);
+  container: pr-stage / size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.pr-stage > * { --pr-cr: 0px; }
+.pr-stage.has-credit > * { --pr-cr: 24px; }
+.pr-stage .pr-svg { flex: none; width: min(100cqw, calc((100cqh - var(--pr-cr)) * var(--pr-ratio))); height: auto; aspect-ratio: var(--pr-ratio); }
 .pr-shadow { fill: var(--spel-ink); }
 .pr-border { fill: none; stroke: var(--spel-ink); stroke-width: 6px; }
 
@@ -61,7 +74,34 @@
 @keyframes pr-cheer { 0% { transform: scale(1); } 40% { transform: scale(1.04); } 100% { transform: scale(1); } }
 
 .pr-ending { background: var(--spel-sky); padding: var(--sp-2); }
-.pr-ending .pr-svg { position: absolute; inset: var(--sp-2); width: calc(100% - 2 * var(--sp-2)); height: calc(100% - 2 * var(--sp-2)); animation: pr-pop 600ms var(--ease-spring) both; }
+.pr-ending .pr-stage { inset: var(--sp-2); }
+.pr-ending .pr-svg { animation: pr-pop 600ms var(--ease-spring) both; }
+/* A photo deserves a bigger end picture than the shared ending strip. */
+.pr-ending.is-photo { height: clamp(170px, 36vh, 340px); }
+
+/* ── Photos: a line under the picture credits the photographer (in the game only once it is whole) ── */
+.pr-photo-wait { fill: var(--pr-tile-0); stroke: none; }
+.pr-credit {
+  flex: none;
+  width: 100%;
+  height: var(--pr-cr);
+  margin: 0;
+  padding-top: 4px;
+  color: var(--kiosk-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  overflow: hidden;
+}
+.pr-world .pr-credit { visibility: hidden; }
+.pr-root.is-done .pr-credit { visibility: visible; animation: pr-fade 600ms var(--ease-out) both; }
+/* A narrow stage (a phone): the credit may take two smaller lines. */
+@container pr-stage (max-width: 420px) {
+  .pr-stage.has-credit > * { --pr-cr: 34px; }
+  .pr-credit { font-size: var(--text-xs); line-height: 14px; }
+}
+@keyframes pr-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pr-pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* ── The sum and the keypad ───────────────────────────────────────────────── */
