@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { CijferExercise } from '../services/math/types';
-import { cijferCheck, cijferKioskGrid, divKioskLayout, divPlan, kioskMulRows } from '../services/cijferen/cijferCells';
+import { cijferFocusOrder, cijferKioskGrid, divKioskLayout, divPlan, kioskMulRows, mulCarries } from '../services/cijferen/cijferCells';
 import { divideToDecimals } from '../services/cijferen/cijferGenerator';
 import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
 import { kioskInteractOf } from '../services/oefenen/kiosk';
@@ -85,27 +85,44 @@ describe('staartdeling on the card', () => {
     });
 });
 
-describe('vermenigvuldigen on the card: onthoudcijfers per multiplier digit', () => {
+describe('vermenigvuldigen on the card: the onthoudcijfers of a row stand right of that row, as the class writes them', () => {
     const mul = (a: number, b: number): CijferExercise => ({ id: 'm', operands: [a, b], operator: 'x', answer: a * b, remainder: 0, isManuallyEdited: false, decimalPlaces: 0 });
 
-    test('457 × 386: three carry rows, the units digit nearest the multiplicand', () => {
-        const ex = mul(457, 386);
-        const rows = kioskMulRows(ex, 0);
-        expect([...rows.carryRowOf]).toEqual([[0, 3], [1, 2], [2, 1]]);
-        expect(rows.multiplicand).toBe(4);
-        const chk = cijferCheck(ex, 0, true);
-        const w = Object.fromEntries(chk.parts.flatMap((p, i) => ('cell' in p ? [[p.cell, chk.wants[i]]] : [])));
-        // × 6: 7·6 = 42 (carry 4), 5·6 + 4 = 34 (carry 3); × 8: 56 (5), 40 + 5 = 45 (4); × 3: 21 (2), 15 + 2 = 17 (1).
-        const carries = Object.keys(w).filter(k => k.startsWith('c'));
-        expect(carries.map(k => `${k}=${w[k]}`)).toEqual(['c0_4=4', 'c0_3=3', 'c1_4=5', 'c1_3=4', 'c2_4=2', 'c2_3=1']);
-    });
-
-    test('× 1 and × 0 get no carry row; the carry cells still check strictly', () => {
-        const ex = mul(1354, 103);
-        expect([...kioskMulRows(ex, 0).carryRowOf.keys()]).toEqual([0]);
+    // The keypad's path: per row right to left, a product digit then the carry its step makes; then the sum.
+    test.each<[number, number, string[]]>([
+        // 8 × 4 = 32 → 2, carry 3; 8 × 2 + 3 = 19 → 9, carry 1; 8 × 1 + 1 = 9. Then × 10 with its 0, then the sum.
+        [124, 18, ['p0_3', 'c0_0', 'p0_2', 'c0_1', 'p0_1', 'p0_0', 'p1_3', 'p1_2', 'p1_1', 'p1_0', 'a3', 'a2', 'a1', 'a0']],
+        // × 1 never carries; × 2: 3·2, 6·2 = 12 (carry 1), 3·2 + 1, 3·2.
+        [3363, 21, ['p0_4', 'p0_3', 'p0_2', 'p0_1', 'p0_0', 'p1_4', 'p1_3', 'p1_2', 'c1_0', 'p1_1', 'p1_0', 'a4', 'a3', 'a2', 'a1', 'a0']],
+        // × 3: 12 (1), 15 + 1 = 16 (1), 9 + 1 = 10 (1), 3 + 1; × 1 none.
+        [1354, 13, ['p0_4', 'c0_0', 'p0_3', 'c0_1', 'p0_2', 'c0_2', 'p0_1', 'p0_0', 'p1_4', 'p1_3', 'p1_2', 'p1_1', 'p1_0', 'a4', 'a3', 'a2', 'a1', 'a0']],
+        // × 1 none; × 9: 72 (7), 18 + 7 = 25 (2), 18 + 2; × 9 again the same.
+        [228, 991, ['p0_5', 'p0_4', 'p0_3', 'p0_2', 'p0_1', 'p0_0', 'p1_5', 'p1_4', 'c1_0', 'p1_3', 'c1_1', 'p1_2', 'p1_1', 'p1_0', 'p2_5', 'p2_4', 'p2_3', 'c2_0', 'p2_2', 'c2_1', 'p2_1', 'p2_0', 'a5', 'a4', 'a3', 'a2', 'a1', 'a0']],
+    ])('%i × %i: focus order', (a, b, order) => {
+        const ex = mul(a, b);
+        expect(cijferFocusOrder(ex, 0)).toEqual(order);
+        // No carry before its row starts: each carry comes right after a digit of its own row.
+        order.forEach((k, i) => { if (k.startsWith('c')) expect(order[i - 1].startsWith(`p${k.slice(1).split('_')[0]}_`)).toBe(true); });
+        // The carries sit on their row's line, right of the E column, first carry first.
+        const cells = cijferKioskGrid(ex, 0).cells;
+        const at = (k: string) => cells.find(c => c.key === k)!;
+        const e = Math.max(...cells.filter(c => c.role === 'digit').map(c => c.col));
+        cells.filter(c => c.role === 'carry').forEach(c => {
+            expect(c.row).toBe(at(`p${c.key.slice(1).split('_')[0]}_0`).row);
+            expect(c.col).toBeGreaterThan(e);
+        });
+        // Right with the carries, fout without any one of them.
         const keys = kioskInteractOf(d, cOf(ex))!.keys!(ex, cOf(ex));
         const { answer, scratch } = cijferFill(ex, keys);
         expect(ok(ex, { ...answer, ...scratch })).toBe(true);
-        expect(ok(ex, answer)).toBe(false);
+        for (const k of Object.keys(scratch)) expect(ok(ex, { ...answer, ...scratch, [k]: '' }), k).toBe(false);
+    });
+
+    test('124 × 18: the carries are 3 then 1, exactly as many cells as the row carries', () => {
+        expect(mulCarries(mul(124, 18), 0, 0)).toEqual([{ from: 0, value: 3 }, { from: 1, value: 1 }]);
+        expect(mulCarries(mul(124, 18), 0, 1)).toEqual([]);
+        // The last step's carry is written into the product (9 × 124: 9 + 2 = 11), never a cell.
+        expect(mulCarries(mul(124, 9), 0, 0)).toEqual([{ from: 0, value: 3 }, { from: 1, value: 2 }]);
+        expect(kioskMulRows(mul(124, 18), 0)).toMatchObject({ multiplicand: 1, multiplier: 2, ppStart: 3 });
     });
 });

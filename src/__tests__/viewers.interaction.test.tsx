@@ -421,35 +421,31 @@ describe('kiosk flow: answer on the card', () => {
         expect(err.expected).toBe('187 r 0');
     });
 
-    test('cijferen vermenigvuldigen: a carry row per multiplier digit, written while the partial product is typed', () => {
+    test('cijferen vermenigvuldigen: 124 × 18 as the class writes it, each carry right of its row, typed after its digit', () => {
         st().load(hashOf(starterSessie({ types: [leafType('cijferen-vermenigvuldigen-nat')] })));
         st().start();
-        // 1354 × 13 (the owner's card): × 3 carries 1, 1, 1; × 1 never carries, so it gets no row.
-        const exercise: CijferExercise = { id: 'm', operands: [1354, 13], operator: 'x', answer: 17602, remainder: 0, decimalPlaces: 0, isManuallyEdited: false };
-        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'p0_4' }); });
+        const exercise: CijferExercise = { id: 'm', operands: [124, 18], operator: 'x', answer: 2232, remainder: 0, decimalPlaces: 0, isManuallyEdited: false };
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'p0_3' }); });
         const { container } = render(<OefenApp />);
-        const keys = kioskFor('cijferen-vermenigvuldigen-nat')!.interact!.keys!(exercise, st().shown!.constraints);
-        expect(keys.slice(0, 8)).toEqual(['p0_4', 'c0_3', 'p0_3', 'c0_2', 'p0_2', 'c0_1', 'p0_1', 'p0_0']);
-        expect(keys.filter(k => k.startsWith('c'))).toEqual(['c0_3', 'c0_2', 'c0_1']);
-        // The carry row is named by its digit, right of the E column, level with its carries.
-        expect(container.querySelector('.kiosk-card-inner')!.textContent).toContain('×3');
         const cell = (k: string) => cellInputs(container).get(k)!;
-        const name = [...container.querySelectorAll<HTMLElement>('.kiosk-card-inner div')].find(el => el.textContent === '×3')!;
-        expect(parseFloat(name.style.left)).toBeGreaterThan(parseFloat(cell('a0').style.left));
-        expect(name.style.top).toBe(cell('c0_3').style.top);
-        expect(cell('c0_3').getAttribute('aria-label')).toBe('Onthouden 1 tientallen');
-        const right = { p0_4: '2', p0_3: '6', p0_2: '0', p0_1: '4', p1_3: '4', p1_2: '5', p1_1: '3', p1_0: '1', a4: '2', a3: '0', a2: '6', a1: '7', a0: '1' };
-        const carries = { c0_3: '1', c0_2: '1', c0_1: '1' };
-        // The keypad hands on along the product row; carries are tapped (off the Enter path).
-        st().press('2');
-        expect(st().activeCell).toBe('p0_3');
-        st().setInteraction({ ...EMPTY_INTERACTION, cells: { ...right, ...carries } });
-        st().answer();
+        // The carries 3 and 1 stand on the × 8 row's line, right of the E column, first carry first.
+        expect(cell('c0_0').style.top).toBe(cell('p0_3').style.top);
+        expect(parseFloat(cell('c0_0').style.left)).toBeGreaterThan(parseFloat(cell('p0_3').style.left));
+        expect(parseFloat(cell('c0_1').style.left)).toBeGreaterThan(parseFloat(cell('c0_0').style.left));
+        expect(cell('c0_0').getAttribute('aria-label')).toBe('Onthouden rij 1, 1');
+        // The keypad walks it as a pupil works: 2, carry 3, 9, carry 1, 9; then × 10 with its 0; then the sum.
+        const press = (k: string, v: string) => { expect(st().activeCell).toBe(k); st().press(v); };
+        press('p0_3', '2'); press('c0_0', '3'); press('p0_2', '9'); press('c0_1', '1'); press('p0_1', '9');
+        expect(st().activeCell).toBe('p0_0');
+        fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+        press('p1_3', '0'); press('p1_2', '4'); press('p1_1', '2'); press('p1_0', '1');
+        press('a3', '2'); press('a2', '3'); press('a1', '2'); press('a0', '2');
+        fireEvent.keyDown(activeInput(container), { key: 'Enter' });
         expect(st().lastCorrect).toBe(true);
         // A needed carry left blank is fout, like a sum's (owner rule).
         st().next();
-        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'p0_4' }); });
-        st().setInteraction({ ...EMPTY_INTERACTION, cells: { ...right, ...carries, c0_2: '' } });
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'p0_3' }); });
+        st().setInteraction({ ...EMPTY_INTERACTION, cells: { p0_3: '2', c0_0: '3', p0_2: '9', p0_1: '9', p1_3: '0', p1_2: '4', p1_1: '2', p1_0: '1', a3: '2', a2: '3', a1: '2', a0: '2' } });
         st().answer();
         expect(st().lastCorrect).toBe(false);
     });

@@ -184,12 +184,13 @@ describe('cijfer cells have a name per role and column', () => {
 
     test('vermenigvuldigen: one-digit multiplier carries, multi-digit partial products', () => {
         expect(labelsOf('cijferen-vermenigvuldigen-nat', ex('x', [123, 4], 492))).toEqual([
-            'Antwoord eenheden', 'Onthouden tientallen', 'Antwoord tientallen', 'Onthouden honderdtallen', 'Antwoord honderdtallen',
+            'Antwoord eenheden', 'Onthouden 1', 'Antwoord tientallen', 'Antwoord honderdtallen',
         ]);
         const many = labelsOf('cijferen-vermenigvuldigen-nat', ex('x', [123, 45], 5535));
         expect(many).toContain('Deelproduct 1 eenheden');
         expect(many).toContain('Deelproduct 2 duizendtallen');
         expect(many.at(-1)).toBe('Antwoord duizendtallen');
+        expect(many).toContain('Onthouden rij 1, 1');
     });
 
     test('delen: per step the quotient digit, its product and difference, the digit brought down; then the rest', () => {

@@ -6,7 +6,7 @@ import { PLACE_VALUES } from '../math/mathEngine';
 // Oefenmodus (Phase C2): the ruitjes of a cijfer grid the pupil fills on the kiosk card.
 // CijferViewer draws a KioskCell at every cell's (row, col); the kiosk descriptor checks them.
 // Rows and columns are the KIOSK grid's: the card draws one free row above a subtraction (the
-// sheet two), one carry row per multiplier digit that can carry (the sheet one free row), no
+// sheet two), none above a multiplication (its carries stand right of each product row), no
 // empty partial-product row under a one-digit multiplier, and in a staartdeling exactly the
 // product and difference rows of its steps, so the grid is as large as the card allows.
 
@@ -40,21 +40,34 @@ export const KIOSK_CARRY_ROW = 1;
 export const KIOSK_FIRST_OPERAND_ROW = 2;
 export const KIOSK_QUOTIENT_ROW = 1;
 
-/** The kiosk multiplication grid's rows: a carry row above the multiplicand for every multiplier
- *  digit of 2 or more (× 0 and × 1 never carry), the units digit's row nearest the multiplicand,
- *  as a pupil writes each new row of onthoudcijfers above the last; partial products only for a
- *  multi-digit multiplier (a one-digit product is the answer row). */
-// SYNC: CijferViewer MultiplicationGrid draws these rows and names each carry row ("×3", "×90").
+/** The kiosk multiplication grid's rows: no free row above the multiplicand, partial products only
+ *  for a multi-digit multiplier (a one-digit product is the answer row). */
+// SYNC: CijferViewer MultiplicationGrid draws these rows in its kiosk branch.
 export function kioskMulRows(ex: CijferExercise, dp: number) {
-    const { n, multiplierDigits } = mulLayout(ex, dp);
-    const carrying = multiplierDigits.flatMap((d, r) => (Number(d) >= 2 ? [r] : []));
-    // Multiplier digit index (units first) → its carry row.
-    const carryRowOf = new Map(carrying.map((r, i) => [r, carrying.length - i]));
-    const top = carrying.length;
+    const { n } = mulLayout(ex, dp);
     const ppRows = n >= 2 ? n : 0;
-    const ppStart = 3 + top;
-    return { carryRowOf, multiplicand: 1 + top, multiplier: 2 + top, ppStart, ppRows, answer: ppStart + ppRows };
+    return { multiplicand: 1, multiplier: 2, ppStart: 3, ppRows, answer: 3 + ppRows };
 }
+
+/** The onthoudcijfers of the product by multiplier digit r (units first), in the order they happen:
+ *  `from` = the multiplicand place whose step makes it. Only real carries: the last step's carry is
+ *  written straight into the product, so it is none. */
+export function mulCarries(ex: CijferExercise, dp: number, r: number): Array<{ from: number; value: number }> {
+    const { scaledMultiplicand, multiplierDigits } = mulLayout(ex, dp);
+    const m = Number(multiplierDigits[r]);
+    const mc = String(scaledMultiplicand).split('').reverse().map(Number);
+    const out: Array<{ from: number; value: number }> = [];
+    let carry = 0;
+    mc.forEach((d, p) => {
+        carry = Math.floor((d * m + carry) / 10);
+        if (p < mc.length - 1 && carry > 0) out.push({ from: p, value: carry });
+    });
+    return out;
+}
+
+// Owner's class method (2026-11-15): a row's onthoudcijfers stand to the RIGHT of the grid on that
+// row's own line, first carry first, half a ruitje clear of the E column.
+export const MUL_CARRY_GAP = 0.5;
 
 export interface CijferKioskGrid {
     cells: CijferCell[];
@@ -200,21 +213,18 @@ export function cijferKioskGrid(ex: CijferExercise, dp: number): CijferKioskGrid
         return { cells, answerRow: KIOSK_QUOTIENT_ROW };
     }
     if (ex.operator === 'x') {
-        const { digitCols, tdp, n, scaledMultiplicand } = mulLayout(ex, dp);
+        const { digitCols, tdp, n } = mulLayout(ex, dp);
         const unitsCol = digitCols - tdp;
-        const { ppStart, ppRows: pp, answer: answerRow, carryRowOf } = kioskMulRows(ex, dp);
-        const mcLen = String(scaledMultiplicand).length;
-        // A product row right to left; after each digit, the carry it makes above the next multiplicand
-        // digit (multiplicand place p + 1 sits in digit column digitCols - 2 - p).
+        const { ppStart, ppRows: pp, answer: answerRow } = kioskMulRows(ex, dp);
+        // A product row right to left; after the digit of a step that carries, that carry in the row's
+        // own carry cells right of the grid (the digit of multiplicand place p sits in column digitCols - 1 - r - p).
         // SYNC: CijferViewer MultiplicationGrid's key draws partialProducts[r] in row ppStart + r.
         const productRow = (r: number, key: (col: number) => string, role: CijferCellRole, row: number) => {
-            const carryRow = carryRowOf.get(r);
+            const carries = mulCarries(ex, dp, r);
             for (let col = digitCols - 1; col >= 0; col--) {
                 add(key(col), role, row, col + 1, unitsCol, role === 'pp' ? r : undefined);
-                const p = digitCols - 1 - r - col;
-                if (carryRow !== undefined && p >= 0 && p + 1 < mcLen) {
-                    add(n === 1 ? `c${digitCols - 2 - p}` : `c${r}_${digitCols - 2 - p}`, 'carry', carryRow, digitCols - 1 - p, unitsCol, n === 1 ? undefined : r);
-                }
+                const i = carries.findIndex(c => c.from === digitCols - 1 - r - col);
+                if (i >= 0) cells.push({ key: `c${r}_${i}`, role: 'carry', row, col: digitCols + 1 + MUL_CARRY_GAP + i, label: n === 1 ? `Onthouden ${i + 1}` : `Onthouden rij ${r + 1}, ${i + 1}` });
             }
         };
         // Row r holds the product by multiplier digit r from the units (checked in any order).
@@ -234,6 +244,18 @@ export function cijferKioskGrid(ex: CijferExercise, dp: number): CijferKioskGrid
         if (ex.operator === '+' && col > 0) add(`c${col - 1}`, 'carry', KIOSK_CARRY_ROW, col, unitsCol);
     }
     return { cells, answerRow };
+}
+
+/** Whether a cell is off the keypad's path (tapped, skipped by Enter and auto-advance): an addition's
+ *  carries and a subtraction's exchanged digits. A multiplication's carries are ON the path: the
+ *  pupil writes the product digit, then the carry that step makes (right of the row). */
+export function cijferScratch(ex: CijferExercise, key: string): boolean {
+    return key[0] === 'b' || (key[0] === 'c' && ex.operator !== 'x');
+}
+
+/** The order the keypad and Enter walk the card's cells (the key order without the scratch cells). */
+export function cijferFocusOrder(ex: CijferExercise, dp: number): string[] {
+    return cijferKioskGrid(ex, dp).cells.map(c => c.key).filter(k => !cijferScratch(ex, k));
 }
 
 // ── Checking ─────────────────────────────────────────────────────────────────
@@ -333,25 +355,21 @@ export function cijferCheck(ex: CijferExercise, dp: number, strictCarries: boole
         };
     }
     if (ex.operator === 'x') {
-        const { digitCols, tdp, partialProducts, scaledMultiplicand, multiplierDigits } = mulLayout(ex, dp);
+        const { digitCols, tdp, partialProducts } = mulLayout(ex, dp);
         const maxInt = digitCols - tdp;
         const answer = digitWants(ex.answer, tdp, maxInt);
-        const { carryRowOf, ppRows: ppCount } = kioskMulRows(ex, dp);
-        // Per carry row: the carry into each multiplicand place, units first.
-        const mc = String(scaledMultiplicand).split('').reverse().map(Number);
-        const carryInto = new Map([...carryRowOf].map(([r, row]) => {
-            const m = Number(multiplierDigits[r]);
-            const into: number[] = [0];
-            mc.forEach((d, p) => into.push(Math.floor((d * m + into[p]) / 10)));
-            return [row, into];
-        }));
+        const { ppRows: ppCount } = kioskMulRows(ex, dp);
+        // c<r>_<i>: the i-th carry of multiplier digit r.
+        const carryOf = (key: string) => {
+            const [r, i] = key.slice(1).split('_').map(Number);
+            return mulCarries(ex, dp, r)[i]?.value ?? 0;
+        };
         const carryCells = cells.filter(c => c.role === 'carry');
         const ppRows = Array.from({ length: ppCount }, (_, r) => cells.filter(c => c.key.startsWith(`p${r}_`)).map(c => c.key).reverse());
         const answerCells = Array.from({ length: digitCols }, (_, col) => `a${col}`);
         return {
             wants: [
-                // The cell over grid column col holds the carry into multiplicand place digitCols - col.
-                ...carryCells.map(c => carryWant(carryInto.get(c.row)?.[digitCols - c.col] ?? 0, strictCarries)),
+                ...carryCells.map(c => carryWant(carryOf(c.key), strictCarries)),
                 ...(ppRows.length ? partialProducts.map(Number).sort((a, b) => a - b).map(String) : []),
                 ...answerCells.map((_, col) => answer[col]),
             ],

@@ -82,14 +82,14 @@ export function cijferFill(ex: CijferExercise, keys: string[]): CijferFill {
         const pps = mDigits.map((d, shift) => String(mc * d * 10 ** shift));
         const ppCells = (order: string[]) => Object.assign({}, ...rows.map((row, r) => rightAlign(keysOf(keys, `${row}_`), order[r])));
         const scratch: Cells = {};
-        // Per multiplier digit: the carry into each multiplicand digit, units first; the cell sits
-        // above that digit (one carry row per digit, c<col> for a one-digit multiplier, c<r>_<col> else).
+        // Per multiplier digit, the carries in the order they happen (c<r>_<i>, right of that row);
+        // the last step's carry goes straight into the product.
         mDigits.forEach((m, r) => {
-            let carry = 0;
-            String(mc).split('').reverse().map(Number).forEach((d, p) => {
-                const key = mDigits.length === 1 ? `c${D - 1 - p}` : `c${r}_${D - 1 - p}`;
-                if (p > 0 && keys.includes(key)) scratch[key] = carry ? String(carry) : '';
+            let carry = 0, i = 0;
+            const digits = String(mc).split('').reverse().map(Number);
+            digits.forEach((d, p) => {
                 carry = Math.floor((d * m + carry) / 10);
+                if (p < digits.length - 1 && carry > 0) scratch[`c${r}_${i++}`] = String(carry);
             });
         });
         return rows.length
