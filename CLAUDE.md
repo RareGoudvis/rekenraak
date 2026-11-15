@@ -34,6 +34,7 @@ npm run font:baseline  # screenshot every sidebar leaf (--out dir --seed); font:
 npm run limits:audit   # full limit diagnosis, out of the gate (env LIMITS_OUT/DUMP/ONLY/SEEDS/COUNT/RANDOM) → summary.json, violations.json, report.md (+ seeded dumps)
 npm run limits:diff    # diff two limits:audit dirs (--before --after --out [--touched]) → report.md/.html
 npm run trigger:shots  # screenshot the repro cases in scripts/limit-trigger-cases.json (font-baseline shape; font:compare diffs two runs)
+npm run spel:thumbs    # Playwright: game + topic thumbnails without a sum → public/spelen/thumbs/ (needs a dev server; --url --only)
 npm run oefen:smoke    # Playwright kiosk smoke: one leaf per input kind × 1280×800 / 1024×768 → index.json + PNGs (needs a dev server; --url --out)
 npm run gate:repro     # Playwright: the gate's breuken walk ×N, exit 1 on a repack-breaker trip (--url --runs --no-shots); the proof a measurement fix holds
 npm run gate           # what the pre-commit hook runs: check + visual gate on the staged files
