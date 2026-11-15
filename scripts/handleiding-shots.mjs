@@ -409,9 +409,7 @@ async function shotsZelf() {
         await settle(p, 500);
         await p.getByRole('button', { name: /Met brug/ }).first().click();
         await settle(p, 500);
-        // The choice, Oefenen of spelen and Hoeveel share one screen (+ and − at leerjaar 1–3 offer Spelen).
-        await p.getByRole('button', { name: 'Oefenen', exact: true }).click();
-        await settle(p, 300);
+        // The choice, Automatiseren (how much) and the games bar share one screen.
         await p.getByRole('button', { name: '5 oefeningen' }).click();
         await settle(p, 300);
         await shot(p, 'zelf-hoeveel');

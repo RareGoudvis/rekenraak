@@ -11,7 +11,7 @@ import { skinById, SKINS } from '../oefenen/spelen/skins/registry';
 import type { SkinMeta, SkinProgress, SkinProps } from '../oefenen/spelen/skins/types';
 import { OPTIONS_KEY, choicesOf, loadChoices, resolveMeta } from '../oefenen/spelen/skins/options';
 import { createSpelEvents } from '../oefenen/spelen/events';
-import GamePicker from '../oefenen/spelen/GamePicker';
+import SpelOptions from '../oefenen/spelen/SpelOptions';
 import SpelEnd from '../oefenen/spelen/SpelEnd';
 import Bom, { BomEnding } from '../oefenen/spelen/skins/bom/Bom';
 import { clockText, fuseLeft, fusePoint, isHurry } from '../oefenen/spelen/skins/bom/fuse';
@@ -72,9 +72,11 @@ describe('Pre-start options', () => {
 
     test('the screen: defaults preselected, one tap on Start; the last pick is remembered per skin', () => {
         const onPick = vi.fn();
-        render(<GamePicker onPick={onPick} />);
-        fireEvent.click(screen.getByRole('button', { name: 'Bom, op tijd' }));
+        const onBack = vi.fn();
+        render(<SpelOptions meta={meta('bom')} onStart={onPick} onBack={onBack} />);
         expect(screen.getByRole('heading', { name: 'Bom' })).toBeTruthy();
+        // The game's picture above its name, as on the game cards.
+        expect(document.querySelector('.spel-options-thumb img')!.getAttribute('src')).toMatch(/thumbs\/bom\.webp$/);
         expect(screen.getByRole('button', { name: '3 minuten' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.getByRole('button', { name: '10 juist' }).getAttribute('aria-pressed')).toBe('true');
         fireEvent.click(screen.getByRole('button', { name: '5 minuten' }));
@@ -84,19 +86,12 @@ describe('Pre-start options', () => {
         expect(onPick).toHaveBeenCalledTimes(1);
         expect(onPick.mock.calls[0][0]).toMatchObject({ id: 'bom', round: { seconds: 300, goal: 20 }, chosen: { tijd: '5', doel: '20' } });
         cleanup();
-        render(<GamePicker onPick={onPick} />);
-        fireEvent.click(screen.getByRole('button', { name: 'Bom, op tijd' }));
+        render(<SpelOptions meta={meta('bom')} onStart={onPick} onBack={onBack} />);
         expect(screen.getByRole('button', { name: '5 minuten' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.getByRole('button', { name: '20 juist' }).getAttribute('aria-pressed')).toBe('true');
-        // Ander spel goes back to the tiles.
+        // Ander spel goes back (to the Keuze screen's games).
         fireEvent.click(screen.getByRole('button', { name: /Ander spel/ }));
-        expect(screen.getByRole('group', { name: 'Kies een spel' })).toBeTruthy();
-        // A skin without options starts at once.
-        cleanup();
-        onPick.mockClear();
-        render(<GamePicker onPick={onPick} />);
-        fireEvent.click(screen.getByRole('button', { name: 'Ballonnen' }));
-        expect(onPick).toHaveBeenCalledWith(meta('ballonnen'));
+        expect(onBack).toHaveBeenCalledTimes(1);
     });
 
     test('broken or blocked storage: the defaults, never a throw', () => {
@@ -242,8 +237,7 @@ describe('Bever', () => {
         expect(meta('bever').canFail).toBe(true);
         localStorage.setItem(OPTIONS_KEY, JSON.stringify({ bom: { tijd: '5', doel: '20' }, bever: { niveau: 'heel moeilijk' } }));
         expect(loadChoices(meta('bever'))).toEqual({ niveau: 'normaal' });
-        render(<GamePicker onPick={vi.fn()} />);
-        fireEvent.click(screen.getByRole('button', { name: 'Bever, op tijd' }));
+        render(<SpelOptions meta={meta('bever')} onStart={vi.fn()} onBack={vi.fn()} />);
         expect(screen.getByRole('button', { name: 'Normaal' }).getAttribute('aria-pressed')).toBe('true');
         fireEvent.click(screen.getByRole('button', { name: 'Moeilijk' }));
         fireEvent.click(screen.getByRole('button', { name: 'Start' }));
