@@ -10,7 +10,8 @@ import type { SheetDnd } from '../../hooks/useSheetDnd';
 import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
 import TutorQr from './TutorQr';
-import { encodeTutorPage } from '../../services/oefenen/tutorPayload';
+import { tutorQrPick } from './tutorQrPick';
+import { encodeTutorPage, tutorPageMarks } from '../../services/oefenen/tutorPayload';
 import { blockHasTutorSteps, exercisesOf, stepsFor } from '../../services/stepsAvailability';
 import EmptySheetHero from './EmptySheetHero';
 import type { MathBlock } from '../../services/math/types';
@@ -92,6 +93,28 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
     () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasTutorSteps(block))),
     [docSettings.tutorQr, packedPages],
   );
+  // Per page: the QR payloads and, per block, which sums the stappenhulp opens with steps ('all' = every one,
+  // a '0101' mask = some, '' = none). Read from the payload the QR really carries, so a mark never promises more.
+  const tutorPages = useMemo(() => {
+    if (!tutorQr) return null;
+    return packedPages.map(page => {
+      const tutorBlocks = page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises: exercisesOf(block) }));
+      const payload = encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade });
+      const lean = encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade: selectedGrade });
+      const pick = tutorQrPick(payload, lean);
+      const marks = new Map<string, string>();
+      if (pick) {
+        tutorPageMarks(tutorBlocks, tutorHasSteps, { greyed: pick === 'full' }).forEach((mask, i) => {
+          if (!mask.some(Boolean)) return;
+          const block = tutorBlocks[i].block;
+          // A hidden title has nowhere to carry the block mark, so its sums carry their own.
+          const titled = block.showInstruction !== false;
+          marks.set(block.id, titled && mask.every(Boolean) ? 'all' : mask.map(m => (m ? '1' : '0')).join(''));
+        });
+      }
+      return { payload, lean, marks };
+    });
+  }, [tutorQr, packedPages, blockOrder, selectedGrade]);
   return (
     <>
       {packedPages.map((page, pi) => (
@@ -136,20 +159,18 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           onFitBlock={fitBlockToPage}
           onSplitBlock={(blockId, anchor) => onOpenSplit(blockId, anchor)}
           header={<SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} continuation={pi > 0} />}
-          footer={tutorQr ? (() => {
-            const tutorBlocks = page.blocks.map(({ block }) => ({ block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises: exercisesOf(block) }));
-            return (
+          footer={tutorPages ? (
               <div className="tutor-qr-foot">
                 <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />
                 <TutorQr
-                  payload={encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade })}
-                  lean={encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade: selectedGrade })}
+                  payload={tutorPages[pi].payload}
+                  lean={tutorPages[pi].lean}
                   caption={docSettings.tutorQrCaption !== false}
                   captionText={docSettings.tutorQrCaptionText}
+                  legend
                 />
               </div>
-            );
-          })() : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
+          ) : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
         >
           {blocks.length === 0 && pi === 0 && (
             <EmptySheetHero />
@@ -199,6 +220,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                 dropNoop={dropZone !== null && dnd.isNoop(item.block.id, dropZone)}
                 showSolutions={showSolutions}
                 docSettings={docSettings}
+                stepsMarks={tutorPages?.[pi].marks.get(item.block.id) ?? ''}
                 blockProps={dnd.blockProps}
                 onFitWidth={fitBlockToWidth}
                 onWiden={widenBlock}

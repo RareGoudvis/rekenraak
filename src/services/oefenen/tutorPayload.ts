@@ -1,6 +1,7 @@
 import type { Equation, MathBlock } from '../math/types';
 import { packText, unpackText } from './packText';
 import { codecById, codecsForType } from '../steps/tutorCodecs';
+import { workedSteps, type StepLine } from '../math/workedSteps';
 
 type ItemNumberingMode = MathBlock['itemNumbering'];
 
@@ -136,23 +137,55 @@ function itemOut(block: MathBlock, ex: unknown, steps: boolean, greyed: boolean)
     return { wire: wire !== 0 && !steps ? [wire] : wire, steps: wire !== 0 && steps };
 }
 
+type TutorPageBlock = { block: MathBlock; n: number | null; title: string; exercises?: unknown[] };
+
+// Each block's wire items, or null for a block the QR leaves out (none of its sums has steps).
+function pageItems(blocks: TutorPageBlock[], hasSteps: (block: MathBlock, ex: unknown) => boolean, greyed: boolean): (unknown[] | null)[] {
+    return blocks.map(({ block, exercises }) => {
+        // Placeholders keep each sum on its printed label (a, b, c ...) even when a neighbour has no steps.
+        const items = (exercises ?? block.exercises ?? []).map(ex => itemOut(block, ex, hasSteps(block, ex), greyed));
+        return items.some(it => it.steps) ? items.map(it => it.wire) : null;
+    });
+}
+
 /** One page's blocks (with their printed opdracht number) → the QR payload, or null when no sum on it has steps.
  *  `exercises` is the block's own list (its registry field); absent = the hoofdrekenen `exercises`.
  *  greyed false leaves the sums without steps out (a 0 each), for a page too full for the QR otherwise. */
 export function encodeTutorPage(
-    blocks: { block: MathBlock; n: number | null; title: string; exercises?: unknown[] }[],
+    blocks: TutorPageBlock[],
     hasSteps: (block: MathBlock, ex: unknown) => boolean,
     { greyed = true, grade }: { greyed?: boolean; grade?: number | null } = {},
 ): string | null {
+    const items = pageItems(blocks, hasSteps, greyed);
     const groups = blocks
-        .map(({ block, n, title, exercises }) => {
-            // Placeholders keep each sum on its printed label (a, b, c ...) even when a neighbour has no steps.
-            const items = (exercises ?? block.exercises ?? []).map(ex => itemOut(block, ex, hasSteps(block, ex), greyed));
-            return items.some(it => it.steps) ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items.map(it => it.wire)] : null;
-        })
+        .map(({ block, n, title }, i) => (items[i] ? [n ?? 0, title.slice(0, MAX_TITLE), block.itemNumbering ?? null, items[i]] : null))
         .filter(g => g !== null);
     const g = grade != null && Number.isInteger(grade) && grade >= 1 && grade <= 6 ? [grade] : [];
     return groups.length ? packText(JSON.stringify([TUTOR_VERSION, groups, ...g])) : null;
+}
+
+// The lines the stappenhulp opens for an item, MAB aside: a sum is worked out on the page itself (a sheet printed
+// before a strategy existed still gains it), a codec type keeps the sheet's own decision (its steps may hang on settings).
+export function tutorStepsOf(item: TutorItem | null): StepLine[] | null {
+    if (!item) return null;
+    if (item.kind === 'sum') return workedSteps(item.eq);
+    return item.steps ? codecById(item.codec)?.steps(item.data) ?? null : null;
+}
+
+/** Per block, per exercise: does the stappenhulp open this one with steps, read from the very items the QR carries. */
+export function tutorPageMarks(
+    blocks: TutorPageBlock[],
+    hasSteps: (block: MathBlock, ex: unknown) => boolean,
+    { greyed = true }: { greyed?: boolean } = {},
+): boolean[][] {
+    return pageItems(blocks, hasSteps, greyed).map((wires, i) => {
+        const count = (blocks[i].exercises ?? blocks[i].block.exercises ?? []).length;
+        if (!wires) return new Array<boolean>(count).fill(false);
+        return wires.map(wire => {
+            // The JSON round trip is the one the QR makes, so the mark reads exactly what the pupil's phone decodes.
+            try { return tutorStepsOf(itemIn(JSON.parse(JSON.stringify(wire)))) !== null; } catch { return false; }
+        });
+    });
 }
 
 const bad = (why: string): never => { throw new Error(`Deze QR-code kan niet gelezen worden (${why}).`); };

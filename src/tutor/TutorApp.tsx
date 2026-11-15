@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, CaretRight, QrCode } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
-import { decodeTutor, TUTOR_HASH_PREFIX, type TutorItem, type TutorSheet } from '../services/oefenen/tutorPayload';
-import { handigSteps, workedSteps, type StepLine } from '../services/math/workedSteps';
+import { decodeTutor, TUTOR_HASH_PREFIX, tutorStepsOf, type TutorItem, type TutorSheet } from '../services/oefenen/tutorPayload';
+import { handigSteps, type StepLine } from '../services/math/workedSteps';
 import { formatMathNumber, opGlyph } from '../services/math/formatters';
 import { itemLabel } from '../components/viewer/itemNumbering';
 import type { Equation } from '../services/math/types';
@@ -59,15 +59,12 @@ function itemSum(item: TutorItem): ReactNode {
     return codec ? <StepTokens tokens={codec.sum(item.data)} fmt={formatMathNumber} /> : '—';
 }
 
-// The lines a tappable item opens; null keeps it greyed (the sheet said no steps, or this page knows none).
+// The lines a tappable item opens; null keeps it greyed. SYNC: the sheet's steps marks read tutorStepsOf too.
 function itemSteps(item: TutorItem | null, grade?: number): StepLine[] | null {
-    if (!item) return null;
-    // A sum is worked out here, not taken from the print: a sheet printed before a strategy existed marked it greyed.
+    const lines = tutorStepsOf(item);
+    if (lines || item?.kind !== 'sum') return lines;
     // A fact without steps (3 + 4) opens the MAB picture alone ([]) for leerjaar 1–3 on a screen big enough for it.
-    if (item.kind === 'sum') return workedSteps(item.eq) ?? (mabAllowed({ grade }) && mabFitsScreen() && mabOnlyApplies(item.eq) ? [] : null);
-    // A codec type keeps the sheet's own decision: its steps may depend on settings the page never sees.
-    if (!item.steps) return null;
-    return codecById(item.codec)?.steps(item.data) ?? null;
+    return mabAllowed({ grade }) && mabFitsScreen() && mabOnlyApplies(item.eq) ? [] : null;
 }
 
 // Any codec type: its steps visual above the lines, question steps (breukvragen) or token steps.
