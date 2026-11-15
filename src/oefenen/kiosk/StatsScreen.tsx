@@ -8,6 +8,7 @@ import { STAR_PATH } from './TopBar';
 import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
 import { isZelfSessie, reviewSessieOf } from '../zelf/zelfSessie';
+import { TUTOR_PAGE, isTutorSessie } from '../../services/oefenen/tutorOefenLink';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie, type OefenSummaryRow } from '../../services/oefenen/types';
 
 // The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
@@ -172,6 +173,8 @@ export default function StatsScreen() {
     const { made, correct } = t;
     const timeUp = run.timerEndsAt !== undefined && (run.stats.finishedAt ?? 0) >= run.timerEndsAt;
     const zelf = isZelfSessie(sessie);
+    // Opened from the stappenhulp ("Nog meer van deze oefening"): the way back is the sheet.
+    const fromSheet = isTutorSessie(sessie);
     // A pupil who chose alone gets the cheer for half or more juist; a teacher's link keeps its plain Klaar!.
     const title = !locked ? 'Resultaten' : timeUp ? 'De tijd is om!' : zelf && made > 0 && correct * 2 >= made ? 'Knap gedaan!' : 'Klaar!';
     const line = made === 0 ? 'Nog geen oefeningen gemaakt.' : scoreText(made, correct, planned);
@@ -207,7 +210,9 @@ export default function StatsScreen() {
                     )}
                     <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
                     <FullscreenExitButton />
-                    {zelf && <button type="button" className={`kiosk-btn${review ? '' : ' kiosk-btn-primary'}`} onClick={() => load('')}>Andere oefening</button>}
+                    {/* tutor.html without a hash reopens the sheet it remembered on this device. */}
+                    {fromSheet && <button type="button" className={`kiosk-btn${review ? '' : ' kiosk-btn-primary'}`} onClick={() => window.location.assign(TUTOR_PAGE)}>Terug naar je blad</button>}
+                    {zelf && <button type="button" className={`kiosk-btn${review || fromSheet ? '' : ' kiosk-btn-primary'}`} onClick={() => load('')}>Andere oefening</button>}
                     {confirmClear ? (
                         <>
                             <button type="button" className="kiosk-btn kiosk-btn-danger is-armed" onClick={clear}>Ja, alles wissen</button>

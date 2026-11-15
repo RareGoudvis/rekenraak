@@ -16,10 +16,18 @@ export const tutorQrMatrix = (payload: string): boolean[][] | null => {
     return matrixCache.get(url) ?? null;
 };
 
-// Which payload the footer QR carries: the full list, the lean one (no greyed sums) when only that fits, or none.
-export function tutorQrPick(payload: string | null, lean: string | null): 'full' | 'lean' | null {
+export type TutorQrPick = 'more' | 'full' | 'lean' | null;
+
+// Which payload the footer QR carries: the full list with the blocks' Oefenmodus settings ("Nog meer van deze
+// oefening"), the full list, the lean one (no greyed sums) when only that fits, or none. A page that cannot also
+// carry the settings loses only the button, never a sum's steps.
+export function tutorQrPick(payload: string | null, lean: string | null, more: string | null = null): TutorQrPick {
     if (!payload) return null;
+    if (more && tutorQrMatrix(more)) return 'more';
     if (tutorQrMatrix(payload)) return 'full';
     return lean && tutorQrMatrix(lean) ? 'lean' : null;
 }
 
+/** The payload a pick stands for. */
+export const tutorQrPayloadOf = (pick: TutorQrPick, { payload, lean, more }: { payload: string | null; lean?: string | null; more?: string | null }): string | null =>
+    (pick === 'more' ? more : pick === 'full' ? payload : pick === 'lean' ? lean : null) ?? null;

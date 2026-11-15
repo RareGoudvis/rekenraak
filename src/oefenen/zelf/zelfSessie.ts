@@ -7,6 +7,7 @@ import { kioskLabelOf, kioskSupports } from '../../services/oefenen/kiosk';
 import { childLabel } from './zelfLabels';
 import { MAX_TYPES, fnv1a } from '../../services/oefenen/session';
 import { OEFEN_VERSION, type OefenSessie, type OefenType } from '../../services/oefenen/types';
+import { TUTOR_SESSIE_PREFIX, isTutorSessie } from '../../services/oefenen/tutorOefenLink';
 
 export type ZelfMode = { kind: 'count'; n: 3 | 5 | 10 } | { kind: 'timer'; min: 1 | 3 | 5 };
 
@@ -312,5 +313,6 @@ export function reviewSessieOf(s: OefenSessie, n: number): OefenSessie {
     const rest: OefenSessie = { ...s };
     // A review is counted, never timed.
     delete rest.timerMin;
-    return { ...rest, id: `${ID_PREFIX}${fnv1a(`nakijken|${s.id}`)}`, title: 'Nakijken', total: n, mode: 'afwisselen', allowRepeatType: true };
+    // A stappenhulp run's review keeps its prefix, so its end screen still leads back to the sheet.
+    return { ...rest, id: `${isTutorSessie(s) ? TUTOR_SESSIE_PREFIX : ID_PREFIX}${fnv1a(`nakijken|${s.id}`)}`, title: 'Nakijken', total: n, mode: 'afwisselen', allowRepeatType: true };
 }

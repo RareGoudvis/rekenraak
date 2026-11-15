@@ -2,8 +2,9 @@ import { useSyncExternalStore } from 'react';
 import type { MathBlock } from '../../services/math/types';
 import type { QrPart } from '../../services/layout/pagePacker';
 import { encodeTutorPage, tutorPageMarks } from '../../services/oefenen/tutorPayload';
-import { exercisesOf, stepsFor } from '../../services/stepsAvailability';
+import { blockHasTutorSteps, exercisesOf, stepsFor } from '../../services/stepsAvailability';
 import { tutorQrMatrix, tutorQrPick } from './tutorQrPick';
+import { tutorOefenRow } from './tutorOefen';
 
 // The stappenhulp split line (PackedPage.qrSplit): a page whose sums overflow one QR gets a
 // second code on a line between two blocks. Each code is a normal tutor payload of its own
@@ -14,12 +15,14 @@ import { tutorQrMatrix, tutorQrPick } from './tutorQrPick';
 // undefined exercise is a placeholder for a sum printed above the line.
 export const tutorHasSteps = (block: MathBlock, ex: unknown) => ex !== undefined && stepsFor(block.typeId, ex, block.constraints) !== null;
 
-function tutorBlocksOf(parts: QrPart[], blockOrder: Record<string, number | null>) {
+function tutorBlocksOf(parts: QrPart[], blockOrder: Record<string, number | null>, more = false) {
     return parts.map(({ block, from = 0, to }) => {
         const all = exercisesOf(block);
         // Leading placeholders keep a cut block's sums on their printed labels (k, l, m ...).
         const exercises = [...new Array<undefined>(from).fill(undefined), ...all.slice(from, to ?? all.length)];
-        return { block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises };
+        // "Nog meer van deze oefening": the block's Oefenmodus settings, only for blocks the QR carries.
+        const oefen = more && blockHasTutorSteps(block) ? tutorOefenRow(block) : null;
+        return { block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises, oefen };
     });
 }
 
@@ -45,23 +48,26 @@ export function tutorQrFits(blockOrder: Record<string, number | null>, grade: nu
 export interface TutorQrSegment {
     payload: string | null;
     lean: string | null;
+    /** The full list plus the blocks' Oefenmodus settings, preferred when it fits. */
+    more: string | null;
     /** Per block id: which of its exercises this code opens with steps (only this segment's indexes set). */
     marks: Map<string, boolean[]>;
 }
 
-/** One code's payloads (full and lean, the footer's own fallback) and the marks they promise. */
-export function tutorQrSegment(parts: QrPart[], blockOrder: Record<string, number | null>, grade: number | null): TutorQrSegment {
-    const tutorBlocks = tutorBlocksOf(parts, blockOrder);
+/** One code's payloads (with settings, full, lean: tutorQrPick's chain) and the marks they promise. */
+export function tutorQrSegment(parts: QrPart[], blockOrder: Record<string, number | null>, grade: number | null, moreOefenen = false): TutorQrSegment {
+    const tutorBlocks = tutorBlocksOf(parts, blockOrder, moreOefenen);
     const payload = encodeTutorPage(tutorBlocks, tutorHasSteps, { grade });
     const lean = encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade });
-    const pick = tutorQrPick(payload, lean);
+    const more = moreOefenen ? encodeTutorPage(tutorBlocks, tutorHasSteps, { grade, oefen: true }) : null;
+    const pick = tutorQrPick(payload, lean, more);
     const marks = new Map<string, boolean[]>();
     if (pick) {
-        tutorPageMarks(tutorBlocks, tutorHasSteps, { greyed: pick === 'full' }).forEach((mask, i) => {
+        tutorPageMarks(tutorBlocks, tutorHasSteps, { greyed: pick !== 'lean' }).forEach((mask, i) => {
             marks.set(tutorBlocks[i].block.id, mask);
         });
     }
-    return { payload, lean, marks };
+    return { payload, lean, more, marks };
 }
 
 /** Per block: 'all' = one mark by the title, a '0101' mask = per sum, absent = none (SheetBlock stepsMarks). */

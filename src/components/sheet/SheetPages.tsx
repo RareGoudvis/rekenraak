@@ -88,6 +88,8 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
     () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasTutorSteps(block))),
     [docSettings.tutorQr, packedPages],
   );
+  // "Nog meer van deze oefening" (absent = on): each code also carries its blocks' Oefenmodus settings when that fits.
+  const tutorMoreOefenen = docSettings.tutorMoreOefenen !== false;
   // Per page: the footer QR's payloads, the split line's when the packer drew one (its code covers the sums
   // above it, the footer the rest), and per block which sums the stappenhulp opens with steps ('all' = every
   // one, a '0101' mask = some, '' = none). Read from the payloads the QRs really carry, so a mark never promises more.
@@ -95,12 +97,12 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
     if (!tutorQr) return null;
     return packedPages.map(page => {
       const split = page.qrSplit;
-      const foot = tutorQrSegment(split ? split.below : page.blocks.map(({ block }) => ({ block })), blockOrder, selectedGrade);
-      const line = split ? tutorQrSegment(split.above, blockOrder, selectedGrade) : null;
+      const foot = tutorQrSegment(split ? split.below : page.blocks.map(({ block }) => ({ block })), blockOrder, selectedGrade, tutorMoreOefenen);
+      const line = split ? tutorQrSegment(split.above, blockOrder, selectedGrade, tutorMoreOefenen) : null;
       const marks = mergeTutorMarks(page.blocks.map(b => b.block), line ? [line, foot] : [foot]);
-      return { payload: foot.payload, lean: foot.lean, line, marks };
+      return { payload: foot.payload, lean: foot.lean, more: foot.more, line, marks };
     });
-  }, [tutorQr, packedPages, blockOrder, selectedGrade]);
+  }, [tutorQr, tutorMoreOefenen, packedPages, blockOrder, selectedGrade]);
   return (
     <>
       {packedPages.map((page, pi) => (
@@ -152,6 +154,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                 <TutorQr
                   payload={tutorPages[pi].payload}
                   lean={tutorPages[pi].lean}
+                  more={tutorPages[pi].more}
                   caption={docSettings.tutorQrCaption !== false}
                   captionText={docSettings.tutorQrCaptionText}
                   legend
@@ -170,7 +173,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
               it, so the column rule is a no-op on a single-column sheet instead of
               drawing a stray line down the page. */}
           {page.qrSplit && tutorPages?.[pi].line && (
-            <TutorQrLine top={page.qrSplit.y} width={cellWidth(4)} payload={tutorPages[pi].line.payload} lean={tutorPages[pi].line.lean} note={SPLIT_NOTE} />
+            <TutorQrLine top={page.qrSplit.y} width={cellWidth(4)} payload={tutorPages[pi].line.payload} lean={tutorPages[pi].line.lean} more={tutorPages[pi].line.more} note={SPLIT_NOTE} />
           )}
           {page.blocks.map((item) => {
             // Horizontal twin of the page's own overflow banner: a page that runs long
