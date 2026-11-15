@@ -114,7 +114,7 @@ describe('Spelen sound', () => {
         const wrong = { given: '11', expected: '12' };
         const miss = { given: '', expected: '12' };
         expect(soundFor(cues('ballonnen'), 'correct', right)).toBe('pop');
-        expect(soundFor(cues('ballonnen'), 'wrong', wrong)).toBe('plop');
+        expect(soundFor(cues('ballonnen'), 'wrong', wrong)).toBe('pfff');
         expect(soundFor(cues('pinguintoren'), 'correct', right)).toBe('plok');
         expect(soundFor(cues('pinguintoren'), 'wrong', wrong)).toBe('splash');
         expect(soundFor(cues('zombies'), 'correct', right)).toBe('poef');
