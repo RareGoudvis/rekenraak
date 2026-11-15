@@ -1482,7 +1482,7 @@ html:has(.oefen-body),
 
 /* Leerjaar: six rounded tiles, each a little world of its leerjaar (backdrops/); the chosen one grows and gets a thick border in its world's colour. */
 .zelf-years {
-  --year: clamp(64px, 10vmin, 96px);
+  --year: clamp(64px, min(13.5vmin, 12.5vw), 108px);
   width: min(100%, 1100px);
   display: flex;
   flex-wrap: wrap;
@@ -1533,16 +1533,16 @@ html:has(.oefen-body),
 .zy-dark { fill: color-mix(in srgb, var(--kid-ink) 75%, transparent); stroke: none; }
 .zy-cactus { fill: #9FD5A5; }
 .zy-line { fill: none; }
-/* The number sits on top, big, with a white halo so it reads on every world. */
+/* The number sits on top, big, on the sky above each tile's art. */
 .zy-num {
   position: relative;
   font-family: var(--font-sheet-math);
-  font-size: calc(var(--year) * 0.5);
+  /* Above the art strip at the bottom, on the clean sky. */
+  margin-bottom: 22%;
+  font-size: calc(var(--year) * 0.52);
   font-weight: 700;
   line-height: 1;
   color: var(--kid-ink);
-  paint-order: stroke fill;
-  -webkit-text-stroke: calc(var(--year) * 0.09) var(--kid-card);
 }
 .zelf-year:active:not([aria-pressed="true"]) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
 .zelf-year:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
