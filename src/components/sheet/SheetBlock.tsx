@@ -82,6 +82,11 @@ export interface SheetBlockProps {
   blockProps: (blockId: string) => { onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void };
   onFitWidth: (blockId: string) => void;
   onWiden: (blockId: string) => void;
+  /** Cut by the stappenhulp split line: this cell shows `windowHeightPx` of the block from
+      `windowTopPx` down. A top > 0 is the lower window, a second render of the same block
+      that the measure pass and the drop targets skip (no data-block-id). */
+  windowTopPx?: number;
+  windowHeightPx?: number;
 }
 
 // One packed cell on a page. Memoised with primitive props only, so hovering or selecting
@@ -89,8 +94,9 @@ export interface SheetBlockProps {
 function SheetBlock({
   block, index, leftPx, topPx, cellWidthPx, widthUnits, availableWidthPx, colGapPx, columnDivider,
   hOverflowPx, isActive, isDragging, showDropZones, dropZone, dropNoop, showSolutions, docSettings,
-  stepsMarks = '', blockProps, onFitWidth, onWiden,
+  stepsMarks = '', blockProps, onFitWidth, onWiden, windowTopPx = 0, windowHeightPx,
 }: SheetBlockProps) {
+  const lower = windowTopPx > 0;
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
   // title row and takes no number, so the opdracht numbering skips over it.
@@ -104,8 +110,10 @@ function SheetBlock({
 
   return (
     <div
-      data-block-id={block.id}
-      data-width={widthUnits}
+      data-block-id={lower ? undefined : block.id}
+      data-width={lower ? undefined : widthUnits}
+      data-sheet-extra={lower ? 'qr-rest' : undefined}
+      aria-hidden={lower || undefined}
       className={columnDivider ? 'col-divider' : undefined}
       style={{
         position: 'absolute',
@@ -115,11 +123,12 @@ function SheetBlock({
         minWidth: 0,
         // The rule is centred in the gutter, which is the COLUMN gap.
         ['--col-gap' as string]: `${colGapPx}px`,
+        ...(windowHeightPx !== undefined && { height: `${windowHeightPx}px`, overflow: 'hidden' }),
       }}
     >
       <div
-        id={`block-${block.id}`}
-        className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${isDragging ? ' is-dragging' : ''}`}
+        id={lower ? undefined : `block-${block.id}`}
+        className={`print-block${block.pageBreakBefore && !lower ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${isDragging ? ' is-dragging' : ''}`}
         onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }}
         // Controls used to live inside this div and reveal on CSS :hover; they're
         // portalled out now (BlockControlsRail, rendered once for whichever block is
@@ -128,7 +137,8 @@ function SheetBlock({
         onPointerEnter={() => setHoveredBlockId(block.id)}
         onPointerLeave={() => setHoveredBlockId((id) => (id === block.id ? null : id))}
         {...blockProps(block.id)}
-        style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}
+        // The lower window shifts the same render up, so it shows exactly the rows under the line.
+        style={lower ? { ...styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers), transform: `translateY(${-windowTopPx}px)` } : styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}
       >
         {/* Only while something is being dragged, and never on the block that
             is being dragged itself. */}
@@ -223,7 +233,7 @@ function SheetBlock({
         })()}
         </ScaledBlock>
       </div>
-      {hOverflowPx > 0 && (
+      {hOverflowPx > 0 && !lower && (
         <div className="no-print cell-hoverflow-warn" onClick={(e) => e.stopPropagation()}>
           <span>Dit blok is {hOverflowPx}px te breed voor zijn kolom.</span>
           <button type="button" onClick={() => onFitWidth(block.id)}>Verklein om te passen</button>

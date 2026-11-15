@@ -26,7 +26,7 @@ const page = (blocks: MathBlock[]): PackedPage => ({
 });
 const measured: MeasuredHeights = {
     heightPxOf: () => undefined, pageBudgetPx: () => undefined, onCellMeasure: () => { }, intrinsicOf: () => undefined,
-    intrinsicEntries: () => [], onBodyMeasure: () => { }, version: 0,
+    intrinsicEntries: () => [], onBodyMeasure: () => { }, rowCutsOf: () => undefined, onRowsMeasure: () => { }, version: 0,
 };
 const dnd: SheetDnd = {
     fromId: null, overId: null, zone: null, isNoop: () => false,

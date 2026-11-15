@@ -995,6 +995,13 @@ button.ez-pill:hover { background: var(--bg-active); }
   font-family: var(--font-ui); font-size: 10px; color: var(--danger);
   border: 1px dashed var(--danger); border-radius: var(--radius-xs); padding: 4px;
 }
+/* The split line (PackedPage.qrSplit): the section rule's 2px ink across the page, a bare code at its end. */
+.tutor-qr-line { position: absolute; left: 0; display: flex; align-items: center; gap: 12px; }
+.tutor-qr-line-rule { flex: 1 1 auto; border-top: 2px solid currentColor; }
+.tutor-qr-line-note {
+  position: absolute; left: 0; top: calc(50% + 8px); max-width: calc(100% - 120px);
+  font-family: var(--font-ui); font-size: 11px; line-height: 1.3; color: var(--text-muted);
+}
 
 /* Sidebar foot: Oefenmodus | Zelf oefenen. The icons keep their size, and a narrow sidebar (a 1024 px window)
    drops them so both labels fit (they were squeezed to a dot: BUGS 2026-11-14). */

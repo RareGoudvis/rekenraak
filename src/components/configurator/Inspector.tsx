@@ -29,6 +29,7 @@ import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
 import QuickBlock from './QuickBlock';
 import { TUTOR_QR_CAPTION, TUTOR_QR_CAPTION_MAX } from '../sheet/TutorQr';
 import StepsGlyph from '../viewer/StepsGlyph';
+import { splitNoteFor, useTutorQrSplitPages } from '../sheet/tutorQrSplit';
 import { effectiveSidebarTab } from '../../services/eenvoudigMode';
 
 // The two optional registry slots the Inspector reads besides the configs: a one-line
@@ -89,6 +90,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const docSettings = useWorksheetStore((state) => state.docSettings);
     // The stappenhulp QR is only offered while some sum on the sheet has worked steps.
     const anySteps = useMemo(() => blocks.some(blockHasTutorSteps), [blocks]);
+    const qrSplitNote = splitNoteFor(useTutorQrSplitPages());
     const updateHeader = useWorksheetStore((state) => state.updateHeader);
     const updateFooter = useWorksheetStore((state) => state.updateFooter);
     const updateDocSettings = useWorksheetStore((state) => state.updateDocSettings);
@@ -416,6 +418,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <Switch checked={!!docSettings.tutorQr} onChange={(v) => updateDocSettings({ tutorQr: v })} aria-label="Stappenhulp-QR onderaan elke pagina" />
                     </div>
                     <p style={{ ...S.hintText, margin: '0 0 var(--sp-2)' }}>Leerlingen scannen de QR en zien hoe ze de sommen van die pagina stap voor stap uitrekenen. Een opdracht of som met <StepsGlyph /> heeft stappen, de rest niet. Zet dit uit bij een toets: de QR verklapt de antwoorden.</p>
+                    {docSettings.tutorQr && qrSplitNote && <p style={{ ...S.hintText, margin: '0 0 var(--sp-2)', color: 'var(--text-main)', fontWeight: 600 }}>{qrSplitNote}</p>}
                     {docSettings.tutorQr && (<>
                         <div style={S.switchRow}>
                             <span style={S.switchText}>Leerlingen kunnen meer van dezelfde oefening maken</span>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { MathBlock } from '../services/math/types';
 import type { WidthUnits } from '../services/layout/blockLayout';
+import type { RowCut } from '../services/layout/pagePacker';
 
 // Real cell heights, fed back into the packer. The budget alone could not be right: it is
 // derived from settings while the CSS grid lays out actual content, so an over-estimate
@@ -140,6 +141,10 @@ export interface MeasuredHeights {
     /** Every measurement of this block, for the packer's width clamp. */
     intrinsicEntries: (blockId: string) => IntrinsicWidth[];
     onBodyMeasure: (pageIndex: number, px: number) => void;
+    /** Where a block's rows start at this width, and how many exercises it shows: the
+        stappenhulp split line may go between two rows (pagePacker splitPage). */
+    rowCutsOf: (block: MathBlock, width: number) => { cuts: RowCut[]; total: number } | undefined;
+    onRowsMeasure: (blockId: string, width: number, cuts: RowCut[], total: number) => void;
     /** Bumped whenever a measurement actually changed — the packer's only dependency. */
     version: number;
 }
@@ -155,6 +160,8 @@ export function useMeasuredHeights(blocks: MathBlock[], continuationKey = '', sh
     // Page 0 carries the header, so its body is the shorter one. Every other page shares a
     // single measurement — they are identical by construction.
     const body = useRef<{ first?: number; rest?: number }>({});
+    // Row starts per `${blockId}:${width}`, like the heights: placement-free, so they converge the same way.
+    const rows = useRef<Map<string, { cuts: RowCut[]; total: number }>>(new Map());
     const [version, setVersion] = useState(0);
 
     // Guard against a measure→pack→measure loop: a height that depends on its own
@@ -246,7 +253,7 @@ export function useMeasuredHeights(blocks: MathBlock[], continuationKey = '', sh
                 if (key.slice(0, key.lastIndexOf(':')) === b.id) intrinsic.delete(key);
             }
         }
-        for (const map of [cells.current, intrinsic, measuredOf]) {
+        for (const map of [cells.current, intrinsic, measuredOf, rows.current]) {
             for (const key of map.keys()) {
                 const id = map === measuredOf ? key : key.slice(0, key.lastIndexOf(':'));
                 if (!alive.has(id)) map.delete(key);
@@ -304,6 +311,18 @@ export function useMeasuredHeights(blocks: MathBlock[], continuationKey = '', sh
         bump(`body ${slot} ${prev ?? '–'}→${Math.round(px)}px`);
     }, [bump]);
 
+    const onRowsMeasure = useCallback((blockId: string, width: number, cuts: RowCut[], total: number) => {
+        if (paused()) return;
+        const key = `${blockId}:${width}`;
+        const prev = rows.current.get(key);
+        const same = prev && prev.total === total && prev.cuts.length === cuts.length
+            && prev.cuts.every((c, i) => c.count === cuts[i].count && Math.abs(c.px - cuts[i].px) <= EPSILON_PX);
+        if (same) return;
+        rows.current.set(key, { cuts, total });
+        bump(`rows ${key}`);
+    }, [bump]);
+    const rowCutsOf = useCallback((block: MathBlock, width: number) => rows.current.get(`${block.id}:${width}`), []);
+
     useEffect(() => {
         if (!import.meta.env.DEV) return;
         devSnapshot = () => ({
@@ -323,7 +342,7 @@ export function useMeasuredHeights(blocks: MathBlock[], continuationKey = '', sh
     // One object whose identity changes only when a measurement did: consumers can depend
     // on it wholesale instead of threading the version counter through their dep arrays.
     return useMemo(
-        () => ({ heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, intrinsicOf, intrinsicEntries, version }),
-        [heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, version],
+        () => ({ heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, rowCutsOf, onRowsMeasure, intrinsicOf, intrinsicEntries, version }),
+        [heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, rowCutsOf, onRowsMeasure, version],
     );
 }

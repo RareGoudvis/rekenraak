@@ -63,9 +63,24 @@ export interface PlacedBlock extends PackedBlock {
     /** Width in column units — `width` under the name the geometry uses. */
     w: WidthUnits;
     /** Height in px as placed: measured when there is one, estimate otherwise, capped at
-        the page budget (a taller block is clipped, and its page says so). */
+        the page budget (a taller block is clipped, and its page says so). With `rest` set it
+        is the height of the top window only. */
     h: number;
+    /** Cut by the QR split line between two of its rows: the cell shows its first `h` px,
+        and the rest of the same render (from `top` down) sits under the line at `y`. */
+    rest?: { y: number; h: number; top: number };
 }
+
+/** A run of one block's exercises, `from` (default 0) up to `to` (default: the end). */
+export interface QrPart { block: MathBlock; from?: number; to?: number }
+
+/** A row boundary inside a block, measured: the row starts `px` below the cell's top and
+    `count` exercises come before it. */
+export interface RowCut { px: number; count: number }
+
+/** The stappenhulp split line: a full-width row with its own QR for the sums above it;
+    the footer QR keeps the sums below it. */
+export interface QrSplit { y: number; h: number; above: QrPart[]; below: QrPart[] }
 
 export interface PackedPage {
     blocks: PlacedBlock[];
@@ -76,6 +91,17 @@ export interface PackedPage {
     fill: number[];
     /** The page budget this page was packed against, in px. */
     budgetPx: number;
+    /** Set when the page's sums do not fit one stappenhulp QR (PackOptions.qrSplit). */
+    qrSplit?: QrSplit;
+}
+
+export interface QrSplitOptions {
+    /** Height of the split line's row (a fixed-height box around the bare QR). */
+    dividerPx: number;
+    /** Whether these exercises fit one QR in full; true when none of them has steps. */
+    fits: (parts: QrPart[]) => boolean;
+    /** Measured row boundaries of a block at a width, for a line inside one block. */
+    rowCutsOf?: (block: MathBlock, width: WidthUnits) => RowCut[] | undefined;
 }
 
 export interface PackOptions {
@@ -96,6 +122,8 @@ export interface PackOptions {
     minWidthOf?: (block: MathBlock) => WidthUnits;
     /** docSettings.answerSpace — only reaches the first-paint ESTIMATE; measured wins after. */
     answerSpacePx?: number;
+    /** Stappenhulp QR on: a page whose sums overflow one QR gets a split line (splitPage). */
+    qrSplit?: QrSplitOptions;
 }
 
 const ROW_UNIT_PX = 24;
@@ -125,6 +153,50 @@ export function skylineSlot(fill: number[], w: number, gapPx: number): { x: numb
     return best.y === Infinity ? { x: 0, y: 0 } : best;
 }
 
+// One page's placement state: `probe` says where a box would go and how deep the page then
+// is, `place` commits it. Skyline and rows differ only here, so the page loop is shared.
+interface Cursor {
+    probe(w: number, h: number): { x: number; y: number; bottom: number };
+    place(x: number, y: number, w: number, h: number): void;
+    fill(): number[];
+}
+
+function skylineCursor(colUnits: number, gapPx: number): Cursor {
+    const fill = new Array<number>(colUnits).fill(0);
+    return {
+        probe(w, h) { const s = skylineSlot(fill, w, gapPx); return { ...s, bottom: s.y + h }; },
+        place(x, y, w, h) { for (let c = x; c < x + w; c++) fill[c] = y + h; },
+        fill: () => [...fill],
+    };
+}
+
+// The pre-skyline layout, kept as a setting: a row is as tall as its tallest block and the
+// next row starts under all of them, so blocks line up across the page (and leave holes).
+function rowsCursor(colUnits: number, gapPx: number): Cursor {
+    // The open row; width 0 = no row yet.
+    let row = { y: 0, width: 0, height: 0 };
+    const below = () => (row.width > 0 ? row.y + row.height + gapPx : 0);
+    return {
+        // Both cases have to be costed: only counting the rows already finished is how a
+        // page overflows on its last row.
+        probe(w, h) {
+            if (row.width > 0 && row.width + w <= colUnits) return { x: row.width, y: row.y, bottom: row.y + Math.max(row.height, h) };
+            return { x: 0, y: below(), bottom: below() + h };
+        },
+        place(x, y, w, h) {
+            row = row.width > 0 && x > 0 && y === row.y
+                ? { y, width: row.width + w, height: Math.max(row.height, h) }
+                : { y, width: w, height: h };
+        },
+        fill: () => new Array<number>(colUnits).fill(row.width > 0 ? row.y + row.height : 0),
+    };
+}
+
+// Where the QR split line goes on a page: in front of block `at`, or inside it before a measured row.
+type SplitPlan = { at: number; cut?: RowCut };
+
+interface PageRun { placed: PlacedBlock[]; fill: number[]; budgetPx: number; next: number; split?: QrSplit }
+
 export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPage[] {
     const colUnits = opts.colUnits ?? COL_UNITS;
     const rowBudget = opts.rowBudget ?? ROW_BUDGET;
@@ -137,6 +209,7 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
         const px = opts.pageBudgetPx?.(pageIndex);
         return px !== undefined && px > 0 ? px : rowBudget * ROW_UNIT_PX;
     };
+    const lineH = opts.qrSplit?.dividerPx ?? 0;
 
     const prepare = (block: MathBlock): Prepared => {
         const asked = (block.widthUnits ?? COL_UNITS) as WidthUnits;
@@ -155,129 +228,120 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
             spans: px > budgetFor(0) + FIT_EPSILON_PX,
         };
     };
+    const prepared = blocks.map(prepare);
 
-    const pages = opts.mode === 'rijen'
-        ? packRows(blocks, prepare, colUnits, gapPx, budgetFor)
-        : packSkyline(blocks, prepare, colUnits, gapPx, budgetFor);
+    // One page from block `start` on; `stopAt` ends it in front of that block. A plan puts the
+    // split line in; null = the line would have nothing under it on this page.
+    const packPage = (start: number, pageIndex: number, plan?: SplitPlan, stopAt?: number): PageRun | null => {
+        const budget = budgetFor(pageIndex);
+        const cur = opts.mode === 'rijen' ? rowsCursor(colUnits, gapPx) : skylineCursor(colUnits, gapPx);
+        const placed: PlacedBlock[] = [];
+        let line: { y: number; first: number } | undefined;
+        let i = start;
+        for (; i < prepared.length && i !== stopAt; i++) {
+            const p = prepared[i];
+            // 1. forced break — never leaving a blank page in front of it
+            // 5a. a block taller than a page cannot share one: whatever sits beside it would
+            //     be pushed off the paper by the part of it that is already clipped.
+            if (placed.length > 0 && (p.block.pageBreakBefore || p.spans)) break;
+            const h = Math.min(p.px, budget);
 
-    // A forced break or a spanning block can leave an empty page behind it.
-    const filled = pages.filter((p, i) => p.blocks.length > 0 || i === 0);
-    return filled.length > 0 ? filled : [{ blocks: [], used: 0, fill: new Array(colUnits).fill(0), budgetPx: budgetFor(0) }];
-}
+            if (plan?.cut && i === plan.at) {
+                // Top window, line, rest window: all full width, all on this page.
+                const top = cur.probe(colUnits, plan.cut.px);
+                const lineY = top.bottom + gapPx;
+                const restY = lineY + lineH + gapPx;
+                const restH = p.px - plan.cut.px;
+                if (restY + restH > budget + FIT_EPSILON_PX) return null;
+                placed.push({ ...p, x: top.x, y: top.y, w: p.width, h: plan.cut.px, rest: { y: restY, h: restH, top: plan.cut.px } });
+                cur.place(top.x, top.y, colUnits, restY + restH - top.y);
+                line = { y: lineY, first: placed.length - 1 };
+                continue;
+            }
+            if (plan && i === plan.at) {
+                const slot = cur.probe(colUnits, lineH);
+                // No room for the line: the page ends in front of it, and what is above fits one QR.
+                if (slot.bottom > budget + FIT_EPSILON_PX) break;
+                cur.place(slot.x, slot.y, colUnits, lineH);
+                line = { y: slot.y, first: placed.length };
+            }
 
-function packSkyline(
-    blocks: MathBlock[],
-    prepare: (b: MathBlock) => Prepared,
-    colUnits: number,
-    gapPx: number,
-    budgetFor: (i: number) => number,
-): PackedPage[] {
-    const pages: PackedPage[] = [];
-    let placed: PlacedBlock[] = [];
-    let fill = new Array<number>(colUnits).fill(0);
-
-    const flush = () => {
-        pages.push({
-            blocks: placed, fill, budgetPx: budgetFor(pages.length),
-            used: Math.max(0, ...fill) / ROW_UNIT_PX,
-        });
-        placed = [];
-        fill = new Array<number>(colUnits).fill(0);
+            // 3. lowest gap wide enough for it, leftmost of equals (or the open row)
+            const slot = cur.probe(p.width, h);
+            // 4. cost the placement BEFORE making it
+            if (!p.spans && slot.bottom > budget + FIT_EPSILON_PX && placed.length > 0) break;
+            placed.push({ ...p, x: slot.x, y: slot.y, w: p.width, h });
+            cur.place(slot.x, slot.y, p.width, h);
+            // 5b. an oversized block owns the rest of its page
+            if (p.spans) { i++; break; }
+        }
+        if (line && placed.length <= line.first) return null;
+        const run: PageRun = { placed, fill: cur.fill(), budgetPx: budget, next: i };
+        if (line) {
+            const above: QrPart[] = placed.slice(0, line.first).map(b => ({ block: b.block }));
+            const below: QrPart[] = placed.slice(line.first).map(b => ({ block: b.block }));
+            if (plan?.cut) {
+                above.push({ block: below[0].block, to: plan.cut.count });
+                below[0] = { block: below[0].block, from: plan.cut.count };
+            }
+            run.split = { y: line.y, h: lineH, above, below };
+        }
+        return run;
     };
 
-    for (const block of blocks) {
-        const p = prepare(block);
-        // 1. forced break — never leaving a blank page in front of it
-        if (block.pageBreakBefore && placed.length > 0) flush();
-        // 5a. a block taller than a page cannot share one: whatever sits beside it would
-        //     be pushed off the paper by the part of it that is already clipped.
-        if (p.spans && placed.length > 0) flush();
-
-        let budget = budgetFor(pages.length);
-        let h = Math.min(p.px, budget);
-        // 3. lowest gap wide enough for it, leftmost of equals
-        let slot = skylineSlot(fill, p.width, gapPx);
-        // 4. cost the placement BEFORE making it
-        if (!p.spans && slot.y + h > budget + FIT_EPSILON_PX && placed.length > 0) {
-            flush();
-            budget = budgetFor(pages.length);
-            h = Math.min(p.px, budget);
-            slot = skylineSlot(fill, p.width, gapPx);
-        }
-
-        placed.push({ ...p, x: slot.x, y: slot.y, w: p.width, h });
-        for (let c = slot.x; c < slot.x + p.width; c++) fill[c] = slot.y + h;
-
-        // 5b. an oversized block owns the rest of its page
-        if (p.spans) flush();
+    const pages: PackedPage[] = [];
+    for (let i = 0; i < prepared.length;) {
+        let run = packPage(i, pages.length)!;
+        if (opts.qrSplit) run = splitPage(run, i, pages.length, opts.qrSplit, prepared, packPage, colUnits);
+        pages.push({
+            blocks: run.placed, fill: run.fill, budgetPx: run.budgetPx,
+            used: Math.max(0, ...run.fill) / ROW_UNIT_PX,
+            ...(run.split && { qrSplit: run.split }),
+        });
+        i = run.next;
     }
-    if (placed.length > 0 || pages.length === 0) flush();
-    return pages;
+    return pages.length > 0 ? pages : [{ blocks: [], used: 0, fill: new Array(colUnits).fill(0), budgetPx: budgetFor(0) }];
 }
 
-// The pre-skyline layout, kept as a setting: a row is as tall as its tallest block and the
-// next row starts under all of them, so blocks line up across the page (and leave holes).
-function packRows(
-    blocks: MathBlock[],
-    prepare: (b: MathBlock) => Prepared,
+// The stappenhulp split for one packed page, only when its sums do not fit one QR in full.
+// The line goes in front of the first block that overflows the QR (the latest block boundary
+// whose sums above still fit, so it lands low on the page). When the sums under it still
+// overflow, or the first block alone does, the line goes between two rows of that block
+// (full width only), at the latest row whose sums above fit. Every candidate is placed for
+// real, so the line's height is costed and the blocks it pushes off move to the next page.
+function splitPage(
+    run: PageRun, start: number, pageIndex: number, qr: QrSplitOptions, prepared: Prepared[],
+    packPage: (start: number, pageIndex: number, plan?: SplitPlan, stopAt?: number) => PageRun | null,
     colUnits: number,
-    gapPx: number,
-    budgetFor: (i: number) => number,
-): PackedPage[] {
-    interface Row { items: PlacedBlock[]; width: number; height: number; y: number }
-
-    const pages: PackedPage[] = [];
-    let rows: Row[] = [];
-    let closed = 0;   // px used by the finished rows of this page, their gaps included
-
-    const flush = () => {
-        const last = rows.length > 0 ? rows[rows.length - 1] : null;
-        const bottom = last ? last.y + last.height : 0;
-        pages.push({
-            blocks: rows.flatMap(r => r.items),
-            fill: new Array<number>(colUnits).fill(bottom),
-            budgetPx: budgetFor(pages.length),
-            used: bottom / ROW_UNIT_PX,
-        });
-        rows = [];
-        closed = 0;
-    };
-
-    for (const block of blocks) {
-        const p = prepare(block);
-        if (block.pageBreakBefore && rows.length > 0) flush();
-
-        const budget = budgetFor(pages.length);
-        const capped = Math.min(p.px, budget);
-        const open = rows.length > 0 ? rows[rows.length - 1] : null;
-        const joins = open !== null && open.width + p.width <= colUnits;
-        // Both cases have to be costed: only counting the rows already finished is how a
-        // page overflows on its last row.
-        const prospective = joins
-            ? closed + Math.max(open.height, capped)
-            : closed + (open ? open.height + gapPx : 0) + capped;
-
-        if (p.spans && rows.length > 0) flush();
-        else if (!p.spans && prospective > budget + FIT_EPSILON_PX && rows.length > 0) flush();
-
-        const last = rows.length > 0 ? rows[rows.length - 1] : null;
-        let target: Row;
-        if (last !== null && last.width + p.width <= colUnits) {
-            target = last;
-        } else {
-            if (last !== null) closed += last.height + gapPx;
-            target = { items: [], width: 0, height: 0, y: closed };
-            rows.push(target);
-        }
-
-        target.items.push({ ...p, x: target.width, y: target.y, w: p.width, h: Math.min(p.px, budget) });
-        target.width += p.width;
-        target.height = Math.max(target.height, capped);
-
-        if (p.spans) flush();
+): PageRun {
+    const parts = (from: number, to: number): QrPart[] => run.placed.slice(from, to).map(b => ({ block: b.block }));
+    const n = run.placed.length;
+    if (n === 0 || run.placed[0].spans || qr.fits(parts(0, n))) return run;
+    // First block that overflows the QR together with everything above it; a binary search,
+    // since adding exercises never makes the payload shorter.
+    let lo = 0, hi = n - 1;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (qr.fits(parts(0, mid + 1))) lo = mid + 1; else hi = mid;
     }
-    if (rows.length > 0 || pages.length === 0) flush();
-    return pages;
+    const j = lo;
+    let fallback: PageRun | null = null;
+    if (j > 0) {
+        // Nothing fits under the line: the page ends in front of block j instead.
+        const byBlock = packPage(start, pageIndex, { at: start + j }) ?? packPage(start, pageIndex, undefined, start + j)!;
+        if (!byBlock.split || qr.fits(byBlock.split.below)) return byBlock;
+        fallback = byBlock;
+    }
+    const p = prepared[start + j];
+    const cuts = p.width === colUnits && !p.spans ? qr.rowCutsOf?.(p.block, p.width) : undefined;
+    if (cuts?.length) {
+        const head = parts(0, j);
+        const latestFirst = cuts.filter(c => c.count > 0 && c.px > 0 && c.px < p.px).sort((a, b) => b.count - a.count);
+        const cut = latestFirst.find(c => qr.fits([...head, { block: p.block, to: c.count }]));
+        const byRow = cut ? packPage(start, pageIndex, { at: start + j, cut }) : null;
+        if (byRow?.split) return byRow;
+    }
+    return fallback ?? run;
 }
 
 /** blockId → zero-based page index, for the Overzicht markers. */

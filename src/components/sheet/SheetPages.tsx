@@ -9,17 +9,11 @@ import type { MeasuredHeights } from '../../hooks/useMeasuredHeights';
 import type { SheetDnd } from '../../hooks/useSheetDnd';
 import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
-import TutorQr from './TutorQr';
-import { tutorQrPick } from './tutorQrPick';
-import { encodeTutorPage, tutorPageMarks } from '../../services/oefenen/tutorPayload';
-import { tutorOefenRow } from './tutorOefen';
-import { blockHasTutorSteps, exercisesOf, stepsFor } from '../../services/stepsAvailability';
+import TutorQr, { TutorQrLine } from './TutorQr';
+import { mergeTutorMarks, SPLIT_NOTE, tutorQrSegment } from './tutorQrSplit';
+import { blockHasTutorSteps } from '../../services/stepsAvailability';
 import EmptySheetHero from './EmptySheetHero';
-import type { MathBlock } from '../../services/math/types';
 import SheetBlock from './SheetBlock';
-
-// The sheet's own rule for the stappenhulp QR: steps under the block's own settings.
-const tutorHasSteps = (block: MathBlock, ex: unknown) => stepsFor(block.typeId, ex, block.constraints) !== null;
 
 // The page stack: one PageSheet per packed page, every cell placed where the packer put it.
 export default function SheetPages({ packedPages, blockOrder, measured, dnd, onOpenSplit }: {
@@ -94,32 +88,19 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
     () => !!docSettings.tutorQr && packedPages.some(p => p.blocks.some(({ block }) => blockHasTutorSteps(block))),
     [docSettings.tutorQr, packedPages],
   );
+  // "Nog meer van deze oefening" (absent = on): each code also carries its blocks' Oefenmodus settings when that fits.
   const tutorMoreOefenen = docSettings.tutorMoreOefenen !== false;
-  // Per page: the QR payloads and, per block, which sums the stappenhulp opens with steps ('all' = every one,
-  // a '0101' mask = some, '' = none). Read from the payload the QR really carries, so a mark never promises more.
+  // Per page: the footer QR's payloads, the split line's when the packer drew one (its code covers the sums
+  // above it, the footer the rest), and per block which sums the stappenhulp opens with steps ('all' = every
+  // one, a '0101' mask = some, '' = none). Read from the payloads the QRs really carry, so a mark never promises more.
   const tutorPages = useMemo(() => {
     if (!tutorQr) return null;
     return packedPages.map(page => {
-      const tutorBlocks = page.blocks.map(({ block }) => ({
-        block, n: blockOrder[block.id] ?? null, title: block.instructionText ?? '', exercises: exercisesOf(block),
-        // "Nog meer van deze oefening" (absent = on): the block's Oefenmodus settings, only for blocks the QR carries.
-        oefen: tutorMoreOefenen && blockHasTutorSteps(block) ? tutorOefenRow(block) : null,
-      }));
-      const payload = encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade });
-      const lean = encodeTutorPage(tutorBlocks, tutorHasSteps, { greyed: false, grade: selectedGrade });
-      const more = tutorMoreOefenen ? encodeTutorPage(tutorBlocks, tutorHasSteps, { grade: selectedGrade, oefen: true }) : null;
-      const pick = tutorQrPick(payload, lean, more);
-      const marks = new Map<string, string>();
-      if (pick) {
-        tutorPageMarks(tutorBlocks, tutorHasSteps, { greyed: pick !== 'lean' }).forEach((mask, i) => {
-          if (!mask.some(Boolean)) return;
-          const block = tutorBlocks[i].block;
-          // A hidden title has nowhere to carry the block mark, so its sums carry their own.
-          const titled = block.showInstruction !== false;
-          marks.set(block.id, titled && mask.every(Boolean) ? 'all' : mask.map(m => (m ? '1' : '0')).join(''));
-        });
-      }
-      return { payload, lean, more, marks };
+      const split = page.qrSplit;
+      const foot = tutorQrSegment(split ? split.below : page.blocks.map(({ block }) => ({ block })), blockOrder, selectedGrade, tutorMoreOefenen);
+      const line = split ? tutorQrSegment(split.above, blockOrder, selectedGrade, tutorMoreOefenen) : null;
+      const marks = mergeTutorMarks(page.blocks.map(b => b.block), line ? [line, foot] : [foot]);
+      return { payload: foot.payload, lean: foot.lean, more: foot.more, line, marks };
     });
   }, [tutorQr, tutorMoreOefenen, packedPages, blockOrder, selectedGrade]);
   return (
@@ -137,6 +118,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           onFooterClick={() => openBladCard('voettekst')}
           onBodyMeasure={measured.onBodyMeasure}
           onCellMeasure={measured.onCellMeasure}
+          onRowsMeasure={tutorQr ? measured.onRowsMeasure : undefined}
           tailPx={(() => {
             // The blank tail is not "how far down the ink goes" any more: with a
             // skyline the next block drops into the LOWEST gap wide enough for it, so
@@ -190,6 +172,9 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
               Only a block that does not start at the left edge has a neighbour beside
               it, so the column rule is a no-op on a single-column sheet instead of
               drawing a stray line down the page. */}
+          {page.qrSplit && tutorPages?.[pi].line && (
+            <TutorQrLine top={page.qrSplit.y} width={cellWidth(4)} payload={tutorPages[pi].line.payload} lean={tutorPages[pi].line.lean} more={tutorPages[pi].line.more} note={SPLIT_NOTE} />
+          )}
           {page.blocks.map((item) => {
             // Horizontal twin of the page's own overflow banner: a page that runs long
             // outlines itself and says by how much, but a cell wider than its column
@@ -208,13 +193,13 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
             const hOverflow = overPx > 2 && (item.width === 4 || item.promoted);
             // Only the block under the pointer shows a live zone during a drag.
             const dropZone = dnd.overId === item.block.id ? dnd.zone : null;
-            return (
+            const cell = (rest?: NonNullable<typeof item.rest>) => (
               <SheetBlock
-                key={item.block.id}
+                key={rest ? `${item.block.id}:rest` : item.block.id}
                 block={item.block}
                 index={blockOrder[item.block.id] ?? null}
                 leftPx={cellLeft(item.x)}
-                topPx={item.y}
+                topPx={rest ? rest.y : item.y}
                 cellWidthPx={cellWidth(item.w)}
                 widthUnits={item.width}
                 availableWidthPx={cellPx}
@@ -232,8 +217,12 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                 blockProps={dnd.blockProps}
                 onFitWidth={fitBlockToWidth}
                 onWiden={widenBlock}
+                windowTopPx={rest?.top}
+                windowHeightPx={rest ? rest.h : item.rest ? item.h : undefined}
               />
             );
+            // A block cut by the QR split line: its top rows above the line, the rest of the same render under it.
+            return item.rest ? [cell(), cell(item.rest)] : cell();
           })}
         </PageSheet>
       ))}
