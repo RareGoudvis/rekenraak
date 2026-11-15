@@ -10,27 +10,30 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { progressOf, useSpelStore } from '../oefenen/spelen/useSpelStore';
 import Schatkist, { SchatkistEnding } from '../oefenen/spelen/skins/schatkist/Schatkist';
 import { CHESTS, newHunt, nextChest, reveal, tryCode } from '../oefenen/spelen/skins/schatkist/code';
-import { CRAB_AFTER, coinsOf, crabTarget, drop, dropSpot, gem, grab, heapSlot, newHeap, right, wrong, HEAP_SLOTS, HEAP_X, HEAP_Y, type Heap } from '../oefenen/spelen/skins/schatkist/heap';
+import { CRAB_AFTER, coinsOf, crabTarget, earnTo, gem, gemsOf, heapSlot, lootLine, newHeap, right, steal, wrong, HEAP_SLOTS, HEAP_X, HEAP_Y, SHORE, type Heap } from '../oefenen/spelen/skins/schatkist/heap';
 import { DAY, HORIZON, SUNSET, skyAt, skyFor } from '../oefenen/spelen/skins/schatkist/sky';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Schatkist round 4: the loot heap, the crab, the sun on the clock (Met tijd) and the open-ended timed hunt.
 
 describe('the heap and the crab (pure)', () => {
-    test('a scored right answer adds a coin, met hulp none; a chest adds a gem; a right answer ends the wrong run', () => {
-        let h = right(newHeap(), true);
-        h = right(h, false);
-        h = gem(h);
-        expect(h.items.map(l => l.kind)).toEqual(['coin', 'gem']);
+    test('the heap follows the score: a coin per counted answer from the first one; a chest adds a gem; a right answer ends the wrong run', () => {
+        let h = earnTo(newHeap(), 1);
+        expect(h.items.map(l => l.kind)).toEqual(['coin']);
+        // Paid out once: the same score adds nothing (met hulp never raises it).
+        expect(earnTo(h, 1)).toBe(h);
+        h = gem(earnTo(h, 3));
+        expect(h.items.map(l => l.kind)).toEqual(['coin', 'coin', 'coin', 'gem']);
+        expect(h.earned).toBe(3);
         h = wrong(h).heap;
         expect(h.run).toBe(1);
-        expect(right(h, true).run).toBe(0);
-        expect(new Set(right(right(h, true), true).items.map(l => l.id)).size).toBe(4);
+        expect(right(h).run).toBe(0);
+        expect(new Set(h.items.map(l => l.id)).size).toBe(4);
     });
 
-    test('the third wrong sum in a row sends the crab for the newest coin (never a gem); then the run starts over', () => {
-        let h: Heap = gem(right(right(newHeap(), true), true));
-        const newest = h.items[1];
+    test('the third wrong sum in a row sends the crab for the newest coin or gem; it is gone for good, the run starts over', () => {
+        let h: Heap = gem(earnTo(newHeap(), 2));
+        const newest = h.items[2];
         for (let i = 1; i < CRAB_AFTER; i++) {
             const w = wrong(h);
             expect(w.crab).toBeNull();
@@ -39,27 +42,38 @@ describe('the heap and the crab (pure)', () => {
         const w = wrong(h);
         expect(w.crab).toEqual(newest);
         expect(w.heap.run).toBe(0);
-        // Only the crab moves the coin: wrong() leaves the heap as it is.
+        // Only the crab takes it: wrong() leaves the heap as it is.
         expect(w.heap.items).toHaveLength(3);
-        h = drop(grab(w.heap, newest.id));
-        expect(h.items.map(l => l.kind)).toEqual(['coin', 'gem']);
-        expect(h.dropped).toBe(1);
-        // The dropped coin still counts as the pupil's.
-        expect(coinsOf(h)).toBe(2);
-        expect(crabTarget(h)).toEqual(h.items[0]);
+        h = steal(w.heap, newest.id);
+        expect(h.items.map(l => l.kind)).toEqual(['coin', 'coin']);
+        expect(h).toMatchObject({ stolen: 1, earned: 2 });
+        expect(steal(h, newest.id)).toBe(h);
+        expect(crabTarget(h)).toEqual(h.items[1]);
+        // A stolen coin is not paid out again: the heap follows new answers only.
+        h = earnTo(steal(h, h.items[1].id), 3);
+        expect([coinsOf(h), gemsOf(h), h.stolen]).toEqual([2, 0, 2]);
     });
 
-    test('no coin on the heap, or a crab still busy: no crab, the run still starts over', () => {
-        let h = gem(newHeap());
+    test('an empty heap or a crab still busy: no crab, the run still starts over', () => {
+        let h = newHeap();
         for (let i = 0; i < CRAB_AFTER - 1; i++) h = wrong(h).heap;
         expect(wrong(h)).toEqual({ heap: { ...h, run: 0 }, crab: null });
-        h = right(newHeap(), true);
+        h = earnTo(newHeap(), 1);
         for (let i = 0; i < CRAB_AFTER - 1; i++) h = wrong(h).heap;
         expect(wrong(h, true).crab).toBeNull();
         expect(wrong(h, true).heap.run).toBe(0);
     });
 
-    test('the slots make a heap right of the chest that grows outwards and upwards; dropped coins lie left of it', () => {
+    test('the loot line: what is left, and what the crab took', () => {
+        expect(lootLine(newHeap())).toBe('nog niets in je schat');
+        expect(lootLine(earnTo(newHeap(), 1))).toBe('1 munt in je schat');
+        const h = gem(earnTo(newHeap(), 9));
+        expect(lootLine(h)).toBe('9 munten en 1 edelsteen in je schat');
+        const robbed = steal(steal(h, h.items[3].id), h.items[4].id);
+        expect(lootLine(robbed)).toBe('7 munten en 1 edelsteen in je schat, de krab pikte er 2');
+    });
+
+    test('the slots make a heap right of the chest that grows outwards and upwards; the crab dives in right of it', () => {
         const slots = Array.from({ length: HEAP_SLOTS }, (_, i) => heapSlot(i));
         expect(slots[0]).toEqual({ x: HEAP_X, y: HEAP_Y });
         expect(new Set(slots.map(p => `${p.x},${p.y}`)).size).toBe(HEAP_SLOTS);
@@ -76,7 +90,8 @@ describe('the heap and the crab (pure)', () => {
         expect(slots[0].y).toBe(HEAP_Y);
         expect(slots.slice(0, 3).filter(p => p.y === HEAP_Y).length).toBeGreaterThanOrEqual(2);
         expect(heapSlot(500)).toEqual(slots[HEAP_SLOTS - 1]);
-        for (let i = 0; i < 12; i++) expect(dropSpot(i).x).toBeLessThan(120);
+        expect(SHORE.x).toBeGreaterThan(Math.max(...slots.slice(0, 20).map(p => p.x)));
+        expect(SHORE.x).toBeLessThan(400);
     });
 });
 
@@ -158,13 +173,14 @@ describe('on the real session', () => {
 
     // React listens for the prefixed name where the environment has no AnimationEvent (jsdom): send both, it hears one.
     const stepEnd = (el: Element) => { fireEvent.animationEnd(el); fireEvent(el, new Event('webkitAnimationEnd', { bubbles: true })); };
-    const heapCoins = (c: HTMLElement) => c.querySelectorAll('.sk-loot:not(.is-dropped) .sk-heap-coin').length;
-    const dropped = (c: HTMLElement) => c.querySelectorAll('.sk-loot.is-dropped').length;
+    const heapCoins = (c: HTMLElement) => c.querySelectorAll('.sk-hoard .sk-heap-coin').length;
 
-    test('coins pile up per scored answer; three wrong in a row: the crab walks a coin off the heap and drops it; the score stays', () => {
+    test('a coin per counted answer from the first sum of chest 1; three wrong in a row: the crab carries the newest into the sea; the score stays', () => {
         start(base());
         const { container } = render(<Wired />);
         rightOne();
+        // The very first right answer is on the heap, long before a chest opens.
+        expect(heapCoins(container)).toBe(1);
         act(() => sp().openHelp());
         act(() => sp().closeHelp());
         // Met hulp: a digit, no coin.
@@ -185,38 +201,38 @@ describe('on the real session', () => {
         expect(crab()!.classList.contains('is-come')).toBe(true);
         stepEnd(crab()!);
         expect(crab()!.classList.contains('is-carry')).toBe(true);
-        expect(crab()!.querySelector('.sk-crab-coin')).not.toBeNull();
+        expect(crab()!.querySelector('.sk-crab-coin .sk-heap-coin')).not.toBeNull();
         expect(heapCoins(container)).toBe(1);
         stepEnd(crab()!);
-        expect(crab()!.classList.contains('is-leave')).toBe(true);
-        expect(dropped(container)).toBe(1);
+        expect(crab()!.classList.contains('is-dive')).toBe(true);
+        expect(crab()!.querySelector('.sk-splash')).not.toBeNull();
         stepEnd(crab()!);
         expect(crab()).toBeNull();
+        // Gone for good, also after the next right answer; the score keeps the right answers.
         expect(heapCoins(container)).toBe(1);
-        expect(dropped(container)).toBe(1);
-        // Visual only: the score and the coins the pupil owns are unchanged.
         expect(sp().score).toBe(2);
-        expect(container.querySelector('.sk-root')!.getAttribute('data-coins')).toBe('2');
+        rightOne();
+        expect(heapCoins(container)).toBe(2);
+        expect(sp().score).toBe(3);
         // The run started over: two more wrong sums bring no crab.
         wrongOne();
         wrongOne();
         expect(crab()).toBeNull();
     });
 
-    test('reduced motion: the coin lies beside the chest at once, the crab stands by it until the next sum', () => {
+    test('reduced motion: the loot is gone at once, the crab stands at the shore with it until the next sum', () => {
         start(base());
         const { container } = render(<Wired reducedMotion />);
         rightOne();
         wrongOne();
         wrongOne();
         act(() => sp().answer(String(Number(sp().question!.answer) + 1)));
-        expect(container.querySelector('.sk-crab.is-still')).not.toBeNull();
+        expect(container.querySelector('.sk-crab.is-still .sk-crab-coin')).not.toBeNull();
         expect(heapCoins(container)).toBe(0);
-        expect(dropped(container)).toBe(1);
         expect(container.querySelector('.sk-hoard.is-settled')).not.toBeNull();
         act(() => sp().next());
         expect(container.querySelector('.sk-crab')).toBeNull();
-        expect(dropped(container)).toBe(1);
+        expect(heapCoins(container)).toBe(0);
     });
 
     test('an opened chest adds a gem; the end screen shows the heap as it was left', () => {
@@ -259,11 +275,11 @@ describe('on the real session', () => {
         }
         expect(sp().phase).not.toBe('end');
         expect(container.querySelector('.sk-chests')!.textContent).toBe(`Kist ${CHESTS + 2}`);
-        expect(reports.at(-1)!.lead).toBe(`${CHESTS + 1} schatkisten open, ${sp().score} juist`);
+        expect(reports.at(-1)).toEqual({ lead: `${sp().score} juist, ${sp().score} munten en ${CHESTS + 1} edelstenen in je schat`, detail: `${CHESTS + 1} schatkisten open.` });
         act(() => { vi.advanceTimersByTime(90_000); });
         act(() => sp().answer(sp().question!.answer));
         expect(sp().phase).toBe('end');
-        expect(sp().result?.lead).toContain(`${CHESTS + 1} schatkisten open`);
+        expect(sp().result?.detail).toBe(`${CHESTS + 1} schatkisten open.`);
         cleanup();
         const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{ tijd: '3' }} reducedMotion />);
         expect(Number.parseInt((end.container.querySelector('.sk-ending') as HTMLElement).style.getPropertyValue('--sk-dusk'))).toBeGreaterThan(85);
