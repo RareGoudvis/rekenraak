@@ -475,6 +475,8 @@
   .zh-root.is-drifting { --zh-k: .92; }
   .zh-pod { grid-template-columns: repeat(2, calc(var(--zh-w) * 1.2)); row-gap: var(--sp-3); }
   .zh-root.is-drifting .zh-pod { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--sp-5); }
+  /* A clock plus "Hoe laat is het?" must fit a phone: smaller words, and they may wrap. */
+  .zh-sign.spel-sign-has-pic { max-width: calc(100vw - 2 * var(--sp-2)); padding: var(--sp-1) var(--sp-3); font-size: clamp(18px, 5.4vw, 32px); white-space: normal; }
 }
 @media (max-height: 460px) and (orientation: landscape) {
   .zh-root, .zh-root.has-pictures { --zh-w: calc(clamp(64px, 24vh, 120px) * var(--zh-k)); }
