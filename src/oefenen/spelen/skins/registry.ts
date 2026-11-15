@@ -210,7 +210,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: {
             music: 'weide',
             id: 'eieren', label: 'Eieren zoeken', input: 'choice', choiceCount: 9, timed: false, round: { questions: 15 }, season: 'pasen',
-            accepts: { kinds: ['number'], maxAnswerChars: 4 }, sounds: { correct: 'piep', wrong: 'plop' },
+            accepts: { kinds: ['number'], maxAnswerChars: 4 }, sounds: { correct: 'piep', wrong: 'plof' },
         },
         icon: Egg,
         Component: lazy(() => import('./eieren/Eieren')),

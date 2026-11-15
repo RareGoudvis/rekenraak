@@ -219,22 +219,23 @@ describe('the three new skins', () => {
         expect(sp().score).toBe(15);
     });
 
-    test('Eieren: a right egg cracks into a chick and fills the basket; a wrong egg wobbles and stays', () => {
+    test('Eieren: a right egg cracks into a chick and fills the basket; a wrong egg opens empty (no chick), the right one glows', () => {
         start('eieren');
         const { container } = render(<Wired Skin={Eieren} />);
         expect(options()).toHaveLength(9);
         expect(container.querySelector('.egg-basket')!.getAttribute('aria-label')).toBe('0 kuikens in het mandje');
         tapValue(sp().question!.answer);
         expect(names()).toEqual(['correct']);
-        expect(container.querySelector('.egg-spot.is-open .egg-chick')).not.toBeNull();
+        expect(container.querySelector('.egg-spot.is-chick .egg-chick')).not.toBeNull();
         expect(container.querySelector('.egg-basket')!.getAttribute('aria-label')).toBe('1 kuikens in het mandje');
         act(() => sp().next());
         const wrong = wrongOf();
         tapValue(wrong);
         expect(names()).toEqual(['correct', 'wrong']);
         expect(log[1].payload).toMatchObject({ given: wrong });
-        const spot = container.querySelector('.egg-spot.is-wobble')!;
-        expect(spot.querySelector('.egg-num')!.textContent).toBe(wrong);
+        const spot = container.querySelector('.egg-spot.is-empty')!;
+        expect(spot.querySelector('.egg')!.getAttribute('aria-label')).toBe(wrong);
+        expect(spot.querySelector('.egg-chick')).toBeNull();
         // The right egg lights up; the sign shows the answer.
         expect(container.querySelector('.egg-spot.is-answer .egg-num')!.textContent).toBe(sp().question!.answer);
         expect(container.querySelector('.egg-sign-answer')!.textContent).toBe(sp().question!.answer);

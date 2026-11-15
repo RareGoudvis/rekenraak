@@ -3,12 +3,23 @@
 .egg-root {
   /* One egg's width; its height is 1.25 ×. Three rows of eggs in tufts under the sign. */
   --egg-w: clamp(54px, min(12vw, 14.5vh), 128px);
-  --egg-fill-0: color-mix(in srgb, var(--accent-getallenkennis) 40%, var(--kiosk-paper));
-  --egg-fill-1: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper));
-  --egg-fill-2: color-mix(in srgb, var(--mab-e) 60%, var(--kiosk-paper));
-  --egg-fill-3: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--kiosk-paper));
-  --egg-fill-4: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper));
-  --egg-fill-5: color-mix(in srgb, var(--accent-metendrekenen) 45%, var(--kiosk-paper));
+  /* Eight shell colours (pastel) with a strong twin for the pattern; no strong red (nothing here is an error). */
+  --egg-c0: color-mix(in srgb, var(--accent-getallenkennis) 32%, var(--kiosk-paper));
+  --egg-c1: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper));
+  --egg-c2: color-mix(in srgb, var(--mab-e) 60%, var(--kiosk-paper));
+  --egg-c3: color-mix(in srgb, var(--accent-metendrekenen) 42%, var(--kiosk-paper));
+  --egg-c4: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--kiosk-paper));
+  --egg-c5: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper));
+  --egg-c6: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--accent-metendrekenen)) 40%, var(--kiosk-paper));
+  --egg-c7: color-mix(in srgb, color-mix(in srgb, var(--accent-getallenkennis) 50%, var(--accent-meetkunde)) 36%, var(--kiosk-paper));
+  --egg-s0: color-mix(in srgb, var(--accent-getallenkennis) 60%, var(--kiosk-paper));
+  --egg-s1: var(--accent-bewerkingen);
+  --egg-s2: var(--mab-e);
+  --egg-s3: var(--accent-metendrekenen);
+  --egg-s4: var(--accent-meetkunde);
+  --egg-s5: var(--accent-vraagstukken);
+  --egg-s6: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--accent-metendrekenen));
+  --egg-s7: color-mix(in srgb, var(--accent-getallenkennis) 50%, var(--accent-meetkunde));
   --egg-tuft: color-mix(in srgb, var(--accent-metendrekenen) 85%, var(--spel-ink));
   --egg-chick: var(--mab-e);
   --egg-beak: var(--accent-vraagstukken);
@@ -46,6 +57,68 @@
   border-radius: 50% 50% 0 0 / 24px 24px 0 0;
   background: var(--spel-grass);
 }
+
+/* ── The garden (Garden.tsx): all decorative, behind the sign and the eggs ───── */
+.egg-root { --egg-obj: clamp(40px, 8.5vmin, 76px); --egg-treeh: clamp(110px, 24vmin, 200px); }
+.egg-tree, .egg-fence, .egg-bush, .egg-peek, .egg-flowers, .egg-fly { position: absolute; pointer-events: none; }
+.egg-fence { left: 0; width: 100%; height: 58px; top: calc(24% - 40px); }
+.egg-picket, .egg-rail { fill: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.egg-tree { left: 1%; top: calc(24% - var(--egg-treeh) + 14px); height: var(--egg-treeh); }
+.egg-trunk { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.egg-trunk-line { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; opacity: .5; }
+.egg-crown circle { fill: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 4; }
+.egg-blossom { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2; }
+.egg-bush { height: var(--egg-obj); }
+.egg-bush-a { left: 17%; top: calc(24% - var(--egg-obj) + 12px); }
+.egg-bush-body circle, .egg-bush-body rect { fill: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--spel-ink) 12%); stroke: var(--spel-ink); stroke-width: 4; }
+.egg-peek { left: 56%; top: calc(24% - var(--egg-obj) + 12px); height: var(--egg-obj); width: calc(var(--egg-obj) * 2); overflow: visible; }
+.egg-peek .egg-bush { left: 0; top: 0; }
+.egg-bunny { position: absolute; left: 30%; bottom: 55%; width: 38%; overflow: visible; animation: egg-peek 18s ease-in-out infinite; }
+@keyframes egg-peek {
+  0%, 52%, 100% { transform: translateY(70%); }
+  58%, 70% { transform: translateY(0); }
+  64% { transform: translateY(-4%); }
+  76% { transform: translateY(70%); }
+}
+.egg-ear { transform-box: fill-box; transform-origin: 50% 100%; }
+.egg-ear-l { animation: egg-ear 18s ease-in-out infinite; }
+@keyframes egg-ear { 0%, 60%, 70%, 100% { transform: none; } 64%, 67% { transform: rotate(-14deg); } }
+.egg-bunny-head, .egg-ear ellipse { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.egg-ear .egg-ear-in { fill: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--kiosk-paper)); stroke: none; }
+.egg-bunny-eye { fill: var(--spel-ink); }
+.egg-bunny-nose { fill: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.egg-bunny-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; }
+
+/* Flowers in the front of the lawn. */
+.egg-flowers { left: 1%; right: 1%; bottom: 0; height: clamp(34px, 7vmin, 60px); z-index: 0; }
+.egg-flower { position: absolute; bottom: 0; height: 100%; transform-origin: 50% 100%; animation: egg-sway 4s ease-in-out infinite; animation-delay: calc(var(--k) * -.7s); }
+.egg-flower:nth-child(1) { left: 2%; } .egg-flower:nth-child(2) { left: 9%; height: 80%; } .egg-flower:nth-child(3) { left: 17%; }
+.egg-flower:nth-child(4) { left: 41%; height: 76%; } .egg-flower:nth-child(5) { left: 58%; } .egg-flower:nth-child(6) { left: 66%; height: 84%; } .egg-flower:nth-child(7) { left: 74%; }
+@keyframes egg-sway { 50% { transform: rotate(5deg); } }
+.egg-stem { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.egg-leaf { fill: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.egg-petals ellipse { stroke: var(--spel-ink); stroke-width: 2.5; }
+.egg-heart { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2.5; }
+
+/* Two butterflies drift over the lawn. */
+.egg-fly { width: clamp(22px, 4.4vmin, 38px); z-index: 0; }
+.egg-fly svg { display: block; width: 100%; overflow: visible; }
+.egg-fly-0 { left: 4%; top: 42%; animation: egg-fly-a 26s linear infinite; }
+.egg-fly-1 { left: 10%; top: 66%; animation: egg-fly-b 34s linear infinite; animation-delay: -12s; }
+@keyframes egg-fly-a {
+  0% { transform: translate(0, 0); } 25% { transform: translate(24vw, -9vh); } 50% { transform: translate(52vw, 3vh); }
+  75% { transform: translate(76vw, -8vh); } 100% { transform: translate(90vw, 0); }
+}
+@keyframes egg-fly-b {
+  0% { transform: translate(80vw, 0); } 30% { transform: translate(56vw, 7vh); } 60% { transform: translate(28vw, -6vh); } 100% { transform: translate(-4vw, 2vh); }
+}
+.egg-wing ellipse { fill: var(--spel-fill-3); stroke: var(--spel-ink); stroke-width: 2; }
+.egg-fly-1 .egg-wing ellipse { fill: var(--spel-fill-2); }
+.egg-wing { transform-box: fill-box; animation: egg-flap .5s ease-in-out infinite alternate; }
+.egg-wing-l { transform-origin: 100% 50%; }
+.egg-wing-r { transform-origin: 0% 50%; }
+@keyframes egg-flap { to { transform: scaleX(.35); } }
+.egg-fly-body { stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
 
 /* ── The sum ──────────────────────────────────────────────────────────────── */
 .egg-top {
@@ -115,8 +188,11 @@
 .egg:focus-visible .egg-shell { stroke-width: 7; }
 .egg-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .egg-shell { fill: var(--fill); stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
-.egg-decor { fill: none; stroke: var(--kiosk-paper); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
-.egg-dot { fill: var(--kiosk-paper); }
+.egg-decor { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.egg-dot { fill: var(--accent); }
+.egg-eye { fill: var(--kiosk-paper); }
+/* The outline over the pattern, so the pattern never touches it. */
+.egg-rim { fill: none; stroke: var(--spel-ink); stroke-width: var(--spel-line); stroke-linejoin: round; }
 .egg-shine { fill: var(--kiosk-paper); opacity: .6; }
 
 .egg-num {
@@ -134,23 +210,6 @@
   line-height: 1.2;
   white-space: nowrap;
 }
-.egg-key {
-  position: absolute;
-  top: 0;
-  right: -6px;
-  display: none;
-  min-width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--spel-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kiosk-paper);
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
-@media (hover: hover) and (pointer: fine) { .egg-key { display: inline-flex; } }
-
 /* The tuft stands in front of the egg's foot. */
 .egg-tuft {
   position: absolute;
@@ -165,27 +224,27 @@
   pointer-events: none;
 }
 
-/* Right: the top shell flies off and a chick pops up. */
-.egg-spot.is-open .egg-shell-top { transform-box: fill-box; transform-origin: 0% 100%; animation: egg-lid 520ms var(--ease-out) forwards; }
+/* Right: the top shell flies off and a chick hops out. */
+.egg-spot.is-chick .egg-half-top { transform-box: fill-box; transform-origin: 0% 100%; animation: egg-lid 520ms var(--ease-out) forwards; }
 @keyframes egg-lid { to { transform: translate(-18%, -60%) rotate(-40deg); opacity: 0; } }
 .egg-chick { position: absolute; overflow: visible; }
-.egg-chick.is-out { left: 8%; width: 84%; top: 4%; animation: egg-chick 520ms var(--ease-spring) 80ms both; }
+.egg-chick.is-out { left: 8%; width: 84%; top: 4%; animation: egg-chick 520ms var(--ease-spring) 80ms both, egg-hop 520ms ease-in-out 700ms 2; }
 @keyframes egg-chick { from { transform: translateY(45%) scale(.6); } to { transform: translateY(0) scale(1); } }
+@keyframes egg-hop { 50% { transform: translateY(-16%); } }
 .egg-chick-body { fill: var(--egg-chick); stroke: var(--spel-ink); stroke-width: 3; }
 .egg-chick-wing { fill: var(--egg-chick); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
 .egg-chick-tuft { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
 .egg-chick-eye { fill: var(--spel-ink); }
 .egg-chick-beak { fill: var(--egg-beak); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
 
-/* Wrong: the egg wobbles and stays; no red. */
-.egg-spot.is-wobble .egg { animation: egg-wobble 640ms ease-in-out both; }
-@keyframes egg-wobble {
-  0%, 100% { transform: rotate(0); }
-  20% { transform: rotate(-12deg); }
-  45% { transform: rotate(10deg); }
-  70% { transform: rotate(-6deg); }
-  88% { transform: rotate(3deg); }
-}
+/* Wrong: the egg cracks open into two halves and there is nothing in it; a soft puff, no red. */
+.egg-inner { fill: color-mix(in srgb, var(--spel-ink) 18%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.egg-spot.is-empty .egg-half-top { transform-box: fill-box; transform-origin: 0% 100%; animation: egg-lid-off 600ms var(--ease-spring) forwards; }
+@keyframes egg-lid-off { 0% { transform: none; } 40% { transform: rotate(-78deg); } to { transform: rotate(-62deg); } }
+.egg-spot.is-empty .egg-art { animation: egg-plof 420ms ease-out both; transform-origin: 50% 100%; }
+@keyframes egg-plof { 0% { transform: scale(1.06, .92); } 60% { transform: scale(.97, 1.04); } to { transform: none; } }
+.egg-spot.is-empty .egg-num { display: none; }
+.egg-spot.is-chick .egg-num { display: none; }
 
 /* The egg with the answer lights up with a ring while the sign shows it. */
 .egg-spot.is-answer .egg::after {
@@ -198,7 +257,7 @@
 }
 @keyframes egg-ring { from { transform: scale(1); } to { transform: scale(1.07); } }
 .egg-spot.is-answer .egg-num { color: var(--kiosk-ok); }
-.egg-spot.is-rest .egg { opacity: .5; transition: opacity var(--dur-slow) var(--ease-out); }
+.egg-spot.is-rest .egg { opacity: .55; transition: opacity var(--dur-slow) var(--ease-out); }
 
 /* ── The basket ───────────────────────────────────────────────────────────── */
 .egg-basket {
@@ -243,13 +302,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .egg, .egg-sign-answer, .egg-chick.is-out, .egg-spot.is-wobble .egg, .egg-spot.is-answer .egg::after, .egg-basket-chick:last-child { animation: none; }
-  .egg-spot.is-open .egg-shell-top { animation: none; opacity: 0; }
+  .egg, .egg-sign-answer, .egg-chick.is-out, .egg-spot.is-empty .egg-art, .egg-spot.is-answer .egg::after, .egg-basket-chick:last-child,
+  .egg-bunny, .egg-ear-l, .egg-flower, .egg-fly, .egg-wing { animation: none; }
+  .egg-spot.is-chick .egg-half-top { animation: none; opacity: 0; }
+  .egg-spot.is-empty .egg-half-top { animation: none; transform: rotate(-62deg); }
+  .egg-bunny { transform: translateY(18%); }
 }
 .egg-root.is-still .egg,
 .egg-root.is-still .egg-sign-answer,
 .egg-root.is-still .egg-chick.is-out,
-.egg-root.is-still .egg-spot.is-wobble .egg,
+.egg-root.is-still .egg-spot.is-empty .egg-art,
 .egg-root.is-still .egg-spot.is-answer .egg::after,
-.egg-root.is-still .egg-basket-chick:last-child { animation: none; }
-.egg-root.is-still .egg-spot.is-open .egg-shell-top { animation: none; opacity: 0; }
+.egg-root.is-still .egg-basket-chick:last-child,
+.egg-root.is-still .egg-bunny, .egg-root.is-still .egg-ear-l, .egg-root.is-still .egg-flower, .egg-root.is-still .egg-fly, .egg-root.is-still .egg-wing { animation: none; }
+.egg-root.is-still .egg-spot.is-chick .egg-half-top { animation: none; opacity: 0; }
+.egg-root.is-still .egg-spot.is-empty .egg-half-top { animation: none; transform: rotate(-62deg); }
+.egg-root.is-still .egg-bunny { transform: translateY(18%); }
