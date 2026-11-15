@@ -11,7 +11,8 @@ import { mulberry32 } from '../oefenen/spelen/distractors';
 import { choiceCanPlay, spelChoiceOf, spelContentOf, spelQuestionOf, spelVarsOf, type SpelQuestion } from '../oefenen/spelen/spelQuestion';
 import { PICTURE_CONTENT, skinsFor } from '../oefenen/spelen/accepts';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
-import GamePicker from '../oefenen/spelen/GamePicker';
+import GameRow from '../oefenen/zelf/GameRow';
+import { gamesFor } from '../oefenen/zelf/topicGames';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { nextBoardOf, boardPickIn } from '../oefenen/spelen/board/session';
@@ -114,7 +115,7 @@ describe('Spelen at leerjaar 4: only the breuken', () => {
         expect(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4)).toEqual({ ...PICTURE_CONTENT, boards: ['pairs', 'target'] });
         // The klok fills no board: Hartjes and Honingraat stay out.
         expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
-        render(<GamePicker onPick={vi.fn()} content={spelContentOf(byLabel(4, 'Breuken vergelijken'), 4)!} today={new Date(2026, 6, 1)} />);
+        render(<GameRow games={gamesFor(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4), new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
         expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Hartjes koppelen', 'Honingraat', 'Pakjesband', 'Mollen meppen, op tijd']);
     });

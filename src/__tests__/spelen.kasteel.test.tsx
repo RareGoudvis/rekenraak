@@ -8,7 +8,9 @@ import { skinById } from '../oefenen/spelen/skins/registry';
 import type { SkinMeta, SkinProgress, SkinProps } from '../oefenen/spelen/skins/types';
 import { resolveMeta } from '../oefenen/spelen/skins/options';
 import { createSpelEvents, type SpelEvents } from '../oefenen/spelen/events';
-import GamePicker from '../oefenen/spelen/GamePicker';
+import GameRow from '../oefenen/zelf/GameRow';
+import { gamesFor } from '../oefenen/zelf/topicGames';
+import { NUMBER_CONTENT } from '../oefenen/spelen/accepts';
 import SpelOptions from '../oefenen/spelen/SpelOptions';
 import SpelEnd from '../oefenen/spelen/SpelEnd';
 import SpelScreen from '../oefenen/spelen/SpelScreen';
@@ -50,10 +52,12 @@ describe('Kasteel: the registry entry and the pre-start screen', () => {
         expect(k.screenWhen).toEqual({ id: 'spelers', value: '2' });
         expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'manier']);
         expect(meta().chosen).toEqual({ spelers: '1', levens: '20', niveau: 'normaal', manier: 'samen' });
-        render(<GamePicker onPick={() => { }} />);
+        render(<GameRow games={gamesFor(NUMBER_CONTENT, new Date(2026, 6, 1))} onPlay={() => { }} />);
         const tile = screen.getByRole('button', { name: /^Kasteel/ });
         expect(tile.getAttribute('aria-label')).toBe('Kasteel, op tijd, 1 of 2 spelers');
-        expect(within(tile).getByText(/1 of 2 spelers/)).toBeTruthy();
+        // A clock and two pupils as stickers on the picture.
+        expect(within(tile).getByText('Kasteel')).toBeTruthy();
+        expect(tile.querySelectorAll('.zelf-play-mark')).toHaveLength(2);
     });
 
     test('Normaal / Moeilijk only for 1 speler, Samen tegelijk / Om beurten only for 2', () => {

@@ -1,17 +1,21 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent, within, act } from '@testing-library/react';
+import { existsSync, statSync } from 'node:fs';
 import OefenApp from '../oefenen/OefenApp';
 import { gameBlurb, GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
-import { GameThumb } from '../oefenen/zelf/SpeelMeteenRow';
-import { SPEEL_METEEN, resolveSpeelMeteen, speelMeteenFor, speelMeteenPreview } from '../oefenen/zelf/speelMeteen';
+import GameThumb from '../oefenen/spelen/GameThumb';
+import { TOPIC_GAME, gamesFor, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
+import { choicesFor, usableVariants } from '../oefenen/zelf/zelfSessie';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
-import { skinsFor } from '../oefenen/spelen/accepts';
+import { NUMBER_CONTENT, skinsFor } from '../oefenen/spelen/accepts';
 import { choiceCanPlay, spelContentOf } from '../oefenen/spelen/spelQuestion';
+import { pickerToday } from '../oefenen/spelen/seasons';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards';
-import type { Leerjaar } from '../config/gradePresets';
+import { EENVOUDIG_NAV } from '../config/eenvoudig/nav';
+import { LEERJAREN } from '../config/gradePresets';
 import KidBackdrop from '../oefenen/kiosk/KidBackdrop';
 import { sceneOf } from '../oefenen/kiosk/backdrops';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -51,134 +55,151 @@ describe('Zelf oefenen start: leerjaar bar', () => {
     });
 });
 
-describe('Speel meteen: the config', () => {
+describe('Topic cards: the config', () => {
     let data: EenvoudigData;
     beforeAll(async () => { data = await loadEenvoudigData(); });
+    const topics = EENVOUDIG_NAV.flatMap(sec => sec.topics);
 
-    test('every line resolves at its leerjaar to a Zelf choice its game accepts', () => {
-        for (const [g, list] of Object.entries(SPEEL_METEEN)) {
-            const grade = Number(g) as Leerjaar;
-            for (const e of list!) {
-                const hit = resolveSpeelMeteen(data, grade, e);
-                expect({ grade, title: e.title, ok: !!hit }).toEqual({ grade, title: e.title, ok: true });
-                // The same check the game picker makes on that choice.
-                expect(skinsFor(SKINS, spelContentOf(hit!.choice, grade)!).map(s => s.meta.id)).toContain(e.skin);
-                expect(choiceCanPlay(hit!.choice, grade)).toBe(true);
+    test('every topic → game line plays every playable choice of that topic wherever it shows', () => {
+        for (const [topic, skinId] of Object.entries(TOPIC_GAME)) {
+            expect(topics.some(t => t.id === topic), topic).toBe(true);
+            const skin = skinById(skinId)!;
+            expect(skin, skinId).toBeTruthy();
+            let shownWithGame = 0;
+            for (const grade of LEERJAREN) {
+                if (!usableVariants(data, grade).has(topic)) continue;
+                const playable = choicesFor(data, grade, topic).filter(c => choiceCanPlay(c, grade));
+                for (const c of playable) expect({ grade, topic, choice: c.label, fits: skinsFor([skin], spelContentOf(c, grade)!).length > 0 }).toMatchObject({ fits: true });
+                if (playable.length) { shownWithGame++; expect(topicGameOf(data, grade, topic)).toBe(skin); }
+                else expect(topicGameOf(data, grade, topic)).toBeNull();
             }
+            expect(shownWithGame, topic).toBeGreaterThan(0);
         }
     });
 
-    test('8 to 12 tiles per playable leerjaar, a game at most twice, calm and timed mixed, plain titles', () => {
-        for (const grade of [1, 2, 3, 4] as const) {
-            const list = SPEEL_METEEN[grade]!;
-            expect(list.length).toBeGreaterThanOrEqual(8);
-            expect(list.length).toBeLessThanOrEqual(12);
-            const per = new Map<string, number>();
-            for (const e of list) per.set(e.skin, (per.get(e.skin) ?? 0) + 1);
-            expect(Math.max(...per.values())).toBeLessThanOrEqual(2);
-            const timed = list.filter(e => skinById(e.skin)!.meta.timed).length;
-            expect(timed).toBeGreaterThanOrEqual(2);
-            expect(list.length - timed).toBeGreaterThanOrEqual(2);
-            expect(new Set(list.map(e => e.title)).size).toBe(list.length);
-            for (const e of list) {
-                expect(e.title).not.toMatch(/—|Leerjaar/);
-                expect(e.title.length).toBeLessThanOrEqual(48);
-            }
+    test('a topic that plays a game at some leerjaar has a picture game', () => {
+        for (const t of topics) {
+            const plays = LEERJAREN.some(g => usableVariants(data, g).has(t.id) && topicHasGame(data, g, t.id));
+            expect({ topic: t.id, mapped: plays ? t.id in TOPIC_GAME : true }).toEqual({ topic: t.id, mapped: true });
         }
-        // Nothing plays above leerjaar 4 yet: no row there.
-        expect(SPEEL_METEEN[5]).toBeUndefined();
     });
 
-    test('a line that names no real choice, or content its game cannot play, drops out', () => {
-        const bad = [
-            { skin: 'ballonnen', topic: 'Hoofdrekenen · Optellen', choice: 'bestaat niet', title: 'x' },
-            { skin: 'nieuwspel', topic: 'Hoofdrekenen · Optellen', choice: 'met', title: 'y' },
-            // Zombies has a keypad: no clock faces.
-            { skin: 'zombies', topic: 'Klok en kalender', choice: 'Klok lezen', title: 'z' },
-        ];
-        for (const e of bad) expect(resolveSpeelMeteen(data, 2, e)).toBeNull();
-        expect(speelMeteenFor(data, 2, JULY, bad)).toEqual([]);
-        // By key or by label: the same choice.
-        const byKey = resolveSpeelMeteen(data, 2, { skin: 'ballonnen', topic: 'Hoofdrekenen · Optellen', choice: 'met', title: 'k' });
-        const byLabel = resolveSpeelMeteen(data, 2, { skin: 'ballonnen', topic: 'Hoofdrekenen · Optellen', choice: 'Met brug', title: 'l' });
-        expect(byKey!.choice.key).toBe(byLabel!.choice.key);
+    test('every topic that shows has its Oefenmodus picture, small enough', () => {
+        const shown = new Set(LEERJAREN.flatMap(g => [...usableVariants(data, g).keys()]));
+        expect(shown.size).toBeGreaterThan(20);
+        for (const id of shown) {
+            const file = `public/spelen/thumbs/oefen-${topicSlug(id)}.webp`;
+            expect(existsSync(file), file).toBe(true);
+            expect(statSync(file).size, file).toBeLessThan(25 * 1024);
+        }
+        expect(topicSlug('Hoofdrekenen · Optellen')).toBe('hoofdrekenen-optellen');
+        expect(topicSlug('Vergelijken, ordenen, afronden')).toBe('vergelijken-ordenen-afronden');
     });
 
-    test('in season a seasonal game jumps to the front with nu!; out of season the config order stands', () => {
-        const july = speelMeteenFor(data, 3, JULY);
-        expect(july.map(t => t.entry)).toEqual(SPEEL_METEEN[3]);
-        expect(july.some(t => t.nu)).toBe(false);
-        const nov = speelMeteenFor(data, 3, SINTERKLAAS);
-        expect(nov[0]).toMatchObject({ nu: true, entry: { skin: 'pakjesband' } });
-        expect(nov.filter(t => t.nu).map(t => t.skin.meta.id)).toEqual(['pakjesband']);
-        // The rest keep their order.
-        expect(nov.slice(1).map(t => t.entry)).toEqual(SPEEL_METEEN[3]!.filter(e => e.skin !== 'pakjesband'));
-        expect(speelMeteenPreview(SINTERKLAAS)[0].skin.meta.id).toBe('pakjesband');
+    test('the card per leerjaar: a game picture where it fits, else the Oefenmodus picture; the controller only with a game', () => {
+        expect(topicCardOf(data, 2, 'Hoofdrekenen · Optellen')).toMatchObject({ game: { meta: { id: 'ballonnen' } }, hasGame: true });
+        expect(topicCardOf(data, 4, 'Hoofdrekenen · Optellen')).toEqual({ game: null, hasGame: false });
+        expect(topicCardOf(data, 2, 'Geld')).toEqual({ game: null, hasGame: false });
+        expect(topicCardOf(data, 4, 'Breuken')).toMatchObject({ game: { meta: { id: 'pakjesband' } }, hasGame: true });
+        // No leerjaar yet: any leerjaar counts.
+        expect(topicCardOf(data, null, 'Klok en kalender')).toMatchObject({ game: { meta: { id: 'zeehond' } }, hasGame: true });
+    });
+
+    test('the games bar order: in season first, then calm, then timed', () => {
+        const rank = (g: { skin: { meta: { timed: boolean } }; nu: boolean }) => (g.nu ? 0 : g.skin.meta.timed ? 2 : 1);
+        const july = gamesFor(NUMBER_CONTENT, JULY);
+        expect(july.map(rank)).toEqual([...july.map(rank)].sort());
+        expect(july.some(g => g.nu)).toBe(false);
+        const nov = gamesFor(NUMBER_CONTENT, SINTERKLAAS);
+        expect(nov[0]).toMatchObject({ nu: true, skin: { meta: { id: 'pakjesband' } } });
+        expect(gamesFor(null, JULY)).toEqual([]);
     });
 });
 
-describe('Speel meteen: the row', () => {
-    const row = () => screen.getByRole('region', { name: 'Speel meteen' });
-    const tile = (name: string | RegExp) => within(row()).getByRole('button', { name });
+describe('Topic cards and the Keuze screen', () => {
+    const card = (section: string, name: string) => within(screen.getByRole('region', { name: section })).getByRole('button', { name });
+    const sp = () => useSpelStore.getState();
     beforeEach(() => {
-        useSpelStore.getState().otherGame();
-        useSpelStore.getState().takePickerAt();
+        sp().otherGame();
+        sp().takePickerAt();
         window.matchMedia ??= ((q: string) => ({ matches: false, media: q, addEventListener: () => { }, removeEventListener: () => { } })) as unknown as typeof window.matchMedia;
     });
 
-    test('no leerjaar yet: the games dimmed and out of reach under the glowing bar', async () => {
-        render(<OefenApp />);
-        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
-        expect(screen.getByRole('heading', { name: 'Kies je leerjaar' })).toBeTruthy();
-        expect(row().className).toContain('is-dim');
-        const buttons = within(row()).getAllByRole('button') as HTMLButtonElement[];
-        expect(buttons.length).toBeGreaterThan(5);
-        expect(buttons.every(b => b.disabled)).toBe(true);
-        fireEvent.click(screen.getByRole('button', { name: 'Leerjaar 3' }));
-        expect(row().className).not.toContain('is-dim');
-        expect(tile(/^Kasteel: tafels door elkaar/)).toBeTruthy();
-        // Nothing plays at leerjaar 5: no row.
-        fireEvent.click(screen.getByRole('button', { name: 'Leerjaar 5' }));
-        expect(screen.queryByRole('region', { name: 'Speel meteen' })).toBeNull();
-    });
-
-    test('a tap starts that game with that oefening; Ander spel opens the game tiles of that choice', async () => {
+    test('picture cards: a game screenshot or the Oefenmodus one, the stickers, the name as the whole button name', async () => {
         localStorage.setItem(GRADE_KEY, '2');
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
-        expect(tile('Voetbal: + met brug, op tijd').getAttribute('title')).toBe(GAME_BLURB.voetbal);
-        fireEvent.click(tile('Ballonnen prikken: maaltafels'));
-        const st = useSpelStore.getState();
-        expect(st.phase).toBe('play');
-        expect(st.meta!.id).toBe('ballonnen');
-        expect(st.from).toMatchObject({ grade: 2, topicId: 'Hoofdrekenen · Maaltafels', choice: { key: '2|Hoofdrekenen · Maaltafels|alles' } });
-        expect(st.question!.text).toMatch(/×/);
-        act(() => useSpelStore.getState().otherGame());
-        expect(await screen.findByRole('heading', { name: 'Kies een spel' })).toBeTruthy();
-        expect(screen.getByText('Maaltafels: Alles door elkaar')).toBeTruthy();
+        expect(screen.queryByRole('region', { name: 'Speel meteen' })).toBeNull();
+        const optellen = card('Hoofdrekenen', 'Optellen');
+        expect(optellen.querySelector('img')!.getAttribute('src')).toMatch(/thumbs\/ballonnen\.webp$/);
+        expect(optellen.querySelector('.zelf-topic-mark.is-game')!.getAttribute('title')).toBe('Er zijn spelletjes');
+        expect(optellen.querySelector('.zelf-topic-mark.is-oefen')!.getAttribute('title')).toBe('Je kan oefenen');
+        expect(optellen.getAttribute('aria-describedby')).toBeTruthy();
+        const geld = card('Meten', 'Geld');
+        expect(geld.querySelector('img')!.getAttribute('src')).toMatch(/thumbs\/oefen-geld\.webp$/);
+        expect(geld.querySelector('.zelf-topic-mark.is-game')).toBeNull();
+        expect(geld.querySelector('.zelf-topic-mark.is-oefen')).not.toBeNull();
+        // The R badge and "Zelf oefenen" sit in the leerjaar bar: no second header.
+        expect(document.querySelector('.kiosk-start-brand')).toBeNull();
+        expect(screen.getByText('Zelf oefenen')).toBeTruthy();
     });
 
-    test('a game with options shows its options screen first', async () => {
+    test('Optellen L2: Automatiseren, then exactly the games that accept the choice; a card starts that game with it', async () => {
+        localStorage.setItem(GRADE_KEY, '2');
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        fireEvent.click(card('Hoofdrekenen', 'Optellen'));
+        expect(screen.queryByRole('region', { name: 'Automatiseren' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Met brug' }));
+        expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
+        const data = await loadEenvoudigData();
+        const choice = choicesFor(data, 2, 'Hoofdrekenen · Optellen', 100).find(c => c.label === 'Met brug')!;
+        const want = gamesFor(spelContentOf(choice, 2), pickerToday()).map(g => g.skin.meta.label);
+        const row = within(screen.getByRole('region', { name: 'Of speel een spel' })).getByRole('group', { name: 'Kies een spel' });
+        const shown = within(row).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
+        expect(shown).toEqual(want);
+        expect(shown).toContain('Honingraat');
+        expect(row.querySelector('img')!.getAttribute('src')).toMatch(/spelen\/thumbs\/\w+\.webp$/);
+        fireEvent.click(within(row).getByRole('button', { name: 'Ballonnen' }));
+        expect(sp().phase).toBe('play');
+        expect(sp().meta!.id).toBe('ballonnen');
+        expect(sp().from).toMatchObject({ grade: 2, topicId: 'Hoofdrekenen · Optellen', choice: { key: choice.key } });
+        expect(sp().question!.text).toMatch(/\+/);
+        // Ander spel: back on the Keuze screen of that choice.
+        act(() => sp().otherGame());
+        expect(await screen.findByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Met brug' }).getAttribute('aria-pressed')).toBe('true');
+    });
+
+    test('a game with options shows its options screen (with its picture) first; Ander spel there returns to the Keuze screen', async () => {
         localStorage.setItem(GRADE_KEY, '3');
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
-        fireEvent.click(tile(/^Voetbal: × 10 en × 100/));
-        expect(useSpelStore.getState().phase).toBe('idle');
+        fireEvent.click(card('Hoofdrekenen', 'Vermenigvuldigen'));
+        fireEvent.click(screen.getByRole('button', { name: 'Keer 10 en 100' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Voetbal/ }));
+        expect(sp().phase).toBe('idle');
         expect(screen.getByRole('heading', { name: 'Voetbal' })).toBeTruthy();
+        expect(document.querySelector('.spel-options-thumb img')).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: /Ander spel/ }));
+        expect(screen.getByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: /^Voetbal/ }));
         fireEvent.click(screen.getByRole('button', { name: '5 minuten' }));
         fireEvent.click(screen.getByRole('button', { name: /Start/ }));
-        const st = useSpelStore.getState();
-        expect(st.meta).toMatchObject({ id: 'voetbal', round: { seconds: 300 } });
-        expect(st.from!.choice.label).toBe('Keer 10 en 100');
-        act(() => useSpelStore.getState().otherGame());
-        cleanup();
-        useSpelStore.getState().takePickerAt();
-        // Ander spel on the options screen: back to the tiles.
+        expect(sp().meta).toMatchObject({ id: 'voetbal', round: { seconds: 300 } });
+        expect(sp().from!.choice.label).toBe('Keer 10 en 100');
+    });
+
+    test('no games bar for content without games', async () => {
+        localStorage.setItem(GRADE_KEY, '2');
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
-        fireEvent.click(tile(/^Kasteel: tafels door elkaar/));
-        fireEvent.click(screen.getByRole('button', { name: /Ander spel/ }));
-        expect(row()).toBeTruthy();
+        fireEvent.click(card('Meten', 'Geld'));
+        fireEvent.click(screen.getByRole('button', { name: 'Geld tellen' }));
+        expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
+        expect(screen.queryByRole('region', { name: 'Of speel een spel' })).toBeNull();
+        expect(screen.queryByRole('group', { name: 'Kies een spel' })).toBeNull();
     });
 
     test('the thumbnail; a missing picture leaves the icon on its colour', () => {
@@ -202,7 +223,7 @@ describe('Speel meteen: the row', () => {
 });
 
 describe('Zelf oefenen start: bundle', () => {
-    // The row shows labels, icons and thumbnails only: no game component may load with the start page.
+    // The cards show labels, icons and thumbnails only: no game component may load with the start page.
     const sources = import.meta.glob('../oefenen/zelf/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
     test('the zelf files never import a skin component, only the registry', () => {

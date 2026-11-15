@@ -7,7 +7,8 @@ import { choicesFor, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { choiceCanPlay, spelContentOf } from '../oefenen/spelen/spelQuestion';
 import { PICTURE_CONTENT, skinsFor } from '../oefenen/spelen/accepts';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
-import GamePicker from '../oefenen/spelen/GamePicker';
+import GameRow from '../oefenen/zelf/GameRow';
+import { gamesFor } from '../oefenen/zelf/topicGames';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { klokQuestion, KLOK_LEAVES, type KlokDirection } from '../oefenen/spelen/content/klok/klokPack';
@@ -66,7 +67,7 @@ describe('klok in the picker', () => {
 
     test('klok content hides the keypad games and the number-only eggs: only the tap skins that draw pictures', () => {
         expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
-        render(<GamePicker onPick={vi.fn()} content={PICTURE_CONTENT} today={new Date(2026, 6, 1)} />);
+        render(<GameRow games={gamesFor(PICTURE_CONTENT, new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
         expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Pakjesband', 'Mollen meppen, op tijd']);
         expect(screen.queryByText('binnenkort')).toBeNull();

@@ -20,7 +20,7 @@
   --spel-tap: 48px;
 }
 
-/* ── Picker: Oefenen of spelen, the game tiles ────────────────────────────── */
+/* ── Touwtrekken's two-mode choice ───────────────────────────────────────── */
 .spel-modes { max-width: 640px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .spel-mode {
   display: flex;
@@ -31,65 +31,6 @@
   min-height: 140px;
 }
 .spel-mode svg { width: 48px; height: 48px; }
-
-.spel-tiles {
-  width: min(100%, 860px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--sp-3);
-}
-.spel-tile {
-  min-height: 168px;
-  padding: var(--sp-3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: var(--radius-lg);
-  background: var(--spel-sky);
-  color: var(--spel-ink);
-  font: inherit;
-  font-size: var(--kiosk-text-lg);
-  font-weight: 700;
-  cursor: pointer;
-}
-.spel-tile:active { transform: translateY(2px); }
-.spel-tile-icon { width: 64px; height: 64px; }
-.spel-tile-timed,
-.spel-tile-soon {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  font-size: var(--kiosk-text);
-  font-weight: 600;
-}
-.spel-tile.is-soon {
-  cursor: default;
-  background: var(--bg-surface-2);
-  border-color: var(--separator);
-  color: var(--text-muted);
-}
-.spel-tile.is-soon:active { transform: none; }
-
-/* The seasonal shelf on top ("Nu extra leuk"), then every game. */
-.spel-shelves { width: min(100%, 860px); display: flex; flex-direction: column; gap: var(--sp-5); }
-.spel-shelf { display: flex; flex-direction: column; gap: var(--sp-2); }
-.spel-shelf .spel-tiles { width: 100%; }
-.spel-shelf-title { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 800; }
-.spel-shelf.is-extra { padding: var(--sp-3); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-xl); background: color-mix(in srgb, var(--spel-star) 22%, var(--kiosk-paper)); }
-.spel-shelf.is-extra .spel-tile { background: var(--kiosk-paper); }
-/* A lone seasonal game keeps a tile's size. */
-.spel-shelf-tiles { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-.spel-tile-season {
-  padding: 2px var(--sp-3);
-  border: 2px solid var(--spel-ink);
-  border-radius: var(--radius-pill);
-  background: var(--spel-star);
-  font-size: var(--kiosk-text);
-  font-weight: 700;
-}
 
 /* ── Game shell ───────────────────────────────────────────────────────────── */
 /* Doubled class: wins over the kiosk's narrow-phone bar (which drops a title this bar does not have). */
@@ -255,6 +196,7 @@
 /* ── Pre-start options (SpelOptions) ──────────────────────────────────────── */
 .spel-options { width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
 .spel-options-title { margin: 0; font-size: var(--kiosk-text-xl); }
+.spel-options-thumb { width: min(100%, 300px); border: var(--kid-line) solid var(--kid-ink); border-radius: var(--kid-radius-sm); box-shadow: var(--kid-drop); }
 .spel-option { width: 100%; display: flex; flex-direction: column; gap: var(--sp-2); }
 .spel-option-label { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; text-align: center; }
 .spel-option-choices { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }

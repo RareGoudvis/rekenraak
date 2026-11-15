@@ -4,7 +4,8 @@ import { act, render, cleanup, screen, within, fireEvent } from '@testing-librar
 import type { ComponentType } from 'react';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import type { SkinPhase, SkinProps } from '../oefenen/spelen/skins/types';
-import GamePicker from '../oefenen/spelen/GamePicker';
+import GameRow from '../oefenen/zelf/GameRow';
+import { gamesFor } from '../oefenen/zelf/topicGames';
 import { NUMBER_CONTENT, skinAccepts, skinsFor } from '../oefenen/spelen/accepts';
 import { brusselsDay, easterSunday, seasonsOn } from '../oefenen/spelen/seasons';
 import { loadEenvoudigData } from '../config/eenvoudig/cards';
@@ -25,7 +26,9 @@ import { resetKiosk } from './helpers/oefenKiosk';
 
 const day = (iso: string) => new Date(`${iso}T12:00:00Z`);
 const OFF_SEASON = day('2026-10-01');
-const labels = (group: HTMLElement) => within(group).getAllByRole('button').map(b => b.querySelector('.spel-tile-label')!.textContent);
+const labels = (group: HTMLElement) => within(group).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
+// The games bar's order out of season: calm games, then timed ones (registry order within).
+const calmFirst = (list: typeof SKINS) => [...list.filter(s => !s.meta.timed), ...list.filter(s => s.meta.timed)].map(s => s.meta.label);
 
 let choice: ZelfChoice;
 const sp = () => useSpelStore.getState();
@@ -91,16 +94,16 @@ describe('accepts', () => {
     });
 
     test('a choice question kind: the picker shows only the tap skins, the rest are hidden (no binnenkort)', () => {
-        render(<GamePicker onPick={vi.fn()} content={{ kind: 'choice' }} today={OFF_SEASON} />);
+        render(<GameRow games={gamesFor({ kind: 'choice' }, OFF_SEASON)} onPlay={vi.fn()} />);
         const shown = labels(screen.getByRole('group', { name: 'Kies een spel' }));
-        expect(shown).toEqual(SKINS.filter(s => s.meta.accepts.kinds.includes('choice')).map(s => s.meta.label));
+        expect(shown).toEqual(calmFirst(SKINS.filter(s => s.meta.accepts.kinds.includes('choice'))));
         expect(shown).toContain('Ballonnen');
         expect(shown).not.toContain('Pinguïntoren');
         expect(shown).not.toContain('Zombies');
         expect(screen.queryByText('binnenkort')).toBeNull();
         cleanup();
-        render(<GamePicker onPick={vi.fn()} today={OFF_SEASON} />);
-        expect(labels(screen.getByRole('group', { name: 'Kies een spel' }))).toEqual(SKINS.map(s => s.meta.label));
+        render(<GameRow games={gamesFor(NUMBER_CONTENT, OFF_SEASON)} onPlay={vi.fn()} />);
+        expect(labels(screen.getByRole('group', { name: 'Kies een spel' }))).toEqual(calmFirst(SKINS));
     });
 });
 
@@ -152,25 +155,27 @@ describe('seasons', () => {
         expect(seasonsOn(new Date('2026-05-31T22:30:00Z'))).toEqual([]);
     });
 
-    test('the picker: in-season games on "Nu extra leuk" on top, then all games; out of season no shelf', () => {
+    test('the games bar: in-season games first with nu!, then the rest; out of season no nu!', () => {
         const seasonal = SKINS.filter(s => s.meta.season);
         for (const s of seasonal) {
             const at = { sinterklaas: '2026-11-20', kerst: '2026-12-20', valentijn: '2027-02-10', pasen: '2027-03-10', lente: '2027-05-10' }[s.meta.season!];
-            render(<GamePicker onPick={vi.fn()} today={day(at)} />);
-            expect(screen.getByRole('heading', { name: 'Nu extra leuk' })).toBeTruthy();
-            expect(labels(screen.getByRole('group', { name: 'Nu extra leuk' }))).toContain(s.meta.label);
-            // Still in the full list, and playable from the shelf.
-            expect(labels(screen.getByRole('group', { name: 'Kies een spel' }))).toContain(s.meta.label);
+            const games = gamesFor(NUMBER_CONTENT, day(at));
+            render(<GameRow games={games} onPlay={vi.fn()} />);
+            const first = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').filter(b => /nu extra leuk$/.test(b.getAttribute('aria-label')!));
+            expect(first.map(b => b.querySelector('.zelf-play-title')!.textContent)).toContain(s.meta.label);
+            // In-season games lead the row; every game is still there.
+            expect(games.findIndex(g => !g.nu)).toBe(games.filter(g => g.nu).length);
+            expect(games).toHaveLength(SKINS.length);
             cleanup();
         }
-        const onPick = vi.fn();
-        render(<GamePicker onPick={onPick} today={OFF_SEASON} />);
-        expect(screen.queryByRole('heading', { name: 'Nu extra leuk' })).toBeNull();
+        const onPlay = vi.fn();
+        render(<GameRow games={gamesFor(NUMBER_CONTENT, OFF_SEASON)} onPlay={onPlay} />);
+        expect(document.querySelector('.zelf-play-nu')).toBeNull();
         // Nothing is locked out of season.
         const tiles = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button') as HTMLButtonElement[];
         expect(tiles.every(t => !t.disabled)).toBe(true);
         fireEvent.click(screen.getByRole('button', { name: 'Ballonnen' }));
-        expect(onPick).toHaveBeenCalledWith(expect.objectContaining({ id: 'ballonnen' }));
+        expect(onPlay).toHaveBeenCalledWith(expect.objectContaining({ meta: expect.objectContaining({ id: 'ballonnen' }) }));
     });
 });
 

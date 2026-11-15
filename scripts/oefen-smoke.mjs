@@ -398,9 +398,11 @@ async function runZelfCase([w, h], page0) {
             rows.push({ ...base, solutions: i, cellHeightPx: h, intrinsicPx: w, text: await page.locator('.oefen-app').innerText(), screenshot: name, consoleErrors: [...errors], ok: true });
         }
         if (await page.getByRole('button', { name: 'Leerjaar 2', exact: true }).getAttribute('aria-pressed') !== 'true') throw new Error('Leerjaar 2 not pressed');
-        // Speel meteen: the leerjaar's picture tiles under the bar.
-        const tiles = await page.getByRole('region', { name: 'Speel meteen' }).getByRole('button', { disabled: false }).count();
-        if (tiles < 8) throw new Error(`Speel meteen: ${tiles} tiles`);
+        // The topic cards: a picture each (a game, or the Oefenmodus), the controller sticker where games play.
+        const cards = await page.locator('.zelf-topic:not([disabled])').count();
+        const pictures = await page.locator('.zelf-topic img').count();
+        const games = await page.locator('.zelf-topic .zelf-topic-mark.is-game').count();
+        if (cards < 10 || pictures !== cards || games < 5) throw new Error(`topic cards: ${cards} cards, ${pictures} pictures, ${games} with games`);
         if (errors.length) throw new Error(`console: ${errors.join(' | ')}`);
         console.log(`  ok    zelf        ${page0} @${w}x${h}`);
         return rows;

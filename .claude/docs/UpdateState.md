@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-15** — Zelf start, the owner's version: picture topic cards (a fitting game's thumbnail via topicGames.ts, else an Oefenmodus screenshot public/spelen/thumbs/oefen-<slug>.webp) with "games" / "oefenen" badges; the title folded into the leerjaar bar; one Keuze screen with "Tot hoeveel?" per leerjaar (L1 10/20, L4 10 000/100 000 where cards differ), "Welke tafels?" toggles (L2 1–10, L3 1–15 + 25/50/100) and Maal / Deel / Allebei, then the "Automatiseren" bar and a row of every fitting game (GameThumb); the Speel meteen row and GamePicker are gone.
+
 **2026-11-15** — Kasteel: every stone is thrown by the catapult (wind-up, a swing against the stop bar, a parabola from the bucket to the hit block computed in scene units by kasteel/throw.ts, reload); the hit lands exactly when the stone arrives.
 
 **2026-11-15** — Zelf start: "Speel meteen" picture tiles per leerjaar (src/oefenen/zelf/speelMeteen.ts, 12 per leerjaar 1–4, each a game × a Zelf choice, tested to resolve and fit) with a thumbnail per game (public/spelen/thumbs/) replace the icon strip; a tap starts that game with that oefening. The link hint is a small line at the bottom; the chosen leerjaar's ring is a darker shade of its own colour.

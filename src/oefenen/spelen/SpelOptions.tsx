@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ArrowUUpLeft, Play } from '@phosphor-icons/react';
 import type { SkinMeta } from './skins/types';
 import { loadChoices, resolveMeta, saveChoices } from './skins/options';
+import { skinById } from './skins/registry';
+import GameThumb from './GameThumb';
 
 interface Props {
     meta: SkinMeta;
@@ -15,8 +17,11 @@ interface Props {
 export default function SpelOptions({ meta, onStart, onBack }: Props) {
     const [chosen, setChosen] = useState(() => loadChoices(meta));
     const start = () => { saveChoices(meta.id, chosen); onStart(resolveMeta(meta, chosen)); };
+    const skin = skinById(meta.id);
     return (
         <section className="spel-options" aria-labelledby="spel-options-title">
+            {/* The game's picture above its name, as on the game cards. */}
+            {skin && <GameThumb skin={skin} className="zelf-play-thumb spel-options-thumb" />}
             <h2 id="spel-options-title" className="spel-options-title">{meta.label}</h2>
             {meta.options?.filter(o => !o.when || chosen[o.when.id] === o.when.value).map(o => (
                 <div key={o.id} className="spel-option">
