@@ -18,6 +18,8 @@ import { REGISTRY } from '../../config/exerciseRegistry';
 import { stepsAtLevel, stepLineText, type StepLine } from '../../services/math/workedSteps';
 import { StepTokens } from './StepTokens';
 import { effectiveSolutionSteps } from '../../services/stepsAvailability';
+import { useStepsMarks, STEPS_MARK_CHARS } from './stepsMarks';
+import StepsGlyph from './StepsGlyph';
 
 // A working row with a stacked breuk: two 0.8em digit lines plus the bar need about 1.4 rows of room.
 const FRAC_ROW_H = `calc(${ANSWER_ROW_H} * 1.4)`;
@@ -141,6 +143,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const sheetPx = useSheetSizePx('math');
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
     const solutionStepsAll = useWorksheetStore((state) => state.docSettings.solutionStepsAll);
+    const stepsMarks = useStepsMarks();
 
     if (!block.exercises || block.exercises.length === 0) {
         return <div className="no-print" style={styles.emptyStateText}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -183,7 +186,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const rowLayout = hrRowLayout({
         ...hrRowStats(block.exercises, sheetPx),
         widthPx: blockPx, mathPx: sheetPx, layout, compScaffoldOn,
-        labelChars: itemLabelChars(block.itemNumbering, block.exercises.length),
+        // Per-sum stappenhulp marks sit in the label column, so the row layout pays for them.
+        labelChars: itemLabelChars(block.itemNumbering, block.exercises.length) + (stepsMarks ? STEPS_MARK_CHARS : 0),
         stepChars,
     });
     const {
@@ -278,8 +282,12 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const kladLine: React.CSSProperties = { borderBottom: '1.5px dotted #000', width: '100%', height: ANSWER_LINE_H };
     const labelCell = (i: number) => {
         const text = itemLabel(block.itemNumbering, i);
-        if (!text) return null;
-        return <span style={{ width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', marginRight: `${OP_TERM_GAP}px`, whiteSpace: 'nowrap' }}>{text}</span>;
+        if (!text && !stepsMarks) return null;
+        return (
+            <span style={{ width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', marginRight: `${OP_TERM_GAP}px`, whiteSpace: 'nowrap' }}>
+                {stepsMarks?.[i] === '1' && <StepsGlyph />}{stepsMarks?.[i] === '1' && text && ' '}{text}
+            </span>
+        );
     };
     return (
         <FragmentableGrid
