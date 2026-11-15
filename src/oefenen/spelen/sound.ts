@@ -42,7 +42,9 @@ export function setSoundOn(next: boolean): void {
     listeners.forEach(fn => fn());
 }
 
-const subscribe = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
+/** Listen to the on / off choice (music.ts follows it). */
+export const subscribeSound = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
+const subscribe = subscribeSound;
 
 export function useSoundOn(): boolean {
     return useSyncExternalStore(subscribe, soundOn, () => false);
@@ -51,6 +53,16 @@ export function useSoundOn(): boolean {
 // ── The AudioContext: made on the first gesture after sound is on, never before ──
 let ctx: AudioContext | null = null;
 let out: AudioNode | null = null;
+const unlockListeners = new Set<() => void>();
+
+/** The shared AudioContext once a gesture made it (music plays on it too); null before. */
+export const audioContext = (): AudioContext | null => ctx;
+
+/** Called after each gesture that made or woke the AudioContext (music waits for the first). */
+export function onSoundUnlock(fn: () => void): () => void {
+    unlockListeners.add(fn);
+    return () => { unlockListeners.delete(fn); };
+}
 
 /** From a user gesture (a tap or key while sound is on): make the AudioContext, or wake it. */
 export function unlockSound(): void {
@@ -74,7 +86,9 @@ export function unlockSound(): void {
     } catch {
         ctx = null;
         out = null;
+        return;
     }
+    unlockListeners.forEach(fn => fn());
 }
 
 /** Test hook: forget the AudioContext and re-read the stored choice. */

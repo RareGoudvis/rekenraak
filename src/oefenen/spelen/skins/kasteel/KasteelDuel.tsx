@@ -3,6 +3,7 @@ import { ArrowCounterClockwise, ArrowUUpLeft, GameController, Heart, Star, Timer
 import { formatMathNumber } from '../../../../services/math/formatters';
 import TwoTapButton from '../../../kiosk/TwoTapButton';
 import SoundToggle from '../../SoundToggle';
+import { useSpelMusic } from '../../music';
 import { cueSound, play } from '../../sound';
 import type { SkinScreenProps } from '../types';
 import type { SoundCue } from '../../sound';
@@ -61,6 +62,7 @@ export default function KasteelDuel({ meta, from, onExit }: SkinScreenProps) {
     };
     useState(begin);
     const st = useDuelStore();
+    useSpelMusic(meta.music, st.phase === 'play');
     const [now, setNow] = useState(() => Date.now());
     const [view, setView] = useState(freshView);
     const latest = useRef(view);

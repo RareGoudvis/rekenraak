@@ -1,6 +1,7 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { SpelEvents } from '../events';
 import type { SoundCue, SkinSounds } from '../sound';
+import type { MusicId } from '../music';
 import type { SpelOutcome } from '../events';
 import type { SpelFrom } from '../useSpelStore';
 import type { BoardRound, SpelBoard } from '../board/board';
@@ -45,6 +46,8 @@ export interface SkinMeta {
     round: { questions?: number; seconds?: number; goal?: number; cap?: number; goalKeep?: boolean; board?: BoardRound };
     // Its sounds per cue (sound.ts): session cues and the skin's own (props.sound); absent = the defaults.
     sounds?: SkinSounds;
+    // Its background loop (music.ts), heard only with Geluid + muziek on; several games share one atmosphere.
+    music?: MusicId;
     // A pre-start screen with these choices (big buttons, a default preselected); absent = no screen.
     options?: SkinOption[];
     // What was picked on that screen (the round already carries their patches); set by the picker.

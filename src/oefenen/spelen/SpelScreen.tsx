@@ -13,6 +13,7 @@ import { SpelVisual } from './SpelVisual';
 import { signSize } from './spelChoice';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
+import { useSpelMusic } from './music';
 import { formatMathNumber } from '../../services/math/formatters';
 import './spelen.css';
 
@@ -106,6 +107,8 @@ export default function SpelScreen() {
     const own = !!entry?.Screen && (!entry.screenWhen || st.meta?.chosen?.[entry.screenWhen.id] === entry.screenWhen.value);
     const now = useGameClock(!!st.meta?.timed && st.phase !== 'end' && !own);
     useSpelSounds(st.events, st.meta?.sounds);
+    // A game with its own screen plays its music itself (it knows its own end screen).
+    useSpelMusic(st.meta?.music, !own && !!entry?.Component && st.phase !== 'end');
     if (own && entry?.Screen && st.meta && st.from) {
         const Screen = entry.Screen;
         return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
