@@ -11,6 +11,7 @@ import { roundTo, targetsFor, usableTargets } from '../../../../services/afronde
 import { plaatsView } from '../../../../services/plaatswaarde/plaatswaardeGenerator';
 import { ladderFor } from '../../../../services/herleidingen/herleidingenGenerator';
 import { toRoman } from '../../../../services/romeinse/romeinseGenerator';
+import type { SpelKey } from '../../accepts';
 
 // The tekst pack's leaves (tekstPack.ts): Zelf oefenen content whose kiosk exercise asks ONE value that a plain
 // line of text can carry ("491 ≈ ? (op tiental)", "Een hoek van 62° is een ?"). Each entry says how its answers
@@ -22,9 +23,10 @@ import { toRoman } from '../../../../services/romeinse/romeinseGenerator';
 export type Rng = () => number;
 type C = Record<string, unknown>;
 
-// What a variant's answers are for a game: 'number' = whole numbers ≥ 0 (typed or tapped: every game); 'tap' =
-// a comma, a minus or words (tap games only); null = these settings have no game form.
-export type TekstPlay = 'number' | 'tap' | null;
+// What a variant's answers are for a game: 'number' = whole numbers ≥ 0 (typed or tapped: every game); 'typed' =
+// numbers with a comma or a minus (every game but the digit-only ones; the keypad gets the leaf's keys); 'tap' = words
+// (tap games only); null = these settings have no game form.
+export type TekstPlay = 'number' | 'typed' | 'tap' | null;
 
 interface AskBase {
     // The sign: one line, one '?' where the answer goes.
@@ -61,6 +63,8 @@ export interface TekstLeaf {
     // The longest answer for these settings in digits and minus signs (a comma is as thin as the thousands space the
     // tap targets were measured with, "89 991" = 5); absent = words (the faces size themselves).
     chars?(c: C): number | undefined;
+    // A 'typed' variant's extra keypad keys; absent = the comma.
+    keys?(c: C): readonly SpelKey[];
     ask(ex: unknown, c: C, rng: Rng, d: KioskDescriptor): TekstAsk | null;
 }
 
@@ -98,7 +102,7 @@ function afrondenTargets(c: C) {
     return cols.length ? cols : [targetsFor(nt(c))[0]];
 }
 const AFRONDEN: TekstLeaf = {
-    playsAs: c => (['simpel', 'rooster'].includes((c.subType as string | undefined) ?? 'rooster') ? (nt(c) === 'decimal' ? 'tap' : 'number') : null),
+    playsAs: c => (['simpel', 'rooster'].includes((c.subType as string | undefined) ?? 'rooster') ? (nt(c) === 'decimal' ? 'typed' : 'number') : null),
     // Rounding up can add a digit (9 960 → 10 000); a kommagetal keeps at most two decimals and its comma.
     chars: c => (nt(c) === 'decimal' ? len(num(c.maxGetal, 100)) + 2 : len(num(c.maxGetal, 1000)) + (isPow10(num(c.maxGetal, 1000)) ? 0 : 1)),
     ask: (raw, c, rng, d) => {
@@ -122,7 +126,7 @@ const AFRONDEN: TekstLeaf = {
 // ── schattend rekenen ────────────────────────────────────────────────────────
 
 const SCHATTEND: TekstLeaf = {
-    playsAs: c => (nt(c) === 'decimal' ? 'tap' : 'number'),
+    playsAs: c => (nt(c) === 'decimal' ? 'typed' : 'number'),
     // The exact result stays under the max (schattendGenerator); its estimate may round up one digit past a max like 9 999.
     chars: c => {
         const max = num(c.maxGetal, nt(c) === 'decimal' ? 100 : 1000);
@@ -177,7 +181,7 @@ const TEMP_VERSCHIL: TekstLeaf = {
 
 // Interest in euros: a tenth or ten times too much (the % slip).
 const INTREST: TekstLeaf = {
-    playsAs: c => (c.subType === 'intrest' ? 'tap' : null),
+    playsAs: c => (c.subType === 'intrest' ? 'typed' : null),
     chars: () => 5,
     ask: (raw, c, _rng, d) => {
         const ex = raw as GeldRekenenExercise;
@@ -214,7 +218,7 @@ const onlyOnce = (number: number, digit: string) => String(number).replace('.', 
 const PLAATSWAARDE: TekstLeaf = {
     playsAs: c => {
         const sub = plaatsView(c);
-        if (sub === 'waarde') return Number(c.decimalPlaces ?? 0) > 0 ? 'tap' : 'number';
+        if (sub === 'waarde') return Number(c.decimalPlaces ?? 0) > 0 ? 'typed' : 'number';
         return sub === 'plaats' || sub === 'omcirkelen' ? 'tap' : null;
     },
     // A digit's value: 4 000 under a max of 10 000, or 0,04 ("0," and its decimals).
@@ -267,7 +271,7 @@ const MAB: TekstLeaf = {
 
 const splitsLayout = (c: C) => (c.layout as string | undefined) ?? 'basic';
 const SPLITSEN: TekstLeaf = {
-    playsAs: c => (['basic', 'splitsboom', 'verliefde-harten'].includes(splitsLayout(c)) ? (Number(c.decimalPlaces ?? 0) > 0 ? 'tap' : 'number') : null),
+    playsAs: c => (['basic', 'splitsboom', 'verliefde-harten'].includes(splitsLayout(c)) ? (Number(c.decimalPlaces ?? 0) > 0 ? 'typed' : 'number') : null),
     chars: c => len(num(c.maxGetal, 10)) + Number(c.decimalPlaces ?? 0),
     ask: (raw, c, rng, d) => {
         const ex = raw as SplitsenExercise;
@@ -288,7 +292,9 @@ function oneBlank<E extends { blankMask: boolean[] }>(ex: E, values: readonly un
     const i = pick(open, rng);
     return i === undefined ? null : { asked: { ...ex, blankMask: ex.blankMask.map((_, j) => j === i) }, i };
 }
-const rijPlay = (c: C): TekstPlay => (nt(c) === 'natural' ? 'number' : nt(c) === 'rational' ? null : 'tap');
+const rijPlay = (c: C): TekstPlay => (nt(c) === 'natural' ? 'number' : nt(c) === 'rational' ? null : 'typed');
+// Gehele getallen go below zero; kommagetallen take the comma.
+const rijKeys = (c: C): SpelKey[] => (nt(c) === 'geheel' ? ['-'] : [',']);
 // A rij runs a few jumps past its max; a kommagetal adds its decimals, a negatief its minus.
 const rijChars = (c: C) => {
     const step = typeof c.step === 'number' ? c.step : 0.1;
@@ -307,6 +313,7 @@ function rijAsk(values: readonly (number | unknown)[], i: number, text: string, 
 const GETALLENRIJ: TekstLeaf = {
     playsAs: rijPlay,
     chars: rijChars,
+    keys: rijKeys,
     ask: (raw, c, rng, d) => {
         const ex = raw as GetallenasExercise;
         const values = ex.values ?? [];
@@ -317,6 +324,7 @@ const GETALLENRIJ: TekstLeaf = {
 const PATROON: TekstLeaf = {
     playsAs: c => (c.showArrows && !(c.showOperators) ? null : rijPlay(c)),
     chars: rijChars,
+    keys: rijKeys,
     ask: (raw, c, rng, d) => {
         const ex = raw as PatroonExercise;
         const one = oneBlank(ex, ex.values, rng);
@@ -444,7 +452,7 @@ function figureWords(ex: MeetExercise): string | null {
     return `een ${name} met zijden ${sides.slice(0, -1).map(show).join(', ')} en ${cm(sides[sides.length - 1])}`;
 }
 const OMTREK: TekstLeaf = {
-    playsAs: c => (c.measureModel !== 'gegeven' || ((c.shapes as string[] | undefined) ?? []).includes('cirkel') ? null : c.precision === 'mm' ? 'tap' : 'number'),
+    playsAs: c => (c.measureModel !== 'gegeven' || ((c.shapes as string[] | undefined) ?? []).includes('cirkel') ? null : c.precision === 'mm' ? 'typed' : 'number'),
     chars: c => len(num(c.maxLength, 10) * 8) + (c.precision === 'mm' ? 1 : 0),
     ask: (raw, c, _rng, d) => {
         const ex = raw as MeetExercise;
@@ -461,7 +469,7 @@ const OMTREK: TekstLeaf = {
 const OPPERVLAKTE: TekstLeaf = {
     playsAs: c => {
         if (c.subType === 'rooster' || (c.askOmtrek && c.subType !== 'rooster')) return null;
-        return ((c.shapes as string[] | undefined) ?? ['rechthoek']).some(s => s !== 'rechthoek' && s !== 'vierkant') ? 'tap' : 'number';
+        return ((c.shapes as string[] | undefined) ?? ['rechthoek']).some(s => s !== 'rechthoek' && s !== 'vierkant') ? 'typed' : 'number';
     },
     chars: c => len(num(c.maxLength, 10) ** 2) + 1,
     ask: (raw, c, _rng, d) => {
@@ -482,7 +490,7 @@ const OPPERVLAKTE: TekstLeaf = {
 
 const euroText = (cents: number) => formatMathNumber((cents / 100).toFixed(2));
 const TERUGGEVEN: TekstLeaf = {
-    playsAs: () => 'tap',
+    playsAs: () => 'typed',
     // The change stays under the price's euros ("45,50" for 4,50 paid with 50).
     chars: c => len(num(c.maxPriceEuros, 99)) + 2,
     ask: (raw, c, _rng, d) => {
@@ -596,9 +604,9 @@ const HOEVEELHEID: TekstLeaf = {
     },
 };
 
-// Kommagetallen + − × : (the hr-std decimal leaves): tap games, the comma shifted or the other operation.
+// Kommagetallen + − × : (the hr-std decimal leaves): the slips are the comma shifted or the other operation.
 const hrDecimaal = (op: '+' | '-' | 'x' | ':'): TekstLeaf => ({
-    playsAs: c => (nt(c) === 'decimal' && c.multiplicationMode !== 'met_rest' ? 'tap' : null),
+    playsAs: c => (nt(c) === 'decimal' && c.multiplicationMode !== 'met_rest' ? 'typed' : null),
     // From the operands' place masks (E, t = under 10): + one carry digit, × the two factors' digits, : the deeltal's.
     chars: c => {
         const ints = (m: unknown) => { const keys = Object.keys((m as Record<string, boolean> | undefined) ?? {}).filter(k => (m as Record<string, boolean>)[k]); if (!keys.length) return null; const i = INT_PLACES.findIndex(k => keys.includes(k)); return i < 0 ? 1 : INT_PLACES.length - i; };

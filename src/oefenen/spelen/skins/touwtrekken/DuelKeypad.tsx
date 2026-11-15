@@ -1,5 +1,8 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Backspace } from '@phosphor-icons/react';
+import { canSubmit, shownAnswer, typeKey } from '../../keypadInput';
+import { spelKeysOf } from '../../spelQuestion';
+import { useDuelStore } from './duelStore';
 
 interface Props {
     // Which half of the screen: names the keypad for screen readers and tests.
@@ -9,9 +12,8 @@ interface Props {
     onAnswer(given: string): void;
 }
 
-// Leerjaar 6 sums reach 10 digits; 12 as SpelKeypad.
-const MAX_DIGITS = 12;
 const DIGITS = ['7', '8', '9', '4', '5', '6', '1', '2', '3'];
+const KEY_LABEL: Record<string, string> = { '-': '−' };
 
 // One player's keypad. Keys act on pointerdown: two children tap at the same moment and a multi-touch
 // screen drops the click of the second touch. A keyboard click (detail 0) still works for a focused key.
@@ -21,12 +23,15 @@ export default function DuelKeypad({ label, questionKey, disabled, onAnswer }: P
     // Taps can land faster than a render: the ref holds what is typed right now.
     const now = useRef(typed);
     const value = typed.key === questionKey ? typed.value : '';
+    // The comma / minus when the round's content has them (as SpelKeypad).
+    const from = useDuelStore(s => s.from);
+    const keys = useMemo(() => (from ? spelKeysOf(from.choice, from.grade) : []), [from]);
 
     const press = (k: string) => {
         if (disabled) return;
         const v = now.current.key === questionKey ? now.current.value : '';
-        if (k === 'ok') { if (v !== '') onAnswer(v); return; }
-        const next = k === 'back' ? v.slice(0, -1) : v.length < MAX_DIGITS ? v + k : v;
+        if (k === 'ok') { if (canSubmit(v)) onAnswer(shownAnswer(v)); return; }
+        const next = typeKey(v, k, keys);
         now.current = { key: questionKey, value: next };
         setTyped(now.current);
     };
@@ -42,12 +47,13 @@ export default function DuelKeypad({ label, questionKey, disabled, onAnswer }: P
 
     return (
         <div className={`tt-keypad${disabled ? ' is-off' : ''}`} role="group" aria-label={label}>
-            <output className="kiosk-math tt-field" aria-label="Antwoord" aria-live="polite">{value}</output>
-            <div className="tt-keys" onPointerDown={onDown} onClick={onClick}>
+            <output className="kiosk-math tt-field" aria-label="Antwoord" aria-live="polite">{shownAnswer(value)}</output>
+            <div className={`tt-keys${keys.length ? ` has-extra is-${keys.length}` : ''}`} onPointerDown={onDown} onClick={onClick}>
                 {DIGITS.map(k => <button key={k} type="button" className="tt-key" data-key={k}>{k}</button>)}
                 <button type="button" className="tt-key is-back" data-key="back" aria-label="Laatste cijfer wissen"><Backspace aria-hidden /></button>
-                <button type="button" className="tt-key" data-key="0">0</button>
-                <button type="button" className="tt-key is-ok" data-key="ok" disabled={disabled || value === ''}>OK</button>
+                {keys.map((k, i) => <button key={k} type="button" className={`tt-key is-extra${i === 0 && keys.length === 2 ? ' is-first' : ''}`} data-key={k}>{KEY_LABEL[k] ?? k}</button>)}
+                <button type="button" className="tt-key is-zero" data-key="0">0</button>
+                <button type="button" className="tt-key is-ok" data-key="ok" disabled={disabled || !canSubmit(value)}>OK</button>
             </div>
         </div>
     );

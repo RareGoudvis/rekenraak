@@ -4,6 +4,10 @@ import type { SpelPackBoard } from './content/pack';
 // Which games fit the chosen content. Pure: the picker shows only the skins that accept it, the rest stay
 // out of sight (never "binnenkort").
 
+// The extra keys a game keypad can show beside the digits: the comma of a kommagetal, a minus.
+export type SpelKey = ',' | '-';
+const KEY_ORDER: readonly SpelKey[] = [',', '-'];
+
 // What a Zelf oefenen choice asks of a game.
 export interface SpelContent {
     kind: AnswerKind;
@@ -11,6 +15,8 @@ export interface SpelContent {
     answerChars?: number;
     // Every answer is plain digits (no comma, fraction or sign): a digit-by-digit skin can play it.
     digitsOnly?: boolean;
+    // A number content's keypad keys beside the digits (some answer has a comma, some a minus); absent = digits only.
+    keys?: readonly SpelKey[];
     // The operations its sums use; absent = unknown, taken as fitting.
     ops?: readonly ('+' | '-' | 'x' | ':')[];
     // The question and its choices are pictures or phrases (a content pack: the klok): only a skin that draws <SpelVisual>.
@@ -38,6 +44,9 @@ export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean
     if (accepts.board && content.boards && !content.boards.includes(accepts.board)) return false;
     return true;
 }
+
+/** The keys several contents need together, in keypad order. */
+export const keysOfAll = (parts: readonly SpelContent[]): SpelKey[] => KEY_ORDER.filter(k => parts.some(p => p.keys?.includes(k)));
 
 /** The skins (registry order) that can play this content. */
 export const skinsFor = <T extends { meta: SkinMeta }>(skins: readonly T[], content: SpelContent): T[] =>

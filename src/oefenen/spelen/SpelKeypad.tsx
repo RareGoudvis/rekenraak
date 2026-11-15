@@ -1,5 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Keypad from '../kiosk/Keypad';
+import type { SpelKey } from './accepts';
+import { canSubmit, keyOfKeyboard, MAX_ANSWER_CHARS, shownAnswer, typeKey } from './keypadInput';
+import { spelKeysOf } from './spelQuestion';
+import { useSpelStore } from './useSpelStore';
 
 interface Props {
     // The pupil's number, on Controleer or Enter.
@@ -8,33 +12,33 @@ interface Props {
     questionKey: string;
     // Outside the play phase the keys do nothing.
     disabled?: boolean;
-    // A shorter field (Schatkist's 4-digit lock); absent = MAX_DIGITS.
+    // A shorter field (Schatkist's 4-digit lock, digits only); absent = MAX_ANSWER_CHARS and the round's keys.
     maxDigits?: number;
     // Told the field's value as it changes (Schatkist shows it in the lock).
     onType?(value: string): void;
 }
 
-// Leerjaar 6 sums reach 1 000 000 000 (10 digits); 12 as the kiosk keypad (oefenen.answerLength).
-const MAX_DIGITS = 12;
-
-// For keypad skins (Pinguïntoren, Zombies): the kiosk keypad plus a physical keyboard (digits, Backspace, Enter).
-export default function SpelKeypad({ onAnswer, questionKey, disabled = false, maxDigits = MAX_DIGITS, onType }: Props) {
+// For keypad skins (Pinguïntoren, Zombies): the kiosk keypad plus a physical keyboard (digits, Backspace, Enter, and
+// the comma / minus when the round's content has them: the same keys for every question, so the keypad never jumps).
+export default function SpelKeypad({ onAnswer, questionKey, disabled = false, maxDigits, onType }: Props) {
     const [typed, setTyped] = useState({ key: questionKey, value: '' });
     const value = typed.key === questionKey ? typed.value : '';
+    const from = useSpelStore(s => s.from);
+    const keys = useMemo<readonly SpelKey[]>(() => (maxDigits === undefined && from ? spelKeysOf(from.choice, from.grade) : []), [from, maxDigits]);
 
     const press = (k: string) => {
         if (disabled) return;
         setTyped(t => {
             const v = t.key === questionKey ? t.value : '';
-            if (k === 'back') return { key: questionKey, value: v.slice(0, -1) };
-            return /^\d$/.test(k) && v.length < maxDigits ? { key: questionKey, value: v + k } : t;
+            const next = typeKey(v, k, keys, maxDigits ?? MAX_ANSWER_CHARS);
+            return next === v && t.key === questionKey ? t : { key: questionKey, value: next };
         });
     };
-    const submit = () => { if (!disabled && value !== '') onAnswer(value); };
+    const submit = () => { if (!disabled && canSubmit(value)) onAnswer(shownAnswer(value)); };
 
     // The window listener is set once; it calls the latest handlers through this ref.
-    const handlers = useRef({ press, submit });
-    useLayoutEffect(() => { handlers.current = { press, submit }; });
+    const handlers = useRef({ press, submit, keys });
+    useLayoutEffect(() => { handlers.current = { press, submit, keys }; });
     const typedTo = useRef(onType);
     useLayoutEffect(() => { typedTo.current = onType; });
     useEffect(() => { typedTo.current?.(value); }, [value]);
@@ -46,7 +50,10 @@ export default function SpelKeypad({ onAnswer, questionKey, disabled = false, ma
             if ((e.target as HTMLElement | null)?.tagName === 'BUTTON' && e.key === 'Enter') return;
             if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat) handlers.current.submit(); }
             else if (e.key === 'Backspace') { e.preventDefault(); handlers.current.press('back'); }
-            else if (/^\d$/.test(e.key)) { e.preventDefault(); handlers.current.press(e.key); }
+            else {
+                const k = keyOfKeyboard(e.key, handlers.current.keys);
+                if (k !== null) { e.preventDefault(); handlers.current.press(k); }
+            }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -54,8 +61,8 @@ export default function SpelKeypad({ onAnswer, questionKey, disabled = false, ma
 
     return (
         <div className="spel-keypad">
-            <output className="kiosk-field kiosk-math spel-keypad-field" aria-label="Jouw antwoord" aria-live="polite">{value}</output>
-            <Keypad extras={[]} onKey={press} onCheck={submit} canCheck={!disabled && value !== ''} />
+            <output className="kiosk-field kiosk-math spel-keypad-field" aria-label="Jouw antwoord" aria-live="polite">{shownAnswer(value)}</output>
+            <Keypad extras={[...keys]} onKey={press} onCheck={submit} canCheck={!disabled && canSubmit(value)} />
         </div>
     );
 }

@@ -18,7 +18,7 @@ export interface SkinAccepts {
     kinds: readonly AnswerKind[];
     // The longest answer the skin's targets can show (an egg, a mole); absent = any length.
     maxAnswerChars?: number;
-    // The skin works digit by digit (a code lock): only content whose answers are plain digits.
+    // Only content whose answers are plain digits: a code lock works digit by digit, an egg prints a bare number.
     digits?: boolean;
     // Only these operations (Honingraat: "find every sum that makes 20" needs + / −; one tafel has too few sums).
     ops?: readonly ('+' | '-' | 'x' | ':')[];

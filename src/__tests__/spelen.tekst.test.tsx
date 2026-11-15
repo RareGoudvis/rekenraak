@@ -93,11 +93,13 @@ describe('the tekst pack: every admitted leaf', () => {
         }
     });
 
-    test('number questions are whole numbers ≥ 0 (every game); a comma, a minus or a word only taps', () => {
+    test('number questions are plain numbers (every game; a comma or minus shows as a view), a word only taps', () => {
         for (const { q } of all) {
             if (q.kind === 'number') {
-                expect(q.views, q.text).toBeUndefined();
-                for (const c of q.choices) expect(c, q.text).toMatch(/^\d+$/);
+                // Whole numbers ≥ 0 as they are; a comma or minus as "1.5" / "-3" with "1,5" / "−3" on the targets.
+                for (const c of q.choices) expect(c, q.text).toMatch(/^-?\d+(\.\d+)?$/);
+                if (q.choices.every(c => /^\d+$/.test(c)) && !q.views) continue;
+                expect(q.views, q.text).toHaveLength(q.choices.length);
             } else {
                 expect(q.kind).toBe('choice');
                 expect(q.views, q.text).toHaveLength(q.choices.length);
@@ -144,9 +146,9 @@ describe('a few leaves by hand', () => {
         expect(eo.choices).toEqual(['even', 'oneven']);
     });
 
-    test('geld teruggeven taps euro amounts and the kiosk gets euro + cent fields', () => {
+    test('geld teruggeven: euro amounts typed or tapped, the kiosk gets euro + cent fields', () => {
         const q = first(choice(2, 'Geld', 'Geld teruggeven'), 2, 'geld-teruggeven');
-        expect(q.kind).toBe('choice');
+        expect(q.kind).toBe('number');
         expect(q.text).toMatch(/^Je betaalt €\s[\d,]+ met €\s\d+\. Je krijgt €\s\? terug\.$/);
         const i = q.choices.indexOf(q.answer);
         expect(q.views![i].text).toMatch(/^\d+,\d\d$/);
@@ -211,12 +213,12 @@ describe('the sums to leerjaar 6', () => {
         expect(onAnswer).toHaveBeenCalledWith('1000000000');
     });
 
-    test('a kommagetal mix no tap target holds plays its keypad part (leerjaar 5 Afronden: the whole numbers)', () => {
+    test('a kommagetal mix no tap target holds plays whole in the keypad games, with the comma (leerjaar 5 Afronden)', () => {
         const c = choice(5, 'Vergelijken, ordenen, afronden', 'Afronden');
         expect(choiceCanPlay(c, 5)).toBe(true);
         const leaves = new Set(spelChoiceOf(c, 5).vars.map(v => v.leafId));
-        expect(leaves.has('afronden-dec-rooster')).toBe(false);
-        expect(spelContentOf(c, 5)!.kind).toBe('number');
+        expect(leaves.has('afronden-dec-rooster')).toBe(true);
+        expect(spelContentOf(c, 5)).toMatchObject({ kind: 'number', keys: [','] });
     });
 });
 

@@ -194,10 +194,10 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Pasen: nine eggs in the grass, the answer and eight distractors (choiceCount). Untimed. Number only:
         // an exercise's own choices are too few for nine eggs, and nine clock faces are too many to read. Four characters:
-        // "89 991" sticks out past the egg (measured 2026-11-14).
+        // "89 991" sticks out past the egg (measured 2026-11-14). Digits only: an egg prints a bare number (no € 5,50, no −3).
         meta: {
             id: 'eieren', label: 'Eieren zoeken', input: 'choice', choiceCount: 9, timed: false, round: { questions: 15 }, season: 'pasen',
-            accepts: { kinds: ['number'], maxAnswerChars: 4 }, sounds: { correct: 'piep', wrong: 'plop' },
+            accepts: { kinds: ['number'], maxAnswerChars: 4, digits: true }, sounds: { correct: 'piep', wrong: 'plop' },
         },
         icon: Egg,
         Component: lazy(() => import('./eieren/Eieren')),
