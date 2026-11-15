@@ -38,6 +38,8 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
+- Spelen scene kit `<Clouds>` under OS prefers-reduced-motion: index.css forces `animation-duration: 0.001ms !important`, so every cloud track's negative delay runs it to its end state (off-stage right) and the sky shows no clouds at all (seen in Ballonnen 2026-11-15; the prop-only reducedMotion path is fine). Fix in scene/ (e.g. place still clouds by `driftX` instead of a paused animation).
+
 
 
 

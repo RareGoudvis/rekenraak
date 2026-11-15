@@ -1,8 +1,21 @@
 /* Ballonnen skin. Flat fills under a thick dark outline (spelen.css tokens), transforms and opacity only
-   (old school laptops), and nothing moves under prefers-reduced-motion. */
+   (old school laptops), and nothing moves under reduced motion (the prop's .is-still and the media query). */
 .bal-sky {
   /* One balloon's width: four lanes side by side with room to sway, small enough to rise past the sign. */
   --bal-w: clamp(64px, min(14vw, 19vh), 150px);
+  --bird-w: clamp(56px, calc(var(--bal-w) * .62), 88px);
+  /* The landscapes (Lands.tsx), all from the theme accents. */
+  --bal-grass-far: color-mix(in srgb, var(--spel-grass) 55%, var(--kiosk-paper));
+  --bal-leaf: color-mix(in srgb, var(--accent-metendrekenen) 82%, var(--spel-ink));
+  --bal-bark: color-mix(in srgb, var(--accent-vraagstukken) 45%, color-mix(in srgb, var(--spel-ink) 45%, var(--kiosk-paper)));
+  --bal-rock: color-mix(in srgb, var(--accent-bewerkingen) 26%, color-mix(in srgb, var(--spel-ink) 34%, var(--kiosk-paper)));
+  --bal-rock-far: color-mix(in srgb, var(--accent-bewerkingen) 22%, color-mix(in srgb, var(--spel-ink) 20%, var(--kiosk-paper)));
+  --bal-snow: color-mix(in srgb, var(--accent-bewerkingen) 5%, var(--kiosk-paper));
+  --bal-pine: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--spel-ink));
+  --bal-sea: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--kiosk-paper));
+  --bal-sand: color-mix(in srgb, var(--mab-e) 40%, var(--kiosk-paper));
+  --bal-sail: color-mix(in srgb, var(--accent-vraagstukken) 75%, var(--kiosk-paper));
+  --bal-switch: 900ms;
   position: absolute;
   inset: 0;
   display: flex;
@@ -12,33 +25,101 @@
   background: var(--spel-sky);
 }
 
-.bal-cloud {
-  position: absolute;
-  width: clamp(80px, 14vw, 180px);
-  fill: var(--spel-cloud);
-  stroke: var(--spel-ink);
-  stroke-width: 3;
-  stroke-linejoin: round;
-  animation: bal-drift 14s ease-in-out infinite alternate;
-}
-.bal-cloud-a { top: 6%; left: 4%; }
-.bal-cloud-b { top: 16%; right: 6%; width: clamp(64px, 10vw, 140px); animation-duration: 18s; animation-delay: -6s; }
-.bal-cloud-c { top: 40%; left: 42%; width: clamp(56px, 8vw, 110px); animation-duration: 22s; animation-delay: -11s; opacity: .8; }
-@keyframes bal-drift { from { transform: translateX(-24px); } to { transform: translateX(24px); } }
+/* Everything behind the sign: the landscape, clouds, balloons and the bird. Its own layer, so a mistake can
+   shake it without moving the sum. */
+.bal-scene { position: absolute; inset: 0; z-index: 1; }
 
-.bal-hills {
+/* ── Landscapes ───────────────────────────────────────────────────────────── */
+/* A little wider than the sky: the shake never shows an edge. */
+.bal-lands { position: absolute; inset: 0 -16px; z-index: 0; pointer-events: none; }
+/* The new one fades in on top; the old one stays whole under it until the fade is done. */
+.bal-land {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0s linear var(--bal-switch), visibility 0s linear var(--bal-switch);
+}
+.bal-land.is-on { z-index: 1; opacity: 1; visibility: visible; transition: opacity var(--bal-switch) ease; }
+.bal-land-sky { position: absolute; inset: 0; background: var(--spel-sky); }
+.bal-land.is-bergen .bal-land-sky {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)), color-mix(in srgb, var(--accent-bewerkingen) 9%, var(--kiosk-paper)) 75%);
+}
+.bal-land.is-strand .bal-land-sky {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--accent-bewerkingen) 24%, var(--kiosk-paper)), color-mix(in srgb, var(--accent-vraagstukken) 20%, var(--kiosk-paper)) 80%);
+}
+.bal-ground { position: absolute; inset: 0; }
+/* After a tap on the bird the new ground rises into place. */
+.bal-lands.is-switched .bal-land.is-on .bal-ground { animation: bal-rise var(--bal-switch) var(--ease-out) both; }
+@keyframes bal-rise { from { translate: 0 12%; } to { translate: 0 0; } }
+
+.bal-strip {
   position: absolute;
   left: 0;
-  right: 0;
   bottom: 0;
   width: 100%;
-  height: 16%;
-  fill: var(--spel-grass);
   stroke: var(--spel-ink);
   stroke-width: var(--spel-line);
-  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
 }
-.bal-hills path { vector-effect: non-scaling-stroke; }
+.bal-strip path { vector-effect: non-scaling-stroke; }
+.bal-prop { position: absolute; bottom: 10%; height: auto; overflow: visible; }
+.bal-prop * { stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+
+/* Grasland: two rows of hills and a tree or two. */
+.bal-gras-far { height: 24%; fill: var(--bal-grass-far); }
+.bal-gras-far path { stroke-width: 3px; }
+.bal-gras-near { height: 16%; fill: var(--spel-grass); }
+.bal-tree { bottom: 13%; width: min(8%, 12vh); }
+.bal-tree.is-small { bottom: 15%; width: min(5.5%, 8vh); }
+.bal-trunk { fill: var(--bal-bark); }
+.bal-crown { fill: var(--bal-leaf); }
+.bal-prop .bal-crown-lit { fill: var(--kiosk-paper); stroke: none; opacity: .3; }
+
+/* Besneeuwde bergen: three peaks, a snowfield, two pines and a light snowfall. */
+.bal-mountain { bottom: 9%; }
+.bal-mountain.is-big { width: min(48%, 64vh); bottom: 8%; }
+.bal-mountain.is-left { width: min(40%, 50vh); }
+.bal-mountain.is-right { width: min(42%, 54vh); }
+.bal-rock { fill: var(--bal-rock); }
+.bal-mountain:not(.is-big) .bal-rock { fill: var(--bal-rock-far); }
+.bal-prop .bal-rock-shade { fill: var(--spel-ink); stroke: none; opacity: .14; }
+.bal-snowcap, .bal-pine-snow { fill: var(--bal-snow); }
+.bal-snowfield { height: 15%; fill: var(--bal-snow); }
+.bal-pine { bottom: 5%; width: min(6%, 9vh); }
+.bal-needles { fill: var(--bal-pine); }
+
+/* Palmstrand: a sun, the sea with a boat, sand and two palms. */
+.bal-sun { top: 15%; bottom: auto; left: auto; right: 8%; width: min(10%, 14vh); }
+.bal-sun-disc { fill: var(--spel-star); }
+.bal-prop .bal-rays path { fill: none; stroke: var(--spel-star); stroke-width: 6; stroke-linecap: round; vector-effect: none; }
+.bal-rays { transform-origin: 50px 50px; animation: bal-spin 40s linear infinite; }
+@keyframes bal-spin { to { transform: rotate(360deg); } }
+.bal-sea { height: 27%; fill: var(--bal-sea); }
+.bal-waves {
+  bottom: 12%;
+  height: 13%;
+  fill: none;
+  stroke: var(--kiosk-paper);
+  stroke-width: 3;
+  stroke-linecap: round;
+  animation: bal-waves 5s ease-in-out infinite alternate;
+}
+@keyframes bal-waves { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+.bal-boat { left: 58%; bottom: 17%; width: min(8%, 11vh); transform-origin: 50% 90%; animation: bal-rock 3.4s ease-in-out infinite alternate; }
+@keyframes bal-rock { from { transform: rotate(-4deg); } to { transform: rotate(4deg) translateY(-3px); } }
+.bal-sail { fill: var(--kiosk-paper); }
+.bal-sail.is-front { fill: var(--bal-sail); }
+.bal-hull { fill: var(--bal-bark); }
+.bal-sand { height: 13%; fill: var(--bal-sand); }
+.bal-palm { bottom: 5%; width: min(16%, 24vh); }
+.bal-palm.is-flip { transform: scaleX(-1); }
+.bal-palm-trunk { fill: var(--bal-bark); }
+.bal-prop .bal-palm-ring { fill: none; stroke-width: 2; opacity: .6; }
+.bal-frond { fill: var(--bal-leaf); }
+.bal-coconut { fill: color-mix(in srgb, var(--bal-bark) 60%, var(--spel-ink)); }
+.bal-fronds { transform-origin: 70px 58px; animation: bal-sway 4.5s ease-in-out infinite alternate; }
+@keyframes bal-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
 
 /* ── The sum ──────────────────────────────────────────────────────────────── */
 .bal-top {
@@ -107,7 +188,7 @@
   from { transform: translateY(0) rotate(-2deg); }
   to { transform: translateY(-10px) rotate(2deg); }
 }
-/* "Hoe los ik dit op?": the clouds and the bob wait too. */
+/* "Hoe los ik dit op?": the bob, the bird and the scenery wait too. */
 .bal-sky.is-paused *,
 .bal-sky.is-paused *::before { animation-play-state: paused; }
 
@@ -133,6 +214,7 @@
 .bal-knot { fill: var(--fill); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
 .bal-string { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
 .bal-shine { fill: var(--kiosk-paper); opacity: .55; }
+.bal-air { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; opacity: 0; }
 
 /* The number on a white patch: readable on every balloon colour. */
 .bal-num {
@@ -157,33 +239,13 @@
   from { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
   to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
-/* The balloon that popped or floated away is blown up again where it was. */
+/* The balloon that popped or went away is blown up again where it was. */
 .bal-slot.is-fresh .bal { animation: bal-fresh 420ms var(--ease-spring) both; transform-origin: 50% 35%; }
 @keyframes bal-fresh { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
 
-/* Keys 1–4: a small hint at the string's end, only where a keyboard is likely. */
-.bal-key {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%, 40%);
-  display: none;
-  min-width: 26px;
-  height: 26px;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--spel-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kiosk-paper);
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
-@media (hover: hover) and (pointer: fine) { .bal-key { display: inline-flex; } }
-
 /* Right: the balloon pops and bursts into bits of its colour. */
 .bal-slot.is-popped .bal-art,
-.bal-slot.is-popped .bal-num,
-.bal-slot.is-popped .bal-key { animation: bal-pop 240ms var(--ease-out) forwards; }
+.bal-slot.is-popped .bal-num { animation: bal-pop 240ms var(--ease-out) forwards; }
 @keyframes bal-pop { to { transform: scale(1.35); opacity: 0; } }
 /* The number's own centring translate stays under the pop. */
 .bal-slot.is-popped .bal-num { animation-name: bal-pop-num; }
@@ -208,45 +270,121 @@
   to { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--bal-w) * -.95)) scale(.4); }
 }
 
-/* Wrong: the picked balloon floats gently away; no red, no shake. */
-.bal-slot.is-away .bal { animation: bal-away 2.4s ease-in forwards; }
-@keyframes bal-away {
-  to { transform: translate(calc((var(--i) - 1.5) * 24px), -90vh) rotate(-12deg); }
+/* Wrong: pfff! The picked balloon loses its air, zigzags off shrinking and wobbling, air puffing from the
+   knot. Friendly and silly, no red; it is gone before the next sum (SPEL_FLASH_MS.wrong = 1600 ms). */
+.bal-slot.is-deflate { z-index: 1; }
+.bal-slot.is-deflate .bal { transform-origin: 50% 70%; animation: bal-deflate 1450ms cubic-bezier(.35, .1, .6, 1) forwards; }
+@keyframes bal-deflate {
+  0% { transform: none; }
+  8% { transform: scale(1.12, .88); }
+  18% { transform: translate(30%, -10%) rotate(-30deg) scale(.9); }
+  32% { transform: translate(-55%, -32%) rotate(34deg) scale(.78); }
+  46% { transform: translate(60%, -58%) rotate(-38deg) scale(.66); }
+  60% { transform: translate(-58%, -86%) rotate(40deg) scale(.56); }
+  74% { transform: translate(45%, -116%) rotate(-32deg) scale(.48); opacity: 1; }
+  88% { transform: translate(-25%, -146%) rotate(24deg) scale(.42); opacity: .85; }
+  100% { transform: translate(10%, -176%) rotate(-12deg) scale(.38); opacity: 0; }
 }
+/* The skin flubbers as the air rushes out. */
+.bal-slot.is-deflate .bal-skin { transform-origin: 50px 54px; animation: bal-flubber 110ms linear infinite alternate; }
+@keyframes bal-flubber { from { transform: scale(1.05, .93); } to { transform: scale(.93, 1.06); } }
+.bal-slot.is-deflate .bal-air { animation: bal-air 140ms linear infinite alternate; }
+@keyframes bal-air { from { opacity: .25; } to { opacity: .9; } }
 
-/* The right balloon lights up with a ring while the sign shows the answer. */
-.bal-ring {
+/* Then the right balloon shows itself: a soft golden glow and a little lift. */
+.bal-glow {
   position: absolute;
-  left: 2%;
-  top: -0.5%;
-  width: 96%;
-  height: 65%;
-  border: 6px solid var(--kiosk-ok);
+  left: 50%;
+  top: 33.75%;
+  width: calc(var(--bal-w) * 1.7);
+  height: calc(var(--bal-w) * 1.7);
+  translate: -50% -50%;
   border-radius: 50%;
-  animation: bal-ring 800ms ease-in-out 2 alternate both;
+  background: radial-gradient(circle, color-mix(in srgb, var(--spel-star) 80%, transparent) 0%, color-mix(in srgb, var(--spel-star) 40%, transparent) 42%, transparent 70%);
+  pointer-events: none;
+  animation: bal-glow-in 450ms 300ms var(--ease-out) both, bal-glow-pulse 700ms 750ms ease-in-out infinite alternate;
 }
-@keyframes bal-ring { from { transform: scale(1); } to { transform: scale(1.08); } }
+@keyframes bal-glow-in { from { opacity: 0; scale: .5; } to { opacity: 1; scale: 1; } }
+@keyframes bal-glow-pulse { from { scale: 1; } to { scale: 1.1; } }
+.bal-slot.is-answer { z-index: 2; }
+.bal-slot.is-answer .bal { transform-origin: 50% 40%; animation: bal-show 600ms 300ms var(--ease-spring) both; }
+@keyframes bal-show { from { scale: 1; } 50% { scale: 1.14; } to { scale: 1.08; } }
+.bal-slot.is-answer .bal-body { stroke-width: 6; }
 .bal-slot.is-answer .bal-num { color: var(--kiosk-ok); }
 
 .bal-slot.is-rest .bal { opacity: .45; transition: opacity var(--dur-slow) var(--ease-out); }
 
+/* ── The bird: now and then it flies by under the sign; a tap switches the landscape ── */
+.bal-bird {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: var(--bird-w);
+  height: calc(var(--bird-w) * .75);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transform: translate3d(-200vw, 0, 0);
+  will-change: transform;
+}
+/* A bigger target than the bird itself: it is moving. */
+.bal-bird::before { content: ''; position: absolute; inset: -18px; }
+.bal-bird:focus, .bal-bird:focus-visible { outline: none; box-shadow: none; }
+.bal-bird-fly { display: block; width: 100%; height: 100%; }
+.bal-bird[data-dir='left'] .bal-bird-fly { transform: scaleX(-1); }
+.bal-bird-art { display: block; width: 100%; height: 100%; overflow: visible; }
+.bal-bird-art * { stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.bal-bird-body, .bal-bird-tail { fill: var(--spel-fill-4); }
+.bal-bird-wing { fill: color-mix(in srgb, var(--spel-fill-4) 70%, var(--spel-ink)); transform-origin: 36px 33px; animation: bal-flap 260ms ease-in-out infinite alternate; }
+@keyframes bal-flap { from { transform: scaleY(1); } to { transform: scaleY(-.55); } }
+.bal-bird-belly { fill: color-mix(in srgb, var(--spel-fill-4) 25%, var(--kiosk-paper)); stroke: none !important; }
+.bal-bird-beak { fill: var(--spel-star); }
+.bal-bird-eye { fill: var(--kiosk-paper); stroke-width: 2 !important; }
+.bal-bird-pupil { fill: var(--spel-ink); stroke: none !important; }
+/* Tapped: a happy loop-the-loop and off into the sky. */
+.bal-bird[data-flee] .bal-bird-art { animation: bal-flee 1100ms cubic-bezier(.4, 0, .7, .4) forwards; }
+.bal-bird[data-flee] .bal-bird-wing { animation-duration: 120ms; }
+@keyframes bal-flee {
+  0% { translate: 0 0; rotate: 0deg; }
+  35% { translate: 0 -24px; rotate: -360deg; }
+  100% { translate: 0 -80vh; rotate: -380deg; }
+}
+/* Sitting on the ground (reduced motion): wings folded, still tappable. */
+.bal-bird[data-k='perch'] .bal-bird-wing { animation: none; }
+
 /* A landscape phone: the sign and the balloons share very little height. */
 @media (max-height: 420px) {
   .bal-sky { --bal-w: clamp(56px, 20vh, 110px); }
-  .bal-cloud-c { display: none; }
+  .bal-tree.is-small, .bal-boat, .bal-pine { display: none; }
 }
 
 /* A phone upright: four narrow lanes, each balloon as wide as its lane allows. */
 @media (orientation: portrait) and (max-width: 600px) {
   .bal-sky { --bal-w: clamp(64px, 20vw, 110px); }
+  .bal-palm { width: 22%; }
+  .bal-sun { width: 14%; top: 17%; right: 4%; }
 }
 
+/* Reduced motion: no loops, instant states; a wrong balloon simply shows itself empty and faded. */
+.bal-sky.is-still .bal-bob, .bal-sky.is-still .bal-rays, .bal-sky.is-still .bal-waves, .bal-sky.is-still .bal-boat,
+.bal-sky.is-still .bal-fronds, .bal-sky.is-still .bal-bird-wing, .bal-sky.is-still .bal-glow,
+.bal-sky.is-still .bal-ground, .bal-sky.is-still .bal-slot.is-answer .bal { animation: none; }
+.bal-sky.is-still .bal-land, .bal-sky.is-still .bal-land.is-on { transition: none; }
+.bal-sky.is-still .bal-slot.is-deflate .bal { animation: none; transform: rotate(-10deg) scale(.6); opacity: .55; }
+.bal-sky.is-still .bal-slot.is-deflate .bal-skin, .bal-sky.is-still .bal-slot.is-deflate .bal-air { animation: none; }
+
 @media (prefers-reduced-motion: reduce) {
-  .bal-cloud, .bal-bob, .bal-ring, .bal-sign-answer, .bal-ribbon, .bal-num, .bal-slot.is-fresh .bal { animation: none; }
+  .bal-bob, .bal-ring, .bal-sign-answer, .bal-ribbon, .bal-num, .bal-slot.is-fresh .bal, .bal-rays, .bal-waves, .bal-boat,
+  .bal-fronds, .bal-bird-wing, .bal-glow, .bal-ground, .bal-slot.is-answer .bal { animation: none; }
+  .bal-land, .bal-land.is-on { transition: none; }
   .bal-slot.is-popped .bal-art,
-  .bal-slot.is-popped .bal-num,
-  .bal-slot.is-popped .bal-key,
-  .bal-slot.is-away .bal { animation: bal-fade 300ms linear forwards; }
+  .bal-slot.is-popped .bal-num { animation: bal-fade 300ms linear forwards; }
+  .bal-slot.is-deflate .bal { animation: none; transform: rotate(-10deg) scale(.6); opacity: .55; }
+  .bal-slot.is-deflate .bal-skin, .bal-slot.is-deflate .bal-air { animation: none; }
 }
 @keyframes bal-fade { to { opacity: 0; } }
 
