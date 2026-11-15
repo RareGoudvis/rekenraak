@@ -14,8 +14,8 @@ interface Props {
     onType?(value: string): void;
 }
 
-// Game answers stay short: a leerjaar 1–3 sum has at most 4 digits.
-const MAX_DIGITS = 6;
+// Leerjaar 6 sums reach 1 000 000 000 (10 digits); 12 as the kiosk keypad (oefenen.answerLength).
+const MAX_DIGITS = 12;
 
 // For keypad skins (Pinguïntoren, Zombies): the kiosk keypad plus a physical keyboard (digits, Backspace, Enter).
 export default function SpelKeypad({ onAnswer, questionKey, disabled = false, maxDigits = MAX_DIGITS, onType }: Props) {
