@@ -154,6 +154,16 @@
   grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr));
   gap: var(--sp-1);
 }
+/* With a comma / minus: the kiosk keypad's layout, ⌫ and the extra keys in a fourth column, 0 and OK two wide. */
+/* minmax(0, …): four keys still fit a half of a phone (two players side by side). */
+.tt-keys.has-extra { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tt-keys.has-extra .tt-key { min-width: 0; }
+.tt-keys.has-extra .is-back { grid-column: 4; grid-row: 1 / span 2; }
+.tt-keys.has-extra.is-2 .is-back { grid-row: 1; }
+.tt-keys.has-extra .is-extra { grid-column: 4; grid-row: 3; }
+.tt-keys.has-extra .is-extra.is-first { grid-row: 2; }
+.tt-keys.has-extra .is-zero { grid-row: 4; grid-column: 1 / span 2; }
+.tt-keys.has-extra .is-ok { grid-row: 4; grid-column: 3 / span 2; }
 .tt-key {
   min-width: var(--spel-tap);
   min-height: var(--spel-tap);

@@ -11,7 +11,7 @@ import { buildZelfSessie, type ZelfChoice } from '../zelf/zelfSessie';
 import { useOefenStore } from '../useOefenStore';
 import { createSpelEvents, type SpelEvents, type SpelOutcome } from './events';
 import { reviewOf } from './review';
-import { spelChoiceOf, spelQuestionOf, type SpelQuestion } from './spelQuestion';
+import { kioskAnswerOf, spelChoiceOf, spelQuestionOf, type SpelQuestion } from './spelQuestion';
 import type { SkinMeta, SkinProgress, SkinResult } from './skins/types';
 import { boardOpenHelp, boardPickIn, nextBoardOf, type SpelBoard } from './board/session';
 
@@ -231,7 +231,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             const d = kioskFor(type.typeId);
             if (!d || given.trim() === '') return;
             // A pack choice is checked in the kiosk's own answer form (a time as [uur, minuten], a wording's fields).
-            const asKiosk = q.kioskAnswers?.[q.choices.indexOf(given.trim())] ?? given.trim();
+            const asKiosk = kioskAnswerOf(q, given);
             settle(given.trim(), checkAnswer(d, q.exercise, q.constraints, asKiosk, type.exactForm), now);
         },
 

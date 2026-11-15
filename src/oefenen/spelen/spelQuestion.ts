@@ -4,7 +4,8 @@ import type { OefenExercise } from '../../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
 import type { ZelfChoice } from '../zelf/zelfSessie';
 import { choicesOf, mulberry32, numberChoicesOf, seedOf, type SumFacts } from './distractors';
-import { NUMBER_CONTENT, PICTURE_CONTENT, skinsFor, type SpelContent } from './accepts';
+import { keysOfAll, NUMBER_CONTENT, PICTURE_CONTENT, skinsFor, type SpelContent, type SpelKey } from './accepts';
+import { normaliseNumber } from '../../services/oefenen/check';
 import { SKINS } from './skins/registry';
 import type { AnswerKind } from './skins/types';
 import type { KioskAnswer } from '../../services/oefenen/types';
@@ -56,7 +57,7 @@ export function spelVarsOf(choice: ZelfChoice, grade: number, board?: SpelPackBo
             vars = part.every(isTekst) ? choice.vars.filter(v => part.includes(v) || (playableNumber(v) && playsAt(v, grade))) : part;
         }
     }
-    // A mix no game holds (leerjaar 5 sums of 7 digits beside kommagetallen, which only tap): the part a keypad game
+    // A mix no game holds (long numbers beside words, which only tap): the part a keypad game
     // takes, else the word part (< = > without the long numbers to tap), else the variants short enough to tap.
     if (vars.length && !fits(vars)) {
         const content = (v: ZelfChoice['vars'][number]) => (isTekst(v) ? packFor(v.leafId)!.contentOf!(v) : null);
@@ -75,7 +76,7 @@ export const spelChoiceOf = (choice: ZelfChoice, grade: number, board?: SpelPack
 /** Whether a Zelf oefenen choice can be played as a game: it has playable variants (spelVarsOf) and at least one game takes them. */
 export function choiceCanPlay(choice: ZelfChoice, grade: number): boolean {
     const vars = spelVarsOf(choice, grade);
-    // Long kommagetallen fit no tap target and the keypad games take no comma: then there is no game to offer.
+    // A mix of words and long numbers fits no game: then there is none to offer.
     return vars.length > 0 && fits(vars);
 }
 
@@ -95,8 +96,10 @@ function mergeContent(parts: readonly SpelContent[]): SpelContent {
     const named = parts.filter(p => p.boards);
     const boards = named.length ? named.reduce<readonly SpelPackBoard[]>((acc, p) => acc.filter(b => p.boards!.includes(b)), named[0].boards!) : undefined;
     const ops = parts.every(p => p.ops) ? [...new Set(parts.flatMap(p => p.ops!))] : undefined;
+    const keys = keysOfAll(parts);
     return {
         kind,
+        ...(kind === 'number' && keys.length > 0 && { keys }),
         ...(chars !== undefined && { answerChars: chars }),
         ...(kind === 'number' && parts.every(p => p.digitsOnly) && { digitsOnly: true }),
         ...(ops && { ops }),
@@ -112,6 +115,12 @@ function mergeContent(parts: readonly SpelContent[]): SpelContent {
 export function spelContentOf(choice: ZelfChoice, grade: number): SpelContent | null {
     const vars = spelVarsOf(choice, grade);
     return vars.length ? contentOfVars(vars) : null;
+}
+
+/** The keys a game keypad shows for this choice (a comma, a minus), the same for every question of the round. */
+export function spelKeysOf(choice: ZelfChoice, grade: number): readonly SpelKey[] {
+    const content = spelContentOf(choice, grade);
+    return content?.kind === 'number' ? content.keys ?? [] : [];
 }
 
 function contentOfVars(vars: ZelfChoice['vars']): SpelContent {
@@ -148,6 +157,15 @@ export interface SpelQuestion {
     // Board rounds (content/pack.ts): a memory pair's two cards, and the value that makes two answers one.
     pair?: { sum: SpelChoiceView; answer: SpelChoiceView };
     same?: string;
+}
+
+/** What the kiosk check gets for a given answer: a pack choice's own kiosk form (a typed "1,50" is the choice 1.5), else the answer as given. */
+export function kioskAnswerOf(q: Pick<SpelQuestion, 'kind' | 'choices' | 'kioskAnswers'>, given: string): KioskAnswer {
+    const g = given.trim();
+    let i = q.choices.indexOf(g);
+    const n = i < 0 && q.kind === 'number' ? normaliseNumber(g) : null;
+    if (n !== null) i = q.choices.findIndex(c => normaliseNumber(c) === n);
+    return q.kioskAnswers?.[i] ?? g;
 }
 
 /** The game question for a made exercise (a pack's, or a whole-number + − × : sum), or null when it has none (the session draws again). */

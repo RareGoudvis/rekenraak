@@ -3,7 +3,7 @@ import { checkAnswer } from '../../../../services/oefenen/check';
 import { kioskFor } from '../../../../services/oefenen/kiosk';
 import { madePerSlot, nextExercise, nextType } from '../../../../services/oefenen/scheduler';
 import type { OefenHistoryEntry, OefenSessie } from '../../../../services/oefenen/types';
-import { spelQuestionOf, type SpelQuestion } from '../../spelQuestion';
+import { kioskAnswerOf, spelQuestionOf, type SpelQuestion } from '../../spelQuestion';
 import { spelSessieOf, type SpelFrom } from '../../useSpelStore';
 import type { SkinMeta } from '../types';
 
@@ -206,7 +206,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
             const type = st.sessie.types[q.slot];
             const d = kioskFor(type.typeId);
             if (!d) return;
-            const correct = checkAnswer(d, q.exercise, q.constraints, given, type.exactForm);
+            const correct = checkAnswer(d, q.exercise, q.constraints, kioskAnswerOf(q, given), type.exactForm);
             const feedback = { given, expected: q.answer, correct };
             const h = entry(st.sessie, q, correct, now - me.shownAt);
 
