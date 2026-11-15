@@ -381,22 +381,74 @@ describe('kiosk flow: answer on the card', () => {
         expect(err.given).not.toBe(err.expected);
     });
 
-    test('cijferen delen: quotient digits left to right, then the rest', () => {
-        st().load(hashOf(starterSessie({ types: [leafType('cijferen-delen-nat')] })));
+    test('cijferen delen: the staartdeling step by step (quotient digit, product, difference, bring down), then the rest', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-delen-nat', { withRemainder: true })] })));
         st().start();
+        // 1354 : 13 = 104 r 2, with a 0 step: 5 : 13 writes no rows, the 4 comes down beside the 5.
+        const exercise: CijferExercise = { id: 'd', operands: [1354, 13], operator: ':', answer: 104, remainder: 2, decimalPlaces: 0, isManuallyEdited: false };
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'q0' }); });
         const { container } = render(<OefenApp />);
-        const cur = st().shown!;
-        const ex = cur.exercise as CijferExercise;
-        const keys = kioskFor('cijferen-delen-nat')!.interact!.keys!(ex, cur.constraints);
-        expect(keys[0]).toBe('q0');
-        expect(keys[keys.length - 1]).toBe('r');
-        // Written from the left like a pupil does: q0, q1, … then Enter to the rest.
-        String(ex.answer).split('').forEach(dg => st().press(dg));
-        while (st().activeCell !== 'r') fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+        const keys = kioskFor('cijferen-delen-nat')!.interact!.keys!(exercise, st().shown!.constraints);
+        expect(keys).toEqual(['q0', 'm0_1', 'm0_0', 'v0_1', 'v0_0', 'n2', 'q1', 'n3', 'q2', 'm1_3', 'm1_2', 'v1_3', 'v1_2', 'r']);
+        // The cells stand where a pupil writes them: 13 under 13, the 5 and 4 brought down, 52 under 54.
+        const cell = (k: string) => cellInputs(container).get(k)!;
+        expect(parseFloat(cell('n3').style.top)).toBeLessThan(parseFloat(cell('m1_3').style.top));
+        expect(cell('n3').style.left).toBe(cell('m1_3').style.left);
+        expect(cell('m0_0').style.left).toBe(cell('v0_0').style.left);
+        // Typed as a pupil works, a full ruitje hands on; Enter skips the ruitjes that stay blank.
+        const press = (k: string, v: string) => { expect(st().activeCell).toBe(k); st().press(v); };
+        const skip = (k: string) => { expect(st().activeCell).toBe(k); fireEvent.keyDown(activeInput(container), { key: 'Enter' }); };
+        press('q0', '1'); press('m0_1', '3'); press('m0_0', '1'); press('v0_1', '0'); skip('v0_0');
+        press('n2', '5'); press('q1', '0'); press('n3', '4');
+        press('q2', '4'); press('m1_3', '2'); press('m1_2', '5'); press('v1_3', '2'); skip('v1_2');
         expect(controleer().disabled).toBe(true);
-        String(ex.remainder).split('').forEach(dg => st().press(dg));
+        press('r', '2');
         fireEvent.keyDown(activeInput(container), { key: 'Enter' });
         expect(st().lastCorrect).toBe(true);
+    });
+
+    test('cijferen delen: a wrong product is fout and the stats line names quotient and rest', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-delen-nat', { withRemainder: true })] })));
+        st().start();
+        const exercise: CijferExercise = { id: 'd', operands: [748, 4], operator: ':', answer: 187, remainder: 0, decimalPlaces: 0, isManuallyEdited: false };
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'q0' }); });
+        render(<OefenApp />);
+        const right = { q0: '1', m0_0: '4', v0_0: '3', n1: '4', q1: '8', m1_1: '2', m1_0: '3', v1_1: '2', n2: '8', q2: '7', m2_2: '8', m2_1: '2', v2_2: '0', r: '0' };
+        st().setInteraction({ ...EMPTY_INTERACTION, cells: { ...right, m1_1: '3' } });
+        st().answer();
+        expect(st().lastCorrect).toBe(false);
+        const err = st().run!.stats.perType[0].errors[0];
+        expect(err.expected).toBe('187 r 0');
+    });
+
+    test('cijferen vermenigvuldigen: a carry row per multiplier digit, written while the partial product is typed', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-vermenigvuldigen-nat')] })));
+        st().start();
+        // 1354 × 13 (the owner's card): × 3 carries 1, 1, 1; × 1 never carries, so it gets no row.
+        const exercise: CijferExercise = { id: 'm', operands: [1354, 13], operator: 'x', answer: 17602, remainder: 0, decimalPlaces: 0, isManuallyEdited: false };
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'p0_4' }); });
+        const { container } = render(<OefenApp />);
+        const keys = kioskFor('cijferen-vermenigvuldigen-nat')!.interact!.keys!(exercise, st().shown!.constraints);
+        expect(keys.slice(0, 8)).toEqual(['p0_4', 'c0_3', 'p0_3', 'c0_2', 'p0_2', 'c0_1', 'p0_1', 'p0_0']);
+        expect(keys.filter(k => k.startsWith('c'))).toEqual(['c0_3', 'c0_2', 'c0_1']);
+        // The carry row is named by its digit and sits right above the multiplicand.
+        expect(container.querySelector('.kiosk-card-inner')!.textContent).toContain('×3');
+        const cell = (k: string) => cellInputs(container).get(k)!;
+        expect(cell('c0_3').getAttribute('aria-label')).toBe('Onthouden 1 tientallen');
+        const right = { p0_4: '2', p0_3: '6', p0_2: '0', p0_1: '4', p1_3: '4', p1_2: '5', p1_1: '3', p1_0: '1', a4: '2', a3: '0', a2: '6', a1: '7', a0: '1' };
+        const carries = { c0_3: '1', c0_2: '1', c0_1: '1' };
+        // The keypad hands on along the product row; carries are tapped (off the Enter path).
+        st().press('2');
+        expect(st().activeCell).toBe('p0_3');
+        st().setInteraction({ ...EMPTY_INTERACTION, cells: { ...right, ...carries } });
+        st().answer();
+        expect(st().lastCorrect).toBe(true);
+        // A needed carry left blank is fout, like a sum's (owner rule).
+        st().next();
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'p0_4' }); });
+        st().setInteraction({ ...EMPTY_INTERACTION, cells: { ...right, ...carries, c0_2: '' } });
+        st().answer();
+        expect(st().lastCorrect).toBe(false);
     });
 
     test('the Lenen key explains itself with one static line, and only the Lenen key does', () => {

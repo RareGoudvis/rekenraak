@@ -1048,7 +1048,8 @@ describe('O25: a decimal divisor sizes the quotient from the shifted dividend', 
         const keys = kioskInteractOf(d, c)!.keys!(ex, c);
         const { answer: right } = cijferFill(ex, keys);
         const given = kioskInteractOf(d, c)!.fromState({ ...EMPTY_INTERACTION, cells: right }, ex, c);
-        expect(normaliseNumber(given.split(INTERACT_SEP)[0])).toBe(normaliseNumber(quotient));
+        // The quotient row reads as the quotient (the stats line "q r rest"); the working cells come before the rest.
+        expect(normaliseNumber(kioskInteractOf(d, c)!.show!(given, ex, c).split(' r ')[0])).toBe(normaliseNumber(quotient));
         expect(checkAnswer(d, ex, c, given)).toBe(true);
     });
 });

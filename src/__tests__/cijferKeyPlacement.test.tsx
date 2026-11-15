@@ -99,7 +99,7 @@ describe('cijferen vermenigvuldigen key: partial products units-first', () => {
         const keys = cijferKioskGrid(ex, 0).cells.map(c => c.key);
         const { answer } = cijferFill(ex, keys);
         const row = (r: number) => keys.filter(k => k.startsWith(`p${r}_`)).sort((a, b) => Number(a.split('_')[1]) - Number(b.split('_')[1])).map(k => answer[k]).join('');
-        expect(kioskMulRows(2).ppRows).toBe(2);
+        expect(kioskMulRows(ex, 0).ppRows).toBe(2);
         expect([row(0), row(1)]).toEqual(['3738', '87220']);
     });
 });

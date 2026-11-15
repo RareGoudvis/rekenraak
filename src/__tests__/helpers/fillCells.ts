@@ -35,7 +35,7 @@ export interface CijferFill {
     answer: Cells;
     // The carries / exchanged digits a pupil writes (right values; blank where none).
     scratch: Cells;
-    // Another right way to write it (partial products in the other row order, a left-aligned quotient).
+    // Another right way to write it (partial products in the other row order).
     alt?: Cells;
 }
 
@@ -44,14 +44,31 @@ export function cijferFill(ex: CijferExercise, keys: string[]): CijferFill {
     const dp = ex.decimalPlaces ?? 0;
     const [a, b] = ex.operands;
     if (ex.operator === ':') {
+        // A staartdeling worked digit by digit from the exercise's own numbers: after the komma
+        // shift, to dp decimals; each step that subtracts fills its product and difference rows.
+        const mdp = decimalsOf(b);
+        const divisor = Math.round(b * 10 ** mdp);
+        const [ip, dc = ''] = Math.abs(a).toFixed(dp + mdp).split('.');
+        const digits = (ip + dc).split('').map(Number);
         const q = keysOf(keys, 'q');
-        const qInt = q.length - dp;
-        const [int, dec = ''] = ex.answer.toFixed(dp).split('.');
-        const intDigits = String(Number(int));
-        const right = { ...rightAlign(q.slice(0, qInt), intDigits), ...Object.fromEntries(q.slice(qInt).map((k, i) => [k, dec[i] ?? ''])) };
-        const left = { ...Object.fromEntries(q.slice(0, qInt).map((k, i) => [k, intDigits[i] ?? ''])), ...Object.fromEntries(q.slice(qInt).map((k, i) => [k, dec[i] ?? ''])) };
-        const r = String(Number(ex.remainder.toFixed(9))).replace('.', ',');
-        return { answer: { ...right, r }, scratch: {}, alt: { ...left, r } };
+        const quotient = String(Math.floor(Number(ip + dc) / divisor)).padStart(dp + 1, '0');
+        const answer: Cells = rightAlign(q, quotient);
+        let partial = 0, k = 0, started = false;
+        digits.forEach((d, col) => {
+            partial = partial * 10 + d;
+            if (started && col > 0 && keys.includes(`n${col}`)) answer[`n${col}`] = String(d);
+            if (partial < divisor && !started) return;
+            started = true;
+            const qd = Math.floor(partial / divisor);
+            if (qd > 0) {
+                Object.assign(answer, rightAlign(keysOf(keys, `m${k}_`), String(qd * divisor)));
+                Object.assign(answer, rightAlign(keysOf(keys, `v${k}_`), String(partial - qd * divisor)));
+                k++;
+            }
+            partial -= qd * divisor;
+        });
+        answer.r = String(Number(ex.remainder.toFixed(9))).replace('.', ',');
+        return { answer, scratch: {} };
     }
     const ans = keysOf(keys, 'a');
     const D = ans.length;
@@ -65,14 +82,16 @@ export function cijferFill(ex: CijferExercise, keys: string[]): CijferFill {
         const pps = mDigits.map((d, shift) => String(mc * d * 10 ** shift));
         const ppCells = (order: string[]) => Object.assign({}, ...rows.map((row, r) => rightAlign(keysOf(keys, `${row}_`), order[r])));
         const scratch: Cells = {};
-        if (mDigits.length === 1) {
-            // Carry into each multiplicand digit, units first; the cell sits above that digit.
+        // Per multiplier digit: the carry into each multiplicand digit, units first; the cell sits
+        // above that digit (one carry row per digit, c<col> for a one-digit multiplier, c<r>_<col> else).
+        mDigits.forEach((m, r) => {
             let carry = 0;
             String(mc).split('').reverse().map(Number).forEach((d, p) => {
-                if (p > 0 && keys.includes(`c${D - 1 - p}`)) scratch[`c${D - 1 - p}`] = carry ? String(carry) : '';
-                carry = Math.floor((d * mDigits[0] + carry) / 10);
+                const key = mDigits.length === 1 ? `c${D - 1 - p}` : `c${r}_${D - 1 - p}`;
+                if (p > 0 && keys.includes(key)) scratch[key] = carry ? String(carry) : '';
+                carry = Math.floor((d * m + carry) / 10);
             });
-        }
+        });
         return rows.length
             ? { answer: { ...answer, ...ppCells(pps) }, scratch, alt: { ...answer, ...ppCells([...pps].reverse()) } }
             : { answer, scratch };
