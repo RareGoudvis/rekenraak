@@ -35,6 +35,10 @@ import { useBootLoad } from './hooks/useBootLoad';
 import { useOnboarding } from './hooks/useOnboarding';
 import { isBordPage } from './bootEntry';
 import { ensureFontLoaded } from './config/fontOptions';
+import { blockHasTutorSteps } from './services/stepsAvailability';
+import type { MathBlock } from './services/math/types';
+import { setTutorQrSplitPages, tutorQrFits } from './components/sheet/tutorQrSplit';
+import { TUTOR_QR_LINE_PX } from './components/sheet/TutorQr';
 
 // docSettings font keys → the theme.css token each one overrides on .print-area-shell.
 const SHEET_FONT_TOKENS = [
@@ -63,6 +67,7 @@ export default function App() {
   const setBlockPages = useWorksheetStore((state) => state.setBlockPages);
   // Harness escape hatch: measure a type at a width its tier forbids (scripts/width-matrix.mjs).
   const debugIgnoreMinWidth = useWorksheetStore((state) => state.debugIgnoreMinWidth);
+  const selectedGrade = useWorksheetStore((state) => state.selectedGrade);
 
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const onboarding = useOnboarding();
@@ -143,6 +148,22 @@ export default function App() {
     });
   }, []);
 
+  // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
+  // separator never renumbers the exercises after it.
+  const blockOrder = useMemo(() => numberBlocks(blocks), [blocks]);
+
+  // Stappenhulp QR on (SheetPages' sheet-wide rule): a page whose sums overflow one QR gets a split line.
+  const tutorQrOn = !!docSettings.tutorQr && blocks.some(blockHasTutorSteps);
+  const qrSplit = useMemo(() => (tutorQrOn ? {
+    dividerPx: TUTOR_QR_LINE_PX,
+    fits: tutorQrFits(blockOrder, selectedGrade),
+    // Row starts only count when they cover every exercise the block shows (one row-major grid).
+    rowCutsOf: (b: MathBlock, w: number) => {
+      const rows = measured.rowCutsOf(b, w);
+      return rows && rows.total === splittableCount(b) ? rows.cuts : undefined;
+    },
+  } : undefined), [tutorQrOn, blockOrder, selectedGrade, measured]);
+
   const packedPages = useMemo(
     () => packPages(blocks, {
       mode: docSettings.packMode ?? 'aansluitend',
@@ -154,12 +175,13 @@ export default function App() {
       minWidthOf: (b) => minWidthUnits(b, measured.intrinsicEntries(b.id)),
       answerSpacePx: docSettings.answerSpace,
       ignoreMinWidth: debugIgnoreMinWidth,
+      qrSplit,
     }),
-    [blocks, docSettings.packMode, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth],
+    [blocks, docSettings.packMode, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth, qrSplit],
   );
-  // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
-  // separator never renumbers the exercises after it.
-  const blockOrder = useMemo(() => numberBlocks(blocks), [blocks]);
+  useEffect(() => {
+    setTutorQrSplitPages(packedPages.flatMap((p, i) => (p.qrSplit ? [i + 1] : [])));
+  }, [packedPages]);
 
   // Per-block page index for the Overzicht markers. It used to be MEASURED from the DOM
   // against a fixed 1044px page height; now it is simply what the packer decided, so the

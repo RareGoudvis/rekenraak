@@ -39,13 +39,36 @@ export default function TutorQr({ payload, lean, caption = true, captionText, le
             </div>,
         );
     }
+    return frame(<QrSvg matrix={matrix} style={box} />);
+}
+
+function QrSvg({ matrix, style }: { matrix: boolean[][]; style: React.CSSProperties }) {
     const n = matrix.length + 2 * QR_QUIET;
     let d = '';
     matrix.forEach((row, r) => row.forEach((dark, c) => { if (dark) d += `M${c + QR_QUIET} ${r + QR_QUIET}h1v1h-1z`; }));
-    return frame(
-        <svg style={box} viewBox={`0 0 ${n} ${n}`} shapeRendering="crispEdges" role="img" aria-label="QR-code voor de stappenhulp">
+    return (
+        <svg style={style} viewBox={`0 0 ${n} ${n}`} shapeRendering="crispEdges" role="img" aria-label="QR-code voor de stappenhulp">
             <rect width={n} height={n} fill="#fff" />
             <path d={d} fill="#000" />
-        </svg>,
+        </svg>
+    );
+}
+
+// The split line's row is exactly the bare code's height, so the packer reserves a known box (no measuring needed).
+export const TUTOR_QR_LINE_PX = QR_PX;
+
+// The stappenhulp split line (PackedPage.qrSplit): a rule across the page with a bare code at its right
+// end, the same size as the footer code, for the sums above it. `note` is the teacher's screen-only warning.
+export function TutorQrLine({ top, width, payload, lean, note }: { top: number; width: number; payload: string | null; lean?: string | null; note?: string }) {
+    const matrix = useMemo(() => (payload ? tutorQrMatrix(payload) ?? (lean ? tutorQrMatrix(lean) : null) : null), [payload, lean]);
+    const box = { width: `${QR_PX}px`, height: `${QR_PX}px`, flex: 'none' as const, position: 'relative' as const };
+    return (
+        <div className="tutor-qr-line" data-sheet-extra="qr-line" style={{ top: `${top}px`, width: `${width}px`, height: `${TUTOR_QR_LINE_PX}px` }}>
+            <div className="tutor-qr-line-rule" />
+            {note && <span className="no-print tutor-qr-line-note" onClick={(e) => e.stopPropagation()}>{note}</span>}
+            {matrix ? <QrSvg matrix={matrix} style={box} /> : (
+                <div style={box}>{payload && <span className="no-print tutor-qr-note">Te veel sommen voor deze QR-code</span>}</div>
+            )}
+        </div>
     );
 }

@@ -142,6 +142,8 @@ export default function TutorApp() {
                         <h2>{g.n ? `Opdracht ${g.n}` : 'Opdracht'}{g.title ? ` · ${g.title}` : ''}</h2>
                         <ul className="tutor-list">
                             {g.items.map((item, i) => {
+                                // Leading placeholders are the sums above the sheet's split line: the other code opens those.
+                                if (!item && g.items.slice(0, i).every(x => !x)) return null;
                                 const label = itemLabel(g.numbering, i) ?? `${i + 1}.`;
                                 const steps = itemSteps(item, grade);
                                 return (
