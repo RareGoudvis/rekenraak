@@ -431,9 +431,12 @@ describe('kiosk flow: answer on the card', () => {
         const keys = kioskFor('cijferen-vermenigvuldigen-nat')!.interact!.keys!(exercise, st().shown!.constraints);
         expect(keys.slice(0, 8)).toEqual(['p0_4', 'c0_3', 'p0_3', 'c0_2', 'p0_2', 'c0_1', 'p0_1', 'p0_0']);
         expect(keys.filter(k => k.startsWith('c'))).toEqual(['c0_3', 'c0_2', 'c0_1']);
-        // The carry row is named by its digit and sits right above the multiplicand.
+        // The carry row is named by its digit, right of the E column, level with its carries.
         expect(container.querySelector('.kiosk-card-inner')!.textContent).toContain('×3');
         const cell = (k: string) => cellInputs(container).get(k)!;
+        const name = [...container.querySelectorAll<HTMLElement>('.kiosk-card-inner div')].find(el => el.textContent === '×3')!;
+        expect(parseFloat(name.style.left)).toBeGreaterThan(parseFloat(cell('a0').style.left));
+        expect(name.style.top).toBe(cell('c0_3').style.top);
         expect(cell('c0_3').getAttribute('aria-label')).toBe('Onthouden 1 tientallen');
         const right = { p0_4: '2', p0_3: '6', p0_2: '0', p0_1: '4', p1_3: '4', p1_2: '5', p1_1: '3', p1_0: '1', a4: '2', a3: '0', a2: '6', a1: '7', a0: '1' };
         const carries = { c0_3: '1', c0_2: '1', c0_1: '1' };

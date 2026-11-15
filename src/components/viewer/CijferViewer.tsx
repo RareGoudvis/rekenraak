@@ -341,9 +341,11 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const gridCols = mulGridCols(ex, dp, extraCols);
     const gridW = gridCols * CELL;
     const gridH = totalRows * CELL;
+    // Card only: the carry-row names stand right of the E column, outside the ruitjes.
+    const namesW = kiosk && n >= 2 && kiosk.carryRowOf.size > 0 ? CELL : 0;
 
     return (
-        <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
+        <div style={{ position: 'relative', width: gridW + namesW, height: gridH, flexShrink: 0, marginTop: cells ? 0 : 4 }}>
             {/* One px wider and taller than the grid, and every line offset half a stroke:
                 a line drawn exactly at gridW/gridH sits half outside the viewport and is
                 clipped away on screen (it survives at print DPI, so the sheet and the paper
@@ -424,12 +426,12 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
             )}
 
             {/* Card only: each carry row is named by what that partial product multiplies by ("×3", "×90"),
-                so the pupil knows which row a carry goes in; a long name shrinks to stay in its ruitje. */}
+                so the pupil knows which row a carry goes in; right of the E column (owner), a long name shrinks to fit. */}
             {kiosk && n >= 2 && [...kiosk.carryRowOf].map(([r, row]) => {
                 const name = `×${multiplierDigits[r]}${'0'.repeat(r)}`;
                 return (
                     <div key={`cl${r}`} style={{
-                        position: 'absolute', left: 0, top: row * CELL, width: CELL, height: CELL,
+                        position: 'absolute', left: gridW, top: row * CELL, width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: CELL * 0.44 * Math.min(1, 3 / name.length), fontFamily: 'var(--font-sheet-math)',
                         color: 'var(--text-muted)', userSelect: 'none', pointerEvents: 'none',
