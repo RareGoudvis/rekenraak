@@ -31,9 +31,9 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
-        version: '1.3.0',
+        version: '2.0.0',
         date: '2026-11',
-        summary: 'Eenvoudig: een blad maken met kaarten. Getallenas en getallenrijen met meerdere sprongen tegelijk.',
+        summary: 'Nieuw: Zelf oefenen met 18 rekenspelletjes, stappenhulp via een QR-code op je blad, en Eenvoudig: een blad maken met kaarten.',
         items: [
             { kind: 'nieuw', text: 'Eenvoudig: kies een oefening op een kaart en ze staat meteen op je blad. De volledige lijst blijft onder Uitgebreid.' },
             {
@@ -126,6 +126,8 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'De hulp achter het vraagteken is groter, volgt de nieuwe knoppen en het nieuwe paneel, en verwijst per onderwerp naar de handleiding.' },
             { kind: 'gewijzigd', text: 'Nieuw paneel rechts: kies bovenaan Opdracht of Heel het blad. Het aantal oefeningen staat altijd bovenaan; elke groep toont kort wat er ingesteld is.' },
             { kind: 'nieuw', text: 'Tussenstappen in de oplossingen kan je nu voor het hele blad tegelijk aanzetten. Per blok kan het nog apart.' },
+            { kind: 'nieuw', text: 'Stappenhulp: na het scannen kunnen leerlingen met Nog meer van deze oefening verder oefenen. Uitzetten kan bij Verbetersleutel en hulp.' },
+            { kind: 'nieuw', text: 'Staan er te veel sommen op een pagina voor één QR-code, dan komt er een tweede code op een lijn midden op het blad.' },
             { kind: 'gewijzigd', text: 'Alle spellen zijn opgefrist: levendige achtergronden, duidelijke maar vriendelijke foutjes en muziek. Geluid en muziek staan standaard aan.' },
             { kind: 'nieuw', text: 'Spellen met het cijferklavier hebben nu een komma- en mintoets waar het nodig is: kommagetallen, geld en negatieve getallen.' },
             { kind: 'nieuw', text: 'Race: kies Tijdrit of Benzine. Bij Benzine rij je zo ver je kan en tank je met een snelle som. Zes landschappen en een echte raceauto.' },
