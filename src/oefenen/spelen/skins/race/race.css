@@ -1,14 +1,20 @@
-/* Race skin. Flat fills under a thick dark outline (spelen.css tokens). The scene layers move by
-   transform only (Race.tsx writes them per frame); under reduced motion nothing scrolls. */
+/* Race skin: the car, the road, gates, the petrol station, the HUD and the panel. Landscapes in scenery.css.
+   The scene moves by transform only (Race.tsx writes it per frame); under reduced motion nothing scrolls. */
+.rc-root,
+.rc-ending {
+  /* One scene unit: the size every scenery tile, gate and the car is drawn in (1 px at 800 px tall). */
+  --rc-u: clamp(0.75px, 0.125vmin, 1.5px);
+  --rc-car: calc(var(--rc-u) * 250);
+  /* The road's share of the scene's height; the scenery stands on its top edge. */
+  --rc-road-h: 30%;
+  --rc-car-fill: var(--accent-vraagstukken);
+  --rc-car-dark: color-mix(in srgb, var(--spel-ink) 82%, var(--kiosk-paper));
+  --rc-glass: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink));
+  --rc-fuel: var(--accent-metendrekenen);
+}
 .rc-root {
-  --rc-car-fill: var(--spel-fill-0);
-  --rc-road: color-mix(in srgb, var(--spel-ink) 62%, var(--kiosk-paper));
-  --rc-hill: color-mix(in srgb, var(--accent-metendrekenen) 40%, var(--kiosk-paper));
-  --rc-leaves: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--spel-ink));
-  --rc-trunk: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
-  --rc-car: clamp(150px, 24vmin, 300px);
-  --rc-at: 14%;
-  /* Side by side the scene runs on under the keypad; this keeps the meter and clock clear of it. */
+  --rc-at: 12%;
+  /* Side by side the scene runs on under the keypad; this keeps the HUD clear of it. */
   --rc-panel-w: min(46vw, 440px);
   position: absolute;
   inset: 0;
@@ -20,60 +26,52 @@
 }
 
 /* ── The scene ────────────────────────────────────────────────────────────── */
-/* Side by side the scene fills the whole screen behind the keypad: out of the grid, so it never stops at the
-   panel's column whatever the grid does. */
-.rc-world { position: absolute; inset: 0; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
-.rc-sky { position: absolute; inset: 0; }
-.rc-sun {
-  position: absolute;
-  top: 18%;
-  right: calc(var(--rc-panel-w) + 10%);
-  width: 64px;
-  height: 64px;
-  border: 3px solid var(--spel-ink);
-  border-radius: 50%;
-  background: var(--spel-star);
-}
-.rc-cloud {
-  position: absolute;
-  width: 110px;
-  height: 36px;
-  border: 3px solid var(--spel-ink);
-  border-radius: 999px;
-  background: var(--spel-cloud);
-}
-.rc-cloud.is-a { top: 24%; left: 10%; }
-.rc-cloud.is-b { top: 34%; left: 48%; width: 80px; height: 28px; opacity: .85; }
+/* Side by side the scene fills the whole screen behind the keypad: out of the grid. */
+.rc-world { position: absolute; z-index: 0; inset: 0; min-width: 0; min-height: 0; overflow: hidden; overflow: clip; }
 
-.rc-strip { position: absolute; left: 0; bottom: 0; display: flex; will-change: transform; }
-.rc-hills { position: absolute; left: 0; right: 0; bottom: 34%; height: 22%; }
-.rc-hills .rc-strip { top: 0; }
-.rc-hill-tile { flex: none; width: 800px; height: 100%; }
-.rc-hill { fill: var(--rc-hill); }
-.rc-hill-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; vector-effect: non-scaling-stroke; }
-.rc-trees { position: absolute; left: 0; right: 0; bottom: 34%; height: 90px; }
-.rc-tree-tile { flex: none; width: 600px; height: 90px; overflow: visible; }
-.rc-trunk { fill: var(--rc-trunk); stroke: var(--spel-ink); stroke-width: 3px; }
-.rc-leaves, .rc-bush { fill: var(--rc-leaves); stroke: var(--spel-ink); stroke-width: 3px; }
-
-/* The road: grass verge on top, the dashed middle line scrolls under the cars. */
+/* The road: the verge on top (its colour per landscape), the dashed middle line scrolls under the cars. */
 .rc-road {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--rc-road-h);
+  background: var(--rc-asphalt);
+  border-top: calc(var(--rc-u) * 14) solid var(--rc-verge);
+  box-shadow: inset 0 3px 0 var(--spel-ink), 0 -3px 0 var(--spel-ink);
+  transition: background-color 1s, border-color 1s;
+}
+.rc-road::before {
+  /* The far edge line: the road reads as a road, not a grey slab. */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 9%;
+  height: calc(var(--rc-u) * 5);
+  background: var(--rc-line);
+  opacity: .75;
+}
+.rc-road::after {
+  /* A lighter kerb along the bottom edge: the road has two sides. */
+  content: '';
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 34%;
-  background: var(--rc-road);
-  border-top: 14px solid var(--spel-grass);
-  box-shadow: inset 0 3px 0 var(--spel-ink), 0 -3px 0 var(--spel-ink);
+  height: calc(var(--rc-u) * 8);
+  background: color-mix(in srgb, var(--rc-verge) 70%, var(--spel-ink));
+  border-top: 3px solid var(--spel-ink);
+  transition: background-color 1s;
 }
 .rc-lines {
   position: absolute;
   left: 0;
-  top: 46%;
+  top: 44%;
   width: calc(100% + 80px);
-  height: 8px;
-  background: repeating-linear-gradient(90deg, var(--kiosk-paper) 0 44px, transparent 44px 80px);
+  height: calc(var(--rc-u) * 7);
+  background: repeating-linear-gradient(90deg, var(--rc-line) 0 44px, transparent 44px 80px);
   will-change: transform;
 }
 /* The finish: a checkered band across the road, at the car's nose when x = length. */
@@ -87,79 +85,190 @@
   background: repeating-conic-gradient(var(--spel-ink) 0 25%, var(--kiosk-paper) 0 50%) 0 0 / 14px 14px;
   will-change: transform;
 }
+/* Benzine: a little flag where the record run stopped. */
+.rc-recordflag {
+  position: absolute;
+  bottom: 48%;
+  left: calc(var(--rc-at) + var(--rc-car));
+  width: 4px;
+  height: calc(var(--rc-u) * 90);
+  background: var(--spel-ink);
+  border-radius: 2px;
+  will-change: transform;
+}
+.rc-recordflag span {
+  position: absolute;
+  top: 0;
+  left: 3px;
+  padding: 2px var(--sp-2) 2px var(--sp-1);
+  border: 3px solid var(--spel-ink);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--spel-star);
+  color: var(--spel-ink);
+  font-size: calc(var(--kiosk-text-lg) * .6);
+  font-weight: 800;
+  white-space: nowrap;
+}
 
+/* ── The car ─────────────────────────────────────────────────────────────── */
 .rc-car {
   position: absolute;
   left: var(--rc-at);
-  bottom: 8%;
+  bottom: 6%;
   width: var(--rc-car);
   will-change: transform;
 }
 /* The ghost drives in the far lane, see-through and grey: the pupil's own best run. */
-.rc-car.is-ghost { bottom: 56%; width: calc(var(--rc-car) * .82); opacity: .5; }
+.rc-car.is-ghost { bottom: 50%; width: calc(var(--rc-car) * .82); opacity: .5; }
 .rc-car-art { display: block; width: 100%; height: auto; overflow: visible; }
-.rc-car-body { fill: var(--rc-car-fill); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
-.rc-car-window { fill: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
-.rc-driver { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
-.rc-car-stripe { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; stroke-linecap: round; }
-.rc-car-light { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-car-shadow { fill: var(--spel-ink); opacity: .25; }
+.rc-car-body { fill: var(--rc-car-fill); stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linejoin: round; }
+.rc-skirt { fill: var(--rc-car-dark); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.rc-wing { fill: var(--rc-car-dark); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-wing-strut { fill: none; stroke: var(--spel-ink); stroke-width: 4px; stroke-linecap: round; }
+.rc-car-glass { fill: var(--rc-glass); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-glass-shine { fill: var(--kiosk-paper); opacity: .45; }
+.rc-helmet { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.rc-helmet-stripe { fill: none; stroke: var(--accent-getallenkennis); stroke-width: 2.5px; stroke-linecap: round; }
+.rc-visor { fill: var(--spel-ink); }
+.rc-intake { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-slat { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 55%, var(--kiosk-paper)); stroke-width: 2px; }
+.rc-crease { fill: none; stroke: color-mix(in srgb, var(--rc-car-fill) 55%, var(--kiosk-paper)); stroke-width: 3px; stroke-linecap: round; }
+.rc-headlight { fill: color-mix(in srgb, var(--spel-star) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.rc-taillight { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.rc-exhaust { fill: color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
 .rc-tyre { fill: var(--spel-ink); }
-.rc-hub { fill: var(--kiosk-paper); }
-.rc-spoke { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; }
-.rc-car-art.is-ghost .rc-car-body { fill: var(--spel-cloud); stroke-dasharray: 8 5; }
-.rc-car-art.is-ghost .rc-driver { fill: var(--spel-cloud); }
+.rc-rim { fill: color-mix(in srgb, var(--spel-ink) 18%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-spoke { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linecap: round; }
+.rc-hub { fill: var(--rc-car-fill); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.rc-calliper { fill: none; stroke: var(--spel-star); stroke-width: 3px; stroke-linecap: round; }
+.rc-spin { transform-box: fill-box; transform-origin: 50% 50%; }
+.rc-car-art.is-ghost .rc-car-body,
+.rc-car-art.is-ghost .rc-wing { fill: var(--spel-cloud); stroke-dasharray: 8 5; }
+.rc-car-art.is-ghost .rc-skirt,
+.rc-car-art.is-ghost .rc-helmet { fill: var(--spel-cloud); }
 
-.rc-wheel { animation: rc-spin 420ms linear infinite; }
-.rc-car.is-me.is-boost .rc-wheel,
-.rc-car.is-me.is-turbo .rc-wheel { animation-duration: 160ms; }
-.rc-car.is-me.is-brake .rc-wheel { animation-play-state: paused; }
-@keyframes rc-spin { to { transform: rotate(360deg); } }
+/* A bump on the road while it drives: quicker when fast, still when stopped. */
+.rc-body-g { transform-box: view-box; }
+.rc-car.is-me[data-speed='cruise'] .rc-body-g { animation: rc-bounce 520ms ease-in-out infinite alternate; }
+.rc-car.is-me[data-speed='fast'] .rc-body-g { animation: rc-bounce 200ms ease-in-out infinite alternate; }
+@keyframes rc-bounce { from { transform: translateY(0); } to { transform: translateY(-1.6px); } }
+/* A stop: the nose dips on the brakes. */
+.rc-car.is-me.is-brake .rc-car-art,
+.rc-car.is-me.is-sputter .rc-car-art { transform-origin: 80% 95%; animation: rc-brake 600ms var(--ease-out) both; }
+@keyframes rc-brake { 0% { transform: rotate(0); } 35% { transform: rotate(2.5deg); } 100% { transform: rotate(0); } }
+.rc-car.is-me.is-cough .rc-car-art { animation: rc-cough 360ms ease-in-out 2; }
+@keyframes rc-cough { 50% { transform: translateX(-3px); } }
 
-/* A bump on the road: the body bounces a little while it drives. */
-.rc-car.is-me .rc-car-art { animation: rc-bounce 600ms ease-in-out infinite alternate; }
-@keyframes rc-bounce { from { transform: translateY(0); } to { transform: translateY(-2px); } }
-.rc-car.is-me.is-brake .rc-car-art { animation: rc-brake 500ms var(--ease-out) both; }
-@keyframes rc-brake {
-  0% { transform: rotate(0); }
-  40% { transform: rotate(4deg) translateX(4px); }
-  100% { transform: rotate(0); }
+/* Fast: speed lines streaming off the back. */
+.rc-speedlines {
+  position: absolute;
+  right: 92%;
+  top: 22%;
+  width: 70%;
+  height: 46%;
+  opacity: 0;
+  transition: opacity 200ms;
+  -webkit-mask-image: linear-gradient(90deg, transparent, var(--spel-ink) 70%);
+  mask-image: linear-gradient(90deg, transparent, var(--spel-ink) 70%);
 }
+.rc-speedlines::before,
+.rc-speedlines::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, var(--kiosk-paper) 0 30px, transparent 30px 52px);
+  animation: rc-streak 260ms linear infinite;
+}
+.rc-speedlines::before { top: 10%; }
+.rc-speedlines::after { top: 70%; animation-duration: 200ms; }
+.rc-car.is-me[data-speed='fast'] .rc-speedlines { opacity: .9; }
+@keyframes rc-streak { from { background-position: 0 0; } to { background-position: -52px 0; } }
 
-/* Turbo: a flickering flame out of the back. */
-.rc-flame { position: absolute; right: 96%; bottom: 22%; width: 44%; height: auto; overflow: visible; }
+/* Turbo: a flickering flame out of the exhaust. */
+.rc-flame { position: absolute; right: 97%; bottom: 20%; width: 34%; height: auto; overflow: visible; transform-origin: right center; animation: rc-flicker 140ms ease-in-out infinite alternate; }
 .rc-flame-out { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
 .rc-flame-in { fill: var(--spel-star); }
-.rc-flame { transform-origin: right center; animation: rc-flicker 140ms ease-in-out infinite alternate; }
 @keyframes rc-flicker { from { transform: scaleX(.8); } to { transform: scaleX(1.1); } }
 
-/* A boost: speed lines; a brake: a little dust cloud at the front wheel. */
-.rc-speed {
-  position: absolute;
-  right: 100%;
-  top: 30%;
-  width: 70%;
-  height: 40%;
-  background: repeating-linear-gradient(180deg, var(--kiosk-paper) 0 4px, transparent 4px 14px);
-  border-radius: 4px;
-  animation: rc-speed 900ms var(--ease-out) forwards;
-}
-@keyframes rc-speed { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-40px); } }
-.rc-skid {
-  position: absolute;
-  left: 72%;
-  bottom: -6%;
-  width: 34%;
-  aspect-ratio: 2;
-  border: 3px solid var(--spel-ink);
-  border-radius: 999px;
-  background: var(--spel-cloud);
-  animation: rc-skid 1000ms var(--ease-out) forwards;
-}
-@keyframes rc-skid { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.3) translateY(-10px); } }
+/* Smoke: at the rear wheel on a stop, out of the exhaust on a cough or an empty tank. */
+.rc-puff { position: absolute; width: 38%; height: auto; left: -12%; bottom: 0; overflow: visible; pointer-events: none; }
+.rc-puff.is-cough, .rc-puff.is-sputter { left: -26%; bottom: 10%; width: 36%; }
+.rc-puff-c { fill: var(--spel-cloud); stroke: var(--spel-ink); stroke-width: 3px; transform-box: fill-box; transform-origin: 50% 50%; animation: rc-puff 900ms var(--ease-out) both; }
+.rc-puff.is-cough .rc-puff-c, .rc-puff.is-sputter .rc-puff-c { fill: color-mix(in srgb, var(--spel-ink) 10%, var(--kiosk-paper)); }
+.rc-puff-c.is-2 { animation-delay: 90ms; }
+.rc-puff-c.is-3 { animation-delay: 180ms; }
+.rc-puff.is-sputter .rc-puff-c { animation-iteration-count: 4; animation-duration: 750ms; }
+@keyframes rc-puff { 0% { opacity: 0; transform: scale(.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.35) translate(-6px, -10px); } }
 
-/* ── Progress, clock, badges ──────────────────────────────────────────────── */
+/* The refill: three drops of fuel falling into the tank. */
+.rc-drops { position: absolute; left: 44%; bottom: 70%; width: 12%; height: 80%; pointer-events: none; }
+.rc-drops i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--rc-u) * 16);
+  height: calc(var(--rc-u) * 16);
+  border: 3px solid var(--spel-ink);
+  border-radius: 50% 0 50% 50%;
+  background: var(--rc-fuel);
+  transform: rotate(-45deg);
+  animation: rc-drop 520ms ease-in both;
+}
+.rc-drops i:nth-child(2) { left: 40%; animation-delay: 300ms; }
+.rc-drops i:nth-child(3) { left: -30%; animation-delay: 600ms; }
+@keyframes rc-drop { 0% { opacity: 0; transform: translateY(-30px) rotate(-45deg); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(40px) rotate(-45deg); } }
+
+/* ── Gates and the petrol station ─────────────────────────────────────────── */
+/* Anchored at the car's nose; Race.tsx shifts them by their distance. The art stands centred on that point. */
+.rc-gate { position: absolute; bottom: 0; left: calc(var(--rc-at) + var(--rc-car)); width: 0; height: 0; will-change: transform; }
+.rc-gate.is-bord { bottom: 100%; }
+.rc-gate-art { position: absolute; bottom: 0; left: 0; height: auto; overflow: visible; transform: translateX(-50%); }
+.rc-gate.is-tunnel .rc-gate-art { width: calc(var(--rc-u) * 560); }
+.rc-gate.is-brug .rc-gate-art { width: calc(var(--rc-u) * 640); }
+.rc-gate.is-bord .rc-gate-art { width: calc(var(--rc-u) * 190); bottom: calc(var(--rc-u) * 4); }
+.rc-rockface { fill: color-mix(in srgb, var(--accent-vraagstukken) 15%, color-mix(in srgb, var(--spel-ink) 45%, var(--kiosk-paper))); stroke: var(--spel-ink); stroke-width: 4px; stroke-linejoin: round; }
+.rc-stone { fill: color-mix(in srgb, var(--spel-ink) 28%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-tunnel-in { fill: var(--spel-ink); opacity: .86; }
+.rc-tunnel-lamp { fill: var(--spel-star); }
+.rc-portal { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 20%, var(--kiosk-paper)); stroke-width: 14px; }
+.rc-arch { stroke: var(--accent-bewerkingen); }
+.rc-arch.is-back { stroke: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper)); }
+.rc-hanger { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-hanger.is-back { stroke-width: 3px; opacity: .55; }
+.rc-rail { fill: color-mix(in srgb, var(--accent-bewerkingen) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-signpost { fill: color-mix(in srgb, var(--spel-ink) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-signboard { fill: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-signboard-in { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-sign-arrow { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-icon-line { stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-icon-flake { fill: none; stroke: var(--accent-bewerkingen); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round; }
+.rc-icon-vein { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linecap: round; }
+.rc-star-fill { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
+
+.rc-station { position: absolute; bottom: 46%; left: calc(var(--rc-at) + var(--rc-car) / 2); width: 0; height: 0; will-change: transform; }
+.rc-station-art { position: absolute; bottom: 0; left: 0; width: calc(var(--rc-u) * 380); height: auto; transform: translateX(-50%); overflow: visible; }
+.rc-st-post { fill: color-mix(in srgb, var(--spel-ink) 20%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-st-roof { fill: var(--accent-bewerkingen); stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-st-stripe { fill: var(--spel-star); }
+.rc-st-drop { fill: var(--rc-fuel); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-st-island { fill: color-mix(in srgb, var(--spel-ink) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-st-pump { fill: var(--accent-metendrekenen); stroke: var(--spel-ink); stroke-width: 4px; }
+.rc-st-screen { fill: color-mix(in srgb, var(--accent-metendrekenen) 15%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-st-panel { fill: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-st-lamp { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
+.rc-st-hose { fill: none; stroke: var(--spel-ink); stroke-width: 6px; stroke-linecap: round; }
+.rc-st-nozzle { fill: color-mix(in srgb, var(--spel-ink) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
+.rc-station-art.is-busy .rc-st-lamp { animation: rc-blink 300ms steps(2) infinite; }
+@keyframes rc-blink { 50% { fill: var(--kiosk-paper); } }
+
+/* ── HUD: Tijdrit's track bar and clock, Benzine's cans, pump bar and kilometres ── */
 .rc-meter {
   position: absolute;
+  z-index: 4;
   top: var(--sp-3);
   left: var(--sp-3);
   right: calc(var(--rc-panel-w) + var(--sp-3));
@@ -168,10 +277,14 @@
 .rc-meter-track {
   position: absolute;
   inset: 8px 0;
+  display: flex;
+  overflow: hidden;
   border: 3px solid var(--spel-ink);
   border-radius: 999px;
   background: var(--kiosk-paper);
 }
+.rc-meter-seg { flex: 1; background: var(--rc-hint); }
+.rc-meter-seg + .rc-meter-seg { border-left: 2px solid var(--spel-ink); }
 .rc-meter-flag {
   position: absolute;
   right: -4px;
@@ -194,14 +307,19 @@
   background: var(--rc-car-fill);
 }
 .rc-meter-dot.is-ghost { background: var(--spel-cloud); opacity: .7; }
-.rc-clock {
+
+.rc-readout {
   position: absolute;
+  z-index: 4;
   top: calc(var(--sp-3) + 40px);
   right: calc(var(--rc-panel-w) + var(--sp-3));
   margin: 0;
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-1);
+  justify-content: flex-end;
+  gap: 0 var(--sp-1);
+  max-width: 60%;
   padding: var(--sp-1) var(--sp-2);
   border: 3px solid var(--spel-ink);
   border-radius: var(--radius-md);
@@ -212,10 +330,38 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.rc-root[data-mode='benzine'] .rc-readout { top: var(--sp-3); }
+.rc-best { flex-basis: 100%; text-align: right; font-family: var(--kid-font, var(--font-ui)); font-size: .6em; font-weight: 800; opacity: .75; }
+
+.rc-hud.is-benzine { position: absolute; z-index: 4; top: var(--sp-3); left: var(--sp-3); display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
+.rc-cans { display: flex; gap: var(--sp-1); padding: var(--sp-1) var(--sp-2); border: 3px solid var(--spel-ink); border-radius: var(--radius-md); background: var(--kiosk-paper); }
+.rc-can-slot { display: block; width: clamp(26px, calc(var(--rc-u) * 36), 44px); }
+.rc-can { display: block; width: 100%; height: auto; overflow: visible; }
+.rc-can-handle, .rc-can-spout { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; stroke-linecap: round; stroke-linejoin: round; }
+.rc-can-body { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.rc-can-fuel { fill: var(--rc-fuel); transform-box: fill-box; transform-origin: 50% 100%; transition: transform 300ms var(--ease-out); }
+.rc-can-drop { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.rc-can.is-empty .rc-can-fuel { transform: scaleY(0); }
+.rc-can.is-empty .rc-can-drop { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 35%, var(--kiosk-paper)); }
+.rc-can.is-empty .rc-can-body { stroke-dasharray: 6 4; }
+.rc-can.is-empty { opacity: .6; }
+.rc-can-slot.is-lost { animation: rc-shake 420ms ease-in-out both; }
+@keyframes rc-shake { 25% { transform: translateX(-4px) rotate(-8deg); } 75% { transform: translateX(4px) rotate(8deg); } }
+.rc-cans.is-filling .rc-can-fuel { animation: rc-fill 500ms var(--ease-out) calc(var(--i) * 300ms) both; }
+.rc-cans.is-filling .rc-can-slot { animation: rc-pop-can 500ms var(--ease-spring) calc(var(--i) * 300ms) both; }
+@keyframes rc-fill { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes rc-pop-can { 50% { transform: scale(1.25); } }
+.rc-next { display: flex; align-items: center; gap: var(--sp-1); padding: 2px var(--sp-2); border: 3px solid var(--spel-ink); border-radius: 999px; background: var(--kiosk-paper); color: var(--accent-metendrekenen); font-size: var(--kiosk-text-lg); }
+.rc-next svg { stroke: var(--spel-ink); stroke-width: 6; }
+.rc-next-bar { display: block; width: clamp(60px, calc(var(--rc-u) * 110), 140px); height: 12px; overflow: hidden; border: 2px solid var(--spel-ink); border-radius: 999px; background: color-mix(in srgb, var(--spel-ink) 8%, var(--kiosk-paper)); }
+.rc-next-bar span { display: block; height: 100%; width: calc(var(--p, 0) * 100%); background: var(--rc-fuel); transition: width 400ms var(--ease-out); }
+
 .rc-badge {
   position: absolute;
-  top: 26%;
+  z-index: 5;
+  top: 24%;
   left: calc((100% - var(--rc-panel-w)) / 2);
+  max-width: calc(100% - var(--rc-panel-w) - 2 * var(--sp-3));
   margin: 0;
   padding: var(--sp-1) var(--sp-4);
   border: var(--spel-line) solid var(--spel-ink);
@@ -224,15 +370,21 @@
   color: var(--spel-ink);
   font-size: var(--kiosk-text-xl);
   font-weight: 800;
+  text-align: center;
   transform: translateX(-50%);
   animation: rc-pop var(--dur-slow) var(--ease-spring) both;
 }
 .rc-badge.is-finish { background: var(--spel-star); }
+.rc-root[data-mode='benzine'] .rc-badge { background: var(--spel-star); }
+.rc-badge.is-empty { background: var(--kiosk-paper); }
 @keyframes rc-pop { from { transform: translateX(-50%) scale(.6); } to { transform: translateX(-50%) scale(1); } }
+
 
 /* ── The sum and the keypad ───────────────────────────────────────────────── */
 .rc-panel {
   position: relative;
+  /* Above the scene's own layers (the road, the weather and the HUD stack inside .rc-world). */
+  z-index: 1;
   grid-column: 2;
   grid-row: 1;
   width: var(--rc-panel-w);
@@ -256,6 +408,8 @@
   line-height: 1.15;
   white-space: nowrap;
 }
+.rc-sign.is-wait { display: inline-flex; align-items: center; gap: var(--sp-2); background: var(--spel-star); font-size: clamp(24px, 4.6vmin, 40px); font-weight: 800; }
+.rc-sign.is-wait svg { color: var(--accent-metendrekenen); stroke: var(--spel-ink); stroke-width: 6; }
 .rc-sign-answer {
   display: inline-block;
   padding: 0 var(--sp-2);
@@ -265,7 +419,11 @@
   animation: rc-grow var(--dur-slow) var(--ease-spring) both;
 }
 @keyframes rc-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+/* The pump's timed sum: a bar that drains (Race.tsx sets --left from 1 to 0). */
+.rc-askbar { display: block; width: min(100%, 340px); height: 16px; overflow: hidden; border: 3px solid var(--spel-ink); border-radius: 999px; background: var(--kiosk-paper); }
+.rc-askbar span { display: block; height: 100%; width: calc(var(--left, 1) * 100%); background: var(--spel-star); }
 .rc-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+.rc-panel.is-asking .spel-keypad { box-shadow: 0 0 0 5px var(--spel-star); }
 
 @media (orientation: portrait) {
   .rc-root { --rc-panel-w: 0px; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
@@ -273,6 +431,7 @@
   .rc-panel { grid-column: 1; grid-row: 2; }
   .rc-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
   .rc-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+  .rc-badge { top: 40%; font-size: var(--kiosk-text-lg); }
 }
 @media (orientation: landscape) and (max-height: 640px) {
   .rc-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
@@ -280,17 +439,49 @@
 }
 
 /* "Hoe los ik dit op?": everything holds still. */
-.rc-root.is-paused * { animation-play-state: paused; }
+.rc-root.is-paused * { animation-play-state: paused !important; }
 
-/* Reduced motion: a still scene; the bar on top shows the race. */
+/* Reduced motion: a still scene; the bar on top (Tijdrit) or the kilometres (Benzine) show the race. */
 .rc-root.is-still .rc-finish,
-.rc-root.is-still .rc-car.is-ghost { display: none; }
+.rc-root.is-still .rc-car.is-ghost,
+.rc-root.is-still .rc-recordflag { display: none; }
 .rc-root.is-still .rc-meter { height: 40px; }
-.rc-root.is-still .rc-clock { top: calc(var(--sp-3) + 52px); }
+.rc-root.is-still[data-mode='tijdrit'] .rc-readout { top: calc(var(--sp-3) + 52px); }
 .rc-root.is-still .rc-meter-track { inset: 10px 0; }
 .rc-root.is-still .rc-meter-dot { width: 40px; height: 40px; left: calc(var(--p) * (100% - 40px)); }
-.rc-root.is-still .rc-wheel,
-.rc-root.is-still .rc-car-art,
-.rc-root.is-still .rc-flame,
-.rc-root.is-still .rc-badge,
-.rc-root.is-still .rc-sign-answer { animation: none; }
+.rc-root.is-still *,
+.rc-ending.is-still * { animation: none !important; transition: none !important; }
+
+/* ── The end screen's picture ─────────────────────────────────────────────── */
+.rc-ending .rc-sky { position: absolute; inset: 0; }
+.rc-ending .rc-ending-sun { position: absolute; top: 6%; left: 5%; width: 12%; max-width: 64px; }
+.rc-ending-road { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: var(--rc-asphalt); border-top: 10px solid var(--rc-verge); box-shadow: 0 -3px 0 var(--spel-ink), inset 0 3px 0 var(--spel-ink); }
+.rc-ending-car { position: absolute; left: 50%; bottom: 10%; width: min(48%, 260px); transform: translateX(-60%); animation: rc-ending-in 900ms var(--ease-out) both; }
+.rc-ending-car .rc-puff { left: -24%; bottom: 14%; width: 28%; }
+@keyframes rc-ending-in { from { transform: translateX(-160%); } to { transform: translateX(-60%); } }
+.rc-ending-flag {
+  position: absolute;
+  right: 12%;
+  bottom: 24%;
+  width: 46px;
+  height: 64%;
+  border-left: 5px solid var(--spel-ink);
+}
+.rc-ending-flag::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 46px;
+  height: 34px;
+  border: 3px solid var(--spel-ink);
+  background: repeating-conic-gradient(var(--spel-ink) 0 25%, var(--kiosk-paper) 0 50%) 0 0 / 14px 14px;
+  transform-origin: left center;
+  animation: rc-wave 900ms ease-in-out infinite alternate;
+}
+@keyframes rc-wave { to { transform: skewY(8deg) scaleX(.9); } }
+.rc-ending-can { position: absolute; right: 10%; bottom: 12%; width: 48px; transform: rotate(-10deg); }
+/* Phone upright: a smaller station, so its roof stays clear of the HUD. */
+@media (orientation: portrait) {
+  .rc-station-art { width: calc(var(--rc-u) * 290); }
+}
