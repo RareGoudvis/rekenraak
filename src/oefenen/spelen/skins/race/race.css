@@ -4,7 +4,7 @@
 .rc-ending {
   /* One scene unit: the size every scenery tile, gate and the car is drawn in (1 px at 800 px tall). */
   --rc-u: clamp(0.75px, 0.125vmin, 1.5px);
-  --rc-car: calc(var(--rc-u) * 250);
+  --rc-car: calc(var(--rc-u) * 290);
   /* The road's share of the scene's height; the scenery stands on its top edge. */
   --rc-road-h: 30%;
   --rc-car-fill: var(--accent-vraagstukken);
