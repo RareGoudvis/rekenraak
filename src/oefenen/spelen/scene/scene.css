@@ -1,0 +1,227 @@
+/* Spelen scene kit: drifting clouds, snow, bursts, cracks and the one-shot motions (README.md).
+   Same look as the skins: flat fills, the --spel-ink outline. Layers never catch taps.
+   prefers-reduced-motion and the components' reducedMotion prop: no loops, no bursts, instant states. */
+
+/* ── Clouds ─────────────────────────────────────────────────────────────── */
+.spel-clouds {
+  --cloud-fill: var(--spel-cloud);
+  --cloud-shade: color-mix(in srgb, var(--cloud-fill) 86%, var(--spel-ink));
+  --cloud-line: 3px;
+  /* Phones: smaller clouds, the same sky. */
+  --cloud-scale: 1;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.spel-clouds.is-far { --cloud-line: 2px; }
+@media (max-width: 600px) { .spel-clouds { --cloud-scale: .62; --cloud-line: 2.5px; } }
+/* A full-width track per cloud: translating it by 100% moves the cloud across the whole layer. */
+.spel-cloud-track {
+  --cw: calc(var(--w) * var(--cloud-scale));
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
+  animation-name: spel-cloud-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  will-change: transform;
+}
+.spel-clouds.is-left .spel-cloud-track { animation-direction: reverse; }
+/* Still: each cloud stays where its delay put it, spread over the sky. */
+.spel-clouds.is-still .spel-cloud-track { animation-play-state: paused; }
+.spel-cloud-track > .spel-cloud {
+  position: absolute;
+  left: calc(-1 * var(--cw));
+  width: var(--cw);
+  height: auto;
+  overflow: visible;
+}
+@keyframes spel-cloud-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100% + var(--cw))); }
+}
+.spel-cloud-rim { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: calc(var(--cloud-line) * 2); vector-effect: non-scaling-stroke; }
+.spel-cloud-rim * { vector-effect: non-scaling-stroke; }
+.spel-cloud-shade { fill: var(--cloud-shade); }
+.spel-cloud-fill { fill: var(--cloud-fill); }
+/* Outline-less: soft, hazy clouds; the belly stays for shape. */
+.spel-clouds.is-flat .spel-cloud-rim { display: none; }
+.spel-clouds.is-flat .spel-cloud-shade { fill: color-mix(in srgb, var(--cloud-fill) 92%, var(--spel-ink)); }
+
+/* ── Snow ───────────────────────────────────────────────────────────────── */
+.spel-snow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* A full-height column per flake: translating it by its own height drops the flake through the layer. */
+.spel-flake-fall {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 0;
+  animation-name: spel-snow-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  will-change: transform;
+}
+.spel-flake {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: block;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: var(--spel-cloud);
+  /* A faint rim: white flakes stay visible on a pale sky. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--spel-ink) 22%, transparent);
+  animation: spel-snow-sway 2.6s ease-in-out infinite alternate;
+}
+.spel-snow.is-still .spel-flake-fall,
+.spel-snow.is-still .spel-flake { animation-play-state: paused; }
+@keyframes spel-snow-fall {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(calc(0% + 12px)); }
+}
+@keyframes spel-snow-sway {
+  from { transform: translateX(calc(-0.5 * var(--sway))); }
+  to { transform: translateX(calc(0.5 * var(--sway))); }
+}
+
+/* ── Bursts ─────────────────────────────────────────────────────────────── */
+.spel-burst {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.spel-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--size);
+  height: var(--size);
+  margin: calc(-0.5 * var(--size)) 0 0 calc(-0.5 * var(--size));
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+.spel-burst.is-splash { --burst-color: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper)); }
+.spel-burst.is-splash .spel-particle {
+  border: 2px solid var(--spel-ink);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--burst-color);
+  animation-name: spel-burst-arc;
+}
+.spel-burst.is-pieces .spel-particle {
+  height: calc(var(--size) * 0.7);
+  border: 2px solid var(--spel-ink);
+  border-radius: 2px;
+  background: var(--burst-color, var(--tone));
+  animation-name: spel-burst-arc;
+}
+.spel-burst.is-sparkle .spel-particle { animation-name: spel-burst-twinkle; animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+.spel-burst.is-sparkle svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.spel-burst.is-sparkle path {
+  fill: var(--burst-color, var(--spel-star));
+  stroke: var(--spel-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.spel-burst.is-smoke { --burst-color: color-mix(in srgb, var(--spel-cloud) 82%, var(--spel-ink)); }
+.spel-burst.is-smoke .spel-particle {
+  border: 2px solid color-mix(in srgb, var(--spel-ink) 35%, transparent);
+  border-radius: 50%;
+  background: var(--burst-color);
+  animation-name: spel-burst-puff;
+}
+/* Up and out, then down under gravity: ease-out to the top of the arc, ease-in after it. */
+@keyframes spel-burst-arc {
+  0% { transform: translate(0, 0) scale(0.5) rotate(0); opacity: 1; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  40% { transform: translate(calc(var(--dx) * 0.7), var(--dy)) scale(1) rotate(calc(var(--rot) * 0.4)); opacity: 1; animation-timing-function: cubic-bezier(.5, 0, .9, .5); }
+  100% { transform: translate(var(--dx), calc(var(--dy) + var(--fall))) scale(0.85) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes spel-burst-twinkle {
+  0% { transform: translate(0, 0) scale(0) rotate(0); opacity: 1; }
+  40% { transform: translate(calc(var(--dx) * 0.7), calc(var(--dy) * 0.7)) scale(1.15) rotate(calc(var(--rot) * 0.5)); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes spel-burst-puff {
+  0% { transform: translate(0, 0) scale(0.3); opacity: 0.95; }
+  60% { opacity: 0.85; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1.6); opacity: 0; }
+}
+
+/* ── Cracks ─────────────────────────────────────────────────────────────── */
+.spel-cracks-over {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.spel-crack-ink,
+.spel-crack-light {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.spel-crack { transform-box: fill-box; animation: spel-crack-grow .3s ease-out both; }
+.spel-crack-ink { stroke: var(--spel-ink); stroke-width: 2.5px; }
+.spel-crack-light { stroke: color-mix(in srgb, var(--kiosk-paper) 75%, transparent); stroke-width: 1.5px; }
+.spel-cracks.is-stage-2 .spel-crack-ink { stroke-width: 3px; }
+.spel-cracks.is-still .spel-crack { animation: none; }
+@keyframes spel-crack-grow { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ── One-shot motions (effects.ts): add the class, remove or replay() to play again ── */
+/* The individual translate / rotate / scale properties stack on an element's own transform. */
+.spel-shake, .spel-bounce, .spel-wiggle, .spel-pop { transform-box: fill-box; }
+.spel-shake { animation: spel-shake .45s ease-in-out both; }
+.spel-bounce { transform-origin: 50% 100%; animation: spel-bounce .6s ease-out both; }
+.spel-wiggle { transform-origin: 50% 85%; animation: spel-wiggle .55s ease-in-out both; }
+.spel-pop { transform-origin: 50% 50%; animation: spel-pop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+/* For a happy dance that keeps going (spel-bounce spel-loop). */
+.spel-loop { animation-iteration-count: infinite; }
+@keyframes spel-shake {
+  0%, 100% { translate: 0 0; }
+  15% { translate: -9px 0; }
+  35% { translate: 8px 0; }
+  55% { translate: -6px 0; }
+  75% { translate: 4px 0; }
+  90% { translate: -2px 0; }
+}
+@keyframes spel-bounce {
+  0% { translate: 0 0; scale: 1 1; }
+  18% { translate: 0 0; scale: 1.08 .9; }
+  45% { translate: 0 -22%; scale: .95 1.06; }
+  70% { translate: 0 0; scale: 1.06 .94; }
+  85% { translate: 0 -5%; scale: 1 1; }
+  100% { translate: 0 0; scale: 1 1; }
+}
+@keyframes spel-wiggle {
+  0%, 100% { rotate: 0deg; }
+  20% { rotate: -9deg; }
+  40% { rotate: 8deg; }
+  60% { rotate: -5deg; }
+  80% { rotate: 3deg; }
+}
+@keyframes spel-pop {
+  0% { scale: .5; opacity: 0; }
+  60% { scale: 1.1; opacity: 1; }
+  100% { scale: 1; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spel-shake, .spel-bounce, .spel-wiggle, .spel-pop { animation: none; }
+  .spel-cloud-track, .spel-flake-fall, .spel-flake { animation-play-state: paused; }
+  .spel-burst { display: none; }
+  .spel-crack { animation: none; }
+}
