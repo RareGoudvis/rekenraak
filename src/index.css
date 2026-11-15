@@ -985,6 +985,11 @@ button.ez-pill:hover { background: var(--bg-active); }
 /* The QR in its own thin frame, with an optional line that says what it is for. */
 .tutor-qr-box { display: flex; align-items: center; gap: 6px; flex: none; padding: 3px; border: 1px solid currentColor; border-radius: 6px; }
 .tutor-qr-caption { width: 124px; font-family: var(--font-sheet-footer); font-size: calc(var(--sheet-size-text) * 0.7); line-height: 1.25; text-align: right; }
+/* "Oefeningen met [footsteps] hebben stappen.": the key to the marks on the sums, under the caption. */
+.tutor-qr-legend { display: block; margin-top: 0.4em; font-family: var(--font-sheet-footer); font-size: calc(var(--sheet-size-text) * 0.7); line-height: 1.25; }
+.tutor-qr-caption .tutor-qr-legend { font-size: inherit; }
+/* Wider with the legend, so caption + legend stay within the 23 mm code's height and the footer keeps its size. */
+.tutor-qr-caption.has-legend { width: 156px; }
 .tutor-qr-note {
   position: absolute; inset: 0; display: flex; align-items: center; text-align: center;
   font-family: var(--font-ui); font-size: 10px; color: var(--danger);

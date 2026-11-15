@@ -12,6 +12,8 @@ import { overlayRegionStyle } from '../../services/regionStyle';
 import { domainFillOf } from '../../config/domainOf';
 import type { MathBlock } from '../../services/math/types';
 import { setHoveredBlockId } from './hoveredBlock';
+import StepsGlyph from '../viewer/StepsGlyph';
+import { StepsMarksContext } from '../viewer/stepsMarks';
 
 // Click-to-edit the opdracht title directly on the A4 preview (mirrors the
 // OrdenenViewer inline-edit pattern). Commit on blur/Enter, Esc cancels; frozen
@@ -75,6 +77,8 @@ export interface SheetBlockProps {
   dropNoop: boolean;
   showSolutions: boolean;
   docSettings: DocSettings;
+  /** Stappenhulp marks (QR on): 'all' = one mark by the title, a '0101' mask = per sum, '' = none. */
+  stepsMarks?: string;
   blockProps: (blockId: string) => { onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void };
   onFitWidth: (blockId: string) => void;
   onWiden: (blockId: string) => void;
@@ -85,7 +89,7 @@ export interface SheetBlockProps {
 function SheetBlock({
   block, index, leftPx, topPx, cellWidthPx, widthUnits, availableWidthPx, colGapPx, columnDivider,
   hOverflowPx, isActive, isDragging, showDropZones, dropZone, dropNoop, showSolutions, docSettings,
-  blockProps, onFitWidth, onWiden,
+  stepsMarks = '', blockProps, onFitWidth, onWiden,
 }: SheetBlockProps) {
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
@@ -189,6 +193,8 @@ function SheetBlock({
               </span>
             )}
             <EditableInstruction block={block} prefix={docSettings.numberBlocks && index != null ? `${index}. ` : ''} />
+            {/* Every sum opens in the stappenhulp: one mark for the block; the negative margin keeps it by the title, not a gap away. */}
+            {stepsMarks === 'all' && <span style={{ display: 'inline-flex', marginLeft: '-6px', flexShrink: 0 }}><StepsGlyph size="1em" /></span>}
           </div>
           {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
         </div>}
@@ -209,7 +215,9 @@ function SheetBlock({
           }
           return (
             <BlockErrorBoundary resetKey={resetKey} label={block.typeId}>
-              <Viewer block={block} showSolutions={showSolutions} />
+              <StepsMarksContext.Provider value={stepsMarks && stepsMarks !== 'all' ? stepsMarks : null}>
+                <Viewer block={block} showSolutions={showSolutions} />
+              </StepsMarksContext.Provider>
             </BlockErrorBoundary>
           );
         })()}
