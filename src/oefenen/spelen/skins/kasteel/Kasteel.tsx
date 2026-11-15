@@ -10,7 +10,8 @@ import './kasteel.css';
 // Kasteel, 1 player: your castle on the left, the computer's on the right. A right answer fires your
 // catapult (5 in a row: a big stone), a mistake and the computer's slow clock fire back (siege.ts).
 // A castle at 0 crumbles; yours = the friendly early end, theirs = the win. One small interval keeps
-// play time (paused under help); the stones fly by CSS.
+// play time (paused under help); the throws and flights run by CSS (art.tsx), timed so a stone arrives
+// exactly flightMs after its fire, when siege.ts lands it.
 
 const TICK_MS = 50;
 // Chunks lie on the grass this long.
@@ -30,6 +31,8 @@ interface View {
     // Hits taken and stones fired, per castle: restart the shake and the catapult's swing.
     hit: Record<Who, number>;
     fired: Record<Who, number>;
+    // The latest throw per castle was a big stone (it rides the arm big).
+    bigShot: Record<Who, boolean>;
     big: number;
 }
 
@@ -45,7 +48,7 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
     const level = levelOf(options);
     const lives = livesOf(options);
     const flightMs = reducedMotion ? 0 : KASTEEL.flightMs;
-    const [view, setView] = useState<View>(() => ({ siege: siegeOf(lives), aims: {}, debris: [], hit: { me: 0, foe: 0 }, fired: { me: 0, foe: 0 }, big: 0 }));
+    const [view, setView] = useState<View>(() => ({ siege: siegeOf(lives), aims: {}, debris: [], hit: { me: 0, foe: 0 }, fired: { me: 0, foe: 0 }, bigShot: { me: false, foe: false }, big: 0 }));
     // The latest siege and aims between renders (the interval and the events both move it on).
     const latest = useRef({ siege: view.siege, aims: new Map<number, Aim>() });
 
@@ -54,6 +57,9 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
     // The question on which help was opened: its right answer fires a normal stone, never a big one.
     const helpedKey = useRef<string | undefined>(undefined);
     const ended = useRef(false);
+    // When the play-time interval last ran: a stone fired between ticks lands that much later, so the hit
+    // never comes before the stone (siege time lags real time by up to one tick).
+    const tickAt = useRef(0);
     const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
     useEffect(() => {
         const all = timers.current;
@@ -64,13 +70,14 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
     useEffect(() => {
         const fire = (by: Who, big: boolean) => {
             const before = latest.current.siege;
-            const s = launch(before, by, big, flightMs);
+            const late = Math.min(TICK_MS, Math.max(0, Date.now() - tickAt.current));
+            const s = launch(before, by, big, flightMs + late);
             if (s === before) return;
             const shot = s.shots[s.shots.length - 1];
             const aim = aimFor(before, shot);
             latest.current.siege = s;
             latest.current.aims.set(shot.id, aim);
-            setView(v => ({ ...v, siege: s, aims: { ...v.aims, [shot.id]: aim }, fired: { ...v.fired, [by]: v.fired[by] + 1 }, big: shot.big ? v.big + 1 : v.big }));
+            setView(v => ({ ...v, siege: s, aims: { ...v.aims, [shot.id]: aim }, fired: { ...v.fired, [by]: v.fired[by] + 1 }, bigShot: { ...v.bigShot, [by]: shot.big }, big: shot.big ? v.big + 1 : v.big }));
         };
         const offs = [
             events.on('help', () => { helpedKey.current = live.current.key; }),
@@ -83,10 +90,12 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
     // Play time: the computer's clock shots, stones landing, the end once a castle has crumbled.
     useEffect(() => {
         let last = Date.now();
+        tickAt.current = last;
         const id = window.setInterval(() => {
             const t = Date.now();
             const dt = t - last;
             last = t;
+            tickAt.current = t;
             if (live.current.phase === 'help' || ended.current) return;
             const before = latest.current.siege;
             const aims = latest.current.aims;
@@ -122,6 +131,7 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
                 setView(v => ({
                     ...v, siege: step.siege, aims: { ...v.aims, ...newAims }, debris: [...v.debris, ...debris],
                     hit: { me: v.hit.me + hit.me, foe: v.hit.foe + hit.foe }, fired: { ...v.fired, foe: v.fired.foe + step.fired.length },
+                    bigShot: step.fired.length ? { ...v.bigShot, foe: false } : v.bigShot,
                 }));
             }
             if (endDue(step.siege)) {
@@ -153,7 +163,7 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
             <div className="ks-world">
                 {/* Only the pupil's win gets the cheering kids: a lost castle is just a heap of stones. */}
                 <Scene
-                    left={{ hp: siege.mine, lives, team: 'blue', name: 'Jij', hit: fx.hit.me, fired: fx.fired.me, won: over?.winner === 'me' }}
+                    left={{ hp: siege.mine, lives, team: 'blue', name: 'Jij', hit: fx.hit.me, fired: fx.fired.me, big: fx.bigShot.me, won: over?.winner === 'me' }}
                     right={{ hp: siege.theirs, lives, team: 'orange', name: 'Computer', hit: fx.hit.foe, fired: fx.fired.foe }}
                     flights={flights} debris={fx.debris} reload={reload} bigCall={fx.big ? { side: 'left', key: fx.big } : null}
                 />
