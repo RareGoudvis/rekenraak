@@ -778,6 +778,18 @@ label, `defaultConstraints`, `instruction` or a viewer's default rendering chang
 enforces that it stays in sync automatically. A screenshot over ~60 KB is logged, not
 failed — check it by hand.
 
+## The game thumbnails (`scripts/spel-thumbs.mjs`, `npm run spel:thumbs`)
+
+Regenerates `public/spelen/thumbs/<skinId>.webp` (a game's picture on its card) and `oefen-<topic>.webp` (a topic card with no game) at 480x300 (webp, quality 0.82). The pictures show **no sum, keypad, HUD, score or per-item number**: a topic card must never show a sum that is wrong for its topic. Needs a dev server; not in the gate. Re-run after any skin's look changes.
+
+```bash
+npm run dev
+npm run spel:thumbs -- --url http://localhost:5173/
+# options: --only ballonnen,oefen-geld  --out <dir> (default public/spelen/thumbs)  --raw <dir> (keep the full-size PNGs)  --dump (print every element with a digit, per game)
+```
+
+How: each game is played at leerjaar 2 Optellen up to a few right answers; the script then injects CSS (`COMMON_CSS`: the keypad, topbar, `.kiosk-math`, `*-sign` and `*-key` hint badges are hidden; `SKIN_CSS[id]`: that skin's svg texts / HUD / scores) and screenshots the scene (keypad games on a 1640 px window: the `-world` box is 16:10). The oefen pictures are the first exercise of every topic, blurred. A new skin = one `GAMES` row and, if its scene shows a number the common rules miss, one `SKIN_CSS` line (`--dump` lists what shows digits). Review the contact sheet by eye before committing the webps.
+
 ## The manual figures (`scripts/handleiding-shots.mjs`, `npm run handleiding:shots`)
 
 `handleiding.html` (the teacher manual, a Vite input beside `about.html`) is hand-written; its
