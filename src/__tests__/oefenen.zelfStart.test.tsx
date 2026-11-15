@@ -150,9 +150,9 @@ describe('Topic cards and the Keuze screen', () => {
         expect(geld.querySelector('img')!.getAttribute('src')).toMatch(geldCard.game ? new RegExp(`thumbs/${geldCard.game.meta.id}\\.webp$`) : /thumbs\/oefen-geld\.webp$/);
         expect(!!geld.querySelector('.zelf-topic-mark.is-game')).toBe(geldCard.hasGame);
         expect(geld.querySelector('.zelf-topic-mark.is-oefen')).not.toBeNull();
-        // The R badge and "Zelf oefenen" sit in the leerjaar bar: no second header.
-        expect(document.querySelector('.kiosk-start-brand')).toBeNull();
-        expect(screen.getByText('Zelf oefenen')).toBeTruthy();
+        // A kids' page: no R badge or "Zelf oefenen" title, only the leerjaar tiles.
+        expect(document.querySelector('.kiosk-start-brand, .zelf-years-logo')).toBeNull();
+        expect(screen.queryByText('Zelf oefenen')).toBeNull();
     });
 
     test('Optellen L2: Automatiseren, then exactly the games that accept the choice; a card starts that game with it', async () => {
