@@ -83,3 +83,26 @@
 .spel-frac-bar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* In the narrow foutjes table a sentence may wrap between its words; a sum or a measure (4 u 45 min) never breaks. */
 .spel-end-errors .spel-line-chunk.is-word:not(.is-whole) { white-space: normal; }
+
+/* A keypad skin's sign (SpelSignBox): the box spans the skin's column and is the container the font is fitted to; the sign
+   keeps the skin's look, its font = the skin's size or less, so the longest line (--sign-chars number-font characters,
+   a digit ≈ .62em) fits inside its border and padding. A sentence (is-wrap) wraps between its words instead. */
+.spel-sign-box {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+.spel-sign-box > .spel-sign-fit {
+  box-sizing: border-box;
+  max-width: 100%;
+  /* --sign-inset = the sign's own padding and border (a skin with a slimmer sign sets less); --sign-min = the floor
+     (12px; half a phone in Touwtrekken allows less for a leerjaar 6 sum). */
+  font-size: max(var(--sign-min, 12px), min(var(--sign-max, clamp(28px, 6vmin, 52px)), calc((100cqi - var(--sign-inset, calc(2 * var(--sp-5) + 2 * var(--spel-line) + 2 * var(--sp-2)))) / (var(--sign-chars, 12) * .62))));
+  white-space: nowrap;
+  text-align: center;
+}
+.spel-sign-box > .spel-sign-fit.is-wrap { white-space: normal; text-wrap: balance; }
+/* In a sign box a rij that may fold always takes its two even rows (the column is narrow on every screen). */
+.spel-sign-box .spel-rij.is-fold { grid-auto-flow: row; grid-template-columns: repeat(var(--rij-half), auto); }

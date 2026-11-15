@@ -55,6 +55,7 @@ const UNIT = /^(mm|cm|dm|m|dam|hm|km|mm²|cm²|dm²|m²|km²|a|ha|ca|mg|cg|dg|g|
 const OP = /^[+\-−×x:=≈<>≤≥…/]$/;
 /** An operator or relation word ("+", "=", "≈"): its chunk is a sum, which never wraps. */
 export const isOperator = (w: string) => OP.test(w);
+const RELATION = /^[=≈]$/;
 const SLOT = /^\?[.,:;!)]*$/;
 const NUMBERISH = /^[(−-]?[\d?][\d\u202F\u00A0,./]*[A-Za-z]?[.,:;)]*$/;
 
@@ -62,12 +63,15 @@ const NUMBERISH = /^[(−-]?[\d?][\d\u202F\u00A0,./]*[A-Za-z]?[.,:;)]*$/;
  * A sign line cut where it may wrap: between words, never inside "7 + 5 = ?", between a number and its unit, or after
  * € (so "Je krijgt € ? terug." breaks before "terug", not after "€"), or inside "11 u 12 min". Join the parts with a space, each one nowrap.
  */
-export function signChunks(text: string): string[] {
+export function signChunks(text: string, breakAtRelation = false): string[] {
     const words = text.split(' ').filter(w => w !== '');
+    // Only a long line breaks there; "7 + 5 = ?" stays whole on any sign.
+    const relationBreak = breakAtRelation && charsOf(text) > WRAP_CHARS;
     const out: string[] = [];
     for (const w of words) {
         const prev = out.length ? out[out.length - 1].split(/[ \u00A0]/).pop()! : null;
-        const glue = prev !== null && (OP.test(w) || SLOT.test(w) || OP.test(prev) || prev === '€' || (UNIT.test(w) && NUMBERISH.test(prev)) || (UNIT.test(prev) && NUMBERISH.test(w)));
+        // breakAtRelation: a very narrow sign (a zombie's) may put "= ?" on its own line, as on paper.
+        const glue = prev !== null && !(relationBreak && RELATION.test(w)) && (OP.test(w) || SLOT.test(w) || OP.test(prev) || prev === '€' || (UNIT.test(w) && NUMBERISH.test(prev)) || (UNIT.test(prev) && NUMBERISH.test(w)));
         if (glue) out[out.length - 1] += `\u00A0${w}`;
         else out.push(w);
     }
@@ -81,8 +85,35 @@ export type RijFold = 'one' | 'fold' | 'two';
 /** How a row of tiles folds, from how much it holds (characters, plus a tile's own padding). */
 export function rijFoldOf(items: readonly string[]): RijFold {
     const width = items.reduce((sum, s) => sum + s.length + 1.5, 0);
-    return width <= 18 ? 'one' : width <= 34 ? 'fold' : 'two';
+    return width <= 22 ? 'one' : width <= 34 ? 'fold' : 'two';
 }
 
 /** The plain line a row reads as where tiles cannot stand (a skin's own text sign, aria): "3, 4, ?, 6"; with kommagetallen "0,5; 1; ?". */
 export const rijText = (items: readonly string[]) => items.join(items.some(s => s.includes(',')) ? '; ' : ', ');
+
+// A narrow space (between thousands) is about half a character wide.
+const charsOf = (s: string) => s.length - (s.split('\u202F').length - 1) * 0.5;
+
+// How wide a sign's longest line is, in number-font characters (a digit is about .62em): a keypad skin's sign
+// (SpelSignBox) fits its font to its column with it. wrap = a sentence, which wraps between words at about WRAP_CHARS.
+export const WRAP_CHARS = 20;
+
+/** The sign's width in characters for this question with this answer text in place of "?" (the longer of the two lines). */
+export function signFitOf(question: { text: string; visual?: { kind: string; items?: string[] } }, answer = '', breakAtRelation = false): { chars: number; wrap: boolean } {
+    const items = question.visual?.kind === 'rij' ? question.visual.items ?? [] : null;
+    if (items) {
+        // A tile is at least 2.3 characters wide plus its padding and the gap; in a sign box a folding rij is two rows (spelVisual.css).
+        const row = rijFoldOf(items) !== 'one' ? items.slice(0, Math.ceil(items.length / 2)) : items;
+        const tiles = row.map(s => Math.max(charsOf(s === '?' ? answer || '?' : s), 2.3) + 1.2);
+        return { chars: Math.round(tiles.reduce((a, b) => a + b, 0)), wrap: false };
+    }
+    const filled = question.text.replace('?', answer);
+    const line = Math.max(charsOf(question.text), charsOf(filled));
+    // A sentence (words of two letters or more beside the numbers) wraps, but never narrower than its longest unbreakable part.
+    const sentence = signChunks(question.text).length > 2 && /\p{L}{2,}/u.test(question.text);
+    const parts = signChunks(question.text, breakAtRelation);
+    if (breakAtRelation && !sentence && parts.length > 1 && line > WRAP_CHARS) return { chars: Math.max(...parts.map(c => charsOf(c.replace('?', answer)))), wrap: true };
+    if (!sentence || line <= WRAP_CHARS) return { chars: Math.max(line, 5), wrap: false };
+    // The answer stands where the ? was, glued to the word before it.
+    return { chars: Math.max(WRAP_CHARS, ...parts.map(c => charsOf(c.replace('?', answer)))), wrap: true };
+}

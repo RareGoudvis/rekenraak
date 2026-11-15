@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import { Burst, Clouds, Snow } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
@@ -64,10 +64,6 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
 
     if (!question) return <div className="pt-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
-    const answer = feedback ? formatMathNumber(Number(feedback.expected)) : '';
-    // The sign keeps one size for the sum and its answer: the font fits the longer of the two.
-    const chars = Math.max(question.text.length, lhs.length + answer.length + 1);
 
     const height = tower.blocks.length;
     const scale = towerScale(height, goal);
@@ -178,9 +174,8 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
             <Snow className="pt-snow" full falling={snowing} density={40} size={[4, 9]} seed={seed % 97} paused={phase === 'help'} reducedMotion={reducedMotion} />
 
             <div className="pt-panel">
-                <p className={`pt-sign kiosk-math${flash ? ' is-solved' : ''}`} style={{ '--pt-chars': chars } as CSSProperties} aria-live="polite">
-                    {flash && feedback ? <>{lhs}<span className="pt-sign-answer">{answer}</span></> : question.text}
-                </p>
+                {/* One size for the sum and its answer, fitted to the panel (SpelSignBox). */}
+                <SpelSignBox className={`pt-sign${flash ? ' is-solved' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="pt-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
             </div>
         </div>

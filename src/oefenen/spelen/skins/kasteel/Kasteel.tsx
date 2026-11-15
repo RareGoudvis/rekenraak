@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { Scene, type Debris, type Flight, type SideKey } from './art';
@@ -148,7 +148,6 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
     if (!question) return <div className="ks-root" />;
     const over = siege.over;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
     const flights: Flight[] = reducedMotion ? [] : siege.shots.map(s => ({ id: s.id, from: sideOf(s.by), big: s.big, aim: aims[s.id] ?? { x: 112, y: -80 }, ms: flightMs }));
     const cl = siege.clock;
     const reload = over ? null : {
@@ -169,11 +168,7 @@ export default function Kasteel({ question, phase, feedback, onAnswer, onFail, o
                 />
             </div>
             <div className="ks-panel">
-                <p className="ks-sign kiosk-math" aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className={`ks-sign-answer${feedback.correct ? '' : ' is-wrong'}`}>{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
-                </p>
+                <SpelSignBox className="ks-sign" question={question} feedback={feedback} flash={flash} answerClassName={`ks-sign-answer${feedback?.correct === false ? ' is-wrong' : ''}`} />
                 <p className="ks-streak" aria-label={`Nog ${KASTEEL.bigEvery - toBig} juist voor een grote steen`}>
                     {Array.from({ length: KASTEEL.bigEvery }, (_, i) => <span key={i} className={`ks-pip${i < toBig ? ' is-on' : ''}`} aria-hidden />)}
                     <span className="ks-streak-label" aria-hidden>Grote steen</span>

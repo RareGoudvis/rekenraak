@@ -232,9 +232,9 @@
   border-radius: var(--radius-lg);
   background: var(--kiosk-paper);
   color: var(--kiosk-ink);
-  /* One size for the sum and its answer: the panel's width shared by the longest line's characters (a
-     monospace digit ≈ .62em, the answer's own padding included); a long text prompt wraps at the floor. */
-  font-size: max(20px, min(clamp(28px, 6vmin, 52px), calc((100cqi - 2 * var(--sp-5) - 2 * var(--spel-line) - 2 * var(--sp-2)) / (var(--pt-chars, 12) * .62))));
+  /* The most it grows; SpelSignBox fits the sum and its answer inside the panel below this. */
+  --sign-max: clamp(28px, 6vmin, 52px);
+  font-size: var(--sign-max);
   font-weight: 700;
   line-height: 1.15;
   text-align: center;

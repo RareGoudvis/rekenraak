@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { beverScale, damBreaks, damHeight, levelOf, waterLevel } from './water';
@@ -193,7 +193,6 @@ export default function Bever({ question, phase, feedback, onAnswer, onFail, pro
 
     if (!question) return <div className="bv-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
     const s = beverScale(dam, water);
     const close = dam - water < 1.5;
     const mood = familyMood(dam, water);
@@ -244,11 +243,7 @@ export default function Bever({ question, phase, feedback, onAnswer, onFail, pro
                 </svg>
             </div>
             <div className="bv-panel">
-                <p className="bv-sign kiosk-math" aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="bv-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
-                </p>
+                <SpelSignBox className={"bv-sign"} question={question} feedback={feedback} flash={flash} answerClassName="bv-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
             </div>
         </div>

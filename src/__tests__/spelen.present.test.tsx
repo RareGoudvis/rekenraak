@@ -2,7 +2,7 @@
 import { describe, test, expect, afterEach, beforeAll } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { setThousandsSeparator } from '../services/math/formatters';
-import { answerTextOf, formatEuro, formatSpelNumber, rijFoldOf, rijText, signChunks } from '../oefenen/spelen/spelFormat';
+import { answerTextOf, formatEuro, formatSpelNumber, rijFoldOf, rijText, signChunks, signFitOf, WRAP_CHARS } from '../oefenen/spelen/spelFormat';
 import { SpelLine, SpelRij, SpelSign } from '../oefenen/spelen/SpelVisual';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { spelChoiceOf, spelQuestionOf, type SpelQuestion } from '../oefenen/spelen/spelQuestion';
@@ -61,8 +61,24 @@ describe('spelFormat', () => {
         expect(signChunks('Een hoek van 62° is een ?')).toEqual(['Een', 'hoek', 'van', '62°', 'is', 'een ?']);
     });
 
+    test('a keypad sign fits the longer of the sum and the sum with its answer; a sentence wraps but never cuts its longest part', () => {
+        expect(signFitOf({ text: '7 + 5 = ?' }, '12')).toEqual({ chars: 10, wrap: false });
+        expect(signFitOf({ text: '4 000 000 + 2 000 000 = ?' }, '6 000 000').wrap).toBe(false);
+        const long = signFitOf({ text: 'In 195 517 353 is de 5 bij de honderdduizendtallen ? waard' }, '500 000');
+        expect(long.wrap).toBe(true);
+        // "honderdduizendtallen 500 000" stays one part: the font fits it.
+        expect(long.chars).toBeGreaterThanOrEqual('honderdduizendtallen 500 000'.length);
+        expect(signFitOf({ text: 'Je betaalt € 4,50 met € 10. Je krijgt € ? terug.' }, '5,50')).toEqual({ chars: WRAP_CHARS, wrap: true });
+        // A zombie's narrow sign: a long sum breaks before "=", a short one never.
+        expect(signChunks('4 000 000 + 2 000 000 = ?'.replace(/(\d) (?=000)/g, '$1\u202F'), true)).toHaveLength(2);
+        expect(signChunks('7 + 5 = ?', true)).toHaveLength(1);
+        // A rij: its (first) row of tiles.
+        expect(signFitOf({ text: '', visual: { kind: 'rij', items: ['2', '?', '4'] } }, '3').chars).toBe(11);
+    });
+
     test('a rij folds by how much it holds; its line has no bars', () => {
         expect(rijFoldOf(['3', '4', '5', '6', '?', '8'])).toBe('one');
+        expect(rijFoldOf(['18', '17', '16', '?', '14', '13'])).toBe('one');
         expect(rijFoldOf(['120', '130', '140', '?', '160', '170'])).toBe('fold');
         expect(rijFoldOf(['125 000', '130 000', '135 000', '?', '145 000', '150 000'])).toBe('two');
         expect(rijText(['3', '4', '?', '6'])).toBe('3, 4, ?, 6');

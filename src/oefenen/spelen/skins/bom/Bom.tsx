@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { WRONG_PENALTY_MS, penaltyHit } from './penalty';
@@ -96,7 +96,6 @@ export default function Bom({ question, phase, feedback, onAnswer, progress, red
     if (hit.mistakes !== progress.mistakes) setHit({ mistakes: progress.mistakes, n: penaltyHit(hit.mistakes, progress.mistakes) ? hit.n + 1 : hit.n });
     if (!question) return <div className="bom-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
     const hurry = isHurry(progress.msLeft);
     return (
         <div className={`bom-root${hurry ? ' is-hurry' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
@@ -109,11 +108,7 @@ export default function Bom({ question, phase, feedback, onAnswer, progress, red
                 </svg>
             </div>
             <div className="bom-panel">
-                <p className="bom-sign kiosk-math" aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="bom-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
-                </p>
+                <SpelSignBox className={"bom-sign"} question={question} feedback={feedback} flash={flash} answerClassName="bom-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
             </div>
         </div>

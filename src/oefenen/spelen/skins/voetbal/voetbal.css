@@ -297,7 +297,9 @@
   border-radius: var(--radius-lg);
   background: var(--kiosk-paper);
   color: var(--kiosk-ink);
-  font-size: clamp(26px, 5.2vmin, 48px);
+  /* The most it grows; SpelSignBox fits the line inside the column below this. */
+  --sign-max: clamp(26px, 5.2vmin, 48px);
+  font-size: var(--sign-max);
   font-weight: 700;
   line-height: 1.15;
   white-space: nowrap;

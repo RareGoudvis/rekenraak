@@ -111,7 +111,9 @@
   background: var(--kiosk-paper);
   color: var(--kiosk-ink);
   max-width: 100%;
-  font-size: clamp(20px, 5vmin, 56px);
+  /* The most it grows; SpelSignBox fits the line inside the column below this. */
+  --sign-max: clamp(20px, 4vmin, 44px);
+  font-size: var(--sign-max);
   font-weight: 700;
   line-height: 1.15;
   white-space: nowrap;
@@ -225,7 +227,7 @@
 /* Upright screens: the field above the keys. */
 @media (orientation: portrait), (max-width: 760px) {
   .tt-keypad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .tt-sign { padding: var(--sp-1) var(--sp-2); }
+  .tt-sign { padding: var(--sp-1) var(--sp-2); --sign-inset: calc(2 * var(--sp-2) + 2 * var(--spel-line) + 4px); --sign-min: 10px; }
   .tt-team { gap: var(--sp-1); }
 }
 

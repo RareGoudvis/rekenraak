@@ -1,5 +1,5 @@
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import {
@@ -328,7 +328,6 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
 
     if (!question) return <div className="vb-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const [lhs] = question.text.split('?');
     const showRing = shooting && (phase === 'play' || phase === 'help');
     const passDots = Math.min(match.passes, VOETBAL.passes);
     const theirs = match.side === 'zwart';
@@ -422,11 +421,7 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
                 <p className={`vb-tag${showRing || theirs ? ' is-on' : ''}${theirs ? ' is-zwart' : ''}`} aria-hidden={!showRing && !theirs}>
                     {theirs ? 'Pak de bal terug!' : 'Schiet op doel!'}
                 </p>
-                <p className={`vb-sign kiosk-math${showRing ? ' is-shot' : ''}`} aria-live="polite">
-                    {flash && feedback
-                        ? <>{lhs}<span className="vb-sign-answer">{formatMathNumber(Number(feedback.expected))}</span></>
-                        : question.text}
-                </p>
+                <SpelSignBox className={`vb-sign${showRing ? ' is-shot' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="vb-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play' || rust} />
             </div>
         </div>

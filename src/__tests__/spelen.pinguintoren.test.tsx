@@ -160,9 +160,10 @@ describe('Pinguïntoren skin', () => {
 
     test('the sign sizes its font for the sum with its answer, so the flash never runs off the panel', () => {
         const { container } = render(<Pinguintoren {...at(2, 0, { question: { key: 'q', text: '810 × 10 = ?', index: 0 }, ...wrong, feedback: { given: '1', expected: '8100', correct: false } })} />);
-        const sign = container.querySelector<HTMLElement>('.pt-sign')!;
-        // One character more for the answer's own padding.
-        expect(sign.style.getPropertyValue('--pt-chars')).toBe(String('810 × 10 = 8 100'.length + 1));
+        const sign = container.querySelector<HTMLElement>('.spel-sign-box > .pt-sign.spel-sign-fit')!;
+        // The shared fit (SpelSignBox): the longer line, the sum with its answer in sheet notation, sets the font.
+        expect(sign.style.getPropertyValue('--sign-chars')).toBe(String('810 × 10 = 8 100'.length));
+        expect(sign.textContent).toBe('810 × 10 = 8 100');
     });
 
     test('the ending: a dance under the flag for the goal, a smile on a smaller tower otherwise', () => {

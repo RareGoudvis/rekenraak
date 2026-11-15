@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowCounterClockwise, ArrowUUpLeft, GameController, Heart, Star, Timer } from '@phosphor-icons/react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
 import TwoTapButton from '../../../kiosk/TwoTapButton';
 import SoundToggle from '../../SoundToggle';
 import { useSpelMusic } from '../../music';
@@ -8,7 +8,7 @@ import { cueSound, play } from '../../sound';
 import type { SkinScreenProps } from '../types';
 import type { SoundCue } from '../../sound';
 import DuelKeypad from '../touwtrekken/DuelKeypad';
-import { SIDES, useDuelStore, type DuelMode, type DuelSide, type Side } from '../touwtrekken/duelStore';
+import { SIDES, useDuelStore, type DuelMode, type Side } from '../touwtrekken/duelStore';
 import { Scene, type Debris, type Flight } from './art';
 import { aimAt, knockedOff } from './castle';
 import { KASTEEL, livesOf } from './siege';
@@ -28,14 +28,6 @@ function formatClock(ms: number): string {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// What one half shows on its sign: the sum, or (once the sum is closed) the sum with its answer.
-function signOf(me: DuelSide, closed: boolean) {
-    const q = me.question;
-    if (!q) return null;
-    if (!closed) return q.text;
-    const [lhs] = q.text.split('?');
-    return <>{lhs}<span className="tt-sign-answer">{formatMathNumber(Number(q.answer))}</span></>;
-}
 
 interface DuelView {
     flights: Flight[];
@@ -172,7 +164,10 @@ export default function KasteelDuel({ meta, from, onExit }: SkinScreenProps) {
                                     <span className="tt-team-name">{TEAM[side]}</span>
                                     <span className="tt-team-score" aria-label={`${me.score} juist`}><Star weight="fill" aria-hidden /> {me.score}</span>
                                 </p>
-                                <p className={`tt-sign kiosk-math${closed ? ' is-solved' : ''}`} aria-live="polite">{signOf(me, closed)}</p>
+                                {me.question && (
+                                    <SpelSignBox className={`tt-sign${closed ? ' is-solved' : ''}`} question={me.question} feedback={closed ? { expected: me.question.answer } : null} flash={closed}
+                                        choices={me.question.choices} views={me.question.views} answer={me.question.answer} answerClassName="tt-sign-answer" breakAtRelation />
+                                )}
                                 <p className="tt-note" aria-live="polite">
                                     {got ? 'Raak!' : waiting ? 'Nu mag de ander.' : closed && me.feedback ? 'Bijna!' : ' '}
                                 </p>

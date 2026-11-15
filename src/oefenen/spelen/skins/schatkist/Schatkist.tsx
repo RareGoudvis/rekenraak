@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent, type CSSProperties, type ReactNode } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
+import { SpelSignBox } from '../../SpelVisual';
+import { answerTextOf } from '../../spelFormat';
 import SpelKeypad from '../../SpelKeypad';
 import { Clouds } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
@@ -258,7 +259,6 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     const flash = phase === 'right' || phase === 'wrong';
     const coding = hunt.stage === 'code' && phase === 'play';
     const open = hunt.stage === 'open' || hunt.stage === 'done';
-    const [before, after = ''] = question.text.split('?');
 
     const submitCode = (code: string) => {
         const next = tryCode(hunt, code);
@@ -275,7 +275,7 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     const note = open ? 'De kist is open!'
         : coding ? (hunt.misses ? 'Kijk nog eens goed naar de cijfers.' : 'Typ de code in het slot.')
         : phase === 'wrong' ? 'Geen cijfer deze keer.'
-        : hunt.last ? <>Het antwoord was <b className="kiosk-math">{formatMathNumber(Number(hunt.last.answer))}</b>, dus het cijfer is <b className="kiosk-math">{hunt.last.digit}</b>.</>
+        : hunt.last ? <>Het antwoord was <b className="kiosk-math">{answerTextOf(null, hunt.last.answer)}</b>, dus het cijfer is <b className="kiosk-math">{hunt.last.digit}</b>.</>
         : 'Elk juist antwoord geeft een cijfer van de code.';
     const newest = phase === 'right' ? hunt.digits.length - 1 : -1;
     const paused = phase === 'help';
@@ -314,11 +314,7 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
                     </>
                 ) : (
                     <>
-                        <p className={`sk-sign kiosk-math${flash ? ' is-solved' : ''}`} aria-live="polite">
-                            {flash && feedback
-                                ? <>{before}<span className="sk-sign-answer">{formatMathNumber(Number(feedback.expected))}</span>{after}</>
-                                : question.text}
-                        </p>
+                        <SpelSignBox className={`sk-sign${flash ? ' is-solved' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="sk-sign-answer" />
                         <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
                     </>
                 )}
