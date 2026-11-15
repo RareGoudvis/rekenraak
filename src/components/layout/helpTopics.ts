@@ -124,7 +124,9 @@ export const HELP_TOPICS: HelpTopic[] = [
         id: 'zelf', title: 'Zelf oefenen', anchor: 'zelf-oefenen',
         bullets: [
             'Op rekenraak.be/kind.html kiezen leerlingen zelf wat ze oefenen, zonder link van jou.',
-            'Ze kiezen hun leerjaar, een onderwerp en hoeveel oefeningen of minuten.',
+            'Ze kiezen hun leerjaar (zes tegels), een onderwerp (kaarten met een spel- of oefenbadge) en op één scherm wat en hoeveel: 3, 5 of 10 oefeningen, of 1, 3 of 5 minuten.',
+            'Daaronder staan 18 spelen in vier groepen: Rustig spelen, Op tijd, Samen spelen en Zoeken en koppelen. Fouten worden bijgehouden en kunnen achteraf nagekeken worden.',
+            'Hoe los ik dit op? toont de stappen (die som telt met hulp). De luidsprekerknop wisselt tussen Uit, Geluid en Geluid + muziek.',
             'Terug naar begin bovenaan laat hen iets anders kiezen. Je vindt de link en een QR-code ook in Oefenmodus.',
         ],
     },
