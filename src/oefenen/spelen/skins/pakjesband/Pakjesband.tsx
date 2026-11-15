@@ -1,80 +1,93 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import type { SkinProps } from '../types';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import type { SkinEndingProps, SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceKind, pictureClass, signClass } from '../../spelChoice';
+import type { SpelChoiceView } from '../../content/pack';
+import { Burst, replay } from '../../scene';
 import { beltDone, beltStep, isOff, parcelAt, runStart } from './belt';
+import { LABEL_Y, presentLooks, TOYS, type PresentLook } from './presents';
+import { pressureFrom, pressureMood, sputters, PRESSURE } from './pressure';
+import { Bin, CrateBack, CrateFront, Gear, Lamp, MachineHead, PresentArt, RobotArm, ToyArt } from './FabriekArt';
 import './pakjesband.css';
 
-// Pakjesband: on a rooftop at dusk four wrapped parcels ride a belt from left to right, each with an answer.
-// Tap (or 1–4) the right one and it hops off and slides down the chimney (whoomp); a wrong one bounces off the
-// belt. A parcel falling off the end is a miss (onMiss), then the next sum. One rAF loop
-// moves the belt (a transform per parcel, track measured on resize); the belt stands still outside play.
-// Under reduced motion the parcels stand still and there is no deadline.
+// Speelgoedfabriek (skin id pakjesband): a wrapping machine sends four presents along a belt, each with an answer.
+// Tap (or 1–4) the right one: it lifts, spins, gets a star stamp and flies into the crate. A wrong one bounces
+// back with a boing and heats the machine's pressure gauge (pressure.ts); right answers cool it. Too hot and the
+// machine sputters: steam, toys everywhere, the friendly early end (onFail). The rightmost present reaching the
+// belt's end is a miss (onMiss) and drops in the bin. One rAF loop moves the belt (a transform per present); the
+// belt stands still outside play. Under reduced motion the presents stand still and there is no deadline.
 
-const STARS: readonly [number, number, number][] = [[6, 8, 1], [18, 22, .7], [31, 6, .8], [72, 9, .9], [86, 24, .7], [93, 6, 1], [48, 18, .6]];
+// A right present's flight into the crate, longer than the session's right flash: the next sum comes meanwhile.
+export const FLY_MS = 1100;
+// The sputter plays this long before the end screen; inside the wrong flash (SPEL_FLASH_MS.wrong = 1600).
+export const SPUTTER_MS = 1300;
 
-function StarArt() {
+// Toys popping out of the sputtering machine: where they land, in shares of the scene (x, y) and their spin.
+const POPS: readonly [number, number, number][] = [[.22, .9, -200], [.36, .82, 160], [.5, .93, -120], [.62, .86, 240], [.78, .91, -160], [.88, .84, 120], [.14, .8, 200], [.44, .96, -260]];
+
+// The hopper's mouth in the scene (pakjesband.css: .pk-machine and its head).
+const HOPPER_X = 'calc(.5% + var(--pk-mw) * .41)';
+const HOPPER_Y = 'calc(var(--pk-belt) * 100% - var(--pk-door-h) - var(--pk-mw) * .95)';
+
+const STACK = [...presentLooks('stapel', 4), ...presentLooks('stapel-2', 2)];
+
+interface Flyer { key: string; look: PresentLook; value: string; view?: SpelChoiceView; left: number; top: number; size: number; dx: number; dy: number }
+
+function Stamp() {
     return (
-        <svg className="pk-star-art" viewBox="0 0 20 20" aria-hidden>
-            <path d="M10 1 L12.6 7 L19 7.6 L14 11.8 L15.6 18.4 L10 14.8 L4.4 18.4 L6 11.8 L1 7.6 L7.4 7 Z" />
-        </svg>
+        <span className="pk-stamp" aria-hidden>
+            <svg viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="17" />
+                <path d="M20 7 L23.5 15.5 L32.5 16 L25.5 21.8 L27.8 30.6 L20 25.6 L12.2 30.6 L14.5 21.8 L7.5 16 L16.5 15.5 Z" />
+            </svg>
+        </span>
     );
 }
 
-function ParcelArt() {
+/** The art and label of one present, in a slot or in flight. */
+function Present({ look, uid, value, view, stamped }: { look: PresentLook; uid: string; value: string; view?: SpelChoiceView; stamped?: boolean }) {
+    // The label stays on the shape's calm front face, also on a smaller present (the art scales from its foot).
+    const labelTop = 100 - (100 - LABEL_Y[look.shape]) * look.size;
+    const side = (1 - look.size) * 50;
     return (
-        <svg className="pk-art" viewBox="0 0 100 100" aria-hidden>
-            <path className="pk-bow" d="M50 22 C 30 2, 14 14, 26 24 C 32 28, 44 26, 50 22 C 56 26, 68 28, 74 24 C 86 14, 70 2, 50 22 Z" />
-            <rect className="pk-box" x="6" y="22" width="88" height="74" rx="8" />
-            <rect className="pk-ribbon" x="42" y="22" width="16" height="74" />
-            <path className="pk-box-line" d="M6 22 L94 22" />
-        </svg>
+        <>
+            <PresentArt look={look} uid={uid} style={{ left: `${side}%`, top: `${(1 - look.size) * 100}%`, width: `${look.size * 100}%`, height: `${look.size * 100}%` }} />
+            <span className={`pk-num kiosk-math is-${faceKind(view)}`} style={{ top: `${labelTop}%` }} aria-hidden><SpelChoiceFace value={value} view={view} /></span>
+            {stamped && <Stamp />}
+        </>
     );
 }
 
-// A plain mitre-shaped vane on a pole with the four winds: only the shape, no figure.
-function Weathervane() {
-    return (
-        <svg className="pk-vane" viewBox="0 0 60 120" aria-hidden>
-            <path className="pk-iron" d="M30 118 L30 38" />
-            <path className="pk-iron" d="M12 78 L48 78" />
-            <circle className="pk-gold" cx="30" cy="78" r="4" />
-            <path className="pk-gold" d="M16 46 L16 22 Q16 8 30 2 Q44 8 44 22 L44 46 Z" />
-            <path className="pk-vane-line" d="M16 34 L44 34 M30 46 L30 14" />
-        </svg>
-    );
-}
-
-// A horse silhouette on the roof edge, head up, one hoof lifted.
-function Horse() {
-    return (
-        <svg className="pk-horse" viewBox="0 0 120 90" aria-hidden>
-            <path d="M14 40 Q4 44 6 62 Q10 54 16 50 Z" />
-            <ellipse cx="52" cy="44" rx="38" ry="17" />
-            <path d="M78 36 L92 8 Q96 2 102 6 L116 18 Q119 24 113 26 L100 24 L92 44 Z" />
-            <path d="M96 6 L98 -2 L102 5 Z" />
-            <rect x="22" y="50" width="8" height="38" rx="3" />
-            <rect x="34" y="52" width="8" height="36" rx="3" />
-            <rect x="66" y="52" width="8" height="36" rx="3" />
-            <path d="M78 50 L86 50 L92 68 L86 72 Z" />
-        </svg>
-    );
-}
-
-export default function Pakjesband({ question, choices, views, phase, feedback, onAnswer, onMiss, reducedMotion }: SkinProps) {
-    const [picked, setPicked] = useState<{ key: string; index: number; dx: number; dy: number } | null>(null);
-    const options = choices ?? [];
+export default function Pakjesband({ question, choices, views, phase, feedback, onAnswer, onMiss, onFail, progress, events, reducedMotion }: SkinProps) {
+    const uid = useId();
+    const [picked, setPicked] = useState<{ key: string; index: number } | null>(null);
+    const [flyer, setFlyer] = useState<Flyer | null>(null);
+    const options = useMemo(() => choices ?? [], [choices]);
+    const looks = useMemo(() => presentLooks(question?.key ?? '', Math.max(4, options.length)), [question?.key, options.length]);
     const pickedNow = picked && question && picked.key === question.key ? picked : null;
     const answerIdx = feedback ? options.indexOf(feedback.expected) : -1;
     const missed = !!feedback && feedback.given === '';
 
+    // The pressure gauge follows the session's counts (met hulp never heats it); kept as derived state.
+    const [meter, setMeter] = useState({ p: 0, right: progress.right, mistakes: progress.mistakes });
+    if (meter.right !== progress.right || meter.mistakes !== progress.mistakes) {
+        setMeter({ p: pressureFrom(meter.p, meter, progress), right: progress.right, mistakes: progress.mistakes });
+    }
+    const pressure = meter.p;
+    const mood = pressureMood(pressure);
+    const sputter = sputters(pressure);
+
+    const root = useRef<HTMLDivElement>(null);
     const field = useRef<HTMLDivElement>(null);
-    const mouth = useRef<HTMLSpanElement>(null);
+    const machine = useRef<HTMLDivElement>(null);
+    const crate = useRef<HTMLSpanElement>(null);
     const parcels = useRef<(HTMLDivElement | null)[]>([]);
     const track = useRef(0);
+    // Where the picked present was when tapped (the belt moves): a right answer's flight starts there.
+    const launch = useRef<Flyer | null>(null);
     const run = useRef(runStart());
-    const live = useRef({ phase, reducedMotion, onMiss, key: question?.key, missedKey: undefined as string | undefined });
-    useLayoutEffect(() => { live.current = { ...live.current, phase, reducedMotion, onMiss, key: question?.key }; });
+    const live = useRef({ phase, reducedMotion, onMiss, onFail, key: question?.key, missedKey: undefined as string | undefined });
+    useLayoutEffect(() => { live.current = { ...live.current, phase, reducedMotion, onMiss, onFail, key: question?.key }; });
 
     const placeAll = () => {
         const still = live.current.reducedMotion;
@@ -91,7 +104,7 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
     const placeRef = useRef(placeAll);
     useLayoutEffect(() => { placeRef.current = placeAll; });
 
-    // A new sum: the belt starts again from the left with four fresh parcels.
+    // A new sum: the belt starts again from the left with four fresh presents.
     useLayoutEffect(() => {
         run.current = runStart();
         placeRef.current();
@@ -100,16 +113,21 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
     const hasQuestion = !!question;
     useLayoutEffect(() => {
         const el = field.current;
-        if (!el || !hasQuestion) return;
+        const box = root.current;
+        if (!el || !box || !hasQuestion) return;
         const remeasure = () => {
             const parcel = el.querySelector<HTMLElement>('.pk-slot');
             track.current = Math.max(0, el.clientWidth - (parcel?.offsetWidth ?? 0));
+            // The scene's size for the CSS that throws things across it (the sputter's toys, a present into the bin).
+            box.style.setProperty('--rw', `${box.clientWidth}px`);
+            box.style.setProperty('--rh', `${box.clientHeight}px`);
             placeRef.current();
         };
         remeasure();
         if (typeof ResizeObserver === 'undefined') return;
         const ro = new ResizeObserver(remeasure);
         ro.observe(el);
+        ro.observe(box);
         return () => ro.disconnect();
     }, [hasQuestion]);
     // After every render: a className change must not drop the loop's is-off, and reduced motion places still.
@@ -138,14 +156,43 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
         return () => cancelAnimationFrame(raf);
     }, []);
 
+    // A mistake (a wrong present or a miss): the machine jolts. A right present takes off for the crate.
+    useEffect(() => {
+        const offWrong = events.on('wrong', () => { if (!live.current.reducedMotion) replay(machine.current, 'spel-shake'); });
+        const offRight = events.on('correct', () => {
+            const from = launch.current;
+            launch.current = null;
+            if (from && from.key === live.current.key && !live.current.reducedMotion) setFlyer(from);
+        });
+        return () => { offWrong(); offRight(); };
+    }, [events]);
+
+    // Too much pressure: the machine sputters for a moment, then the round ends.
+    useEffect(() => {
+        if (!sputter) return;
+        const id = window.setTimeout(() => live.current.onFail(), SPUTTER_MS);
+        return () => window.clearTimeout(id);
+    }, [sputter]);
+
+    // The flight is over: the present is in the crate.
+    useEffect(() => {
+        if (!flyer) return;
+        const id = window.setTimeout(() => setFlyer(f => (f === flyer ? null : f)), reducedMotion ? 0 : FLY_MS);
+        return () => window.clearTimeout(id);
+    }, [flyer, reducedMotion]);
+
     const pick = (i: number) => {
         if (phase !== 'play' || !question || options[i] === undefined) return;
-        // Where the chimney is from this parcel, for the slide down.
+        setPicked({ key: question.key, index: i });
         const p = parcels.current[i]?.getBoundingClientRect();
-        const m = mouth.current?.getBoundingClientRect();
-        const dx = p && m ? m.left + m.width / 2 - (p.left + p.width / 2) : 0;
-        const dy = p && m ? m.top - p.bottom : 0;
-        setPicked({ key: question.key, index: i, dx, dy });
+        const box = root.current?.getBoundingClientRect();
+        const c = crate.current?.getBoundingClientRect();
+        launch.current = p && box ? {
+            key: question.key, look: looks[i], value: options[i], view: views?.[i],
+            left: p.left - box.left, top: p.top - box.top, size: p.width,
+            dx: c ? c.left + c.width / 2 - (p.left + p.width / 2) : box.right - 80 - p.right,
+            dy: c ? c.top + c.height / 2 - (p.top + p.height / 2) : box.bottom - 60 - p.bottom,
+        } : null;
         onAnswer(options[i]);
     };
     const pickRef = useRef(pick);
@@ -163,14 +210,20 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
 
     if (!question) return <div className="pk-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const right = phase === 'right' && pickedNow;
+    // Presents in the crate: the one still flying lands when its flight ends.
+    const pile = Math.max(0, progress.right - (flyer ? 1 : 0));
+    const moving = phase === 'play' && !reducedMotion;
 
     return (
-        <div className={`pk-root${views ? ' has-pictures' : ''}${pictureClass(views)}${phase === 'play' && !reducedMotion ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <span className="pk-moon" aria-hidden />
-            {STARS.map(([x, y, s], k) => (
-                <span key={k} className="pk-star" style={{ left: `${x}%`, top: `${y}%`, '--s': s, '--k': k } as CSSProperties} aria-hidden><StarArt /></span>
-            ))}
+        <div ref={root} className={`pk-root is-${mood}${views ? ' has-pictures' : ''}${pictureClass(views)}${moving ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${sputter ? ' is-sputter' : ''}`}>
+            <div className="pk-wall" aria-hidden>
+                <span className="pk-pipe" />
+                <Gear className="pk-gear is-big" />
+                <Gear className="pk-gear is-small" />
+                <span className="pk-cord is-a" /><Lamp className="pk-hanging is-a" />
+                <span className="pk-cord is-b" /><Lamp className="pk-hanging is-b" />
+            </div>
+            <div className="pk-floor" aria-hidden />
 
             <div className="pk-top">
                 <p className={`pk-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
@@ -178,20 +231,18 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
                 </p>
             </div>
 
-            <div className="pk-house" aria-hidden>
-                <svg className="pk-roof" viewBox="0 0 400 100" preserveAspectRatio="none">
-                    <path className="pk-roof-tiles" d="M34 0 L366 0 L400 100 L0 100 Z" />
-                    <path className="pk-roof-line" d="M27 22 L373 22 M20 44 L380 44 M13 66 L387 66 M6 88 L394 88" />
-                    <path className="pk-ridge" d="M30 0 L370 0" />
-                </svg>
-                <Weathervane />
-                <Horse />
-                {[10, 47, 88].map(x => <span key={x} className="pk-post" style={{ left: `${x}%` }} />)}
-                <div className="pk-chimney-back"><span ref={mouth} className="pk-mouth" /></div>
-                {right && !reducedMotion && <span className="pk-puff"><span /><span /><span /></span>}
+            {/* The feed pipe drops toys into the machine's hopper. */}
+            <span className="pk-feed" aria-hidden>
+                {!reducedMotion && !sputter && TOYS.slice(0, 3).map((t, k) => <span key={t} className="pk-feed-toy" style={{ '--k': k } as CSSProperties}><ToyArt kind={TOYS[(k * 2 + progress.answered) % TOYS.length]} /></span>)}
+            </span>
+            <div ref={machine} className="pk-machine" aria-hidden>
+                <div className="pk-machine-rattle">
+                    <MachineHead className="pk-head-art" pressure={pressure} mood={mood} />
+                    <div className="pk-mbody"><span className="pk-door" /></div>
+                    {(mood === 'warm' || mood === 'high') && !reducedMotion && <span className="pk-valve-puff"><span /><span /></span>}
+                </div>
+                {progress.mistakes > 0 && <Burst key={`steam-${progress.mistakes}`} kind="smoke" x="84%" y="calc(var(--pk-mw) * .02)" spread={46} count={7} seed={progress.mistakes} reducedMotion={reducedMotion} />}
             </div>
-            {/* The chimney's front sits over the belt layer: a parcel sliding down disappears behind it. */}
-            <div className="pk-chimney" aria-hidden />
 
             <div className="pk-line">
                 <div ref={field} className="pk-field" role="group" aria-label="Kies het antwoord">
@@ -201,24 +252,81 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
                             : flash ? ' is-rest' : '';
                         return (
                             <div key={`${question.key}-${i}`} ref={el => { parcels.current[i] = el; }} className={`pk-slot${state}`}>
-                                <div className="pk-hop" style={{ '--fill': `var(--spel-fill-${i})`, '--dx': `${pickedNow?.index === i ? pickedNow.dx : 0}px`, '--dy': `${pickedNow?.index === i ? pickedNow.dy : 0}px` } as CSSProperties}>
+                                <div className="pk-hop" style={{ '--i': i } as CSSProperties}>
                                     <button type="button" className="pk-parcel" disabled={phase !== 'play'} aria-label={choiceLabel(c, views?.[i])}
                                         // A moving target: the tap counts where the finger lands.
                                         onPointerDown={e => { if (e.button === 0) pick(i); }}
                                         onClick={() => pick(i)}>
-                                        <ParcelArt />
-                                        <span className={`pk-num kiosk-math is-${faceKind(views?.[i])}`} aria-hidden><SpelChoiceFace value={c} view={views?.[i]} /></span>
-                                        <span className="pk-key" aria-hidden>{i + 1}</span>
+                                        <Present look={looks[i]} uid={`${uid}-${i}`} value={c} view={views?.[i]} stamped={reducedMotion && state === ' is-down'} />
                                     </button>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-                <div className={`pk-belt${phase === 'play' && !reducedMotion ? ' is-running' : ''}`} aria-hidden>
+                <div className={`pk-belt${moving ? ' is-running' : ''}`} aria-hidden>
                     {Array.from({ length: 9 }, (_, r) => <span key={r} className="pk-roller" />)}
                 </div>
+                {[30, 80].map(x => <span key={x} className="pk-post" style={{ left: `${x}%` }} aria-hidden />)}
             </div>
+
+            {/* Presents already made, waiting on the floor (no labels: only the belt's presents are answers). */}
+            <div className="pk-stack" aria-hidden>
+                {STACK.map((l, k) => <PresentArt key={k} look={l} uid={`${uid}-stack-${k}`} className={`is-${k}`} />)}
+            </div>
+            <Bin className="pk-bin-art" />
+            <RobotArm key={`arm-${pile}`} className={`pk-robot-art${pile > 0 ? ' is-cheer' : ''}`} />
+            <div key={`crate-${pile}`} className={`pk-crate${pile > 0 ? ' is-bump' : ''}`} aria-hidden>
+                <CrateBack pile={pile} />
+                <span ref={crate} className="pk-crate-mouth" />
+                <CrateFront className="pk-crate-front-art" />
+                {pile > 0 && !reducedMotion && <Burst kind="sparkle" x="50%" y="30%" spread={70} count={9} seed={pile} />}
+            </div>
+            {flyer && (
+                <div key={flyer.key} className="pk-flyer" style={{ left: flyer.left, top: flyer.top, width: flyer.size, height: flyer.size, '--dx': `${flyer.dx}px`, '--dy': `${flyer.dy}px` } as CSSProperties} aria-hidden>
+                    <Present look={flyer.look} uid={`${uid}-fly`} value={flyer.value} view={flyer.view} stamped />
+                </div>
+            )}
+
+            {sputter && (
+                <div className="pk-pops" aria-hidden>
+                    <Burst kind="smoke" x={HOPPER_X} y={HOPPER_Y} spread={110} count={12} seed={11} reducedMotion={reducedMotion} />
+                    <Burst kind="pieces" x={HOPPER_X} y={HOPPER_Y} spread={140} count={16} seed={5} reducedMotion={reducedMotion} />
+                    {POPS.map(([x, y, r], k) => (
+                        <span key={k} className="pk-pop-toy" style={{ '--tx': x, '--ty': y, '--tr': `${r}deg`, '--k': k } as CSSProperties}>
+                            <ToyArt kind={TOYS[k % TOYS.length]} />
+                        </span>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// The end screen's picture: the machine sputtered (steam, toys on the floor, dizzy eyes) or a full crate.
+export function FabriekEnding({ outcome, reducedMotion }: SkinEndingProps) {
+    const failed = outcome === 'failed';
+    const looks = presentLooks('ending', 4);
+    return (
+        <div className={`spel-ending pk-ending${failed ? ' is-failed' : ' is-done'}${reducedMotion ? ' is-still' : ''}`}>
+            <svg viewBox="0 0 560 240" preserveAspectRatio="xMidYMax meet" aria-hidden>
+                <rect className="pk-end-wall" x="-400" y="-100" width="1360" height="300" />
+                <rect className="pk-end-floor" x="-400" y="196" width="1360" height="200" />
+                {failed ? <>
+                    <g className="pk-end-machine"><MachineHead x={70} y={36} width={150} height={150} pressure={PRESSURE.max} mood="burst" /></g>
+                    <rect className="pk-end-body" x={70} y={185} width={150} height={20} />
+                    {[[120, 30, 26], [160, 14, 20], [200, 34, 16]].map(([cx, cy, r], k) => <circle key={k} className="pk-end-steam" cx={cx} cy={cy} r={r} style={{ '--k': k } as CSSProperties} />)}
+                    {[[250, 168, 'teddy', -20], [300, 180, 'ball', 0], [352, 172, 'duck', 15], [404, 182, 'car', -8], [450, 166, 'rocket', 70], [40, 176, 'block', 12], [496, 178, 'teddy', 160]].map(([x, y, kind, r], k) => (
+                        <g key={k} transform={`rotate(${r} ${Number(x) + 18} ${Number(y) + 18})`}><ToyArt kind={kind as typeof TOYS[number]} x={Number(x)} y={Number(y)} width={36} height={36} /></g>
+                    ))}
+                </> : <>
+                    <g className="pk-end-machine"><MachineHead x={50} y={36} width={150} height={150} pressure={0} mood="happy" /></g>
+                    <rect className="pk-end-body" x={50} y={185} width={150} height={20} />
+                    <CrateBack x={280} y={70} width={190} height={152} pile={8} />
+                    {looks.map((l, k) => <PresentArt key={k} look={l} uid={`end-${k}`} x={300 + k * 36} y={66 + (k % 2) * 8} width={40} height={40} />)}
+                    <CrateFront x={280} y={70} width={190} height={152} />
+                </>}
+            </svg>
         </div>
     );
 }

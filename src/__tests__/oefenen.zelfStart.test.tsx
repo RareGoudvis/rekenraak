@@ -21,7 +21,7 @@ import { sceneOf } from '../oefenen/kiosk/backdrops';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 const JULY = new Date(Date.UTC(2026, 6, 1, 12));
-const SINTERKLAAS = new Date(Date.UTC(2026, 10, 20, 12));
+const KERST = new Date(Date.UTC(2026, 11, 20, 12));
 
 beforeEach(() => {
     resetKiosk();
@@ -119,8 +119,9 @@ describe('Topic cards: the config', () => {
         const july = gamesFor(NUMBER_CONTENT, JULY);
         expect(july.map(rank)).toEqual([...july.map(rank)].sort());
         expect(july.some(g => g.nu)).toBe(false);
-        const nov = gamesFor(NUMBER_CONTENT, SINTERKLAAS);
-        expect(nov[0]).toMatchObject({ nu: true, skin: { meta: { id: 'pakjesband' } } });
+        // The Speelgoedfabriek is year-round (2026-11-15): Kerst is the first season with a game in this list.
+        const dec = gamesFor(NUMBER_CONTENT, KERST);
+        expect(dec[0]).toMatchObject({ nu: true, skin: { meta: { id: 'kerstboom' } } });
         expect(gamesFor(null, JULY)).toEqual([]);
     });
 });

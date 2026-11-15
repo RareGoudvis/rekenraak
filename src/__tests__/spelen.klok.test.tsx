@@ -69,7 +69,7 @@ describe('klok in the picker', () => {
         expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
         render(<GameRow games={gamesFor(PICTURE_CONTENT, new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Pakjesband', 'Mollen meppen, op tijd']);
+        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Mollen meppen, op tijd']);
         expect(screen.queryByText('binnenkort')).toBeNull();
     });
 });

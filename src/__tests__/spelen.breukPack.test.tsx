@@ -118,7 +118,7 @@ describe('Spelen at leerjaar 4: only the breuken', () => {
         expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
         render(<GameRow games={gamesFor(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4), new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Hartjes koppelen', 'Honingraat', 'Pakjesband', 'Mollen meppen, op tijd']);
+        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Hartjes koppelen', 'Honingraat', 'Speelgoedfabriek', 'Mollen meppen, op tijd']);
     });
 
     test('a board round plays only the cards that fill it', () => {

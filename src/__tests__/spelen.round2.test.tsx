@@ -130,7 +130,8 @@ describe('The friendly early end', () => {
             sp().fail();
             expect(sp().phase).toBe('play');
         }
-        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'kasteel'].includes(s.meta.id))).toEqual([]);
+        // Owner-approved early ends; the Speelgoedfabriek's machine sputters (2026-11-15).
+        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'kasteel', 'pakjesband'].includes(s.meta.id))).toEqual([]);
         sp().start(startWith(CAN_FAIL));
         sp().openHelp();
         sp().fail();

@@ -181,15 +181,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./schatkist/Schatkist').then(m => ({ default: m.SchatkistEnding }))),
     },
     {
-        // Sinterklaas: parcels on a belt over the roof, the right one down the chimney. A parcel falling off the
-        // belt's end is a miss (pakjesband/belt.ts: about 12 s per sum).
+        // Speelgoedfabriek (year-round; id kept for links and thumbs): presents on a belt, the right one into the crate.
+        // The rightmost present reaching the belt's end is a miss (pakjesband/belt.ts: about 12 s per sum). Mistakes heat
+        // the machine's pressure gauge, right answers cool it (pakjesband/pressure.ts); too hot = it sputters (canFail).
         meta: {
             music: 'fabriek',
-            id: 'pakjesband', label: 'Pakjesband', input: 'choice', timed: false, round: { questions: 20 }, season: 'sinterklaas', accepts: TAP_PICTURES,
-            sounds: { correct: 'whoomp', wrong: 'boing', miss: 'plop' },
+            id: 'pakjesband', label: 'Speelgoedfabriek', input: 'choice', timed: false, round: { questions: 20 }, accepts: TAP_PICTURES,
+            canFail: true, winTitle: 'Alle pakjes zijn klaar!', failTitle: 'Oei! De machine sputtert. Nog eens?',
+            sounds: { correct: 'ting', wrong: 'boing', miss: 'plop', win: 'cheer', fail: 'puf' },
         },
         icon: Gift,
         Component: lazy(() => import('./pakjesband/Pakjesband')),
+        Ending: lazy(() => import('./pakjesband/Pakjesband').then(m => ({ default: m.FabriekEnding }))),
     },
     {
         // Kerst: a bare fir tree; each right answer hangs the next bauble or garland, the 15th is the star on top.

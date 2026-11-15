@@ -16,7 +16,7 @@ export const GAME_BLURB: Record<string, string> = {
     honingraat: 'Zoek in de honingraat alle sommen die het getal maken.',
     prent: 'Elk juist antwoord draait een tegel om. Welk dier zit eronder?',
     schatkist: 'Vind de cijfers van de code en open de schatkist.',
-    pakjesband: 'Gooi het juiste pakje door de schoorsteen.',
+    pakjesband: 'Tik het pakje met het juiste antwoord. Te veel foutjes en de machine sputtert!',
     kerstboom: 'Versier de kerstboom. Elk juist antwoord hangt er iets bij.',
     eieren: 'Zoek het ei met het juiste antwoord in het gras.',
     mollen: 'Mep de mol met het juiste antwoord, snel!',
