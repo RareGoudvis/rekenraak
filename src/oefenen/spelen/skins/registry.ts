@@ -4,6 +4,7 @@ import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 import { CastleTurret, ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 import { Fish } from '@phosphor-icons/react';
 import { SoccerBall } from '@phosphor-icons/react';
+import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -130,14 +131,15 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./kasteel/Kasteel').then(m => ({ default: m.KasteelEnding }))),
     },
     {
-        // Valentijn: memory with 6 sums and their answers on 12 hearts, 2 boards. A sum card turned first and then
-        // a wrong answer, twice for the same sum, logs that sum once (board/session.ts). Answers up to 5 characters
-        // ("10/12") fit a card; breuken pair a picture with its breuk, or a breuk with its vereenvoudigde breuk.
+        // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
+        // first and then a wrong answer, twice for the same sum, logs that sum once (board/session.ts) and breaks its
+        // heart (the skin voices it: hit; a ball going flat: caught). Answers up to 5 characters ("10/12") fit a card;
+        // breuken pair a picture with its breuk, or a breuk with its vereenvoudigde breuk. Voetballen is a look option.
         meta: {
             music: 'zacht',
-            id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn',
-            round: { board: { kind: 'pairs', boards: 2, size: 6, strikes: 2 } }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
-            sounds: { correct: 'ting', wrong: 'plop', flip: 'flip', nomatch: 'plop' },
+            id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn', options: HARTJES_OPTIONS,
+            round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
+            sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop', hit: 'krak', caught: 'whoosh' },
         },
         icon: Heart,
         Component: lazy(() => import('../board/hartjes/Hartjes')),

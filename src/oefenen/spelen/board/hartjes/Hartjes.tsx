@@ -3,17 +3,20 @@ import type { SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
 import { answerFace, sumFace, type BoardFace, type SpelBoard } from '../board';
 import { SpelVisual } from '../../SpelVisual';
+import { Burst } from '../../scene';
+import { BallArt, CountMark, HEART, HeartArt } from './Art';
+import { cardLook, gridOf, lookOf, type CardLook } from './hearts';
 import './hartjes.css';
 
-// Hartjes koppelen (Valentijn): memory. Each sum and its answer lie face down on two hearts; tap two to
-// turn them. A sum with its own answer stays open with a sparkle, any other two turn back after a moment.
-// The session checks every sum + answer pick and keeps the mistakes (board/session.ts); this only turns
-// cards. 3D flips in CSS; under reduced motion a card simply shows its other side.
+// Hartjes koppelen (Valentijn): memory. Each sum and its answer lie face down on two hearts (or footballs);
+// tap two to turn them. A sum with its own answer stays open with a sparkle (a "Goal!"), any other two turn
+// back after a moment. A sum logged as a mistake breaks its heart (a flat ball) for the rest of the board;
+// pairing it later sticks a plaster on. The session checks every pick and keeps the mistakes
+// (board/session.ts); this only turns cards. 3D flips in CSS; under reduced motion a card simply shows its other side.
 
 // Long enough to read both cards, short enough to keep the game going.
 const FLIP_BACK_MS = 1200;
-
-const HEART = 'M50 90 C22 70 4 54 4 32 C4 15 16 4 30 4 C40 4 46 10 50 19 C54 10 60 4 70 4 C84 4 96 15 96 32 C96 54 78 70 50 90 Z';
+const FLOURISH_MS = 900;
 
 // A card = one side of one sum: id = cell * 2 (the sum) or cell * 2 + 1 (its answer).
 const cellOf = (id: number) => id >> 1;
@@ -49,35 +52,42 @@ function Sparkle() {
     );
 }
 
-function Card({ id, board, up, onTap, disabled, sparkle, still }: { id: number; board: SpelBoard; up: boolean; onTap(): void; disabled: boolean; sparkle: boolean; still: boolean }) {
+interface CardProps { id: number; board: SpelBoard; ball: boolean; up: boolean; nope: boolean; onTap(): void; disabled: boolean; flourish: boolean; puff: boolean; reducedMotion: boolean }
+
+function Card({ id, board, ball, up, nope, onTap, disabled, flourish, puff, reducedMotion }: CardProps) {
     const cell = board.cells[cellOf(id)];
     const q = cell.question;
     const solved = cell.state === 'solved';
     const open = up || solved;
     const face = isSum(id) ? sumFace(q) : answerFace(q);
-    const label = solved ? `${faceText(sumFace(q))} is ${faceText(answerFace(q))}, gevonden` : open ? faceText(face) : 'Hartje, dicht';
+    // Only the sum's card carries its mistake: the answer card was never wrong.
+    const look: CardLook = isSum(id) ? cardLook(cell) : 'whole';
+    const Art = ball ? BallArt : HeartArt;
+    const closed = ball ? 'Bal, dicht' : 'Hartje, dicht';
+    const label = solved ? `${faceText(sumFace(q))} is ${faceText(answerFace(q))}, gevonden` : open ? faceText(face) : closed;
     return (
-        <button type="button" className={`hj-card${open ? ' is-open' : ''}${solved ? ' is-solved' : ''}${isSum(id) ? ' is-sum' : ' is-answer'}${still ? ' is-still' : ''}`}
+        <button type="button" className={`hj-card${open ? ' is-open' : ''}${solved ? ' is-solved' : ''}${isSum(id) ? ' is-sum' : ' is-answer'} is-${look}${nope ? ' is-nope' : ''}`}
             onClick={onTap} disabled={disabled || open} aria-label={label} data-cell={cellOf(id)}>
             <span className="hj-flip">
-                <span className="hj-side hj-back" aria-hidden>
-                    <svg className="hj-heart" viewBox="0 0 100 94"><path className="hj-heart-back" d={HEART} /><path className="hj-heart-mini" transform="translate(32 28) scale(.36)" d={HEART} /></svg>
-                </span>
+                <span className="hj-side hj-back" aria-hidden><Art side="back" look={look} /></span>
                 <span className="hj-side hj-front" aria-hidden>
-                    <svg className="hj-heart" viewBox="0 0 100 94"><path className="hj-heart-front" d={HEART} /></svg>
+                    <Art side="front" look={look} />
                     <Face face={face} />
                 </span>
             </span>
-            {sparkle && <Sparkle />}
+            {flourish && !ball && !reducedMotion && <Sparkle />}
+            {flourish && ball && <Burst kind="pieces" x="50%" y="45%" spread={70} count={12} seed={id + 1} reducedMotion={reducedMotion} />}
+            {puff && <Burst kind="smoke" x="50%" y="30%" spread={40} count={6} seed={id + 3} reducedMotion={reducedMotion} />}
         </button>
     );
 }
 
-function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion }: Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound' | 'reducedMotion'> & { board: SpelBoard }) {
+function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion, ball }: Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound' | 'reducedMotion'> & { board: SpelBoard; ball: boolean }) {
     const order = useMemo(() => shuffled(board.cells.length * 2, board.key), [board.key, board.cells.length]);
     // The cards turned up and not yet paired (at most two).
     const [up, setUp] = useState<number[]>([]);
-    const [sparkle, setSparkle] = useState<number | null>(null);
+    const [flourish, setFlourish] = useState<number | null>(null);
+    const [puff, setPuff] = useState<number | null>(null);
     const solved = (id: number) => board.cells[cellOf(id)].state === 'solved';
     // The shell hands a new sound function every render; the flip-back timer must not restart on it.
     const soundRef = useRef(sound);
@@ -88,9 +98,19 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
     const [seenSolved, setSeenSolved] = useState(solvedCount);
     if (solvedCount !== seenSolved) {
         setSeenSolved(solvedCount);
-        setSparkle(board.focus);
+        setFlourish(board.focus);
         setUp([]);
     }
+    // A sum just logged as a mistake: its heart cracks (a ball goes flat with a puff).
+    const broken = board.cells.filter(c => cardLook(c) === 'broken').length;
+    const [seenBroken, setSeenBroken] = useState(broken);
+    if (broken !== seenBroken) {
+        setSeenBroken(broken);
+        if (broken > seenBroken) setPuff(board.focus);
+    }
+    useEffect(() => {
+        if (puff !== null) soundRef.current(ball ? 'caught' : 'hit');
+    }, [puff, ball]);
 
     // Two cards up that are no pair turn back after a moment.
     useEffect(() => {
@@ -100,10 +120,15 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
     }, [up]);
 
     useEffect(() => {
-        if (sparkle === null) return;
-        const t = window.setTimeout(() => setSparkle(null), 900);
+        if (flourish === null) return;
+        const t = window.setTimeout(() => setFlourish(null), FLOURISH_MS);
         return () => window.clearTimeout(t);
-    }, [sparkle]);
+    }, [flourish]);
+    useEffect(() => {
+        if (puff === null) return;
+        const t = window.setTimeout(() => setPuff(null), FLOURISH_MS);
+        return () => window.clearTimeout(t);
+    }, [puff]);
 
     const tap = (id: number) => {
         if (phase !== 'play' || up.length >= 2 || up.includes(id) || solved(id)) return;
@@ -120,39 +145,57 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
         }
     };
 
+    // A sum and an answer up that the session did not pair: both give a little "no" shake before turning back.
+    const nope = up.length === 2 && isSum(up[0]) !== isSum(up[1]) && !up.some(solved);
     const found = board.cells.filter(c => c.state === 'solved').length;
     const cleared = found === board.cells.length;
     // One size for every sum on the board: the longest decides (a picture has no length).
     const long = board.cells.some(c => { const f = sumFace(c.question); return f.kind === 'text' && f.text.length > 7; });
     // A pack's pairs (a pizza and its breuk, a breuk and its vereenvoudigde breuk) are no sum and answer.
     const pairs = board.cells.some(c => c.question.pair);
+    const grid = gridOf(order.length);
+    const shape = {
+        '--hj-cols-l': grid.landscape.cols, '--hj-rows-l': grid.landscape.rows, '--hj-cols-p': grid.portrait.cols,
+        '--hj-rows-p': grid.portrait.rows, '--hj-cols-t': grid.tall.cols, '--hj-rows-t': grid.tall.rows, '--hj-cols-s': grid.short.cols, '--hj-rows-s': grid.short.rows,
+    } as CSSProperties;
     return (
         <>
             <div className="hj-top">
-                <p className="hj-sign" aria-live="polite">{cleared ? 'Alle hartjes gevonden!' : pairs ? 'Zoek wat bij elkaar hoort' : 'Zoek de som en haar antwoord'}</p>
+                <p className="hj-sign" aria-live="polite">{cleared ? (ball ? 'Alle ballen gevonden!' : 'Alle hartjes gevonden!') : pairs ? 'Zoek wat bij elkaar hoort' : 'Zoek de som en haar antwoord'}</p>
                 <span className="hj-count" role="img" aria-label={`${found} van ${board.cells.length} paren`}>
-                    {board.cells.map((c, i) => (
-                        <svg key={i} className={`hj-dot${c.state === 'solved' ? ' is-on' : ''}`} viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>
-                    ))}
+                    {board.cells.map((c, i) => <CountMark key={i} ball={ball} on={c.state === 'solved'} />)}
                 </span>
             </div>
-            <div className={`hj-grid${long ? ' is-long' : ''}`} role="group" aria-label="Hartjes">
+            <div className={`hj-grid${long ? ' is-long' : ''}`} style={shape} role="group" aria-label={ball ? 'Ballen' : 'Hartjes'}>
                 {order.map((id, k) => (
                     <div key={id} className="hj-slot" style={{ '--k': k } as CSSProperties}>
-                        <Card id={id} board={board} up={up.includes(id)} onTap={() => tap(id)} disabled={phase !== 'play'}
-                            sparkle={sparkle === cellOf(id) && !reducedMotion} still={reducedMotion} />
+                        <Card id={id} board={board} ball={ball} up={up.includes(id)} nope={nope && up.includes(id)} onTap={() => tap(id)} disabled={phase !== 'play'}
+                            flourish={flourish === cellOf(id)} puff={puff === cellOf(id) && isSum(id) && ball} reducedMotion={reducedMotion} />
                     </div>
                 ))}
+                {ball && flourish !== null && <p className="hj-goal" aria-hidden>Goal!</p>}
             </div>
         </>
     );
 }
 
-export default function Hartjes({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion }: SkinProps) {
+// The pitch behind the balls: a halfway line and the centre circle, nothing else.
+function Pitch() {
     return (
-        <div className={`hj-root${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <svg className="hj-deco" viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>
-            {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} reducedMotion={reducedMotion} />}
+        <svg className="hj-pitch" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden>
+            <path d="M200 -10 V310" />
+            <circle cx={200} cy={150} r={70} />
+            <circle className="hj-pitch-spot" cx={200} cy={150} r={5} />
+        </svg>
+    );
+}
+
+export default function Hartjes({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion, options }: SkinProps) {
+    const ball = lookOf(options) === 'voetballen';
+    return (
+        <div className={`hj-root${ball ? ' is-ball' : ''}${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+            {ball ? <Pitch /> : <svg className="hj-deco" viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>}
+            {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} reducedMotion={reducedMotion} ball={ball} />}
         </div>
     );
 }
