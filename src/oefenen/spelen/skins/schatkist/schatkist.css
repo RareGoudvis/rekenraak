@@ -104,7 +104,7 @@
 .sk-hoard.is-settled .sk-fly-x,
 .sk-hoard.is-settled .sk-fly-y { animation: none; }
 
-/* The crab: out of the sea to the heap, with the coin across the sand to beside the chest, off into the sea. */
+/* The crab: out of the sea to the heap, with the loot back to the shore, and under with a splash. */
 .sk-crab-shell { fill: var(--sk-crab); stroke: var(--spel-ink); stroke-width: 3px; }
 .sk-crab-claw { fill: var(--sk-crab); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
 .sk-crab-leg, .sk-crab-arm, .sk-crab-stalk { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
@@ -114,17 +114,26 @@
 .sk-crab { translate: var(--tx) var(--ty); }
 .sk-crab.is-come { animation: sk-crab-come 1500ms ease-in-out both; }
 .sk-crab.is-carry { animation: sk-crab-carry 2000ms ease-in-out both; }
-.sk-crab.is-leave { animation: sk-crab-leave 1600ms ease-in both; }
+.sk-crab.is-dive { animation: sk-crab-dive 900ms ease-in both; }
 @keyframes sk-crab-come { from { translate: 470px 274px; } 85%, to { translate: var(--hx) 274px; } }
 @keyframes sk-crab-carry { from { translate: var(--hx) 274px; } 90%, to { translate: var(--tx) var(--ty); } }
-@keyframes sk-crab-leave { from { translate: var(--tx) var(--ty); } to { translate: -90px 280px; } }
+@keyframes sk-crab-dive { from { translate: var(--tx) var(--ty); } to { translate: calc(var(--tx) + 6px) calc(var(--ty) + 4px); } }
+/* Under it goes: the crab and its loot sink and shrink, a ring and four drops splash up. */
+.sk-crab.is-dive .sk-crab-body { animation: sk-sink 900ms ease-in both; }
+@keyframes sk-sink { 0% { scale: 1; opacity: 1; translate: 0 0; } 30% { translate: 0 -6px; } 100% { scale: .2; opacity: 0; translate: 0 14px; } }
+.sk-splash-ring { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; transform-box: fill-box; transform-origin: center; animation: sk-ring 900ms ease-out both; }
+@keyframes sk-ring { from { scale: .2; opacity: 1; } to { scale: 1.6; opacity: 0; } }
+.sk-splash-drop { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; animation: sk-drop 800ms ease-out both; animation-delay: 150ms; }
+@keyframes sk-drop { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 1; } 50% { translate: calc(var(--dx) * .7) -16px; } 100% { translate: var(--dx) 4px; opacity: 0; } }
 /* It scuttles sideways: a quick bob, legs and claws clicking. */
-.sk-crab:not(.is-still) .sk-crab-body { animation: sk-scuttle 220ms ease-in-out infinite alternate; }
+/* The dive has its own body motion (sk-sink). */
+.sk-crab:not(.is-still):not(.is-dive) .sk-crab-body { animation: sk-scuttle 220ms ease-in-out infinite alternate; }
 @keyframes sk-scuttle { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -3px; rotate: 4deg; } }
 .sk-crab-claw { transform-box: fill-box; transform-origin: 50% 100%; animation: sk-snip 300ms ease-in-out infinite alternate; }
 @keyframes sk-snip { from { rotate: -8deg; } to { rotate: 10deg; } }
-/* The coin it carries pops up into its claws. */
+/* The coin or gem it carries pops up into its claws. */
 .sk-crab-coin { animation: sk-pick 300ms var(--ease-spring) both; }
+.sk-crab.is-dive .sk-crab-coin { animation: none; }
 @keyframes sk-pick { from { opacity: 0; translate: -16px 20px; } to { opacity: 1; translate: 0 0; } }
 
 /* The lock shakes on a wrong code (two copies so the next one restarts it). */

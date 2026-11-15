@@ -82,4 +82,3 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 - Flaky test steps.herleiding "every generated oppervlakte exercise has steps": a random samengesteld-enkel km² + mm² → mm² exercise (toParts value 1000000000000749) gets null steps, about 1 run in many. Seen by the gate 2026-11-14.
 - **Spelen 2026-11-15, Touwtrekken sign:** at 390×844 Touwtrekken's sign drops the "?" outside its box on long sums ("0,421 × 2 = ?").
-- **Spelen 2026-11-15, keypad skins' answer flash:** the skins print `formatMathNumber(Number(feedback.expected))`, so a negative answer shows a hyphen ("-9", not "−9") and an amount loses its cents zero ("7,5" for € 7,50). One shared helper over the answer text would fix all keypad skins.

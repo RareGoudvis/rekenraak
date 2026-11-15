@@ -1,20 +1,19 @@
 import { Suspense, useState } from 'react';
 import { ArrowCounterClockwise, CheckCircle, GameController, Star, Trash } from '@phosphor-icons/react';
 import TwoTapButton from '../kiosk/TwoTapButton';
-import { formatMathNumber } from '../../services/math/formatters';
 import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
-import { SpelChoiceFace, SpelVisual } from './SpelVisual';
-import { viewFor } from './spelChoice';
+import { SpelChoiceFace, SpelLine, SpelQuestionLine } from './SpelVisual';
+import { answerTextOf, viewOfValue } from './spelFormat';
 import FullscreenExitButton from '../kiosk/FullscreenExitButton';
 import type { SpelMistake } from './useSpelStore';
 
-// An empty given = a miss (the zombie reached the door before an answer); a board's claim reads as words ("meer dan 50").
-const num = (v: string) => v === '' ? 'geen' : /^\d+$/.test(v) ? formatMathNumber(Number(v)) : v;
-// A pack answer (the klok) as it was shown: a phrase, a time or a small clock face.
+// An answer as the game showed it (spelFormat answerTextOf: −9, € 7,50, half drie) or a small picture; an empty given =
+// a miss (the zombie reached the door before an answer); a board's claim reads as words ("meer dan 50").
 const answerCell = (q: SpelMistake['question'], v: string) => {
-    const view = v === '' ? undefined : viewFor(q.choices, q.views, v);
-    return view ? <span className={view.visual ? `spel-end-pic is-${view.visual.kind}` : undefined}><SpelChoiceFace value={v} view={view} /></span> : num(v);
+    if (v === '') return 'geen';
+    const view = viewOfValue(q, v);
+    return view?.visual ? <span className={`spel-end-pic is-${view.visual.kind}`}><SpelChoiceFace value={v} view={view} /></span> : <SpelLine text={answerTextOf(q, v)} />;
 };
 
 // After a round: the numbers, the mistakes, and Nakijken (the mistakes again, Oefenen-style) as the big button.
@@ -58,10 +57,7 @@ export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boo
                         <tbody>
                             {mistakes.map((m, i) => (
                                 <tr key={i}>
-                                    <td className="kiosk-math">
-                                        {m.question.visual && <span className={`spel-end-pic is-${m.question.visual.kind}`}><SpelVisual visual={m.question.visual} /></span>}
-                                        {m.question.text}
-                                    </td>
+                                    <td className="kiosk-math"><SpelQuestionLine question={m.question} /></td>
                                     <td className="kiosk-math is-given">{answerCell(m.question, m.given)}</td>
                                     <td className="kiosk-math">{answerCell(m.question, m.question.answer)}</td>
                                 </tr>

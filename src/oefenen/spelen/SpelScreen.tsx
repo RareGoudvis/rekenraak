@@ -9,7 +9,7 @@ import { skinById } from './skins/registry';
 import type { SkinPhase } from './skins/types';
 import { powerOfTen, type SumFacts } from './distractors';
 import SpelEnd from './SpelEnd';
-import { SpelVisual } from './SpelVisual';
+import { SpelQuestionLine, SpelVisual } from './SpelVisual';
 import { signSize } from './spelChoice';
 import { cueSound, play, useSpelSounds } from './sound';
 import SoundToggle from './SoundToggle';
@@ -79,7 +79,7 @@ function HelpPanel() {
                             {question.help.visual && <span className={`spel-help-pic is-${question.help.visual.kind}`}><SpelVisual visual={question.help.visual} /></span>}
                             <p className="spel-help-tip">{question.help.tip}</p>
                         </>
-                    ) : <p className="spel-help-question kiosk-math">{question.text}</p>}
+                    ) : <p className="spel-help-question kiosk-math"><SpelQuestionLine question={question} /></p>}
                     {cardVisual}
                 </section>
                 <section className="spel-help-steps">

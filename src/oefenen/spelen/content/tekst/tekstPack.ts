@@ -97,8 +97,8 @@ function wordQuestion(ask: WordAsk, rng: () => number, count: number): SpelPackQ
     };
 }
 
-// The asked kiosk exercise, when it is a part of the made one.
-const rest = (ask: NumberAsk | WordAsk) => ({ ...(ask.exercise !== undefined && { exercise: ask.exercise }), ...(ask.constraints && { constraints: ask.constraints }) });
+// The asked kiosk exercise, when it is a part of the made one, and the sign's picture of the question (a rij as tiles).
+const rest = (ask: NumberAsk | WordAsk) => ({ ...(ask.exercise !== undefined && { exercise: ask.exercise }), ...(ask.constraints && { constraints: ask.constraints }), ...(ask.visual && { visual: ask.visual }) });
 
 export const TEKST_PACK: SpelPack = {
     leaves: Object.keys(TEKST_LEAVES),

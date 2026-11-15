@@ -4,7 +4,7 @@ import SpelKeypad from '../../SpelKeypad';
 import { Clouds } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { CHESTS, CODE_LEN, newHunt, nextChest, reveal, tryCode, type Hunt } from './code';
-import { coinsOf, drop, dropSpot, gem, grab, heapSlot, newHeap, right, wrong, HEAP_X, HEAP_Y, type Heap, type Loot } from './heap';
+import { coinsOf, earnTo, gem, heapSlot, lootLine, newHeap, right, steal, wrong, HEAP_X, HEAP_Y, SHORE, type Heap, type Loot } from './heap';
 import { DAY, SUNSET, skyFor, type Sky } from './sky';
 import './schatkist.css';
 
@@ -13,7 +13,7 @@ import './schatkist.css';
 // four, the pupil types the code into the lock on the same keypad. A wrong code shakes the lock, the digits stay in
 // view. The chest opens with gold coins and a gem for the heap. Untimed: three chests make the round (the skin's
 // own finish). Met tijd: as many chests as the clock allows, the sun rising and setting with it. A wrong sum gives
-// no digit; three in a row bring a crab that carries one coin off the heap and drops it beside the chest.
+// no digit; three in a row bring a crab that carries the newest coin or gem off the heap into the sea.
 
 // How long the open chest shows its coins before the next chest.
 const OPEN_MS = 1900;
@@ -89,16 +89,12 @@ function LootShape({ kind, n }: { kind: Loot['kind']; n: number }) {
 // Where a new coin or gem hops from: the chest's lock for a coin, its open mouth for a gem.
 const FROM = { coin: { x: 200, y: 150 }, gem: { x: 200, y: 160 } };
 
-/** The heap beside the chest and the coins the crab dropped beside it. */
+/** The heap beside the chest. */
 export function Hoard({ heap, settled }: { heap: Heap; settled?: boolean }) {
     let gems = 0;
     return (
         <g className={`sk-hoard${settled ? ' is-settled' : ''}`}>
             <ellipse className="sk-heap-shadow" cx={HEAP_X} cy={HEAP_Y + 4} rx={heap.items.length ? Math.min(62, 16 + heap.items.length * 2.2) : 0} ry="6" />
-            {Array.from({ length: heap.dropped }, (_, i) => {
-                const p = dropSpot(i);
-                return <g key={`d${i}`} className="sk-loot is-dropped" style={{ transform: `translate(${p.x}px, ${p.y}px)` }}><LootShape kind="coin" n={i} /></g>;
-            })}
             {/* Gems after the coins, so a coin landing higher up never hides one. */}
             {heap.items.map((l, i) => ({ l, i, n: l.kind === 'gem' ? gems++ : 0 })).sort((a, b) => Number(a.l.kind === 'gem') - Number(b.l.kind === 'gem')).map(({ l, i, n }) => {
                 const p = heapSlot(i);
@@ -117,13 +113,21 @@ export function Hoard({ heap, settled }: { heap: Heap; settled?: boolean }) {
     );
 }
 
-// The crab's trip: in from the sea to the heap, with the coin to the sand beside the chest, off again.
-type CrabTrip = { coin: Loot; phase: 'come' | 'carry' | 'leave' | 'still'; at: { x: number; y: number }; to: { x: number; y: number }; forKey: string };
+// The crab's trip: in from the sea to the heap, with the loot back to the shore, under with a splash.
+// still = reduced motion: it stands at the shore with the loot until the next sum.
+type CrabTrip = { loot: Loot; gemN: number; phase: 'come' | 'carry' | 'dive' | 'still'; at: { x: number; y: number }; forKey: string };
 
 function Crab({ trip, onStep }: { trip: CrabTrip; onStep(e: AnimationEvent<SVGGElement>): void }) {
-    const style = { '--hx': `${trip.at.x + 26}px`, '--tx': `${trip.to.x + 24}px`, '--ty': `${trip.to.y - 6}px` } as CSSProperties;
+    const style = { '--hx': `${trip.at.x + 26}px`, '--tx': `${SHORE.x}px`, '--ty': `${SHORE.y}px` } as CSSProperties;
+    const carrying = trip.phase === 'carry' || trip.phase === 'dive' || trip.phase === 'still';
     return (
         <g className={`sk-crab is-${trip.phase}`} style={style} onAnimationEnd={onStep}>
+            {trip.phase === 'dive' && (
+                <g className="sk-splash" aria-hidden>
+                    <ellipse className="sk-splash-ring" cx="0" cy="2" rx="20" ry="5" />
+                    {[-14, -5, 5, 14].map((dx, i) => <circle key={i} className="sk-splash-drop" cx={dx} cy="-2" r="3" style={{ '--dx': `${dx * 1.4}px` } as CSSProperties} />)}
+                </g>
+            )}
             <g className="sk-crab-body" transform="scale(1.2)">
                 <path className="sk-crab-leg" d="M-14 2 L-24 8 L-27 14 M-12 6 L-20 13 L-21 19 M14 2 L24 8 L27 14 M12 6 L20 13 L21 19" />
                 <path className="sk-crab-arm" d="M-12 -4 L-20 -12 M12 -4 L20 -12" />
@@ -135,7 +139,7 @@ function Crab({ trip, onStep }: { trip: CrabTrip; onStep(e: AnimationEvent<SVGGE
                 <circle className="sk-crab-pupil" cx="-5" cy="-19" r="1.6" />
                 <circle className="sk-crab-pupil" cx="7" cy="-19" r="1.6" />
                 <path className="sk-crab-grin" d="M-5 3 Q0 7 5 3" />
-                {trip.phase === 'carry' && <g className="sk-crab-coin" transform="translate(0 -30)"><LootShape kind="coin" n={0} /></g>}
+                {carrying && <g className="sk-crab-coin" transform="translate(0 -30)"><LootShape kind={trip.loot.kind} n={trip.gemN} /></g>}
             </g>
         </g>
     );
@@ -145,7 +149,8 @@ function Crab({ trip, onStep }: { trip: CrabTrip; onStep(e: AnimationEvent<SVGGE
 // Placed where the sea shows on every screen: left of the island, right of it before the keypad, and further out on wide ones.
 const SWELLS: [number, number, number][] = [[34, 203, 0], [362, 204, 1], [-64, 214, 2], [398, 217, 3], [470, 240, 4]];
 
-function Island({ children, sky }: { children: ReactNode; sky: Sky }) {
+// behind = between the sea and the sand (the crab diving in behind the island's edge).
+function Island({ children, sky, behind }: { children: ReactNode; sky: Sky; behind?: ReactNode }) {
     return (
         <svg className="sk-svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax meet" aria-hidden>
             {/* The sun sits behind the sea so it can rise out of it and set into it. */}
@@ -160,6 +165,7 @@ function Island({ children, sky }: { children: ReactNode; sky: Sky }) {
                     <path className="sk-swell-body" d="M-22 4 Q-12 -10 2 -9 Q12 -8 14 -1 Q8 -5 4 -1 Q10 3 22 4 Z" />
                 </g>
             ))}
+            {behind}
             <path className="sk-sand" d="M-60 300 Q-40 222 80 220 Q200 206 320 220 Q440 224 460 300 Z" />
             {/* A palm tree. */}
             <path className="sk-trunk" d="M58 236 Q50 170 76 112 L88 116 Q66 172 74 236 Z" />
@@ -184,25 +190,26 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     const [crab, setCrab] = useState<CrabTrip | null>(null);
     // The question whose answer was handled (one digit, one coin or one step of the crab's run per question).
     const [seenFor, setSeenFor] = useState<string | null>(null);
-    const [scoreSeen, setScoreSeen] = useState(progress.score);
     const [typed, setTyped] = useState('');
+    // Every counted right answer is a coin, from the very first one (the heap follows the score).
+    if (progress.score > heap.earned) setHeap(h => earnTo(h, progress.score));
     if (question && feedback && (phase === 'right' || phase === 'wrong') && seenFor !== question.key) {
         setSeenFor(question.key);
-        setScoreSeen(progress.score);
         if (feedback.correct) {
             setHunt(h => reveal(h, feedback.expected));
-            setHeap(h => right(h, progress.score > scoreSeen));
+            setHeap(right);
         } else {
             const next = wrong(heap, crab !== null);
             setHeap(next.heap);
             if (next.crab) {
-                const at = heapSlot(heap.items.findIndex(l => l.id === next.crab!.id));
-                const to = dropSpot(heap.dropped);
-                // Reduced motion: no walk; the coin lies beside the chest at once and the crab stands by it.
+                const idx = heap.items.findIndex(l => l.id === next.crab!.id);
+                const gemN = heap.items.slice(0, idx).filter(l => l.kind === 'gem').length;
+                const trip = { loot: next.crab, gemN, at: heapSlot(idx), forKey: question.key };
+                // Reduced motion: no walk; the loot is gone at once and the crab stands at the shore with it.
                 if (reducedMotion) {
-                    setHeap(drop(grab(next.heap, next.crab.id)));
-                    setCrab({ coin: next.crab, phase: 'still', at, to, forKey: question.key });
-                } else setCrab({ coin: next.crab, phase: 'come', at, to, forKey: question.key });
+                    setHeap(steal(next.heap, next.crab.id));
+                    setCrab({ ...trip, phase: 'still' });
+                } else setCrab({ ...trip, phase: 'come' });
             }
         }
     }
@@ -212,20 +219,17 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     const onCrabStep = (e: AnimationEvent<SVGGElement>) => {
         if (e.target !== e.currentTarget || !crab) return;
         if (crab.phase === 'come') {
-            setHeap(h => grab(h, crab.coin.id));
+            setHeap(h => steal(h, crab.loot.id));
             setCrab({ ...crab, phase: 'carry' });
-        } else if (crab.phase === 'carry') {
-            setHeap(drop);
-            setCrab({ ...crab, phase: 'leave' });
-        } else if (crab.phase === 'leave') setCrab(null);
+        } else if (crab.phase === 'carry') setCrab({ ...crab, phase: 'dive' });
+        else if (crab.phase === 'dive') setCrab(null);
     };
 
     useEffect(() => { opened = 0; lastHeap = newHeap(); }, []);
-    // The end screen shows the heap as it is; a coin still on its way with the crab already lies beside the chest.
-    useEffect(() => {
-        const carried = crab && (crab.phase === 'carry' || crab.phase === 'come') ? crab.coin.id : null;
-        lastHeap = carried === null ? heap : drop(grab(heap, carried));
-    }, [heap, crab]);
+    // The end screen shows the heap as it is; loot the crab already set out for is gone.
+    useEffect(() => { lastHeap = crab?.phase === 'come' ? steal(heap, crab.loot.id) : heap; }, [heap, crab]);
+    const loot = useRef(lastHeap);
+    useLayoutEffect(() => { loot.current = crab?.phase === 'come' ? steal(heap, crab.loot.id) : heap; });
     // The open chest shows its coins, then the next chest; after the last one the round ends.
     const finish = useRef(onFinish);
     useLayoutEffect(() => { finish.current = onFinish; });
@@ -235,7 +239,7 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
         if (hunt.stage !== 'open') return;
         const last = hunt.chest + 1 >= chests;
         const id = window.setTimeout(() => {
-            if (last) finish.current?.({ title: 'De schat is van jou!', lead: `${chestsLine(CHESTS)}, ${score.current} juist` });
+            if (last) finish.current?.({ title: 'De schat is van jou!', lead: `${score.current} juist, ${lootLine(loot.current)}` });
             else setHunt(h => nextChest(h, chests));
         }, last ? OPEN_MS - 500 : OPEN_MS);
         return () => window.clearTimeout(id);
@@ -244,9 +248,10 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
     const report = useRef(onReport);
     useLayoutEffect(() => { report.current = onReport; });
     const openedNow = hunt.chest + (hunt.stage === 'open' || hunt.stage === 'done' ? 1 : 0);
+    const lootNow = lootLine(crab?.phase === 'come' ? steal(heap, crab.loot.id) : heap);
     useEffect(() => {
-        if (timed) report.current?.({ lead: `${chestsLine(openedNow)}, ${progress.score} juist` });
-    }, [timed, openedNow, progress.score]);
+        if (timed) report.current?.({ lead: `${progress.score} juist, ${lootNow}`, detail: `${chestsLine(openedNow)}.` });
+    }, [timed, openedNow, progress.score, lootNow]);
 
     const sky = timed ? skyFor(progress.msLeft, progress.msTotal) : DAY;
     if (!question) return <div className="sk-root" style={skyStyle(sky)} />;
@@ -293,10 +298,10 @@ export default function Schatkist({ question, phase, feedback, onAnswer, onFinis
                     </div>
                 </div>
                 <div className="sk-scene">
-                    <Island sky={sky}>
+                    <Island sky={sky} behind={crab?.phase === 'dive' && <Crab trip={crab} onStep={onCrabStep} />}>
                         <Chest key={hunt.chest} open={open} shown={coding ? typed : ''} shake={hunt.misses} />
                         <Hoard heap={heap} settled={reducedMotion} />
-                        {crab && <Crab trip={crab} onStep={onCrabStep} />}
+                        {crab && crab.phase !== 'dive' && <Crab trip={crab} onStep={onCrabStep} />}
                     </Island>
                 </div>
             </div>

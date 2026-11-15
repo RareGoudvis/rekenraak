@@ -1,6 +1,7 @@
-// Schatkist: the loot heap beside the chest and the crab, pure. A scored right answer adds a coin, an opened chest a
-// gem. Three wrong sums in a row bring a crab that takes the newest coin off the heap and drops it beside the chest.
-// The crab is only a funny moment: the dropped coin is still the pupil's and the score never changes.
+// Schatkist: the loot heap beside the chest and the crab, pure. Every counted right answer adds a coin (the heap
+// follows the session's score, so it grows from the very first answer), an opened chest adds a gem. Three wrong sums
+// in a row bring a crab that takes the newest coin or gem off the heap and carries it into the sea: the heap shrinks
+// for good. The score never changes (those answers were right); the loot is what the crab takes.
 
 export type LootKind = 'coin' | 'gem';
 export interface Loot { id: number; kind: LootKind }
@@ -8,8 +9,10 @@ export interface Loot { id: number; kind: LootKind }
 export interface Heap {
     // On the heap, in the order they came.
     items: Loot[];
-    // Coins the crab dropped on the sand beside the chest.
-    dropped: number;
+    // Coins earned so far (the session's score when they were handed out).
+    earned: number;
+    // Coins and gems the crab carried off.
+    stolen: number;
     // Wrong sums in a row.
     run: number;
     nextId: number;
@@ -17,36 +20,53 @@ export interface Heap {
 
 export const CRAB_AFTER = 3;
 
-export const newHeap = (): Heap => ({ items: [], dropped: 0, run: 0, nextId: 0 });
+export const newHeap = (): Heap => ({ items: [], earned: 0, stolen: 0, run: 0, nextId: 0 });
 
 const add = (h: Heap, kind: LootKind): Heap => ({ ...h, items: [...h.items, { id: h.nextId, kind }], nextId: h.nextId + 1 });
 
-/** A right sum ends the wrong run; a scored one (not met hulp) adds a coin. */
-export const right = (h: Heap, scored: boolean): Heap => (scored ? add({ ...h, run: 0 }, 'coin') : { ...h, run: 0 });
+/** A coin for every counted right answer not yet paid out (met hulp never scores, so it gives none). */
+export function earnTo(h: Heap, score: number): Heap {
+    let next = h;
+    while (next.earned < score) next = { ...add(next, 'coin'), earned: next.earned + 1 };
+    return next;
+}
+
+/** A right sum ends the wrong run. */
+export const right = (h: Heap): Heap => (h.run ? { ...h, run: 0 } : h);
 
 /** An opened chest adds a gem. */
 export const gem = (h: Heap): Heap => add(h, 'gem');
 
-/** The coin a crab would take: the newest coin on the heap (gems stay put). */
-export function crabTarget(h: Heap): Loot | null {
-    for (let i = h.items.length - 1; i >= 0; i--) if (h.items[i].kind === 'coin') return h.items[i];
-    return null;
-}
+/** What a crab would take: the newest coin or gem on the heap. */
+export const crabTarget = (h: Heap): Loot | null => h.items.at(-1) ?? null;
 
-/** A wrong sum: the third in a row sends the crab for a coin (none on the heap, or a crab still busy = no crab). */
+/** A wrong sum: the third in a row sends the crab (an empty heap, or a crab still busy = no crab); the run starts over. */
 export function wrong(h: Heap, crabBusy = false): { heap: Heap; crab: Loot | null } {
     const run = h.run + 1;
     if (run < CRAB_AFTER) return { heap: { ...h, run }, crab: null };
     return { heap: { ...h, run: 0 }, crab: crabBusy ? null : crabTarget(h) };
 }
 
-/** The crab picks the coin up: it leaves the heap. */
-export const grab = (h: Heap, id: number): Heap => ({ ...h, items: h.items.filter(l => l.id !== id) });
+/** The crab picks it up: it leaves the heap for good. */
+export function steal(h: Heap, id: number): Heap {
+    if (!h.items.some(l => l.id === id)) return h;
+    return { ...h, items: h.items.filter(l => l.id !== id), stolen: h.stolen + 1 };
+}
 
-/** The crab drops it beside the chest. */
-export const drop = (h: Heap): Heap => ({ ...h, dropped: h.dropped + 1 });
+export const coinsOf = (h: Heap): number => h.items.filter(l => l.kind === 'coin').length;
+export const gemsOf = (h: Heap): number => h.items.filter(l => l.kind === 'gem').length;
 
-export const coinsOf = (h: Heap): number => h.items.filter(l => l.kind === 'coin').length + h.dropped;
+/** The end screen's loot line: "7 munten en 1 edelsteen in je schat, de krab pikte er 2". */
+export function lootLine(h: Heap): string {
+    const coins = coinsOf(h);
+    const gems = gemsOf(h);
+    const parts = [
+        ...(coins ? [`${coins} ${coins === 1 ? 'munt' : 'munten'}`] : []),
+        ...(gems ? [`${gems} ${gems === 1 ? 'edelsteen' : 'edelstenen'}`] : []),
+    ];
+    const kept = parts.length ? `${parts.join(' en ')} in je schat` : 'nog niets in je schat';
+    return h.stolen ? `${kept}, de krab pikte er ${h.stolen}` : kept;
+}
 
 // ── Geometry, in the island's 400 × 300 viewBox ─────────────────────────────
 
@@ -99,7 +119,6 @@ const SLOTS: { x: number; y: number }[] = (() => {
 /** Where the i-th item on the heap lies; past the last slot, items share the top. */
 export const heapSlot = (i: number): { x: number; y: number } => SLOTS[Math.min(i, HEAP_SLOTS - 1)];
 
-// Dropped coins lie in the sand left of the chest, a little row that wraps.
-export const DROP_X = 108;
-export const DROP_Y = 280;
-export const dropSpot = (i: number): { x: number; y: number } => ({ x: DROP_X - (i % 4) * 17 + (Math.floor(i / 4) % 2) * 7, y: DROP_Y - Math.floor(i / 4) * 6 });
+// Where the crab goes back into the water: just behind the island's far edge, right of the heap (the sand hides its legs
+// there), in view on phones and behind no keypad.
+export const SHORE = { x: 378, y: 212 };

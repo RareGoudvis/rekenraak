@@ -1,4 +1,6 @@
-// The race car: a low wedge supercar (big wheels, a rear wing, side intakes), no brand marks. Drawn nose to the
+import { useId } from 'react';
+
+// The race car: a low wedge supercar (big wheels, a rear wing, a side intake), no brand marks. Drawn nose to the
 // right in a 220 × 90 box, the tyres on y = 78. The loop spins the wheels (.rc-spin) by the distance driven.
 
 // SYNC: Race.tsx WHEEL_SHARE (the wheel's radius 18 over the width 220, for the spin per metre).
@@ -21,29 +23,43 @@ function Wheel({ cx }: { cx: number }) {
     );
 }
 
+// One closed body from the rear bumper to the nose; the wheel arches are bites out of it (r 21 around the wheels).
+const BODY = 'M8 66 L33.9 66 A21 21 0 0 1 74.1 66 L149.9 66 A21 21 0 0 1 190.1 66 L206 66 L214 60 L212 54 '
+    + 'Q206 40 186 33 L150 31 L118 18 Q100 14 82 18 L40 30 L14 36 L8 43 L6 52 Q6 62 8 66 Z';
+const GLASS = 'M88 22 Q100 18 116 21 L140 31 L92 32 Z';
+
 export function CarArt({ ghost = false }: { ghost?: boolean }) {
+    const clip = `rc-glass-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
     return (
         <svg className={`rc-car-art${ghost ? ' is-ghost' : ''}`} viewBox={`0 0 ${CAR_VIEW.w} ${CAR_VIEW.h}`} aria-hidden>
-            <ellipse className="rc-car-shadow" cx="112" cy="80" rx="100" ry="5" />
+            <ellipse className="rc-car-shadow" cx="112" cy="80" rx="102" ry="5" />
             <g className="rc-body-g">
                 {/* The rear wing on two struts, behind the body. */}
-                <path className="rc-wing-strut" d="M20 36 L16 20 M36 33 L32 20" />
-                <path className="rc-wing" d="M2 14 Q2 11 6 11 L44 12 Q47 12 46 16 L44 20 L4 21 Q1 21 2 18 Z" />
-                {/* The wedge: a long low nose, the cabin far back, angular wheel arches. */}
-                <path className="rc-car-body" d="M10 38 L22 34 L74 24 Q96 19 112 21 L150 34 L156 35 Q170 30 186 38 L208 50 L216 56 L211 64 L197 64 L192 44 L183 39 L157 39 L148 44 L143 64 L81 64 L76 44 L67 39 L41 39 L32 44 L27 64 L12 64 Q6 64 6 58 L6 44 Q6 40 10 38 Z" />
-                <path className="rc-skirt" d="M81 64 L143 64 L141 59 L83 59 Z M197 64 L211 64 L213 60 L198 60 Z M12 64 L27 64 L28 60 L7 60 Q7 63 12 64 Z" />
-                <path className="rc-car-glass" d="M78 27 Q96 22 110 24 L140 35 L84 38 Z" />
-                <path className="rc-glass-shine" d="M98 25 L108 26 L96 36 L88 36 Z" />
-                <circle className="rc-helmet" cx="103" cy="31" r="6" />
-                <rect className="rc-visor" x="104" y="29.5" width="5.5" height="3.5" rx="1.5" />
-                <path className="rc-helmet-stripe" d="M98 27 Q103 24 107 26" />
-                {/* Side intake behind the door, with slats. */}
-                <path className="rc-intake" d="M86 41 L114 39 L108 56 L82 56 Z" />
-                <path className="rc-slat" d="M89 45 L111 44 M87 49 L109 48 M85 53 L107 52" />
-                <path className="rc-crease" d="M116 48 L146 50" />
-                <path className="rc-headlight" d="M198 47 L211 52 L209 55 L197 51 Z" />
-                <path className="rc-taillight" d="M6 42 L16 39 L16 44 L6 46 Z" />
-                <rect className="rc-exhaust" x="0" y="54" width="10" height="5" rx="2" />
+                <path className="rc-wing-strut" d="M20 34 L16 16 M34 31 L32 16" />
+                <path className="rc-wing" d="M2 12 Q2 9 6 9 L42 10 Q46 10 45 14 L43 17 L4 18 Q1 18 2 15 Z" />
+                <path className="rc-car-body" d={BODY} />
+                {/* The dark wheel wells behind the tyres. */}
+                <path className="rc-well" d="M33.9 66 A21 21 0 0 1 74.1 66 Z M149.9 66 A21 21 0 0 1 190.1 66 Z" />
+                <path className="rc-skirt" d="M75 66 L149.9 66 L149 61 L75 61 Z" />
+                <path className="rc-shine" d="M158 33.5 L182 35" />
+                <path className="rc-crease" d="M106 46 L150 45" />
+                <path className="rc-door" d="M100 33 L104 58" />
+                <path className="rc-intake" d="M80 40 L99 38 L95 54 L82 56 Z" />
+                <path className="rc-slat" d="M83 43 L97 42 M82 47 L96 46 M82 51 L95 50" />
+                <clipPath id={clip}><path d={GLASS} /></clipPath>
+                <path className="rc-car-glass" d={GLASS} />
+                {/* The driver: a round helmet with its visor to the front, seen through the side window. */}
+                <g clipPath={`url(#${clip})`}>
+                    <circle className="rc-helmet" cx="110" cy="28" r="7" />
+                    <path className="rc-visor" d="M109.5 23.5 L116.5 23.5 Q118 26.5 116.5 29 L109.5 29 Q108 26 109.5 23.5 Z" />
+                    <path className="rc-glass-shine" d="M96 22 L104 21 L95 31 L91 31 Z" />
+                </g>
+                <path className="rc-glass-line" d={GLASS} />
+                <path className="rc-mirror" d="M139 30 L145 26.5 L148 29.5 Z" />
+                <path className="rc-headlight" d="M196 43 L208 50 L205.5 52 L194 46 Z" />
+                <path className="rc-grille" d="M194 58 L208 58 L206 62 L192.5 62 Z" />
+                <path className="rc-taillight" d="M8 46 L17 44 L17 49 L7.5 51 Z" />
+                <rect className="rc-exhaust" x="1" y="58" width="11" height="5" rx="2" />
             </g>
             <Wheel cx={54} />
             <Wheel cx={170} />
