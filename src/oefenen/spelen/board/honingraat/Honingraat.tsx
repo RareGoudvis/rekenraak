@@ -1,122 +1,105 @@
-import { useId, useState, type CSSProperties } from 'react';
-import { formatMathNumber } from '../../../../services/math/formatters';
-import type { SkinProps } from '../../skins/types';
-import { answerFace, sumFace, type BoardFace, type BoardTarget, type SpelBoard } from '../board';
-import { combLayout } from './comb';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import type { SkinEndingProps, SkinProps } from '../../skins/types';
+import { mulberry32, seedOf } from '../../distractors';
+import { Clouds } from '../../scene';
+import type { BoardCell, SpelBoard } from '../board';
+import { Bee, Branch, FrontFlowers, Hills, Wasp } from './art';
+import Comb from './HoneyComb';
+import Meadow from './Meadow';
+import WaspChallenge from './WaspChallenge';
+import { viewAt, waspSchedule, waspSums, type WaspVerdict } from './hive';
 import './honingraat.css';
 
-// Honingraat (Lente): a honeycomb of sums; find every sum that makes the target. A right cell: the bee
-// flies there and the cell fills with honey. A wrong cell gives a soft bzz shake, then shows its own
-// answer and closes (the session logs it). Untimed; three honeycombs. CSS only, still under reduced motion.
+// Honingraat (Lente): find every sum that makes the target, on a honeycomb, then in a flower meadow, then a
+// comb again (hive.ts viewAt). A full board: the bee flies happily on while the scene scrolls to the next one.
+// Moeilijk (options.niveau): now and then a wasp comes for the nest before a comb (WaspChallenge); it can
+// claim the nest (onFail). The session checks every cell; reduced motion: no scroll, no loops, instant states.
 
-const HEX = '50,2 98,29.7 98,85.8 50,113.5 2,85.8 2,29.7';
+// The scroll from one board to the next (honingraat.css hx-scroll lasts as long).
+export const SCROLL_MS = 1500;
 
-const faceText = (face: BoardFace) => (face.kind === 'text' ? face.text : face.label);
-
-function Bee() {
-    return (
-        <svg className="hx-bee-art" viewBox="0 0 80 64" aria-hidden>
-            <g transform="rotate(-24 34 14)"><ellipse className="hx-wing" cx="34" cy="14" rx="13" ry="17" /></g>
-            <g transform="rotate(20 48 14)"><ellipse className="hx-wing" cx="48" cy="14" rx="13" ry="17" /></g>
-            <ellipse className="hx-bee-body" cx="40" cy="40" rx="26" ry="19" />
-            <path className="hx-bee-stripe" d="M30 23 Q26 40 30 57 M44 22 Q40 40 44 58" />
-            <path className="hx-bee-sting" d="M14 40 L5 37 L14 45 Z" />
-            <circle className="hx-bee-eye" cx="56" cy="35" r="3.6" />
-            <path className="hx-bee-smile" d="M54 45 Q59 49 63 44" />
-            <path className="hx-bee-feeler" d="M60 24 Q64 12 70 10 M64 27 Q72 18 77 18" />
-        </svg>
-    );
+function BoardView(props: Parameters<typeof Comb>[0]) {
+    return viewAt(props.board.index) === 'comb' ? <Comb {...props} /> : <Meadow {...props} />;
 }
 
-function Sign({ target, cleared }: { target: BoardTarget; cleared: boolean }) {
-    if (cleared) return <p className="hx-sign" aria-live="polite">Alle honing is binnen!</p>;
-    // A pack's comb (the breuken): its own words before the target.
-    if (target.kind === 'pack') return <p className="hx-sign" aria-live="polite">{target.lead} <span className="hx-sign-n kiosk-math">{target.n}</span></p>;
-    const n = <span className="hx-sign-n kiosk-math">{formatMathNumber(target.n)}</span>;
-    return <p className="hx-sign" aria-live="polite">{target.kind === 'eq' ? <>Zoek alle sommen die {n} zijn</> : <>Zoek alle sommen groter dan {n}</>}</p>;
-}
-
-function Comb({ board, phase, onBoardPick, reducedMotion }: Pick<SkinProps, 'phase' | 'onBoardPick' | 'reducedMotion'> & { board: SpelBoard }) {
-    const uid = useId();
-    const layout = combLayout(board.cells.length);
-    // Where the bee is: its hive corner, or the cell it just filled.
-    const [beeAt, setBeeAt] = useState<number | null>(null);
-    const [bzz, setBzz] = useState<number | null>(null);
-    // The session's verdict on the last pick arrives as the board: follow it (state adjusted during render).
-    const [seenFocus, setSeenFocus] = useState<SpelBoard['focus']>(board.focus);
-    // Every pick moves the focus to a new cell (a picked cell closes), so a focus change is a new verdict.
-    if (board.focus !== seenFocus) {
-        setSeenFocus(board.focus);
-        const f = board.focus;
-        if (f !== null && board.cells[f].state === 'solved') setBeeAt(f);
-        else if (f !== null && board.cells[f].state === 'missed') setBzz(f);
+export default function Honingraat({ board, phase, onBoardPick, reducedMotion, sound, options, progress, onFail }: SkinProps) {
+    const hard = options.niveau === 'moeilijk';
+    const [schedule] = useState(() => waspSchedule(progress.board?.total ?? 3, mulberry32(seedOf(board?.key ?? 'honing'))));
+    const [last, setLast] = useState(board ?? null);
+    // The board the scene scrolls away from, while the next one comes in.
+    const [leaving, setLeaving] = useState<SpelBoard | null>(null);
+    // Every cell of the boards already played (the wasp's sums come from them).
+    const [played, setPlayed] = useState<readonly BoardCell[]>([]);
+    const [wasp, setWasp] = useState<{ seed: number } | null>(null);
+    if ((board ?? null) !== last) {
+        setLast(board ?? null);
+        if (board && last && board.key !== last.key) {
+            if (!reducedMotion) setLeaving(last);
+            setPlayed(p => [...p, ...last.cells]);
+            if (hard && schedule.includes(board.index)) setWasp({ seed: seedOf(board.key) });
+        }
     }
-    const target = board.target!;
-    const toFind = board.cells.filter(c => c.match);
-    const found = toFind.filter(c => c.state === 'solved').length;
-    const cleared = found === toFind.length;
-    // One size for every sum on the comb: the longest decides.
-    const long = board.cells.some(c => faceText(sumFace(c.question)).length > 7);
+    useEffect(() => {
+        if (!leaving) return;
+        const id = window.setTimeout(() => setLeaving(null), SCROLL_MS);
+        return () => window.clearTimeout(id);
+    }, [leaving]);
+    const fail = useRef(onFail);
+    useEffect(() => { fail.current = onFail; });
+    const sums = useMemo(() => (wasp ? waspSums(played, mulberry32(wasp.seed)) : []), [wasp, played]);
+    const waspOn = !!wasp && !leaving && sums.length > 0;
+    const waspDone = (v: WaspVerdict) => { if (v === 'claimed') fail.current(); else setWasp(null); };
 
-    const pick = (i: number) => {
-        const c = board.cells[i];
-        if (phase !== 'play' || c.state !== 'open') return;
-        onBoardPick?.(i, '');
-    };
-
-    const bee = beeAt !== null ? layout.cells[beeAt] : { x: layout.width - 0.15, y: -0.2 };
+    const paused = phase === 'help';
+    const active = !leaving && !wasp;
     return (
-        <>
-            <div className="hx-top">
-                <Sign target={target} cleared={cleared} />
-                <span className="hx-count" role="img" aria-label={`${found} van ${toFind.length} gevonden`}>
-                    {toFind.map((c, i) => (
-                        <svg key={i} className={`hx-pip${c.state === 'solved' ? ' is-on' : ''}`} viewBox="0 0 100 116" aria-hidden><polygon points={HEX} /></svg>
-                    ))}
-                </span>
+        <div className={`hx-root${paused ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${leaving ? ' is-scrolling' : ''}`}>
+            <span className="hx-sun" aria-hidden />
+            <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[3, 20]} speed={110} seed={11} paused={paused} reducedMotion={reducedMotion} />
+            <Clouds layer="near" count={2} size={[120, 180]} band={[6, 26]} speed={80} seed={4} paused={paused} reducedMotion={reducedMotion} />
+            <span className="hx-ground" aria-hidden />
+            {/* The far hills and the front flowers pan by a copy on each scroll (remounted, so it plays again). */}
+            <span key={`h-${leaving?.key ?? 'rest'}`} className="hx-hills-wrap" aria-hidden><Hills /></span>
+            <span key={`f-${leaving?.key ?? 'rest'}`} className="hx-front-wrap" aria-hidden><FrontFlowers /></span>
+            <div className="hx-views">
+                {leaving && (
+                    <div key={leaving.key} className="hx-view is-leaving" inert>
+                        <BoardView board={leaving} phase={phase} reducedMotion={reducedMotion} sound={sound} active={false} leaving />
+                    </div>
+                )}
+                {board?.target && (
+                    <div key={board.key} className={`hx-view${leaving ? ' is-entering' : ''}${waspOn ? ' is-under-attack' : ''}`} inert={!active}>
+                        <BoardView board={board} phase={phase} onBoardPick={onBoardPick} reducedMotion={reducedMotion} sound={sound} active={active} />
+                    </div>
+                )}
             </div>
-            <div className="hx-comb-wrap">
-                <div className={`hx-comb${cleared ? ' is-cleared' : ''}${long ? ' is-long' : ''}`} role="group" aria-label="Honingraat"
-                    style={{ '--hx-cols': layout.width, '--hx-rows-h': layout.height } as CSSProperties}>
-                    {board.cells.map((c, i) => {
-                        const { x, y } = layout.cells[i];
-                        const sum = faceText(sumFace(c.question));
-                        // A breuk that does not simplify (4/9) has no other answer to show.
-                        const own = faceText(answerFace(c.question));
-                        const state = c.state === 'solved' ? ' is-honey' : c.state === 'missed' ? ' is-missed' : '';
-                        const label = c.state === 'solved' ? `${sum}, honing` : c.state === 'missed' && own !== sum ? `${sum} is ${own}` : sum;
-                        return (
-                            <button key={`${board.key}-${i}`} type="button" className={`hx-cell${state}${bzz === i ? ' is-bzz' : ''}`}
-                                style={{ '--x': x, '--y': y, '--i': i } as CSSProperties} disabled={phase !== 'play' || c.state !== 'open'}
-                                onClick={() => pick(i)} onAnimationEnd={e => { if (e.animationName === 'hx-bzz') setBzz(null); }} aria-label={label}>
-                                <svg className="hx-hex" viewBox="0 0 100 115.5" aria-hidden>
-                                    <clipPath id={`${uid}-${i}`}><polygon points={HEX} /></clipPath>
-                                    <polygon className="hx-wax" points={HEX} />
-                                    <g clipPath={`url(#${uid}-${i})`}>
-                                        <rect className="hx-honey" x="0" y="0" width="100" height="116" />
-                                        <ellipse className="hx-shine" cx="30" cy="34" rx="11" ry="5" transform="rotate(-28 30 34)" />
-                                    </g>
-                                    <polygon className="hx-rim" points={HEX} />
-                                </svg>
-                                <span className="hx-sum kiosk-math" aria-hidden>{sum}</span>
-                                {c.state === 'missed' && own !== sum && <span className="hx-own kiosk-math" aria-hidden>= {own}</span>}
-                            </button>
-                        );
-                    })}
-                    <span className={`hx-bee${beeAt !== null ? ' is-landed' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--bx': bee.x, '--by': bee.y } as CSSProperties} aria-hidden>
-                        <Bee />
-                    </span>
-                </div>
-            </div>
-        </>
+            {leaving && <span className="hx-traveller" aria-hidden><span className="hx-traveller-loop"><Bee mood="happy" /></span></span>}
+            {waspOn && <WaspChallenge sums={sums} pool={played.map(c => c.question)} seed={wasp.seed} reducedMotion={reducedMotion} sound={sound} paused={paused} onDone={waspDone} />}
+        </div>
     );
 }
 
-export default function Honingraat({ board, phase, onBoardPick, reducedMotion }: SkinProps) {
+/** The end screen's picture: a full comb with dancing bees, or the wasp sitting on the nest, bees peeking. */
+export function HoningraatEnding({ outcome, reducedMotion }: SkinEndingProps) {
+    const claimed = outcome === 'failed';
     return (
-        <div className={`hx-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <span className="hx-sun" aria-hidden />
-            {board?.target && <Comb key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} reducedMotion={reducedMotion} />}
+        <div className={`spel-ending hx-ending${claimed ? ' is-claimed' : ' is-party'}${reducedMotion ? ' is-still' : ''}`} aria-hidden>
+            <span className="hx-ending-branch"><Branch /></span>
+            <svg className="hx-ending-comb" viewBox="0 0 220 170">
+                <path className="hx-slab-wax" d="M30 10 L190 10 C210 10 214 30 214 60 C214 130 160 166 110 166 C60 166 6 130 6 60 C6 30 10 10 30 10 Z" />
+                {[[60, 50], [110, 50], [160, 50], [85, 93], [135, 93], [60, 136], [110, 136], [160, 136], [35, 93], [185, 93]].map(([x, y], i) => (
+                    <polygon key={i} className={`hx-ending-cell${claimed && i % 3 === 0 ? ' is-empty' : ''}`} transform={`translate(${x - 25} ${y - 28.9}) scale(.5)`} points="50,2 98,29.7 98,85.8 50,113.5 2,85.8 2,29.7" />
+                ))}
+                <path className="hx-slab-rim" d="M30 10 L190 10 C210 10 214 30 214 60 C214 130 160 166 110 166 C60 166 6 130 6 60 C6 30 10 10 30 10 Z" />
+            </svg>
+            {claimed ? (
+                <>
+                    <span className="hx-ending-wasp"><Wasp mood="grin" /></span>
+                    {[0, 1].map(i => <span key={i} className="hx-ending-bee is-peek" style={{ '--e': i } as CSSProperties}><span className="hx-bee-turn"><Bee mood="worried" /></span></span>)}
+                </>
+            ) : (
+                [0, 1, 2].map(i => <span key={i} className="hx-ending-bee" style={{ '--e': i } as CSSProperties}><span className="hx-bee-turn"><Bee mood="happy" pollen={i === 1} /></span></span>)
+            )}
         </div>
     );
 }

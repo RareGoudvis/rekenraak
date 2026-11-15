@@ -28,3 +28,29 @@ export function combLayout(n: number): { cells: { x: number; y: number }[]; widt
     });
     return { cells, width, height: HEX_H * (1 + 0.75 * (rows.length - 1)) };
 }
+
+// The wax around the cells to find: the comb's edge, in cell widths beyond the cells.
+export const COMB_RIM = { side: 0.45, top: 0.3, bottom: 0.4 } as const;
+
+export type DecorKind = 'wax' | 'honey' | 'capped' | 'egg' | 'larva';
+const DECOR: readonly DecorKind[] = ['wax', 'capped', 'egg', 'honey', 'larva', 'wax', 'capped', 'larva', 'egg', 'honey', 'wax'];
+
+/** The lattice cells around the comb (cut off by its wax edge): honey, capped honey, an egg or a larva. Seeded by position. */
+export function combDecor(n: number): { x: number; y: number; kind: DecorKind }[] {
+    const { cells, width, height } = combLayout(n);
+    const rows = combRows(n).length;
+    const taken = new Set(cells.map(c => `${c.x}|${c.y}`));
+    // Row 0's centres sit on whole or half cell widths; the lattice alternates from there.
+    const parity0 = cells[0].x % 1;
+    const out: { x: number; y: number; kind: DecorKind }[] = [];
+    for (let r = -1; r <= rows; r++) {
+        const y = HEX_H / 2 + r * HEX_H * 0.75;
+        if (y - HEX_H / 2 > height + COMB_RIM.bottom || y + HEX_H / 2 < -COMB_RIM.top) continue;
+        const off = (parity0 + (Math.abs(r) % 2) * 0.5) % 1;
+        for (let x = off - 1; x <= width + 1; x += 1) {
+            if (taken.has(`${x}|${y}`)) continue;
+            out.push({ x, y, kind: DECOR[Math.abs(Math.round(x * 7 + r * 13 + n)) % DECOR.length] });
+        }
+    }
+    return out;
+}

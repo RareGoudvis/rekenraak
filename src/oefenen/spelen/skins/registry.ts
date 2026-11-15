@@ -157,17 +157,21 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('../board/hartjes/Hartjes')),
     },
     {
-        // Lente: a honeycomb of 13 sums, find every one that makes the target (3–5), 3 honeycombs. A wrong cell is a
-        // mistake at once. Cards whose answers rarely repeat (tot 1000) get "groter dan" a round number instead.
+        // Lente: 13 sums, find every one that makes the target (3–5), on a honeycomb, a flower meadow, a comb again. A
+        // wrong cell is a mistake at once. Cards whose answers rarely repeat (tot 1000) get "groter dan" a round number.
         // Gelijkwaardige breuken: "zoek alle breuken die gelijk zijn aan 1/2" (content/breuken/breukComb.ts).
+        // Moeilijk: five boards, and a wasp now and then (board/honingraat/hive.ts) that can claim the nest (canFail).
         meta: {
             music: 'weide',
-            id: 'honingraat', label: 'Honingraat', input: 'board', timed: false, season: 'lente',
+            id: 'honingraat', label: 'Honingraat', input: 'board', timed: false, season: 'lente', canFail: true,
             round: { board: { kind: 'target', boards: 3, size: 13, strikes: 1 } }, accepts: { kinds: ['number', 'choice'], ops: ['+', '-'], pictures: true, board: 'target' },
-            sounds: { correct: 'drup', wrong: 'bzz' },
+            options: [{ ...NIVEAU, choices: [NIVEAU.choices[0], { ...NIVEAU.choices[1], round: { board: { kind: 'target', boards: 5, size: 13, strikes: 1 } } }] }],
+            winTitle: 'Alle honing is binnen!', failTitle: 'Oei! De wesp heeft het nest. Nog eens?',
+            sounds: { correct: 'drup', wrong: 'bzz', barricade: 'krak', launch: 'zwoesj', hit: 'pop', lost: 'boing', win: 'cheer', fail: 'wahwah' },
         },
         icon: Hexagon,
         Component: lazy(() => import('../board/honingraat/Honingraat')),
+        Ending: lazy(() => import('../board/honingraat/Honingraat').then(m => ({ default: m.HoningraatEnding }))),
     },
     {
         // A funny animal under 4 × 4 tiles: each right answer flips one away (random order), 16 show it all. A mistake
