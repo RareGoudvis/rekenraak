@@ -12,7 +12,7 @@ import Touwtrekken from '../oefenen/spelen/skins/touwtrekken/Touwtrekken';
 import { TOUW } from '../oefenen/spelen/skins/touwtrekken/rule';
 import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
 import { playRecipe } from '../oefenen/spelen/sound';
-import { BOT, botTurn } from '../oefenen/spelen/duel/bot';
+import { BOT, botTurn, nextPace } from '../oefenen/spelen/duel/bot';
 import { duelConfigOf, duelOptions } from '../oefenen/spelen/duel/options';
 import {
     DUEL_TIMING, SHARED_TRIES, SUM_CLOCK, applyEffect, defaultRoundOver, freshSideView, hitRule, leadOf, matchWinnerOf, ropeOf, ropeRule, sumLimitMs, winsNeeded, wrongOf,
@@ -111,65 +111,46 @@ describe('duel rules (pure)', () => {
     });
 });
 
-describe('the bot', () => {
-    test('pacing: Moeilijk is quicker and surer than Normaal; ahead it eases off, behind it pushes a little', () => {
-        const avg = (level: DuelLevel, lead = 0) => {
+describe('the bot (pure; the win rates per game are in spelen.bot.test)', () => {
+    test('pacing: Moeilijk is quicker and surer than Normaal; ahead it eases off, behind it pushes', () => {
+        const avg = (level: DuelLevel, lead = 0, paceMs: number | null = null) => {
             const rnd = mulberry32(3);
             let ms = 0, right = 0;
-            for (let i = 0; i < 2000; i++) { const t = botTurn(level, lead, 2, rnd); ms += t.delayMs; right += t.correct ? 1 : 0; }
+            for (let i = 0; i < 2000; i++) { const t = botTurn(level, { lead, answerChars: 2, paceMs }, rnd); ms += t.delayMs; right += t.correct ? 1 : 0; }
             return { ms: ms / 2000, right: right / 2000 };
         };
         const n = avg('normaal'), m = avg('moeilijk');
         expect(m.ms).toBeLessThan(n.ms);
         expect(m.right).toBeGreaterThan(n.right);
         expect(n.ms).toBeGreaterThan(BOT.normaal.minMs);
-        expect(avg('normaal', 1).ms).toBeGreaterThan(n.ms * 1.3);
+        expect(avg('normaal', 1).ms).toBeGreaterThan(n.ms * 1.5);
         expect(avg('normaal', 1).right).toBeLessThan(n.right);
-        expect(avg('normaal', -1).ms).toBeLessThan(n.ms);
+        expect(avg('normaal', -1).ms).toBeLessThan(n.ms * 0.6);
+        expect(avg('normaal', -1).right).toBeGreaterThan(n.right);
         // A longer answer takes longer to type.
-        expect(botTurn('normaal', 0, 5, () => 0.5).delayMs - botTurn('normaal', 0, 2, () => 0.5).delayMs).toBe(3 * BOT.perCharMs);
+        expect(botTurn('normaal', { lead: 0, answerChars: 5 }, () => 0.5).delayMs - botTurn('normaal', { lead: 0, answerChars: 2 }, () => 0.5).delayMs).toBe(3 * BOT.perCharMs);
         expect(leadOf(freshSideView(5), { ...freshSideView(5), lives: 0 }, 5)).toBe(1);
     });
 
-    // One round, 5 lives, a right answer takes 1 off the other: a pupil (an answer every minMs–maxMs, pRight right)
-    // against the bot, with the engine's flash times and, on Moeilijk, the sum clock (a slow answer times out).
-    function round(level: DuelLevel, rnd: () => number, kid = { minMs: 4_000, maxMs: 7_000, pRight: 0.85 }, lives = 5): Side {
-        const s = { left: { ...freshSideView(lives) }, right: { ...freshSideView(lives) } };
-        const next = { left: 0, right: 0 };
-        const turn = (side: Side, at: number) => {
-            const me = s[side], them = s[side === 'left' ? 'right' : 'left'];
-            const t = side === 'left'
-                ? { delayMs: kid.minMs + (kid.maxMs - kid.minMs) * rnd(), correct: rnd() < kid.pRight }
-                : botTurn(level, leadOf(me, them, lives), 2, rnd);
-            const limit = level === 'moeilijk' ? sumLimitMs(me.right) : Infinity;
-            const right = t.correct && t.delayMs <= limit;
-            return { at: at + Math.min(t.delayMs, limit), right };
-        };
-        let pend = { left: turn('left', 0), right: turn('right', 0) };
-        for (;;) {
-            const side: Side = pend.left.at <= pend.right.at ? 'left' : 'right';
-            const other: Side = side === 'left' ? 'right' : 'left';
-            const { at, right } = pend[side];
-            if (right) { s[side].right++; s[other].lives--; if (s[other].lives <= 0) return side; }
-            next[side] = at + (right ? DUEL_TIMING.flashRight : DUEL_TIMING.flashWrong);
-            pend = { ...pend, [side]: turn(side, next[side]) };
-        }
-    }
-    const winRate = (level: DuelLevel, kid?: Parameters<typeof round>[2]) => {
-        const rnd = mulberry32(42);
-        let won = 0;
-        for (let i = 0; i < 1000; i++) if (round(level, rnd, kid) === 'left') won++;
-        return won / 1000;
-    };
+    test('it follows the pupil: a quick pupil meets a quicker, surer bot; a slow one a slower bot; never under the floor', () => {
+        const at = (paceMs: number | null, shared = false) => botTurn('normaal', { lead: 0, answerChars: 2, paceMs, shared }, () => 0.5);
+        const mid = (BOT.normaal.minMs + BOT.normaal.maxMs) / 2;
+        expect(at(null).delayMs).toBe(mid);
+        expect(at(3_000).delayMs).toBeLessThan(mid * 0.75);
+        expect(at(9_000).delayMs).toBeGreaterThan(mid * 1.2);
+        // Following, not copying: the bot keeps a little of its own pace.
+        expect(at(3_000).delayMs).toBeGreaterThan(3_000 * BOT.normaal.paceTimes);
+        // One shared sum: a touch slower, as every sum is a straight race.
+        expect(at(4_000, true).delayMs).toBeGreaterThan(at(4_000).delayMs);
+        expect(botTurn('moeilijk', { lead: -1, answerChars: 1, paceMs: 200 }, () => 0).delayMs).toBe(BOT.floorMs);
+        // Its sureness follows too (rng 0.15: right at a quick pace, wrong at a slow one).
+        expect(botTurn('normaal', { lead: 0, answerChars: 2, paceMs: 3_000 }, () => 0.15).correct).toBe(true);
+        expect(botTurn('normaal', { lead: 0, answerChars: 2, paceMs: 9_000 }, () => 0.15).correct).toBe(false);
+    });
 
-    test('a 9-year-old beats Normaal most of the time; Moeilijk is a real fight', () => {
-        expect(winRate('normaal')).toBeGreaterThanOrEqual(0.75);
-        const hard = winRate('moeilijk');
-        expect(hard).toBeGreaterThan(0.3);
-        expect(hard).toBeLessThan(0.7);
-        // A slower pupil (6–9 s, 80 %) still wins Normaal more often than not; a quick sure one wins Moeilijk.
-        expect(winRate('normaal', { minMs: 6_000, maxMs: 9_000, pRight: 0.8 })).toBeGreaterThan(0.5);
-        expect(winRate('moeilijk', { minMs: 2_500, maxMs: 4_500, pRight: 0.95 })).toBeGreaterThan(0.75);
+    test('the pace: a running average leaning on the last sums', () => {
+        expect(nextPace(null, 5_000)).toBe(5_000);
+        expect(nextPace(5_000, 3_000)).toBe(4_300);
     });
 });
 
