@@ -3,7 +3,7 @@ import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards
 import { LEERJAREN } from '../config/gradePresets';
 import { MAX_TYPES, parseSessie } from '../services/oefenen/session';
 import { kioskSupports } from '../services/oefenen/kiosk';
-import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choicesFor, isZelfSessie, usableVariants, type ZelfMode } from '../oefenen/zelf/zelfSessie';
+import { ZELF_COUNTS, ZELF_MINUTES, buildZelfSessie, choicesFor, isZelfSessie, usableVariants, zelfUsable, type ZelfMode } from '../oefenen/zelf/zelfSessie';
 
 const MODES: ZelfMode[] = [
     ...ZELF_COUNTS.map(n => ({ kind: 'count', n }) as ZelfMode),
@@ -11,7 +11,8 @@ const MODES: ZelfMode[] = [
 ];
 
 let data: EenvoudigData;
-const topicIds = (g: (typeof LEERJAREN)[number]) => [...usableVariants(data, g).keys()];
+// Every topic the pupil sees, Door elkaar included.
+const topicIds = (g: (typeof LEERJAREN)[number]) => [...zelfUsable(data, g).keys()];
 const allChoices = () => LEERJAREN.flatMap(g => topicIds(g).flatMap(t => choicesFor(data, g, t).map(c => ({ g, t, c }))));
 
 describe('Zelf oefenen sessie', () => {

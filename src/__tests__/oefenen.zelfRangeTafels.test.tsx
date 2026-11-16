@@ -8,7 +8,7 @@ import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards
 import { resolveCard } from '../config/eenvoudig/resolveCard';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { RANGE_KEY, TAFELS_KEY, readRange, readTafels } from '../oefenen/zelf/zelfPicks';
-import { TAFELS_DEFAULT, ZELF_RANGES, buildZelfSessie, choicesFor, tafelChoice, tafelList, tafelPickOf, tafelsOffer, zelfMaxOf } from '../oefenen/zelf/zelfSessie';
+import { TAFELS_DEFAULT, ZELF_RANGES, buildZelfSessie, choicesFor, tafelChoice, tafelList, tafelPickOf, tafelsOffer, zelfMaxOf, zelfRangeButtons } from '../oefenen/zelf/zelfSessie';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { skinsFor } from '../oefenen/spelen/accepts';
 import { SKINS } from '../oefenen/spelen/skins/registry';
@@ -40,7 +40,7 @@ async function openTopic(grade: number, section: string, name: string) {
 
 describe('Tot hoeveel?', () => {
     test('the ranges per leerjaar', () => {
-        expect(ZELF_RANGES).toEqual({ 1: [10, 20], 2: [100], 3: [1000], 4: [10000, 100000], 5: [1000000], 6: [1000000000] });
+        expect(ZELF_RANGES).toEqual({ 1: [5, 10, 20], 2: [100], 3: [1000], 4: [10000, 100000], 5: [1000000], 6: [1000000000] });
     });
 
     test('leerjaar 1: tot 10 and tot 20 give different Optellen cards, each of that range', () => {
@@ -75,14 +75,15 @@ describe('Tot hoeveel?', () => {
         }
     });
 
-    test('the screen: leerjaar 1 asks tot 10 or tot 20 (tot 10 first), remembered; leerjaar 2 shows its range; klok nothing', async () => {
+    test('the screen: leerjaar 1 asks tot 5, tot 10 or tot 20 (tot 5 first), remembered; leerjaar 2 shows its range; klok nothing', async () => {
         await openTopic(1, 'Hoofdrekenen', 'Optellen');
         const group = screen.getByRole('group', { name: 'Tot hoeveel?' });
-        expect(within(group).getByRole('button', { name: 'tot 10' }).getAttribute('aria-pressed')).toBe('true');
+        expect(within(group).getAllByRole('button').map(b => b.textContent)).toEqual(['tot 5', 'tot 10', 'tot 20']);
+        expect(within(group).getByRole('button', { name: 'tot 5' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.queryByRole('button', { name: 'Met brug' })).toBeNull();
         click('tot 20');
         expect(screen.getByRole('button', { name: 'Met brug' })).toBeTruthy();
-        expect(readRange(1, [10, 20])).toBe(20);
+        expect(readRange(1, [5, 10, 20])).toBe(20);
         expect(JSON.parse(localStorage.getItem(RANGE_KEY)!)).toEqual({ 1: 20 });
         click('Met brug');
         click('Begin met oefenen');
@@ -112,6 +113,40 @@ describe('Tot hoeveel?', () => {
         cleanup();
         await openTopic(2, 'Meten', 'Klok en kalender');
         expect(screen.queryByText(/^tot /)).toBeNull();
+    });
+
+    test('leerjaar 1 tot 5: + and − up to 5, splitsbomen and MAB-blokjes; a range a topic has no cards of is no button', () => {
+        for (const topic of ['Hoofdrekenen · Optellen', 'Hoofdrekenen · Aftrekken', 'Splitsen', 'Getallen lezen en plaatswaarde']) {
+            expect(zelfMaxOf(data, topic, 1, 5), topic).toBe(5);
+            expect(zelfRangeButtons(data, topic, 1), topic).toEqual([5, 10, 20]);
+            const cs = choicesFor(data, 1, topic, 5);
+            expect(cs.length, topic).toBeGreaterThan(0);
+            for (const v of cs.flatMap(c => c.vars)) expect(maxOf(v, data), v.id).toBe(5);
+            for (const c of cs) for (const t of buildZelfSessie(c, { kind: 'count', n: 5 }, 0, 1).types) {
+                const c2 = t.constraints as { maxGetal?: number; maxNumber?: number };
+                expect(c2.maxGetal ?? c2.maxNumber, t.leafId).toBe(5);
+            }
+        }
+        // Tot 5 sums still play: the keypad games take a one-digit + or −.
+        const plus5 = choicesFor(data, 1, 'Hoofdrekenen · Optellen', 5)[0];
+        expect(skinsFor(SKINS, spelContentOf(plus5, 1)!).map(k => k.meta.id)).toContain('ballonnen');
+        // MAB tot 5 and tot 10 are "MAB-blokjes" (herkennen), the same choice as tot 20, so a range switch keeps it picked.
+        for (const r of [5, 10, 20]) expect(choicesFor(data, 1, 'Getallen lezen en plaatswaarde', r).map(c => c.label)).toContain('MAB-blokjes');
+        expect(choicesFor(data, 1, 'Getallen lezen en plaatswaarde', 5).flatMap(c => c.vars.map(v => v.leafId))).toEqual(['mab-herkennen']);
+        expect(choicesFor(data, 1, 'Getallen lezen en plaatswaarde', 10).flatMap(c => c.vars.map(v => v.leafId))).toEqual(['mab-herkennen']);
+        // Handig rekenen has only tot 20 cards: no buttons, the pill.
+        expect(zelfRangeButtons(data, 'Handig rekenen', 1)).toEqual([]);
+        expect(zelfRangeButtons(data, 'Hoofdrekenen · Optellen', 4)).toEqual([]);
+        expect(zelfRangeButtons(data, 'Hoofdrekenen · Vermenigvuldigen', 4)).toEqual([10000, 100000]);
+    });
+
+    test('the screen: MAB tot 5 starts at once (one choice), tot 10 keeps it', async () => {
+        await openTopic(1, 'Getallen', 'Getallen lezen en plaatswaarde');
+        expect(screen.getByRole('button', { name: 'tot 5' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.queryByText('Welke oefening?')).toBeNull();
+        click('Begin met oefenen');
+        const s = useOefenStore.getState().sessie!;
+        expect(s.types.map(t => [t.leafId, (t.constraints as { maxNumber: number }).maxNumber])).toEqual([['mab-herkennen', 5]]);
     });
 
     test('a broken remembered range falls back to the smaller one', () => {

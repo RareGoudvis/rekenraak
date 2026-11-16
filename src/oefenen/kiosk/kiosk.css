@@ -1766,6 +1766,10 @@ html:has(.oefen-body),
 }
 .zelf-step .zelf-grid { width: 100%; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .zelf-step .zelf-choice { justify-content: center; text-align: center; min-height: 84px; font-size: var(--kiosk-text-lg); font-weight: 900; }
+/* A tile's text shrinks until its longest word (--zelf-word letters, set by the picker) fits the tile: "Kommagetallen" never sticks out.
+   0.56em = a Nunito 900 letter with room to spare ("Kommagetallen" averages 0.51em); a word still breaks as the last resort. */
+.zelf-step .zelf-grid > .zelf-choice { container-type: inline-size; }
+.zelf-step .zelf-grid .zelf-choice-text { font-size: min(1em, 100cqi / (var(--zelf-word, 1) * 0.56)); }
 /* Tot hoeveel: two big range buttons (leerjaar 1 and 4), else the range as a fixed pill under the title. */
 .zelf-range { margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px; }
 .zelf-range-label { font-size: var(--kiosk-text-lg); font-weight: 900; }

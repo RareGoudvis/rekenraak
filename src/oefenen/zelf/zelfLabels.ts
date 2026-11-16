@@ -1,3 +1,5 @@
+import { COMBO_TOPIC_ID } from '../../config/eenvoudig/nav';
+
 // Child-friendly labels for the Op.stap headings and card names the Zelf oefenen picker can show.
 // Keyed by topic, then by the original text; zelfLabels.test.ts fails when the picker shows a heading with no row here.
 export const ZELF_LABELS: Record<string, Record<string, string>> = {
@@ -5,10 +7,13 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
         'Tellen': 'Tellen',
         'Getallenas': 'Getallenlijn',
         'Patronen': 'Patronen',
+        'Getallenpatronen verderzetten': 'Patronen verderzetten',
     },
     'Getallen lezen en plaatswaarde': {
         'Plaatswaarde': 'Plaatswaarde',
-        'Aantallen en plaatswaarde': 'Aantallen en plaatswaarde',
+        // Only MAB cards sit under this heading; the tot 5 / tot 10 cards (leerjaar 1) are named MAB, so every range shows the same choice.
+        'Aantallen en plaatswaarde': 'MAB-blokjes',
+        'MAB': 'MAB-blokjes',
         'Lezen en schrijven': 'Getallen lezen en schrijven',
         'Functie van getallen': 'Waarvoor dient een getal?',
         'Romeinse cijfers': 'Romeinse cijfers',
@@ -24,6 +29,8 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
     },
     'Splitsen': {
         'Splitsboom': 'Splitsbomen',
+        'Splitsen in rooster': 'Splitsen in een rooster',
+        'Verliefde harten': 'Verliefde harten',
     },
     'Handig rekenen': {
         'E + TE': 'Handig optellen',
@@ -108,6 +115,7 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
         'TE × TE': 'Twee cijfers keer twee',
         'HTE × TE': 'Drie cijfers keer twee',
         'DHTE × E': 'Vier cijfers keer één',
+        'DHTE × TE': 'Vier cijfers keer twee',
         'Gewone getallen': 'Hele getallen',
         'Kommagetallen': 'Kommagetallen',
     },
@@ -149,6 +157,12 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
         'Oppervlakte': 'Oppervlakte',
     },
 };
+
+// A topic whose Eenvoudig name is a teacher's word: Combinatie mixes + − × : sums.
+const ZELF_TOPIC_LABELS: Record<string, string> = { [COMBO_TOPIC_ID]: 'Door elkaar' };
+
+/** The name a pupil sees for a topic. */
+export const zelfTopicLabel = (topic: { id: string; label: string }): string => ZELF_TOPIC_LABELS[topic.id] ?? topic.label;
 
 /** The child label for an Op.stap heading, or the heading itself when the table has no row. */
 export const childLabel = (topicId: string, original: string): string => ZELF_LABELS[topicId]?.[original] ?? original;

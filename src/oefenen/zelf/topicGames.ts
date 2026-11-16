@@ -1,4 +1,5 @@
 import type { EenvoudigData } from '../../config/eenvoudig/cards';
+import { COMBO_TOPIC_ID } from '../../config/eenvoudig/nav';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { skinsFor, type SpelContent } from '../spelen/accepts';
 import { choiceCanPlay, spelContentOf } from '../spelen/spelQuestion';
@@ -21,6 +22,8 @@ export const TOPIC_GAME: Readonly<Record<string, string>> = {
     'Klok en kalender': 'zeehond',
     Breuken: 'pakjesband',
     'Handig rekenen': 'prent',
+    // Door elkaar: its own picture, not Optellen's or Aftrekken's game again.
+    [COMBO_TOPIC_ID]: 'schatkist',
 };
 
 const playable = (s: Skin | null): s is Skin => !!s && !!(s.Component || s.Screen);
