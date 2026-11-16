@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ArrowUUpLeft } from '@phosphor-icons/react';
 import TwoTapButton from '../../kiosk/TwoTapButton';
+import RotatePrompt from '../../kiosk/RotatePrompt';
+import { UPRIGHT_PHONE, useMedia } from '../../kiosk/useMedia';
 import SoundToggle from '../SoundToggle';
 import { SpelSignBox } from '../SpelVisual';
 import { useSpelMusic } from '../music';
@@ -55,7 +57,13 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
     const st = useDuelStore();
     const { config, phase, sides } = st;
     const teams = teamsOf(config, over);
-    useSpelMusic(meta.music, phase === 'ready' || phase === 'play' || phase === 'roundEnd');
+    // A phone held upright: "Draai je toestel" over the duel, and the match waits (every clock stands still).
+    const upright = useMedia(UPRIGHT_PHONE);
+    useEffect(() => {
+        const d = useDuelStore.getState();
+        if (upright) d.pause(); else d.resume();
+    }, [upright, phase]);
+    useSpelMusic(meta.music, !upright && (phase === 'ready' || phase === 'play' || phase === 'roundEnd'));
     useDuelSounds(meta, config.players === 1);
     const leave = () => { useDuelStore.getState().stop(); onExit(); };
     if (phase === 'idle') return null;
@@ -65,7 +73,7 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
     const maxLives = st.rule.maxLives?.(config) ?? config.lives;
 
     return (
-        <div className={`oefen-app spel-app duel-app ${className}${between ? ' is-between' : ''}${config.players === 1 ? ' is-solo' : ''}`} data-phase={phase}>
+        <div className={`oefen-app spel-app duel-app ${className}${between ? ' is-between' : ''}${config.players === 1 ? ' is-solo' : ''}${st.paused ? ' is-paused' : ''}`} data-phase={phase}>
             <header className="kiosk-topbar spel-topbar duel-topbar">
                 <TwoTapButton label={<><ArrowUUpLeft aria-hidden /> <span>Terug</span></>} armName="Terug" groupLabel="Stoppen met spelen" confirm="Ja, stoppen" onConfirm={leave} />
                 <Scoreline teams={teams} />
@@ -110,12 +118,12 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
                                             choices={q.choices} views={q.views} answer={q.answer} answerClassName="duel-sign-answer" breakAtRelation />
                                     )}
                                     {me.limitMs !== null && q && (
-                                        <TimerRing key={`${q.key}-${st.round}`} ms={me.limitMs} running={!closed && !me.out && phase === 'play'} />
+                                        <TimerRing key={`${q.key}-${st.round}`} ms={me.limitMs} running={!closed && !me.out && phase === 'play' && !st.paused} />
                                     )}
                                 </div>
                                 <p className="duel-note" aria-live="polite">{note}</p>
                                 {bot
-                                    ? <BotCard thinking={phase === 'play' && !!q && !fb && !me.locked} given={fb && fb.given !== '' ? fb.given : null} correct={fb && fb.given !== '' ? fb.correct : null} />
+                                    ? <BotCard thinking={phase === 'play' && !st.paused && !!q && !fb && !me.locked} given={fb && fb.given !== '' ? fb.given : null} correct={fb && fb.given !== '' ? fb.correct : null} />
                                     : <DuelKeypad label={`Cijfers ${teams[side].name}`} questionKey={q?.key ?? ''} onAnswer={g => st.answer(side, g)} keyboard={config.players === 1}
                                         disabled={phase !== 'play' || !q || closed || me.locked || me.out} />}
                             </section>
@@ -124,6 +132,7 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
                 </div>
                 <DuelCard teams={teams} art={cardArt} onNext={() => st.nextRound()} onAgain={() => st.again()} onExit={leave} />
             </main>
+            {upright && <RotatePrompt />}
         </div>
     );
 }

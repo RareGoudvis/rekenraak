@@ -40,6 +40,8 @@ export interface DuelState {
     matchWinner: Side | null;
     // The round's win moment has played: the scoreboard (or the match card) is up.
     card: boolean;
+    // Paused (a phone held upright, the "Draai je toestel" prompt): every clock stands still, answers wait.
+    paused: boolean;
     events: DuelEvents;
 
     // A new match (fresh session) from the picked config; the first round starts with its banner.
@@ -51,6 +53,9 @@ export interface DuelState {
     nextRound(now?: number): void;
     // "Nog eens": the same match again.
     again(now?: number): void;
+    // Freeze the round (ready / play only): the timers stop and keep what was left; resume shifts every deadline.
+    pause(now?: number): void;
+    resume(now?: number): void;
     stop(): void;
 }
 
@@ -77,17 +82,24 @@ const freshSide = (lives: number, keep?: Pick<DuelSide, 'history' | 'wins' | 'to
 const viewOf = (s: DuelSide): DuelSideView => ({ lives: s.lives, points: s.points, streak: s.streak, right: s.right, wrong: s.wrong, flags: s.flags });
 
 export const useDuelStore = create<DuelState>()((set, get) => {
-    const timers = new Map<string, ReturnType<typeof setTimeout>>();
-    const later = (id: string, ms: number, fn: () => void) => {
-        clearTimeout(timers.get(id));
-        timers.set(id, setTimeout(() => { timers.delete(id); fn(); }, ms));
+    // Every engine timer, with when it is due (in the caller's clock) so a pause can keep what is left.
+    // fn gets that due time: a pause shifts it, so a landing or a time-out after a pause is stamped right.
+    interface Timer { t: ReturnType<typeof setTimeout>; due: number; fn: (at: number) => void }
+    const timers = new Map<string, Timer>();
+    // Paused: the timers that were running and the ms each had left.
+    const frozen = new Map<string, { left: number; fn: (at: number) => void }>();
+    let pausedAt = 0;
+    const later = (id: string, ms: number, fn: (at: number) => void, from = Date.now()) => {
+        clearTimeout(timers.get(id)?.t);
+        const due = from + ms;
+        timers.set(id, { due, fn, t: setTimeout(() => { timers.delete(id); fn(due); }, ms) });
     };
-    const cancel = (id: string) => { clearTimeout(timers.get(id)); timers.delete(id); };
-    const clearAll = () => { for (const t of timers.values()) clearTimeout(t); timers.clear(); };
+    const cancel = (id: string) => { clearTimeout(timers.get(id)?.t); timers.delete(id); frozen.delete(id); };
+    const clearAll = () => { for (const t of timers.values()) clearTimeout(t.t); timers.clear(); frozen.clear(); };
     let flightId = 1;
 
     const rng = () => (get().config.rng ?? Math.random)();
-    const playing = () => get().phase === 'play';
+    const playing = () => get().phase === 'play' && !get().paused;
     const patchSide = (side: Side, p: Partial<DuelSide>) => set(st => ({ sides: { ...st.sides, [side]: { ...st.sides[side], ...p } } }));
     const isBot = (side: Side) => get().config.players === 1 && side === 'right';
 
@@ -105,7 +117,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         const wins = { left: sides.left.wins + (winner === 'left' ? 1 : 0), right: sides.right.wins + (winner === 'right' ? 1 : 0) };
         const match = matchWinnerOf(wins, config.bestOf);
         set(st => ({
-            phase: match ? 'matchEnd' : 'roundEnd', roundWinner: winner, matchWinner: match, flights: [], card: false, roundEndsAt: null,
+            phase: match ? 'matchEnd' : 'roundEnd', paused: false, roundWinner: winner, matchWinner: match, flights: [], card: false, roundEndsAt: null,
             sides: {
                 left: { ...st.sides.left, wins: wins.left, deadline: null, locked: true },
                 right: { ...st.sides.right, wins: wins.right, deadline: null, locked: true },
@@ -143,7 +155,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
             const flight: DuelFlight = { id: flightId++, from: by, to: l.to ?? otherSide(by), tag: l.tag ?? 'shot', startedAt: now, landsAt: now + l.ms, data: l.data ?? {}, effect: l.effect ?? {} };
             set(st => ({ flights: [...st.flights, flight] }));
             events.emit('launch', { flight });
-            later(`flight-${flight.id}`, l.ms, () => land(flight.id, now + l.ms));
+            later(`flight-${flight.id}`, l.ms, at => land(flight.id, at), now);
         }
         checkRound(false);
     };
@@ -175,7 +187,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         const { config, sides } = get();
         const limit = config.level === 'moeilijk' && q ? sumLimitMs(sides[side].right) : null;
         patchSide(side, { question: q, feedback: null, locked: false, tries: 0, out: false, shownAt: now, deadline: limit === null ? null : now + limit, limitMs: limit });
-        if (limit !== null && q) later(`deadline-${side}`, limit, () => timeout(side, q.key, now + limit));
+        if (limit !== null && q) later(`deadline-${side}`, limit, at => timeout(side, q.key, at), now);
         else cancel(`deadline-${side}`);
         if (isBot(side)) { cancel('bot'); scheduleBot(); }
     };
@@ -262,7 +274,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
             patchSide(side, { locked: false });
             if (isBot(side)) scheduleBot();
         });
-        if (left !== null) later(`deadline-${side}`, Math.max(0, left), () => timeout(side, q.key, now + left));
+        if (left !== null) later(`deadline-${side}`, Math.max(0, left), at => timeout(side, q.key, at), now);
     };
 
     const timeout = (side: Side, key: string, now: number) => {
@@ -302,18 +314,18 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         clearAll();
         const { config, sides, round, events } = get();
         set({
-            phase: 'ready', flights: [], roundWinner: null, card: false, roundEndsAt: null,
+            phase: 'ready', paused: false, flights: [], roundWinner: null, card: false, roundEndsAt: null,
             sides: { left: freshSide(config.lives, sides.left), right: freshSide(config.lives, sides.right) },
         });
         events.emit('roundStart', { round });
         const ready = config.readyMs ?? DUEL_TIMING.readyMs;
-        if (ready > 0) later('ready', ready, () => play(now + ready));
+        if (ready > 0) later('ready', ready, at => play(at), now);
         else play(now);
     };
 
     return {
         phase: 'idle', meta: null, from: null, sessie: null, config: DEFAULT_CONFIG, rule: {}, round: 1,
-        sides: { left: freshSide(5), right: freshSide(5) }, shared: [], flights: [], roundEndsAt: null, roundWinner: null, matchWinner: null, card: false,
+        sides: { left: freshSide(5), right: freshSide(5) }, shared: [], flights: [], roundEndsAt: null, roundWinner: null, matchWinner: null, card: false, paused: false,
         events: createDuelEvents(),
 
         begin({ meta, from, rule, config, now = Date.now() }) {
@@ -351,9 +363,33 @@ export const useDuelStore = create<DuelState>()((set, get) => {
             if (meta && from) get().begin({ meta, from, rule, config, now });
         },
 
+        pause(now = Date.now()) {
+            const { phase, paused } = get();
+            if (paused || (phase !== 'ready' && phase !== 'play')) return;
+            for (const [id, t] of timers) { clearTimeout(t.t); frozen.set(id, { left: Math.max(0, t.due - now), fn: t.fn }); }
+            timers.clear();
+            pausedAt = now;
+            set({ paused: true });
+        },
+
+        resume(now = Date.now()) {
+            if (!get().paused) return;
+            const shift = Math.max(0, now - pausedAt);
+            const by = (t: number | null) => (t === null ? null : t + shift);
+            const moved = (s: DuelSide): DuelSide => ({ ...s, deadline: by(s.deadline), shownAt: s.shownAt + shift });
+            set(st => ({
+                paused: false, roundEndsAt: by(st.roundEndsAt),
+                flights: st.flights.map(f => ({ ...f, startedAt: f.startedAt + shift, landsAt: f.landsAt + shift })),
+                sides: { left: moved(st.sides.left), right: moved(st.sides.right) },
+            }));
+            const wake = [...frozen];
+            frozen.clear();
+            for (const [id, f] of wake) later(id, f.left, f.fn, now);
+        },
+
         stop() {
             clearAll();
-            set({ phase: 'idle', sessie: null, sides: { left: freshSide(5), right: freshSide(5) }, shared: [], flights: [], roundEndsAt: null, roundWinner: null, matchWinner: null, card: false });
+            set({ phase: 'idle', paused: false, sessie: null, sides: { left: freshSide(5), right: freshSide(5) }, shared: [], flights: [], roundEndsAt: null, roundWinner: null, matchWinner: null, card: false });
         },
     };
 });

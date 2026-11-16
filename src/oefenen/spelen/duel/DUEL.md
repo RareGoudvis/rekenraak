@@ -141,7 +141,7 @@ A rule may read your component's refs (Kikkers: which bug is nearest) because ho
 `phase` (`idle` · `ready` · `play` · `roundEnd` · `matchEnd`), `round`, `config`, `sides.left|right`
 (`lives`, `points`, `streak`, `right`, `wrong`, `flags`, `wins`, `totalRight`, `question`, `feedback`, `locked`,
 `out`, `limitMs`), `flights` (in the air: `id`, `from`, `to`, `tag`, `startedAt`, `landsAt`, `data`),
-`roundWinner`, `matchWinner`, `card` (the scoreboard / match card is up).
+`roundWinner`, `matchWinner`, `card` (the scoreboard / match card is up), `paused` (see below).
 
 Flights are state: draw each one from `startedAt` to `landsAt` with a CSS animation keyed by `id` (Kasteel's
 stones). The engine lands it on time; your scene never decides a hit.
@@ -156,15 +156,26 @@ stones). The engine lands it on time; your scene never decides a hit.
 ## The screen (`<DuelScreen>`)
 
 Props: `meta`, `onExit`, `scene` (fills `.duel-world`, absolutely positioned), `className` (your root class;
-set `--duel-scene-h` for a taller band, default 40 %, `--duel-left` / `--duel-right` for team colours),
+set `--duel-scene-h` for the band's share, default 46 %, `--duel-left` / `--duel-right` for team colours),
 `teams` (names / colours over Blauw / Oranje, Jij / Computer), `hearts` (false when your scene shows lives),
-`points` (a star with the round's points per half), `rightNote` ("Raak!"), `cardArt` (a picture on the cards).
+`points` (the score counts the round's points instead of its right answers), `score` (false when your scene's
+own HUD shows the score: Robotduel's bars, Kasteel's life bars, both with `ScoreStar` / a chip),
+`rightNote` ("Raak!"), `cardArt` (a picture on the cards).
 
-It brings: the top bar (Terug, names + round dots + "Ronde N", the round clock, sound), hearts in the band's
-corners, the "Ronde N" / "Start!" banner, two halves with name, Moeilijk ring, sum, note and keypad (1 speler:
-the computer's face on the right, the left keypad also takes the keyboard), the round card ("Volgende ronde")
-and the match card (trophy, confetti, "Nog eens", "Ander spel"). Music: `meta.music` while playing.
-Looks checked at 1280×800, 1920×1080 and 1024×768.
+It brings: the top bar (Terug, names + round dots + "Ronde N", the round clock, sound), the lives (hearts) and
+the round's score (a star) in the band's top corners, the "Ronde N" / "Start!" banner, two halves in the team
+colours (no name pill: the colour says whose half it is) with the sum (the Moeilijk ring beside it, on the
+outer edge), the note and a keypad (1 speler: the computer's face on the right, the left keypad also takes the
+keyboard), the round card ("Volgende ronde") and the match card (trophy, confetti, "Nog eens", "Ander spel").
+Music: `meta.music` while playing. The halves never shrink under their content (a keypad of 48 px keys), so on
+a low screen the band gives way: a big `--duel-scene-h` is safe. Looks checked at 1280×800, 1920×1080 and
+1024×768.
+
+A phone held upright (`UPRIGHT_PHONE`, kiosk/RotatePrompt.tsx) gets "Draai je toestel" over the duel and the
+engine pauses (`pause()` / `resume()`, ready and play only): every timer keeps what it had left, and on resume
+the deadlines, `roundEndsAt` and the flights shift by the pause; answers and effects wait; `.duel-app.is-paused`
+stops the scene's CSS animations. A scene's own JS loop (Kikkers' bugs) runs on; it cannot change the match
+while paused.
 
 ## Sounds
 
