@@ -1,0 +1,389 @@
+/* Meteorietenregen: two bases on Mars (art.tsx). Flat fills under the thick --spel-ink outline, theme tokens
+   mixed into Mars colours. Meteors fly a true parabola on nested transforms (as Kasteel's stones); every loop
+   and burst is CSS, transforms and opacity only. The screen around it is the shared duel screen (duel.css). */
+.mt-app {
+  --mt-red: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--accent-vraagstukken));
+  --mt-ground: color-mix(in srgb, var(--mt-red) 80%, var(--text-main));
+  --mt-ground-deep: color-mix(in srgb, var(--mt-red) 55%, var(--text-main));
+  --mt-ground-lite: color-mix(in srgb, var(--mt-red) 70%, var(--kiosk-paper));
+  --mt-far: color-mix(in srgb, var(--mt-red) 45%, var(--mt-sky-low));
+  --mt-sky-top: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--text-main));
+  --mt-sky-mid: color-mix(in srgb, color-mix(in srgb, var(--accent-getallenkennis) 50%, var(--accent-meetkunde)) 62%, var(--text-main));
+  --mt-sky-low: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--kiosk-paper));
+  --mt-hull: var(--kiosk-paper);
+  --mt-metal: color-mix(in srgb, var(--text-muted) 32%, var(--kiosk-paper));
+  --mt-metal-dark: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper));
+  --mt-glass: color-mix(in srgb, var(--accent-bewerkingen) 28%, var(--kiosk-paper));
+  --mt-solar: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--text-main));
+  --mt-light: color-mix(in srgb, var(--spel-star) 70%, var(--kiosk-paper));
+  --mt-alarm: var(--accent-getallenkennis);
+  --mt-fire-1: var(--spel-star);
+  --mt-fire-2: var(--accent-vraagstukken);
+  --mt-fire-3: var(--accent-getallenkennis);
+  --mt-smoke: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper));
+  --mt-smoke-dark: color-mix(in srgb, var(--text-muted) 72%, var(--kiosk-paper));
+  --mt-rock: color-mix(in srgb, var(--accent-vraagstukken) 32%, var(--text-main));
+  --mt-moon: color-mix(in srgb, var(--accent-vraagstukken) 18%, var(--text-muted));
+  --mt-shield-1: var(--kid-go);
+  --mt-shield-2: var(--mab-h);
+  --mt-skin: var(--kid-tint-4);
+  /* The halves below sit on the Mars ground, the band behind the scene is its night sky. */
+  --spel-grass: var(--mt-ground-deep);
+  --spel-sky: var(--mt-sky-top);
+  --duel-scene-h: 42%;
+}
+.mt-app .duel-half { background: color-mix(in srgb, var(--duel-team) 22%, var(--bg-surface)); }
+.mt-app .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 42%, var(--bg-surface)); }
+
+.mt-scene { position: absolute; inset: 0; background: var(--mt-sky-top); }
+.mt-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.mt-svg * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* Shakes: two names per kind, so a new one restarts it. */
+.mt-scene.is-shake-light-0 { animation: mt-shake-light-0 280ms ease-out; }
+.mt-scene.is-shake-light-1 { animation: mt-shake-light-1 280ms ease-out; }
+.mt-scene.is-shake-hit-0 { animation: mt-shake-hit-0 460ms ease-out; }
+.mt-scene.is-shake-hit-1 { animation: mt-shake-hit-1 460ms ease-out; }
+.mt-scene.is-shake-boom-0 { animation: mt-shake-boom-0 1000ms ease-out; }
+.mt-scene.is-shake-boom-1 { animation: mt-shake-boom-1 1000ms ease-out; }
+@keyframes mt-shake-light-0 { 0%, 100% { translate: 0 0; } 30% { translate: -3px 1px; } 65% { translate: 3px -1px; } }
+@keyframes mt-shake-light-1 { 0%, 100% { translate: 0 0; } 30% { translate: -3px 1px; } 65% { translate: 3px -1px; } }
+@keyframes mt-shake-hit-0 { 0%, 100% { translate: 0 0; } 12% { translate: -9px 4px; } 30% { translate: 8px -5px; } 50% { translate: -5px 3px; } 72% { translate: 3px -1px; } }
+@keyframes mt-shake-hit-1 { 0%, 100% { translate: 0 0; } 12% { translate: -9px 4px; } 30% { translate: 8px -5px; } 50% { translate: -5px 3px; } 72% { translate: 3px -1px; } }
+@keyframes mt-shake-boom-0 {
+  0%, 100% { translate: 0 0; } 6% { translate: -16px 8px; } 14% { translate: 15px -9px; } 24% { translate: -13px 6px; }
+  36% { translate: 10px -6px; } 50% { translate: -7px 4px; } 66% { translate: 5px -2px; } 82% { translate: -2px 1px; }
+}
+@keyframes mt-shake-boom-1 {
+  0%, 100% { translate: 0 0; } 6% { translate: -16px 8px; } 14% { translate: 15px -9px; } 24% { translate: -13px 6px; }
+  36% { translate: 10px -6px; } 50% { translate: -7px 4px; } 66% { translate: 5px -2px; } 82% { translate: -2px 1px; }
+}
+
+/* ── The sky ──────────────────────────────────────────────────────────────── */
+.mt-sky-top { stop-color: var(--mt-sky-top); }
+.mt-sky-mid { stop-color: var(--mt-sky-mid); }
+.mt-sky-low { stop-color: var(--mt-sky-low); }
+.mt-star { fill: var(--kiosk-paper); opacity: .85; }
+.mt-star.is-twinkle { animation: mt-twinkle 2.6s ease-in-out infinite alternate; }
+@keyframes mt-twinkle { from { opacity: .2; } to { opacity: 1; } }
+.mt-shooting path { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; stroke-dasharray: 64; }
+.mt-shooting { animation: mt-shoot 11s linear 3s infinite; opacity: 0; }
+@keyframes mt-shoot {
+  0% { transform: translate(980px, 50px); opacity: 0; }
+  1% { opacity: 1; }
+  5% { transform: translate(840px, 92px); opacity: 0; }
+  100% { transform: translate(840px, 92px); opacity: 0; }
+}
+.mt-moon-body { fill: var(--mt-moon); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-moon-shade { fill: color-mix(in srgb, var(--mt-moon) 70%, var(--text-main)); }
+.mt-moon-crater { fill: color-mix(in srgb, var(--mt-moon) 75%, var(--text-main)); }
+.mt-moon.is-phobos { animation: mt-drift 38s ease-in-out infinite alternate; }
+.mt-moon.is-deimos { animation: mt-drift 52s ease-in-out -20s infinite alternate-reverse; }
+@keyframes mt-drift { from { translate: -40px 4px; } to { translate: 40px -4px; } }
+.mt-far { fill: var(--mt-far); }
+.mt-far-shade { fill: color-mix(in srgb, var(--mt-far) 85%, var(--text-main)); }
+
+/* ── The ground ───────────────────────────────────────────────────────────── */
+.mt-ground { fill: var(--mt-ground); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-strata { fill: none; stroke: var(--mt-ground-deep); stroke-width: 3px; opacity: .5; }
+.mt-crater-rim { fill: var(--mt-ground-lite); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-crater-hole { fill: var(--mt-ground-deep); }
+.mt-rock { fill: var(--mt-ground-deep); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* A dust devil wanders over the plain, twisting; it fades in and out at the ends. */
+.mt-devil-body { fill: var(--mt-ground-lite); opacity: .45; }
+.mt-devil-swirl { fill: none; stroke: var(--mt-ground-lite); stroke-width: 3px; opacity: .8; }
+.mt-devil { opacity: 0; }
+.mt-devil.is-a { animation: mt-devil-a 17s linear infinite; }
+.mt-devil.is-b { animation: mt-devil-b 23s linear -9s infinite; }
+@keyframes mt-devil-a { 0% { transform: translate(400px, 300px); opacity: 0; } 10%, 85% { opacity: .9; } 100% { transform: translate(760px, 296px); opacity: 0; } }
+@keyframes mt-devil-b { 0% { transform: translate(820px, 306px) scale(.8); opacity: 0; } 12%, 80% { opacity: .8; } 100% { transform: translate(470px, 302px) scale(.8); opacity: 0; } }
+.mt-devil-spin { animation: mt-devil-spin 700ms ease-in-out infinite alternate; }
+@keyframes mt-devil-spin { from { transform: skewX(-8deg) scaleX(.9); } to { transform: skewX(8deg) scaleX(1.08); } }
+
+/* The rover drives back and forth between the bases, turning at the ends. */
+.mt-rover-path { animation: mt-rover-go 22s linear infinite; }
+@keyframes mt-rover-go {
+  0% { transform: translate(480px, 314px); }
+  46% { transform: translate(720px, 314px); }
+  50%, 54% { transform: translate(720px, 314px) scaleX(-1); }
+  96% { transform: translate(480px, 314px) scaleX(-1); }
+  100% { transform: translate(480px, 314px); }
+}
+.mt-rover { animation: mt-bob 360ms ease-in-out infinite alternate; }
+.mt-rover-wheel { animation: mt-roll 900ms linear infinite; }
+@keyframes mt-roll { to { transform: rotate(360deg); } }
+.mt-tyre { fill: var(--mt-metal-dark); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-spoke { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.mt-rover-eye { fill: var(--mt-light); animation: mt-blink 2.8s steps(1) infinite; }
+.mt-rover-dust circle { fill: var(--mt-ground-lite); opacity: .7; animation: mt-dust 900ms ease-out infinite; }
+.mt-rover-dust circle + circle { animation-delay: 300ms; }
+@keyframes mt-dust { from { transform: translate(0, 0) scale(.5); opacity: .8; } to { transform: translate(-14px, -6px) scale(1.3); opacity: 0; } }
+@keyframes mt-bob { from { translate: 0 0; } to { translate: 0 -1.5px; } }
+@keyframes mt-blink { 0%, 86% { opacity: 1; } 88%, 92% { opacity: .15; } }
+
+/* ── A base ───────────────────────────────────────────────────────────────── */
+.mt-base.is-left { --mt-team: var(--duel-left); }
+.mt-base.is-right { --mt-team: var(--duel-right); }
+.mt-hull { fill: var(--mt-hull); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-metal { fill: var(--mt-metal); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-hull.is-scorched, .mt-metal.is-scorched { fill: var(--mt-metal-dark); }
+.mt-team { fill: var(--mt-team); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-seam { fill: none; stroke: var(--mt-metal); stroke-width: 2px; }
+.mt-lattice { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.mt-strut, .mt-pole { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; }
+.mt-knob { fill: var(--mt-metal-dark); stroke: var(--spel-ink); stroke-width: 2px; }
+.mt-solar { fill: var(--mt-solar); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-solar-cells { fill: none; stroke: color-mix(in srgb, var(--mt-solar) 50%, var(--kiosk-paper)); stroke-width: 1.5px; }
+.mt-window { fill: var(--mt-light); stroke: var(--spel-ink); stroke-width: 3px; animation: mt-glow 3.2s ease-in-out infinite alternate; }
+.mt-window + .mt-window { animation-delay: -1.4s; }
+@keyframes mt-glow { from { fill: var(--mt-light); } to { fill: var(--spel-star); } }
+.mt-door { fill: var(--mt-metal); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-dent { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-dasharray: 40; animation: mt-draw 400ms var(--ease-out) both; }
+@keyframes mt-draw { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+.mt-tip { fill: var(--mt-alarm); stroke: var(--spel-ink); stroke-width: 2px; animation: mt-blink-tip 1.4s steps(1) infinite; }
+@keyframes mt-blink-tip { 0%, 49% { fill: var(--mt-alarm); } 50%, 100% { fill: var(--mt-metal-dark); } }
+.mt-dish { animation: mt-scan 5s ease-in-out infinite alternate; }
+@keyframes mt-scan { from { transform: rotate(-26deg); } to { transform: rotate(18deg); } }
+.mt-base:has(.mt-beacon.is-alarm) .mt-dish { animation-duration: 600ms; }
+.mt-cloth { fill: var(--mt-team); stroke: var(--spel-ink); stroke-width: 3px; transform-origin: 0 0; animation: mt-wave 1.2s ease-in-out infinite alternate; }
+@keyframes mt-wave { from { transform: skewY(-5deg) scaleX(.95); } to { transform: skewY(5deg) scaleX(1.03); } }
+.mt-glass-dome { fill: color-mix(in srgb, var(--mt-glass) 75%, transparent); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-glass-frame { fill: none; stroke: var(--spel-ink); stroke-width: 1.5px; opacity: .6; }
+.mt-glass { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; }
+.mt-plant { fill: var(--kid-go); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* The beacon on the roof: off by day, red and turning with light beams while a meteor is coming. */
+.mt-beacon { fill: var(--mt-metal-dark); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-beacon.is-alarm { fill: var(--mt-alarm); animation: mt-alarm 400ms steps(1) infinite; }
+@keyframes mt-alarm { 0%, 49% { fill: var(--mt-alarm); } 50%, 100% { fill: var(--spel-star); } }
+.mt-beams path { fill: var(--mt-alarm); opacity: .3; }
+.mt-beams { animation: mt-spin 900ms linear infinite; }
+@keyframes mt-spin { to { transform: rotate(360deg); } }
+
+/* The launcher: a kick back and a muzzle flash per meteor. */
+.mt-barrel.is-fire { animation: mt-recoil 420ms var(--ease-out); }
+@keyframes mt-recoil { 0% { transform: translateX(0); } 15% { transform: translateX(-11px); } 100% { transform: translateX(0); } }
+.mt-flash { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-muzzle { animation: mt-muzzle 500ms ease-out both; }
+@keyframes mt-muzzle { 0% { transform: scale(.2); opacity: 1; } 25% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1.5) translateX(10px); opacity: 0; } }
+.mt-puff { fill: var(--mt-smoke); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* Damage: smoke from half the lives down, little flames at the end, sparks where the tower stood. */
+.mt-smoke-puff { fill: var(--mt-smoke); stroke: var(--spel-ink); stroke-width: 2px; opacity: 0; animation: mt-rise 2.4s ease-out infinite; animation-delay: calc(var(--k) * 2.4s / var(--n)); }
+.mt-smoke.is-big .mt-smoke-puff { fill: var(--mt-smoke-dark); }
+@keyframes mt-rise { 0% { transform: translate(0, 0) scale(.4); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate(14px, -70px) scale(1.5); opacity: 0; } }
+.mt-fire-out { fill: var(--mt-fire-2); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-fire-in { fill: var(--mt-fire-1); }
+.mt-flames { animation: mt-flicker 180ms steps(2) infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes mt-flicker { from { transform: scale(.88, .9); } to { transform: scale(1.06, 1.12); } }
+.mt-sparks path { fill: none; stroke: var(--spel-star); stroke-width: 2.5px; animation: mt-sparkle 700ms steps(2) infinite; }
+@keyframes mt-sparkle { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* A knocked-off base: one flash of rebuild at the start of a round, and the crater after the last hit. */
+.mt-standing { animation: mt-pop 500ms var(--ease-spring) both; }
+@keyframes mt-pop { from { transform: scale(.85, .3); opacity: 0; } to { transform: none; opacity: 1; } }
+.mt-crater { animation: mt-crater 700ms var(--ease-out) 450ms both; }
+@keyframes mt-crater { from { transform: scale(.4, .2); opacity: 0; } to { transform: none; opacity: 1; } }
+.mt-scorch { fill: color-mix(in srgb, var(--mt-ground-deep) 70%, var(--text-main)); opacity: .55; }
+.mt-pit { fill: var(--mt-ground-deep); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-pit-floor { fill: color-mix(in srgb, var(--mt-ground-deep) 60%, var(--text-main)); }
+.mt-rim { fill: var(--mt-ground-lite); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-ember { fill: var(--mt-fire-2); animation: mt-ember 1.6s ease-in-out infinite alternate; }
+@keyframes mt-ember { from { fill: var(--mt-fire-3); opacity: .5; } to { fill: var(--mt-fire-1); opacity: 1; } }
+
+/* ── The crew ─────────────────────────────────────────────────────────────── */
+.mt-suit-fill { fill: var(--mt-hull); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-legs { fill: none; stroke: var(--spel-ink); stroke-width: 10px; }
+.mt-astro .mt-legs { stroke: var(--spel-ink); }
+.mt-boot { fill: var(--mt-metal-dark); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-pack { fill: var(--mt-metal); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-arm { fill: none; stroke: var(--spel-ink); stroke-width: 7px; }
+.mt-arm.is-bot { stroke-width: 4px; }
+.mt-helmet { fill: var(--mt-hull); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-face { fill: var(--mt-skin); stroke: var(--spel-ink); stroke-width: 2px; }
+.mt-eye { fill: var(--spel-ink); }
+.mt-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 1.8px; }
+.mt-mouth.is-open { fill: var(--spel-ink); }
+.mt-soot { fill: none; stroke: var(--mt-smoke-dark); stroke-width: 2.5px; opacity: .8; }
+.mt-astro-ant { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.mt-astro-tip { fill: var(--mt-team); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mt-sweat { fill: var(--mt-glass); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mt-tread { fill: var(--mt-metal-dark); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-wheel { fill: var(--mt-metal); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mt-neck { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-screen { fill: var(--mt-solar); stroke: var(--spel-ink); stroke-width: 2px; }
+.mt-bot-eyes circle { fill: var(--mt-light); }
+.mt-bot-x { fill: none; stroke: var(--mt-light); stroke-width: 1.8px; }
+.mt-bot-bulb { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mt-bot-bulb.is-alarm { animation: mt-alarm 300ms steps(1) infinite; }
+.mt-dizzy { animation: mt-spin 1.4s linear infinite; }
+.mt-alert-bg { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-alert-mark { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; }
+.mt-alert { animation: mt-alert 500ms ease-in-out infinite alternate; }
+@keyframes mt-alert { from { transform: scale(.9) rotate(-8deg); } to { transform: scale(1.12) rotate(8deg); } }
+.mt-dizzy-star { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5px; }
+
+.mt-astro-body, .mt-bot-body { transform-box: fill-box; transform-origin: 50% 100%; }
+.mt-astro.is-idle .mt-astro-body { animation: mt-breathe 1.8s ease-in-out infinite alternate; }
+.mt-bot.is-idle .mt-bot-body { animation: mt-sway 2.6s ease-in-out infinite alternate; }
+@keyframes mt-breathe { from { transform: scaleY(1); } to { transform: scaleY(1.04) translateY(-1px); } }
+@keyframes mt-sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.mt-astro.is-cheer .mt-astro-body, .mt-astro.is-won .mt-astro-body,
+.mt-bot.is-cheer .mt-bot-body, .mt-bot.is-won .mt-bot-body { animation: mt-jump 440ms ease-in-out infinite alternate; }
+@keyframes mt-jump { from { transform: translateY(0) scaleY(.94); } to { transform: translateY(-18px) scaleY(1.04); } }
+.mt-bot.is-cheer .mt-bot-body, .mt-bot.is-won .mt-bot-body { animation-delay: -200ms; }
+.mt-astro.is-panic .mt-astro-body, .mt-bot.is-panic .mt-bot-body { animation: mt-panic 130ms linear infinite alternate; }
+@keyframes mt-panic { from { transform: translateX(-2.5px) rotate(-3deg); } to { transform: translateX(2.5px) rotate(3deg); } }
+.mt-astro.is-calm .mt-astro-body, .mt-bot.is-calm .mt-bot-body { animation: mt-nod 600ms ease-in-out infinite alternate; }
+@keyframes mt-nod { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+.mt-astro.is-hit .mt-astro-body, .mt-bot.is-hit .mt-bot-body { animation: mt-knock 650ms var(--ease-out); }
+@keyframes mt-knock { 0% { transform: rotate(0); } 25% { transform: rotate(-22deg) translateX(-8px); } 60% { transform: rotate(10deg); } 100% { transform: rotate(0); } }
+.mt-astro.is-sooty .mt-astro-body, .mt-bot.is-sooty .mt-bot-body { animation: mt-wobble 1.4s ease-in-out infinite alternate; }
+@keyframes mt-wobble { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+
+/* ── Shields ──────────────────────────────────────────────────────────────── */
+.mt-dome.is-l1 { --mt-shield: var(--mt-shield-1); }
+.mt-dome.is-l2 { --mt-shield: var(--mt-shield-2); }
+.mt-dome-grow { animation: mt-dome-up 650ms var(--ease-spring) both; }
+@keyframes mt-dome-up { 0% { transform: scale(.05, 0); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+.mt-dome-fill { fill: var(--mt-shield); opacity: .16; animation: mt-hum 1.6s ease-in-out infinite alternate; }
+.mt-dome.is-l2 .mt-dome-fill { opacity: .12; animation-delay: -.8s; }
+@keyframes mt-hum { from { opacity: .1; } to { opacity: .24; } }
+.mt-hex { fill: none; stroke-width: 1.6px; }
+.mt-hex.is-l1 { stroke: var(--mt-shield-1); }
+.mt-hex.is-l2 { stroke: var(--mt-shield-2); }
+.mt-dome-hex { opacity: .45; animation: mt-hex 2.4s ease-in-out infinite alternate; }
+@keyframes mt-hex { from { opacity: .28; } to { opacity: .6; } }
+.mt-dome-sweep { fill: var(--kiosk-paper); opacity: .22; animation: mt-sweep 3.6s ease-in-out infinite; }
+.mt-dome.is-l2 .mt-dome-sweep { animation-delay: -1.8s; }
+@keyframes mt-sweep { from { transform: translateX(-240px) skewX(-18deg); } to { transform: translateX(240px) skewX(-18deg); } }
+.mt-dome-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: .55; }
+.mt-dome-edge { fill: none; stroke: var(--mt-shield); stroke-width: 5px; }
+.mt-dome.is-l2 .mt-dome-edge { stroke-width: 6px; }
+/* A shield takes a meteor: a white flash, then it bursts outwards and fades. */
+.mt-dome.is-breaking .mt-dome-grow { animation: mt-dome-break 700ms ease-out both; }
+.mt-dome.is-breaking .mt-dome-edge { stroke: var(--kiosk-paper); stroke-dasharray: 18 12; }
+.mt-dome.is-breaking .mt-dome-fill { fill: var(--kiosk-paper); animation: mt-dome-flash 700ms ease-out both; }
+@keyframes mt-dome-flash { 0% { opacity: .75; } 100% { opacity: 0; } }
+@keyframes mt-dome-break { 0% { transform: none; opacity: 1; } 20% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1.14); opacity: 0; } }
+
+/* ── Meteors: x and y run linearly, the arc on a third transform (two quadratic halves = exact t²);
+   the head turns with the path (--a0 … --a8 from geometry.ts). ── */
+.mt-fly { visibility: hidden; animation: mt-show var(--dur) var(--wait) forwards; }
+@keyframes mt-show { from, to { visibility: visible; } }
+.mt-fly-x, .mt-fly-y, .mt-fly-arc, .mt-aim, .mt-grow { animation-duration: var(--dur); animation-delay: var(--wait); animation-fill-mode: both; animation-timing-function: linear; }
+.mt-fly-x { animation-name: mt-fly-x; }
+.mt-fly-y { animation-name: mt-fly-y; }
+.mt-fly-arc { animation-name: mt-fly-arc; }
+.mt-aim { animation-name: mt-aim; }
+.mt-grow { animation-name: mt-grow; }
+@keyframes mt-fly-x { from { transform: translateX(0); } to { transform: translateX(var(--dx)); } }
+@keyframes mt-fly-y { from { transform: translateY(0); } to { transform: translateY(var(--dy)); } }
+@keyframes mt-fly-arc {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.3333, .6667, .6667, 1); }
+  50% { transform: translateY(var(--arc)); animation-timing-function: cubic-bezier(.3333, 0, .6667, .3333); }
+  100% { transform: translateY(0); }
+}
+@keyframes mt-aim {
+  0% { transform: rotate(var(--a0)); } 12.5% { transform: rotate(var(--a1)); } 25% { transform: rotate(var(--a2)); }
+  37.5% { transform: rotate(var(--a3)); } 50% { transform: rotate(var(--a4)); } 62.5% { transform: rotate(var(--a5)); }
+  75% { transform: rotate(var(--a6)); } 87.5% { transform: rotate(var(--a7)); } 100% { transform: rotate(var(--a8)); }
+}
+@keyframes mt-grow { 0% { transform: scale(.55); } 40% { transform: scale(.9); } 100% { transform: scale(1.25); } }
+.mt-glow { fill: var(--mt-fire-1); opacity: .35; animation: mt-pulse 160ms ease-in-out infinite alternate; }
+@keyframes mt-pulse { from { opacity: .22; transform: scale(.9); } to { opacity: .45; transform: scale(1.1); } }
+.mt-tail { animation: mt-tail 110ms steps(2) infinite alternate; }
+@keyframes mt-tail { from { transform: scale(.92, .9); } to { transform: scale(1.08, 1.1); } }
+.mt-tail-out { fill: var(--mt-fire-3); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-tail-mid { fill: var(--mt-fire-2); }
+.mt-tail-in { fill: var(--mt-fire-1); }
+.mt-rock-body { fill: var(--mt-rock); stroke: var(--spel-ink); stroke-width: 3px; }
+.mt-rock-pit { fill: color-mix(in srgb, var(--mt-rock) 60%, var(--text-main)); }
+.mt-hot { fill: var(--mt-fire-1); }
+.mt-spin { animation: mt-spin 900ms linear infinite; }
+.mt-ember-trail { fill: var(--mt-fire-2); stroke: var(--spel-ink); stroke-width: 1.5px; opacity: calc(.9 - var(--k) * .18); }
+
+/* ── Impacts ──────────────────────────────────────────────────────────────── */
+.mt-fx-flash { fill: var(--spel-star); animation: mt-flash 420ms ease-out both; }
+.mt-fx-flash.is-shield { fill: var(--kiosk-paper); }
+.mt-fx.is-boom .mt-fx-flash { animation-duration: 800ms; }
+.mt-core { fill: var(--kiosk-paper); animation: mt-core 520ms ease-out both; }
+@keyframes mt-core { 0% { transform: scale(.4); opacity: 1; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(.6); opacity: 0; } }
+.mt-zap { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; animation: mt-zap 480ms var(--ease-out) both; }
+@keyframes mt-zap { 0% { transform: scale(.2) rotate(-20deg); opacity: 1; } 40% { transform: scale(1.25) rotate(0); opacity: 1; } 100% { transform: scale(1.5) rotate(10deg); opacity: 0; } }
+.mt-shard path { stroke: var(--spel-ink); stroke-width: 2px; fill: var(--mt-shield-1); }
+.mt-fx.is-l2 .mt-shard path { fill: var(--mt-shield-2); }
+.mt-shard { animation: mt-shard 900ms var(--ease-out) both; animation-delay: calc(var(--k) * 20ms); }
+@keyframes mt-shard { 0% { transform: translateX(0) rotate(0) scale(1); opacity: 1; } 70% { opacity: 1; } 100% { transform: translateX(var(--d)) rotate(240deg) scale(.5); opacity: 0; } }
+@keyframes mt-flash { 0% { transform: scale(.2); opacity: 1; } 40% { opacity: .95; } 100% { transform: scale(1.6); opacity: 0; } }
+.mt-fire-ball { stroke: var(--spel-ink); stroke-width: 3px; animation: mt-fireball 1400ms var(--ease-out) both; animation-delay: calc(var(--k) * 40ms); }
+.mt-fx.is-boom .mt-fire-ball { animation-duration: 2000ms; animation-delay: calc(var(--k) * 110ms); }
+.mt-fire-ball.is-0 { fill: var(--mt-fire-1); }
+.mt-fire-ball.is-1 { fill: var(--mt-fire-2); }
+.mt-fire-ball.is-2 { fill: var(--mt-fire-3); }
+@keyframes mt-fireball {
+  0% { transform: scale(.1); }
+  22% { transform: scale(1.25); }
+  55% { transform: scale(1.12) translateY(-8px); opacity: 1; }
+  100% { transform: scale(1.4) translateY(-30px); opacity: 0; }
+}
+.mt-shock { fill: none; stroke: var(--mt-ground-lite); stroke-width: 5px; animation: mt-shock 700ms var(--ease-out) both; }
+@keyframes mt-shock { from { transform: scale(.1); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+.mt-spark { fill: none; stroke: var(--spel-star); stroke-width: 4px; animation: mt-spark 520ms var(--ease-out) both; animation-delay: calc(var(--k) * 25ms); }
+.mt-spark.is-hot { stroke: var(--mt-fire-1); stroke-width: 4px; }
+@keyframes mt-spark { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+.mt-fx.is-block g:nth-of-type(odd) > .mt-spark { stroke: var(--mt-shield-1); }
+.mt-fx.is-block.is-l2 g:nth-of-type(odd) > .mt-spark { stroke: var(--mt-shield-2); }
+.mt-ripple { fill: none; stroke: var(--mt-shield-1); stroke-width: 7px; animation: mt-ripple 800ms var(--ease-out) both; }
+.mt-fx.is-l2 .mt-ripple { stroke: var(--mt-shield-2); }
+.mt-ripple.is-2 { animation-delay: 160ms; stroke-width: 4px; }
+@keyframes mt-ripple { from { transform: scale(.2); opacity: 1; } to { transform: scale(3.2, 2.4); opacity: 0; } }
+
+/* Debris: up and out, then down onto the ground (--fall), tumbling. */
+.mt-chunk { animation: mt-chunk 1500ms cubic-bezier(.2, .7, .5, 1) both; animation-delay: calc(var(--k) * 30ms); }
+.mt-fx.is-boom .mt-chunk { animation-duration: 2400ms; }
+@keyframes mt-chunk {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  35% { transform: translate(calc(var(--cx) * .6), var(--cy)) rotate(calc(var(--r) * .4)); }
+  75% { transform: translate(var(--cx), var(--fall)) rotate(var(--r)); opacity: 1; }
+  100% { transform: translate(var(--cx), var(--fall)) rotate(var(--r)); opacity: 0; }
+}
+.mt-team-chunk { fill: var(--mt-fire-2); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mt-bounce { animation: mt-bounce 1200ms cubic-bezier(.2, .7, .5, 1) both; animation-delay: calc(var(--k) * 30ms); }
+@keyframes mt-bounce {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  35% { transform: translate(var(--bx), var(--by)) rotate(calc(var(--r) * .5)); }
+  85% { transform: translate(calc(var(--bx) * 1.6), var(--fall)) rotate(var(--r)); opacity: 1; }
+  100% { transform: translate(calc(var(--bx) * 1.6), var(--fall)) rotate(var(--r)); opacity: 0; }
+}
+.mt-fx .mt-smoke-puff { animation-iteration-count: 1; animation-duration: 1800ms; }
+/* The base's last boom: big soft puffs billow up and drift apart. */
+.mt-billow circle { fill: var(--mt-smoke); stroke: var(--spel-ink); stroke-width: 3px; animation: mt-billow 2800ms var(--ease-out) both; animation-delay: calc(300ms + var(--k) * 70ms); }
+@keyframes mt-billow {
+  0% { transform: translateY(20px) scale(.2); opacity: 0; }
+  18% { opacity: 1; }
+  70% { opacity: .9; }
+  100% { transform: translateY(-90px) scale(1.35); opacity: 0; }
+}
+
+/* Comic calls over a base: they pop, float up and fade. */
+.mt-call { animation: mt-call 1200ms var(--ease-out) both; }
+@keyframes mt-call { 0% { transform: scale(.2) rotate(-10deg); opacity: 0; } 18% { transform: scale(1.18) rotate(4deg); opacity: 1; } 70% { transform: scale(1) translateY(-10px); opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
+.mt-call-bg { stroke: var(--spel-ink); stroke-width: 3.5px; }
+.mt-call.is-boom .mt-call-bg { fill: var(--spel-star); }
+.mt-call.is-block .mt-call-bg { fill: var(--mt-shield-1); }
+.mt-call.is-shield .mt-call-bg { fill: color-mix(in srgb, var(--mt-shield-1) 75%, var(--kiosk-paper)); }
+.mt-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 24px; font-weight: 900; }
+
+/* Fireworks over the winner: a rocket goes up, bursts into rays and dots, again and again. */
+.mt-fw { --c: var(--spel-star); }
+.mt-fw.is-1 { --c: var(--kid-go); }
+.mt-fw.is-2 { --c: var(--kid-tint-ring-6); }
+.mt-fw.is-3 { --c: var(--mt-shield-2); }
+.mt-fw-trail { fill: none; stroke: var(--c); stroke-width: 3px; animation: mt-fw-up 1.9s ease-out var(--d) infinite both; }
+@keyframes mt-fw-up { 0% { transform: translateY(var(--rise)); opacity: 1; } 28% { transform: translateY(0); opacity: 1; } 30%, 100% { opacity: 0; } }
+.mt-fw-burst { opacity: 0; animation: mt-fw-burst 1.9s var(--ease-out) var(--d) infinite both; }
+@keyframes mt-fw-burst { 0%, 28% { transform: scale(.1); opacity: 0; } 32% { opacity: 1; } 75% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.1) translateY(10px); opacity: 0; } }
+.mt-fw-ray { fill: none; stroke: var(--c); stroke-width: 4px; }
+.mt-fw-dot { fill: var(--c); stroke: var(--spel-ink); stroke-width: 1.5px; }

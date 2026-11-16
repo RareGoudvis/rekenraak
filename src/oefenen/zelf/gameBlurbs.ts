@@ -12,6 +12,7 @@ export const GAME_BLURB: Record<string, string> = {
     voetbal: 'Speel een match tegen de zwarte beren. Speel de bal door en scoor!',
     kasteel: 'Schiet met je katapult op het andere kasteel. Alleen of met z\'n tweeën.',
     touwtrekken: 'Tegen de computer of met z\'n tweeën. Wie juist antwoordt, trekt aan het touw.',
+    meteorietenregen: 'Schiet meteorieten op de basis van de ander. Twee juist op rij = een schild!',
     hartjes: 'Draai de hartjes of voetballen om en zoek een som met haar antwoord.',
     honingraat: 'Zoek alle sommen die het getal maken. Moeilijk: pas op voor de wesp!',
     prent: 'Elk juist antwoord draait een tegel om. Welk grappig dier zit eronder?',
