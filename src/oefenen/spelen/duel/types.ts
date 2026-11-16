@@ -126,6 +126,8 @@ export interface DuelSide extends DuelSideView {
     // Moeilijk: when this sum times out, and its full time (the ring). null = no clock.
     deadline: number | null;
     limitMs: number | null;
+    // How long this side takes per sum lately (bot.ts nextPace; the bot follows the pupil's pace); null = no answer yet.
+    paceMs: number | null;
     // Rounds won this match; right answers this match (the end card).
     wins: number;
     totalRight: number;

@@ -6,7 +6,7 @@ import type { OefenHistoryEntry, OefenSessie } from '../../../services/oefenen/t
 import { kioskAnswerOf, spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import { spelSessieOf, type SpelFrom } from '../useSpelStore';
 import type { SkinMeta } from '../skins/types';
-import { botTurn } from './bot';
+import { botTurn, nextPace } from './bot';
 import { createDuelEvents, type DuelEvents } from './events';
 import { DUEL_TIMING, SHARED_TRIES, applyEffect, defaultRoundOver, freshSideView, leadOf, matchWinnerOf, sumLimitMs, wrongOf } from './rules';
 import { SIDES, otherSide, type DuelConfig, type DuelCtx, type DuelEffect, type DuelEventMap, type DuelFlight, type DuelRule, type DuelSide, type DuelSideView, type Side } from './types';
@@ -74,9 +74,9 @@ export function drawFor(s: OefenSessie, history: readonly OefenHistoryEntry[]): 
 
 const DEFAULT_CONFIG: DuelConfig = { players: 2, level: 'normaal', lives: 5, bestOf: 3, stream: 'own' };
 
-const freshSide = (lives: number, keep?: Pick<DuelSide, 'history' | 'wins' | 'totalRight'>): DuelSide => ({
+const freshSide = (lives: number, keep?: Pick<DuelSide, 'history' | 'wins' | 'totalRight' | 'paceMs'>): DuelSide => ({
     ...freshSideView(lives), question: null, history: keep?.history ?? [], feedback: null, locked: false, tries: 0, out: false,
-    shownAt: 0, deadline: null, limitMs: null, wins: keep?.wins ?? 0, totalRight: keep?.totalRight ?? 0,
+    shownAt: 0, deadline: null, limitMs: null, wins: keep?.wins ?? 0, totalRight: keep?.totalRight ?? 0, paceMs: keep?.paceMs ?? null,
 });
 
 const viewOf = (s: DuelSide): DuelSideView => ({ lives: s.lives, points: s.points, streak: s.streak, right: s.right, wrong: s.wrong, flags: s.flags });
@@ -175,7 +175,8 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         const q = me.question;
         if (!isBot('right') || !playing() || !q || me.feedback || me.locked || me.out) return;
         const { config, sides } = get();
-        const turn = botTurn(config.level, leadOf(viewOf(sides.right), viewOf(sides.left), config.lives), q.answer.length, rng);
+        const lead = leadOf(viewOf(sides.right), viewOf(sides.left), config.lives);
+        const turn = botTurn(config.level, { lead, answerChars: q.answer.length, paceMs: sides.left.paceMs, shared: config.stream === 'shared' }, rng);
         later('bot', turn.delayMs, () => {
             const cur = get().sides.right;
             if (!playing() || cur.question?.key !== q.key || cur.feedback || cur.locked || cur.out) return;
@@ -229,9 +230,10 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         if (!playing() || !q) return;
         cancel(`deadline-${side}`);
         const h = entry(q, correct, now - me.shownAt);
+        const paceMs = nextPace(me.paceMs, now - me.shownAt);
         const counts = correct
-            ? { streak: me.streak + 1, right: me.right + 1, totalRight: me.totalRight + 1 }
-            : { streak: 0, wrong: me.wrong + 1 };
+            ? { streak: me.streak + 1, right: me.right + 1, totalRight: me.totalRight + 1, paceMs }
+            : { streak: 0, wrong: me.wrong + 1, paceMs };
         const feedback = { given, expected: q.answer, correct };
 
         if (st.config.stream === 'own') {
@@ -251,7 +253,11 @@ export const useDuelStore = create<DuelState>()((set, get) => {
             for (const s of SIDES) { cancel(`deadline-${s}`); cancel(`lock-${s}`); }
             cancel('bot');
             patchSide(side, { ...counts, feedback, locked: true, deadline: null });
-            patchSide(other, { feedback: { given: '', expected: q.answer, correct: false }, locked: true, deadline: null });
+            // The other side had not answered yet: it takes at least this long (its pace only goes up from it).
+            const them = st.sides[other];
+            const waited = now - them.shownAt;
+            const paceOther = them.paceMs !== null && waited > them.paceMs ? nextPace(them.paceMs, waited) : them.paceMs;
+            patchSide(other, { feedback: { given: '', expected: q.answer, correct: false }, locked: true, deadline: null, paceMs: paceOther });
             st.events.emit('right', { side, given, streak: counts.streak!, ms: h.ms });
             apply(side, 'right', st.rule.right?.(ctxOf(side)) ?? { damage: { [other]: 1 } }, now);
             if (playing()) later('shared', DUEL_TIMING.sharedNext, () => nextShared());
@@ -283,7 +289,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         const q = me.question;
         if (!playing() || !q || q.key !== key || me.feedback || me.out) return;
         const h = entry(q, false, now - me.shownAt);
-        const counts = { streak: 0, wrong: me.wrong + 1 };
+        const counts = { streak: 0, wrong: me.wrong + 1, paceMs: nextPace(me.paceMs, now - me.shownAt) };
         if (st.config.stream === 'own') {
             patchSide(side, { ...counts, history: [...me.history, h], feedback: { given: '', expected: q.answer, correct: false }, deadline: null });
             if (isBot(side)) cancel('bot');

@@ -12,7 +12,7 @@ Touwtrekken (`skins/touwtrekken/`) and Kasteel (`skins/kasteel/`) are the two wo
 |---|---|
 | `types.ts` | `Side`, `DuelConfig`, `DuelRule`, `DuelEffect`, `DuelCtx`, `DuelFlight`, `DuelEventMap` |
 | `rules.ts` | pure: `sumLimitMs` (Moeilijk clock), `winsNeeded` / `matchWinnerOf`, `applyEffect`, `defaultRoundOver`, `hitRule`, `ropeRule`, `leadOf`, `DUEL_TIMING`, `SHARED_TRIES` |
-| `bot.ts` | pure: `BOT` tuning table, `botTurn(level, lead, answerChars, rng)` |
+| `bot.ts` | pure: `BOT` tuning table, `botTurn(level, { lead, answerChars, paceMs, shared }, rng)`: it follows the pupil's pace (`nextPace`, the store keeps `paceMs` per side) and a rubber band on the lead; win rates per game in `spelen.bot.test.ts` |
 | `duelStore.ts` | the zustand store `useDuelStore` (one match at a time); dev builds expose it as `window.__duel` |
 | `options.ts` | `duelOptions(spec)` (the shared pre-start options), `MANIER_OPTION`, `duelConfigOf(chosen, extra)` |
 | `useDuel.ts` | `useDuelMatch(meta, from, rule, extra?)`, `useDuelEvent(name, fn)` |
