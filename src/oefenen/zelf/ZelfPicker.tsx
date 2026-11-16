@@ -19,9 +19,10 @@ import GameRow from './GameRow';
 import { gamesFor, topicCardOf } from './topicGames';
 import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { readRange, readTafels, saveRange, saveTafels } from './zelfPicks';
+import { zelfTopicLabel } from './zelfLabels';
 import {
     TAFELS_DEFAULT, ZELF_COUNTS, ZELF_MINUTES, ZELF_RANGES, buildZelfSessie, choiceMayHaveMab, choicesFor, isTafelTopic, modeKey, tafelChoice,
-    tafelPickOf, tafelsOffer, usableVariants, zelfMaxOf, type TafelOp, type ZelfChoice, type ZelfMode,
+    tafelPickOf, tafelsOffer, zelfMaxOf, zelfUsable, zelfRangeButtons, type TafelOp, type ZelfChoice, type ZelfMode,
 } from './zelfSessie';
 
 type Skin = (typeof SKINS)[number];
@@ -108,8 +109,8 @@ export default function ZelfPicker() {
     });
 
     // Before a leerjaar is picked the topics of every leerjaar show (dimmed).
-    const anyGrade = useMemo(() => data && new Set(LEERJAREN.flatMap(g => [...usableVariants(data, g).keys()])), [data]);
-    const shown = useMemo(() => (grade !== null ? (data ? new Set(usableVariants(data, grade).keys()) : null) : anyGrade), [data, grade, anyGrade]);
+    const anyGrade = useMemo(() => data && new Set(LEERJAREN.flatMap(g => [...zelfUsable(data, g).keys()])), [data]);
+    const shown = useMemo(() => (grade !== null ? (data ? new Set(zelfUsable(data, grade).keys()) : null) : anyGrade), [data, grade, anyGrade]);
     // The picture and stickers per topic card (topicGames.ts).
     const cards = useMemo(() => new Map(data && shown ? [...shown].map(id => [id, topicCardOf(data, grade, id)] as const) : []), [data, shown, grade]);
     const choices = data && grade !== null && topicId !== null && !isTafel ? choicesFor(data, grade, topicId, range) : [];
@@ -150,7 +151,7 @@ export default function ZelfPicker() {
                                         <h2 className="zelf-section-title">{section.name}</h2>
                                         <div className="zelf-grid zelf-grid-topics">
                                             {list.map(t => (
-                                                <TopicCard key={t.id} id={t.id} label={t.label} game={cards.get(t.id)?.game ?? null} hasGame={!!cards.get(t.id)?.hasGame}
+                                                <TopicCard key={t.id} id={t.id} label={zelfTopicLabel(t)} game={cards.get(t.id)?.game ?? null} hasGame={!!cards.get(t.id)?.hasGame}
                                                     disabled={grade === null} onPick={() => {
                                                         if (grade === null) return;
                                                         setTopicId(t.id);
@@ -173,7 +174,8 @@ export default function ZelfPicker() {
 
     if (!data || grade === null) return <><KidBackdrop grade={grade} /><main className="oefen-center zelf">{bar}<p className="oefen-lead">Even laden…</p></main></>;
 
-    const topicLabel = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === topicId)?.label ?? '';
+    const topicNav = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === topicId);
+    const topicLabel = topicNav ? zelfTopicLabel(topicNav) : '';
     const { icon: topicGlyph, size: topicSize } = topicIcon(topicId, topicLabel);
 
     // A game card: that game with this oefening; Nakijken, Ander spel and Terug come back to this screen.
@@ -184,11 +186,11 @@ export default function ZelfPicker() {
         useSpelStore.getState().start({ choice: active, grade, topicId, meta });
     };
 
-    // Tot hoeveel: the card range each of the leerjaar's ranges gives this topic; a choice only where they differ.
+    // Tot hoeveel: buttons for the ranges this topic has cards of (zelfRangeButtons), else the range it plays as a pill.
     const ranges = ZELF_RANGES[grade];
-    const maxes = ranges.map(r => zelfMaxOf(data, topicId, grade, r));
-    const rangeShown = maxes.some(m => m !== null) ? zelfMaxOf(data, topicId, grade, range ?? ranges[0]) : null;
-    const rangeChoice = ranges.length > 1 && maxes.every(m => m !== null) && new Set(maxes).size === ranges.length;
+    const rangeShown = ranges.some(r => zelfMaxOf(data, topicId, grade, r) !== null) ? zelfMaxOf(data, topicId, grade, range ?? ranges[0]) : null;
+    const rangeButtons = zelfRangeButtons(data, topicId, grade);
+    const rangeChoice = rangeButtons.length > 0;
     const pickRange = (r: number) => {
         setRangePick(p => ({ ...p, [grade]: r }));
         saveRange(grade, r);
@@ -242,8 +244,8 @@ export default function ZelfPicker() {
                 {rangeShown !== null && (rangeChoice ? (
                     <div className="zelf-range" role="group" aria-labelledby="zelf-range-label">
                         <span id="zelf-range-label" className="zelf-range-label">Tot hoeveel?</span>
-                        {ranges.map(r => (
-                            <button key={r} type="button" className="zelf-choice zelf-range-btn" aria-pressed={r === range} onClick={() => pickRange(r)}>tot {fmtNumber(r)}</button>
+                        {rangeButtons.map(r => (
+                            <button key={r} type="button" className="zelf-choice zelf-range-btn" aria-pressed={r === rangeShown} onClick={() => pickRange(r)}>tot {fmtNumber(r)}</button>
                         ))}
                     </div>
                 ) : <p className="zelf-range is-fixed"><span className="kiosk-pill zelf-range-pill">tot {fmtNumber(rangeShown)}</span></p>)}

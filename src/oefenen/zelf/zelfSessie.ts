@@ -1,5 +1,5 @@
 import { GRADE_MAX, defaultMax, kindsOf, listCards, typesOf, type CardType, type CardVariant, type EenvoudigData } from '../../config/eenvoudig/cards';
-import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
+import { COMBO_TOPIC_ID, EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
 import { resolveCard } from '../../config/eenvoudig/resolveCard';
 import type { Leerjaar } from '../../config/gradePresets';
 import { rowMayHaveMab, rowYields, withKioskSeed } from '../../components/oefenen/oefenBuild';
@@ -101,10 +101,20 @@ function usable(v: CardVariant): boolean {
 
 const byGrade = new Map<EenvoudigData, Map<string, Map<string, UsableCard[]>>>();
 
-// The number ranges a pupil works in per leerjaar (owner 2026-11-15); two = the pupil picks ("Tot hoeveel?", the smaller first).
+// The number ranges a pupil works in per leerjaar (owner 2026-11-15; tot 5 in leerjaar 1 2026-11-16); more than one = the pupil picks ("Tot hoeveel?", the smallest first).
 export const ZELF_RANGES: Readonly<Record<Leerjaar, readonly number[]>> = {
-    1: [10, 20], 2: [100], 3: [1000], 4: [10_000, 100_000], 5: [1_000_000], 6: [1_000_000_000],
+    1: [5, 10, 20], 2: [100], 3: [1000], 4: [10_000, 100_000], 5: [1_000_000], 6: [1_000_000_000],
 };
+
+// "Door elkaar" (owner 2026-11-16): the Combinatie topic mixes the cards of two operations' topics, from leerjaar 2 on.
+const MIX_TOPIC = COMBO_TOPIC_ID;
+const MIX_MIN_GRADE = 2;
+const MIXES = [
+    { key: 'plusmin', label: '+ en −', from: ['Hoofdrekenen · Optellen', 'Hoofdrekenen · Aftrekken'] },
+    { key: 'maaldeel', label: '× en :', from: ['Hoofdrekenen · Vermenigvuldigen', 'Hoofdrekenen · Delen'] },
+] as const;
+const MIX_FROM: readonly string[] = MIXES.flatMap(m => m.from);
+export const isMixTopic = (topicId: string) => topicId === MIX_TOPIC;
 
 const firstGrade = (card: CardType) => (card.grades.length ? Math.min(...card.grades) : 0);
 // A card of exactly the pupil's range may be authored one leerjaar ahead when that range is past the leerjaar's own (leerjaar 4 "tot 100 000" uses the leerjaar 5 cards).
@@ -116,11 +126,26 @@ const varFits = (card: CardType, v: CardVariant, grade: Leerjaar, exact: number 
  * smallest above. null = the topic has no range cards (klok, breuken, tafels …).
  */
 export function zelfMaxOf(data: EenvoudigData, topicId: string, grade: Leerjaar, range: number): number | null {
+    // The mix plays each operation in its own topic's range; it shows the biggest of them.
+    if (isMixTopic(topicId)) {
+        const maxes = MIX_FROM.map(t => zelfMaxOf(data, t, grade, range)).filter((m): m is number => m !== null);
+        return maxes.length ? Math.max(...maxes) : null;
+    }
     const ahead = range > GRADE_MAX[grade] ? range : null;
     const maxes = [...new Set(typesOf(data, topicId).filter(t => t.max != null && !t.kind && cardFits(t, grade, ahead)).map(t => t.max!))].sort((a, b) => a - b);
     if (!maxes.length) return null;
     return maxes.filter(m => m <= range).pop() ?? maxes[0];
 }
+
+/** The "Tot hoeveel?" buttons of a topic: the leerjaar's ranges that have cards of exactly that range, when there are two or more ([] = none to pick). */
+export function zelfRangeButtons(data: EenvoudigData, topicId: string, grade: Leerjaar): number[] {
+    const exact = ZELF_RANGES[grade].filter(r => zelfMaxOf(data, topicId, grade, r) === r);
+    return exact.length > 1 ? exact : [];
+}
+
+// A sum the mix can hold: whole numbers or kommagetallen, one answer (no met rest), no breuken or procent.
+const mixable = (card: CardType, v: CardVariant) =>
+    card.kind !== 'breuk' && !/-rat$/.test(v.leafId) && v.ov?.multiplicationMode !== 'met_rest' && numberKindOf(card, v) !== 'procent';
 
 /**
  * Per topic (only those with something usable) the listed cards for the leerjaar, each with its usable variants.
@@ -147,6 +172,29 @@ export function usableVariants(data: EenvoudigData, grade: Leerjaar, range?: num
             .map(card => ({ card, vars: card.vars.filter(v => varFits(card, v, grade, exact) && usable(v)) }))
             .filter(c => c.vars.length > 0);
         if (list.length) out.set(topic.id, list);
+    }
+    perGrade.set(cacheKey, out);
+    return out;
+}
+
+const withMix = new Map<EenvoudigData, Map<string, Map<string, UsableCard[]>>>();
+
+/** The topics the pupil's picker shows: usableVariants (the teacher's card topics) plus Door elkaar, its cards those of its source topics in this range. */
+export function zelfUsable(data: EenvoudigData, grade: Leerjaar, range?: number): Map<string, UsableCard[]> {
+    let perGrade = withMix.get(data);
+    if (!perGrade) { perGrade = new Map(); withMix.set(data, perGrade); }
+    const cacheKey = `${grade}|${range ?? ''}`;
+    const cached = perGrade.get(cacheKey);
+    if (cached) return cached;
+    const cards = usableVariants(data, grade, range);
+    const mix = grade < MIX_MIN_GRADE ? [] : MIX_FROM.flatMap(t => cards.get(t) ?? [])
+        .map(({ card, vars }) => ({ card, vars: vars.filter(v => mixable(card, v)) }))
+        .filter(c => c.vars.length > 0);
+    // Nav order, so the Door elkaar card sits after Delen under Hoofdrekenen.
+    const out = new Map<string, UsableCard[]>();
+    for (const topic of EENVOUDIG_NAV.flatMap(s => s.topics)) {
+        const list = isMixTopic(topic.id) ? mix : cards.get(topic.id);
+        if (list?.length) out.set(topic.id, list);
     }
     perGrade.set(cacheKey, out);
     return out;
@@ -274,6 +322,21 @@ function kindChoices(cards: UsableCard[], topicId: string): ZelfChoice[] | null 
     return [...pick('other', 'breuken', 'Breuken'), ...pick('komma', 'komma', 'Kommagetallen'), ...pick('procent', 'procent', 'Procenten')];
 }
 
+// Door elkaar: + and − together, × and : together, kommagetallen as choices of their own; a mix needs both of its topics.
+function mixChoices(cards: UsableCard[]): ZelfChoice[] {
+    const out: ZelfChoice[] = [];
+    for (const kind of ['other', 'komma'] as const) {
+        for (const m of MIXES) {
+            const parts = m.from.map(t => cards.filter(c => c.card.topic === t).flatMap(c => c.vars.filter(v => numberKindOf(c.card, v) === kind)));
+            if (parts.some(p => !p.length)) continue;
+            out.push(kind === 'komma'
+                ? { key: `${m.key}-komma`, label: `${m.label} met kommagetallen`, vars: parts.flat() }
+                : { key: m.key, label: m.label, vars: parts.flat() });
+        }
+    }
+    return out.length > 1 ? [...out, { key: 'alles', label: ALLES, vars: out.flatMap(c => c.vars) }] : out;
+}
+
 // Anything else: the curriculum heading of the cards (komma / breuk cards without one get their kind), else the card names.
 function generalChoices(cards: UsableCard[], topicId: string): ZelfChoice[] {
     const split = kindChoices(cards, topicId);
@@ -292,11 +355,12 @@ function generalChoices(cards: UsableCard[], topicId: string): ZelfChoice[] {
  * range = the pupil's "Tot hoeveel?" (usableVariants); a range other than Eenvoudig's default marks the key, so its runs stay apart.
  */
 export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string, range?: number): ZelfChoice[] {
-    const cards = usableVariants(data, grade, range).get(topicId) ?? [];
+    const cards = zelfUsable(data, grade, range).get(topicId) ?? [];
     if (!cards.length) return [];
     const max = range === undefined ? null : zelfMaxOf(data, topicId, grade, range);
     const tail = max !== null && max !== defaultMax(data, topicId, grade) ? `|tot${max}` : '';
-    const raw = BRUG_TOPIC.test(topicId) ? brugChoices(cards) : TAFEL_TOPIC.test(topicId) ? tafelChoices(cards) : generalChoices(cards, topicId);
+    const raw = isMixTopic(topicId) ? mixChoices(cards)
+        : BRUG_TOPIC.test(topicId) ? brugChoices(cards) : TAFEL_TOPIC.test(topicId) ? tafelChoices(cards) : generalChoices(cards, topicId);
     // A choice that repeats another one's variants only adds a button.
     const out: ZelfChoice[] = [];
     for (const c of raw) {

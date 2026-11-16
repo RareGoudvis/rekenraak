@@ -6,7 +6,7 @@ import OefenApp from '../oefenen/OefenApp';
 import { gameBlurb, GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import GameThumb from '../oefenen/spelen/GameThumb';
 import { TOPIC_GAME, gamesFor, groupGames, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
-import { choicesFor, usableVariants } from '../oefenen/zelf/zelfSessie';
+import { choicesFor, zelfUsable } from '../oefenen/zelf/zelfSessie';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { NUMBER_CONTENT, skinsFor } from '../oefenen/spelen/accepts';
@@ -67,7 +67,7 @@ describe('Topic cards: the config', () => {
             expect(skin, skinId).toBeTruthy();
             let shownWithGame = 0;
             for (const grade of LEERJAREN) {
-                if (!usableVariants(data, grade).has(topic)) continue;
+                if (!zelfUsable(data, grade).has(topic)) continue;
                 const playable = choicesFor(data, grade, topic).filter(c => choiceCanPlay(c, grade));
                 const fitsOne = playable.some(c => skinsFor([skin], spelContentOf(c, grade)!).length > 0);
                 if (fitsOne) { shownWithGame++; expect(topicGameOf(data, grade, topic)).toBe(skin); }
@@ -78,7 +78,7 @@ describe('Topic cards: the config', () => {
 
     test('a topic that plays a game at a leerjaar shows a game picture there, and that game plays one of its choices', () => {
         for (const t of topics) for (const g of LEERJAREN) {
-            if (!usableVariants(data, g).has(t.id)) continue;
+            if (!zelfUsable(data, g).has(t.id)) continue;
             const game = topicGameOf(data, g, t.id);
             expect({ topic: t.id, g, picture: !!game }).toEqual({ topic: t.id, g, picture: topicHasGame(data, g, t.id) });
             if (game) {
@@ -89,7 +89,7 @@ describe('Topic cards: the config', () => {
     });
 
     test('every topic that shows has its Oefenmodus picture, small enough', () => {
-        const shown = new Set(LEERJAREN.flatMap(g => [...usableVariants(data, g).keys()]));
+        const shown = new Set(LEERJAREN.flatMap(g => [...zelfUsable(data, g).keys()]));
         expect(shown.size).toBeGreaterThan(20);
         for (const id of shown) {
             const file = `public/spelen/thumbs/oefen-${topicSlug(id)}.webp`;

@@ -2,10 +2,14 @@ import { describe, test, expect } from 'vitest';
 import { loadEenvoudigData } from '../config/eenvoudig/cards';
 import { LEERJAREN } from '../config/gradePresets';
 import { ZELF_LABELS } from '../oefenen/zelf/zelfLabels';
-import { choicesFor, numberKindOf, usableVariants } from '../oefenen/zelf/zelfSessie';
+import { ZELF_RANGES, choicesFor, numberKindOf, usableVariants, zelfUsable } from '../oefenen/zelf/zelfSessie';
+import type { Leerjaar } from '../config/gradePresets';
 import { resolveCard } from '../config/eenvoudig/resolveCard';
 
 const KOMMA_TOPIC = 'Kommagetallen en procenten';
+// Every choice the picker can show: each leerjaar's own ranges (Tot hoeveel?) and Eenvoudig's default.
+const everyChoice = (data: Awaited<ReturnType<typeof loadEenvoudigData>>, g: Leerjaar, t: string) =>
+    [undefined, ...ZELF_RANGES[g]].flatMap(r => choicesFor(data, g, t, r));
 
 describe('Zelf oefenen labels', () => {
     test('every heading the picker can show has a child label (new cards cannot slip through)', async () => {
@@ -13,8 +17,8 @@ describe('Zelf oefenen labels', () => {
         const missing = new Set<string>();
         let seen = 0;
         for (const g of LEERJAREN) {
-            for (const t of usableVariants(data, g).keys()) {
-                for (const c of choicesFor(data, g, t)) {
+            for (const t of zelfUsable(data, g).keys()) {
+                for (const c of everyChoice(data, g, t)) {
                     if (!c.source) continue;
                     seen++;
                     const label = ZELF_LABELS[t]?.[c.source];
@@ -32,7 +36,7 @@ describe('Zelf oefenen labels', () => {
     test('no label table row is stale (every row is used somewhere)', async () => {
         const data = await loadEenvoudigData();
         const used = new Set<string>();
-        for (const g of LEERJAREN) for (const t of usableVariants(data, g).keys()) for (const c of choicesFor(data, g, t)) if (c.source) used.add(`${t} :: ${c.source}`);
+        for (const g of LEERJAREN) for (const t of zelfUsable(data, g).keys()) for (const c of everyChoice(data, g, t)) if (c.source) used.add(`${t} :: ${c.source}`);
         const stale = Object.entries(ZELF_LABELS).flatMap(([t, rows]) => Object.keys(rows).map(o => `${t} :: ${o}`)).filter(k => !used.has(k));
         expect(stale).toEqual([]);
     });
