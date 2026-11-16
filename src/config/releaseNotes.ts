@@ -31,7 +31,7 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
-        version: '2.1.0',
+        version: '2.0.2',
         date: '2026-11',
         summary: 'Nieuw: vijf spelletjes voor twee, ook tegen de computer, en in Zelf oefenen eerst kiezen: Oefenen of Spelen.',
         items: [
