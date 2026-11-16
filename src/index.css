@@ -569,24 +569,13 @@ textarea:focus-visible,
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
-/* Modal entrance (ModalShell). Sheet drops from the window edge; dialog scales in; scrim fades.
-   prefers-reduced-motion (below) neutralises these by collapsing animation-duration. */
+/* Modal entrance (ModalShell). Sheet drops from the window edge; dialog scales in; scrim fades. */
 @keyframes modal-scrim-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-card-in  { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes modal-sheet-in { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
 .modal-scrim { animation: modal-scrim-in var(--dur) var(--ease-out); }
 .modal-card { animation: modal-card-in var(--dur) var(--ease-out); }
 .modal-card.modal-sheet { animation: modal-sheet-in var(--dur) var(--ease-out); }
-
-/* Respect the OS "reduce motion" setting — calm, no transitions/animations. */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
-}
 
 /* ── Collapsible side panels ─────────────────────────────────────────────
    Default (≥1536px or pinned): the shell is a transparent passthrough — the

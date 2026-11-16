@@ -267,9 +267,8 @@ html:has(.oefen-body),
   font-size: var(--kiosk-text-lg);
   font-weight: 900;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .kiosk-btn, .kiosk-key, .kiosk-choice, .kiosk-check-wide, .zelf-choice, .kiosk-tray-piece { transition: transform 0.08s ease-out; }
-}
+
+.kiosk-btn, .kiosk-key, .kiosk-choice, .kiosk-check-wide, .zelf-choice, .kiosk-tray-piece { transition: transform 0.08s ease-out; }
 
 /* ── Top bar: pills on the sky ─────────────────────────────────────────────── */
 .kiosk-topbar {
@@ -1025,7 +1024,6 @@ html:has(.oefen-body),
   animation: kiosk-drain var(--flash-ms, 1s) linear forwards;
 }
 @keyframes kiosk-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
-@media (prefers-reduced-motion: reduce) { .kiosk-feedback-bar, .kiosk-feedback { animation: none; } }
 
 /* 2 kansen: a quiet note above the answer while the pupil is on the second try. */
 .kiosk-attempt {
@@ -1265,7 +1263,6 @@ html:has(.oefen-body),
   50% { box-shadow: 0 0 0 10px transparent, var(--kid-drop); }
 }
 .kiosk-steps-pulse { animation: kiosk-steps-pulse 1.4s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .kiosk-steps-pulse { animation: none; } }
 
 /* ── Groups (breuk van een hoeveelheid): objects to group and colour, rows, answer ─ */
 /* Card px (the card scales them up). */
@@ -1479,7 +1476,7 @@ html:has(.oefen-body),
   overflow-wrap: break-word;
   cursor: pointer;
 }
-@media (hover: hover) and (prefers-reduced-motion: no-preference) { .zelf-choice:hover:not(.is-picked) { transform: translateY(-2px); } }
+@media (hover: hover) { .zelf-choice:hover:not(.is-picked) { transform: translateY(-2px); } }
 .zelf-choice:active { transform: translateY(3px); --kid-sh: 0 2px 0 var(--kid-ink); }
 .zelf-choice.is-picked,
 .zelf-choice[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--kid-ring), 0 6px 0 var(--kid-ink); background: var(--kid-pick); }
@@ -1566,11 +1563,11 @@ html:has(.oefen-body),
 .zelf-year:active:not([aria-pressed="true"]) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
 .zelf-year:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
 .zelf-year[aria-pressed="true"] { border: 5px solid var(--w-ring); --kid-sh: 0 0 0 2px var(--kid-ink), var(--kid-drop-sm); transform: scale(1.12); }
-@media (prefers-reduced-motion: no-preference) {
-  .zelf-year { transition: transform 0.12s ease-out; }
-  /* First visit: the bar glows gently until a tile is picked (reduced motion: the words alone). */
-  .zelf-years.is-unset { animation: zelf-glow 1.8s ease-in-out infinite; }
-}
+
+.zelf-year { transition: transform 0.12s ease-out; }
+/* First visit: the bar glows gently until a tile is picked (the words say the same). */
+.zelf-years.is-unset { animation: zelf-glow 1.8s ease-in-out infinite; }
+
 @keyframes zelf-glow {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--kid-ring) 0%, transparent), var(--kid-drop); }
   50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--kid-ring) 60%, transparent), var(--kid-drop); }
@@ -1700,7 +1697,7 @@ html:has(.oefen-body),
 .zelf-topic:disabled { cursor: default; }
 .zelf-topic:active:not(:disabled) { transform: translateY(4px); --kid-sh: 0 1px 0 var(--kid-ink); }
 .zelf-topic:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+@media (hover: hover) {
   .zelf-topic:hover:not(:disabled) { transform: translateY(-3px) rotate(-1deg); }
 }
 .zelf-topic-pic { position: relative; display: block; }

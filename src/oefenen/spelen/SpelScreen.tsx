@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ArrowUUpLeft, Lifebuoy, Star, Timer } from '@phosphor-icons/react';
 import TwoTapButton from '../kiosk/TwoTapButton';
 import StepsPanel from '../kiosk/StepsPanel';
@@ -18,18 +18,6 @@ import FullscreenExitButton from '../kiosk/FullscreenExitButton';
 import { formatMathNumber } from '../../services/math/formatters';
 import './spelen.css';
 
-
-const REDUCED = '(prefers-reduced-motion: reduce)';
-const subscribeMotion = (fn: () => void) => {
-    const mq = window.matchMedia?.(REDUCED);
-    mq?.addEventListener('change', fn);
-    return () => mq?.removeEventListener('change', fn);
-};
-const reducedNow = () => window.matchMedia?.(REDUCED).matches ?? false;
-
-function useReducedMotion(): boolean {
-    return useSyncExternalStore(subscribeMotion, reducedNow, () => false);
-}
 
 function formatClock(ms: number): string {
     const s = Math.max(0, Math.ceil(ms / 1000));
@@ -102,7 +90,6 @@ function HelpPanel() {
 // The game shell: top bar (Terug, progress, score, Hoe los ik dit op?), the skin, the help panel, the end screen.
 export default function SpelScreen() {
     const st = useSpelStore();
-    const reducedMotion = useReducedMotion();
     const entry = st.meta ? skinById(st.meta.id) : null;
     // A game with its own session and screen (Touwtrekken, Kasteel for 2); the round above only holds its choice.
     const own = !!entry?.Screen && (!entry.screenWhen || st.meta?.chosen?.[entry.screenWhen.id] === entry.screenWhen.value);
@@ -114,7 +101,7 @@ export default function SpelScreen() {
         const Screen = entry.Screen;
         return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
     }
-    if (st.phase === 'end') return <div className="oefen-app"><SpelEnd reducedMotion={reducedMotion} /></div>;
+    if (st.phase === 'end') return <div className="oefen-app"><SpelEnd /></div>;
     if (!st.meta || !entry?.Component) return null;
     const Skin = entry.Component;
     const progress = progressOf(st, now);
@@ -181,7 +168,6 @@ export default function SpelScreen() {
                         progress={progress}
                         options={st.meta.chosen ?? {}}
                         events={st.events}
-                        reducedMotion={reducedMotion}
                         runKey={st.from ? `${st.meta.id}:${st.from.choice.key}` : undefined}
                         onFinish={st.finish}
                         onReport={st.report}

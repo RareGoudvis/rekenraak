@@ -38,7 +38,7 @@ const progressWith = (over: Partial<SkinProgress> = {}): SkinProgress => ({
 const propsWith = (over: Partial<SkinProps> = {}): SkinProps => ({
     question: { key: 'q1', text: '7 + 5 = ?', index: 0 }, choices: null, phase: 'play', feedback: null,
     onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
-    progress: progressWith(), options: {}, events: createSpelEvents(), reducedMotion: false, ...over,
+    progress: progressWith(), options: {}, events: createSpelEvents(), ...over,
 });
 
 beforeAll(async () => {
@@ -241,10 +241,10 @@ describe('Bom', () => {
     });
 
     test('the endings: a smiling bomb with a flag, or the PUF! cloud', () => {
-        const { container, rerender } = render(<BomEnding outcome="won" progress={progressWith()} options={{}} reducedMotion={false} />);
+        const { container, rerender } = render(<BomEnding outcome="won" progress={progressWith()} options={{}} />);
         expect(container.querySelector('.bom-flag')).not.toBeNull();
         expect(screen.queryByText('PUF!')).toBeNull();
-        rerender(<BomEnding outcome="lost" progress={progressWith()} options={{}} reducedMotion />);
+        rerender(<BomEnding outcome="lost" progress={progressWith()} options={{}} />);
         expect(screen.getByText('PUF!')).toBeTruthy();
         expect(container.querySelector('.bom-cloud')).not.toBeNull();
     });
@@ -336,9 +336,9 @@ describe('Bever', () => {
         render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'moeilijk' } })} />);
         expect(onFail).toHaveBeenCalledTimes(1);
         cleanup();
-        const { container, rerender } = render(<BeverEnding outcome="won" progress={p} options={{}} reducedMotion={false} />);
+        const { container, rerender } = render(<BeverEnding outcome="won" progress={p} options={{}} />);
         expect(container.querySelector('.bv-hat')).not.toBeNull();
-        rerender(<BeverEnding outcome="failed" progress={p} options={{}} reducedMotion={false} />);
+        rerender(<BeverEnding outcome="failed" progress={p} options={{}} />);
         expect(container.querySelector('.bv-log')).not.toBeNull();
     });
 });
@@ -407,16 +407,15 @@ describe('Zombies: survivors behind barricades', () => {
     });
 
     test('the endings: survivors cheer, the caught ones dance as zombies', async () => {
-        const { container, rerender } = render(<ZombiesEnding outcome="won" progress={progressWith({ misses: 4 })} options={{ niveau: 'normaal' }} reducedMotion={false} />);
+        const { container, rerender } = render(<ZombiesEnding outcome="won" progress={progressWith({ misses: 4 })} options={{ niveau: 'normaal' }} />);
         expect(container.querySelectorAll('[data-survivor=safe]')).toHaveLength(4);
         expect(container.querySelectorAll('.zb-sv.is-dance')).toHaveLength(1);
-        rerender(<ZombiesEnding outcome="failed" progress={progressWith({ misses: 3 })} options={{ niveau: 'moeilijk' }} reducedMotion />);
+        rerender(<ZombiesEnding outcome="failed" progress={progressWith({ misses: 3 })} options={{ niveau: 'moeilijk' }} />);
         expect(container.querySelectorAll('[data-survivor=safe]')).toHaveLength(0);
-        expect(container.querySelector('.zb-ending.is-still')).not.toBeNull();
         // The end screen loads the skin's Ending lazily.
         const Ending = skinById('zombies')!.Ending!;
         cleanup();
-        render(<Suspense fallback={null}><Ending outcome="won" progress={progressWith()} options={{}} reducedMotion={false} /></Suspense>);
+        render(<Suspense fallback={null}><Ending outcome="won" progress={progressWith()} options={{}} /></Suspense>);
         await waitFor(() => expect(document.querySelector('.zb-party')).not.toBeNull());
     });
 });

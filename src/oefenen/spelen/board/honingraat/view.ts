@@ -11,7 +11,7 @@ export const faceText = (face: BoardFace) => (face.kind === 'text' ? face.text :
 // The bee's resting spot before the first find: beside the board's left edge, where it flew in from.
 export const BEE_START = { x: -0.3 } as const;
 
-export interface ViewProps extends Pick<SkinProps, 'phase' | 'onBoardPick' | 'reducedMotion' | 'sound'> {
+export interface ViewProps extends Pick<SkinProps, 'phase' | 'onBoardPick' | 'sound'> {
     board: SpelBoard;
     // Picks are taken (not while the scene scrolls or the wasp is here).
     active: boolean;

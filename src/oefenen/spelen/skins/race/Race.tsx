@@ -40,7 +40,7 @@ type Speed = 'stop' | 'cruise' | 'fast';
 
 const devPins = () => (import.meta.env.DEV && typeof location !== 'undefined' ? pinnedOf(location.search) : { lands: [], gate: null });
 
-export default function Race({ question, phase, feedback, onAnswer, onMiss, onFail, onReport, progress, events, reducedMotion, runKey, onFinish, options }: SkinProps) {
+export default function Race({ question, phase, feedback, onAnswer, onMiss, onFail, onReport, progress, events, runKey, onFinish, options }: SkinProps) {
     const mode = raceModeOf(options);
     const benzine = mode === 'benzine';
     const [route] = useState(() => { const pin = devPins(); return routeOf(mode, Math.random, pin.lands, pin.gate); });
@@ -65,8 +65,8 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
     const lines = useRef<HTMLDivElement>(null);
     // What the loop moves, re-read after every render (renders are rare: a gate, a phase, an effect).
     const nodes = useRef<{ strips: HTMLElement[]; movers: HTMLElement[]; wheels: SVGGElement[]; ghostWheels: SVGGElement[] }>({ strips: [], movers: [], wheels: [], ghostWheels: [] });
-    const live = useRef({ phase, onFinish, onFail, onReport, onMiss, runKey, reducedMotion, qKey: question?.key ?? '', helpedKey: '' });
-    useLayoutEffect(() => { live.current = { ...live.current, phase, onFinish, onFail, onReport, onMiss, runKey, reducedMotion, qKey: question?.key ?? '' }; });
+    const live = useRef({ phase, onFinish, onFail, onReport, onMiss, runKey, qKey: question?.key ?? '', helpedKey: '' });
+    useLayoutEffect(() => { live.current = { ...live.current, phase, onFinish, onFail, onReport, onMiss, runKey, qKey: question?.key ?? '' }; });
     useLayoutEffect(() => {
         const el = root.current;
         if (!el) return;
@@ -90,7 +90,7 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
         if (next === f) return;
         const nose = (meCar.current?.offsetLeft ?? 0) + (meCar.current?.offsetWidth ?? 0);
         const width = root.current?.offsetWidth ?? 1280;
-        const metres = live.current.reducedMotion ? 1 : Math.max(24, (width - nose) / PPM + 8);
+        const metres = Math.max(24, (width - nose) / PPM + 8);
         car.current = glideCar(car.current, metres, FUEL.pullMs / 1000);
         fuelNow.current = next;
         setFuel(next);
@@ -207,29 +207,27 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
             const sp: Speed = c.stopped || speed < 0.3 ? 'stop' : speed > RACE.base * 2.5 ? 'fast' : 'cruise';
             if (sp !== speedShown && meCar.current) { speedShown = sp; meCar.current.dataset.speed = sp; }
 
-            if (!st.reducedMotion) {
-                const px = c.x * PPM;
-                const { strips, movers, wheels, ghostWheels } = nodes.current;
-                for (const strip of strips) {
-                    const w = tileOf(strip);
-                    const par = Number(strip.dataset.par);
-                    if (w > 0) strip.style.transform = `translate3d(${(-((px * par) % w)).toFixed(1)}px, 0, 0)`;
-                }
-                if (lines.current) lines.current.style.transform = `translate3d(${(-(px % DASH)).toFixed(1)}px, 0, 0)`;
-                for (const m of movers) m.style.transform = `translate3d(${((Number(m.dataset.wx) - c.x) * PPM).toFixed(1)}px, 0, 0)`;
-                const r = (meCar.current?.offsetWidth ?? 200) * WHEEL_SHARE;
-                const turn = (x: number) => `rotate(${((x * PPM / Math.max(1, r)) * 180 / Math.PI % 360).toFixed(1)}deg)`;
-                for (const w of wheels) w.style.transform = turn(c.x);
-                if (gx !== null) {
-                    for (const w of ghostWheels) w.style.transform = turn(gx);
-                    if (ghostCar.current) ghostCar.current.style.transform = `translate3d(${((gx - c.x) * PPM).toFixed(1)}px, 0, 0)`;
-                }
+            const px = c.x * PPM;
+            const { strips, movers, wheels, ghostWheels } = nodes.current;
+            for (const strip of strips) {
+                const w = tileOf(strip);
+                const par = Number(strip.dataset.par);
+                if (w > 0) strip.style.transform = `translate3d(${(-((px * par) % w)).toFixed(1)}px, 0, 0)`;
+            }
+            if (lines.current) lines.current.style.transform = `translate3d(${(-(px % DASH)).toFixed(1)}px, 0, 0)`;
+            for (const m of movers) m.style.transform = `translate3d(${((Number(m.dataset.wx) - c.x) * PPM).toFixed(1)}px, 0, 0)`;
+            const r = (meCar.current?.offsetWidth ?? 200) * WHEEL_SHARE;
+            const turn = (x: number) => `rotate(${((x * PPM / Math.max(1, r)) * 180 / Math.PI % 360).toFixed(1)}deg)`;
+            for (const w of wheels) w.style.transform = turn(c.x);
+            if (gx !== null) {
+                for (const w of ghostWheels) w.style.transform = turn(gx);
+                if (ghostCar.current) ghostCar.current.style.transform = `translate3d(${((gx - c.x) * PPM).toFixed(1)}px, 0, 0)`;
             }
             if (c.finishedAt !== null) {
                 const ms = Math.round(c.finishedAt * 1000);
                 const best = st.runKey ? saveIfBest(st.runKey, { ms, trace: c.trace }) : { isNew: true, before: null };
                 setDone(true);
-                finishTimer = window.setTimeout(() => live.current.onFinish?.(raceResult(ms, best)), st.reducedMotion ? 600 : FINISH_HOLD_MS);
+                finishTimer = window.setTimeout(() => live.current.onFinish?.(raceResult(ms, best)), FINISH_HOLD_MS);
             }
         };
         raf = requestAnimationFrame(frame);
@@ -245,7 +243,7 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
     const asking = benzine && fuel.phase === 'ask';
     const takes = !benzine || fuelTakesAnswers(fuel);
     const gates = [seg, seg + 1].filter(i => gateOf(route, i) !== null);
-    const showStation = benzine && stationX !== null && (!reducedMotion || ['pull', 'ready', 'ask', 'refill'].includes(fuel.phase));
+    const showStation = benzine && stationX !== null;
     const next = stationProgress(progress.answered);
     const badge = done && !benzine ? 'Finish!'
         : benzine && (fuel.phase === 'sputter' || fuel.phase === 'empty') ? 'De tank is leeg!'
@@ -257,33 +255,33 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
     const carFx = fx.kind ? ` is-${fx.kind}` : '';
     return (
         <div ref={root} data-land={land} data-mode={mode}
-            className={`rc-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${done ? ' is-done' : ''}`}>
+            className={`rc-root${phase === 'help' ? ' is-paused' : ''}${done ? ' is-done' : ''}`}>
             <div className="rc-world" role="img" aria-label={LAND_LABEL[land]}>
-                {!reducedMotion && leaving && leaving.seg >= 0 && <Landscape key={leaving.seg} land={landOf(route, leaving.seg)} leaving />}
+                {leaving && leaving.seg >= 0 && <Landscape key={leaving.seg} land={landOf(route, leaving.seg)} leaving />}
                 <Landscape key={seg} land={land} leaving={false} />
                 <div className="rc-road" aria-hidden>
                     <div ref={lines} className="rc-lines" />
                     {!benzine && <div className="rc-finish" data-wx={RACE.length} />}
                     {benzine && bestKm !== null && <div className="rc-recordflag" data-wx={bestKm}><span>Record</span></div>}
-                    {!reducedMotion && gates.map(i => (
+                    {gates.map(i => (
                         <div key={`b${i}`} className={`rc-gate is-${gateOf(route, i)} is-back`} data-wx={i * route.segment}>
                             <GateArt gate={gateOf(route, i)!} part="back" next={landOf(route, i)} />
                         </div>
                     ))}
                     {showStation && (
-                        <div className="rc-station" data-wx={reducedMotion ? undefined : stationX}>
+                        <div className="rc-station" data-wx={stationX}>
                             <Station busy={fx.kind === 'refill'} />
                         </div>
                     )}
                     {ghost && <div ref={ghostCar} className="rc-car is-ghost"><CarArt ghost /></div>}
                     <div ref={meCar} className={`rc-car is-me${carFx}${turbo ? ' is-turbo' : ''}`} data-fx={fx.kind ?? undefined}>
-                        {!reducedMotion && <span className="rc-speedlines" />}
+                        <span className="rc-speedlines" />
                         {turbo && <Flame />}
                         <CarArt />
-                        {!reducedMotion && (fx.kind === 'brake' || fx.kind === 'cough' || fx.kind === 'sputter') && <Puff key={fx.n} className={`is-${fx.kind}`} />}
+                        {(fx.kind === 'brake' || fx.kind === 'cough' || fx.kind === 'sputter') && <Puff key={fx.n} className={`is-${fx.kind}`} />}
                         {fx.kind === 'refill' && <span key={fx.n} className="rc-drops" aria-hidden><i /><i /><i /></span>}
                     </div>
-                    {!reducedMotion && gates.map(i => (
+                    {gates.map(i => (
                         <div key={`f${i}`} className={`rc-gate is-${gateOf(route, i)} is-front`} data-wx={i * route.segment}>
                             <GateArt gate={gateOf(route, i)!} part="front" next={landOf(route, i)} />
                         </div>
@@ -302,7 +300,7 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
                         </div>
                     </div>
                 ) : (
-                    // The whole track at a glance: the car, the ghost, the finish, the three landscapes. Under reduced motion this is the race.
+                    // The whole track at a glance: the car, the ghost, the finish, the three landscapes.
                     <div className="rc-meter" role="img" aria-label="Hoe ver je bent">
                         <span className="rc-meter-track">
                             {route.lands.map((l, i) => <span key={i} className="rc-meter-seg" data-land={l} />)}
@@ -334,14 +332,14 @@ export default function Race({ question, phase, feedback, onAnswer, onMiss, onFa
 }
 
 /** The end screen's picture: the car under the chequered flag, or beside its empty jerrycan with a smile. */
-export function RaceEnding({ outcome, options, reducedMotion }: SkinEndingProps) {
+export function RaceEnding({ outcome, options }: SkinEndingProps) {
     const empty = raceModeOf(options) === 'benzine' && outcome === 'failed';
     return (
-        <div className={`spel-ending rc-ending${empty ? ' is-empty' : ''}${reducedMotion ? ' is-still' : ''}`} data-land="platteland">
+        <div className={`spel-ending rc-ending${empty ? ' is-empty' : ''}`} data-land="platteland">
             <div className="rc-sky" />
             <Sun className="rc-ending-sun" />
             <div className="rc-ending-road" />
-            <div className="rc-ending-car"><CarArt />{empty && !reducedMotion && <Puff className="is-sputter" />}</div>
+            <div className="rc-ending-car"><CarArt />{empty && <Puff className="is-sputter" />}</div>
             {empty
                 ? <span className="rc-ending-can"><Can full={false} /></span>
                 : <span className="rc-ending-flag" aria-hidden />}

@@ -159,14 +159,14 @@ describe('on the real session', () => {
     const rightOne = () => { act(() => sp().answer(sp().question!.answer)); act(() => sp().next()); };
     const wrongOne = () => { act(() => sp().answer(String(Number(sp().question!.answer) + 1))); act(() => sp().next()); };
 
-    function Wired({ reducedMotion = false, onReport }: { reducedMotion?: boolean; onReport?(r: SkinResult): void }) {
+    function Wired({ onReport }: { onReport?(r: SkinResult): void }) {
         const st = useSpelStore();
         if (!st.question || !st.meta) return null;
         const progress = progressOf(st);
         return (
             <Schatkist question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={null}
                 phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-                onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} reducedMotion={reducedMotion}
+                onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events}
                 onFinish={st.finish} onReport={onReport ?? st.report} />
         );
     }
@@ -220,21 +220,6 @@ describe('on the real session', () => {
         expect(crab()).toBeNull();
     });
 
-    test('reduced motion: the loot is gone at once, the crab stands at the shore with it until the next sum', () => {
-        start(base());
-        const { container } = render(<Wired reducedMotion />);
-        rightOne();
-        wrongOne();
-        wrongOne();
-        act(() => sp().answer(String(Number(sp().question!.answer) + 1)));
-        expect(container.querySelector('.sk-crab.is-still .sk-crab-coin')).not.toBeNull();
-        expect(heapCoins(container)).toBe(0);
-        expect(container.querySelector('.sk-hoard.is-settled')).not.toBeNull();
-        act(() => sp().next());
-        expect(container.querySelector('.sk-crab')).toBeNull();
-        expect(heapCoins(container)).toBe(0);
-    });
-
     test('an opened chest adds a gem; the end screen shows the heap as it was left', () => {
         start(base());
         const { container } = render(<Wired />);
@@ -245,7 +230,7 @@ describe('on the real session', () => {
         expect(container.querySelectorAll('.sk-gem')).toHaveLength(1);
         expect(heapCoins(container)).toBe(4);
         cleanup();
-        const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{}} reducedMotion={false} />);
+        const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{}} />);
         expect(end.container.querySelectorAll('.sk-hoard.is-settled .sk-heap-coin')).toHaveLength(4);
         expect(end.container.querySelectorAll('.sk-gem')).toHaveLength(1);
         // Untimed: the day sky.
@@ -281,7 +266,7 @@ describe('on the real session', () => {
         expect(sp().phase).toBe('end');
         expect(sp().result?.detail).toBe(`${CHESTS + 1} schatkisten open.`);
         cleanup();
-        const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{ tijd: '3' }} reducedMotion />);
+        const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{ tijd: '3' }} />);
         expect(Number.parseInt((end.container.querySelector('.sk-ending') as HTMLElement).style.getPropertyValue('--sk-dusk'))).toBeGreaterThan(85);
         expect(end.container.querySelectorAll('.sk-gem')).toHaveLength(CHESTS + 1);
     });

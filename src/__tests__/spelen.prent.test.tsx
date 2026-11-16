@@ -109,7 +109,7 @@ function Wired() {
     return (
         <Prent question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={null}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} reducedMotion={false}
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events}
             onFinish={st.finish} />
     );
 }
@@ -163,7 +163,7 @@ describe('A round with a photo', () => {
         expect(container.querySelector('.pr-root.is-done')).not.toBeNull();
         expect(credit().getAttribute('aria-hidden')).toBe('false');
         act(() => sp().next());
-        const end = render(<PrentEnding outcome="won" progress={progressOf(sp())} options={{}} reducedMotion={false} />);
+        const end = render(<PrentEnding />);
         // The end screen knows the photo loaded: no second fetch, the picture at once.
         expect(asked).toHaveLength(1);
         expect(end.container.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe(`De prent: ${photo.alt}`);
@@ -186,7 +186,7 @@ describe('A round with a photo', () => {
         // The game goes on as before: a tile per right answer.
         right();
         expect(container.querySelectorAll('.pr-tile.is-gone')).toHaveLength(1);
-        const end = render(<PrentEnding outcome="won" progress={progressOf(sp())} options={{}} reducedMotion={false} />);
+        const end = render(<PrentEnding />);
         expect(asked).toHaveLength(1);
         expect(end.container.querySelector('.prent-art')).not.toBeNull();
         expect(end.container.querySelector('.pr-credit')).toBeNull();

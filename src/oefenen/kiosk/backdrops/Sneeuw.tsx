@@ -152,9 +152,9 @@ export default function Sneeuw() {
             </Far>
             <Ground back />
             <Ground />
-            <Cloud top="10%" w="clamp(90px, 10vw, 180px)" dur={120} delay={-35} at="10vw" />
-            <Cloud top="32%" w="clamp(70px, 7vw, 130px)" dur={150} delay={-100} at="84vw" />
-            <Trav vb="0 0 60 24" w="clamp(36px, 3vw, 60px)" top="24%" dur={36} delay={-10} at="88vw">
+            <Cloud top="10%" w="clamp(90px, 10vw, 180px)" dur={120} delay={-35} />
+            <Cloud top="32%" w="clamp(70px, 7vw, 130px)" dur={150} delay={-100} />
+            <Trav vb="0 0 60 24" w="clamp(36px, 3vw, 60px)" top="24%" dur={36} delay={-10}>
                 <g className="ks-flap"><path className="ks-line" d="M6 14 q10 -10 20 0 q10 -10 20 0" /></g>
             </Trav>
             <Air side="l"><Flake x={34} y={30} /><Flake x={92} y={54} s={0.7} /><Flake x={136} y={24} s={0.55} /></Air>

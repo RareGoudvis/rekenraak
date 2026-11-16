@@ -176,7 +176,7 @@ const progressWith = (over: Partial<SkinProgress> = {}): SkinProgress => ({
 const propsWith = (over: Partial<SkinProps> = {}): SkinProps => ({
     question: { key: 'q1', text: '7 + 5 = ?', index: 0 }, choices: null, phase: 'play', feedback: null,
     onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
-    progress: progressWith(), options: {}, events: createSpelEvents(), reducedMotion: false, ...over,
+    progress: progressWith(), options: {}, events: createSpelEvents(), ...over,
 });
 
 describe('Zombies skin: the walk on screen', () => {
@@ -221,7 +221,7 @@ describe('Zombies skin: the walk on screen', () => {
         expect(shownOf(front)).toBeCloseTo(xOf(front), 1);
     });
 
-    test('under help nothing moves, not even a leg; reduced motion: no walking cycle and an instant step', () => {
+    test('under help nothing moves, not even a leg', () => {
         const events = createSpelEvents();
         const { container, rerender } = render(<Zombies {...propsWith({ events })} />);
         wait(1000);
@@ -230,15 +230,6 @@ describe('Zombies skin: the walk on screen', () => {
         const held = snap();
         wait(3000);
         expect(snap()).toBe(held);
-        cleanup();
-        const still = render(<Zombies {...propsWith({ events, reducedMotion: true })} />);
-        wait(2000);
-        const front = lanes(still.container)[0];
-        expect(xOf(front)).toBeLessThan(ZOMBIE.start - 5);
-        expect(front.querySelector('[data-part=legA]')!.getAttribute('transform')).toBe('translate(0 0.00) rotate(0.00 40 98)');
-        const x = xOf(front);
-        act(() => events.emit('wrong', { given: '1', expected: '12' }));
-        expect(shownOf(front)).toBeCloseTo(x - ZOMBIE.step, 1);
     });
 });
 
@@ -310,14 +301,7 @@ describe('Zombies follow-up (owner 2026-11-15): no stun on a wrong answer, a spe
             expect(container.querySelectorAll('[data-zombie=down]')).toHaveLength(0);
         });
 
-        test('reduced motion: an instant hit, no dart flight; the group shows its fear and huddles when two are left', () => {
-            const events = createSpelEvents();
-            const { container } = render(<Zombies {...propsWith({ events, reducedMotion: true })} />);
-            act(() => events.emit('correct', { given: '12', streak: 1 }));
-            expect(container.querySelector('.zb-dart')).toBeNull();
-            expect(container.querySelector('.zb-pfft')).toBeNull();
-            expect((container.querySelector('.zb-root') as HTMLElement).style.getPropertyValue('--zb-hit')).toBe('0ms');
-            cleanup();
+        test('the group shows its fear and huddles when two are left', () => {
             const crew = (misses: number) => {
                 const r = render(<Zombies {...propsWith({ progress: progressWith({ misses }) })} />);
                 const el = r.container.querySelector('.zb-crew')!;

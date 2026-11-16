@@ -49,7 +49,7 @@ function Pine({ left }: { left: string }) {
 }
 
 // The snowfall runs only while the mountains are shown (no flakes falling out of sight).
-function Bergen({ snowing, reducedMotion, paused }: { snowing: boolean; reducedMotion: boolean; paused: boolean }) {
+function Bergen({ snowing, paused }: { snowing: boolean; paused: boolean }) {
     return (
         <>
             <Mountain left="-8%" className="is-left" />
@@ -60,7 +60,7 @@ function Bergen({ snowing, reducedMotion, paused }: { snowing: boolean; reducedM
             </svg>
             <Pine left="9%" />
             <Pine left="86%" />
-            {snowing && <Snow density={18} full size={[4, 10]} fall={[8, 13]} paused={paused} reducedMotion={reducedMotion} className="bal-snow" />}
+            {snowing && <Snow density={18} full size={[4, 10]} fall={[8, 13]} paused={paused} className="bal-snow" />}
         </>
     );
 }
@@ -114,7 +114,7 @@ function Strand() {
     );
 }
 
-export default function Lands({ land, switched, reducedMotion, paused }: { land: Land; switched: boolean; reducedMotion: boolean; paused: boolean }) {
+export default function Lands({ land, switched, paused }: { land: Land; switched: boolean; paused: boolean }) {
     return (
         <div className={`bal-lands${switched ? ' is-switched' : ''}`} aria-hidden>
             {LANDS.map(l => (
@@ -122,7 +122,7 @@ export default function Lands({ land, switched, reducedMotion, paused }: { land:
                     <div className="bal-land-sky" />
                     <div className="bal-ground">
                         {l === 'gras' && <Gras />}
-                        {l === 'bergen' && <Bergen snowing={land === 'bergen'} reducedMotion={reducedMotion} paused={paused} />}
+                        {l === 'bergen' && <Bergen snowing={land === 'bergen'} paused={paused} />}
                         {l === 'strand' && <Strand />}
                     </div>
                 </div>

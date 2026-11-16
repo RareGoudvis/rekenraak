@@ -1,5 +1,4 @@
-/* Eieren zoeken skin. A spring garden: flat fills under a thick dark outline (spelen.css tokens), CSS only,
-   nothing moves under prefers-reduced-motion. */
+/* Eieren zoeken skin. A spring garden: flat fills under a thick dark outline (spelen.css tokens), CSS only. */
 .egg-root {
   /* One egg's width; its height is 1.25 ×. Three rows of eggs in tufts under the sign. */
   --egg-w: clamp(54px, min(12vw, 14.5vh), 128px);
@@ -300,21 +299,3 @@
   .egg-basket { width: clamp(110px, 18vw, 170px); }
   .egg-sun { display: none; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .egg, .egg-sign-answer, .egg-chick.is-out, .egg-spot.is-empty .egg-art, .egg-spot.is-answer .egg::after, .egg-basket-chick:last-child,
-  .egg-bunny, .egg-ear-l, .egg-flower, .egg-fly, .egg-wing { animation: none; }
-  .egg-spot.is-chick .egg-half-top { animation: none; opacity: 0; }
-  .egg-spot.is-empty .egg-half-top { animation: none; transform: rotate(-62deg); }
-  .egg-bunny { transform: translateY(18%); }
-}
-.egg-root.is-still .egg,
-.egg-root.is-still .egg-sign-answer,
-.egg-root.is-still .egg-chick.is-out,
-.egg-root.is-still .egg-spot.is-empty .egg-art,
-.egg-root.is-still .egg-spot.is-answer .egg::after,
-.egg-root.is-still .egg-basket-chick:last-child,
-.egg-root.is-still .egg-bunny, .egg-root.is-still .egg-ear-l, .egg-root.is-still .egg-flower, .egg-root.is-still .egg-fly, .egg-root.is-still .egg-wing { animation: none; }
-.egg-root.is-still .egg-spot.is-chick .egg-half-top { animation: none; opacity: 0; }
-.egg-root.is-still .egg-spot.is-empty .egg-half-top { animation: none; transform: rotate(-62deg); }
-.egg-root.is-still .egg-bunny { transform: translateY(18%); }

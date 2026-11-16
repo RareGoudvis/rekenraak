@@ -19,8 +19,6 @@ export interface CloudsProps {
     seed?: number;
     // The help panel is open: the sky waits.
     paused?: boolean;
-    // Clouds stand still where they are (spread over the sky).
-    reducedMotion?: boolean;
     className?: string;
 }
 
@@ -51,28 +49,21 @@ export function CloudShape({ shape, flip }: { shape: number; flip?: boolean }) {
     );
 }
 
-// How far along its crossing a cloud starts (0–1): reduced motion draws it there with a plain transform, since a paused
-// animation lands off-screen when prefers-reduced-motion collapses every animation's duration (src/index.css).
-const progressOf = (c: { delay: number; duration: number }, direction: 'right' | 'left') => {
-    const p = ((-c.delay / c.duration) % 1 + 1) % 1;
-    return direction === 'left' ? 1 - p : p;
-};
-
 /** Drifting clouds that keep moving and wrap round; stack a far and a near layer for parallax. */
 export default function Clouds({
     count = 4, speed = 70, size = [110, 190], band = [4, 30], layer = 'mid', tint, outline = true, direction = 'right',
-    seed = 7, paused = false, reducedMotion = false, className,
+    seed = 7, paused = false, className,
 }: CloudsProps) {
     const [s0, s1] = size;
     const [b0, b1] = band;
     const specs = useMemo(() => cloudLayout({ count, seed, size: [s0, s1], speed, band: [b0, b1], layer }), [count, seed, s0, s1, speed, b0, b1, layer]);
-    const cls = ['spel-clouds', `is-${layer}`, outline ? '' : 'is-flat', direction === 'left' ? 'is-left' : '', paused || reducedMotion ? 'is-still' : '', reducedMotion ? 'is-fixed' : '', className ?? '']
+    const cls = ['spel-clouds', `is-${layer}`, outline ? '' : 'is-flat', direction === 'left' ? 'is-left' : '', paused ? 'is-still' : '', className ?? '']
         .filter(Boolean).join(' ');
     return (
         <div className={cls} style={tint ? { '--cloud-fill': tint } as CSSProperties : undefined} aria-hidden>
             {specs.map(c => (
                 <div key={c.key} className="spel-cloud-track"
-                    style={{ top: `${c.top}%`, opacity: c.opacity, animationDuration: `${c.duration}s`, animationDelay: `${c.delay}s`, '--w': `${c.width}px`, '--p': progressOf(c, direction) } as CSSProperties}>
+                    style={{ top: `${c.top}%`, opacity: c.opacity, animationDuration: `${c.duration}s`, animationDelay: `${c.delay}s`, '--w': `${c.width}px` } as CSSProperties}>
                     <CloudShape shape={c.shape} flip={c.flip} />
                 </div>
             ))}

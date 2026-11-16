@@ -1,5 +1,5 @@
 /* Kerstboom versieren: a warm living room at evening. Flat fills under a thick dark outline (spelen.css tokens).
-   Transforms and opacity only; nothing loops under reduced motion and everything holds still under "Hoe los ik dit op?". */
+   Transforms and opacity only; everything holds still under "Hoe los ik dit op?". */
 .kb-root {
   position: absolute;
   inset: 0;
@@ -238,8 +238,4 @@
 
 /* The skin's own motions (the kit's layers pause and still themselves). */
 .kb-root.is-paused :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-fall, .kb-roll, .kb-decor, .kb-decor *, .kb-present, .kb-tree, .kb-cat-ear) { animation-play-state: paused; }
-.kb-root.is-still :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-fall, .kb-roll, .kb-decor, .kb-decor *, .kb-present, .kb-tree, .kb-cat-ear, .kb-sign-answer),
-.kb-ending.is-still :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-decor, .kb-decor *, .kb-present) { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  :is(.kb-root, .kb-ending) :is(.kb-cat-breathe, .kb-zz, .kb-bulb-glow, .kb-bulb-glass, .kb-fall, .kb-roll, .kb-decor, .kb-decor *, .kb-present, .kb-tree, .kb-cat-ear, .kb-sign-answer) { animation: none; }
-}
+

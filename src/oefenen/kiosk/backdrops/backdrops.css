@@ -1,7 +1,6 @@
 /* The leerjaar scenes behind the pupil pages (KidBackdrop with a grade). Sticker style but calm: pastel fills and a
    softened outline, drawn only along the bottom and the far edges, so the middle stays sky and the text keeps its
-   contrast. Alive but slow: weather, clouds and animals crossing, small loops per character; all of it rests in place
-   under reduced motion. */
+   contrast. Alive but slow: weather, clouds and animals crossing, small loops per character. */
 /* The scene palette, shared with the leerjaar tiles (LeerjaarBar), which draw a small version of each world. */
 .kid-backdrop.is-theme, .zelf-years {
   --ks-eye: color-mix(in srgb, var(--kid-ink) 72%, transparent);
@@ -99,9 +98,8 @@
 .kid-backdrop.is-theme .ks-vein { stroke-width: 1.5; }
 .kid-backdrop.is-theme .ks-branch { fill: none; stroke: var(--ks-wood); stroke-width: 9; }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ks-bob { animation: ks-bob 5s ease-in-out infinite; }
-}
+.ks-bob { animation: ks-bob 5s ease-in-out infinite; }
+
 @keyframes ks-bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -152,11 +150,9 @@
 .kid-backdrop.is-theme .ks-mouthfill { fill: var(--ks-eye); stroke: none; }
 .kid-backdrop.is-theme .ks-ns { stroke: none; }
 
-/* The weather layer (Weather.tsx): one shared path animation, each particle's start and end in custom properties;
-   a particle rests at --rest when motion is reduced, and frozen rain is left out. */
+/* The weather layer (Weather.tsx): one shared path animation, each particle's start and end in custom properties. */
 .ks-weather { left: 0; top: 0; width: 100%; height: 100%; }
-.kid-backdrop.is-theme .kw-p { transform: var(--rest); transform-origin: 0 0; opacity: var(--o); }
-.kid-backdrop.is-theme .ks-weather.is-rain { display: none; }
+.kid-backdrop.is-theme .kw-p { transform-origin: 0 0; opacity: var(--o); }
 .kid-backdrop.is-theme .kw-snow { fill: var(--ks-white); stroke: var(--ks-snowshade); stroke-width: 1.2; }
 .kid-backdrop.is-theme .kw-petal { fill: var(--ks-pink); stroke: color-mix(in srgb, var(--kid-ink) 22%, transparent); stroke-width: 1.2; }
 .kid-backdrop.is-theme .kw-petal.is-white { fill: var(--ks-white); }
@@ -166,38 +162,34 @@
 .kid-backdrop.is-theme .kw-rain { fill: none; stroke: var(--ks-rain); stroke-width: 2; }
 .kid-backdrop.is-theme .kw-sand { fill: var(--ks-camel-dark); stroke: none; }
 .kid-backdrop.is-theme .kw-wind { fill: none; stroke: color-mix(in srgb, var(--ks-white) 85%, transparent); stroke-width: 2.5; }
-.kid-backdrop.is-theme .ks-rise { transform: var(--rest); }
 
-/* Travellers (Trav in parts.tsx): cross the whole width; rest at --at when motion is reduced. */
-.ks-trav { left: 0; height: auto; transform: translateX(var(--at)); }
-.ks-trav.is-rev { transform: translateX(var(--at)) scaleX(-1); }
+/* Travellers (Trav in parts.tsx): cross the whole width. */
+.ks-trav { left: 0; height: auto; }
 .kid-backdrop.is-theme .ks-cloud { fill: var(--ks-white); }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ks-trav { animation: ks-cross var(--dur) linear var(--delay) infinite; }
-  .ks-trav.is-rev { animation-name: ks-cross-rev; }
-  .ks-peek { animation: ks-peek 11s ease-in-out infinite; }
-  .ks-look { animation: ks-look 7s ease-in-out infinite; }
-  .ks-hop { animation: ks-hop 6s ease-in-out infinite; }
-  .ks-nod { animation: ks-nod 5s ease-in-out infinite; }
-  .ks-roll { animation: ks-roll 1.6s linear infinite; transform-box: fill-box; transform-origin: center; }
-  .ks-bounce { animation: ks-bounce 0.8s ease-in-out infinite alternate; }
-  .ks-pulse { animation: ks-pulse 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-  .ks-buzz { animation: ks-buzz 7s ease-in-out infinite; }
-  .ks-wing-beat { animation: ks-wing-beat 5s ease-in-out infinite; }
-  .ks-sway-l { animation: ks-sway 5s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
-  .kid-backdrop.is-theme .kw-p { animation: ks-move var(--dur) linear var(--delay) infinite; }
-  .kid-backdrop.is-theme .ks-weather.is-rain { display: block; }
-  .kid-backdrop.is-theme .ks-rise { animation: ks-rise 6s ease-out var(--delay) infinite; }
-  .ks-blink { animation: ks-blink 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-  .ks-sway { animation: ks-sway 6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
-  .ks-swish { animation: ks-swish 3.2s ease-in-out infinite; }
-  .ks-wave { animation: ks-wave 2.6s ease-in-out infinite; }
-  .ks-tilt { animation: ks-tilt 4.5s ease-in-out infinite; }
-  .ks-flap { animation: ks-flap 0.45s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
-  .ks-spin { animation: ks-spin 50s linear infinite; transform-box: fill-box; transform-origin: center; }
-  .ks-drift { animation: ks-drift 16s ease-in-out infinite; }
-}
+.ks-trav { animation: ks-cross var(--dur) linear var(--delay) infinite; }
+.ks-trav.is-rev { animation-name: ks-cross-rev; }
+.ks-peek { animation: ks-peek 11s ease-in-out infinite; }
+.ks-look { animation: ks-look 7s ease-in-out infinite; }
+.ks-hop { animation: ks-hop 6s ease-in-out infinite; }
+.ks-nod { animation: ks-nod 5s ease-in-out infinite; }
+.ks-roll { animation: ks-roll 1.6s linear infinite; transform-box: fill-box; transform-origin: center; }
+.ks-bounce { animation: ks-bounce 0.8s ease-in-out infinite alternate; }
+.ks-pulse { animation: ks-pulse 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ks-buzz { animation: ks-buzz 7s ease-in-out infinite; }
+.ks-wing-beat { animation: ks-wing-beat 5s ease-in-out infinite; }
+.ks-sway-l { animation: ks-sway 5s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
+.kid-backdrop.is-theme .kw-p { animation: ks-move var(--dur) linear var(--delay) infinite; }
+.kid-backdrop.is-theme .ks-rise { animation: ks-rise 6s ease-out var(--delay) infinite; }
+.ks-blink { animation: ks-blink 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ks-sway { animation: ks-sway 6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.ks-swish { animation: ks-swish 3.2s ease-in-out infinite; }
+.ks-wave { animation: ks-wave 2.6s ease-in-out infinite; }
+.ks-tilt { animation: ks-tilt 4.5s ease-in-out infinite; }
+.ks-flap { animation: ks-flap 0.45s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+.ks-spin { animation: ks-spin 50s linear infinite; transform-box: fill-box; transform-origin: center; }
+.ks-drift { animation: ks-drift 16s ease-in-out infinite; }
+
 @keyframes ks-move {
   0% { transform: translate(var(--x0), var(--y0)) rotate(0deg); opacity: 0; }
   8%, 88% { opacity: var(--o); }

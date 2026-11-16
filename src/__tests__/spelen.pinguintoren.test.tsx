@@ -106,7 +106,7 @@ describe('Pinguïntoren skin', () => {
         question: { key: `q${count}-${mistakes}`, text: '7 + 5 = ?', index: 0 },
         choices: null, phase: 'play', feedback: null,
         onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound,
-        progress: progressWith({ goal: { count, target: 20 }, mistakes }), options: {}, events, reducedMotion: false,
+        progress: progressWith({ goal: { count, target: 20 }, mistakes }), options: {}, events,
         ...over,
     });
     const wrong = { phase: 'wrong' as const, feedback: { given: '11', expected: '12', correct: false } };
@@ -147,17 +147,6 @@ describe('Pinguïntoren skin', () => {
         expect(sound).toHaveBeenCalledWith('miss');
     });
 
-    test('reduced motion: no seals, no flying halves, the tower simply lower', () => {
-        const { container, rerender } = render(<Pinguintoren {...at(4, 0, { reducedMotion: true })} />);
-        expect(container.querySelector('.pt-seal')).toBeNull();
-        rerender(<Pinguintoren {...at(3, 1, { ...wrong, reducedMotion: true })} />);
-        rerender(<Pinguintoren {...at(2, 2, { ...wrong, reducedMotion: true, question: { key: 'n', text: '1 + 1 = ?', index: 1 } })} />);
-        expect(container.querySelectorAll('.pt-tower .pt-block')).toHaveLength(2);
-        expect(container.querySelector('.pt-half')).toBeNull();
-        expect(container.querySelector('.pt-settle')).toBeNull();
-        expect(container.querySelector('.pt-root.is-still')).not.toBeNull();
-    });
-
     test('the sign sizes its font for the sum with its answer, so the flash never runs off the panel', () => {
         const { container } = render(<Pinguintoren {...at(2, 0, { question: { key: 'q', text: '810 × 10 = ?', index: 0 }, ...wrong, feedback: { given: '1', expected: '8100', correct: false } })} />);
         const sign = container.querySelector<HTMLElement>('.spel-sign-box > .pt-sign.spel-sign-fit')!;
@@ -167,11 +156,11 @@ describe('Pinguïntoren skin', () => {
     });
 
     test('the ending: a dance under the flag for the goal, a smile on a smaller tower otherwise', () => {
-        const won = render(<PinguintorenEnding outcome="won" progress={progressWith({ goal: { count: 20, target: 20 } })} options={{}} reducedMotion={false} />);
+        const won = render(<PinguintorenEnding outcome="won" progress={progressWith({ goal: { count: 20, target: 20 } })} options={{}} />);
         expect(won.container.querySelector('.pt-dance')).not.toBeNull();
         expect(won.container.querySelector('.pt-flag')).not.toBeNull();
         won.unmount();
-        const done = render(<PinguintorenEnding outcome="done" progress={progressWith({ goal: { count: 8, target: 20 } })} options={{}} reducedMotion />);
+        const done = render(<PinguintorenEnding outcome="done" progress={progressWith({ goal: { count: 8, target: 20 } })} options={{}} />);
         expect(done.container.querySelector('.pt-dance')).toBeNull();
         expect(done.container.querySelectorAll('.pt-block').length).toBeGreaterThan(0);
     });

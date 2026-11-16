@@ -1,5 +1,5 @@
 /* Hartjes koppelen skin (Valentijn), and its Voetballen look. Sticker look: flat fills under a thick dark
-   outline (spelen.css tokens), CSS-only flips, nothing moves under prefers-reduced-motion. */
+   outline (spelen.css tokens), CSS-only flips. */
 .hj-root {
   --hj-pink: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper));
   --hj-pink-soft: color-mix(in srgb, var(--accent-getallenkennis) 14%, var(--kiosk-paper));
@@ -234,10 +234,3 @@
   .hj-root { padding-top: var(--sp-2); --hj-top-h: 60px; }
   .hj-deco { display: none; }
 }
-
-/* Reduced motion: every state at once, nothing moves. */
-@media (prefers-reduced-motion: reduce) {
-  .hj-root *, .hj-root *::after { animation: none !important; transition: none !important; }
-}
-.hj-root.is-still *,
-.hj-root.is-still *::after { animation: none !important; transition: none !important; }

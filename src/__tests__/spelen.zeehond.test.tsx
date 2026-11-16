@@ -14,12 +14,12 @@ import { klokQuestion } from '../oefenen/spelen/content/klok/klokPack';
 import { formatDigitalTime, formatTimeText } from '../services/clock/clockTypes';
 import Zeehond from '../oefenen/spelen/skins/zeehond/Zeehond';
 import { fishLeft, flightOf, ZEEHOND_ROUND } from '../oefenen/spelen/skins/zeehond/feed';
-import { DRIFT_MAX_SPEED, DRIFT_STILL_STEP, driftOffsets, fedAfter, girthOf, GROW_STEPS, levelOf, pickPod, SEAL_LOOKS, sealShape, type SpotBox } from '../oefenen/spelen/skins/zeehond/pod';
+import { DRIFT_MAX_SPEED, driftOffsets, fedAfter, girthOf, GROW_STEPS, levelOf, pickPod, SEAL_LOOKS, sealShape, type SpotBox } from '../oefenen/spelen/skins/zeehond/pod';
 import { choicesOf } from '../oefenen/spelen/skins/options';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Zeehondjes voeren: the registry entry and what it plays, the skin on the real session (right / wrong / help,
-// keys 1–4, the bucket), the reduced-motion path and clock faces on the signs; the seals of a game (looks, growth per
+// keys 1–4, the bucket), the flying fish and clock faces on the signs; the seals of a game (looks, growth per
 // fish, signs that swap while the seals stay) and Moeilijk's drifting floes (pod.ts).
 
 let choice: ZelfChoice;
@@ -40,18 +40,18 @@ beforeEach(() => {
     for (const name of ['correct', 'wrong', 'help', 'end'] as SpelEventName[]) offs.push(sp().events.on(name, p => log.push({ name, payload: p })));
     vi.spyOn(console, 'error').mockImplementation(() => { });
 });
-afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 const start = (now?: number) => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('zeehond')!.meta, now }));
 
-function Wired({ reducedMotion = false, niveau }: { reducedMotion?: boolean; niveau?: string }) {
+function Wired({ niveau }: { niveau?: string }) {
     const st = useSpelStore();
     if (!st.question || !st.meta) return null;
     const progress = progressOf(st);
     return (
         <Zeehond question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={niveau ? { niveau } : {}} events={st.events} reducedMotion={reducedMotion} />
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={niveau ? { niveau } : {}} events={st.events} />
     );
 }
 const seals = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).getAllByRole('button') as HTMLButtonElement[];
@@ -149,17 +149,6 @@ describe('Zeehondjes voeren', () => {
         expect(names()).toEqual(['correct', 'wrong']);
     });
 
-    test('reduced motion: no flying fish, the fish is simply at the seal', () => {
-        start();
-        const { container } = render(<Wired reducedMotion />);
-        expect(container.querySelector('.zh-root.is-still')).not.toBeNull();
-        tapValue(sp().question!.answer);
-        expect(names()).toEqual(['correct']);
-        expect(container.querySelector('.zh-fly')).toBeNull();
-        expect(container.querySelector('.zh-bubbles')).toBeNull();
-        expect(container.querySelector('.zh-spot.is-fed .zh-fed-fish')).not.toBeNull();
-    });
-
     test('klok content: clock faces on the signs, named by their view; a tap hands back the value', () => {
         const exercise = { id: 'x', hours: 8, minutes: 15, timeText: formatTimeText(8, 15, false), digitalText: formatDigitalTime(8, 15), isManuallyEdited: false, clockType: 'analoog' as const, exerciseMode: 'tekenen' as const };
         const q = klokQuestion(exercise, { clockType: 'analoog', exerciseMode: 'tekenen', timeTypes: ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor'] }, 'q1', 4)!;
@@ -168,7 +157,7 @@ describe('Zeehondjes voeren', () => {
             question: { key: 'q1', text: q.text, index: 0, visual: q.visual }, choices: q.choices, views: q.views,
             phase: 'play', feedback: null, onAnswer, onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
             progress: { answered: 0, total: 15, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: null },
-            options: {}, events: createSpelEvents(), reducedMotion: false,
+            options: {}, events: createSpelEvents(),
         };
         const { container } = render(<Zeehond {...props} />);
         expect(container.querySelector('.zh-root.has-pictures')).not.toBeNull();
@@ -258,17 +247,15 @@ describe('Zeehondjes voeren', () => {
                 expect(moved).toBeGreaterThan(30);
             }
         }
-        // Reduced motion: each question puts the seals somewhere else.
-        const { spots, width, height } = cases[0];
-        const at = (q: number) => driftOffsets(q * DRIFT_STILL_STEP + 3, spots, { width, height, gap: 10, seed: 5 }).map(o => Math.round(o.dx));
-        expect(at(1)).not.toEqual(at(2));
-        expect(at(2)).not.toEqual(at(3));
     });
 
     test('a new question swaps the signs, not the seals; the fed seal grows; no key badges', () => {
         // A fixed session seed: the same sums every run (the seals' looks stay random).
         start(20261115);
-        const { container } = render(<Wired reducedMotion />);
+        vi.useFakeTimers();
+        // The fish flies first; the seal eats (and grows) when it lands.
+        const feed = (value: string) => { tapValue(value); act(() => { vi.advanceTimersByTime(500); }); };
+        const { container } = render(<Wired />);
         expect(container.querySelector('.zh-key')).toBeNull();
         const before = seals();
         const spotsNow = () => [...container.querySelectorAll('.zh-spot')];
@@ -279,7 +266,7 @@ describe('Zeehondjes voeren', () => {
         expect(girths()).toEqual([0, 0, 0, 0]);
         const firstSigns = signs();
         const fedSeal = sp().question!.choices.indexOf(sp().question!.answer);
-        tapValue(sp().question!.answer);
+        feed(sp().question!.answer);
         expect(girths()[fedSeal]).toBe(1);
         expect(girths().reduce((a, b) => a + b)).toBe(1);
         act(() => sp().next());
@@ -289,7 +276,7 @@ describe('Zeehondjes voeren', () => {
         expect(signs()).toEqual(sp().question!.choices);
         expect(signs()).not.toEqual(firstSigns);
         // A wrong pick feeds nobody.
-        tapValue(wrongOf());
+        feed(wrongOf());
         expect(girths().reduce((a, b) => a + b)).toBe(1);
         act(() => sp().next());
         // Each fish goes to the seal holding the answer; a seal stops growing at GROW_STEPS (one seal can get five
@@ -298,7 +285,7 @@ describe('Zeehondjes voeren', () => {
         fish[fedSeal] = 1;
         for (let k = 0; k < 6; k++) {
             fish[sp().question!.choices.indexOf(sp().question!.answer)]++;
-            tapValue(sp().question!.answer);
+            feed(sp().question!.answer);
             act(() => sp().next());
         }
         expect(girths()).toEqual(fish.map(girthOf));

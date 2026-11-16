@@ -188,15 +188,15 @@
 .zb-sv-sweat { fill: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--kiosk-paper)); stroke-width: 2; }
 .zb-tube { fill: var(--zb-wood); stroke-width: 2.5; }
 /* Worried: a quicker sway; scared: trembling and huddled close (two or fewer left). */
-.zb-root:not(.is-still) .zb-crew.is-worried .zb-sv:not(.is-caught) .zb-sv-body { animation-duration: .9s; }
-.zb-root:not(.is-still) .zb-crew.is-scared .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-tremble 130ms linear infinite alternate; }
+.zb-root .zb-crew.is-worried .zb-sv:not(.is-caught) .zb-sv-body { animation-duration: .9s; }
+.zb-root .zb-crew.is-scared .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-tremble 130ms linear infinite alternate; }
 @keyframes zb-tremble { from { transform: translateX(-1.5%) rotate(-1deg); } to { transform: translateX(1.5%) rotate(1deg); } }
 .zb-crew.is-scared .zb-sv:not(.is-caught) { margin-right: calc(var(--zb-sv-w) * -.4); transition: margin-right 500ms var(--ease-out); }
 /* A streak: the group gives a little hop on each right answer. */
-.zb-root:not(.is-still) .zb-crew.is-cheery .zb-sv:not(.is-caught):not(.is-shooting) .zb-sv-body { animation: zb-hop 520ms var(--ease-out); }
+.zb-root .zb-crew.is-cheery .zb-sv:not(.is-caught):not(.is-shooting) .zb-sv-body { animation: zb-hop 520ms var(--ease-out); }
 @keyframes zb-hop { 0%, 100% { transform: none; } 40% { transform: translateY(-14%); } }
 /* The shooter steps up for its puff: the tube comes up, a little "pfft" floats off. */
-.zb-root:not(.is-still) .zb-sv.is-shooting .zb-sv-body { animation: zb-puff-up 600ms var(--ease-out); }
+.zb-root .zb-sv.is-shooting .zb-sv-body { animation: zb-puff-up 600ms var(--ease-out); }
 @keyframes zb-puff-up { 0% { transform: none; } 30% { transform: translateY(-6%) scale(1.04, .96); } 45% { transform: translateY(-6%) scale(.96, 1.06); } 100% { transform: none; } }
 .zb-pfft {
   position: absolute;
@@ -233,7 +233,7 @@
 @keyframes zb-dart { from { transform: translate(var(--fx), var(--fy)); } to { transform: translate(var(--tx), var(--ty)); } }
 @keyframes zb-dart-gone { to { opacity: 0; } }
 /* Calm and brave: a slow sway while the zombies come. */
-.zb-root:not(.is-still) .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-sv-sway 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.4s); }
+.zb-root .zb-sv:not(.is-caught) .zb-sv-body { animation: zb-sv-sway 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.4s); }
 @keyframes zb-sv-sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
 /* Caught: a silly spin into a green zombie, then it shuffles off along the street. */
 .zb-sv.is-caught { z-index: 1; animation: zb-sv-off 9s linear 900ms forwards; }
@@ -481,24 +481,6 @@
 
 /* "Hoe los ik dit op?": all movement holds (the loop stops too). */
 .zb-root.is-paused * { animation-play-state: paused; }
-
-/* Reduced motion: no walking loop, no drifting scenery; states change at once. */
-.zb-root.is-still .zb-lane { will-change: auto; }
-.zb-root.is-still .zb-zombie .zb-body,
-.zb-root.is-still .zb-zombie .zb-art,
-.zb-root.is-still .zb-zombie .zb-sign,
-.zb-root.is-still .zb-zombie .zb-pole,
-.zb-root.is-still .zb-sv,
-.zb-root.is-still .zb-sv-body,
-.zb-root.is-still .zb-bar-up,
-.zb-root.is-still .zb-rubble,
-.zb-root.is-still .zb-fog,
-.zb-root.is-still .zb-twinkle,
-.zb-ending.is-still .zb-fog,
-.zb-ending.is-still .zb-twinkle { animation: none; }
-.zb-root.is-still .zb-bar.is-broken .zb-bar-up,
-.zb-root.is-still .zb-bat-fly { visibility: hidden; }
-.zb-root.is-still .zb-zombie.is-flop .zb-body { animation: zb-fade 300ms linear 300ms forwards; }
 @keyframes zb-fade { to { opacity: 0; } }
 
 /* ── The end screen picture ───────────────────────────────────────────────── */
@@ -519,4 +501,3 @@
 @keyframes zb-cheer { from { transform: translateY(0); } to { transform: translateY(-22%); } }
 .zb-sv.is-dance .zb-sv-body { animation: zb-dance 800ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.3s); }
 @keyframes zb-dance { from { transform: rotate(-10deg) translateX(-6%); } to { transform: rotate(10deg) translateX(6%); } }
-.zb-ending.is-still .zb-sv-body { animation: none; }

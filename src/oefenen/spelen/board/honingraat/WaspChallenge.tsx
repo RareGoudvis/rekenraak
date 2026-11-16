@@ -14,7 +14,7 @@ import { WASP, WASP_MS, waspChoices, waspVerdict, type WaspVerdict } from './hiv
 // asked (or shown) on the boards before and are logged there; this is the skin's own little fight.
 
 
-interface Props extends Pick<SkinProps, 'reducedMotion' | 'sound'> {
+interface Props extends Pick<SkinProps, 'sound'> {
     sums: readonly SpelQuestion[];
     // The other sums played, for the drops' other answers.
     pool: readonly SpelQuestion[];
@@ -23,7 +23,7 @@ interface Props extends Pick<SkinProps, 'reducedMotion' | 'sound'> {
     onDone(verdict: WaspVerdict): void;
 }
 
-export default function WaspChallenge({ sums, pool, seed, reducedMotion, sound, paused, onDone }: Props) {
+export default function WaspChallenge({ sums, pool, seed, sound, paused, onDone }: Props) {
     const choices = useMemo(() => {
         const rng = mulberry32(seed);
         return sums.map(q => waspChoices(q, pool.filter(o => o.key !== q.key), rng));
@@ -69,12 +69,12 @@ export default function WaspChallenge({ sums, pool, seed, reducedMotion, sound, 
     const right = results.length - wrong;
     const mood = settled === 'chased' ? 'dizzy' : settled === 'claimed' || picked !== null && picked !== rightValue ? 'grin' : 'cheeky';
     return (
-        <div className={`hx-wasp${settled ? ` is-${settled}` : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--near': wrong } as CSSProperties}>
+        <div className={`hx-wasp${settled ? ` is-${settled}` : ''}`} style={{ '--near': wrong } as CSSProperties}>
             <div className="hx-wasp-zone" aria-hidden>
                 <span className="hx-wasp-fly"><span className="hx-wasp-turn"><Wasp mood={mood} /></span></span>
                 {/* Each right drop: a bee darts at the wasp. */}
                 {right > 0 && !settled && <span key={`dart-${right}`} className="hx-dart"><Bee mood="busy" /></span>}
-                {settled === 'chased' && <Burst kind="sparkle" x="50%" y="45%" spread={110} count={10} seed={seed} reducedMotion={reducedMotion} />}
+                {settled === 'chased' && <Burst kind="sparkle" x="50%" y="45%" spread={110} count={10} seed={seed} />}
             </div>
             <section className="hx-wasp-card" aria-label="Een wesp!">
                 {settled ? (

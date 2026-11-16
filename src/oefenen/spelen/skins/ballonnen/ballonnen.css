@@ -1,5 +1,5 @@
 /* Ballonnen skin. Flat fills under a thick dark outline (spelen.css tokens), transforms and opacity only
-   (old school laptops), and nothing moves under reduced motion (the prop's .is-still and the media query). */
+   (old school laptops). */
 .bal-sky {
   /* One balloon's width: four lanes side by side with room to sway, small enough to rise past the sign. */
   --bal-w: clamp(64px, min(14vw, 19vh), 150px);
@@ -353,8 +353,6 @@
   35% { translate: 0 -24px; rotate: -360deg; }
   100% { translate: 0 -80vh; rotate: -380deg; }
 }
-/* Sitting on the ground (reduced motion): wings folded, still tappable. */
-.bal-bird[data-k='perch'] .bal-bird-wing { animation: none; }
 
 /* A landscape phone: the sign and the balloons share very little height. */
 @media (max-height: 420px) {
@@ -368,25 +366,6 @@
   .bal-palm { width: 22%; }
   .bal-sun { width: 14%; top: 17%; right: 4%; }
 }
-
-/* Reduced motion: no loops, instant states; a wrong balloon simply shows itself empty and faded. */
-.bal-sky.is-still .bal-bob, .bal-sky.is-still .bal-rays, .bal-sky.is-still .bal-waves, .bal-sky.is-still .bal-boat,
-.bal-sky.is-still .bal-fronds, .bal-sky.is-still .bal-bird-wing, .bal-sky.is-still .bal-glow,
-.bal-sky.is-still .bal-ground, .bal-sky.is-still .bal-slot.is-answer .bal { animation: none; }
-.bal-sky.is-still .bal-land, .bal-sky.is-still .bal-land.is-on { transition: none; }
-.bal-sky.is-still .bal-slot.is-deflate .bal { animation: none; transform: rotate(-10deg) scale(.6); opacity: .55; }
-.bal-sky.is-still .bal-slot.is-deflate .bal-skin, .bal-sky.is-still .bal-slot.is-deflate .bal-air { animation: none; }
-
-@media (prefers-reduced-motion: reduce) {
-  .bal-bob, .bal-ring, .bal-sign-answer, .bal-ribbon, .bal-num, .bal-slot.is-fresh .bal, .bal-rays, .bal-waves, .bal-boat,
-  .bal-fronds, .bal-bird-wing, .bal-glow, .bal-ground, .bal-slot.is-answer .bal { animation: none; }
-  .bal-land, .bal-land.is-on { transition: none; }
-  .bal-slot.is-popped .bal-art,
-  .bal-slot.is-popped .bal-num { animation: bal-fade 300ms linear forwards; }
-  .bal-slot.is-deflate .bal { animation: none; transform: rotate(-10deg) scale(.6); opacity: .55; }
-  .bal-slot.is-deflate .bal-skin, .bal-slot.is-deflate .bal-air { animation: none; }
-}
-@keyframes bal-fade { to { opacity: 0; } }
 
 /* Content packs (SpelChoiceFace): a clock face fills the balloon's body; a phrase wraps on two lines. */
 .bal-num.is-picture {

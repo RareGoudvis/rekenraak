@@ -162,7 +162,7 @@ describe('Hartjes: a broken heart, a plaster, and the Voetballen look', () => {
         for (const [look, cue] of [['hartjes', 'hit'], ['voetballen', 'caught']] as const) {
             act(() => start({ look }));
             const sound = vi.fn();
-            const props = { board: sp().board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound, reducedMotion: true, options: { look } } as unknown as SkinProps;
+            const props = { board: sp().board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound, options: { look } } as unknown as SkinProps;
             const { rerender } = render(<Hartjes {...props} />);
             act(() => sp().boardPick(0, wrongFor(0)));
             rerender(<Hartjes {...props} board={sp().board} />);

@@ -24,8 +24,6 @@ export const FLOAT = {
     // A little faster with the streak, never frantic: +2 % a step, at most +20 %.
     perStreak: 0.02,
     maxStreak: 10,
-    // Under reduced motion: still heights inside the band (share of the band from the bottom).
-    still: [0.25, 0.5, 0.3, 0.55],
     // Space kept free under the number at the bottom edge (px).
     margin: 8,
 } as const;
@@ -113,16 +111,12 @@ export function phaseAt(i: number, tau: number): number {
     return frac(tau / FLOAT.loopS + FLOAT.phases[i] + wob);
 }
 
-/** The centre of balloon i's lane, its sway and its still height. */
+/** The centre of balloon i's lane, and its sway. */
 export const laneX = (g: FloatGeom, i: number) => (g.w * (i + 0.5)) / 4;
 export const swayAmp = (g: FloatGeom) => Math.max(0, Math.min(FLOAT.swayPx, (g.w / 4 - g.bw) / 4));
 
-/** Where balloon i's box goes (left, top in px) at game time tau, or still (reduced motion). */
-export function floatAt(g: FloatGeom, path: FloatPath, i: number, tau: number | null): { x: number; y: number } {
-    if (tau === null) {
-        const [d0, d1] = path.band;
-        return { x: laneX(g, i) - g.bw / 2, y: g.h - (d0 + (d1 - d0) * FLOAT.still[i]) };
-    }
+/** Where balloon i's box goes (left, top in px) at game time tau. */
+export function floatAt(g: FloatGeom, path: FloatPath, i: number, tau: number): { x: number; y: number } {
     const sway = swayAmp(g) * Math.sin((2 * Math.PI * tau) / FLOAT.swayS[i] + i * 2.1);
     return { x: laneX(g, i) - g.bw / 2 + sway, y: path.yAt(phaseAt(i, tau)) };
 }

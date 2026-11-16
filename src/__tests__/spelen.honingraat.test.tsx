@@ -155,7 +155,7 @@ describe('Honingraat round 4: the meadow, the scroll, the wasp', () => {
     const props = (niveau: string, onFail = vi.fn()): SkinProps => ({
         question: null, choices: null, board: sp().board, onBoardPick: (cell, given, strike) => sp().boardPick(cell, given, strike),
         phase: sp().phase === 'end' ? 'play' : sp().phase as SkinProps['phase'], feedback: null, onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(),
-        onFail, sound: vi.fn(), progress: progressOf(sp()), options: { niveau }, events: sp().events, reducedMotion: false,
+        onFail, sound: vi.fn(), progress: progressOf(sp()), options: { niveau }, events: sp().events,
     });
     const startAt = (niveau: string) => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(HONING(), { niveau }) });
     const fillBoard = () => cells().forEach((c, i) => { if (c.match) sp().boardPick(i, ''); });

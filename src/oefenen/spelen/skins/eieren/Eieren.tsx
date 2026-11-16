@@ -10,7 +10,7 @@ import './eieren.css';
 // Eieren zoeken: a spring garden with nine eggs in grass tufts (3 × 3), each with a number. Tap (or 1–9) the
 // egg with the answer and it cracks open into a chick, which joins the others in the basket; a wrong egg
 // cracks open too and is empty (a puff, never red). Every question the eggs get new patterns and colours
-// (looks.ts). Untimed. Everything moves in CSS; nothing moves under reduced motion.
+// (looks.ts). Untimed. Everything moves in CSS.
 
 // The chicks the basket can show (the round is 15).
 const BASKET = 15;
@@ -92,10 +92,10 @@ function Tuft() {
     );
 }
 
-function Basket({ chicks, reducedMotion }: { chicks: number; reducedMotion: boolean }) {
+function Basket({ chicks }: { chicks: number }) {
     const n = Math.min(chicks, BASKET);
     return (
-        <div className={`egg-basket${reducedMotion ? ' is-still' : ''}`} role="img" aria-label={`${n} kuikens in het mandje`}>
+        <div className={`egg-basket`} role="img" aria-label={`${n} kuikens in het mandje`}>
             <div className="egg-basket-chicks">
                 {Array.from({ length: n }, (_, k) => <span key={k} className="egg-basket-chick" style={{ '--k': k } as CSSProperties}><Chick /></span>)}
             </div>
@@ -108,7 +108,7 @@ function Basket({ chicks, reducedMotion }: { chicks: number; reducedMotion: bool
     );
 }
 
-export default function Eieren({ question, choices, phase, feedback, onAnswer, progress, reducedMotion }: SkinProps) {
+export default function Eieren({ question, choices, phase, feedback, onAnswer, progress }: SkinProps) {
     const [picked, setPicked] = useState<{ key: string; index: number } | null>(null);
     const options = choices ?? [];
     const pickedIdx = picked && question && picked.key === question.key ? picked.index : null;
@@ -137,8 +137,8 @@ export default function Eieren({ question, choices, phase, feedback, onAnswer, p
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div className={`egg-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <GardenBack reducedMotion={reducedMotion} paused={phase === 'help'} />
+        <div className={`egg-root${phase === 'help' ? ' is-paused' : ''}`}>
+            <GardenBack paused={phase === 'help'} />
             <span className="egg-sun" aria-hidden />
             <div className="egg-grass" aria-hidden />
             <GardenFront />
@@ -159,14 +159,14 @@ export default function Eieren({ question, choices, phase, feedback, onAnswer, p
                                 {st === 'chick' && <Chick className="is-out" />}
                                 <EggArt open={open} decor={look.pattern} />
                                 {!(st === 'chick') && <span className="egg-num kiosk-math" aria-hidden><SpelChoiceFace value={c} /></span>}
-                                {open && <Burst key={`${question.key}-${i}`} kind={st === 'chick' ? 'sparkle' : 'smoke'} x="50%" y={st === 'chick' ? '40%' : '58%'} spread={st === 'chick' ? 90 : 44} count={st === 'chick' ? 10 : undefined} seed={i + 3} reducedMotion={reducedMotion} />}
+                                {open && <Burst key={`${question.key}-${i}`} kind={st === 'chick' ? 'sparkle' : 'smoke'} x="50%" y={st === 'chick' ? '40%' : '58%'} spread={st === 'chick' ? 90 : 44} count={st === 'chick' ? 10 : undefined} seed={i + 3} />}
                             </button>
                             <Tuft />
                         </div>
                     );
                 })}
             </div>
-            <Basket chicks={progress.right} reducedMotion={reducedMotion} />
+            <Basket chicks={progress.right} />
         </div>
     );
 }

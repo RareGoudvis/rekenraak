@@ -195,7 +195,7 @@ const BARRICADES = ['crate', 'fence', 'crate'] as const;
 
 interface Shot { n: number; k: number; from: [number, number]; to: [number, number] }
 
-function Camp({ level, hits, reducedMotion, shot, cheery }: { level: ZombieLevel; hits: number; reducedMotion: boolean; shot: Shot | null; cheery: boolean }) {
+function Camp({ level, hits, shot, cheery }: { level: ZombieLevel; hits: number; shot: Shot | null; cheery: boolean }) {
     const { survivors: total, barricades: bars } = DEFENCE[level];
     const d = defenceAfter(level, hits);
     const fear = fearOf(level, hits);
@@ -212,7 +212,7 @@ function Camp({ level, hits, reducedMotion, shot, cheery }: { level: ZombieLevel
                         <span key={k} className={`zb-sv${caught ? ' is-caught' : ''}${shooting ? ' is-shooting' : ''}`} style={{ '--k': k } as CSSProperties}
                             data-k={k} data-survivor={caught ? 'caught' : 'safe'}>
                             <span className="zb-sv-body"><SurvivorArt i={k} pose={caught ? 'zombie' : 'stand'} fear={fear} hug={hugOf(k)} shooting={shooting} /></span>
-                            {shooting && !reducedMotion && <span key={shot.n} className="zb-pfft" aria-hidden>pfft</span>}
+                            {shooting && <span key={shot.n} className="zb-pfft" aria-hidden>pfft</span>}
                         </span>
                     );
                 })}
@@ -231,7 +231,7 @@ function Camp({ level, hits, reducedMotion, shot, cheery }: { level: ZombieLevel
                                         <rect className="zb-wood" x="16" y="3" width="24" height="6" rx="2" transform="rotate(9 28 6)" />
                                     </svg>
                                 )}
-                                {broken && !reducedMotion && (
+                                {broken && (
                                     <span className="zb-splinters">{[0, 1, 2, 3].map(s => <span key={s} className="zb-splinter" style={{ '--s': s } as CSSProperties} />)}</span>
                                 )}
                             </span>
@@ -270,7 +270,7 @@ function Star({ i }: { i: number }) {
     );
 }
 
-export default function Zombies({ question, phase, feedback, onAnswer, onMiss, onFail, sound, progress, options, events, reducedMotion }: SkinProps) {
+export default function Zombies({ question, phase, feedback, onAnswer, onMiss, onFail, sound, progress, options, events }: SkinProps) {
     const level = zombieLevelOf(options);
     const [line, setLine] = useState<Zombie[]>(START);
     // A new question: the zombie that flopped or bumped leaves, a newcomer joins at the back.
@@ -294,8 +294,8 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const gaits = useRef(new Map<number, Gait>());
     const rigs = useRef(new Map<number, Rig>());
     const size = useRef<Size>({ track: 0, left: 0, street: 0, zombie: 0 });
-    const live = useRef({ phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line, reducedMotion });
-    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line, reducedMotion }; });
+    const live = useRef({ phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line });
+    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onFail, sound, misses: progress.misses, level, line }; });
 
     const [shot, setShot] = useState<Shot | null>(null);
     const shots = useRef(0);
@@ -385,8 +385,8 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             const g = gaits.current.get(front.id);
             if (!w || !g) return;
             const x = stepCloser(w.x);
-            // The game spot moves at once; the drawn zombie lunges after it (at once under reduced motion).
-            if (!live.current.reducedMotion) g.lag += w.x - x;
+            // The game spot moves at once; the drawn zombie lunges after it.
+            g.lag += w.x - x;
             w.x = x;
             place(rigs.current.get(front.id), w.x, w.x + g.lag);
         });
@@ -434,12 +434,9 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                     lunged = g.lag < 0.05 ? g.lag : g.lag * (1 - Math.exp(-dt * 9));
                     g.lag -= lunged;
                 }
-                if (st.reducedMotion) g.amp = 0;
-                else {
-                    const stepping = z.mood === 'walk';
-                    g.p += shambleRate(stepping ? w.v : 0, track, zombie) * dt + strideOf(lunged, track, zombie);
-                    g.amp += ((stepping ? 1 : 0) - g.amp) * Math.min(1, dt / SHAMBLE.settle);
-                }
+                const stepping = z.mood === 'walk';
+                g.p += shambleRate(stepping ? w.v : 0, track, zombie) * dt + strideOf(lunged, track, zombie);
+                g.amp += ((stepping ? 1 : 0) - g.amp) * Math.min(1, dt / SHAMBLE.settle);
                 const rig = rigs.current.get(z.id);
                 place(rig, w.x, w.x + g.lag);
                 pose(rig, g, size.current, w.x + g.lag);
@@ -455,11 +452,11 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div data-niveau={level} className={`zb-root is-${level === 'moeilijk' ? 'moeilijk' : 'normaal'}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--zb-hit': `${reducedMotion ? 0 : DART_MS}ms` } as CSSProperties}>
+        <div data-niveau={level} className={`zb-root is-${level === 'moeilijk' ? 'moeilijk' : 'normaal'}${phase === 'help' ? ' is-paused' : ''}`} style={{ '--zb-hit': `${DART_MS}ms` } as CSSProperties}>
             <div className="zb-street" ref={street}>
                 <Graveyard />
                 <div className="zb-ground" aria-hidden />
-                <Camp level={level} hits={progress.misses} reducedMotion={reducedMotion} shot={shot} cheery={phase === 'right' && progress.streak >= 3} />
+                <Camp level={level} hits={progress.misses} shot={shot} cheery={phase === 'right' && progress.streak >= 3} />
                 <div className="zb-track">
                     {[...line, ...fallen].map((z, i) => {
                         const down = i >= line.length;
@@ -478,11 +475,11 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                                             <span className="zb-pole" aria-hidden />
                                         </div>
                                         <ZombieArt />
-                                        {(z.mood === 'boing' || z.mood === 'flop') && !reducedMotion && (
+                                        {(z.mood === 'boing' || z.mood === 'flop') && (
                                             <span className="zb-dizzy" aria-hidden>{[0, 1, 2].map(s => <Star key={s} i={s} />)}</span>
                                         )}
                                     </div>
-                                    {z.mood === 'flop' && !reducedMotion && (
+                                    {z.mood === 'flop' && (
                                         <span className="zb-smoke" aria-hidden>
                                             {Array.from({ length: PUFFS }, (_, p) => <span key={p} className="zb-puff" style={{ '--a': `${(360 / PUFFS) * p}deg` } as CSSProperties} />)}
                                         </span>
@@ -492,7 +489,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
                         );
                     })}
                 </div>
-                {shot && !reducedMotion && <Dart key={shot.n} shot={shot} />}
+                {shot && <Dart key={shot.n} shot={shot} />}
                 <FrontFog />
             </div>
             <div className="zb-controls">
@@ -503,12 +500,12 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
 }
 
 // The end screen: the survivors left cheer (they made it to the end); the caught ones dance as silly zombies.
-export function ZombiesEnding({ outcome, progress, options, reducedMotion }: SkinEndingProps) {
+export function ZombiesEnding({ outcome, progress, options }: SkinEndingProps) {
     const level = zombieLevelOf(options);
     const total = DEFENCE[level].survivors;
     const caught = outcome === 'failed' ? total : defenceAfter(level, progress.misses).caught;
     return (
-        <div className={`spel-ending zb-ending${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending zb-ending`}>
             <Graveyard small />
             <div className="zb-ground" aria-hidden />
             <div className="zb-party">

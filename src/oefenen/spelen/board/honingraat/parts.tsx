@@ -43,11 +43,11 @@ export function Top({ board, view }: { board: SpelBoard; view: HiveView }) {
 }
 
 /** The player's bee, perched on its last find (or beside the board), facing the way it flew. */
-export function BoardBee({ x, y, face, mood, landed, hidden, still, children }: {
-    x: number; y: number; face: 1 | -1; mood: BeeMood; landed: boolean; hidden?: boolean; still: boolean; children?: ReactNode;
+export function BoardBee({ x, y, face, mood, landed, hidden, children }: {
+    x: number; y: number; face: 1 | -1; mood: BeeMood; landed: boolean; hidden?: boolean; children?: ReactNode;
 }) {
     return (
-        <span className={`hx-bee${landed ? ' is-landed' : ''}${hidden ? ' is-gone' : ''}${still ? ' is-still' : ''}`} style={{ '--bx': x, '--by': y, '--face': face } as CSSProperties} aria-hidden>
+        <span className={`hx-bee${landed ? ' is-landed' : ''}${hidden ? ' is-gone' : ''}`} style={{ '--bx': x, '--by': y, '--face': face } as CSSProperties} aria-hidden>
             <span className="hx-bee-turn"><Bee mood={mood} /></span>
             {children}
         </span>

@@ -1,5 +1,5 @@
 /* Zeehondjes voeren skin. An icy sea: flat fills under a thick dark outline (spelen.css tokens), CSS only,
-   transforms and opacity only (light on old laptops); nothing bobs, drifts, flies or claps under reduced motion. */
+   transforms and opacity only (light on old laptops). */
 .zh-root {
   /* One seal's width; with its sign it stands about 1.6 × as tall. Big targets for the youngest. Moeilijk
      makes them a little smaller (--zh-k) so the floes have room to drift. */
@@ -336,8 +336,6 @@
 .zh-spot.has-eaten .zh-eyes-open { opacity: 0; }
 .zh-spot.has-eaten .zh-eyes-happy { opacity: 1; }
 .zh-spot.is-fed .zh-board { box-shadow: 0 0 0 5px var(--kiosk-ok); }
-/* Reduced motion: the fish is simply at the seal's mouth. */
-.zh-fed-fish { position: absolute; left: 50%; top: 50%; width: calc(var(--zh-w) * .38); transform: translate(-30%, -40%) rotate(-14deg); }
 
 /* Wrong: "hmpf, not for me": the seal shuts its eyes, folds its flippers and turns its head away; no red. */
 .zh-spot.is-nope .zh-head { animation: zh-nope 900ms ease-in-out both; }
@@ -485,34 +483,3 @@
   .zh-top { padding-top: var(--sp-1); }
 }
 
-/* Reduced motion: no loops, no flights, instant states. */
-@media (prefers-reduced-motion: reduce) {
-  .zh-bob, .zh-seal, .zh-board, .zh-head, .zh-mouth-open, .zh-flip, .zh-waves, .zh-far-floe, .zh-sign-answer, .zh-spot.is-fed .zh-art,
-  .zh-spot.is-answer .zh-board-wrap, .zh-spot.has-eaten .zh-grow, .zh-ending-seal { animation: none; }
-}
-.zh-root.is-still .zh-bob,
-.zh-root.is-still .zh-seal,
-.zh-root.is-still .zh-board,
-.zh-root.is-still .zh-head,
-.zh-root.is-still .zh-mouth-open,
-.zh-root.is-still .zh-flip,
-.zh-root.is-still .zh-face,
-.zh-root.is-still .zh-waves,
-.zh-root.is-still .zh-far-floe,
-.zh-root.is-still .zh-sign-answer,
-.zh-root.is-still .zh-spot.is-fed .zh-art,
-.zh-root.is-still .zh-spot.is-answer .zh-board-wrap,
-.zh-root.is-still .zh-grow,
-.zh-ending.is-still .zh-ending-seal,
-.zh-ending.is-still .zh-flip { animation: none; }
-/* Still, the wrong seal has looked away with folded flippers. */
-.zh-root.is-still .zh-spot.is-nope .zh-face { transform: translateX(-24%); }
-.zh-root.is-still .zh-spot.is-nope .zh-head { transform: rotate(-16deg); }
-.zh-root.is-still .zh-spot.is-nope .zh-flip-l { transform: rotate(-70deg) translate(6%, -4%); }
-.zh-root.is-still .zh-spot.is-nope .zh-flip-r { transform: rotate(70deg) translate(-6%, -4%); }
-@media (prefers-reduced-motion: reduce) {
-  .zh-spot.is-nope .zh-face { animation: none; transform: translateX(-24%); }
-  .zh-spot.is-nope .zh-head { animation: none; transform: rotate(-16deg); }
-  .zh-spot.is-nope .zh-flip-l { animation: none; transform: rotate(-70deg) translate(6%, -4%); }
-  .zh-spot.is-nope .zh-flip-r { animation: none; transform: rotate(70deg) translate(-6%, -4%); }
-}

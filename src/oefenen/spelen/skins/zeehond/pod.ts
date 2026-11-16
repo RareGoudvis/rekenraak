@@ -87,8 +87,6 @@ export interface Offset { dx: number; dy: number }
 
 // Fair for six-year-olds on an iPad: never faster than this (px per second), however far a floe wanders.
 export const DRIFT_MAX_SPEED = 24;
-// Reduced motion: each question shows the seals at the moment this many seconds further (new spots, no movement).
-export const DRIFT_STILL_STEP = 9.7;
 const W1 = (2 * Math.PI) / 23;
 const W2 = (2 * Math.PI) / 37;
 const WY = (2 * Math.PI) / 17;

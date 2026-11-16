@@ -94,14 +94,14 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 const start = () => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('pakjesband')!.meta }));
 const wait = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
-function Wired({ still = false }: { still?: boolean }) {
+function Wired() {
     const st = useSpelStore();
     if (!st.question || !st.meta) return null;
     const progress = progressOf(st);
     return (
         <Pakjesband question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} reducedMotion={still} />
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} />
     );
 }
 const options = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).queryAllByRole('button', { hidden: true }) as HTMLButtonElement[];
@@ -194,23 +194,16 @@ describe('the skin on the session', () => {
         expect(sp().phase).toBe('play');
     });
 
-    test('reduced motion: no flight, the stamp shows on the present in place', () => {
-        start();
-        const { container } = render(<Wired still />);
-        tapRight();
-        expect(container.querySelector('.pk-flyer')).toBeNull();
-        expect(container.querySelector('.pk-slot.is-down .pk-stamp')).not.toBeNull();
-    });
 });
 
 describe('the end picture', () => {
     test('sputtered: dizzy eyes and toys on the floor; a full round: a happy machine and a full crate', () => {
         const progress = progressOf(sp());
-        const { container, unmount } = render(<FabriekEnding outcome="failed" progress={progress} options={{}} reducedMotion={false} />);
+        const { container, unmount } = render(<FabriekEnding outcome="failed" progress={progress} options={{}} />);
         expect(container.querySelector('.pk-ending.is-failed .pk-spiral')).not.toBeNull();
         expect(container.querySelectorAll('.pk-toy').length).toBeGreaterThan(4);
         unmount();
-        const done = render(<FabriekEnding outcome="won" progress={progress} options={{}} reducedMotion />);
+        const done = render(<FabriekEnding outcome="won" progress={progress} options={{}} />);
         expect(done.container.querySelector('.pk-ending.is-done .pk-happy-eye')).not.toBeNull();
         expect(done.container.querySelectorAll('.pk-pile').length).toBe(8);
     });

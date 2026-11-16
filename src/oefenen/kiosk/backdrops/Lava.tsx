@@ -69,16 +69,16 @@ const Dino = () => (
     </>
 );
 
-const RISING: { delay: number; rest: string; s: number }[] = [
-    { delay: 0, rest: 'translate(-6px, -4px) scale(0.7)', s: 0.8 },
-    { delay: -2, rest: 'translate(6px, -32px) scale(1)', s: 1 },
-    { delay: -4, rest: 'translate(-2px, -62px) scale(1.3)', s: 1.1 },
+const RISING: { delay: number; s: number }[] = [
+    { delay: 0, s: 0.8 },
+    { delay: -2, s: 1 },
+    { delay: -4, s: 1.1 },
 ];
 
 const Volcano = () => (
     <>
         {RISING.map(p => (
-            <g key={p.delay} className="ks-rise" style={{ '--rest': p.rest, '--delay': `${p.delay}s`, transformOrigin: '122px 76px' } as CSSProperties}>
+            <g key={p.delay} className="ks-rise" style={{ '--delay': `${p.delay}s`, transformOrigin: '122px 76px' } as CSSProperties}>
                 <Puff x={122} y={74} s={p.s} />
             </g>
         ))}
@@ -140,9 +140,9 @@ export default function Lava() {
             </Far>
             <Ground back />
             <Ground />
-            <Cloud top="10%" w="clamp(90px, 10vw, 180px)" dur={120} delay={-50} at="10vw" />
-            <Cloud top="38%" w="clamp(70px, 7vw, 130px)" dur={150} delay={-100} at="86vw" />
-            <Trav vb="0 0 92 40" w="clamp(60px, 6vw, 120px)" top="18%" dur={30} delay={-12} at="4vw"><Ptero /></Trav>
+            <Cloud top="10%" w="clamp(90px, 10vw, 180px)" dur={120} delay={-50} />
+            <Cloud top="38%" w="clamp(70px, 7vw, 130px)" dur={150} delay={-100} />
+            <Trav vb="0 0 92 40" w="clamp(60px, 6vw, 120px)" top="18%" dur={30} delay={-12}><Ptero /></Trav>
             <Air side="r"><circle className="ks-sun" cx="110" cy="38" r="26" /><path className="ks-gloss" d="M94 30 Q98 20 108 18" /></Air>
             <Corner side="l">
                 <g className="ks-sway"><Frond x={24} y={238} a={-100} len={100} /><Frond x={30} y={238} a={-60} len={110} /></g>

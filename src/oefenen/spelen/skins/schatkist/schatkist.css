@@ -1,5 +1,5 @@
-/* Schatkist. Flat fills under a thick dark outline (spelen.css tokens). Transforms and opacity only; nothing moves
-   under reduced motion and everything holds still under "Hoe los ik dit op?". */
+/* Schatkist. Flat fills under a thick dark outline (spelen.css tokens). Transforms and opacity only; everything
+   holds still under "Hoe los ik dit op?". */
 .sk-root,
 .sk-ending {
   --sk-sea: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper));
@@ -127,7 +127,7 @@
 @keyframes sk-drop { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 1; } 50% { translate: calc(var(--dx) * .7) -16px; } 100% { translate: var(--dx) 4px; opacity: 0; } }
 /* It scuttles sideways: a quick bob, legs and claws clicking. */
 /* The dive has its own body motion (sk-sink). */
-.sk-crab:not(.is-still):not(.is-dive) .sk-crab-body { animation: sk-scuttle 220ms ease-in-out infinite alternate; }
+.sk-crab:not(.is-dive) .sk-crab-body { animation: sk-scuttle 220ms ease-in-out infinite alternate; }
 @keyframes sk-scuttle { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -3px; rotate: 4deg; } }
 .sk-crab-claw { transform-box: fill-box; transform-origin: 50% 100%; animation: sk-snip 300ms ease-in-out infinite alternate; }
 @keyframes sk-snip { from { rotate: -8deg; } to { rotate: 10deg; } }
@@ -246,8 +246,4 @@
 }
 
 .sk-root.is-paused * { animation-play-state: paused; }
-.sk-root.is-still *,
-.sk-ending.is-still * { animation: none; transition: none; }
-@media (prefers-reduced-motion: reduce) {
-  .sk-root *, .sk-ending * { animation: none; transition: none; }
-}
+

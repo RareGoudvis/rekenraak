@@ -18,7 +18,7 @@ const answerCell = (q: SpelMistake['question'], v: string) => {
 
 // After a round: the numbers, the mistakes, and Nakijken (the mistakes again, Oefenen-style) as the big button.
 // A lost or failed round reads friendly: never red, never "verloren".
-export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boolean }) {
+export default function SpelEnd() {
     const st = useSpelStore();
     const { meta, sessie, history, score, bestStreak, helped, mistakes, climb, result, outcome, nakijken, restart, otherGame } = st;
     const [wiped, setWiped] = useState(false);
@@ -35,7 +35,7 @@ export default function SpelEnd({ reducedMotion = false }: { reducedMotion?: boo
         <main className="oefen-center spel-end">
             {Ending && outcome && (
                 <Suspense fallback={null}>
-                    <Ending outcome={outcome} progress={progressOf(st)} options={meta?.chosen ?? {}} reducedMotion={reducedMotion} />
+                    <Ending outcome={outcome} progress={progressOf(st)} options={meta?.chosen ?? {}} />
                 </Suspense>
             )}
             <h1 className="oefen-title">{title}</h1>

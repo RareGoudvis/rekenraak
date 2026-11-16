@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 
 // The scene behind the zombies: a friendly night graveyard (sky, a big moon, stars, far hills, a dead tree,
 // an iron fence, rounded tombstones, drifting fog and now and then a bat). Decoration only: no text, no numbers.
-// CSS draws every colour and movement (zombies.css); reduced motion stills it all.
+// CSS draws every colour and movement (zombies.css).
 
 const STARS: readonly [number, number, number][] = [
     [8, 10, 1], [19, 26, 0.7], [31, 8, 0.9], [44, 20, 0.6], [56, 6, 1], [63, 30, 0.7], [72, 14, 0.8], [91, 34, 0.6], [38, 36, 0.5],

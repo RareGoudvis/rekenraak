@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react';
 import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
-import type { SkinEndingProps, SkinProps } from '../types';
+import type { SkinProps } from '../types';
 import type { PrentEntry } from './prenten';
 import { PRENT_H, PRENT_W } from './prenten/palette';
 import { GRID, TILES, flippedFor, lastPrent, pickPrent, rememberPrent, tileOrder } from './pick';
@@ -71,7 +71,7 @@ function usePicture(id: string | null) {
     return { photo: view ? photo : null, view, drawn };
 }
 
-export default function Prent({ question, phase, feedback, onAnswer, progress, reducedMotion }: SkinProps) {
+export default function Prent({ question, phase, feedback, onAnswer, progress }: SkinProps) {
     // Picked once per round (a remount = a new round); pure, so a double render picks the same way.
     const [id] = useState(() => devPrent() ?? pickPrent(poolIds(), lastPrent()));
     const [order] = useState(() => tileOrder());
@@ -85,7 +85,7 @@ export default function Prent({ question, phase, feedback, onAnswer, progress, r
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div className={`pr-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${done ? ' is-done' : ''}`}>
+        <div className={`pr-root${phase === 'help' ? ' is-paused' : ''}${done ? ' is-done' : ''}`}>
             <div className="pr-world">
                 <div className={`pr-stage${photo ? ' has-credit' : ''}`}>
                     <PrentPicture prent={drawn} photo={view} gone={gone} />
@@ -102,10 +102,10 @@ export default function Prent({ question, phase, feedback, onAnswer, progress, r
 }
 
 /** The end screen: the whole picture, whatever the score, with the photographer's credit. */
-export function PrentEnding({ reducedMotion }: SkinEndingProps) {
+export function PrentEnding() {
     const { photo, view, drawn } = usePicture(current ?? lastPrent());
     return (
-        <div className={`spel-ending pr-ending${photo ? ' is-photo' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending pr-ending${photo ? ' is-photo' : ''}`}>
             <div className={`pr-stage${photo ? ' has-credit' : ''}`}>
                 <PrentPicture prent={drawn} photo={view} gone="all" label={`De prent: ${photo ? photo.alt : drawn.label}`} />
                 {photo && <p className="pr-credit">{photoCredit(photo)}</p>}

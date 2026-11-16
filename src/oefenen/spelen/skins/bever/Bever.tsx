@@ -160,7 +160,7 @@ const CLOUDS = [
     { y: 28, w: 13, d: 95, at: -45 },
 ];
 
-export default function Bever({ question, phase, feedback, onAnswer, onFail, progress, options, reducedMotion }: SkinProps) {
+export default function Bever({ question, phase, feedback, onAnswer, onFail, progress, options }: SkinProps) {
     const level = levelOf(options);
     const elapsed = progress.msTotal !== null && progress.msLeft !== null ? progress.msTotal - progress.msLeft : 0;
     const water = waterLevel(level, elapsed, progress.mistakes);
@@ -203,7 +203,7 @@ export default function Bever({ question, phase, feedback, onAnswer, onFail, pro
     // Zoomed far out the family is drawn a bit bigger than the camera, and moves out to keep its gap.
     const k = s < FAMILY_MIN ? FAMILY_MIN / s : 1;
     const lodgeX = footR(dam) + LODGE_GAP * k;
-    const cls = ['bv-root', `is-${mood}`, phase === 'help' && 'is-paused', reducedMotion && 'is-still', close && 'is-close', phase === 'wrong' && 'is-wrong', cheering && 'is-cheer']
+    const cls = ['bv-root', `is-${mood}`, phase === 'help' && 'is-paused', close && 'is-close', phase === 'wrong' && 'is-wrong', cheering && 'is-cheer']
         .filter(Boolean).join(' ');
     return (
         <div className={cls} style={{ '--bv-day': dayOf(progress.msLeft, progress.msTotal) } as CSSProperties}>
@@ -217,23 +217,21 @@ export default function Bever({ question, phase, feedback, onAnswer, onFail, pro
                     ))}
                 </div>
                 <svg className="bv-svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax meet" aria-hidden>
-                    {!reducedMotion && <g className="bv-birds">{[0, 1].map(i => (
+                    <g className="bv-birds">{[0, 1].map(i => (
                         <g key={i} className="bv-bird-path" style={{ '--k': i } as CSSProperties}>
                             <g transform={`translate(${-18 * i} ${10 * i}) scale(${1 - 0.25 * i})`}><Bird /></g>
                         </g>
-                    ))}</g>}
+                    ))}</g>
                     <g className="bv-cam" style={{ transform: `scale(${s})` }}>
-                        <Stream water={water} dam={dam} wave={reducedMotion ? 0 : wave} behind={<g transform={`translate(8 ${GROUND})`}><Reeds n={5} h={92} /></g>}>
+                        <Stream water={water} dam={dam} wave={wave} behind={<g transform={`translate(8 ${GROUND})`}><Reeds n={5} h={92} /></g>}>
                             <Dam layers={dam} fresh={seen.n > 0 ? dam - 1 : -1} />
                             {close && <Spill layers={dam} />}
                             <g transform={`translate(${lodgeX} ${GROUND}) scale(${k})`}><Family mood={mood} /></g>
                             <g transform={`translate(${BANK_X - 16} ${GROUND})`}><Reeds n={3} h={62} /></g>
                         </Stream>
-                        {!reducedMotion && (
-                            <g className="bv-water" style={{ transform: `translateY(${GROUND - water * STICK}px)` }}>
-                                <g className="bv-dfly-path"><Dragonfly /></g>
-                            </g>
-                        )}
+                        <g className="bv-water" style={{ transform: `translateY(${GROUND - water * STICK}px)` }}>
+                            <g className="bv-dfly-path"><Dragonfly /></g>
+                        </g>
                     </g>
                     <g className="bv-beaver" style={{ transform: `translate(${bx}px, ${by}px) scale(${Math.max(0.55, s)})` }}>
                         <g className="bv-flinch">
@@ -287,14 +285,14 @@ function Stump({ i, side }: { i: number; side: -1 | 1 }) {
 
 // The end screen: held = the family's party on the dam; broken = the babies float off on a log, waving, and
 // their dad paddles after them.
-export function BeverEnding({ outcome, reducedMotion }: SkinEndingProps) {
+export function BeverEnding({ outcome }: SkinEndingProps) {
     const held = outcome !== 'failed';
     const top = GROUND - PARTY_LAYERS * STICK;
     const lodgeX = footR(PARTY_LAYERS) + LODGE_GAP;
     // Whatever floats in the flood ends at the stream bed.
     const clip = useId();
     return (
-        <div className={`spel-ending bv-ending${held ? ' is-party' : ' is-broken'}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending bv-ending${held ? ' is-party' : ' is-broken'}`}>
             <svg viewBox={held ? ENDING_VIEW : BURST_VIEW} preserveAspectRatio="xMidYMax meet" aria-hidden>
                 <circle className="bv-sun-art" cx={held ? 350 : 246} cy={held ? 96 : 170} r={held ? 18 : 12} />
                 {held ? (

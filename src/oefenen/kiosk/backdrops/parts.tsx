@@ -45,18 +45,18 @@ export function Sticker({ children }: { children: ReactNode }) {
     return <g><g className="ks-under">{children}</g><g className="ks-over">{children}</g></g>;
 }
 
-/** Something crossing the whole width (a cloud, a bird, a tumbleweed); `at` is where it rests when motion is reduced. */
-export function Trav({ vb, w, top, bottom, dur, delay = 0, at, rev, children }: {
-    vb: string; w: string; top?: string; bottom?: string; dur: number; delay?: number; at: string; rev?: boolean; children: ReactNode;
+/** Something crossing the whole width (a cloud, a bird, a tumbleweed). */
+export function Trav({ vb, w, top, bottom, dur, delay = 0, rev, children }: {
+    vb: string; w: string; top?: string; bottom?: string; dur: number; delay?: number; rev?: boolean; children: ReactNode;
 }) {
-    const style = { width: w, top, bottom, '--dur': `${dur}s`, '--delay': `${delay}s`, '--at': at } as CSSProperties;
+    const style = { width: w, top, bottom, '--dur': `${dur}s`, '--delay': `${delay}s` } as CSSProperties;
     return <svg className={`ks-trav${rev ? ' is-rev' : ''}`} viewBox={vb} style={style}>{children}</svg>;
 }
 
 /** A soft cloud drifting across the sky. */
-export function Cloud({ top, w, dur, delay, at }: { top: string; w: string; dur: number; delay: number; at: string }) {
+export function Cloud({ top, w, dur, delay }: { top: string; w: string; dur: number; delay: number }) {
     return (
-        <Trav vb="0 0 120 50" w={w} top={top} dur={dur} delay={delay} at={at}>
+        <Trav vb="0 0 120 50" w={w} top={top} dur={dur} delay={delay}>
             <Sticker>
                 <ellipse className="ks-cloud" cx="60" cy="36" rx="50" ry="12" />
                 <circle className="ks-cloud" cx="40" cy="28" r="15" />

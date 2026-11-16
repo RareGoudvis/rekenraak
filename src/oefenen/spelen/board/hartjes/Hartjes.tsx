@@ -12,7 +12,7 @@ import './hartjes.css';
 // tap two to turn them. A sum with its own answer stays open with a sparkle (a "Goal!"), any other two turn
 // back after a moment. A sum logged as a mistake breaks its heart (a flat ball) for the rest of the board;
 // pairing it later sticks a plaster on. The session checks every pick and keeps the mistakes
-// (board/session.ts); this only turns cards. 3D flips in CSS; under reduced motion a card simply shows its other side.
+// (board/session.ts); this only turns cards. 3D flips in CSS.
 
 // Long enough to read both cards, short enough to keep the game going.
 const FLIP_BACK_MS = 1200;
@@ -53,9 +53,9 @@ function Sparkle() {
     );
 }
 
-interface CardProps { id: number; board: SpelBoard; ball: boolean; up: boolean; nope: boolean; onTap(): void; disabled: boolean; flourish: boolean; puff: boolean; reducedMotion: boolean }
+interface CardProps { id: number; board: SpelBoard; ball: boolean; up: boolean; nope: boolean; onTap(): void; disabled: boolean; flourish: boolean; puff: boolean }
 
-function Card({ id, board, ball, up, nope, onTap, disabled, flourish, puff, reducedMotion }: CardProps) {
+function Card({ id, board, ball, up, nope, onTap, disabled, flourish, puff }: CardProps) {
     const cell = board.cells[cellOf(id)];
     const q = cell.question;
     const solved = cell.state === 'solved';
@@ -76,14 +76,14 @@ function Card({ id, board, ball, up, nope, onTap, disabled, flourish, puff, redu
                     <Face face={face} />
                 </span>
             </span>
-            {flourish && !ball && !reducedMotion && <Sparkle />}
-            {flourish && ball && <Burst kind="pieces" x="50%" y="45%" spread={70} count={12} seed={id + 1} reducedMotion={reducedMotion} />}
-            {puff && <Burst kind="smoke" x="50%" y="30%" spread={40} count={6} seed={id + 3} reducedMotion={reducedMotion} />}
+            {flourish && !ball && <Sparkle />}
+            {flourish && ball && <Burst kind="pieces" x="50%" y="45%" spread={70} count={12} seed={id + 1} />}
+            {puff && <Burst kind="smoke" x="50%" y="30%" spread={40} count={6} seed={id + 3} />}
         </button>
     );
 }
 
-function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion, ball }: Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound' | 'reducedMotion'> & { board: SpelBoard; ball: boolean }) {
+function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, ball }: Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound'> & { board: SpelBoard; ball: boolean }) {
     const order = useMemo(() => shuffled(board.cells.length * 2, board.key), [board.key, board.cells.length]);
     // The cards turned up and not yet paired (at most two).
     const [up, setUp] = useState<number[]>([]);
@@ -172,7 +172,7 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, reducedM
                 {order.map((id, k) => (
                     <div key={id} className="hj-slot" style={{ '--k': k } as CSSProperties}>
                         <Card id={id} board={board} ball={ball} up={up.includes(id)} nope={nope && up.includes(id)} onTap={() => tap(id)} disabled={phase !== 'play'}
-                            flourish={flourish === cellOf(id)} puff={puff === cellOf(id) && isSum(id) && ball} reducedMotion={reducedMotion} />
+                            flourish={flourish === cellOf(id)} puff={puff === cellOf(id) && isSum(id) && ball} />
                     </div>
                 ))}
                 {ball && flourish !== null && <p className="hj-goal" aria-hidden>Goal!</p>}
@@ -192,12 +192,12 @@ function Pitch() {
     );
 }
 
-export default function Hartjes({ board, phase, onBoardPick, onBoardFocus, sound, reducedMotion, options }: SkinProps) {
+export default function Hartjes({ board, phase, onBoardPick, onBoardFocus, sound, options }: SkinProps) {
     const ball = lookOf(options) === 'voetballen';
     return (
-        <div className={`hj-root${ball ? ' is-ball' : ''}${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`hj-root${ball ? ' is-ball' : ''}${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}`}>
             {ball ? <Pitch /> : <svg className="hj-deco" viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>}
-            {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} reducedMotion={reducedMotion} ball={ball} />}
+            {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} ball={ball} />}
         </div>
     );
 }

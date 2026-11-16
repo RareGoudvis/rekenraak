@@ -1,6 +1,6 @@
 /* Honingraat skin (Lente). Sticker look: flat fills under a thick dark outline (spelen.css tokens). The cells
    sit in cell widths (--x, --y) on the comb's grid, in a comb hanging from a branch or a flower bed in the
-   meadow. Movement is CSS; prefers-reduced-motion and .is-still: no loops, no scroll, instant states. */
+   meadow. Movement is CSS. */
 .hx-root, .hx-ending {
   /* One cell's width; a pointy-top hexagon is 1.155 × as tall. The comb, its wax rim and the branch fit 1024 × 768. */
   --hx-w: clamp(64px, min(15vw, 17.5vh), 180px);
@@ -601,12 +601,3 @@
   .hx-view { gap: var(--sp-1); padding-top: var(--sp-2); }
   .hx-sun { display: none; }
 }
-
-/* Reduced motion: nothing loops, nothing scrolls, the states are simply there. */
-@media (prefers-reduced-motion: reduce) {
-  .hx-root *:not(.spel-cloud-track), .hx-ending * { animation: none !important; transition: none !important; }
-}
-/* The nectar drop never shows. */
-.hx-root.is-still .hx-nectar { display: none; }
-@media (prefers-reduced-motion: reduce) { .hx-nectar { display: none; } }
-.hx-root.is-still *:not(.spel-cloud-track), .hx-ending.is-still * { animation: none !important; transition: none !important; }

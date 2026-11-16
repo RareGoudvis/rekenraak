@@ -14,7 +14,7 @@ type Face = 'clock' | 'smile' | 'oh';
 
 const STAR = 'M0 -15 L4 -5 L14 -6 L6 1 L10 12 L0 5 L-10 12 L-6 1 L-14 -6 L-4 -5 Z';
 
-function BombArt({ face, clock = '', fuse = 1, spark = true, flag = false, hit = null, still = false }: { face: Face; clock?: string; fuse?: number; spark?: boolean; flag?: boolean; hit?: number | null; still?: boolean }) {
+function BombArt({ face, clock = '', fuse = 1, spark = true, flag = false, hit = null }: { face: Face; clock?: string; fuse?: number; spark?: boolean; flag?: boolean; hit?: number | null }) {
     const tip = fusePoint(fuse);
     return (
         <g className="bom-art">
@@ -29,7 +29,7 @@ function BombArt({ face, clock = '', fuse = 1, spark = true, flag = false, hit =
                 <g className={`bom-display${hit !== null ? ' is-hit' : ''}`} key={`d${hit}`}>
                     <rect x="88" y="134" width="104" height="52" rx="10" />
                     <text x="140" y="172" textAnchor="middle">{clock}</text>
-                    {hit !== null && !still && <text className="bom-minus" x="196" y="128" textAnchor="middle" aria-hidden>{`−${WRONG_PENALTY_MS / 1000}s`}</text>}
+                    {hit !== null && <text className="bom-minus" x="196" y="128" textAnchor="middle" aria-hidden>{`−${WRONG_PENALTY_MS / 1000}s`}</text>}
                 </g>
             )}
             {face === 'smile' && (
@@ -85,7 +85,7 @@ function Bar({ count, target, freshKey }: { count: number; target: number; fresh
     );
 }
 
-export default function Bom({ question, phase, feedback, onAnswer, progress, reducedMotion }: SkinProps) {
+export default function Bom({ question, phase, feedback, onAnswer, progress }: SkinProps) {
     const target = progress.goal?.target ?? 10;
     const count = Math.min(progress.goal?.count ?? 0, target);
     // A segment just filled pops in (keyed per fill, so the next one restarts).
@@ -98,12 +98,12 @@ export default function Bom({ question, phase, feedback, onAnswer, progress, red
     const flash = phase === 'right' || phase === 'wrong';
     const hurry = isHurry(progress.msLeft);
     return (
-        <div className={`bom-root${hurry ? ' is-hurry' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`bom-root${hurry ? ' is-hurry' : ''}${phase === 'help' ? ' is-paused' : ''}`}>
             <div className="bom-world">
                 <Bar count={count} target={target} freshKey={seen.up ? seen.n : null} />
                 <svg className="bom-svg" viewBox="0 0 300 260" preserveAspectRatio="xMidYMax meet" aria-hidden>
                     <g className={`bom-breathe${phase === 'right' ? ' is-relief' : ''}`}>
-                        <BombArt face="clock" clock={clockText(progress.msLeft)} fuse={fuseLeft(progress.msLeft, progress.msTotal)} hit={hit.n > 0 && phase === 'wrong' ? hit.n : null} still={reducedMotion} />
+                        <BombArt face="clock" clock={clockText(progress.msLeft)} fuse={fuseLeft(progress.msLeft, progress.msTotal)} hit={hit.n > 0 && phase === 'wrong' ? hit.n : null} />
                     </g>
                 </svg>
             </div>
@@ -117,9 +117,9 @@ export default function Bom({ question, phase, feedback, onAnswer, progress, red
 
 const CONFETTI = 16;
 
-function Confetti({ reducedMotion }: { reducedMotion: boolean }) {
+function Confetti() {
     return (
-        <span className={`bom-confetti${reducedMotion ? ' is-still' : ''}`} aria-hidden>
+        <span className="bom-confetti" aria-hidden>
             {Array.from({ length: CONFETTI }, (_, i) => (
                 <span key={i} className="bom-bit" style={{ '--i': i, '--x': `${(i * 37) % 100}%`, '--c': `var(--spel-fill-${1 + (i % 5)})` } as CSSProperties} />
             ))}
@@ -128,10 +128,10 @@ function Confetti({ reducedMotion }: { reducedMotion: boolean }) {
 }
 
 // The end screen: defused = the bomb smiles under a little flag; time up = a big soft PUF! cloud with confetti.
-export function BomEnding({ outcome, reducedMotion }: SkinEndingProps) {
+export function BomEnding({ outcome }: SkinEndingProps) {
     const won = outcome === 'won';
     return (
-        <div className={`spel-ending bom-ending${won ? ' is-won' : ' is-puf'}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending bom-ending${won ? ' is-won' : ' is-puf'}`}>
             <svg viewBox="0 0 300 260" preserveAspectRatio="xMidYMid meet" aria-hidden>
                 {won ? (
                     <g className="bom-hop"><BombArt face="smile" fuse={0.12} spark={false} flag /></g>
@@ -150,7 +150,7 @@ export function BomEnding({ outcome, reducedMotion }: SkinEndingProps) {
                 )}
             </svg>
             {!won && <p className="bom-puf" aria-hidden>PUF!</p>}
-            <Confetti reducedMotion={reducedMotion} />
+            <Confetti />
         </div>
     );
 }

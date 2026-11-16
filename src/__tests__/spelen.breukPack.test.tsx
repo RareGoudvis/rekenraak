@@ -252,7 +252,7 @@ describe('Hartjes koppelen with breuken', () => {
         const s = { ...buildZelfSessie(spelChoiceOf(byLabel(3, 'Breuk in een figuur'), 3, 'pairs'), { kind: 'count', n: 10 }, 0, 3), total: undefined };
         const board = nextBoardOf(s, round, null, [], undefined, mulberry32(3))!;
         const props = {
-            board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound: vi.fn(), reducedMotion: true,
+            board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound: vi.fn(),
         } as unknown as SkinProps;
         const { container } = render(<Suspense fallback={null}><Hartjes {...props} /></Suspense>);
         expect(container.querySelectorAll('.hj-pic .breuk-pic')).toHaveLength(board.cells.length);
@@ -351,7 +351,7 @@ describe('a breuken round and Nakijken', () => {
             question: { key: 'q1', text: q.text, index: 0, visual: q.visual }, choices: q.choices, views: q.views,
             phase: 'play', feedback: null, onAnswer, onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
             progress: { answered: 0, total: 20, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: null },
-            options: {}, events: createSpelEvents(), reducedMotion: true,
+            options: {}, events: createSpelEvents(),
         };
         const { container } = render(<Suspense fallback={null}><Ballonnen {...props} /></Suspense>);
         expect(container.querySelectorAll('.bal-num.is-picture .breuk-pic')).toHaveLength(4);

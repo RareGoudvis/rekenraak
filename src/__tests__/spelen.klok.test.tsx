@@ -126,7 +126,7 @@ describe('the shared picture component', () => {
             question: { key: 'q1', text: q.text, index: 0, visual: q.visual }, choices: q.choices, views: q.views,
             phase: 'play', feedback: null, onAnswer, onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
             progress: { answered: 0, total: 20, score: 0, streak: 0, bestStreak: 0, msLeft: null, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: null },
-            options: {}, events: createSpelEvents(), reducedMotion: true,
+            options: {}, events: createSpelEvents(),
         };
         const { container } = render(<Suspense fallback={null}><Ballonnen {...props} /></Suspense>);
         expect(container.querySelector('.bal-sign.spel-sign-has-pic .spel-digi')!.textContent).toBe('08:15');

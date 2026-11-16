@@ -171,8 +171,8 @@ export interface SkinProps {
     options: SkinChoices;
     // correct / wrong / help / streak / timeUp / end, for effects.
     events: SpelEvents;
-    // prefers-reduced-motion: skip rising, floating and bursts.
-    reducedMotion: boolean;
+    // Deprecated: motion is always on; only kasteel/ still reads this, and goes with its rewrite.
+    reducedMotion?: boolean;
     // Stable per card + game: the key for a skin's own records on this device (Race's best time).
     runKey?: string;
     // The skin's own goal ended the round (Race: the finish line).
@@ -196,7 +196,8 @@ export interface SkinEndingProps {
     outcome: SpelOutcome;
     progress: SkinProgress;
     options: SkinChoices;
-    reducedMotion: boolean;
+    // Deprecated: motion is always on; only kasteel/ still reads this, and goes with its rewrite.
+    reducedMotion?: boolean;
 }
 
 export interface SkinEntry {

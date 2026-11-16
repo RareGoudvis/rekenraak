@@ -364,7 +364,6 @@
 
 /* Right: the present lifts, spins, gets its stamp and flies into the crate (a copy outside the belt, .pk-flyer). */
 .pk-slot.is-down .pk-hop { visibility: hidden; }
-.pk-root.is-still .pk-slot.is-down .pk-hop { visibility: visible; }
 .pk-flyer {
   position: absolute;
   z-index: 3;
@@ -513,32 +512,6 @@
   .pk-root { --pk-belt: .6; --pk-floor: .84; --pk-mw: clamp(70px, calc(var(--pk-w) * 1.2), 150px); }
   .pk-hanging, .pk-cord, .pk-gear.is-small, .pk-robot-art { display: none; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .pk-gear, .pk-hanging, .pk-belt.is-running, .pk-hop, .pk-sign-answer, .pk-robot-lower, .pk-robot-upper, .pk-robot-hand,
-  .pk-root .pk-machine-rattle, .pk-lamp-dome, .pk-needle path, .pk-hopper-rim, .pk-crate,
-  .pk-slot.is-answer .pk-parcel::after, .pk-slot.is-missed .pk-parcel::after { animation: none !important; }
-  .pk-needle { transition: none; }
-  .pk-slot.is-off .pk-hop { animation: pk-fade 300ms linear forwards; }
-  .pk-slot.is-bounce .pk-hop { animation: none; }
-  .pk-pop-toy { animation: none; transform: translate(var(--ex), var(--ey)) rotate(var(--tr)); }
-}
-.pk-root.is-still .pk-gear,
-.pk-root.is-still .pk-hanging,
-.pk-root.is-still .pk-hop,
-.pk-root.is-still .pk-sign-answer,
-.pk-root.is-still .pk-robot-lower,
-.pk-root.is-still .pk-robot-upper,
-.pk-root.is-still .pk-robot-hand,
-.pk-root.is-still .pk-machine-rattle,
-.pk-root.is-still .pk-lamp-dome,
-.pk-root.is-still .pk-needle path,
-.pk-root.is-still .pk-hopper-rim,
-.pk-root.is-still .pk-crate { animation: none; }
-.pk-root.is-still .pk-needle { transition: none; }
-.pk-root.is-still .pk-slot.is-off .pk-hop { animation: pk-fade 300ms linear forwards; }
-.pk-root.is-still .pk-pop-toy { animation: none; transform: translate(var(--ex), var(--ey)) rotate(var(--tr)); }
-.pk-root.is-still.is-sputter .pk-hopper-rim { translate: -30px -70px; rotate: -50deg; }
 @keyframes pk-fade { to { opacity: 0; } }
 
 /* Content packs (SpelChoiceFace): bigger presents so a clock face reads (≥ 96 px); a phrase wraps on two lines. */
@@ -584,9 +557,6 @@
 @keyframes pk-end-steam { from { translate: 0 4px; scale: .92; } to { translate: 6px -6px; scale: 1.06; } }
 .pk-ending.is-failed .pk-end-machine { animation: pk-end-wobble 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
 @keyframes pk-end-wobble { from { rotate: -2deg; } to { rotate: 2deg; } }
-.pk-ending.is-still .pk-end-steam,
-.pk-ending.is-still .pk-end-machine { animation: none; }
-@media (prefers-reduced-motion: reduce) { .pk-end-steam, .pk-end-machine { animation: none; } }
 
 /* The stack of finished presents on the floor, between the machine and the robot. */
 .pk-stack {
