@@ -32,6 +32,12 @@ const sectionTint = (name: string | undefined) => ({ '--tint': name ? SECTION_TI
 // "10 000": thousands apart, never broken over two lines.
 const fmtNumber = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
 
+// A choice tile's label; its longest word goes to the CSS, which shrinks the text until that word fits the tile.
+const longestWord = (text: string) => Math.max(...text.split(/\s+/).map(w => w.length));
+const ChoiceText = ({ text }: { text: string }) => (
+    <span className="zelf-choice-text" style={{ '--zelf-word': longestWord(text) } as React.CSSProperties}>{text}</span>
+);
+
 const TAFEL_OPS: { op: TafelOp; text: string }[] = [{ op: 'x', text: 'Maal ×' }, { op: ':', text: 'Deel :' }, { op: 'beide', text: 'Allebei × en :' }];
 
 const SECTION_OF_TOPIC: Record<string, string> = Object.fromEntries(EENVOUDIG_NAV.flatMap(sec => sec.topics.map(t => [t.id, sec.name])));
@@ -272,7 +278,7 @@ export default function ZelfPicker() {
                                 {stepTitle('Maal of deel?', 'zelf-op-title')}
                                 <div className="zelf-grid zelf-ops" role="group" aria-labelledby="zelf-op-title">
                                     {TAFEL_OPS.map(o => (
-                                        <button key={o.op} type="button" className="zelf-choice" aria-pressed={o.op === op} onClick={() => setTafelOp(o.op)}>{o.text}</button>
+                                        <button key={o.op} type="button" className="zelf-choice" aria-pressed={o.op === op} onClick={() => setTafelOp(o.op)}><ChoiceText text={o.text} /></button>
                                     ))}
                                 </div>
                             </section>
@@ -284,7 +290,7 @@ export default function ZelfPicker() {
                             <div className="zelf-grid">
                                 {choices.map(c => (
                                     <button key={c.key} type="button" className="zelf-choice" aria-pressed={choice?.key === c.key}
-                                        onClick={() => { tapped.current = true; setChoice(c); }}>{c.label}</button>
+                                        onClick={() => { tapped.current = true; setChoice(c); }}><ChoiceText text={c.label} /></button>
                                 ))}
                             </div>
                         </section>
