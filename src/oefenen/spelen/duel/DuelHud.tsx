@@ -25,6 +25,15 @@ export function Hearts({ lives, max, side }: { lives: number; max: number; side:
     );
 }
 
+/** The round's score beside the lives: right answers, or points (points = true); it pops on every change (keyed by value). */
+export function ScoreStar({ value, points = false, className = '' }: { value: number; points?: boolean; className?: string }) {
+    return (
+        <span key={value} className={`duel-score-star ${className}`} role="img" aria-label={points ? `${value} ${value === 1 ? 'punt' : 'punten'}` : `${value} juist`} data-score={value}>
+            <Star weight="fill" aria-hidden />{value}
+        </span>
+    );
+}
+
 /** Moeilijk: the sum's countdown, a ring that empties (CSS, restarted per sum by its key). */
 export function TimerRing({ ms, running }: { ms: number; running: boolean }) {
     return (

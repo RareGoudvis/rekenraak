@@ -3,6 +3,7 @@ import { ShieldWarning } from '@phosphor-icons/react';
 import type { SkinScreenProps } from '../types';
 import DuelScreen from '../../duel/DuelScreen';
 import { teamsOf, type Teams } from '../../duel/teams';
+import { ScoreStar } from '../../duel/DuelHud';
 import { useDuelStore } from '../../duel/duelStore';
 import { useDuelEvent, useDuelMatch } from '../../duel/useDuel';
 import { SIDES, type Side } from '../../duel/types';
@@ -39,7 +40,7 @@ const freshFx = (): Fx => ({
     oops: { left: 0, right: 0 }, pows: [], shake: { n: 0, big: false },
 });
 
-// The fighting-game health bars on top: a segment per life, the special meter, a warning when the guard is down.
+// The fighting-game health bars on top: a segment per life, the round's score, the special meter, a warning when the guard is down.
 function Bars({ teams }: { teams: Teams }) {
     const sides = useDuelStore(s => s.sides);
     const max = useDuelStore(s => s.config.lives);
@@ -54,7 +55,10 @@ function Bars({ teams }: { teams: Teams }) {
                     <div key={side} className={`rd-bar is-${side} ${tone}`}>
                         <Portrait side={side} />
                         <div className="rd-bar-main">
-                            <span className="rd-bar-name">{teams[side].name}</span>
+                            <span className="rd-bar-top">
+                                <span className="rd-bar-name">{teams[side].name}</span>
+                                <ScoreStar value={me.right} className="rd-score" />
+                            </span>
                             <span className="rd-segs" role="img" aria-label={`${me.lives} van ${max} levens`} data-lives={me.lives}>
                                 {Array.from({ length: max }, (_, i) => {
                                     const full = side === 'left' ? i < me.lives : i >= max - me.lives;
@@ -151,7 +155,7 @@ export default function Robotduel({ meta, from, onExit }: SkinScreenProps) {
     const shake = fx.shake.n ? ` rd-shake-${fx.shake.n % 2}${fx.shake.big ? ' is-big' : ''}` : '';
 
     return (
-        <DuelScreen meta={meta} onExit={onExit} className="rd-app" hearts={false} rightNote="Raak!"
+        <DuelScreen meta={meta} onExit={onExit} className="rd-app" hearts={false} score={false} rightNote="Raak!"
             cardArt={winner ? <CardRobot side={winner} /> : undefined}
             scene={<>
                 <div className={`rd-cam${shake}`} style={{ '--rd-shake-x': fx.shake.big ? '14px' : '7px' } as CSSProperties}>

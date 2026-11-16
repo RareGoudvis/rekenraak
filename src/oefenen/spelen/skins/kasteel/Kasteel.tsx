@@ -91,12 +91,12 @@ export default function Kasteel({ meta, from, onExit }: SkinScreenProps) {
     const between = st.phase === 'roundEnd' || st.phase === 'matchEnd';
     const castle = (side: Side): CastleView => ({
         hp: st.sides[side].lives, lives, team: side === 'left' ? 'blue' : 'orange', name: teams[side].name,
-        hit: fx.hit[side], fired: fx.fired[side], big: fx.bigShot[side], won: between && st.roundWinner === side,
+        hit: fx.hit[side], fired: fx.fired[side], big: fx.bigShot[side], won: between && st.roundWinner === side, score: st.sides[side].right,
     });
     const flights: Flight[] = st.flights.map(f => ({ id: f.id, from: f.from, big: !!f.data.big, aim: fx.aims[f.id] ?? WALL_MID, ms: KASTEEL.flightMs }));
 
     return (
-        <DuelScreen meta={meta} onExit={onExit} className="ks-duel" hearts={false}
+        <DuelScreen meta={meta} onExit={onExit} className="ks-duel" hearts={false} score={false}
             scene={<Scene view="0 14 640 446" left={castle('left')} right={castle('right')} flights={flights} debris={fx.debris} bigCall={fx.big} />} />
     );
 }

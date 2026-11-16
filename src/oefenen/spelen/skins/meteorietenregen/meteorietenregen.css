@@ -30,7 +30,7 @@
   /* The halves below sit on the Mars ground, the band behind the scene is its night sky. */
   --spel-grass: var(--mt-ground-deep);
   --spel-sky: var(--mt-sky-top);
-  --duel-scene-h: 42%;
+  --duel-scene-h: 50%;
 }
 .mt-app .duel-half { background: color-mix(in srgb, var(--duel-team) 22%, var(--bg-surface)); }
 .mt-app .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 42%, var(--bg-surface)); }

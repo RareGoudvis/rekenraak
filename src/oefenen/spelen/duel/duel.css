@@ -49,19 +49,24 @@
 .duel-dot.is-won { background: var(--spel-star); animation: duel-pop 500ms var(--ease-spring) both; }
 
 /* ── Stage: the band on top, the halves below ─────────────────────────────── */
+/* The halves never go under their content (min-content: the sum, the note and a keypad of --spel-tap keys), so on a
+   low screen the band gives way instead of the keypad's bottom row being cut off. */
 .duel-stage {
   display: grid;
-  grid-template-rows: minmax(150px, var(--duel-scene-h, 40%)) minmax(0, 1fr);
+  grid-template-rows: minmax(150px, var(--duel-scene-h, 46%)) minmax(min-content, 1fr);
   background: var(--spel-sky);
 }
 /* The scene stays in its band: the halves get nothing drawn over them. */
 .duel-world { position: relative; min-height: 0; overflow: hidden; overflow: clip; }
 
-/* The lives in the band's top corners, as in a fighting game. */
+/* The lives and the score in the band's top corners, as in a fighting game. */
 .duel-corner {
   position: absolute;
   top: var(--sp-2);
   z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   padding: 4px var(--sp-2);
   border: 3px solid var(--spel-ink);
   border-radius: 999px;
@@ -69,7 +74,27 @@
   box-shadow: var(--kid-drop-sm);
 }
 .duel-corner.is-left { left: var(--sp-2); }
-.duel-corner.is-right { right: var(--sp-2); }
+.duel-corner.is-right { right: var(--sp-2); flex-direction: row-reverse; }
+/* The round's score: a star with the count, it pops on every point. */
+.duel-score-star {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-sheet-math);
+  font-size: clamp(18px, 3vmin, 32px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--spel-ink);
+  animation: duel-pop 420ms var(--ease-spring);
+}
+.duel-score-star svg {
+  width: 1.15em;
+  height: 1.15em;
+  color: var(--spel-star);
+  stroke: var(--spel-ink);
+  stroke-width: 12px;
+  paint-order: stroke;
+}
 .duel-hearts { display: inline-flex; gap: 2px; }
 .duel-heart {
   width: clamp(20px, 3.4vmin, 34px);
@@ -131,8 +156,9 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   justify-items: center;
+  --sign-max: clamp(20px, 4.4vmin, 52px);
   gap: var(--sp-1);
   padding: var(--sp-2);
   margin-top: var(--sp-2);
@@ -142,17 +168,20 @@
   transition: background-color 200ms;
 }
 .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 38%, var(--bg-surface)); }
-.duel-head {
-  margin: 0;
-  min-height: 44px;
-  display: flex;
+/* The sum with the Moeilijk ring beside it on the half's outer edge; the row keeps the sign's height while there is
+   no sum yet (the ready banner), so the keypad never jumps. */
+.duel-ask {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--sign-max) * 1.15 + 2 * var(--sp-1) + 2 * var(--spel-line));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--sp-3);
-  font-size: var(--kiosk-text-lg);
-  font-weight: 800;
+  gap: var(--sp-2);
 }
-.duel-points { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-sheet-math); }
-.duel-points svg { color: var(--spel-star); }
+.duel-ask > .spel-sign-box { grid-row: 1; grid-column: 2; }
+.duel-half.is-left .duel-ring { grid-row: 1; grid-column: 1; }
+.duel-half.is-right .duel-ring { grid-row: 1; grid-column: 3; }
 .duel-sign {
   margin: 0;
   padding: var(--sp-1) var(--sp-4);
@@ -161,8 +190,7 @@
   background: var(--kiosk-paper);
   color: var(--kiosk-ink);
   max-width: 100%;
-  /* The most it grows; SpelSignBox fits the line inside the column below this. */
-  --sign-max: clamp(20px, 4.4vmin, 52px);
+  /* The most it grows (--sign-max on .duel-half); SpelSignBox fits the line inside the column below this. */
   font-size: var(--sign-max);
   font-weight: 700;
   line-height: 1.15;
@@ -254,6 +282,8 @@
   font-family: var(--font-sheet-math);
   font-size: var(--kiosk-text-xl);
   font-weight: 700;
+  /* A digit fits in 1em: its line box sets the keypad's least height, the band takes the rest. */
+  line-height: 1;
   cursor: pointer;
   touch-action: none;
   box-shadow: 0 3px 0 var(--spel-ink);
@@ -300,6 +330,11 @@
 .duel-bot-dots i:nth-child(2) { animation-delay: 160ms; }
 .duel-bot-dots i:nth-child(3) { animation-delay: 320ms; }
 @keyframes duel-dot-bob { 0%, 100% { translate: 0 0; opacity: .4; } 40% { translate: 0 -8px; opacity: 1; } }
+
+/* Paused (Draai je toestel): the scene and the rings stand still with the engine's clocks. */
+.duel-app.is-paused .duel-world *,
+.duel-app.is-paused .duel-world,
+.duel-app.is-paused .duel-ring * { animation-play-state: paused !important; }
 
 /* ── Cards: between rounds and the match end ───────────────────────────────── */
 .duel-card-wrap {
@@ -368,6 +403,6 @@
 @media (orientation: portrait), (max-width: 760px) {
   .duel-keypad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
   .duel-sign { padding: var(--sp-1) var(--sp-2); --sign-inset: calc(2 * var(--sp-2) + 2 * var(--spel-line) + 4px); --sign-min: 10px; }
-  .duel-head { gap: var(--sp-1); }
+  .duel-ask { gap: var(--sp-1); }
   .duel-score .duel-name { display: none; }
 }
