@@ -1,0 +1,309 @@
+/* Kikkers en vliegjes: a sunny pond, two frogs on lily pads, bugs in the air. Flat fills under the thick
+   --spel-ink outline (spelen.css tokens). Elements with a transform attribute move by the translate / rotate /
+   scale properties (they stack on the attribute). Only transforms and opacity animate. The screen around it
+   is the shared duel screen (duel.css). */
+.kv-app {
+  --duel-scene-h: 44%;
+  --kv-water: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--accent-metendrekenen)) 52%, var(--kiosk-paper));
+  --kv-water-far: color-mix(in srgb, var(--kv-water) 65%, var(--kiosk-paper));
+  --kv-water-light: color-mix(in srgb, var(--kv-water) 30%, var(--kiosk-paper));
+  --kv-hill: color-mix(in srgb, var(--accent-metendrekenen) 50%, var(--kiosk-paper));
+  --kv-tree: color-mix(in srgb, var(--accent-metendrekenen) 82%, var(--spel-ink));
+  --kv-trunk: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+  --kv-reed: color-mix(in srgb, var(--accent-metendrekenen) 72%, var(--spel-ink));
+  --kv-reed-far: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--kiosk-paper));
+  --kv-cattail: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --kv-pad: color-mix(in srgb, var(--accent-metendrekenen) 80%, var(--spel-ink));
+  --kv-pad-vein: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--kiosk-paper));
+  --kv-frog: color-mix(in srgb, var(--accent-metendrekenen) 82%, var(--mab-e));
+  --kv-belly: color-mix(in srgb, var(--mab-e) 26%, var(--kiosk-paper));
+  --kv-blush: var(--kid-tint-6);
+  --kv-tongue: color-mix(in srgb, var(--kid-tint-ring-6) 72%, var(--kiosk-paper));
+  --kv-mouth: color-mix(in srgb, var(--kid-tint-ring-6) 40%, var(--spel-ink));
+  --kv-gold: var(--mab-e);
+  --kv-gold-deep: var(--kid-tint-ring-1);
+  --kv-fly: color-mix(in srgb, var(--text-muted) 55%, var(--spel-ink));
+  --kv-fly-eye: var(--kid-tint-ring-4);
+  --kv-wing: color-mix(in srgb, var(--kiosk-paper) 72%, transparent);
+  --kv-beetle: var(--accent-meetkunde);
+  --kv-beetle-dark: color-mix(in srgb, var(--accent-meetkunde) 45%, var(--spel-ink));
+  --kv-blue: var(--accent-bewerkingen);
+}
+.kv-sky-top { stop-color: var(--spel-sky); }
+.kv-sky-low { stop-color: color-mix(in srgb, var(--mab-e) 22%, var(--kiosk-paper)); }
+.kv-cloud path { fill: var(--spel-cloud); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-cloud { animation: kv-drift 40s ease-in-out infinite alternate; }
+@keyframes kv-drift { from { translate: -40px 0; } to { translate: 50px 0; } }
+.kv-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.kv-scene * { stroke-linejoin: round; stroke-linecap: round; }
+.kv-goal {
+  position: absolute;
+  top: var(--sp-2);
+  left: 50%;
+  z-index: 3;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 4px var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--kiosk-paper) 90%, transparent);
+  box-shadow: var(--kid-drop-sm);
+  font-weight: 900;
+  font-size: clamp(14px, 2.2vmin, 24px);
+  white-space: nowrap;
+  translate: -50% 0;
+}
+.kv-goal svg { color: var(--spel-star); stroke: var(--spel-ink); stroke-width: 12px; paint-order: stroke; }
+
+/* ── The pond ─────────────────────────────────────────────────────────────── */
+.kv-sun-disc { fill: var(--kv-gold); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-ray { fill: color-mix(in srgb, var(--kv-gold) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-sun-smile { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kv-sun-eye { fill: var(--spel-ink); }
+.kv-sun-rays { transform-box: fill-box; transform-origin: center; animation: kv-spin 40s linear infinite; }
+@keyframes kv-spin { to { rotate: 360deg; } }
+.kv-hill { fill: var(--kv-hill); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-trunk { fill: none; stroke: var(--kv-trunk); stroke-width: 6px; }
+.kv-crown { fill: var(--kv-tree); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-water { fill: var(--kv-water); }
+.kv-water-far { fill: var(--kv-water-far); }
+.kv-bank { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-streak { fill: none; stroke: var(--kv-water-light); stroke-width: 4px; animation: kv-streak 5s ease-in-out infinite alternate; }
+@keyframes kv-streak { from { translate: -14px 0; opacity: .35; } to { translate: 18px 0; opacity: .9; } }
+.kv-ripple { fill: none; stroke: var(--kv-water-light); stroke-width: 3px; transform-box: fill-box; transform-origin: center; opacity: 0; animation: kv-ripple 6s var(--ease-out) infinite; }
+@keyframes kv-ripple { 0% { scale: .2; opacity: 0; } 8% { opacity: .9; } 40%, 100% { scale: 1.7; opacity: 0; } }
+.kv-glint { fill: var(--kiosk-paper); transform-box: fill-box; transform-origin: center; animation: kv-twinkle 3.4s ease-in-out infinite; }
+@keyframes kv-twinkle { 0%, 60%, 100% { scale: 0; } 75% { scale: 1.2; } 85% { scale: .7; } }
+.kv-lily { transform-box: fill-box; transform-origin: center; animation: kv-bob 4s ease-in-out infinite alternate; }
+@keyframes kv-bob { from { translate: 0 -1.5px; rotate: -1.5deg; } to { translate: 0 2px; rotate: 1.5deg; } }
+.kv-lily-pad, .kv-pad { fill: var(--kv-pad); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-lily-vein { fill: none; stroke: var(--kv-pad-vein); stroke-width: 2px; }
+.kv-petal { fill: var(--kv-blush); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-flower-heart { fill: var(--kv-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-reed { transform-box: fill-box; transform-origin: bottom center; animation: kv-sway 3.6s ease-in-out infinite alternate; }
+@keyframes kv-sway { from { rotate: -2.5deg; } to { rotate: 3deg; } }
+.kv-reed-stem { fill: none; stroke: var(--spel-ink); stroke-width: 6px; }
+.kv-reed-stem + .kv-reed-head { stroke-width: 3px; }
+.kv-reed-leaf { fill: none; stroke: var(--kv-reed); stroke-width: 7px; }
+.kv-reed-head { fill: var(--kv-cattail); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-reed .kv-reed-stem:first-of-type { stroke: var(--kv-reed); }
+.kv-reed.is-far .kv-reed-stem, .kv-reed.is-far .kv-reed-leaf { stroke: var(--kv-reed-far); stroke-width: 4px; }
+.kv-reed.is-far .kv-reed-head { stroke-width: 2px; }
+/* The fish: hidden under the water most of the time, one jump in an arc every 9 s. */
+.kv-fish { opacity: 0; animation: kv-fish 9s ease-in-out 2s infinite; }
+.kv-fish-body { fill: var(--kid-tint-ring-4); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kv-fish-eye { fill: var(--spel-ink); }
+@keyframes kv-fish {
+  0%, 80% { opacity: 0; translate: -36px 6px; rotate: -60deg; }
+  81% { opacity: 1; translate: -36px 0; rotate: -60deg; }
+  87% { translate: 0 -46px; rotate: 0deg; }
+  93% { opacity: 1; translate: 36px 0; rotate: 60deg; }
+  94%, 100% { opacity: 0; translate: 36px 6px; rotate: 60deg; }
+}
+.kv-fish-ring { fill: none; stroke: var(--kv-water-light); stroke-width: 3px; transform-box: fill-box; transform-origin: center; opacity: 0; animation: kv-fish-ring 9s ease-out 2s infinite; }
+@keyframes kv-fish-ring { 0%, 92% { opacity: 0; scale: .3; } 94% { opacity: 1; scale: .6; } 100% { opacity: 0; scale: 1.8; } }
+/* The little blue dragonfly on a far reed: it rests, darts off and comes back. */
+.kv-bluefly-body { fill: none; stroke: var(--kv-blue); stroke-width: 3.5px; }
+.kv-bluefly-head { fill: var(--kv-blue); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.kv-wing.is-blue { fill: color-mix(in srgb, var(--kiosk-paper) 80%, transparent); stroke: var(--kv-blue); stroke-width: 1.2px; }
+.kv-blue-dart { animation: kv-dart 8s ease-in-out infinite; }
+@keyframes kv-dart {
+  0%, 55% { translate: 0 0; }
+  60% { translate: -70px -34px; }
+  66% { translate: -30px -58px; }
+  72% { translate: 40px -26px; }
+  80%, 100% { translate: 0 0; }
+}
+.kv-bluefly .kv-wing { transform-box: fill-box; transform-origin: center; animation: kv-glint-wing 1.6s ease-in-out infinite alternate; }
+@keyframes kv-glint-wing { from { opacity: .55; } to { opacity: 1; } }
+
+/* ── The frogs ────────────────────────────────────────────────────────────── */
+.kv-frog-at { --kv-scarf: var(--duel-left); }
+.kv-frog-at.is-right { --kv-frog: color-mix(in srgb, var(--accent-metendrekenen) 58%, var(--mab-e)); --kv-scarf: var(--duel-right); }
+.kv-skin { fill: var(--kv-frog); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-skin-dark { fill: color-mix(in srgb, var(--kv-frog) 72%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-spot { fill: color-mix(in srgb, var(--kv-frog) 72%, var(--spel-ink)); }
+.kv-toes { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-belly { fill: var(--kv-belly); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kv-arm { fill: none; stroke: var(--spel-ink); stroke-width: 16px; }
+.kv-arm-in { fill: none; stroke: var(--kv-frog); stroke-width: 10px; }
+.kv-hand { fill: var(--kv-frog); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-scarf { fill: var(--kv-scarf); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-scarf-tail { transform-box: fill-box; transform-origin: right center; animation: kv-flap 1.2s ease-in-out infinite alternate; }
+@keyframes kv-flap { from { rotate: -8deg; } to { rotate: 10deg; } }
+.kv-blush { fill: var(--kv-blush); }
+.kv-nostril { fill: var(--spel-ink); }
+.kv-smile { fill: none; stroke: var(--spel-ink); stroke-width: 3.5px; }
+.kv-eye-white { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kv-pupil { fill: var(--spel-ink); }
+.kv-shine { fill: var(--kiosk-paper); }
+/* A blink now and then (the lid comes down from the top); the two frogs blink out of step. */
+.kv-lid { fill: var(--kv-frog); stroke: var(--spel-ink); stroke-width: 2.5px; transform-box: fill-box; transform-origin: center top; scale: 1 0; animation: kv-blink 4.6s infinite; }
+.kv-frog-at.is-right .kv-lid { animation-delay: -2.2s; animation-duration: 5.3s; }
+@keyframes kv-blink { 0%, 93%, 100% { scale: 1 0; } 95.5% { scale: 1 1; } }
+.kv-wide { transform-box: fill-box; transform-origin: center bottom; animation: kv-wide 1.4s var(--ease-spring) both; }
+@keyframes kv-wide { 0% { scale: 1; } 15% { scale: 1.25; } 80% { scale: 1.18; } 100% { scale: 1; } }
+.kv-notice { transform-box: fill-box; transform-origin: center bottom; animation: kv-notice 1.6s var(--ease-spring) both; }
+.kv-notice-mark { fill: var(--kv-gold); stroke: var(--spel-ink); stroke-width: 3px; }
+@keyframes kv-notice { 0% { scale: 0; opacity: 1; } 18% { scale: 1.3; } 30%, 80% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; translate: 0 -10px; } }
+
+/* Breathing, and the pad bobbing under the frog. */
+.kv-pad-bob { animation: kv-pad 3.4s ease-in-out infinite alternate; }
+@keyframes kv-pad { from { translate: 0 -1px; } to { translate: 0 3px; } }
+.kv-breathe { transform-box: fill-box; transform-origin: center bottom; animation: kv-breathe 2.6s ease-in-out infinite alternate; }
+@keyframes kv-breathe { from { scale: 1 1; } to { scale: 1.015 1.03; } }
+/* The throat sac: hidden until the frog croaks. */
+.kv-sac { fill: var(--kv-belly); stroke: var(--spel-ink); stroke-width: 2.5px; transform-box: fill-box; transform-origin: center top; scale: 0; }
+
+/* A snap: the frog leans in, the mouth opens while the tongue is out. Then a gulp: the cheeks puff. */
+.kv-lunge { transform-box: fill-box; transform-origin: center bottom; animation: kv-lunge 380ms var(--ease-out); }
+@keyframes kv-lunge { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 8px -4px; rotate: 5deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.kv-mouth-open path { fill: var(--kv-mouth); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-mouth-open { animation: kv-mouth 380ms both; }
+@keyframes kv-mouth { 0%, 90% { opacity: 1; } 100% { opacity: 0; } }
+.kv-cheeks { transform-box: fill-box; transform-origin: center; animation: kv-cheeks 620ms var(--ease-spring) both; }
+@keyframes kv-cheeks { 0% { scale: 0; } 30% { scale: 1.15; } 70% { scale: 1; opacity: 1; } 100% { scale: .2; opacity: 0; } }
+.kv-bubble { fill: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-burp { animation: kv-burp 1s var(--ease-out) both; }
+@keyframes kv-burp { 0% { translate: -10px 8px; scale: .3; opacity: 0; } 20% { opacity: 1; } 100% { translate: 6px -30px; scale: 1.1; opacity: 0; } }
+
+/* A mistake: the frog sways, swirly eyes, stars round its head; it wears off. */
+.kv-sway { transform-box: fill-box; transform-origin: center bottom; animation: kv-sway-hit 1.2s ease-in-out; }
+@keyframes kv-sway-hit { 0% { rotate: 0deg; } 15% { rotate: -10deg; translate: -6px 0; } 35% { rotate: 8deg; } 55% { rotate: -6deg; } 75% { rotate: 3deg; } 100% { rotate: 0deg; translate: 0 0; } }
+.kv-daze { animation: kv-daze 1.5s both; }
+.kv-daze.is-held { animation: none; }
+@keyframes kv-daze { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+.kv-swirl-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.4px; }
+.kv-swirl-spin { transform-box: fill-box; transform-origin: center; animation: kv-spin 900ms linear infinite; }
+.kv-dizzy-star { fill: var(--kv-gold); stroke: var(--spel-ink); stroke-width: 1.8px; }
+.kv-star-orbit { animation: kv-orbit 1s linear infinite; }
+@keyframes kv-orbit {
+  0% { translate: 30px 0; scale: 1; }
+  25% { translate: 0 9px; scale: 1.2; }
+  50% { translate: -30px 0; scale: 1; }
+  75% { translate: 0 -9px; scale: .7; }
+  100% { translate: 30px 0; scale: 1; }
+}
+
+/* The round's end: the winner jumps and croaks over and over; the other flops over, dizzy. */
+.kv-frog { transform-box: fill-box; transform-origin: center bottom; transition: rotate 450ms var(--ease-spring), translate 450ms var(--ease-spring), scale 450ms var(--ease-spring); }
+.kv-frog.is-cheer { animation: kv-jump 900ms ease-in-out infinite; }
+@keyframes kv-jump {
+  0% { translate: 0 0; scale: 1.1 .9; }
+  12% { translate: 0 0; scale: .94 1.08; }
+  45% { translate: 0 -62px; scale: 1 1; rotate: -4deg; }
+  78% { translate: 0 0; scale: 1 1; rotate: 0deg; }
+  88% { scale: 1.12 .86; }
+  100% { translate: 0 0; scale: 1.1 .9; }
+}
+.kv-frog.is-cheer .kv-sac { animation: kv-croak 900ms ease-in-out infinite; }
+@keyframes kv-croak { 0%, 40% { scale: 0; } 55% { scale: 1.15; } 70% { scale: .7; } 85% { scale: 1.05; } 100% { scale: 0; } }
+.kv-frog.is-flop { rotate: -24deg; translate: -10px 8px; scale: 1.04 .86; }
+.kv-win-rings .kv-ripple.is-win { animation: kv-ripple 1.5s var(--ease-out) infinite; stroke-width: 3.5px; }
+
+/* ── Bugs ─────────────────────────────────────────────────────────────────── */
+.kv-buzz { animation: kv-buzz 110ms ease-in-out infinite alternate; }
+@keyframes kv-buzz { from { translate: 0 -1px; } to { translate: 0 1.2px; } }
+.kv-wing { fill: var(--kv-wing); stroke: var(--spel-ink); stroke-width: 1.8px; }
+.kv-wings { transform-box: fill-box; transform-origin: center bottom; animation: kv-flutter 70ms linear infinite alternate; }
+.kv-wings.is-fast { animation-duration: 55ms; }
+@keyframes kv-flutter { from { scale: 1 1; } to { scale: 1 .3; } }
+.kv-fly-body { fill: var(--kv-fly); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-fly-stripe { fill: none; stroke: color-mix(in srgb, var(--kv-fly) 50%, var(--kiosk-paper)); stroke-width: 1.5px; }
+.kv-fly-head { fill: var(--kv-fly); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-fly-legs { fill: none; stroke: var(--spel-ink); stroke-width: 1.8px; }
+.kv-bug-eye { fill: var(--spel-ink); }
+.kv-bug-eye.is-fly { fill: var(--kv-fly-eye); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.kv-beetle-shell { fill: var(--kv-beetle); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.kv-beetle-split { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-beetle-spot { fill: var(--kv-beetle-dark); }
+.kv-beetle-head { fill: var(--spel-ink); }
+.kv-shine.is-shell { fill: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); }
+.kv-antenna { fill: none; stroke: var(--spel-ink); stroke-width: 1.8px; }
+.kv-wing.is-gold { fill: color-mix(in srgb, color-mix(in srgb, var(--kv-gold) 25%, var(--kiosk-paper)) 75%, transparent); stroke: var(--kv-gold-deep); stroke-width: 2px; }
+.kv-glow { fill: color-mix(in srgb, var(--kv-gold) 40%, transparent); transform-box: fill-box; transform-origin: center; animation: kv-glow 900ms ease-in-out infinite alternate; }
+@keyframes kv-glow { from { scale: .75; opacity: .5; } to { scale: 1.1; opacity: 1; } }
+.kv-df-edge { fill: none; stroke: var(--spel-ink); stroke-width: 12px; }
+.kv-df-tail { fill: none; stroke: var(--kv-gold); stroke-width: 6.5px; }
+.kv-df-band { fill: none; stroke: var(--kv-gold-deep); stroke-width: 2.5px; }
+.kv-df-smile { fill: none; stroke: var(--spel-ink); stroke-width: 1.8px; }
+.kv-df-chest, .kv-df-head { fill: var(--kv-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.kv-df-eye { fill: var(--kid-tint-ring-3); stroke: var(--spel-ink); stroke-width: 1.8px; }
+.kv-twinkle { fill: var(--kiosk-paper); stroke: var(--kv-gold-deep); stroke-width: 1px; transform-box: fill-box; transform-origin: center; animation: kv-twinkle 1.2s ease-in-out infinite; }
+
+/* ── A catch: the tongue shoots out (overshoot), holds a blink, pulls the bug back in ──
+   (380 ms = TONGUE_MS; it reaches the bug at 29% = POND.tongueMs) */
+.kv-tongue { transform-origin: 0 0; animation: kv-tongue 380ms both; }
+@keyframes kv-tongue {
+  0% { scale: .02 1; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  29% { scale: 1.08 1; }
+  37% { scale: .97 1; }
+  46%, 52% { scale: 1 1; animation-timing-function: cubic-bezier(.5, 0, .9, .6); }
+  100% { scale: 0 1; }
+}
+.kv-tip { animation: kv-tip 380ms both; }
+@keyframes kv-tip {
+  0% { translate: 0 0; opacity: 1; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  29% { translate: calc(var(--len) * 1.08px) 0; }
+  37% { translate: calc(var(--len) * .97px) 0; }
+  46%, 52% { translate: calc(var(--len) * 1px) 0; animation-timing-function: cubic-bezier(.5, 0, .9, .6); }
+  96% { opacity: 1; }
+  100% { translate: 0 0; opacity: 0; }
+}
+.kv-tongue-edge { fill: none; stroke: var(--spel-ink); stroke-width: 14px; }
+.kv-tongue-fill { fill: none; stroke: var(--kv-tongue); stroke-width: 8px; }
+.kv-tongue-tip { fill: var(--kv-tongue); stroke: var(--spel-ink); stroke-width: 3px; }
+.kv-stuck { animation: kv-stuck 380ms both; }
+@keyframes kv-stuck { 0%, 28% { opacity: 0; scale: 1; } 29% { opacity: 1; scale: 1.1; } 80% { scale: .9; } 100% { opacity: 1; scale: .6; } }
+.kv-stuck .kv-wings { animation-duration: 40ms; }
+
+/* The points pop up where the bug was caught; the dragonfly's in gold with a burst of stars. */
+.kv-plus { animation: kv-plus 1100ms var(--ease-out) 110ms both; }
+@keyframes kv-plus {
+  0% { translate: 0 0; scale: .3; opacity: 0; }
+  18% { translate: 0 -14px; scale: 1.3; opacity: 1; }
+  30% { scale: 1; }
+  75% { opacity: 1; }
+  100% { translate: 0 -54px; scale: 1; opacity: 0; }
+}
+.kv-plus-text {
+  fill: var(--kiosk-paper);
+  stroke: var(--spel-ink);
+  stroke-width: 6px;
+  paint-order: stroke;
+  font-family: var(--kid-font);
+  font-size: 34px;
+  font-weight: 900;
+}
+.kv-popup.is-beetle .kv-plus-text { fill: color-mix(in srgb, var(--kv-beetle) 45%, var(--kiosk-paper)); font-size: 40px; }
+.kv-popup.is-dragonfly .kv-plus-text { fill: var(--kv-gold); font-size: 54px; stroke-width: 7px; }
+.kv-burst { animation: kv-burst-fade 900ms 110ms both; }
+@keyframes kv-burst-fade { 0% { opacity: 0; } 10%, 70% { opacity: 1; } 100% { opacity: 0; } }
+.kv-burst-ring { fill: none; stroke: var(--kv-gold); stroke-width: 5px; transform-box: fill-box; transform-origin: center; animation: kv-ring 700ms var(--ease-out) 110ms both; }
+@keyframes kv-ring { from { scale: .2; } to { scale: 2.4; stroke-width: 1px; } }
+.kv-burst-star { transform-box: fill-box; transform-origin: center; fill: var(--kv-gold); stroke: var(--spel-ink); stroke-width: 1.5px; animation: kv-burst-star 800ms var(--ease-out) 110ms both; }
+@keyframes kv-burst-star { from { translate: 0 0; scale: .4; } 60% { scale: 1.3; } to { translate: 0 calc(-1 * var(--d)); scale: .8; } }
+
+/* A splash by the pad: drops fly up and out, a ring opens. */
+.kv-ripple.is-splash { animation: kv-splash-ring 1s var(--ease-out) both; stroke-width: 3.5px; }
+@keyframes kv-splash-ring { 0% { scale: .2; opacity: 1; } 100% { scale: 1.8; opacity: 0; } }
+.kv-drop { fill: var(--kv-water-light); stroke: var(--spel-ink); stroke-width: 2px; animation: kv-drop 750ms cubic-bezier(.3, .6, .6, 1) both; }
+@keyframes kv-drop {
+  0% { translate: 0 0; scale: .4; opacity: 1; }
+  45% { translate: calc(var(--dx) * .55) var(--dy); scale: 1; }
+  85% { opacity: 1; }
+  100% { translate: var(--dx) 8px; scale: .7; opacity: 0; }
+}
+
+/* ── The cards ────────────────────────────────────────────────────────────── */
+.kv-card-art { display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); margin-bottom: calc(-1 * var(--sp-2)); }
+.kv-card-frogs { width: clamp(110px, 18vmin, 180px); height: auto; overflow: visible; }
+.kv-card-frogs[viewBox^="40"] { width: clamp(220px, 40vmin, 380px); }
+.kv-crown { color: var(--spel-star); stroke: var(--spel-ink); stroke-width: 12px; paint-order: stroke; }
+.kv-card-points { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); font-weight: 800; }
+.kv-card-points span { display: inline-flex; align-items: center; gap: 4px; padding: 2px var(--sp-2); border: 3px solid var(--spel-ink); border-radius: 999px; }
+.kv-card-points .is-left { background: color-mix(in srgb, var(--duel-left) 30%, var(--bg-surface)); }
+.kv-card-points .is-right { background: color-mix(in srgb, var(--duel-right) 30%, var(--bg-surface)); }
+.kv-card-points svg { color: var(--spel-star); }

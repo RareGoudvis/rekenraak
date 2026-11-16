@@ -319,7 +319,8 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         begin({ meta, from, rule, config, now = Date.now() }) {
             clearAll();
             set({
-                meta, from, rule, config, round: 1, sessie: spelSessieOf({ ...from, meta, now }), shared: [], matchWinner: null,
+                // No question cap: a match runs as long as its rounds do (a solo game's 20-question round would starve a side).
+                meta, from, rule, config, round: 1, sessie: { ...spelSessieOf({ ...from, meta, now }), total: undefined }, shared: [], matchWinner: null,
                 sides: { left: freshSide(config.lives), right: freshSide(config.lives) },
             });
             startRound(now);
