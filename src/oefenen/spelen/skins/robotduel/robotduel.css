@@ -13,7 +13,7 @@
   --rd-fire: var(--accent-vraagstukken);
   --rd-warn: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-star));
   --rd-smoke: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper));
-  --duel-scene-h: 42%;
+  --duel-scene-h: 50%;
 }
 /* The engine's "Ronde N" banner gives way to the ring's own (Robotduel.tsx Banner). */
 .rd-app .duel-banner { display: none; }
@@ -400,7 +400,10 @@
 .rd-bar.is-right .rd-portrait { --rd-eye: color-mix(in srgb, var(--kid-go) 55%, var(--kiosk-paper)); }
 .rd-bar-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
 .rd-bar-name { color: var(--kiosk-paper); font-weight: 900; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1; }
-.rd-bar.is-right .rd-bar-name { text-align: end; }
+.rd-bar-top { display: flex; align-items: center; gap: var(--sp-2); }
+.rd-bar.is-right .rd-bar-top { flex-direction: row-reverse; }
+/* The score star on the dark ring: a paper chip so the number reads. */
+.rd-score { padding: 1px 8px 1px 4px; border: 2px solid var(--spel-ink); border-radius: 999px; background: var(--kiosk-paper); font-size: clamp(14px, 2.4vmin, 24px); }
 .rd-segs {
   display: flex;
   gap: 3px;

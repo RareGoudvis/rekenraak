@@ -1,0 +1,61 @@
+/* "Draai je toestel" (RotatePrompt.tsx): a full-screen sticker card over the game or the exercise, in the kids'
+   look (kiosk.css --kid-* tokens: sky, thick ink outline, solid drop). The phone turns onto its side in a loop. */
+.rotate-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  background: var(--kid-sky);
+  color: var(--kid-ink);
+  font-family: var(--kid-font);
+  text-align: center;
+  /* Nothing under it takes a tap while it is up. */
+  touch-action: none;
+}
+.rotate-art {
+  width: min(62vw, 260px);
+  height: auto;
+  overflow: visible;
+  padding: var(--sp-3);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--kid-card);
+  box-shadow: var(--kid-drop-lg);
+}
+.rotate-phone {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rotate-turn 2.6s var(--ease-spring, ease-in-out) infinite;
+}
+.rotate-phone-body { fill: var(--kid-tint-3); stroke: var(--kid-ink); stroke-width: 5px; }
+.rotate-phone-screen { fill: var(--kid-card); stroke: var(--kid-ink); stroke-width: 3px; }
+.rotate-phone-dot { fill: var(--kid-ink); }
+.rotate-phone-face circle { fill: var(--kid-ink); }
+.rotate-phone-face path { fill: none; stroke: var(--kid-ink); stroke-width: 3.5px; stroke-linecap: round; }
+.rotate-arrow { fill: none; stroke: var(--kid-tint-ring-1); stroke-width: 9px; stroke-linecap: round; animation: rotate-arrow 2.6s ease-in-out infinite; }
+.rotate-arrow-head { fill: var(--kid-tint-ring-1); stroke: var(--kid-ink); stroke-width: 3px; stroke-linejoin: round; animation: rotate-arrow 2.6s ease-in-out infinite; }
+.rotate-spark { fill: none; stroke: var(--kid-ring); stroke-width: 4px; stroke-linecap: round; transform-box: fill-box; transform-origin: center; animation: rotate-spark 2.6s ease-in-out infinite; }
+.rotate-spark.is-2 { animation-delay: .3s; }
+/* Upright, a wiggle, then onto its side with a bounce, a short rest, and back. */
+@keyframes rotate-turn {
+  0%, 12% { transform: rotate(0deg); }
+  18% { transform: rotate(8deg); }
+  45%, 78% { transform: rotate(-90deg) scale(1.08); }
+  92%, 100% { transform: rotate(0deg); }
+}
+@keyframes rotate-arrow {
+  0%, 15% { opacity: .35; }
+  35%, 70% { opacity: 1; }
+  100% { opacity: .35; }
+}
+@keyframes rotate-spark {
+  0%, 40% { transform: scale(0); opacity: 0; }
+  55% { transform: scale(1.4); opacity: 1; }
+  75%, 100% { transform: scale(0); opacity: 0; }
+}
+.rotate-title { margin: 0; font-size: clamp(28px, 8vw, 40px); font-weight: 900; line-height: 1.1; }
+.rotate-lead { margin: 0; max-width: 22em; font-size: clamp(18px, 4.6vw, 22px); font-weight: 700; color: var(--kid-muted); }

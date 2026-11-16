@@ -3,7 +3,7 @@
    scale properties (they stack on the attribute). Only transforms and opacity animate. The screen around it
    is the shared duel screen (duel.css). */
 .kv-app {
-  --duel-scene-h: 44%;
+  --duel-scene-h: 52%;
   --kv-water: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--accent-metendrekenen)) 52%, var(--kiosk-paper));
   --kv-water-far: color-mix(in srgb, var(--kv-water) 65%, var(--kiosk-paper));
   --kv-water-light: color-mix(in srgb, var(--kv-water) 30%, var(--kiosk-paper));

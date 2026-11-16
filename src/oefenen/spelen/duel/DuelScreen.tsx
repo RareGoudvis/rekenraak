@@ -1,13 +1,15 @@
-import type { ReactNode } from 'react';
-import { ArrowUUpLeft, Star } from '@phosphor-icons/react';
+import { useEffect, type ReactNode } from 'react';
+import { ArrowUUpLeft } from '@phosphor-icons/react';
 import TwoTapButton from '../../kiosk/TwoTapButton';
+import RotatePrompt from '../../kiosk/RotatePrompt';
+import { UPRIGHT_PHONE, useMedia } from '../../kiosk/useMedia';
 import SoundToggle from '../SoundToggle';
 import { SpelSignBox } from '../SpelVisual';
 import { useSpelMusic } from '../music';
 import { cueSound, play, type SoundCue } from '../sound';
 import type { SkinMeta } from '../skins/types';
 import DuelKeypad from './DuelKeypad';
-import { BotCard, DuelCard, Hearts, ReadyBanner, RoundClock, Scoreline, TimerRing } from './DuelHud';
+import { BotCard, DuelCard, Hearts, ReadyBanner, RoundClock, Scoreline, ScoreStar, TimerRing } from './DuelHud';
 import { teamStyle, teamsOf, type Team } from './teams';
 import { useDuelStore } from './duelStore';
 import { useDuelEvent } from './useDuel';
@@ -30,8 +32,10 @@ export interface DuelScreenProps {
     teams?: Partial<Record<Side, Partial<Team>>>;
     // Hearts in the band's corners; false when the scene shows the lives itself (the castles' bars, the rope).
     hearts?: boolean;
-    // A star with the round's points in each half (Kikkers en vliegjes).
+    // The score beside the lives counts the round's points instead of its right answers (Kikkers en vliegjes).
     points?: boolean;
+    // The score star in the band's corners; false when the scene's own HUD shows it (Robotduel, Kasteel).
+    score?: boolean;
     // The call on a right answer ("Raak!", "Trek!").
     rightNote?: string;
     // A picture on the round / match card (the winner's pose).
@@ -49,11 +53,17 @@ function useDuelSounds(meta: SkinMeta, solo: boolean) {
     useDuelEvent('matchEnd', ({ winner }) => voice(solo && winner === 'right' ? 'lost' : 'win'));
 }
 
-export default function DuelScreen({ meta, onExit, scene, className = '', teams: over, hearts = true, points = false, rightNote = 'Raak!', cardArt }: DuelScreenProps) {
+export default function DuelScreen({ meta, onExit, scene, className = '', teams: over, hearts = true, points = false, score = true, rightNote = 'Raak!', cardArt }: DuelScreenProps) {
     const st = useDuelStore();
     const { config, phase, sides } = st;
     const teams = teamsOf(config, over);
-    useSpelMusic(meta.music, phase === 'ready' || phase === 'play' || phase === 'roundEnd');
+    // A phone held upright: "Draai je toestel" over the duel, and the match waits (every clock stands still).
+    const upright = useMedia(UPRIGHT_PHONE);
+    useEffect(() => {
+        const d = useDuelStore.getState();
+        if (upright) d.pause(); else d.resume();
+    }, [upright, phase]);
+    useSpelMusic(meta.music, !upright && (phase === 'ready' || phase === 'play' || phase === 'roundEnd'));
     useDuelSounds(meta, config.players === 1);
     const leave = () => { useDuelStore.getState().stop(); onExit(); };
     if (phase === 'idle') return null;
@@ -63,7 +73,7 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
     const maxLives = st.rule.maxLives?.(config) ?? config.lives;
 
     return (
-        <div className={`oefen-app spel-app duel-app ${className}${between ? ' is-between' : ''}${config.players === 1 ? ' is-solo' : ''}`} data-phase={phase}>
+        <div className={`oefen-app spel-app duel-app ${className}${between ? ' is-between' : ''}${config.players === 1 ? ' is-solo' : ''}${st.paused ? ' is-paused' : ''}`} data-phase={phase}>
             <header className="kiosk-topbar spel-topbar duel-topbar">
                 <TwoTapButton label={<><ArrowUUpLeft aria-hidden /> <span>Terug</span></>} armName="Terug" groupLabel="Stoppen met spelen" confirm="Ja, stoppen" onConfirm={leave} />
                 <Scoreline teams={teams} />
@@ -75,9 +85,10 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
             <main className="spel-stage duel-stage">
                 <div className="duel-world">
                     {scene}
-                    {hearts && SIDES.map(side => (
+                    {(hearts || score) && SIDES.map(side => (
                         <span key={side} className={`duel-corner is-${side}`} style={teamStyle(teams[side])}>
-                            <Hearts lives={sides[side].lives} max={Math.max(maxLives, sides[side].lives)} side={side} />
+                            {hearts && <Hearts lives={sides[side].lives} max={Math.max(maxLives, sides[side].lives)} side={side} />}
+                            {score && <ScoreStar value={points ? sides[side].points : sides[side].right} points={points} />}
                         </span>
                     ))}
                     <ReadyBanner />
@@ -100,20 +111,19 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
                                             : shared && me.locked ? 'Even wachten…' : ' ';
                         return (
                             <section key={side} className={`duel-half is-${side}${got ? ' is-got' : ''}${bot ? ' is-bot' : ''}`} aria-label={teams[side].name} style={teamStyle(teams[side])}>
-                                <p className="duel-head">
-                                    <span className="duel-name">{teams[side].name}</span>
-                                    {points && <span className="duel-points" aria-label={`${me.points} punten`}><Star weight="fill" aria-hidden /> {me.points}</span>}
-                                    {me.limitMs !== null && q && (
-                                        <TimerRing key={`${q.key}-${st.round}`} ms={me.limitMs} running={!closed && !me.out && phase === 'play'} />
+                                {/* The half's colour says whose it is; the Moeilijk ring sits beside the sum, on the outer edge. */}
+                                <div className="duel-ask">
+                                    {q && (
+                                        <SpelSignBox className={`duel-sign${closed ? ' is-solved' : ''}`} question={q} feedback={closed ? { expected: q.answer } : null} flash={closed}
+                                            choices={q.choices} views={q.views} answer={q.answer} answerClassName="duel-sign-answer" breakAtRelation />
                                     )}
-                                </p>
-                                {q && (
-                                    <SpelSignBox className={`duel-sign${closed ? ' is-solved' : ''}`} question={q} feedback={closed ? { expected: q.answer } : null} flash={closed}
-                                        choices={q.choices} views={q.views} answer={q.answer} answerClassName="duel-sign-answer" breakAtRelation />
-                                )}
+                                    {me.limitMs !== null && q && (
+                                        <TimerRing key={`${q.key}-${st.round}`} ms={me.limitMs} running={!closed && !me.out && phase === 'play' && !st.paused} />
+                                    )}
+                                </div>
                                 <p className="duel-note" aria-live="polite">{note}</p>
                                 {bot
-                                    ? <BotCard thinking={phase === 'play' && !!q && !fb && !me.locked} given={fb && fb.given !== '' ? fb.given : null} correct={fb && fb.given !== '' ? fb.correct : null} />
+                                    ? <BotCard thinking={phase === 'play' && !st.paused && !!q && !fb && !me.locked} given={fb && fb.given !== '' ? fb.given : null} correct={fb && fb.given !== '' ? fb.correct : null} />
                                     : <DuelKeypad label={`Cijfers ${teams[side].name}`} questionKey={q?.key ?? ''} onAnswer={g => st.answer(side, g)} keyboard={config.players === 1}
                                         disabled={phase !== 'play' || !q || closed || me.locked || me.out} />}
                             </section>
@@ -122,6 +132,7 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
                 </div>
                 <DuelCard teams={teams} art={cardArt} onNext={() => st.nextRound()} onAgain={() => st.again()} onExit={leave} />
             </main>
+            {upright && <RotatePrompt />}
         </div>
     );
 }

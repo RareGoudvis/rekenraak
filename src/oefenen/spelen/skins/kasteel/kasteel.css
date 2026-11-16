@@ -145,6 +145,10 @@
 .ks-badge { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3.5px; }
 .ks-heart { fill: var(--ks-low); stroke: var(--spel-ink); stroke-width: 2px; }
 .ks-name { fill: var(--ks-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-score-chip { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.ks-score-star { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.ks-score-text { fill: var(--spel-ink); font-family: var(--font-sheet-math); font-size: 19px; font-weight: 700; }
+.ks-score { transform-box: fill-box; transform-origin: center; animation: duel-pop 420ms var(--ease-spring); }
 .ks-name-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 17px; font-weight: 800; }
 .ks-bar-hit-0 { animation: ks-bar-hit-0 420ms ease-out; }
 .ks-bar-hit-1 { animation: ks-bar-hit-1 420ms ease-out; }
@@ -175,4 +179,4 @@
 
 /* A little more band than the duel default: two whole castles with their bars; 42 % still leaves the halves
    room for a sign of three lines (a leerjaar 6 tekst question) above the whole keypad. */
-.ks-duel { --duel-scene-h: 42%; }
+.ks-duel { --duel-scene-h: 50%; }

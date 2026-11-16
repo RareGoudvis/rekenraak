@@ -16,7 +16,7 @@
   --tg-crowd: color-mix(in srgb, var(--spel-ink) 80%, var(--accent-meetkunde));
   /* A taller band than the duel default: two whole contestants and their counters; the halves keep room for
      a sign of three lines above the keypad (as Kasteel). */
-  --duel-scene-h: 42%;
+  --duel-scene-h: 50%;
 }
 .tg-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .tg-scene * { stroke-linejoin: round; stroke-linecap: round; }

@@ -1,6 +1,8 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ArrowUUpLeft, Lifebuoy, Star, Timer } from '@phosphor-icons/react';
 import TwoTapButton from '../kiosk/TwoTapButton';
+import RotatePrompt from '../kiosk/RotatePrompt';
+import { UPRIGHT_PHONE, useMedia } from '../kiosk/useMedia';
 import StepsPanel from '../kiosk/StepsPanel';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
 import { mabOnlyFor } from '../../services/stepsAvailability';
@@ -94,9 +96,15 @@ export default function SpelScreen() {
     // A game with its own session and screen (Touwtrekken, Kasteel for 2); the round above only holds its choice.
     const own = !!entry?.Screen && (!entry.screenWhen || st.meta?.chosen?.[entry.screenWhen.id] === entry.screenWhen.value);
     const now = useGameClock(!!st.meta?.timed && st.phase !== 'end' && !own);
+    // A phone held upright: "Draai je toestel" over the game; the round waits (the clock stops, the skin sees a pause).
+    // A game with its own screen (the duels) does this itself.
+    const upright = useMedia(UPRIGHT_PHONE) && !own;
+    const sessie = st.sessie;
+    useEffect(() => { useSpelStore.getState().setAway(upright); }, [upright, sessie]);
+    useEffect(() => () => useSpelStore.getState().setAway(false), []);
     useSpelSounds(st.events, st.meta?.sounds);
     // A game with its own screen plays its music itself (it knows its own end screen).
-    useSpelMusic(st.meta?.music, !own && !!entry?.Component && st.phase !== 'end');
+    useSpelMusic(st.meta?.music, !own && !upright && !!entry?.Component && st.phase !== 'end');
     if (own && entry?.Screen && st.meta && st.from) {
         const Screen = entry.Screen;
         return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
@@ -105,7 +113,8 @@ export default function SpelScreen() {
     if (!st.meta || !entry?.Component) return null;
     const Skin = entry.Component;
     const progress = progressOf(st, now);
-    const phase = st.phase as SkinPhase;
+    // Away, a skin sees the help's pause: its own movers and deadlines (a zombie, a balloon) wait as they do under help.
+    const phase = (st.away && st.phase === 'play' ? 'help' : st.phase) as SkinPhase;
     const at = Math.min(progress.answered + (phase === 'play' || phase === 'help' ? 1 : 0), progress.total ?? Infinity);
     return (
         <div className="oefen-app spel-app">
@@ -174,8 +183,9 @@ export default function SpelScreen() {
                         onHold={on => st.hold(on)}
                     />
                 </Suspense>
-                {phase === 'help' && <HelpPanel />}
+                {st.phase === 'help' && <HelpPanel />}
             </main>
+            {upright && <RotatePrompt />}
         </div>
     );
 }

@@ -16,6 +16,9 @@ interface Props {
     instruction: string;
     // Changes per exercise so a crashed viewer retries on the next one.
     exerciseKey: string;
+    // Told after every fit whether the exercise is wider than the card at the scale it got (the kiosk then asks
+    // a phone held upright to turn).
+    onTooWide?(wide: boolean): void;
 }
 
 // The viewer lays one exercise out at about a half-width sheet block (338 px), exactly as on
@@ -28,11 +31,13 @@ const MAX_ZOOM = 3.2;
 // grid too tall for that at the card's size scrolls inside the card instead of shrinking.
 const MIN_CELL_PX = 40;
 
-export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey }: Props) {
+export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey, onTooWide }: Props) {
     const boxRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
     const sizerRef = useRef<HTMLDivElement>(null);
     const [fit, setFit] = useState({ k: 1, x: 0, w: VIRTUAL_W, h: 0, scroll: false });
+    const wideRef = useRef(onTooWide);
+    useLayoutEffect(() => { wideRef.current = onTooWide; });
     const Viewer = EXERCISE_UI[typeId]?.Viewer;
     const interaction = useOefenStore(s => s.interaction);
     const activeCell = useOefenStore(s => s.activeCell);
@@ -69,6 +74,7 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
             if (cellH * k < MIN_CELL_PX) k = Math.min(MAX_ZOOM, MIN_CELL_PX / cellH);
             // Raised to MIN_CELL_PX, the grid outgrows the card: it scrolls from its top-left.
             const scroll = w * k > boxW + 1 || h * k > boxH + 1;
+            wideRef.current?.(w * k > boxW + 1);
             // The sizer clips with overflow:hidden but still scrolls programmatically (focus, scrollIntoView
             // against a stale fit); a leftover offset would show only a slice of the exercise.
             sizer.scrollLeft = 0; sizer.scrollTop = 0;

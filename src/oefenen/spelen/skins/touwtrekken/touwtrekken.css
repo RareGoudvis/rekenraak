@@ -2,7 +2,7 @@
    outline (spelen.css tokens); the rope moves by a transform transition. */
 .tt-app {
   --tt-fur: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
-  --duel-scene-h: 36%;
+  --duel-scene-h: 50%;
 }
 .tt-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .tt-grass { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 3px; }

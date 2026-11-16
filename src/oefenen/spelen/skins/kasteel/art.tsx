@@ -37,6 +37,8 @@ export interface CastleView {
     big?: boolean;
     // The winner: the flag goes up high and two kids cheer in front.
     won?: boolean;
+    // The round's score (right answers): a star chip beside the life bar.
+    score?: number;
 }
 
 export interface Flight { id: number; from: SideKey; big: boolean; aim: { x: number; y: number }; ms: number }
@@ -189,6 +191,14 @@ function Heart({ x, y, r = 11 }: { x: number; y: number; r?: number }) {
     return <path className="ks-heart" transform={`translate(${x} ${y}) scale(${s})`} d="M0 9 C-12 0 -11 -9 -5 -9 C-2 -9 0 -6 0 -5 C0 -6 2 -9 5 -9 C11 -9 12 0 0 9 Z" />;
 }
 
+// The score chip's width (scene units); a five-point star of radius 11 around (0, 0) on it.
+const SCORE_W = 62;
+const STAR_D = 'M' + Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + i * Math.PI / 5;
+    const r = i % 2 ? 4.6 : 11;
+    return `${(r * Math.cos(a)).toFixed(1)} ${(r * Math.sin(a)).toFixed(1)}`;
+}).join(' L') + ' Z';
+
 // The life bar: "17 / 20" on a bar that goes green → yellow → red, with a shake and a flash per hit.
 function LifeBar({ side, v }: { side: SideKey; v: CastleView }) {
     const f = Math.max(0, v.hp) / v.lives;
@@ -203,6 +213,15 @@ function LifeBar({ side, v }: { side: SideKey; v: CastleView }) {
                 <text className="ks-bar-text" x="12" y="22" textAnchor="middle">{`${Math.max(0, v.hp)} / ${v.lives}`}</text>
                 <circle className="ks-badge" cx={-BAR_W / 2} cy="15" r="19" />
                 <Heart x={-BAR_W / 2} y={16} />
+                {v.score !== undefined && (
+                    // Inward, beside the bar: right of the left castle's bar, left of the right castle's heart.
+                    <g key={v.score} className="ks-score" role="img" aria-label={`${v.score} juist`}
+                        transform={`translate(${side === 'left' ? BAR_W / 2 + 8 : -BAR_W / 2 - 27 - SCORE_W} 0)`}>
+                        <rect className="ks-score-chip" x="0" y="0" width={SCORE_W} height="30" rx="15" />
+                        <path className="ks-score-star" transform="translate(17 15)" d={STAR_D} />
+                        <text className="ks-score-text" x={SCORE_W - 20} y="22" textAnchor="middle">{v.score}</text>
+                    </g>
+                )}
             </g>
         </g>
     );

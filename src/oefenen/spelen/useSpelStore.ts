@@ -69,6 +69,8 @@ interface SpelState {
     result: SkinResult | null;
     // A skin's own pause (Voetbal's half time): the clock stands still as under help; the skin holds its input.
     held: boolean;
+    // The screen's pause (a phone held upright, the "Draai je toestel" prompt): the clock stands still as under a hold.
+    away: boolean;
     // Board rounds (meta.round.board): the sums on screen; question = the one picked last (for the help).
     board: SpelBoard | null;
     events: SpelEvents;
@@ -89,6 +91,8 @@ interface SpelState {
     report(result: SkinResult): void;
     // The skin's own pause on (true) or off: the clock stops, the round and its answers wait on the skin.
     hold(on: boolean, now?: number): void;
+    // The screen's own pause on (true) or off; independent of help and of a skin's hold.
+    setAway(on: boolean, now?: number): void;
     restart(): void;
     // Back to the picker on this choice's game tiles (Ander spel, Terug mid-round).
     otherGame(): void;
@@ -137,7 +141,7 @@ export const spelSessieOf = (o: SpelStart): OefenSessie => {
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
     helped: 0, helpedNow: false, climb: 0, mistakes: [], misses: 0, outcome: null as SpelOutcome | null, help: null, endsAt: null, pausedLeft: null, shownAt: 0, result: null,
-    held: false, board: null as SpelBoard | null,
+    held: false, away: false, board: null as SpelBoard | null,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
@@ -269,10 +273,10 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         },
 
         closeHelp(now = Date.now()) {
-            const { phase, pausedLeft, held } = get();
+            const { phase, pausedLeft, held, away } = get();
             if (phase !== 'help') return;
-            // Under a skin's hold the clock waits for the hold to end.
-            set({ phase: 'play', help: null, ...(!held && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }), shownAt: now });
+            // Under a skin's hold (or the screen's pause) the clock waits for that to end.
+            set({ phase: 'play', help: null, ...(!held && !away && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }), shownAt: now });
         },
 
         tick(now = Date.now()) {
@@ -293,11 +297,18 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         },
 
         hold(on, now = Date.now()) {
-            const { phase, held, endsAt, pausedLeft } = get();
+            const { phase, held, away, endsAt, pausedLeft } = get();
             if (on === held || phase === 'idle' || phase === 'end') return;
             if (on) set({ held: true, pausedLeft: pausedLeft ?? (endsAt !== null ? Math.max(0, endsAt - now) : null) });
-            // Under help the clock stays stopped until the help closes.
-            else set({ held: false, ...(phase !== 'help' && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }) });
+            // Under help (or the screen's pause) the clock stays stopped until that ends too.
+            else set({ held: false, ...(phase !== 'help' && !away && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }) });
+        },
+
+        setAway(on, now = Date.now()) {
+            const { phase, held, away, endsAt, pausedLeft } = get();
+            if (on === away || phase === 'idle' || phase === 'end') return;
+            if (on) set({ away: true, pausedLeft: pausedLeft ?? (endsAt !== null ? Math.max(0, endsAt - now) : null) });
+            else set({ away: false, ...(phase !== 'help' && !held && { pausedLeft: null, ...(pausedLeft !== null && { endsAt: now + pausedLeft }) }) });
         },
 
         restart() {
