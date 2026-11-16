@@ -14,6 +14,7 @@ export const GAME_BLURB: Record<string, string> = {
     touwtrekken: 'Tegen de computer of met z\'n tweeën. Wie juist antwoordt, trekt aan het touw.',
     meteorietenregen: 'Schiet meteorieten op de basis van de ander. Twee juist op rij = een schild!',
     robotduel: 'Twee robots in de ring. Elk juist antwoord is een stoot. Drie op rij: supermove!',
+    taartgevecht: 'Wie eerst juist antwoordt, gooit een taart. Splat! Alleen of met z\'n tweeën.',
     hartjes: 'Draai de hartjes of voetballen om en zoek een som met haar antwoord.',
     honingraat: 'Zoek alle sommen die het getal maken. Moeilijk: pas op voor de wesp!',
     prent: 'Elk juist antwoord draait een tegel om. Welk grappig dier zit eronder?',
