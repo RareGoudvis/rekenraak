@@ -7,6 +7,8 @@ import { cellPlanOf, currentInput, fractionNext, timeWordsNext, useOefenStore } 
 import { KWART } from '../../services/clock/timeWords';
 import TopBar from './TopBar';
 import ExerciseCard from './ExerciseCard';
+import RotatePrompt from './RotatePrompt';
+import { PORTRAIT, useMedia } from './useMedia';
 import AnswerInput from './AnswerInput';
 import FeedbackOverlay from './FeedbackOverlay';
 import StepsPanel from './StepsPanel';
@@ -170,6 +172,9 @@ export default function Kiosk() {
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
     // How far the steps are revealed, for a 'card' visual (MAB) drawn under the exercise; null = not opened yet.
     const [cardRevealed, setCardRevealed] = useState<number | null>(null);
+    // Measured, never a list: an exercise wider than its card in portrait asks for the phone on its side.
+    const [tooWide, setTooWide] = useState(false);
+    const portrait = useMedia(PORTRAIT);
     useKioskKeys();
     if (!sessie || !run) return null;
 
@@ -205,7 +210,7 @@ export default function Kiosk() {
                     <section className="kiosk-card-col" aria-label="Oefening">
                         {shown && type && (
                             <ExerciseCard key={shown.exerciseKey} typeId={type.typeId} exercise={shown.exercise} constraints={shown.constraints}
-                                instruction={instruction} exerciseKey={shown.exerciseKey} />
+                                instruction={instruction} exerciseKey={shown.exerciseKey} onTooWide={setTooWide} />
                         )}
                         {cardVisual}
                         {hint && <p className="kiosk-hint">{PENGUIN}{hint}</p>}
@@ -222,6 +227,7 @@ export default function Kiosk() {
                     </section>
                 </main>
             )}
+            {portrait && tooWide && phase !== 'stats' && shown && <RotatePrompt lead="Zo past de oefening op je scherm." />}
         </div>
     );
 }
