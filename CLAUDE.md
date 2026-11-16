@@ -174,7 +174,7 @@ the per-typeId table is §7.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
 **`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **Bordmodus /
-whiteboard (`src/board/`, `/bord.html`; tools, instruments, widget settings)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
+whiteboard (`src/board/`, `/bord.html`; tools, instruments, widget settings)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15 · **two-player duel games (engine, rules, bot; how to add one)** → §15 "Spelen round 5" + [src/oefenen/spelen/duel/DUEL.md](src/oefenen/spelen/duel/DUEL.md). Animations always play: never add prefers-reduced-motion branches (owner 2026-11-16).
 
 ---
 

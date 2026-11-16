@@ -790,6 +790,12 @@ npm run spel:thumbs -- --url http://localhost:5173/
 
 How: each game is played at leerjaar 2 Optellen up to a few right answers; the script then injects CSS (`COMMON_CSS`: the keypad, topbar, `.kiosk-math`, `*-sign` and `*-key` hint badges are hidden; `SKIN_CSS[id]`: that skin's svg texts / HUD / scores) and screenshots the scene (keypad games on a 1640 px window: the `-world` box is 16:10). The oefen pictures are the first exercise of every topic, blurred. A new skin = one `GAMES` row and, if its scene shows a number the common rules miss, one `SKIN_CSS` line (`--dump` lists what shows digits). Review the contact sheet by eye before committing the webps.
 
+## Duel games by hand (`scripts/duel-shots.mjs`)
+
+Dev builds expose `window.__duel` (the duel store). The script starts a 1 or 2 speler match of any duel game and
+answers for either side (`__duel.getState().answer(side, q.answer)`), then screenshots play, right, wrong, the round
+card and the match card per viewport. Kikkers also exposes `window.__kikker` to summon the golden dragonfly.
+
 ## The manual figures (`scripts/handleiding-shots.mjs`, `npm run handleiding:shots`)
 
 `handleiding.html` (the teacher manual, a Vite input beside `about.html`) is hand-written; its
