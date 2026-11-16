@@ -32,7 +32,19 @@ const GAMES = [
     ['bom', 'Bom', 3], ['bever', 'Bever', 5], ['race', 'Race', 3], ['voetbal', 'Voetbal', 3], ['touwtrekken', 'Touwtrekken', -1],
     ['kasteel', 'Kasteel', 2], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
+    ['meteorietenregen', 'Meteorietenregen', 0],
 ];
+// Duel games with 2 spelers (no keyboard): the moment of the picture, staged through window.__duel (dev builds).
+const duelAnswer = (page, side) => page.evaluate(s => { const d = window.__duel.getState(); const q = d.sides[s].question; if (q && !d.sides[s].feedback) d.answer(s, q.answer); }, side);
+const DUEL_PLAY = {
+    // Left: 4 in a row (both shields up), then a meteor from the right on its way down onto them.
+    meteorietenregen: async page => {
+        for (let i = 0; i < 4; i++) { await duelAnswer(page, 'left'); await page.waitForTimeout(800); }
+        await page.waitForTimeout(2600);
+        await duelAnswer(page, 'right');
+        await page.waitForTimeout(1700);
+    },
+};
 
 // Shared chrome that carries numbers. Every skin marks its numbers with .kiosk-math and its sum sign as <prefix>-sign;
 // the hint badges ("1, 2, 3") are <prefix>-key; the keypad is .spel-keypad (Touwtrekken: .tt-keypad).
@@ -51,6 +63,8 @@ const SKIN_CSS = {
     kasteel: '.ks-bar-text { display: none !important; }',
     // The rope is a wide strip: closer in, so the bears fill the picture.
     touwtrekken: '.tt-scene { transform: scale(1.5); transform-origin: 50% 100%; }',
+    // A wide strip: the left base with its shields fills the picture, the meteor coming in from the right.
+    meteorietenregen: '.mt-svg { transform: scale(2); transform-origin: 0 100%; }',
     schatkist: '.sk-parchment { visibility: hidden !important; }',
     zeehond: '.zh-count { visibility: hidden !important; }',
     hartjes: '.hj-text { visibility: hidden !important; }',
@@ -134,6 +148,7 @@ for (const [id, label, rights] of GAMES) {
             if (await st.count()) { await st.first().click(); await page.waitForTimeout(500); }
         }
         await page.waitForTimeout(1500);
+        if (DUEL_PLAY[id]) await DUEL_PLAY[id](page);
         for (let i = 0; i < rights; i++) {
             await page.waitForFunction(() => /\d+ [+−-] \d+ = \?/.test(document.body.innerText.replace(/\s+/g, ' ')), null, { timeout: 8000 }).catch(() => { });
             const m = /(\d+) ([+−-]) (\d+) = \?/.exec((await page.locator('body').innerText()).replace(/\s+/g, ' ')); if (!m) break;
