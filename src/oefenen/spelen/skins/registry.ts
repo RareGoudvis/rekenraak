@@ -4,6 +4,7 @@ import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 import { CastleTurret, ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 import { Fish } from '@phosphor-icons/react';
 import { SoccerBall } from '@phosphor-icons/react';
+import { Cake } from '@phosphor-icons/react';
 import { WRONG_PENALTY_MS } from './bom/penalty';
 import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
@@ -133,6 +134,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: CastleTurret,
         Screen: lazy(() => import('./kasteel/Kasteel')),
+    },
+    {
+        // A duel (DUEL.md) on one shared sum: the first right answer throws a cream pie (taartgevecht/rule.ts); the scene voices
+        // the throw, the splat and the dizzy lock itself (taartgevecht/sounds.ts).
+        meta: {
+            id: 'taartgevecht', label: 'Taartgevecht', music: 'gek', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions(), sounds: { correct: null, wrong: null, miss: 'plop', win: 'jingle' },
+        },
+        icon: Cake,
+        Screen: lazy(() => import('./taartgevecht/Taartgevecht')),
     },
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
