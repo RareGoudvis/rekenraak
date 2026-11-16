@@ -42,10 +42,6 @@
   pointer-events: none;
 }
 .tv-scene * { stroke-linejoin: round; stroke-linecap: round; }
-.tv-stub-wall { fill: var(--tv-night); }
-.tv-stub-wall.is-kerker { fill: color-mix(in srgb, var(--text-muted) 40%, var(--spel-ink)); }
-.tv-stub-wall.is-school { fill: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--spel-ink)); }
-.tv-stub-floor { fill: var(--spel-ink); }
 
 /* Hit-stop, then a shake scaled to the damage (Blok and IJspijl 1, Vuurbal 2, Bliksem 3). */
 .tv-cam.tv-shake-0 { animation: tv-shake-0 var(--tv-shake-ms, 420ms) ease-out; }

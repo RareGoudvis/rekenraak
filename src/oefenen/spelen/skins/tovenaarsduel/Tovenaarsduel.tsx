@@ -7,7 +7,7 @@ import { useDuelStore } from '../../duel/duelStore';
 import { useDuelEvent, useDuelMatch } from '../../duel/useDuel';
 import { SIDES, otherSide, type Side } from '../../duel/types';
 import { CardWizard, GlowDefs, Impact, Portrait, Shot, SpellIcon, Wizard, type ImpactView, type WizardView } from './art';
-import Arena, { pickArena, readLastArena, saveLastArena, type ArenaKind } from './arenaPlaceholder';
+import Arena, { pickArena, readLastArena, saveLastArena, type ArenaKind } from './arenas';
 import { FLOOR, MODEL, VIEW, WIZ_X } from './geometry';
 import {
     SPELLS, SPELL_NAME, TOVER, TOVER_RULE, freshMarks, healthTone, ladderStep, markHit, nextSpellOf, parseLandTag, shieldOf, spellOf, spellOfFlight,
