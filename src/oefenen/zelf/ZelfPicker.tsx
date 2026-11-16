@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Play } from '@phosphor-icons/react';
+import { ArrowLeft, GameController, Notebook, Play } from '@phosphor-icons/react';
 import { useEenvoudigData } from '../../components/eenvoudig/useEenvoudigData';
 import { EENVOUDIG_NAV } from '../../config/eenvoudig/nav';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
@@ -18,7 +18,8 @@ import TopicCard from './TopicCard';
 import GameRow from './GameRow';
 import { gamesFor, topicCardOf } from './topicGames';
 import { gradeTint, readGrade, saveGrade } from './zelfGrade';
-import { readRange, readTafels, saveRange, saveTafels } from './zelfPicks';
+import { readRange, readTafels, readWay, saveRange, saveTafels, saveWay, type ZelfWay } from './zelfPicks';
+import { gameBlurb } from './gameBlurbs';
 import { zelfTopicLabel } from './zelfLabels';
 import {
     TAFELS_DEFAULT, ZELF_COUNTS, ZELF_MINUTES, ZELF_RANGES, buildZelfSessie, choiceMayHaveMab, choicesFor, isTafelTopic, modeKey, tafelChoice,
@@ -42,25 +43,14 @@ const TAFEL_OPS: { op: TafelOp; text: string }[] = [{ op: 'x', text: 'Maal ×' }
 
 const SECTION_OF_TOPIC: Record<string, string> = Object.fromEntries(EENVOUDIG_NAV.flatMap(sec => sec.topics.map(t => [t.id, sec.name])));
 
-// The two ways to practise, drawn like the game cards: a sheet with lines, two balloons.
-const OEFENEN_ICON = (
-    <svg className="zelf-panel-icon" viewBox="0 0 72 72" aria-hidden>
-        <circle className="zm-paper" cx="36" cy="36" r="32" />
-        <rect className="zm-sheet" x="20" y="16" width="32" height="40" rx="4" />
-        <path className="zm-line" d="M27 28 h18 M27 36 h18 M27 44 h11" />
-    </svg>
-);
-const SPELEN_ICON = (
-    <svg className="zelf-panel-icon" viewBox="0 0 72 72" aria-hidden>
-        <circle className="zm-paper" cx="36" cy="36" r="32" />
-        <path className="zm-string" d="M29 43 q-2 8 4 14 M45 46 q2 6 -6 11" />
-        <ellipse className="zm-b0" cx="29" cy="30" rx="11" ry="13" />
-        <ellipse className="zm-b1" cx="45" cy="34" rx="10" ry="12" />
-    </svg>
-);
+// The two ways on the Keuze screen: their tile text, icon and tint (oefenen blue, spelen orange).
+const WAYS: { way: ZelfWay; title: string; why: string; Icon: typeof Notebook }[] = [
+    { way: 'oefenen', title: 'Oefenen', why: 'Rustig oefenen, met hulp na een foutje', Icon: Notebook },
+    { way: 'spelen', title: 'Spelen', why: 'Kies een spel', Icon: GameController },
+];
 
 // The page opened without a link: a pupil picks leerjaar (the top bar, remembered) and onderwerp (a picture card),
-// then on one Keuze screen the oefening and either Automatiseren (how much) or a game from the games bar.
+// then on one Keuze screen the oefening and one of two ways: Oefenen (how much) or Spelen (the games).
 export default function ZelfPicker() {
     const data = useEenvoudigData();
     const openZelf = useOefenStore(s => s.openZelf);
@@ -97,23 +87,26 @@ export default function ZelfPicker() {
         () => (active && grade !== null && choiceCanPlay(active, grade) ? gamesFor(spelContentOf(active, grade), pickerToday()) : []),
         [active, grade],
     );
+    // Oefenen or Spelen: back from a game opens Spelen, else the device's last pick, else neither (two tiles).
+    const [way, setWay] = useState<ZelfWay | null>(() => (from ? 'spelen' : readWay()));
     // A tapped choice brings the next steps into view (a long list of choices pushes them below the fold).
     const nextRef = useRef<HTMLDivElement>(null);
-    const gamesRef = useRef<HTMLElement>(null);
+    const waysRef = useRef<HTMLDivElement>(null);
     const tapped = useRef(false);
+    // Bring the Oefenen / Spelen tiles to the top after this render: smooth after a tap, at once when coming back from a game.
+    const toWays = useRef<ScrollBehavior | null>(from ? 'instant' : null);
     useEffect(() => {
         if (!tapped.current || !choice) return;
         tapped.current = false;
         nextRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     }, [choice]);
-    // Back from a game: the games bar in view, where the pupil picks another one.
-    const cameBack = useRef(!!from);
+    // The tiles on top, the open part right under them (the games run below the fold).
     useEffect(() => {
-        if (!cameBack.current || !gamesRef.current) return;
-        cameBack.current = false;
-        gamesRef.current.scrollIntoView?.({ block: 'nearest' });
+        if (!toWays.current || !waysRef.current) return;
+        waysRef.current.scrollIntoView?.({ block: 'start', behavior: toWays.current });
+        toWays.current = null;
     });
-
+    const pickWay = (w: ZelfWay) => { toWays.current = 'smooth'; setWay(w); saveWay(w); };
     // Before a leerjaar is picked the topics of every leerjaar show (dimmed).
     const anyGrade = useMemo(() => data && new Set(LEERJAREN.flatMap(g => [...zelfUsable(data, g).keys()])), [data]);
     const shown = useMemo(() => (grade !== null ? (data ? new Set(zelfUsable(data, grade).keys()) : null) : anyGrade), [data, grade, anyGrade]);
@@ -121,7 +114,7 @@ export default function ZelfPicker() {
     const cards = useMemo(() => new Map(data && shown ? [...shown].map(id => [id, topicCardOf(data, grade, id)] as const) : []), [data, shown, grade]);
     const choices = data && grade !== null && topicId !== null && !isTafel ? choicesFor(data, grade, topicId, range) : [];
     const back = () => {
-        if (setup) setSetup(null);
+        if (setup) { toWays.current = 'instant'; setSetup(null); }
         else { setTopicId(null); setChoice(null); setTafelOp(null); setTafelPick(null); }
     };
     const bar = grade !== null && (
@@ -217,8 +210,8 @@ export default function ZelfPicker() {
                 <KidBackdrop clouds={false} grade={grade} />
                 <main key="setup" className="oefen-center zelf">
                     {bar}
-                    <p className="oefen-lead">{topicLabel}: {active.label}</p>
-                    <SpelOptions meta={setup.meta} onStart={meta => play(setup, meta)} onBack={() => setSetup(null)} />
+                    <SpelOptions meta={setup.meta} blurb={gameBlurb(setup.meta.id, '')} note={`${topicLabel}: ${active.label}`}
+                        onStart={meta => play(setup, meta)} onBack={() => { toWays.current = 'instant'; setSetup(null); }} />
                 </main>
             </>
         );
@@ -235,6 +228,44 @@ export default function ZelfPicker() {
                     onClick={() => setMode(o.mode)}>{o.text}</button>
             ))}
         </div>
+    );
+
+    // Games for this oefening = the two tiles; a tafels topic keeps them while no tafel is picked (the hint says why).
+    const everyTafel = isTafel && !active ? tafelChoice(grade, topicId, offer, op) : null;
+    const split = games.length > 0 || (everyTafel !== null && choiceCanPlay(everyTafel, grade));
+    // Oefenen: how much, MAB, then start. Alone (no games) it carries its own head, as the only way.
+    const oefenPart = (alone: boolean) => (
+        <section id="zelf-part-oefenen" className="zelf-step zelf-panel zelf-part is-oefenen"
+            aria-labelledby={alone ? 'zelf-oefen-title' : 'zelf-way-oefenen-title'}>
+            {alone && (
+                <div className="zelf-panel-head">
+                    <span className="zelf-way-icon" aria-hidden><Notebook weight="duotone" /></span>
+                    <div className="zelf-panel-text">
+                        <h2 id="zelf-oefen-title" className="zelf-panel-title">Oefenen</h2>
+                        <p className="zelf-panel-why">Rustig oefenen, met hulp na een foutje</p>
+                    </div>
+                </div>
+            )}
+            <div className="zelf-amount-row is-stack">
+                {group('count', 'Aantal oefeningen')}
+                <div className="zelf-amount-time">
+                    <span className="zelf-amount-or">of op tijd</span>
+                    {group('timer', 'Aantal minuten')}
+                </div>
+            </div>
+            <div className="zelf-amounts">
+                {mabPossible ? (
+                    <button type="button" className="kiosk-btn zelf-mab" aria-pressed={mab} onClick={() => setMab(m => !m)}>
+                        {mab ? 'Hulp met MAB-blokjes: aan' : 'Hulp met MAB-blokjes: uit'}
+                    </button>
+                ) : <span />}
+                <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big zelf-go" disabled={!active}
+                    onClick={() => { if (!active) return; tryFullscreen(); openZelf(buildZelfSessie(active, mode, Date.now(), grade, mabPossible && !mab)); }}>
+                    <Play weight="fill" aria-hidden /> Begin met oefenen
+                </button>
+            </div>
+            {!active && <p className="zelf-hint" role="status">Kies minstens één tafel.</p>}
+        </section>
     );
 
     return (
@@ -297,46 +328,31 @@ export default function ZelfPicker() {
                     )}
                     {(active || isTafel) && (
                         <div ref={nextRef} className="zelf-steps">
-                            {/* Automatiseren: plain practice, how much, then start. */}
-                            <section className="zelf-step zelf-panel" aria-labelledby="zelf-auto-title">
-                                <div className="zelf-panel-head">
-                                    {OEFENEN_ICON}
-                                    <div className="zelf-panel-text">
-                                        <h2 id="zelf-auto-title" className="zelf-panel-title">Automatiseren</h2>
-                                        <p className="zelf-panel-why">Rustig oefenen, met hulp na een foutje</p>
+                            {split ? (
+                                <>
+                                    {/* Oefenen or Spelen: two big tiles, one part open below them (a segmented choice, never a new page). */}
+                                    <div ref={waysRef} className="zelf-ways" role="group" aria-label="Oefenen of spelen">
+                                        {WAYS.map(w => (
+                                            <button key={w.way} type="button" className={`zelf-way is-${w.way}`} aria-pressed={way === w.way}
+                                                aria-label={w.title} aria-describedby={`zelf-way-${w.way}-why`} aria-controls={way === w.way ? `zelf-part-${w.way}` : undefined}
+                                                onClick={() => pickWay(w.way)}>
+                                                <span className="zelf-way-icon" aria-hidden><w.Icon weight="duotone" /></span>
+                                                <span className="zelf-way-text">
+                                                    <span id={`zelf-way-${w.way}-title`} className="zelf-way-title">{w.title}</span>
+                                                    <span id={`zelf-way-${w.way}-why`} className="zelf-way-why">{w.why}</span>
+                                                </span>
+                                            </button>
+                                        ))}
                                     </div>
-                                </div>
-                                <div className="zelf-amount-row is-stack">
-                                    {group('count', 'Aantal oefeningen')}
-                                    <div className="zelf-amount-time">
-                                        <span className="zelf-amount-or">of op tijd</span>
-                                        {group('timer', 'Aantal minuten')}
-                                    </div>
-                                </div>
-                                <div className="zelf-amounts">
-                                    {mabPossible ? (
-                                        <button type="button" className="kiosk-btn zelf-mab" aria-pressed={mab} onClick={() => setMab(m => !m)}>
-                                            {mab ? 'Hulp met MAB-blokjes: aan' : 'Hulp met MAB-blokjes: uit'}
-                                        </button>
-                                    ) : <span />}
-                                    <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big zelf-go" disabled={!active}
-                                        onClick={() => { if (!active) return; tryFullscreen(); openZelf(buildZelfSessie(active, mode, Date.now(), grade, mabPossible && !mab)); }}>
-                                        <Play weight="fill" aria-hidden /> Begin met oefenen
-                                    </button>
-                                </div>
-                                {!active && <p className="zelf-hint" role="status">Kies minstens één tafel.</p>}
-                            </section>
-                            {games.length > 0 && (
-                                <section ref={gamesRef} className="zelf-step zelf-panel is-games" aria-labelledby="zelf-games-title">
-                                    <div className="zelf-panel-head">
-                                        {SPELEN_ICON}
-                                        <div className="zelf-panel-text">
-                                            <h2 id="zelf-games-title" className="zelf-panel-title">Of speel een spel</h2>
-                                        </div>
-                                    </div>
-                                    <GameRow games={games} onPlay={skin => play(skin)} />
-                                </section>
-                            )}
+                                    {way === 'oefenen' && oefenPart(false)}
+                                    {way === 'spelen' && (
+                                        <section id="zelf-part-spelen"
+                                            className="zelf-step zelf-panel zelf-part is-spelen" aria-labelledby="zelf-way-spelen-title">
+                                            {games.length > 0 ? <GameRow games={games} onPlay={skin => play(skin)} /> : <p className="zelf-hint is-left" role="status">Kies minstens één tafel.</p>}
+                                        </section>
+                                    )}
+                                </>
+                            ) : oefenPart(true)}
                         </div>
                     )}
                 </div>

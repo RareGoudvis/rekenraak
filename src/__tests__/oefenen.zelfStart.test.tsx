@@ -8,6 +8,7 @@ import GameThumb from '../oefenen/spelen/GameThumb';
 import { TOPIC_GAME, gamesFor, groupGames, topicCardOf, topicGameOf, topicHasGame, topicSlug } from '../oefenen/zelf/topicGames';
 import { choicesFor, zelfUsable } from '../oefenen/zelf/zelfSessie';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
+import { WAY_KEY, readWay, saveWay } from '../oefenen/zelf/zelfPicks';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { NUMBER_CONTENT, skinsFor } from '../oefenen/spelen/accepts';
 import { choiceCanPlay, spelContentOf } from '../oefenen/spelen/spelQuestion';
@@ -156,19 +157,30 @@ describe('Topic cards and the Keuze screen', () => {
         expect(screen.queryByText('Zelf oefenen')).toBeNull();
     });
 
-    test('Optellen L2: Automatiseren, then exactly the games that accept the choice; a card starts that game with it', async () => {
+    test('Optellen L2: Oefenen or Spelen (owner 2026-11-16), then exactly the games that accept the choice; a card starts that game with it', async () => {
         localStorage.setItem(GRADE_KEY, '2');
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         fireEvent.click(card('Hoofdrekenen', 'Optellen'));
-        expect(screen.queryByRole('region', { name: 'Automatiseren' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Oefenen' })).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Met brug' }));
-        expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
+        // Two tiles, neither open on a first visit; each opens only its own part, the other stays switchable.
+        expect(screen.getByRole('group', { name: 'Oefenen of spelen' })).toBeTruthy();
+        expect(screen.queryByRole('region', { name: 'Oefenen' })).toBeNull();
+        expect(screen.queryByRole('region', { name: 'Spelen' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Oefenen' }));
+        expect(screen.getByRole('region', { name: 'Oefenen' })).toBeTruthy();
         expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
+        expect(screen.queryByRole('group', { name: 'Kies een spel' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Spelen' }));
+        expect(screen.getByRole('button', { name: 'Spelen' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Oefenen' }).getAttribute('aria-pressed')).toBe('false');
+        expect(screen.queryByRole('button', { name: /Begin met oefenen/ })).toBeNull();
+        expect(localStorage.getItem(WAY_KEY)).toBe('spelen');
         const data = await loadEenvoudigData();
         const choice = choicesFor(data, 2, 'Hoofdrekenen · Optellen', 100).find(c => c.label === 'Met brug')!;
         const want = groupGames(gamesFor(spelContentOf(choice, 2), pickerToday())).flatMap(g => g.games.map(x => x.skin.meta.label));
-        const row = within(screen.getByRole('region', { name: 'Of speel een spel' })).getByRole('group', { name: 'Kies een spel' });
+        const row = within(screen.getByRole('region', { name: 'Spelen' })).getByRole('group', { name: 'Kies een spel' });
         const shown = within(row).getAllByRole('button').map(b => b.querySelector('.zelf-play-title')!.textContent);
         expect(shown).toEqual(want);
         expect(shown).toContain('Honingraat');
@@ -178,10 +190,34 @@ describe('Topic cards and the Keuze screen', () => {
         expect(sp().meta!.id).toBe('ballonnen');
         expect(sp().from).toMatchObject({ grade: 2, topicId: 'Hoofdrekenen · Optellen', choice: { key: choice.key } });
         expect(sp().question!.text).toMatch(/\+/);
-        // Ander spel: back on the Keuze screen of that choice.
+        // Ander spel: back on the Keuze screen of that choice, Spelen open.
         act(() => sp().otherGame());
-        expect(await screen.findByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
+        expect(await screen.findByRole('region', { name: 'Spelen' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Met brug' }).getAttribute('aria-pressed')).toBe('true');
+    });
+
+    test('the last way is remembered per device; storage that throws still opens the tiles', async () => {
+        localStorage.setItem(GRADE_KEY, '2');
+        localStorage.setItem(WAY_KEY, 'oefenen');
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        fireEvent.click(card('Hoofdrekenen', 'Optellen'));
+        fireEvent.click(screen.getByRole('button', { name: 'Met brug' }));
+        expect(screen.getByRole('region', { name: 'Oefenen' })).toBeTruthy();
+        cleanup();
+        localStorage.setItem(WAY_KEY, 'spelen');
+        render(<OefenApp />);
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        fireEvent.click(card('Hoofdrekenen', 'Optellen'));
+        fireEvent.click(screen.getByRole('button', { name: 'Met brug' }));
+        expect(screen.getByRole('region', { name: 'Spelen' })).toBeTruthy();
+        cleanup();
+        const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+        expect(readWay()).toBeNull();
+        get.mockRestore();
+        const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+        expect(() => saveWay('oefenen')).not.toThrow();
+        set.mockRestore();
     });
 
     test('a game with options shows its options screen (with its picture) first; Ander spel there returns to the Keuze screen', async () => {
@@ -190,27 +226,34 @@ describe('Topic cards and the Keuze screen', () => {
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         fireEvent.click(card('Hoofdrekenen', 'Vermenigvuldigen'));
         fireEvent.click(screen.getByRole('button', { name: 'Keer 10 en 100' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Spelen' }));
         fireEvent.click(screen.getByRole('button', { name: /^Voetbal/ }));
         expect(sp().phase).toBe('idle');
+        // The game's own start: its picture, name, line and what it plays (owner 2026-11-16).
         expect(screen.getByRole('heading', { name: 'Voetbal' })).toBeTruthy();
         expect(document.querySelector('.spel-options-thumb img')).not.toBeNull();
+        expect(screen.getByText(GAME_BLURB.voetbal)).toBeTruthy();
+        expect(screen.getByText('Vermenigvuldigen: Keer 10 en 100')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: /Ander spel/ }));
-        expect(screen.getByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
+        expect(screen.getByRole('region', { name: 'Spelen' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: /^Voetbal/ }));
         fireEvent.click(screen.getByRole('button', { name: '5 minuten' }));
-        fireEvent.click(screen.getByRole('button', { name: /Start/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Start spel' }));
         expect(sp().meta).toMatchObject({ id: 'voetbal', round: { seconds: 300 } });
         expect(sp().from!.choice.label).toBe('Keer 10 en 100');
     });
 
-    test('no games bar for content without games', async () => {
+    test('no games: Oefenen only, open, no Spelen tile (even when Spelen was the last pick)', async () => {
         localStorage.setItem(GRADE_KEY, '2');
+        localStorage.setItem(WAY_KEY, 'spelen');
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         fireEvent.click(card('Meten', 'Geld'));
         fireEvent.click(screen.getByRole('button', { name: 'Geld tellen' }));
-        expect(screen.getByRole('region', { name: 'Automatiseren' })).toBeTruthy();
-        expect(screen.queryByRole('region', { name: 'Of speel een spel' })).toBeNull();
+        expect(screen.getByRole('region', { name: 'Oefenen' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Spelen' })).toBeNull();
+        expect(screen.queryByRole('region', { name: 'Spelen' })).toBeNull();
         expect(screen.queryByRole('group', { name: 'Kies een spel' })).toBeNull();
     });
 

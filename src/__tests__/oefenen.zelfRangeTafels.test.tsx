@@ -16,6 +16,8 @@ import { spelContentOf } from '../oefenen/spelen/spelQuestion';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }));
+// Oefenen or Spelen (owner 2026-11-16): open the Oefenen part; a choice without games shows it at once (no tile).
+const oefenen = () => { const tile = screen.queryByRole('button', { name: 'Oefenen' }); if (tile) fireEvent.click(tile); };
 const ids = (cs: { vars: { id: string }[] }[]) => new Set(cs.flatMap(c => c.vars.map(v => v.id)));
 const maxOf = (v: { id: string }, data: EenvoudigData) => data.types.find(t => t.vars.some(x => x.id === v.id))?.max;
 
@@ -86,6 +88,7 @@ describe('Tot hoeveel?', () => {
         expect(readRange(1, [5, 10, 20])).toBe(20);
         expect(JSON.parse(localStorage.getItem(RANGE_KEY)!)).toEqual({ 1: 20 });
         click('Met brug');
+        oefenen();
         click('Begin met oefenen');
         const types = useOefenStore.getState().sessie!.types;
         expect(types.every(t => (t.constraints as { maxGetal?: number }).maxGetal === 20)).toBe(true);
@@ -144,6 +147,7 @@ describe('Tot hoeveel?', () => {
         await openTopic(1, 'Getallen', 'Getallen lezen en plaatswaarde');
         expect(screen.getByRole('button', { name: 'tot 5' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.queryByText('Welke oefening?')).toBeNull();
+        oefenen();
         click('Begin met oefenen');
         const s = useOefenStore.getState().sessie!;
         expect(s.types.map(t => [t.leafId, (t.constraints as { maxNumber: number }).maxNumber])).toEqual([['mab-herkennen', 5]]);
@@ -210,9 +214,13 @@ describe('Welke tafels?', () => {
         expect(screen.getByRole('button', { name: 'Maal ×' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.queryByRole('button', { name: 'Tafel van 1 tot 5' })).toBeNull();
         click('Geen');
+        oefenen();
         expect((screen.getByRole('button', { name: /Begin met oefenen/ }) as HTMLButtonElement).disabled).toBe(true);
         expect(screen.getByText('Kies minstens één tafel.')).toBeTruthy();
-        expect(screen.queryByRole('region', { name: 'Of speel een spel' })).toBeNull();
+        // No tafel: Spelen stays a tile (the games come back with a tafel) but shows the same hint, no games.
+        click('Spelen');
+        expect(screen.getByText('Kies minstens één tafel.')).toBeTruthy();
+        expect(screen.queryByRole('group', { name: 'Kies een spel' })).toBeNull();
         click('Tafel van 25');
         click('Tafel van 7');
         expect(readTafels(3, tafelsOffer(3), TAFELS_DEFAULT)).toEqual([7, 25]);
@@ -225,7 +233,7 @@ describe('Welke tafels?', () => {
         expect(st.question!.text).toMatch(/[×:]/);
         // Ander spel: back with the same tafels and × en :.
         act(() => useSpelStore.getState().otherGame());
-        await screen.findByRole('region', { name: 'Of speel een spel' });
+        await screen.findByRole('region', { name: 'Spelen' });
         expect(screen.getByRole('button', { name: 'Allebei × en :' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.getByRole('button', { name: 'Tafel van 25' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.getByRole('button', { name: 'Tafel van 1' }).getAttribute('aria-pressed')).toBe('false');
@@ -235,6 +243,7 @@ describe('Welke tafels?', () => {
         await openTopic(2, 'Hoofdrekenen', 'Deeltafels');
         expect(screen.getByRole('button', { name: 'Deel :' }).getAttribute('aria-pressed')).toBe('true');
         click('Alle');
+        oefenen();
         click('Begin met oefenen');
         const t = useOefenStore.getState().sessie!.types;
         expect(t).toHaveLength(1);

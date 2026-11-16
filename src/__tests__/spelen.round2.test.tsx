@@ -70,19 +70,19 @@ describe('Pre-start options', () => {
         expect(resolveMeta(meta('ballonnen'))).toBe(meta('ballonnen'));
     });
 
-    test('the screen: defaults preselected, one tap on Start; the last pick is remembered per skin', () => {
+    test('the screen: defaults preselected, one tap on Start spel; the last pick is remembered per skin', () => {
         const onPick = vi.fn();
         const onBack = vi.fn();
         render(<SpelOptions meta={meta('bom')} onStart={onPick} onBack={onBack} />);
         expect(screen.getByRole('heading', { name: 'Bom' })).toBeTruthy();
-        // The game's picture above its name, as on the game cards.
+        // The game's picture beside its name, as the start of that game (owner 2026-11-16).
         expect(document.querySelector('.spel-options-thumb img')!.getAttribute('src')).toMatch(/thumbs\/bom\.webp$/);
         expect(screen.getByRole('button', { name: '3 minuten' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.getByRole('button', { name: '10 juist' }).getAttribute('aria-pressed')).toBe('true');
         fireEvent.click(screen.getByRole('button', { name: '5 minuten' }));
         fireEvent.click(screen.getByRole('button', { name: '20 juist' }));
         expect(screen.getByRole('button', { name: '3 minuten' }).getAttribute('aria-pressed')).toBe('false');
-        fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Start spel' }));
         expect(onPick).toHaveBeenCalledTimes(1);
         expect(onPick.mock.calls[0][0]).toMatchObject({ id: 'bom', round: { seconds: 300, goal: 20 }, chosen: { tijd: '5', doel: '20' } });
         cleanup();
@@ -259,7 +259,7 @@ describe('Bever', () => {
         render(<SpelOptions meta={meta('bever')} onStart={vi.fn()} onBack={vi.fn()} />);
         expect(screen.getByRole('button', { name: 'Normaal' }).getAttribute('aria-pressed')).toBe('true');
         fireEvent.click(screen.getByRole('button', { name: 'Moeilijk' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Start spel' }));
         expect(loadChoices(meta('bever'))).toEqual({ niveau: 'moeilijk' });
         expect(loadChoices(meta('bom'))).toEqual({ tijd: '5', doel: '20' });
     });

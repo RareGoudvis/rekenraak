@@ -62,12 +62,14 @@ describe('Volledig scherm uit', () => {
         fireEvent.click(within(screen.getByRole('region', { name: 'Hoofdrekenen' })).getByRole('button', { name: 'Aftrekken' }));
         click('tot 20');
         click(/Zonder brug/);
+        // Oefenen or Spelen (owner 2026-11-16): the games sit behind the Spelen tile.
+        click('Spelen');
         click('Ballonnen');
         await screen.findByRole('group', { name: 'Kies het antwoord' });
         expect(requestFullscreen).toHaveBeenCalled();
         expect(within(document.querySelector('.spel-topbar') as HTMLElement).getByRole('button', { name: 'Volledig scherm uit' })).toBeTruthy();
         act(() => useSpelStore.getState().otherGame());
-        expect(await screen.findByRole('region', { name: 'Of speel een spel' })).toBeTruthy();
+        expect(await screen.findByRole('region', { name: 'Spelen' })).toBeTruthy();
         expect(exitFullscreen).toHaveBeenCalled();
         expect(full).toBeNull();
         expect(btn()).toBeNull();

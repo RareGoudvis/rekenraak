@@ -41,8 +41,11 @@ describe('Zelf oefenen picker', () => {
         const variants = screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''));
         expect(variants.length).toBeGreaterThan(0);
         fireEvent.click(variants[0]);
-        // One screen after the choice: Automatiseren (how much, Begin met oefenen) and the games bar under it.
-        expect(screen.getByRole('heading', { name: 'Automatiseren' })).toBeTruthy();
+        // One screen after the choice: the Oefenen and Spelen tiles (owner 2026-11-16), neither open on a first visit.
+        expect(screen.getByRole('button', { name: 'Spelen' }).getAttribute('aria-pressed')).toBe('false');
+        expect(screen.queryByRole('button', { name: /Begin met oefenen/ })).toBeNull();
+        click('Oefenen');
+        expect(screen.getByRole('region', { name: 'Oefenen' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
         click('3 oefeningen');
         click('Begin met oefenen');
@@ -59,6 +62,7 @@ describe('Zelf oefenen picker', () => {
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
+        click('Oefenen');
         click('3 minuten');
         click('Begin met oefenen');
         expect(st().sessie!.timerMin).toBe(3);
@@ -71,6 +75,7 @@ describe('Zelf oefenen picker', () => {
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         topic('Hoofdrekenen', 'Optellen');
         fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
+        click('Oefenen');
         click('Begin met oefenen');
         // A finished run, set straight into the store (the run itself is the kiosk's own tested path).
         useOefenStore.setState({ phase: 'locked', run: { ...st().run!, done: true } });
