@@ -5,7 +5,7 @@ Most recent entry first.
 
 ---
 
-**2026-11-16** — Round 5, local on rc-oefenen (not pushed): always animate (prefers-reduced-motion ignored), a shared duel engine (levens, beste van 1/3/5, Moeilijk per-sum clock, a bot, pause) with Kasteel and Touwtrekken ported and four new duel games (Taartgevecht, Kikkers en vliegjes, Robotduel, Meteorietenregen), more room in the duel screens, "Draai je toestel" on upright phones, Zelf extras (L1 tot 5 + MAB-blokjes, Door elkaar, labels that fit), the Oefenen / Spelen tiles with a start screen per game, 24 more prent photos.
+**2026-11-16** — Round 5, local on rc-oefenen (not pushed): always animate (prefers-reduced-motion ignored), a shared duel engine (levens, beste van 1/3/5, Moeilijk per-sum clock, a bot, pause) with Kasteel and Touwtrekken ported and four new duel games (Taartgevecht, Kikkers en vliegjes, Robotduel, Meteorietenregen), more room in the duel screens, "Draai je toestel" on upright phones, Zelf extras (L1 tot 5 + MAB-blokjes, Door elkaar, labels that fit), the Oefenen / Spelen tiles with a start screen per game, 24 more prent photos. Then Tovenaarsduel (evil wizards Paars / Rood, a streak spell ladder, three random arenas) and a stronger bot that follows the pupil; released as v2.0.2.
 
 **2026-11-16** — v2.0.1 "kids UI background fixes": the six leerjaar scenes behind Zelf oefenen redrawn (merged sticker outlines, shading, far layer, weather per leerjaar, clouds and animals crossing, small character loops; all still under reduced motion), corners scale into the side space on wide screens, the picker title is screen-reader-only and the card list fades above the ground. Follow-up: the six LeerjaarBar tiles redrawn as small stills of the new scenes (shared palette, Sticker outlines).
 
