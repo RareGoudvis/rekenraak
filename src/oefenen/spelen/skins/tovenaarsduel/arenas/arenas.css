@@ -1,0 +1,570 @@
+/* Tovenaarsduel's arenas (index.ts): Lab, Kerker, School. Flat fills under the ink outline (spelen.css tokens),
+   glows from radial gradients (no CSS filters: iPad Safari ignores them on SVG). Only transform and opacity
+   animate. A big hit sets is-p0 / is-p1 on the root (twin keyframes restart the reactions) and is-hit-<side>;
+   pieces marked is-l / is-r react harder on the half that was hit. One-shots remount per hit (a key). */
+.tva {
+  --amp-l: 1;
+  --amp-r: 1;
+  --amp: 1;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tva.is-hit-left { --amp-l: 1.7; --amp-r: .55; }
+.tva.is-hit-right { --amp-l: .55; --amp-r: 1.7; }
+.tva .is-l { --amp: var(--amp-l); }
+.tva .is-r { --amp: var(--amp-r); }
+.tva-svg { display: block; width: 100%; height: 100%; }
+.tva-svg * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── Shared loops ─────────────────────────────────────────────────────────── */
+@keyframes tva-pulse { from { opacity: .5; } to { opacity: 1; } }
+.tva-twinkle { fill: var(--kiosk-paper); animation: tva-twinkle 2.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -730ms); }
+@keyframes tva-twinkle { from { transform: scale(.35); opacity: .35; } to { transform: scale(1.05); opacity: 1; } }
+/* An orbit from two sine-like sweeps a quarter turn apart (x and y). */
+.tva-orb-x { animation: tva-orb-x calc(var(--t) / 2) ease-in-out infinite alternate; }
+.tva-orb-y { animation: tva-orb-y calc(var(--t) / 2) ease-in-out infinite alternate; animation-delay: calc(var(--t) / -4); }
+@keyframes tva-orb-x { from { transform: translateX(calc(var(--rx) * -1)); } to { transform: translateX(var(--rx)); } }
+@keyframes tva-orb-y { from { transform: translateY(calc(var(--ry) * -1)); } to { transform: translateY(var(--ry)); } }
+
+/* ── Reactions to a big hit (twins: the parity class restarts them) ───────── */
+.tva.is-p0 .tva-wob { animation: tva-wob-0 1100ms ease-out var(--d, 0ms) both; }
+.tva.is-p1 .tva-wob { animation: tva-wob-1 1100ms ease-out var(--d, 0ms) both; }
+@keyframes tva-wob-0 {
+  0%, 100% { transform: none; }
+  10% { transform: rotate(calc(var(--amp) * var(--wob, 8deg))); }
+  28% { transform: rotate(calc(var(--amp) * var(--wob, 8deg) * -.75)); }
+  48% { transform: rotate(calc(var(--amp) * var(--wob, 8deg) * .45)); }
+  70% { transform: rotate(calc(var(--amp) * var(--wob, 8deg) * -.2)); }
+}
+@keyframes tva-wob-1 {
+  0%, 100% { transform: none; }
+  10% { transform: rotate(calc(var(--amp) * var(--wob, 8deg))); }
+  28% { transform: rotate(calc(var(--amp) * var(--wob, 8deg) * -.75)); }
+  48% { transform: rotate(calc(var(--amp) * var(--wob, 8deg) * .45)); }
+  70% { transform: rotate(calc(var(--amp) * var(--wob, 8deg) * -.2)); }
+}
+.tva.is-p0 .tva-surge { animation: tva-surge-0 900ms ease-out both; }
+.tva.is-p1 .tva-surge { animation: tva-surge-1 900ms ease-out both; }
+@keyframes tva-surge-0 { 0%, 100% { transform: none; } 14% { transform: scale(calc(1 + var(--amp) * .12), calc(1 + var(--amp) * 1.4)); } 36% { transform: scale(1, .7); } 60% { transform: scale(1, 1.2); } }
+@keyframes tva-surge-1 { 0%, 100% { transform: none; } 14% { transform: scale(calc(1 + var(--amp) * .12), calc(1 + var(--amp) * 1.4)); } 36% { transform: scale(1, .7); } 60% { transform: scale(1, 1.2); } }
+.tva-flash { opacity: 0; }
+.tva.is-p0 .tva-flash { animation: tva-flash-0 1000ms ease-out both; }
+.tva.is-p1 .tva-flash { animation: tva-flash-1 1000ms ease-out both; }
+@keyframes tva-flash-0 { 0% { opacity: 0; transform: scale(.7); } 12% { opacity: 1; transform: scale(calc(1 + var(--amp) * .12)); } 100% { opacity: 0; transform: scale(1.15); } }
+@keyframes tva-flash-1 { 0% { opacity: 0; transform: scale(.7); } 12% { opacity: 1; transform: scale(calc(1 + var(--amp) * .12)); } 100% { opacity: 0; transform: scale(1.15); } }
+/* A jolt: thrown up and settling, harder on the hit side (a crowd, a rattled lid). */
+.tva.is-p0 .tva-jolt { animation: tva-jolt-0 850ms ease-out var(--d, 0ms) both; }
+.tva.is-p1 .tva-jolt { animation: tva-jolt-1 850ms ease-out var(--d, 0ms) both; }
+@keyframes tva-jolt-0 {
+  0%, 100% { transform: none; }
+  8% { transform: translateY(4px) scaleY(.9); }
+  26% { transform: translateY(calc(var(--amp) * var(--jump, 18px) * -1)) scaleY(1.06); }
+  48% { transform: translateY(2px) scaleY(.94); }
+  64% { transform: translateY(calc(var(--amp) * var(--jump, 18px) * -.35)); }
+  80% { transform: none; }
+}
+@keyframes tva-jolt-1 {
+  0%, 100% { transform: none; }
+  8% { transform: translateY(4px) scaleY(.9); }
+  26% { transform: translateY(calc(var(--amp) * var(--jump, 18px) * -1)) scaleY(1.06); }
+  48% { transform: translateY(2px) scaleY(.94); }
+  64% { transform: translateY(calc(var(--amp) * var(--jump, 18px) * -.35)); }
+  80% { transform: none; }
+}
+/* A gust through a flame: it bends away, blazes up and settles. */
+.tva.is-p0 .tva-gust { animation: tva-gust-0 900ms ease-out var(--d, 0ms) both; }
+.tva.is-p1 .tva-gust { animation: tva-gust-1 900ms ease-out var(--d, 0ms) both; }
+@keyframes tva-gust-0 {
+  0%, 100% { transform: none; }
+  10% { transform: skewX(calc(var(--amp) * var(--lean, -22deg))) scale(calc(1 + var(--amp) * .25), calc(1 + var(--amp) * .55)); }
+  30% { transform: skewX(calc(var(--amp) * var(--lean, -22deg) * -.5)) scale(1.1, 1.25); }
+  55% { transform: skewX(calc(var(--amp) * var(--lean, -22deg) * .25)) scale(1, 1.05); }
+}
+@keyframes tva-gust-1 {
+  0%, 100% { transform: none; }
+  10% { transform: skewX(calc(var(--amp) * var(--lean, -22deg))) scale(calc(1 + var(--amp) * .25), calc(1 + var(--amp) * .55)); }
+  30% { transform: skewX(calc(var(--amp) * var(--lean, -22deg) * -.5)) scale(1.1, 1.25); }
+  55% { transform: skewX(calc(var(--amp) * var(--lean, -22deg) * .25)) scale(1, 1.05); }
+}
+/* A banner flaps: it billows out and ripples back. */
+.tva.is-p0 .tva-flap { animation: tva-flap-0 1300ms ease-out var(--d, 0ms) both; }
+.tva.is-p1 .tva-flap { animation: tva-flap-1 1300ms ease-out var(--d, 0ms) both; }
+@keyframes tva-flap-0 {
+  0%, 100% { transform: none; }
+  10% { transform: skewX(calc(var(--amp) * 9deg)) scaleX(calc(1 - var(--amp) * .1)); }
+  26% { transform: skewX(calc(var(--amp) * -7deg)) scaleX(1.04); }
+  44% { transform: skewX(calc(var(--amp) * 4deg)) scaleX(.97); }
+  64% { transform: skewX(calc(var(--amp) * -2deg)); }
+}
+@keyframes tva-flap-1 {
+  0%, 100% { transform: none; }
+  10% { transform: skewX(calc(var(--amp) * 9deg)) scaleX(calc(1 - var(--amp) * .1)); }
+  26% { transform: skewX(calc(var(--amp) * -7deg)) scaleX(1.04); }
+  44% { transform: skewX(calc(var(--amp) * 4deg)) scaleX(.97); }
+  64% { transform: skewX(calc(var(--amp) * -2deg)); }
+}
+
+/* ── One-shots (remounted per hit) ────────────────────────────────────────── */
+.tva-fly-x { animation: tva-fly-x 950ms linear calc(var(--k) * 22ms) both; }
+@keyframes tva-fly-x { from { transform: translateX(0); } to { transform: translateX(calc(var(--dx) * var(--amp))); } }
+.tva-fly-y { animation: tva-fly-y 950ms calc(var(--k) * 22ms) both; }
+@keyframes tva-fly-y {
+  0% { transform: translateY(0) scale(.4); opacity: 1; animation-timing-function: cubic-bezier(.2, .7, .5, 1); }
+  38% { transform: translateY(calc(var(--up) * var(--amp))) scale(1); animation-timing-function: cubic-bezier(.5, 0, .9, .5); }
+  92% { opacity: 1; }
+  100% { transform: translateY(var(--down)) scale(.8, .5); opacity: 0; }
+}
+.tva-pop { animation: tva-pop 520ms ease-out both; }
+@keyframes tva-pop { 0% { transform: scale(.3); opacity: .95; } 100% { transform: scale(1.35); opacity: 0; } }
+.tva-spark-once { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5px; animation: tva-spark-once 760ms ease-out calc(var(--k) * 26ms) both; }
+@keyframes tva-spark-once { 0% { transform: translate(0, 0) scale(1.2); opacity: 1; } 100% { transform: translate(calc(var(--dx) * var(--amp)), calc(var(--dy) * var(--amp))) scale(.3) rotate(160deg); opacity: 0; } }
+.tva-glint-once { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; animation: tva-glint-once 820ms ease-out calc(var(--k) * 70ms) both; }
+@keyframes tva-glint-once { 0% { transform: scale(0) rotate(0); opacity: 0; } 30% { transform: scale(calc(var(--amp) * .9)) rotate(45deg); opacity: 1; } 100% { transform: scale(0) rotate(90deg); opacity: 0; } }
+/* Dust and pebbles from the ceiling: they fall to the floor and fade. */
+.tva-fall { animation: tva-fall var(--fd, 1300ms) cubic-bezier(.45, 0, .9, .6) var(--fdel, 0ms) both; }
+@keyframes tva-fall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 8% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(var(--fx, 0px), var(--fy)) rotate(var(--fr, 0deg)); opacity: 0; } }
+.tva-cloud { animation: tva-cloud 1400ms ease-out var(--fdel, 0ms) both; }
+@keyframes tva-cloud { 0% { transform: scale(.2); opacity: 0; } 15% { opacity: .85; } 100% { transform: translate(var(--fx, 0px), 26px) scale(1.6); opacity: 0; } }
+
+/* The ring that runs out over the floor, and the warm flash over the half that was hit. */
+.tva-ring-once { animation: tva-ring-once 700ms ease-out both; }
+.tva-ring-once.is-late { animation-delay: 120ms; }
+@keyframes tva-ring-once { 0% { transform: scale(.6); opacity: 1; } 100% { transform: scale(1.45); opacity: 0; } }
+.tva-hitflash { position: absolute; inset: 0; pointer-events: none; animation: tva-hitflash 650ms ease-out both; }
+.tva-hitflash.is-left { background: radial-gradient(ellipse 34% 75% at 19% 60%, color-mix(in srgb, var(--spel-star) 45%, transparent), transparent 75%); }
+.tva-hitflash.is-right { background: radial-gradient(ellipse 34% 75% at 81% 60%, color-mix(in srgb, var(--spel-star) 45%, transparent), transparent 75%); }
+.tva-hitflash.is-mid { background: radial-gradient(ellipse 50% 75% at 50% 60%, color-mix(in srgb, var(--spel-star) 35%, transparent), transparent 75%); }
+@keyframes tva-hitflash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+.tva-shadow { fill: var(--spel-ink); opacity: .4; }
+.tva-stop-ink { stop-color: var(--spel-ink); }
+
+/* ══ Lab ═══════════════════════════════════════════════════════════════════ */
+.tva-lab {
+  --lab-wall: color-mix(in srgb, var(--accent-meetkunde) 22%, var(--spel-ink));
+  --lab-stone: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink));
+  --lab-wood: color-mix(in srgb, var(--accent-vraagstukken) 34%, var(--spel-ink));
+  --lab-wood-lt: color-mix(in srgb, var(--accent-vraagstukken) 52%, var(--spel-ink));
+  --lab-floor: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  --lab-brass: color-mix(in srgb, var(--mab-e) 72%, var(--accent-vraagstukken));
+  --lab-brass-dk: color-mix(in srgb, var(--mab-e) 45%, var(--spel-ink));
+  --lab-iron: color-mix(in srgb, var(--text-muted) 32%, var(--spel-ink));
+  --lab-sky: color-mix(in srgb, var(--accent-bewerkingen) 34%, var(--spel-ink));
+  --lab-moon: color-mix(in srgb, var(--mab-e) 30%, var(--kiosk-paper));
+  --lab-rune: color-mix(in srgb, var(--kid-go) 55%, var(--kiosk-paper));
+  --lab-green: var(--kid-go);
+  --lab-purple: var(--mab-e2);
+  --lab-pink: color-mix(in srgb, var(--accent-getallenkennis) 50%, var(--kid-tint-6));
+  --lab-blue: color-mix(in srgb, var(--accent-bewerkingen) 70%, var(--kiosk-paper));
+  --lab-gold: var(--mab-e);
+  background: var(--lab-wall);
+}
+.tva-lab-stop.is-green { stop-color: var(--lab-green); }
+.tva-lab-stop.is-purple { stop-color: var(--lab-purple); }
+.tva-lab-stop.is-pink { stop-color: var(--lab-pink); }
+.tva-lab-stop.is-blue { stop-color: var(--lab-blue); }
+.tva-lab-stop.is-gold { stop-color: var(--lab-gold); }
+.tva-lab-stop.is-moon { stop-color: var(--lab-moon); }
+
+.tva-lab-wall { fill: var(--lab-wall); }
+.tva-lab-stone { fill: var(--lab-stone); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-opacity: .55; }
+.tva-lab-stone.is-1 { fill: color-mix(in srgb, var(--lab-stone) 88%, var(--kiosk-paper)); }
+.tva-lab-stone.is-2 { fill: color-mix(in srgb, var(--lab-stone) 80%, var(--spel-ink)); }
+.tva-lab-stone.is-faint { fill: var(--lab-wall); stroke-opacity: .22; }
+.tva-lab-sky { fill: var(--lab-sky); }
+.tva-lab-moon { fill: var(--lab-moon); }
+.tva-lab-mullion { fill: none; stroke: var(--lab-wood); stroke-width: 7px; }
+.tva-lab-winframe { fill: none; stroke: var(--lab-wood-lt); stroke-width: 10px; }
+.tva-lab-winframe.is-in { stroke-width: 5px; }
+.tva-lab-winframe.is-ink { stroke: var(--spel-ink); stroke-width: 16px; }
+.tva-lab-moonbeam { fill: url(#tva-lab-moonbeam); animation: tva-pulse 6s ease-in-out infinite alternate; }
+.tva-lab-beam { fill: var(--lab-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-grain { fill: none; stroke: var(--spel-ink); stroke-width: 2px; opacity: .35; }
+.tva-lab-nail { fill: var(--lab-brass-dk); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tva-lab-panel { fill: var(--lab-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-panel-in { fill: none; stroke: var(--spel-ink); stroke-width: 2px; opacity: .4; }
+.tva-lab-rail { fill: var(--lab-wood-lt); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-floor { fill: var(--lab-floor); }
+.tva-lab-seam { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; opacity: .45; }
+.tva-lab-floorline { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+
+/* Flasks and shelves. */
+.tva-lab-glass { fill: var(--kiosk-paper); fill-opacity: .16; }
+.tva-lab-rim { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-liq { stroke: none; }
+.tva-lab-liq.is-green { fill: var(--lab-green); }
+.tva-lab-liq.is-purple { fill: var(--lab-purple); }
+.tva-lab-liq.is-pink { fill: var(--lab-pink); }
+.tva-lab-liq.is-blue { fill: var(--lab-blue); }
+.tva-lab-liq.is-gold { fill: var(--lab-gold); }
+.tva-lab-cork { fill: var(--lab-wood-lt); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-lab-lid { fill: var(--lab-brass); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-lab-label { fill: var(--lab-moon); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tva-lab-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .7; }
+.tva-lab-mote { stroke: none; transform-origin: 0 0; animation: tva-twinkle 1.4s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -470ms); }
+.tva-lab-mote.is-gold { fill: var(--lab-gold); }
+.tva-lab-flaskglow { animation: tva-pulse 2.2s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -530ms); }
+.tva-lab-plank { fill: var(--lab-wood-lt); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-bracket { fill: none; stroke: var(--spel-ink); stroke-width: 5px; }
+.tva-lab-book { stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-lab-book.is-a { fill: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-ink)); }
+.tva-lab-book.is-b { fill: color-mix(in srgb, var(--accent-metendrekenen) 50%, var(--spel-ink)); }
+.tva-lab-book.is-c { fill: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--spel-ink)); }
+.tva-lab-line { fill: none; stroke: var(--lab-brass); stroke-width: 2px; }
+.tva-lab-wood { fill: var(--lab-wood-lt); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-lab-post { fill: none; stroke: var(--lab-wood-lt); stroke-width: 3px; }
+.tva-lab-sand { fill: var(--lab-gold); }
+.tva-lab-sand.is-top { animation: tva-lab-sand-top 7s linear infinite; }
+.tva-lab-sand.is-bottom { animation: tva-lab-sand-bottom 7s linear infinite; }
+@keyframes tva-lab-sand-top { 0% { transform: scale(1); } 92% { transform: scale(.15); opacity: 1; } 100% { transform: scale(.15); opacity: 0; } }
+@keyframes tva-lab-sand-bottom { 0% { transform: scale(.15); opacity: 0; } 4% { opacity: 1; } 92% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+.tva-lab-sandrun { fill: none; stroke: var(--lab-gold); stroke-width: 2px; stroke-dasharray: 3 3; animation: tva-lab-run 400ms linear infinite; }
+@keyframes tva-lab-run { from { stroke-dashoffset: 6; } to { stroke-dashoffset: 0; } }
+
+/* Herbs. */
+.tva-lab-sway { animation: tva-lab-sway 3.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -610ms); }
+@keyframes tva-lab-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.tva-lab-string { fill: none; stroke: var(--lab-wood-lt); stroke-width: 2.5px; }
+.tva-lab-leaf { stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-lab-leaf.is-0 { fill: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--spel-ink)); }
+.tva-lab-leaf.is-1 { fill: color-mix(in srgb, var(--accent-meetkunde) 55%, var(--kiosk-paper)); }
+.tva-lab-chili { fill: color-mix(in srgb, var(--accent-getallenkennis) 75%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-lab-tie { fill: var(--lab-brass); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* Cauldrons. */
+.tva-lab-potglow { animation: tva-pulse 1.7s ease-in-out infinite alternate; }
+.tva-lab-pot { fill: var(--lab-iron); stroke: var(--spel-ink); stroke-width: 4px; }
+.tva-lab-potshine { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: .22; }
+.tva-lab-iron { fill: none; stroke: var(--spel-ink); stroke-width: 9px; }
+.tva-lab-logs { fill: none; stroke: var(--lab-wood-lt); stroke-width: 9px; }
+.tva-lab-rimring { fill: none; stroke: var(--spel-ink); stroke-width: 9px; }
+.tva-lab-brew.is-green, .tva-lab-drop.is-green, .tva-lab-splash.is-green { fill: var(--lab-green); }
+.tva-lab-brew.is-purple, .tva-lab-drop.is-purple, .tva-lab-splash.is-purple { fill: var(--lab-purple); }
+.tva-lab-drop { stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-lab-splash { fill-opacity: .7; }
+.tva-lab-brewshine { fill: var(--kiosk-paper); opacity: .45; animation: tva-pulse 900ms ease-in-out infinite alternate; }
+.tva-lab-bubble { stroke: var(--spel-ink); stroke-width: 2px; animation: tva-lab-bubble 1.9s ease-out infinite; animation-delay: calc(var(--k) * -330ms); }
+.tva-lab-bubble.is-green { fill: color-mix(in srgb, var(--lab-green) 60%, var(--kiosk-paper)); }
+.tva-lab-bubble.is-purple { fill: color-mix(in srgb, var(--lab-purple) 60%, var(--kiosk-paper)); }
+@keyframes tva-lab-bubble {
+  0% { transform: translateY(0) scale(.3); opacity: 0; }
+  15% { opacity: 1; }
+  78% { transform: translateY(var(--bh)) scale(1); opacity: 1; }
+  100% { transform: translateY(var(--bh)) scale(1.6); opacity: 0; }
+}
+.tva-lab-steam { animation: tva-lab-steam 3.6s ease-out infinite; animation-delay: calc(var(--k) * -720ms); }
+.tva-lab-steam.is-green { fill: color-mix(in srgb, var(--lab-green) 45%, var(--kiosk-paper)); }
+.tva-lab-steam.is-purple { fill: color-mix(in srgb, var(--lab-purple) 45%, var(--kiosk-paper)); }
+@keyframes tva-lab-steam {
+  0% { transform: translate(0, 0) scale(.4); opacity: 0; }
+  18% { opacity: .55; }
+  100% { transform: translate(var(--sx), var(--sh)) scale(2); opacity: 0; }
+}
+.tva-lab-fire { animation: tva-lab-fire 280ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -110ms); }
+@keyframes tva-lab-fire { from { transform: scale(1, 1) skewX(-4deg); } to { transform: scale(.86, 1.22) skewX(5deg); } }
+.tva-lab-flame-out { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-lab-flame-in { fill: var(--mab-e); }
+.tva-lab-stir { animation: tva-lab-stir 2.4s ease-in-out infinite alternate; }
+@keyframes tva-lab-stir { from { transform: translateX(-14px) rotate(-6deg); } to { transform: translateX(10px) rotate(8deg); } }
+.tva-lab-spoon { fill: none; stroke: var(--lab-wood-lt); stroke-width: 8px; }
+.tva-lab-spoonbowl { fill: var(--lab-wood-lt); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+/* The orrery. */
+.tva-lab-sunglow { animation: tva-pulse 2.8s ease-in-out infinite alternate; }
+.tva-lab-brass { fill: var(--lab-brass); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-brass-dk { fill: var(--lab-brass-dk); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-arm { fill: none; stroke: var(--lab-brass-dk); stroke-width: 6px; }
+.tva-lab-ring { fill: none; stroke: var(--lab-brass); stroke-width: 6px; }
+.tva-lab-ticks { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-meridian { animation: tva-spin 46s linear infinite; }
+@keyframes tva-spin { to { transform: rotate(360deg); } }
+.tva-lab-orbit { fill: none; stroke: var(--lab-brass); stroke-width: 2.5px; opacity: .8; }
+.tva-lab-sun { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-lab-rays { fill: none; stroke: var(--mab-e); stroke-width: 3px; animation: tva-spin 14s linear infinite; }
+.tva-lab-planet { stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-lab-planet.is-a { fill: var(--lab-pink); }
+.tva-lab-planet.is-b { fill: var(--lab-blue); }
+.tva-lab-planet.is-c { fill: var(--lab-green); }
+.tva-lab-planetring { fill: none; stroke: var(--lab-moon); stroke-width: 2px; }
+
+/* The tipped flask. */
+.tva-lab-puddleglow { animation: tva-pulse 1.3s ease-in-out infinite alternate; }
+.tva-lab-puddle { fill: var(--lab-pink); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-lab-spark { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.2px; opacity: 0; animation: tva-lab-spark 1.6s ease-out infinite; animation-delay: calc(var(--k) * -270ms); }
+@keyframes tva-lab-spark { 0% { transform: translate(0, 0) scale(.4); opacity: 0; } 8% { opacity: 1; } 55% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(90deg); opacity: 0; } 100% { opacity: 0; } }
+
+/* The alchemy circle. */
+.tva-lab-circleglow { animation: tva-pulse 3.2s ease-in-out infinite alternate; }
+.tva-lab-turn { animation: tva-spin 90s linear infinite; }
+.tva-lab-rune { fill: none; stroke: var(--lab-rune); stroke-width: 3px; vector-effect: non-scaling-stroke; opacity: .85; }
+.tva-lab-rune.is-wide { stroke-width: 5px; }
+.tva-lab-rune.is-dot { fill: var(--lab-rune); fill-opacity: .25; }
+.tva-lab-rune.is-glyph { fill: var(--lab-rune); }
+.tva-lab-shock { fill: none; stroke: var(--lab-rune); stroke-width: 6px; }
+.tva-lab-motes { fill: var(--lab-rune); animation: tva-lab-motes 5.5s ease-out infinite; animation-delay: calc(var(--k) * -690ms); }
+@keyframes tva-lab-motes { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: .9; } 100% { transform: translate(12px, -170px); opacity: 0; } }
+
+/* ══ Kerker ════════════════════════════════════════════════════════════════ */
+.tva-kerker {
+  --ker-wall: color-mix(in srgb, var(--accent-bewerkingen) 8%, color-mix(in srgb, var(--text-muted) 34%, var(--spel-ink)));
+  --ker-stone: color-mix(in srgb, var(--accent-bewerkingen) 8%, color-mix(in srgb, var(--text-muted) 58%, var(--spel-ink)));
+  --ker-deep: color-mix(in srgb, var(--accent-bewerkingen) 10%, color-mix(in srgb, var(--text-muted) 14%, var(--spel-ink)));
+  --ker-floor: color-mix(in srgb, var(--accent-vraagstukken) 8%, color-mix(in srgb, var(--text-muted) 52%, var(--spel-ink)));
+  --ker-iron: color-mix(in srgb, var(--text-muted) 30%, var(--spel-ink));
+  --ker-iron-lt: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper));
+  --ker-wood: color-mix(in srgb, var(--accent-vraagstukken) 34%, var(--spel-ink));
+  --ker-wood-lt: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
+  --ker-moss: color-mix(in srgb, var(--accent-metendrekenen) 50%, var(--spel-ink));
+  --ker-warm: color-mix(in srgb, var(--mab-e) 70%, var(--accent-vraagstukken));
+  --ker-water: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper));
+  --ker-web: color-mix(in srgb, var(--kiosk-paper) 70%, transparent);
+  --ker-bat: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink));
+  --ker-mouse: color-mix(in srgb, var(--text-muted) 45%, var(--kiosk-paper));
+  background: var(--ker-wall);
+}
+.tva-ker-stop.is-warm { stop-color: var(--ker-warm); }
+.tva-ker-stop.is-hot { stop-color: var(--kiosk-paper); }
+.tva-ker-stop.is-far { stop-color: var(--ker-water); }
+
+.tva-ker-wall { fill: var(--ker-wall); }
+.tva-ker-stone { fill: var(--ker-stone); stroke: var(--spel-ink); stroke-width: 3px; stroke-opacity: .7; }
+.tva-ker-stone.is-1 { fill: color-mix(in srgb, var(--ker-stone) 86%, var(--kiosk-paper)); }
+.tva-ker-stone.is-2 { fill: color-mix(in srgb, var(--ker-stone) 78%, var(--spel-ink)); }
+.tva-ker-moss { fill: var(--ker-moss); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-ker-pool { animation: tva-ker-flicker 1.4s linear infinite; animation-delay: calc(var(--k) * -370ms); }
+@keyframes tva-ker-flicker { 0% { opacity: .85; } 18% { opacity: 1; } 34% { opacity: .78; } 52% { opacity: .96; } 70% { opacity: .74; } 86% { opacity: .92; } 100% { opacity: .85; } }
+.tva-ker-deep { fill: var(--ker-deep); }
+.tva-ker-deeper { fill: color-mix(in srgb, var(--ker-deep) 70%, var(--spel-ink)); }
+.tva-ker-farglow { animation: tva-pulse 5s ease-in-out infinite alternate; }
+.tva-ker-step { fill: none; stroke: var(--ker-stone); stroke-width: 3px; opacity: .55; }
+.tva-ker-jamb, .tva-ker-vous { fill: color-mix(in srgb, var(--ker-stone) 90%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tva-ker-vous.is-key { fill: color-mix(in srgb, var(--ker-stone) 78%, var(--kiosk-paper)); }
+.tva-ker-beam { fill: var(--ker-wood); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tva-ker-grain { fill: none; stroke: var(--spel-ink); stroke-width: 2px; opacity: .4; }
+.tva-ker-web { animation: tva-ker-web 5s ease-in-out infinite alternate; }
+@keyframes tva-ker-web { from { transform: skewX(-2deg); } to { transform: skewX(2deg) scale(1.02); } }
+.tva-ker-thread { fill: none; stroke: var(--ker-web); stroke-width: 1.6px; }
+
+/* Chains. */
+.tva-ker-swing { animation: tva-ker-swing 4.2s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -1.1s); }
+@keyframes tva-ker-swing { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+.tva-ker-link { fill: none; stroke: var(--spel-ink); stroke-width: 7px; }
+.tva-ker-link-side { fill: var(--ker-iron-lt); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-ker-shackle { fill: none; stroke: var(--spel-ink); stroke-width: 7px; }
+.tva-ker-hinge { fill: var(--ker-iron-lt); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+/* The cell door. */
+.tva-ker-cell { fill: color-mix(in srgb, var(--ker-deep) 60%, var(--spel-ink)); }
+.tva-ker-frame { fill: none; stroke: color-mix(in srgb, var(--ker-stone) 90%, var(--kiosk-paper)); stroke-width: 14px; }
+.tva-ker-frame.is-ink { stroke: var(--spel-ink); stroke-width: 21px; }
+.tva-ker-bar { fill: none; stroke: var(--spel-ink); stroke-width: 9px; }
+.tva-ker-crossbar { fill: none; stroke: var(--spel-ink); stroke-width: 8px; }
+.tva-ker-rivet { fill: var(--ker-iron-lt); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-ker-lock { fill: var(--ker-warm); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-keyhole { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.tva-ker-eye { fill: var(--mab-e); }
+.tva-ker-pupil { fill: var(--spel-ink); animation: tva-ker-look 6s ease-in-out infinite; }
+@keyframes tva-ker-look { 0%, 30% { transform: translateX(-3px); } 40%, 70% { transform: translateX(3px); } 80%, 100% { transform: translate(0, 2px); } }
+.tva-ker-peek { animation: tva-ker-blink 4.4s linear infinite; }
+@keyframes tva-ker-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+/* Torches. */
+.tva-ker-plate { fill: var(--ker-iron); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-arm { fill: none; stroke: var(--spel-ink); stroke-width: 5px; }
+.tva-ker-stick { fill: none; stroke: var(--ker-wood-lt); stroke-width: 9px; }
+.tva-ker-cup { fill: var(--ker-iron); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-wrap { fill: none; stroke: var(--ker-wood-lt); stroke-width: 3px; }
+.tva-ker-flame { animation: tva-ker-flame 620ms linear infinite; animation-delay: calc(var(--k) * -170ms); }
+@keyframes tva-ker-flame {
+  0%, 100% { transform: none; }
+  25% { transform: scale(.9, 1.12) skewX(4deg); }
+  50% { transform: scale(1.06, .93) skewX(-3deg); }
+  75% { transform: scale(.94, 1.07) skewX(2deg); }
+}
+.tva-ker-flame-out { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-flame-mid { fill: var(--mab-e); }
+.tva-ker-flame-core { fill: var(--kiosk-paper); }
+.tva-ker-ember { fill: var(--mab-e); animation: tva-ker-ember 1.5s ease-out infinite; animation-delay: calc(var(--k) * -430ms); }
+@keyframes tva-ker-ember { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--ex), -70px) scale(.3); opacity: 0; } }
+.tva-ker-mote { fill: var(--ker-warm); animation: tva-ker-mote 7s ease-in-out infinite; animation-delay: calc(var(--k) * -1.3s); }
+@keyframes tva-ker-mote { 0% { transform: translate(0, 0); opacity: 0; } 25% { transform: translate(10px, -14px); opacity: .85; } 50% { transform: translate(-6px, -26px); opacity: .45; } 75% { transform: translate(8px, -38px); opacity: .85; } 100% { transform: translate(0, -52px); opacity: 0; } }
+
+/* Floor and props. */
+.tva-ker-floor { fill: var(--ker-floor); }
+.tva-ker-flag { fill: var(--ker-floor); stroke: var(--spel-ink); stroke-width: 3px; stroke-opacity: .6; }
+.tva-ker-flag.is-1 { fill: color-mix(in srgb, var(--ker-floor) 88%, var(--kiosk-paper)); }
+.tva-ker-flag.is-2 { fill: color-mix(in srgb, var(--ker-floor) 85%, var(--spel-ink)); }
+.tva-ker-floorlight { animation: tva-ker-flicker 1.4s linear infinite; animation-delay: calc(var(--k) * -370ms); }
+.tva-ker-floorline { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.tva-ker-straw { fill: color-mix(in srgb, var(--mab-e) 70%, var(--accent-vraagstukken)); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-strand { fill: none; stroke: color-mix(in srgb, var(--mab-e) 50%, var(--spel-ink)); stroke-width: 2.5px; }
+.tva-ker-hole { fill: var(--spel-ink); }
+.tva-ker-mouse { opacity: 0; animation: tva-ker-mouse 9s ease-in-out infinite; animation-delay: -5s; }
+@keyframes tva-ker-mouse { 0%, 58% { opacity: 0; transform: translate(0, 4px); } 63% { opacity: 1; transform: translate(0, 0); } 70% { transform: translate(-3px, -2px) rotate(-6deg); } 77% { transform: translate(3px, 0) rotate(5deg); } 84% { opacity: 1; transform: none; } 88%, 100% { opacity: 0; transform: translate(0, 4px); } }
+.tva-ker-mousebody { fill: var(--ker-mouse); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-ker-mouseeye { fill: var(--spel-ink); }
+.tva-ker-nose { fill: var(--kid-tint-6); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tva-ker-bucket { fill: var(--ker-wood-lt); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-hoop { fill: none; stroke: var(--ker-iron); stroke-width: 5px; }
+.tva-ker-water { fill: var(--ker-water); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-ker-handle { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-ker-drop { fill: var(--ker-water); stroke: var(--spel-ink); stroke-width: 2px; animation: tva-ker-drop 3.4s infinite; animation-delay: calc(var(--k) * -1.7s); }
+@keyframes tva-ker-drop {
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  30% { transform: translateY(0) scale(1); animation-timing-function: ease-in-out; }
+  36% { transform: translateY(6px) scale(1); animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+  58% { transform: translateY(var(--fall)) scale(.9, 1.2); opacity: 1; }
+  59%, 100% { transform: translateY(var(--fall)); opacity: 0; }
+}
+.tva-ker-splash { fill: none; stroke: var(--ker-water); stroke-width: 3px; opacity: 0; animation: tva-ker-splash 3.4s infinite; animation-delay: calc(var(--k) * -1.7s); }
+@keyframes tva-ker-splash { 0%, 58% { transform: scale(.2); opacity: 0; } 60% { transform: scale(.5); opacity: 1; } 80%, 100% { transform: scale(1.5); opacity: 0; } }
+.tva-ker-puddle { fill: var(--ker-water); opacity: .55; }
+
+/* Bats. */
+.tva-ker-bat { fill: var(--ker-bat); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-ker-batwing { fill: color-mix(in srgb, var(--ker-bat) 85%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-ker-bateye { fill: var(--mab-e); }
+.tva-ker-batfang { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.5px; }
+.tva-ker-wing.is-left { animation: tva-ker-flap-l 170ms ease-in-out infinite alternate; }
+.tva-ker-wing.is-right { animation: tva-ker-flap-r 170ms ease-in-out infinite alternate; }
+@keyframes tva-ker-flap-l { from { transform: rotate(-24deg) scaleY(1.1); } to { transform: rotate(22deg) scaleY(.7); } }
+@keyframes tva-ker-flap-r { from { transform: rotate(24deg) scaleY(1.1); } to { transform: rotate(-22deg) scaleY(.7); } }
+.tva-ker-flutter { animation: tva-ker-flutter 340ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -120ms); }
+@keyframes tva-ker-flutter { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
+.tva-ker-dangle { animation: tva-ker-dangle 3.2s ease-in-out infinite alternate; }
+@keyframes tva-ker-dangle { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.tva-ker-claw { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-ker-sleep { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-ker-z { fill: none; stroke: var(--kiosk-paper); stroke-width: 2px; opacity: 0; animation: tva-ker-z 3s ease-out infinite; animation-delay: calc(var(--k) * -1s); }
+@keyframes tva-ker-z { 0% { transform: translate(0, 0) scale(.5); opacity: 0; } 20% { opacity: .9; } 100% { transform: translate(16px, -30px) scale(1.2); opacity: 0; } }
+
+/* The rain of dust on a hit. */
+.tva-ker-pebble { fill: var(--ker-stone); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-ker-speck { fill: color-mix(in srgb, var(--ker-stone) 60%, var(--kiosk-paper)); }
+.tva-ker-puff { fill: color-mix(in srgb, var(--ker-stone) 50%, var(--kiosk-paper)); }
+
+/* ══ School ════════════════════════════════════════════════════════════════ */
+.tva-school {
+  --sch-wall: color-mix(in srgb, var(--accent-vraagstukken) 16%, color-mix(in srgb, var(--text-muted) 42%, var(--spel-ink)));
+  --sch-block: color-mix(in srgb, var(--accent-vraagstukken) 18%, color-mix(in srgb, var(--text-muted) 52%, var(--spel-ink)));
+  --sch-stone: color-mix(in srgb, var(--accent-vraagstukken) 14%, color-mix(in srgb, var(--text-muted) 72%, var(--kiosk-paper)));
+  --sch-sky: color-mix(in srgb, var(--accent-bewerkingen) 38%, var(--spel-ink));
+  --sch-sky-low: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink));
+  --sch-moon: color-mix(in srgb, var(--mab-e) 30%, var(--kiosk-paper));
+  --sch-blue: color-mix(in srgb, var(--accent-bewerkingen) 78%, var(--spel-ink));
+  --sch-orange: color-mix(in srgb, var(--accent-vraagstukken) 88%, var(--spel-ink));
+  --sch-gold: var(--mab-e);
+  --sch-wood: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  --sch-wood-lt: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --sch-floor: color-mix(in srgb, var(--accent-vraagstukken) 46%, var(--spel-ink));
+  --sch-carpet: color-mix(in srgb, var(--accent-meetkunde) 48%, var(--spel-ink));
+  --sch-wax: color-mix(in srgb, var(--mab-e) 18%, var(--kiosk-paper));
+  --sch-cloth: color-mix(in srgb, var(--mab-e) 14%, var(--kiosk-paper));
+  background: var(--sch-wall);
+}
+.tva-sch-stop.is-warm { stop-color: var(--mab-e); }
+.tva-sch-stop.is-moon { stop-color: var(--sch-moon); }
+
+.tva-sch-wall { fill: var(--sch-wall); }
+.tva-sch-block { fill: var(--sch-block); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-opacity: .45; }
+.tva-sch-block.is-faint { fill: var(--sch-wall); stroke-opacity: .2; }
+.tva-sch-pillar { fill: var(--sch-stone); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tva-sch-flute { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; opacity: .3; }
+.tva-sch-capital { fill: color-mix(in srgb, var(--sch-stone) 85%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+
+/* Windows. */
+.tva-sch-sky { fill: var(--sch-sky); }
+.tva-sch-skylow { fill: var(--sch-sky-low); opacity: .6; }
+.tva-sch-moon { fill: var(--sch-moon); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-crater { fill: color-mix(in srgb, var(--sch-moon) 80%, var(--spel-ink)); }
+.tva-sch-moonglow { animation: tva-pulse 4s ease-in-out infinite alternate; }
+.tva-sch-lead { fill: none; stroke: var(--spel-ink); stroke-width: 4px; opacity: .8; }
+.tva-sch-frame { fill: none; stroke: var(--sch-stone); stroke-width: 12px; }
+.tva-sch-roundframe { fill: none; stroke: var(--sch-stone); stroke-width: 10px; }
+.tva-sch-frame.is-ink { stroke: var(--spel-ink); stroke-width: 18px; }
+.tva-sch-roundframe.is-ink { stroke: var(--spel-ink); stroke-width: 16px; }
+.tva-sch-sill { fill: var(--sch-stone); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-sch-shoot { opacity: 0; animation: tva-sch-shoot 9s linear infinite; animation-delay: calc(var(--k) * -2.3s); }
+@keyframes tva-sch-shoot { 0%, 80% { transform: translate(0, 0); opacity: 0; } 82% { opacity: 1; } 90% { transform: translate(var(--sx), var(--sy)); opacity: 0; } 100% { transform: translate(var(--sx), var(--sy)); opacity: 0; } }
+.tva-sch-trail { fill: none; stroke: var(--sch-moon); stroke-width: 3px; opacity: .7; }
+.tva-sch-shootstar { fill: var(--kiosk-paper); }
+
+/* Candles. */
+.tva-sch-bob { animation: tva-sch-bob 3.6s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -730ms); }
+@keyframes tva-sch-bob { from { transform: translateY(-6px) rotate(-2deg); } to { transform: translateY(6px) rotate(2deg); } }
+.tva-sch-candleglow { animation: tva-ker-flicker 1.6s linear infinite; animation-delay: calc(var(--k) * -290ms); }
+.tva-sch-wax { fill: var(--sch-wax); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-drip { fill: none; stroke: var(--sch-wax); stroke-width: 3px; }
+.tva-sch-wick { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-flame { animation: tva-ker-flame 540ms linear infinite; animation-delay: calc(var(--k) * -130ms); }
+.tva-sch-flame-out { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-flame-in { fill: var(--mab-e); }
+
+/* Banners. */
+.tva-sch-rod { fill: var(--sch-gold); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-ripple { animation: tva-sch-ripple 5s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -1.3s); }
+@keyframes tva-sch-ripple { from { transform: skewX(-1.5deg); } to { transform: skewX(1.5deg) scaleX(.98); } }
+.tva-sch-banner { stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tva-sch-banner.is-blue { fill: var(--sch-blue); }
+.tva-sch-banner.is-orange { fill: var(--sch-orange); }
+.tva-sch-trim { fill: none; stroke: var(--sch-gold); stroke-width: 3px; }
+.tva-sch-shield { fill: color-mix(in srgb, var(--spel-ink) 25%, transparent); stroke: var(--sch-gold); stroke-width: 3px; }
+.tva-sch-emblem { fill: var(--sch-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-owleye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-tassel { fill: none; stroke: var(--sch-gold); stroke-width: 4px; }
+
+/* The high table. */
+.tva-sch-tabletop { fill: var(--sch-wood-lt); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-sch-cloth { fill: var(--sch-cloth); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-sch-hem { fill: none; stroke: var(--sch-gold); stroke-width: 4px; }
+.tva-sch-goblet { fill: var(--sch-gold); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-plate { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-pie { fill: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--mab-e)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+/* Floor. */
+.tva-sch-floor { fill: var(--sch-floor); }
+.tva-sch-board { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; opacity: .4; }
+.tva-sch-carpet { fill: var(--sch-carpet); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-sch-carpettrim { fill: none; stroke: var(--sch-gold); stroke-width: 3px; opacity: .85; }
+.tva-sch-floorglow { opacity: .5; }
+.tva-sch-floorline { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+
+/* The stands and the pupils. */
+.tva-sch-bench { fill: var(--sch-wood-lt); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-sch-benchfront { fill: var(--sch-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.tva-sch-bounce { animation: tva-sch-bounce 520ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -170ms); }
+@keyframes tva-sch-bounce { from { transform: translateY(0) scaleY(1); } to { transform: translateY(-5px) scaleY(1.03); } }
+.tva-sch-wave { animation: tva-sch-wave 2.8s ease-in-out infinite; animation-delay: calc(var(--k) * -610ms); }
+@keyframes tva-sch-wave { 0%, 50%, 100% { transform: rotate(0); } 60% { transform: rotate(-30deg); } 70% { transform: rotate(10deg); } 80% { transform: rotate(-30deg); } 90% { transform: rotate(5deg); } }
+.tva-sch-wave.is-flag { animation: tva-sch-flag 700ms ease-in-out infinite alternate; }
+@keyframes tva-sch-flag { from { transform: rotate(-14deg); } to { transform: rotate(16deg); } }
+.tva-sch-blink { animation: tva-ker-blink 3.8s linear infinite; animation-delay: calc(var(--k) * -530ms); }
+.tva-sch-owl { stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-owl.is-0 { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--text-muted)); }
+.tva-sch-owl.is-1 { fill: color-mix(in srgb, var(--text-muted) 60%, var(--kiosk-paper)); }
+.tva-sch-owl.is-2 { fill: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink)); }
+.tva-sch-wing.is-0 { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--text-muted)); }
+.tva-sch-wing.is-1 { fill: color-mix(in srgb, var(--text-muted) 60%, var(--kiosk-paper)); }
+.tva-sch-wing.is-2 { fill: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink)); }
+.tva-sch-wing { stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-belly { fill: color-mix(in srgb, var(--mab-e) 20%, var(--kiosk-paper)); }
+.tva-sch-eyewhite { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-pupil { fill: var(--spel-ink); }
+.tva-sch-beak { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tva-sch-imp { stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tva-sch-imp.is-0 { fill: color-mix(in srgb, var(--accent-metendrekenen) 75%, var(--kiosk-paper)); }
+.tva-sch-imp.is-1 { fill: color-mix(in srgb, var(--mab-e2) 70%, var(--kiosk-paper)); }
+.tva-sch-imp.is-2 { fill: color-mix(in srgb, var(--kid-go) 55%, var(--accent-bewerkingen)); }
+.tva-sch-imparm { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.tva-sch-horn { fill: var(--sch-moon); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tva-sch-grin { fill: var(--spel-ink); }
+.tva-sch-scarf { stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-scarf.is-blue, .tva-sch-pennant.is-blue { fill: var(--accent-bewerkingen); }
+.tva-sch-scarf.is-orange, .tva-sch-pennant.is-orange { fill: var(--accent-vraagstukken); }
+.tva-sch-pennant { stroke: var(--spel-ink); stroke-width: 2px; }
+.tva-sch-stick { fill: none; stroke: var(--sch-wood-lt); stroke-width: 3px; }
+.tva-sch-confetti { stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tva-sch-confetti.is-0 { fill: var(--mab-e); }
+.tva-sch-confetti.is-1 { fill: var(--accent-bewerkingen); }
+.tva-sch-confetti.is-2 { fill: var(--accent-vraagstukken); }
