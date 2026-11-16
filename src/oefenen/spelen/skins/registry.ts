@@ -12,6 +12,8 @@ import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
 import { BugBeetle } from '@phosphor-icons/react';
 import { WINNEN_OPTION } from './kikkers/rule';
+import { MagicWand } from '@phosphor-icons/react';
+import { TOVER } from './tovenaarsduel/rule';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -179,6 +181,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: BugBeetle,
         Screen: lazy(() => import('./kikkers/Kikkers')),
+    },
+    {
+        // A duel (DUEL.md): own sums each; every right answer casts a spell by itself, by the streak (tovenaarsduel/rule.ts:
+        // IJspijl 1, Vuurbal 2, Bliksem 3, then a Schild). Big hits, so the lives are 20 / 30 / 40. The scene voices its moments.
+        meta: {
+            music: 'griezel', id: 'tovenaarsduel', label: 'Tovenaarsduel', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions({ lives: { choices: TOVER.lives.choices, default: TOVER.lives.default } }),
+            sounds: { correct: null, wrong: null, miss: null, win: null },
+        },
+        icon: MagicWand,
+        Screen: lazy(() => import('./tovenaarsduel/Tovenaarsduel')),
     },
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned

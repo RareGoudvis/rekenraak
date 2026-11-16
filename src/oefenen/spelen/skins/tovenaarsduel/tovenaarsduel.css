@@ -1,0 +1,512 @@
+/* Tovenaarsduel: two wizards on an arena backdrop (arenas/, its own layer). Flat fills under the thick ink outline,
+   glows from radial gradients (no CSS filters: iPad Safari ignores them on SVG). Only transform and opacity
+   animate. A restart = a parity class (-0 / -1, twin keyframes) or a remount by key (art.tsx). Always animated
+   (owner 2026-11-16: no reduced-motion branch). */
+.tv-app {
+  --tv-blue: var(--spel-fill-1);
+  --tv-orange: var(--spel-fill-5);
+  --tv-ice: color-mix(in srgb, var(--accent-bewerkingen) 28%, var(--kiosk-paper));
+  --tv-ice-deep: color-mix(in srgb, var(--accent-bewerkingen) 62%, var(--kiosk-paper));
+  --tv-fire: var(--accent-vraagstukken);
+  --tv-fire-hot: var(--spel-star);
+  --tv-fire-red: var(--accent-getallenkennis);
+  --tv-bolt: var(--spel-star);
+  --tv-hot: var(--kiosk-paper);
+  --tv-shield: color-mix(in srgb, var(--accent-meetkunde) 60%, var(--kiosk-paper));
+  --tv-magic: var(--accent-meetkunde);
+  --tv-gold: var(--spel-star);
+  --tv-skin: var(--kid-tint-4);
+  --tv-wood: color-mix(in srgb, var(--accent-vraagstukken) 38%, var(--spel-ink));
+  --tv-smoke: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper));
+  --tv-night: color-mix(in srgb, var(--accent-meetkunde) 22%, var(--spel-ink));
+  --duel-scene-h: 52%;
+}
+.tv-app .duel-world { background: var(--tv-night); }
+.tv-app .duel-banner { background: var(--tv-magic); color: var(--kiosk-paper); }
+.tv-app .duel-banner.is-go { background: var(--tv-gold); color: var(--spel-ink); }
+
+/* The camera: the arena and the wizards shake together. Its size is the container the floor is measured in: the
+   arena (viewBox 1600 × 700, slice, bottom-aligned) puts its back wall's foot 140 units over the bottom edge,
+   max(8.75cqw, 20cqh); the wizards stand 40 % of the way into that floor, toward the viewer. */
+.tv-cam { position: absolute; inset: 0; container-type: size; }
+.tv-scene {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  /* An absolutely placed svg keeps its own aspect with height auto: the height is set, never top + bottom. */
+  height: 92%;
+  height: calc(100% - max(8.75cqw, 20cqh) * .6);
+  overflow: visible;
+  pointer-events: none;
+}
+.tv-scene * { stroke-linejoin: round; stroke-linecap: round; }
+.tv-stub-wall { fill: var(--tv-night); }
+.tv-stub-wall.is-kerker { fill: color-mix(in srgb, var(--text-muted) 40%, var(--spel-ink)); }
+.tv-stub-wall.is-school { fill: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--spel-ink)); }
+.tv-stub-floor { fill: var(--spel-ink); }
+
+/* Hit-stop, then a shake scaled to the damage (Blok and IJspijl 1, Vuurbal 2, Bliksem 3). */
+.tv-cam.tv-shake-0 { animation: tv-shake-0 var(--tv-shake-ms, 420ms) ease-out; }
+.tv-cam.tv-shake-1 { animation: tv-shake-1 var(--tv-shake-ms, 420ms) ease-out; }
+.tv-cam.is-p1 { --s: 4px; --tv-shake-ms: 380ms; }
+.tv-cam.is-p2 { --s: 9px; --tv-shake-ms: 520ms; }
+.tv-cam.is-p3 { --s: 16px; --tv-shake-ms: 720ms; }
+@keyframes tv-shake-0 {
+  0%, 10%, 100% { transform: none; }
+  16% { transform: translate(calc(var(--s) * -1), calc(var(--s) * .6)); }
+  30% { transform: translate(var(--s), calc(var(--s) * -.5)); }
+  46% { transform: translate(calc(var(--s) * -.6), calc(var(--s) * .3)); }
+  62% { transform: translate(calc(var(--s) * .35), calc(var(--s) * -.2)); }
+  80% { transform: translate(calc(var(--s) * -.15), 0); }
+}
+@keyframes tv-shake-1 {
+  0%, 10%, 100% { transform: none; }
+  16% { transform: translate(calc(var(--s) * -1), calc(var(--s) * .6)); }
+  30% { transform: translate(var(--s), calc(var(--s) * -.5)); }
+  46% { transform: translate(calc(var(--s) * -.6), calc(var(--s) * .3)); }
+  62% { transform: translate(calc(var(--s) * .35), calc(var(--s) * -.2)); }
+  80% { transform: translate(calc(var(--s) * -.15), 0); }
+}
+/* Lightning: the whole band flashes white. */
+.tv-flash { position: absolute; inset: 0; z-index: 2; background: var(--kiosk-paper); pointer-events: none; animation: tv-flash 420ms ease-out both; }
+@keyframes tv-flash { 0% { opacity: .85; } 14% { opacity: .15; } 24% { opacity: .55; } 100% { opacity: 0; } }
+
+/* ── Glows (gradient stops) ───────────────────────────────────────────────── */
+.tv-stop-hot { stop-color: var(--tv-hot); stop-opacity: 1; }
+.tv-stop { stop-opacity: .8; }
+.tv-stop.is-none { stop-opacity: 0; }
+.tv-stop.is-ijs { stop-color: var(--tv-ice-deep); }
+.tv-stop.is-vuur { stop-color: var(--tv-fire); }
+.tv-stop.is-bliksem { stop-color: var(--tv-bolt); }
+.tv-stop.is-schild { stop-color: var(--tv-shield); }
+.tv-stop.is-magic { stop-color: var(--tv-magic); }
+.tv-stop.is-warm { stop-color: var(--tv-gold); }
+
+/* The spell colours: every piece of a spell reads --c. */
+.tv-app .is-ijs { --c: var(--tv-ice-deep); --c-lite: var(--tv-ice); }
+.tv-app .is-vuur { --c: var(--tv-fire); --c-lite: var(--tv-fire-hot); }
+.tv-app .is-bliksem { --c: var(--tv-bolt); --c-lite: var(--tv-hot); }
+.tv-app .is-schild { --c: var(--tv-shield); --c-lite: var(--tv-hot); }
+
+/* ── A wizard ─────────────────────────────────────────────────────────────── */
+.tv-wiz { --tv-team: var(--tv-blue); }
+.tv-wiz.is-right { --tv-team: var(--tv-orange); }
+.tv-team { fill: var(--tv-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tv-team-dk { fill: color-mix(in srgb, var(--tv-team) 62%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.tv-trim { fill: none; stroke: var(--tv-gold); stroke-width: 4px; }
+.tv-robe-star { fill: var(--tv-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tv-belt { fill: none; stroke: var(--tv-gold); stroke-width: 5px; }
+.tv-belt-knot { fill: none; stroke: var(--tv-gold); stroke-width: 3.5px; }
+.tv-boot { fill: color-mix(in srgb, var(--tv-team) 30%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-skin { fill: var(--tv-skin); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-ear { fill: color-mix(in srgb, var(--tv-skin) 80%, var(--accent-getallenkennis)); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-nose { fill: color-mix(in srgb, var(--tv-skin) 70%, var(--accent-getallenkennis)); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-eye { fill: var(--spel-ink); }
+.tv-glint { fill: var(--kiosk-paper); }
+.tv-eye-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-brow { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; }
+.tv-brow.is-dark { stroke: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--spel-ink)); }
+.tv-beard { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-beard.is-dark { fill: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--spel-ink)); }
+.tv-beard.is-frost { fill: color-mix(in srgb, var(--tv-ice) 70%, var(--kiosk-paper)); }
+.tv-beard.is-dark.is-frost { fill: color-mix(in srgb, var(--tv-ice-deep) 45%, var(--spel-ink)); }
+.tv-beard-line { fill: none; stroke: color-mix(in srgb, var(--text-muted) 35%, var(--kiosk-paper)); stroke-width: 2.5px; }
+.tv-moustache { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tv-moustache.is-dark { fill: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--spel-ink)); }
+.tv-band { fill: color-mix(in srgb, var(--tv-team) 45%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tv-buckle { fill: var(--tv-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.tv-emblem { fill: var(--tv-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.tv-pompom { fill: var(--tv-gold); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tv-staff { fill: var(--tv-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-staff-claw { fill: none; stroke: var(--tv-wood); stroke-width: 6px; }
+.tv-crystal { fill: var(--tv-shield); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-shadow { fill: var(--spel-ink); opacity: .4; }
+.tv-sweat { fill: var(--tv-ice); stroke: var(--spel-ink); stroke-width: 2px; animation: tv-sweat 1.6s ease-in infinite; }
+@keyframes tv-sweat { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(26px); opacity: 0; } }
+
+/* The marks a hit leaves: soot, scorch, frost, frizzy hair, smoke from a singed hat, sparks. */
+.tv-soot { fill: var(--spel-ink); opacity: .55; }
+.tv-scorch { fill: var(--spel-ink); opacity: .8; }
+.tv-frizz { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-frost { fill: none; stroke: var(--tv-ice); stroke-width: 5px; opacity: .95; }
+.tv-icicle { fill: var(--tv-ice); stroke: var(--spel-ink); stroke-width: 1.8px; }
+.tv-wisp { fill: var(--tv-smoke); opacity: 0; animation: tv-wisp 2.2s ease-out infinite; animation-delay: calc(var(--k) * -730ms); }
+@keyframes tv-wisp { 0% { transform: translate(0, 0) scale(.4); opacity: 0; } 20% { opacity: .85; } 100% { transform: translate(-14px, -52px) scale(1.5); opacity: 0; } }
+.tv-spark-loop { fill: none; stroke: var(--tv-bolt); stroke-width: 3.5px; opacity: 0; animation: tv-sputter 1.3s steps(1) infinite; animation-delay: calc(var(--k) * -430ms); }
+@keyframes tv-sputter { 0% { opacity: 1; } 10% { opacity: 0; } 24% { opacity: 1; } 32%, 100% { opacity: 0; } }
+
+/* Idle: breathing, the robe flutters, the hat sways, blinking, the staff sways; the two wizards out of step. */
+.tv-idle { animation: tv-breathe 2.4s ease-in-out infinite alternate; }
+.tv-wiz.is-right .tv-idle { animation-delay: -1.2s; }
+@keyframes tv-breathe { from { transform: scaleY(1); } to { transform: scaleY(1.018) translateY(-1px); } }
+.tv-robe { animation: tv-flutter 1.7s ease-in-out infinite alternate; }
+.tv-wiz.is-right .tv-robe { animation-delay: -.8s; }
+@keyframes tv-flutter { from { transform: skewX(-2deg); } to { transform: skewX(3deg) scaleX(1.015); } }
+.tv-hat { animation: tv-hat-sway 2.9s ease-in-out infinite alternate; }
+@keyframes tv-hat-sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+.tv-head { animation: tv-nod 3.2s ease-in-out infinite alternate; }
+@keyframes tv-nod { from { transform: rotate(-1deg); } to { transform: rotate(2deg); } }
+.tv-blink { animation: tv-blink 4.6s linear infinite; }
+.tv-wiz.is-right .tv-blink { animation-delay: -2.1s; }
+@keyframes tv-blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+.tv-arm { animation: tv-sway 2.2s ease-in-out infinite alternate; }
+@keyframes tv-sway { from { transform: rotate(-2deg); } to { transform: rotate(2.5deg); } }
+
+/* The orb: the next spell, pulsing, sparkles turning round it; after a cast it refills. */
+.tv-orb-glow { animation: tv-orb-glow 1.1s ease-in-out infinite alternate; }
+@keyframes tv-orb-glow { from { transform: scale(.85); opacity: .7; } to { transform: scale(1.15); opacity: 1; } }
+.tv-orb-ball { fill: var(--c); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-orb-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .8; }
+.tv-orb-icon .tv-icon { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.tv-orb-icon .tv-icon.is-ijs { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; }
+.tv-orb.is-bliksem .tv-orb-icon .tv-icon, .tv-orb.is-schild .tv-orb-icon .tv-icon { fill: var(--kiosk-paper); }
+.tv-orb-icon { animation: tv-icon-bob 1.1s ease-in-out infinite alternate; }
+@keyframes tv-icon-bob { from { transform: scale(.94); } to { transform: scale(1.08); } }
+.tv-orb-sparks { animation: tv-spin 2.6s linear infinite; }
+.tv-orb-spark { fill: var(--c-lite); stroke: var(--spel-ink); stroke-width: 1px; transform: rotate(calc(var(--k) * 120deg)) translateX(36px); }
+@keyframes tv-spin { to { transform: rotate(360deg); } }
+.tv-orb.is-refill { animation: tv-orb-in 420ms var(--ease-spring) 560ms both; }
+@keyframes tv-orb-in { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* The charge: a glow swelling at the orb and motes rushing in, until the spell leaves (the arm's release). */
+.tv-charge { opacity: 0; }
+.tv-charge.is-ijs { --dur: 1000ms; --rel: 320ms; }
+.tv-charge.is-vuur { --dur: 1100ms; --rel: 380ms; }
+.tv-charge.is-bliksem { --dur: 1000ms; --rel: 560ms; }
+.tv-charge { animation: tv-charge calc(var(--rel) * 1.5) ease-in both; }
+@keyframes tv-charge { 0% { transform: scale(.2); opacity: 0; } 20% { opacity: 1; } 66% { transform: scale(1.25); opacity: 1; } 76% { transform: scale(1.7); opacity: 1; } 100% { transform: scale(.4); opacity: 0; } }
+.tv-mote { fill: var(--c-lite); stroke: var(--spel-ink); stroke-width: 1px; animation: tv-mote var(--rel) ease-in both; animation-delay: calc(var(--k) * 40ms); }
+@keyframes tv-mote { from { transform: translate(var(--mx), var(--my)); opacity: 0; } 30% { opacity: 1; } to { transform: none; opacity: 0; } }
+
+/* The cast pose: the staff arm pulls back while the spell charges and snaps forward (CAST_DEG) on release. */
+.tv-arm.is-ijs { animation: tv-arm-ijs 1000ms both, tv-sway 2.2s 1000ms ease-in-out infinite alternate; }
+.tv-arm.is-vuur { animation: tv-arm-vuur 1100ms both, tv-sway 2.2s 1100ms ease-in-out infinite alternate; }
+.tv-arm.is-bliksem { animation: tv-arm-bliksem 1000ms both, tv-sway 2.2s 1000ms ease-in-out infinite alternate; }
+.tv-arm.is-schild { animation: tv-arm-schild 800ms both, tv-sway 2.2s 800ms ease-in-out infinite alternate; }
+@keyframes tv-arm-ijs { 0% { transform: none; animation-timing-function: ease-out; } 26% { transform: rotate(-16deg); animation-timing-function: cubic-bezier(.5, 0, 1, .5); } 32%, 62% { transform: rotate(25deg); animation-timing-function: ease-in-out; } 100% { transform: none; } }
+@keyframes tv-arm-vuur { 0% { transform: none; animation-timing-function: ease-out; } 28% { transform: rotate(-20deg) translate(-4px, -6px); animation-timing-function: cubic-bezier(.5, 0, 1, .5); } 34.5%, 64% { transform: rotate(25deg); animation-timing-function: ease-in-out; } 100% { transform: none; } }
+@keyframes tv-arm-bliksem { 0% { transform: none; animation-timing-function: ease-out; } 20%, 48% { transform: rotate(-34deg) translate(0, -22px); animation-timing-function: cubic-bezier(.5, 0, 1, .5); } 56%, 80% { transform: rotate(25deg); animation-timing-function: ease-in-out; } 100% { transform: none; } }
+@keyframes tv-arm-schild { 0% { transform: none; } 30%, 70% { transform: translate(0, -26px) rotate(-6deg); } 100% { transform: none; } }
+
+/* The body leans into the cast (feet pivot). */
+.tv-lean.tv-cast-0.is-c-ijs { animation: tv-lean-ijs-0 1000ms both; }
+.tv-lean.tv-cast-1.is-c-ijs { animation: tv-lean-ijs-1 1000ms both; }
+.tv-lean.tv-cast-0.is-c-vuur { animation: tv-lean-vuur-0 1100ms both; }
+.tv-lean.tv-cast-1.is-c-vuur { animation: tv-lean-vuur-1 1100ms both; }
+.tv-lean.tv-cast-0.is-c-bliksem { animation: tv-lean-bliksem-0 1000ms both; }
+.tv-lean.tv-cast-1.is-c-bliksem { animation: tv-lean-bliksem-1 1000ms both; }
+.tv-lean.tv-cast-0.is-c-schild { animation: tv-lean-schild-0 800ms both; }
+.tv-lean.tv-cast-1.is-c-schild { animation: tv-lean-schild-1 800ms both; }
+@keyframes tv-lean-ijs-0 { 0% { transform: none; } 26% { transform: rotate(-4deg); } 34%, 60% { transform: translateX(8px) rotate(5deg); } 100% { transform: none; } }
+@keyframes tv-lean-ijs-1 { 0% { transform: none; } 26% { transform: rotate(-4deg); } 34%, 60% { transform: translateX(8px) rotate(5deg); } 100% { transform: none; } }
+@keyframes tv-lean-vuur-0 { 0% { transform: none; } 28% { transform: rotate(-6deg) translateX(-4px); } 36%, 62% { transform: translateX(12px) rotate(7deg); } 100% { transform: none; } }
+@keyframes tv-lean-vuur-1 { 0% { transform: none; } 28% { transform: rotate(-6deg) translateX(-4px); } 36%, 62% { transform: translateX(12px) rotate(7deg); } 100% { transform: none; } }
+@keyframes tv-lean-bliksem-0 { 0% { transform: none; } 20%, 48% { transform: translateY(-8px) rotate(-3deg) scaleY(1.04); } 58%, 78% { transform: translateX(10px) rotate(6deg); } 100% { transform: none; } }
+@keyframes tv-lean-bliksem-1 { 0% { transform: none; } 20%, 48% { transform: translateY(-8px) rotate(-3deg) scaleY(1.04); } 58%, 78% { transform: translateX(10px) rotate(6deg); } 100% { transform: none; } }
+@keyframes tv-lean-schild-0 { 0% { transform: none; } 30%, 70% { transform: scale(1.04, .97); } 100% { transform: none; } }
+@keyframes tv-lean-schild-1 { 0% { transform: none; } 30%, 70% { transform: scale(1.04, .97); } 100% { transform: none; } }
+
+/* Taking a hit: a hit-stop squash, knocked back about the feet; harder per damage. */
+.tv-react.tv-hit-0.is-dmg-1 { animation: tv-knock-1-0 560ms ease-out; }
+.tv-react.tv-hit-1.is-dmg-1 { animation: tv-knock-1-1 560ms ease-out; }
+.tv-react.tv-hit-0.is-dmg-2 { animation: tv-knock-2-0 720ms ease-out; }
+.tv-react.tv-hit-1.is-dmg-2 { animation: tv-knock-2-1 720ms ease-out; }
+.tv-react.tv-hit-0.is-dmg-3 { animation: tv-knock-3-0 900ms ease-out; }
+.tv-react.tv-hit-1.is-dmg-3 { animation: tv-knock-3-1 900ms ease-out; }
+@keyframes tv-knock-1-0 { 0%, 10% { transform: scale(1.04, .96); } 18% { transform: translateX(-18px) rotate(-7deg); } 44% { transform: translateX(-12px) rotate(-4deg); } 100% { transform: none; } }
+@keyframes tv-knock-1-1 { 0%, 10% { transform: scale(1.04, .96); } 18% { transform: translateX(-18px) rotate(-7deg); } 44% { transform: translateX(-12px) rotate(-4deg); } 100% { transform: none; } }
+@keyframes tv-knock-2-0 { 0%, 10% { transform: scale(1.06, .94); } 16% { transform: translate(-34px, -8px) rotate(-12deg); } 40% { transform: translate(-28px, 0) rotate(-8deg); } 70% { transform: translateX(-4px) rotate(2deg); } 100% { transform: none; } }
+@keyframes tv-knock-2-1 { 0%, 10% { transform: scale(1.06, .94); } 16% { transform: translate(-34px, -8px) rotate(-12deg); } 40% { transform: translate(-28px, 0) rotate(-8deg); } 70% { transform: translateX(-4px) rotate(2deg); } 100% { transform: none; } }
+@keyframes tv-knock-3-0 { 0%, 9% { transform: scale(1.08, .92); } 14% { transform: translate(-56px, -22px) rotate(-18deg); } 34% { transform: translate(-50px, 0) rotate(-13deg); } 46% { transform: translate(-44px, -4px) rotate(-10deg); } 72% { transform: translateX(-6px) rotate(3deg); } 100% { transform: none; } }
+@keyframes tv-knock-3-1 { 0%, 9% { transform: scale(1.08, .92); } 14% { transform: translate(-56px, -22px) rotate(-18deg); } 34% { transform: translate(-50px, 0) rotate(-13deg); } 46% { transform: translate(-44px, -4px) rotate(-10deg); } 72% { transform: translateX(-6px) rotate(3deg); } 100% { transform: none; } }
+
+/* IJspijl: a shiver and an icy crust that melts away (a picture only: keypad and clock run on). */
+.tv-shiver.tv-chill-0 { animation: tv-shiver-0 1300ms linear; }
+.tv-shiver.tv-chill-1 { animation: tv-shiver-1 1300ms linear; }
+@keyframes tv-shiver-0 { 0%, 100% { transform: none; } 10%, 30%, 50%, 70% { transform: translateX(-3px); } 20%, 40%, 60%, 80% { transform: translateX(3px); } 90% { transform: translateX(-1px); } }
+@keyframes tv-shiver-1 { 0%, 100% { transform: none; } 10%, 30%, 50%, 70% { transform: translateX(-3px); } 20%, 40%, 60%, 80% { transform: translateX(3px); } 90% { transform: translateX(-1px); } }
+.tv-crust { animation: tv-crust 2600ms ease-out both; }
+@keyframes tv-crust { 0% { opacity: 0; transform: scale(1.1); } 8% { opacity: 1; transform: none; } 60% { opacity: .9; } 100% { opacity: 0; } }
+.tv-crust-ice { fill: var(--tv-ice); opacity: .5; stroke: var(--kiosk-paper); stroke-width: 3px; }
+.tv-crust-ice.is-hat { opacity: .4; }
+.tv-crust-flake { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; animation: tv-twinkle 700ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -140ms); }
+@keyframes tv-twinkle { from { opacity: .3; transform: scale(.7); } to { opacity: 1; transform: scale(1.15); } }
+
+/* A wrong answer: the spell fizzles out of the orb in grey puffs; the wizard droops a moment. */
+.tv-idle.tv-oops-0 { animation: tv-breathe 2.4s ease-in-out infinite alternate, tv-droop-0 640ms ease-out; }
+.tv-idle.tv-oops-1 { animation: tv-breathe 2.4s ease-in-out infinite alternate, tv-droop-1 640ms ease-out; }
+@keyframes tv-droop-0 { 0%, 100% { transform: none; } 30%, 60% { transform: translateY(5px) rotate(-2deg) scaleY(.97); } }
+@keyframes tv-droop-1 { 0%, 100% { transform: none; } 30%, 60% { transform: translateY(5px) rotate(-2deg) scaleY(.97); } }
+.tv-fizzle-puff { fill: color-mix(in srgb, var(--tv-smoke) 60%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; opacity: 0; animation: tv-fizzle 900ms ease-out both; animation-delay: calc(var(--k) * 70ms); }
+@keyframes tv-fizzle { 0% { transform: scale(.3); opacity: 0; } 20% { opacity: .95; } 100% { transform: translate(calc(var(--k) * 6px - 9px), -46px) scale(1.4); opacity: 0; } }
+
+/* The floor runes: one per ladder step, lit in its spell's colour; they pop when they light. */
+.tv-rune-ring { fill: none; stroke: color-mix(in srgb, var(--tv-magic) 40%, var(--spel-ink)); stroke-width: 3px; opacity: .8; }
+.tv-rune-ring.is-inner { stroke-width: 1.5px; stroke-dasharray: 6 8; }
+.tv-runes.is-lit .tv-rune-ring { stroke: var(--tv-magic); animation: tv-rune-glow 900ms ease-in-out infinite alternate; }
+@keyframes tv-rune-glow { from { opacity: .55; } to { opacity: 1; } }
+.tv-rune { fill: none; stroke: color-mix(in srgb, var(--tv-magic) 30%, var(--spel-ink)); stroke-width: 3px; }
+.tv-rune.is-on { stroke: var(--c); stroke-width: 4px; animation: tv-rune-on 520ms var(--ease-spring) both; }
+@keyframes tv-rune-on { from { transform: scale(2.2); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* The shield: a dome of light that grows, breathes and turns its runes. */
+.tv-dome { animation: tv-dome-up 640ms var(--ease-spring) both, tv-dome-pulse 1.6s 640ms ease-in-out infinite alternate; }
+@keyframes tv-dome-up { from { transform: scale(.15); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes tv-dome-pulse { from { opacity: .85; transform: scale(1); } to { opacity: 1; transform: scale(1.025); } }
+.tv-dome-fill { fill: color-mix(in srgb, var(--tv-shield) 22%, transparent); stroke: var(--tv-shield); stroke-width: 5px; }
+.tv-dome-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 6px; opacity: .55; }
+.tv-dome-runes { animation: tv-spin 9s linear infinite; }
+.tv-dome-rune { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .85; }
+
+/* Defeated: a poof, sitting down dizzy, the hat flies off, the staff drops. */
+.tv-wiz.is-ko .tv-idle { animation: tv-sit 700ms cubic-bezier(.5, 0, .8, .4) 250ms both; }
+@keyframes tv-sit { from { transform: none; } 70% { transform: translateY(24px) scale(1.04, .8); } 85% { transform: translateY(18px) scale(1, .84); } to { transform: translateY(22px) scale(1.03, .82) rotate(-3deg); } }
+.tv-wiz.is-ko .tv-head { animation: tv-woozy 1.4s ease-in-out 900ms infinite alternate; }
+@keyframes tv-woozy { from { transform: rotate(8deg); } to { transform: rotate(18deg); } }
+.tv-wiz.is-ko .tv-hat { opacity: 0; }
+.tv-wiz.is-ko .tv-arm { animation: tv-drop-staff 900ms cubic-bezier(.5, 0, .9, .5) 200ms both; }
+@keyframes tv-drop-staff { from { transform: none; } 80% { transform: translate(14px, 84px) rotate(94deg); } 90% { transform: translate(14px, 76px) rotate(88deg); } to { transform: translate(14px, 84px) rotate(92deg); } }
+.tv-hat-fly { animation: tv-hat-fly 1500ms both; }
+@keyframes tv-hat-fly {
+  0% { transform: none; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  32% { transform: translate(-34px, -130px); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  80% { transform: translate(-96px, 158px); animation-timing-function: ease-out; }
+  90% { transform: translate(-104px, 146px); animation-timing-function: ease-in; }
+  100% { transform: translate(-110px, 158px); }
+}
+.tv-hat-spin { animation: tv-hat-spin 1500ms ease-out both; }
+@keyframes tv-hat-spin { from { transform: none; } 80% { transform: rotate(-420deg); } to { transform: rotate(-440deg); } }
+.tv-dizzy { opacity: 0; animation: tv-fade-in 300ms 900ms both, tv-spin 1.3s 900ms linear infinite; }
+@keyframes tv-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.tv-dizzy-star { fill: var(--tv-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tv-poof { fill: var(--tv-smoke); stroke: var(--spel-ink); stroke-width: 3px; opacity: 0; animation: tv-poof 1400ms ease-out both; animation-delay: calc(var(--k) * 45ms); }
+@keyframes tv-poof { 0% { transform: scale(.2); opacity: 0; } 14% { transform: scale(1); opacity: 1; } 60% { opacity: .9; } 100% { transform: scale(1.35) translateY(-24px); opacity: 0; } }
+
+/* The winner raises the staff and hops; magic bursts from it. */
+.tv-wiz.is-win .tv-arm { animation: tv-arm-win 600ms var(--ease-spring) both, tv-arm-wave 520ms 600ms ease-in-out infinite alternate; }
+@keyframes tv-arm-win { from { transform: none; } to { transform: translate(6px, -40px) rotate(-12deg); } }
+@keyframes tv-arm-wave { from { transform: translate(6px, -40px) rotate(-12deg); } to { transform: translate(8px, -46px) rotate(-4deg); } }
+.tv-wiz.is-win .tv-idle { animation: tv-hop 380ms ease-in-out infinite alternate; }
+@keyframes tv-hop { from { transform: translateY(0) scaleY(.97); } to { transform: translateY(-14px) scaleY(1.03); } }
+.tv-win-burst { animation: tv-burst 1.3s ease-out infinite both; animation-delay: calc(var(--k) * -430ms); }
+@keyframes tv-burst { 0% { transform: scale(.1); opacity: 1; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+.tv-ray { fill: none; stroke: var(--tv-team, var(--tv-magic)); stroke-width: 5px; }
+.tv-ray.is-star { stroke: var(--tv-gold); }
+.tv-fireworks.is-left { --tv-team: var(--tv-blue); }
+.tv-fireworks.is-right { --tv-team: var(--tv-orange); }
+.tv-firework { animation: tv-burst 1.5s ease-out infinite both; animation-delay: calc(var(--k) * -370ms); }
+
+/* ── Spells in the air ───────────────────────────────────────────────────── */
+.tv-fly-x { animation: tv-fly-x var(--fly) linear var(--charge) both; }
+@keyframes tv-fly-x { from { transform: translateX(0); } to { transform: translateX(var(--dx)); } }
+.tv-shot.is-ijs .tv-fly-y { animation: tv-fly-y var(--fly) linear var(--charge) both; }
+@keyframes tv-fly-y { from { transform: translateY(0); } to { transform: translateY(var(--dy)); } }
+.tv-shot.is-vuur .tv-fly-y { animation: tv-fly-arc var(--fly) var(--charge) both; }
+@keyframes tv-fly-arc {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.3, .6, .6, 1); }
+  50% { transform: translateY(calc(var(--dy) / 2 + var(--arc))); animation-timing-function: cubic-bezier(.4, 0, .7, .4); }
+  100% { transform: translateY(var(--dy)); }
+}
+.tv-spear, .tv-fireball { animation: tv-appear 140ms ease-out var(--charge) both; }
+@keyframes tv-appear { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.tv-spear-body { fill: var(--tv-ice); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-spear-tail { fill: var(--tv-ice-deep); opacity: .55; }
+.tv-spear-core { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; }
+.tv-spear-shard { fill: none; stroke: var(--tv-ice-deep); stroke-width: 3px; }
+.tv-fire-out { fill: var(--tv-fire-red); stroke: var(--spel-ink); stroke-width: 3px; animation: tv-lick 160ms ease-in-out infinite alternate; }
+.tv-fire-mid { fill: var(--tv-fire); animation: tv-lick 120ms ease-in-out infinite alternate-reverse; }
+.tv-fire-core { fill: var(--tv-fire-hot); }
+@keyframes tv-lick { from { transform: scale(1, .92); } to { transform: scale(1.08, 1.06); } }
+.tv-trail-flake { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; opacity: 0; animation: tv-trail 760ms ease-out var(--d) both; }
+@keyframes tv-trail { 0% { transform: scale(.3); opacity: 0; } 12% { transform: scale(1.3); opacity: 1; } 100% { transform: translateY(18px) rotate(120deg) scale(.4); opacity: 0; } }
+.tv-trail-ember { fill: var(--tv-fire-hot); stroke: var(--spel-ink); stroke-width: 1.5px; opacity: 0; animation: tv-ember-trail 700ms ease-out var(--d) both; }
+@keyframes tv-ember-trail { 0% { transform: scale(.4); opacity: 0; } 10% { transform: scale(1.2); opacity: 1; } 100% { transform: translate(calc(var(--k) * 6px - 6px), 26px) scale(.3); opacity: 0; } }
+.tv-trail-smoke { fill: var(--tv-smoke); opacity: 0; animation: tv-smoke-trail 1000ms ease-out var(--d) both; }
+@keyframes tv-smoke-trail { 0% { transform: scale(.3); opacity: 0; } 15% { opacity: .55; } 100% { transform: translateY(-24px) scale(1.6); opacity: 0; } }
+/* Bliksem in the air: the call to the sky, a storm cloud gathering over the target. */
+.tv-skyzap { fill: none; stroke: var(--tv-bolt); stroke-width: 4px; opacity: 0; animation: tv-skyzap 1000ms steps(1) both; }
+@keyframes tv-skyzap { 0%, 50% { opacity: 0; } 52% { opacity: 1; } 56% { opacity: .2; } 60% { opacity: 1; } 66%, 100% { opacity: 0; } }
+.tv-cloud { animation: tv-cloud 1000ms ease-out both; }
+@keyframes tv-cloud { 0%, 20% { transform: scale(.2); opacity: 0; } 55% { transform: scale(.9); opacity: 1; } 100% { transform: scale(1.08); opacity: 1; } }
+.tv-cloud-body { fill: color-mix(in srgb, var(--text-muted) 55%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3px; }
+.tv-cloud-zap { fill: none; stroke: var(--tv-bolt); stroke-width: 3px; opacity: 0; animation: tv-sputter 400ms steps(1) 500ms infinite; }
+.tv-cloud-body.is-fading { animation: tv-cloud-out 900ms ease-out both; }
+@keyframes tv-cloud-out { from { transform: scale(1.08); opacity: 1; } to { transform: scale(1.3) translateY(-10px); opacity: 0; } }
+
+/* ── Impacts: a hit-stop hold, then the burst ─────────────────────────────── */
+.tv-impact.is-blocked .tv-burst { transform: scale(.6); }
+.tv-imp-flash { animation: tv-flash-ring 460ms ease-out both; }
+@keyframes tv-flash-ring { 0% { transform: scale(.3); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+.tv-frost-star { fill: var(--tv-ice); stroke: var(--kiosk-paper); stroke-width: 3px; animation: tv-pop-hold 900ms ease-out both; }
+@keyframes tv-pop-hold { 0% { transform: scale(.2); opacity: 1; } 9% { transform: scale(1.2); } 18% { transform: scale(1.15); } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
+.tv-shard { fill: var(--tv-ice); stroke: var(--spel-ink); stroke-width: 2px; animation: tv-fly-out 760ms cubic-bezier(.2, .7, .4, 1) 90ms both; animation-delay: calc(90ms + var(--k) * 20ms); }
+@keyframes tv-fly-out { from { transform: scale(.4); opacity: 1; } 70% { opacity: 1; } to { transform: translate(var(--dx), var(--dy)) rotate(var(--r, 180deg)) scale(.8); opacity: 0; } }
+.tv-mist { fill: var(--tv-ice); opacity: 0; animation: tv-mist 1300ms ease-out both; animation-delay: calc(var(--k) * 40ms); }
+@keyframes tv-mist { 0% { transform: scale(.4); opacity: 0; } 20% { opacity: .6; } 100% { transform: scale(2.2); opacity: 0; } }
+.tv-boom-out { fill: var(--tv-fire-red); stroke: var(--spel-ink); stroke-width: 3.5px; animation: tv-pop-hold 760ms ease-out both; }
+.tv-boom-in { fill: var(--tv-fire-hot); stroke: var(--spel-ink); stroke-width: 2.5px; animation: tv-pop-hold 680ms ease-out both; }
+.tv-boom-in.is-bolt { fill: var(--tv-bolt); }
+.tv-ember { fill: var(--tv-fire-hot); stroke: var(--spel-ink); stroke-width: 1.5px; animation: tv-ember 1100ms cubic-bezier(.2, .7, .4, 1) both; animation-delay: calc(80ms + var(--k) * 25ms); }
+@keyframes tv-ember { 0% { transform: none; opacity: 1; } 55% { transform: translate(var(--dx), var(--dy)); opacity: 1; } 100% { transform: translate(calc(var(--dx) * 1.15), calc(var(--dy) + 70px)); opacity: 0; } }
+.tv-boom-smoke { fill: var(--tv-smoke); stroke: var(--spel-ink); stroke-width: 2.5px; opacity: 0; animation: tv-boom-smoke 1300ms ease-out both; animation-delay: calc(120ms + var(--k) * 50ms); }
+@keyframes tv-boom-smoke { 0% { transform: scale(.3); opacity: 0; } 18% { opacity: .9; } 100% { transform: translateY(-50px) scale(1.5); opacity: 0; } }
+.tv-bolt { animation: tv-bolt 700ms steps(1) both; }
+@keyframes tv-bolt { 0% { opacity: 1; } 12% { opacity: .2; } 20% { opacity: 1; } 34% { opacity: .4; } 42% { opacity: 1; } 60% { opacity: .5; } 68% { opacity: 1; } 84%, 100% { opacity: 0; } }
+.tv-bolt-glow { fill: none; stroke: var(--tv-bolt); stroke-width: 22px; opacity: .8; }
+.tv-bolt-core { fill: none; stroke: var(--kiosk-paper); stroke-width: 8px; }
+.tv-bolt-fork { fill: none; stroke: var(--tv-bolt); stroke-width: 5px; }
+.tv-zapspark { fill: none; stroke: var(--tv-bolt); stroke-width: 4.5px; animation: tv-fly-out 560ms ease-out 60ms both; }
+.tv-scorch-floor { fill: var(--spel-ink); opacity: 0; animation: tv-scorch 1400ms ease-out both; }
+@keyframes tv-scorch { 0% { opacity: 0; } 10% { opacity: .55; } 70% { opacity: .45; } 100% { opacity: 0; } }
+/* A block: the dome flashes, cracks run over it and it falls apart in glassy shards. */
+.tv-dome-flash { fill: var(--kiosk-paper); stroke: var(--tv-shield); stroke-width: 6px; animation: tv-dome-flash 620ms ease-out both; }
+@keyframes tv-dome-flash { 0% { opacity: .9; transform: scale(1); } 20% { opacity: .7; transform: scale(1.04); } 100% { opacity: 0; transform: scale(1.12); } }
+.tv-crack { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; stroke-dasharray: 400; animation: tv-crack 620ms ease-out both; }
+@keyframes tv-crack { 0% { stroke-dashoffset: 400; opacity: 1; } 30% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.tv-glass { fill: color-mix(in srgb, var(--tv-shield) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; animation: tv-glass 1000ms cubic-bezier(.3, .5, .6, 1) 160ms both; animation-delay: calc(160ms + var(--k) * 30ms); }
+@keyframes tv-glass { 0% { transform: none; opacity: 0; } 8% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
+
+/* ── The HUD over the band: a face, the name and score, the health bar with its number, the spell ladder ── */
+.tv-hud {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  pointer-events: none;
+}
+.tv-bar { --tv-team: var(--tv-blue); --tv-life: var(--kid-go); display: flex; align-items: center; gap: var(--sp-2); width: min(30%, 400px); }
+.tv-bar.is-right { --tv-team: var(--tv-orange); flex-direction: row-reverse; }
+.tv-bar.is-mid { --tv-life: var(--spel-star); }
+.tv-bar.is-low { --tv-life: var(--accent-getallenkennis); }
+.tv-portrait {
+  flex: none;
+  width: clamp(42px, 7.4vmin, 76px);
+  height: auto;
+  border: 3px solid var(--spel-ink);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tv-team) 40%, var(--spel-ink));
+  box-shadow: var(--kid-drop-sm);
+}
+.tv-bar-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.tv-bar-top { display: flex; align-items: center; gap: var(--sp-2); }
+.tv-bar.is-right .tv-bar-top { flex-direction: row-reverse; }
+.tv-bar-name { color: var(--kiosk-paper); font-weight: 900; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1; text-shadow: 0 2px 0 var(--spel-ink); }
+.tv-score { padding: 1px 8px 1px 4px; border: 2px solid var(--spel-ink); border-radius: 999px; background: var(--kiosk-paper); font-size: clamp(14px, 2.4vmin, 24px); }
+.tv-health {
+  position: relative;
+  display: block;
+  height: clamp(18px, 3.4vmin, 32px);
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--spel-ink) 82%, var(--tv-team));
+  box-shadow: var(--kid-drop-sm);
+  overflow: visible;
+}
+.tv-health-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) * var(--f));
+  border-radius: 999px;
+  background: var(--tv-life);
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--spel-ink) 25%, transparent), inset 0 3px 0 color-mix(in srgb, var(--kiosk-paper) 45%, transparent);
+  transition: width 420ms var(--ease-out), background-color 300ms;
+}
+.tv-bar.is-right .tv-health-fill { left: auto; right: 2px; }
+.tv-health-num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--kiosk-paper);
+  font-family: var(--kid-font);
+  font-weight: 900;
+  font-size: clamp(13px, 2.4vmin, 22px);
+  line-height: 1;
+  -webkit-text-stroke: 4px var(--spel-ink);
+  paint-order: stroke fill;
+}
+/* The damage flies off the bar: -1 / -2 / -3 in the spell's colour, or Blok! */
+.tv-pop {
+  position: absolute;
+  top: 30%;
+  right: 14%;
+  color: var(--c, var(--tv-shield));
+  font-family: var(--kid-font);
+  font-weight: 900;
+  font-size: clamp(26px, 6vmin, 54px);
+  line-height: 1;
+  -webkit-text-stroke: clamp(3px, .7vmin, 6px) var(--spel-ink);
+  paint-order: stroke fill;
+  white-space: nowrap;
+  animation: tv-pop 1300ms cubic-bezier(.2, .9, .3, 1) both;
+}
+.tv-bar.is-right .tv-pop { right: auto; left: 14%; }
+.tv-pop.is-blok { color: var(--tv-shield); }
+.tv-pop.is-bliksem { font-size: clamp(30px, 7.4vmin, 66px); }
+@keyframes tv-pop { 0% { transform: translateY(-6px) scale(.3); opacity: 0; } 12% { transform: translateY(4px) scale(1.4); opacity: 1; } 30% { transform: translateY(14px) scale(1.1); } 75% { opacity: 1; } 100% { transform: translateY(58px) scale(.95); opacity: 0; } }
+.tv-ladder { display: flex; gap: 4px; align-items: center; }
+.tv-bar.is-right .tv-ladder { flex-direction: row-reverse; }
+.tv-step {
+  display: grid;
+  place-items: center;
+  width: clamp(18px, 3vmin, 28px);
+  height: clamp(18px, 3vmin, 28px);
+  border: 2px solid var(--spel-ink);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--spel-ink) 70%, var(--tv-team));
+  transition: transform 200ms;
+}
+.tv-step svg { width: 74%; height: 74%; }
+.tv-step .tv-icon { fill: color-mix(in srgb, var(--kiosk-paper) 45%, transparent); stroke: none; }
+.tv-step .tv-icon.is-ijs { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 45%, transparent); stroke-width: 3px; }
+.tv-step.is-done { background: color-mix(in srgb, var(--c) 45%, var(--spel-ink)); }
+.tv-step.is-next { background: var(--c); transform: scale(1.3); animation: tv-step-next 700ms ease-in-out infinite alternate; }
+.tv-step.is-next .tv-icon { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.tv-step.is-next .tv-icon.is-ijs { fill: none; stroke: var(--kiosk-paper); stroke-width: 3.5px; }
+@keyframes tv-step-next { from { transform: scale(1.18); } to { transform: scale(1.36); } }
+.tv-shield-chip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(30px, 5vmin, 46px);
+  height: clamp(30px, 5vmin, 46px);
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--tv-shield);
+  animation: tv-step-next 800ms ease-in-out infinite alternate;
+}
+.tv-shield-chip svg { width: 70%; height: 70%; }
+.tv-shield-chip .tv-icon { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* "Poef!" when a wizard is defeated. */
+.tv-banner {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  z-index: 4;
+  margin: 0;
+  color: var(--kiosk-paper);
+  font-family: var(--kid-font);
+  font-size: clamp(40px, 11vmin, 120px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  -webkit-text-stroke: clamp(3px, .7vmin, 7px) var(--tv-magic);
+  paint-order: stroke fill;
+  text-shadow: 0 .07em 0 var(--spel-ink);
+  translate: -50% -50%;
+  pointer-events: none;
+  animation: tv-slam 560ms cubic-bezier(.2, 1.4, .4, 1) 400ms both;
+}
+@keyframes tv-slam { 0% { transform: scale(3) rotate(-12deg); opacity: 0; } 60% { transform: scale(.94) rotate(-4deg); opacity: 1; } 100% { transform: scale(1) rotate(-6deg); opacity: 1; } }
+
+/* The winner on the round / match card. */
+.tv-card-art { display: block; width: clamp(80px, 14vmin, 132px); height: auto; margin: -6px auto -4px; overflow: visible; }

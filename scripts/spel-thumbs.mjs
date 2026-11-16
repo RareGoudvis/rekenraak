@@ -34,7 +34,10 @@ const GAMES = [
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
     ['meteorietenregen', 'Meteorietenregen', 0],
     ['kikkers', 'Kikkers en vliegjes', 0],
+    ['tovenaarsduel', 'Tovenaarsduel', 0],
 ];
+// A game's page query (dev builds): Tovenaarsduel's arena.
+const QUERY = { tovenaarsduel: '?arena=school' };
 // Duel games with 2 spelers (no keyboard): the moment of the picture, staged through window.__duel (dev builds).
 const duelAnswer = (page, side) => page.evaluate(s => { const d = window.__duel.getState(); const q = d.sides[s].question; if (q && !d.sides[s].feedback) d.answer(s, q.answer); }, side);
 const DUEL_PLAY = {
@@ -44,6 +47,13 @@ const DUEL_PLAY = {
         await page.waitForTimeout(2600);
         await duelAnswer(page, 'right');
         await page.waitForTimeout(1700);
+    },
+    // Right: a shield (4 in a row); left: an IJspijl, then a Vuurbal frozen on its way to the dome (pause() stops the CSS too).
+    tovenaarsduel: async page => {
+        await duelAnswer(page, 'left'); await page.waitForTimeout(1900);
+        for (let i = 0; i < 4; i++) { await duelAnswer(page, 'right'); await page.waitForTimeout(1300); }
+        await duelAnswer(page, 'left'); await page.waitForTimeout(740);
+        await page.evaluate(() => window.__duel.getState().pause());
     },
 };
 
@@ -72,6 +82,8 @@ const SKIN_CSS = {
     meteorietenregen: '.mt-svg { transform: scale(2); transform-origin: 0 100%; }',
     // The stage is a wide strip: closer in, so the two contestants fill the picture.
     taartgevecht: '.tg-scene { transform: translateY(-15%) scale(1.3); transform-origin: 50% 100%; }',
+    // The health bars carry the lives; the two wizards and the spell between them fill the picture.
+    tovenaarsduel: '.tv-hud, .tv-banner { display: none !important; }',
     schatkist: '.sk-parchment { visibility: hidden !important; }',
     zeehond: '.zh-count { visibility: hidden !important; }',
     hartjes: '.hj-text { visibility: hidden !important; }',
@@ -130,10 +142,10 @@ async function save(page, png, name) {
     return `${name} ${Math.round(buf.length / 1024)} KB`;
 }
 
-async function toTopics(page, grade) {
-    await page.goto(`${URL}kind.html`);
+async function toTopics(page, grade, query = '') {
+    await page.goto(`${URL}kind.html${query}`);
     await page.evaluate(() => { try { localStorage.clear(); } catch { /* private mode */ } });
-    await page.goto(`${URL}kind.html`);
+    await page.goto(`${URL}kind.html${query}`);
     await page.getByRole('button', { name: `Leerjaar ${grade}`, exact: true }).first().click();
 }
 
@@ -144,7 +156,7 @@ for (const [id, label, rights] of GAMES) {
     try {
         // No Comedy Wildlife photo in a thumbnail: a blocked photo makes Verborgen prent draw its own animal.
         if (id === 'prent') await page.route('**/spelen/prent/**', r => r.abort());
-        await toTopics(page, 2);
+        await toTopics(page, 2, QUERY[id]);
         await page.getByRole('button', { name: /^Optellen/ }).first().click();
         const met = page.getByRole('button', { name: /^Met brug/ }); if (await met.count()) await met.first().click();
         { const way = page.getByRole('button', { name: 'Spelen', exact: true }); if (await way.count()) await way.click(); }
