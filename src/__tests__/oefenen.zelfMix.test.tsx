@@ -99,6 +99,8 @@ describe('Door elkaar on the screen', () => {
         fireEvent.click(within(screen.getByRole('region', { name: 'Hoofdrekenen' })).getByRole('button', { name: 'Door elkaar' }));
         expect(screen.getByRole('heading', { name: 'Door elkaar' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: '× en :' }));
+        // Oefenen or Spelen (owner 2026-11-16): the run starts from the Oefenen tile.
+        fireEvent.click(screen.getByRole('button', { name: 'Oefenen' }));
         fireEvent.click(screen.getByRole('button', { name: /Begin met oefenen/ }));
         const leaves = new Set(useOefenStore.getState().sessie!.types.map(t => t.leafId));
         expect(leaves).toEqual(new Set(['hr-std-vermenigvuldigen-nat', 'hr-std-delen-nat']));

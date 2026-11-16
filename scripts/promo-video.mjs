@@ -439,6 +439,7 @@ async function startGame(page, { grade, topic, tafels, range, game, options = []
     }
     const choice = page.getByRole('button', { name: /^Met brug|^Zonder brug/ });
     if (!tafels && await choice.count()) await choice.first().click();
+    { const way = page.getByRole('button', { name: 'Spelen', exact: true }); if (await way.count()) await way.click(); }
     await page.getByRole('group', { name: 'Kies een spel' }).getByRole('button', { name: new RegExp(`^${game}`) }).click();
     await wait(600);
     for (const o of options) { await page.getByRole('button', { name: o, exact: true }).click(); await wait(150); }
@@ -460,11 +461,13 @@ async function startZelf(page, { grade, topic, choice, tafels, range }) {
         await page.getByRole('button', { name: 'Geen', exact: true }).click();
         for (const t of tafels) await page.getByRole('button', { name: `Tafel van ${t}`, exact: true }).click();
     }
+    { const way = page.getByRole('button', { name: 'Oefenen', exact: true }); if (await way.count()) await way.click(); }
     const begin = page.getByRole('button', { name: /Begin met oefenen/ });
     if (choice || !(await begin.count()) || await begin.isDisabled()) {
         const pick = choice ? page.locator('.zelf-choice:not(.zelf-range-btn)', { hasText: choice }) : page.locator('.zelf-choice:not(.zelf-range-btn)');
         await pick.first().click();
         await wait(300);
+        { const way = page.getByRole('button', { name: 'Oefenen', exact: true }); if (await way.count()) await way.click(); }
     }
     await begin.click();
     await wait(1400);

@@ -32,3 +32,19 @@ export function readTafels(grade: Leerjaar, offer: readonly number[], fallback: 
 }
 
 export const saveTafels = (grade: Leerjaar, tables: readonly number[]) => writeEntry(TAFELS_KEY, grade, [...tables]);
+
+// Oefenen or Spelen on the Keuze screen: the pupil's last pick, one per device (not per leerjaar).
+export const WAY_KEY = 'rekenraak_zelf_weg_v1';
+export type ZelfWay = 'oefenen' | 'spelen';
+
+/** The remembered way, or null on a first visit (both tiles shown, neither open). */
+export function readWay(): ZelfWay | null {
+    try {
+        const v = globalThis.localStorage?.getItem(WAY_KEY);
+        return v === 'oefenen' || v === 'spelen' ? v : null;
+    } catch { return null; }
+}
+
+export function saveWay(way: ZelfWay) {
+    try { globalThis.localStorage?.setItem(WAY_KEY, way); } catch { /* private mode: this visit only */ }
+}

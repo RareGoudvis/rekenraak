@@ -213,14 +213,105 @@
 .spel-end-record { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; }
 .spel-end-more { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
 
-/* ── Pre-start options (SpelOptions) ──────────────────────────────────────── */
-.spel-options { width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
-.spel-options-title { margin: 0; font-size: var(--kiosk-text-xl); }
-.spel-options-thumb { width: min(100%, 300px); border: var(--kid-line) solid var(--kid-ink); border-radius: var(--kid-radius-sm); box-shadow: var(--kid-drop); }
-.spel-option { width: 100%; display: flex; flex-direction: column; gap: var(--sp-2); }
-.spel-option-label { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; text-align: center; }
-.spel-option-choices { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+/* ── Pre-start options (SpelOptions): the game's own start screen ─────────── */
+/* Its picture, name and line in a card tinted in the game's colour; the options as small segments below; one Start spel.
+   Sized by the viewport height so the game with the most options fits above the floor at 1024×768. */
+.spel-options {
+  --opt-row: clamp(40px, 5vh, 54px);
+  width: min(100%, 900px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.4vh, 18px);
+}
+.spel-options-hero {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 28px);
+  padding: 8px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius);
+  background: var(--tint, var(--kid-tint-3));
+  box-shadow: var(--kid-drop);
+}
+.spel-options .spel-options-thumb {
+  height: clamp(120px, 20vh, 280px);
+  flex: none;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius-sm);
+  background: var(--kid-card);
+}
+.spel-options-text { min-width: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.spel-options-title { margin: 0; font-size: var(--kiosk-text-xl); font-weight: 900; line-height: 1.05; }
+.spel-options-blurb { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 800; line-height: 1.2; }
+.spel-options-note {
+  align-self: flex-start;
+  margin: 0;
+  padding: 2px 12px;
+  border: 2px solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-card);
+  font-size: var(--kiosk-text);
+  font-weight: 800;
+}
+/* The options: label above a segmented row, two per line when there are many. */
+.spel-options-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px 22px;
+  padding: 10px 14px 14px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius);
+  background: var(--kid-card);
+  box-shadow: var(--kid-drop-sm);
+}
+.spel-options-panel.is-many { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* An odd last option gets the whole line, so its longer labels (Elk een eigen som) never wrap. */
+.spel-options-panel.is-many .spel-option:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.spel-options-panel.is-many .spel-option:last-child:nth-child(odd) .spel-seg { width: fit-content; min-width: calc(50% - 11px); max-width: 100%; }
+.spel-options-panel.is-many .spel-option:last-child:nth-child(odd) .spel-seg-btn { flex-basis: auto; padding: 0 20px; }
+.spel-option { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.spel-option-label { margin: 0; font-size: var(--kiosk-text); font-weight: 900; line-height: 1.1; text-align: left; }
+.spel-seg {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-key);
+}
+.spel-seg-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--opt-row);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--kid-ink);
+  font: inherit;
+  font-size: var(--kiosk-text);
+  font-weight: 800;
+  line-height: 1.1;
+  cursor: pointer;
+}
+@media (hover: hover) { .spel-seg-btn:hover:not([aria-pressed="true"]) { background: var(--kid-card); } }
+.spel-seg-btn[aria-pressed="true"] { background: var(--kid-ring); box-shadow: inset 0 0 0 2.5px var(--kid-ink); font-weight: 900; }
+.spel-options-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .spel-options-start { min-height: 64px; min-width: min(100%, 280px); }
+/* A phone: picture above the text, one option per line. */
+@media (max-width: 599px) {
+  .spel-options-hero { flex-direction: column; align-items: stretch; }
+  .spel-options .spel-options-thumb { height: auto; width: 100%; }
+  .spel-options-panel.is-many { grid-template-columns: minmax(0, 1fr); }
+  .spel-options-actions { flex-direction: column-reverse; align-items: stretch; }
+}
+/* A phone on its side: picture and options next to each other. */
+@media (max-height: 560px) and (min-width: 600px) {
+  .spel-options { width: min(100%, 1100px); display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: start; }
+  .spel-options-hero { grid-row: span 2; flex-direction: column; align-items: stretch; }
+  .spel-options .spel-options-thumb { height: auto; width: 100%; }
+  .spel-options-panel.is-many { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* ── A skin's ending picture on the end screen (skins/*: Ending) ─────────── */
 .spel-ending {

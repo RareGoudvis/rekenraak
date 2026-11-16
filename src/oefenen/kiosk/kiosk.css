@@ -1741,7 +1741,6 @@ html:has(.oefen-body),
   .zelf-topic-mark svg { width: 16px; height: 16px; }
   .zelf-topic-marks { bottom: -12px; }
 }
-.zelf-choice-big { min-height: 88px; justify-content: center; text-align: center; font-size: var(--kiosk-text-lg); font-weight: 900; }
 /* Touwtrekken's two-mode choice still uses the old number tile name. */
 .zelf-choice-num { font-size: var(--kiosk-text-xl); min-height: 88px; justify-content: center; }
 .zelf-or { margin: 0; color: var(--kid-muted); }
@@ -1807,7 +1806,67 @@ html:has(.oefen-body),
   .zelf-range .zelf-range-btn { min-height: 52px; padding: 0 14px; font-size: var(--kiosk-text); }
 }
 
-/* Automatiseren and the games bar: two sticker panels, a drawn icon and the title on top. */
+/* Oefenen or Spelen: two big tiles side by side (a segmented choice), the open one's part in a sticker panel below. */
+.zelf-ways { scroll-margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); }
+.zelf-way {
+  --kid-sh: var(--kid-drop);
+  --way-tint: var(--kid-tint-3);
+  --way-ring: var(--kid-tint-ring-3);
+  min-width: 0;
+  min-height: clamp(84px, 13vh, 120px);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius);
+  background: var(--kid-card);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.08s ease-out;
+}
+.zelf-way.is-spelen { --way-tint: var(--kid-tint-4); --way-ring: var(--kid-tint-ring-4); }
+@media (hover: hover) { .zelf-way:hover:not([aria-pressed="true"]) { transform: translateY(-2px); } }
+.zelf-way:active { transform: translateY(4px); --kid-sh: 0 1px 0 var(--kid-ink); }
+/* The open way: its tint fills the tile and a thick ring in its colour, so the panel below reads as its part. */
+.zelf-way[aria-pressed="true"] { --kid-sh: 0 0 0 5px var(--way-ring), var(--kid-drop); background: var(--way-tint); }
+.zelf-way-icon {
+  width: clamp(52px, 8vh, 72px);
+  height: clamp(52px, 8vh, 72px);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: 50%;
+  background: var(--way-tint, var(--kid-tint-3));
+  color: var(--kid-ink);
+}
+.zelf-way[aria-pressed="true"] .zelf-way-icon { background: var(--kid-card); }
+.zelf-way-icon svg { width: 64%; height: 64%; }
+.zelf-way-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.zelf-way-title { font-size: var(--kiosk-text-xl); font-weight: 900; line-height: 1.1; }
+.zelf-way-why { font-size: var(--kiosk-text); font-weight: 700; line-height: 1.2; color: var(--kid-muted); }
+/* The open part: a notch under its own tile ties the two together. */
+.zelf-part { position: relative; }
+.zelf-ways + .zelf-part { margin-top: 4px; }
+.zelf-ways + .zelf-part::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: calc(25% - 14px);
+  width: 24px;
+  height: 24px;
+  border-top: var(--kid-line) solid var(--kid-ink);
+  border-left: var(--kid-line) solid var(--kid-ink);
+  background: var(--kid-card);
+  transform: rotate(45deg);
+}
+.zelf-ways + .zelf-part.is-spelen::before { left: calc(75% - 14px); }
+.zelf-part.is-spelen { padding-bottom: 6px; }
 .zelf-panel {
   padding: 14px 18px 18px;
   border: var(--kid-line) solid var(--kid-ink);
@@ -1815,24 +1874,18 @@ html:has(.oefen-body),
   background: var(--kid-card);
   box-shadow: var(--kid-drop);
 }
-.zelf-panel.is-games { padding-bottom: 6px; }
 .zelf-panel-head { display: flex; align-items: center; gap: 14px; }
-.zelf-panel-icon { width: 56px; height: 56px; flex: none; }
 .zelf-panel-text { display: flex; flex-direction: column; gap: 2px; }
 .zelf-panel-title { margin: 0; font-size: var(--kiosk-text-xl); font-weight: 900; line-height: 1.1; text-align: left; }
 .zelf-panel-why { margin: 0; font-size: var(--kiosk-text); font-weight: 700; color: var(--kid-muted); text-align: left; }
+.zelf-hint.is-left { text-align: left; padding: 6px 0 12px; }
 @media (max-width: 599px) {
   .zelf-panel { padding: 12px 12px 14px; }
-  .zelf-panel-icon { width: 44px; height: 44px; }
-  .zelf-panel-title { font-size: var(--kiosk-text-lg); }
+  .zelf-panel-title, .zelf-way-title { font-size: var(--kiosk-text-lg); }
+  .zelf-way { padding: 10px 12px; gap: 10px; }
+  .zelf-way-icon { width: 44px; height: 44px; }
   .zelf-step .zelf-amount-row .zelf-choice { padding: 0 12px; min-height: 52px; }
 }
-.zm-paper { fill: var(--kid-card); stroke: var(--kid-ink); stroke-width: 3; }
-.zm-sheet { fill: var(--kid-tint-1); stroke: var(--kid-ink); stroke-width: 3; }
-.zm-line { fill: none; stroke: var(--kid-ink); stroke-width: 3; stroke-linecap: round; }
-.zm-string { fill: none; stroke: var(--kid-ink); stroke-width: 2; }
-.zm-b0 { fill: var(--mab-e); stroke: var(--kid-ink); stroke-width: 2.5; }
-.zm-b1 { fill: var(--mab-h); stroke: var(--kid-ink); stroke-width: 2.5; }
 /* Hoeveel: the counts and minutes as small stickers, Start beside them. */
 .zelf-amounts { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 20px; }
 .zelf-amount-row { display: flex; flex-wrap: wrap; gap: 10px; }
