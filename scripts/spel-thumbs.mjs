@@ -30,7 +30,7 @@ const DUMP = argv.includes('--dump');
 const GAMES = [
     ['pinguintoren', 'Pinguïntoren', 6], ['ballonnen', 'Ballonnen', 1], ['zeehond', 'Zeehondjes voeren', 0], ['zombies', 'Zombies', 2],
     ['bom', 'Bom', 3], ['bever', 'Bever', 5], ['race', 'Race', 3], ['voetbal', 'Voetbal', 3], ['touwtrekken', 'Touwtrekken', -1],
-    ['kasteel', 'Kasteel', 2], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
+    ['kasteel', 'Kasteel', 2], ['robotduel', 'Robotduel', 0], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
     ['meteorietenregen', 'Meteorietenregen', 0],
 ];
@@ -61,6 +61,8 @@ const SKIN_CSS = {
     race: '.rc-clock, .rc-readout { visibility: hidden !important; }',
     voetbal: '.vb-hud, .vb-board text { visibility: hidden !important; }',
     kasteel: '.ks-bar-text { display: none !important; }',
+    // The ring's own HUD and banners carry the round number and lives; closer in, so the robots fill the picture.
+    robotduel: '.rd-hud, .rd-banner { display: none !important; } .rd-scene { transform: scale(1.3); transform-origin: 50% 96%; }',
     // The rope is a wide strip: closer in, so the bears fill the picture.
     touwtrekken: '.tt-scene { transform: scale(1.5); transform-origin: 50% 100%; }',
     // A wide strip: the left base with its shields fills the picture, the meteor coming in from the right.
