@@ -60,7 +60,7 @@ function Wired({ Skin }: { Skin: ComponentType<SkinProps> }) {
     return (
         <Skin question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} reducedMotion={false} />
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} />
     );
 }
 const options = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).queryAllByRole('button', { hidden: true }) as HTMLButtonElement[];

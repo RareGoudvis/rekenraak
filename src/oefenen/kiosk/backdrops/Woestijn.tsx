@@ -129,11 +129,11 @@ export default function Woestijn() {
             </Far>
             <Ground back />
             <Ground />
-            <Trav vb="0 0 90 40" w="clamp(50px, 5vw, 90px)" top="16%" dur={34} delay={-8} at="6vw">
+            <Trav vb="0 0 90 40" w="clamp(50px, 5vw, 90px)" top="16%" dur={34} delay={-8}>
                 <g className="ks-flap"><path className="ks-line" d="M6 22 q8 -8 16 0 q8 -8 16 0" /></g>
                 <g className="ks-flap" style={{ animationDelay: '-0.2s' }}><path className="ks-line" d="M50 10 q6 -6 12 0 q6 -6 12 0" /></g>
             </Trav>
-            <Trav vb="-30 -40 60 70" w="clamp(36px, 3.4vw, 64px)" bottom="calc(var(--ks-ground-h) * 0.3)" dur={22} delay={-6} at="70vw">
+            <Trav vb="-30 -40 60 70" w="clamp(36px, 3.4vw, 64px)" bottom="calc(var(--ks-ground-h) * 0.3)" dur={22} delay={-6}>
                 <g className="ks-bounce"><g className="ks-roll"><Tumbleweed /></g></g>
             </Trav>
             <Air side="r">

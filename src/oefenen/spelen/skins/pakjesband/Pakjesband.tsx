@@ -15,7 +15,7 @@ import './pakjesband.css';
 // back with a boing and heats the machine's pressure gauge (pressure.ts); right answers cool it. Too hot and the
 // machine sputters: steam, toys everywhere, the friendly early end (onFail). The rightmost present reaching the
 // belt's end is a miss (onMiss) and drops in the bin. One rAF loop moves the belt (a transform per present); the
-// belt stands still outside play. Under reduced motion the presents stand still and there is no deadline.
+// belt stands still outside play.
 
 // A right present's flight into the crate, longer than the session's right flash: the next sum comes meanwhile.
 export const FLY_MS = 1100;
@@ -58,7 +58,7 @@ function Present({ look, uid, value, view, stamped }: { look: PresentLook; uid: 
     );
 }
 
-export default function Pakjesband({ question, choices, views, phase, feedback, onAnswer, onMiss, onFail, progress, events, reducedMotion }: SkinProps) {
+export default function Pakjesband({ question, choices, views, phase, feedback, onAnswer, onMiss, onFail, progress, events }: SkinProps) {
     const uid = useId();
     const [picked, setPicked] = useState<{ key: string; index: number } | null>(null);
     const [flyer, setFlyer] = useState<Flyer | null>(null);
@@ -86,17 +86,16 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
     // Where the picked present was when tapped (the belt moves): a right answer's flight starts there.
     const launch = useRef<Flyer | null>(null);
     const run = useRef(runStart());
-    const live = useRef({ phase, reducedMotion, onMiss, onFail, key: question?.key, missedKey: undefined as string | undefined });
-    useLayoutEffect(() => { live.current = { ...live.current, phase, reducedMotion, onMiss, onFail, key: question?.key }; });
+    const live = useRef({ phase, onMiss, onFail, key: question?.key, missedKey: undefined as string | undefined });
+    useLayoutEffect(() => { live.current = { ...live.current, phase, onMiss, onFail, key: question?.key }; });
 
     const placeAll = () => {
-        const still = live.current.reducedMotion;
         parcels.current.forEach((el, i) => {
             if (!el) return;
-            const r = still ? -1 : run.current;
+            const r = run.current;
             const at = Math.min(parcelAt(i, r), 1.06);
             el.style.transform = `translate3d(${(at * track.current).toFixed(1)}px, 0, 0)`;
-            el.classList.toggle('is-off', !still && isOff(i, r));
+            el.classList.toggle('is-off', isOff(i, r));
             // Its spot on the belt (tests, debugging).
             el.dataset.at = at.toFixed(3);
         });
@@ -130,7 +129,7 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
         ro.observe(box);
         return () => ro.disconnect();
     }, [hasQuestion]);
-    // After every render: a className change must not drop the loop's is-off, and reduced motion places still.
+    // After every render: a className change must not drop the loop's is-off.
     useLayoutEffect(() => { placeRef.current(); });
 
     useEffect(() => {
@@ -142,8 +141,8 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
             const dt = last === null ? 0 : Math.min(0.1, Math.max(0, (t - last) / 1000));
             last = t;
             const st = live.current;
-            // Only while the sum waits: still during a flash, under "Hoe los ik dit op?" and under reduced motion.
-            if (st.phase !== 'play' || st.reducedMotion) return;
+            // Only while the sum waits: still during a flash and under "Hoe los ik dit op?".
+            if (st.phase !== 'play') return;
             run.current = beltStep(run.current, dt);
             placeRef.current();
             if (beltDone(run.current) && st.missedKey !== st.key) {
@@ -158,11 +157,11 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
 
     // A mistake (a wrong present or a miss): the machine jolts. A right present takes off for the crate.
     useEffect(() => {
-        const offWrong = events.on('wrong', () => { if (!live.current.reducedMotion) replay(machine.current, 'spel-shake'); });
+        const offWrong = events.on('wrong', () => replay(machine.current, 'spel-shake'));
         const offRight = events.on('correct', () => {
             const from = launch.current;
             launch.current = null;
-            if (from && from.key === live.current.key && !live.current.reducedMotion) setFlyer(from);
+            if (from && from.key === live.current.key) setFlyer(from);
         });
         return () => { offWrong(); offRight(); };
     }, [events]);
@@ -177,9 +176,9 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
     // The flight is over: the present is in the crate.
     useEffect(() => {
         if (!flyer) return;
-        const id = window.setTimeout(() => setFlyer(f => (f === flyer ? null : f)), reducedMotion ? 0 : FLY_MS);
+        const id = window.setTimeout(() => setFlyer(f => (f === flyer ? null : f)), FLY_MS);
         return () => window.clearTimeout(id);
-    }, [flyer, reducedMotion]);
+    }, [flyer]);
 
     const pick = (i: number) => {
         if (phase !== 'play' || !question || options[i] === undefined) return;
@@ -212,10 +211,10 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
     const flash = phase === 'right' || phase === 'wrong';
     // Presents in the crate: the one still flying lands when its flight ends.
     const pile = Math.max(0, progress.right - (flyer ? 1 : 0));
-    const moving = phase === 'play' && !reducedMotion;
+    const moving = phase === 'play';
 
     return (
-        <div ref={root} className={`pk-root is-${mood}${views ? ' has-pictures' : ''}${pictureClass(views)}${moving ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${sputter ? ' is-sputter' : ''}`}>
+        <div ref={root} className={`pk-root is-${mood}${views ? ' has-pictures' : ''}${pictureClass(views)}${moving ? ' is-moving' : ''}${phase === 'help' ? ' is-paused' : ''}${sputter ? ' is-sputter' : ''}`}>
             <div className="pk-wall" aria-hidden>
                 <span className="pk-pipe" />
                 <Gear className="pk-gear is-big" />
@@ -233,15 +232,15 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
 
             {/* The feed pipe drops toys into the machine's hopper. */}
             <span className="pk-feed" aria-hidden>
-                {!reducedMotion && !sputter && TOYS.slice(0, 3).map((t, k) => <span key={t} className="pk-feed-toy" style={{ '--k': k } as CSSProperties}><ToyArt kind={TOYS[(k * 2 + progress.answered) % TOYS.length]} /></span>)}
+                {!sputter && TOYS.slice(0, 3).map((t, k) => <span key={t} className="pk-feed-toy" style={{ '--k': k } as CSSProperties}><ToyArt kind={TOYS[(k * 2 + progress.answered) % TOYS.length]} /></span>)}
             </span>
             <div ref={machine} className="pk-machine" aria-hidden>
                 <div className="pk-machine-rattle">
                     <MachineHead className="pk-head-art" pressure={pressure} mood={mood} />
                     <div className="pk-mbody"><span className="pk-door" /></div>
-                    {(mood === 'warm' || mood === 'high') && !reducedMotion && <span className="pk-valve-puff"><span /><span /></span>}
+                    {(mood === 'warm' || mood === 'high') && <span className="pk-valve-puff"><span /><span /></span>}
                 </div>
-                {progress.mistakes > 0 && <Burst key={`steam-${progress.mistakes}`} kind="smoke" x="84%" y="calc(var(--pk-mw) * .02)" spread={46} count={7} seed={progress.mistakes} reducedMotion={reducedMotion} />}
+                {progress.mistakes > 0 && <Burst key={`steam-${progress.mistakes}`} kind="smoke" x="84%" y="calc(var(--pk-mw) * .02)" spread={46} count={7} seed={progress.mistakes} />}
             </div>
 
             <div className="pk-line">
@@ -257,7 +256,7 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
                                         // A moving target: the tap counts where the finger lands.
                                         onPointerDown={e => { if (e.button === 0) pick(i); }}
                                         onClick={() => pick(i)}>
-                                        <Present look={looks[i]} uid={`${uid}-${i}`} value={c} view={views?.[i]} stamped={reducedMotion && state === ' is-down'} />
+                                        <Present look={looks[i]} uid={`${uid}-${i}`} value={c} view={views?.[i]} />
                                     </button>
                                 </div>
                             </div>
@@ -280,7 +279,7 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
                 <CrateBack pile={pile} />
                 <span ref={crate} className="pk-crate-mouth" />
                 <CrateFront className="pk-crate-front-art" />
-                {pile > 0 && !reducedMotion && <Burst kind="sparkle" x="50%" y="30%" spread={70} count={9} seed={pile} />}
+                {pile > 0 && <Burst kind="sparkle" x="50%" y="30%" spread={70} count={9} seed={pile} />}
             </div>
             {flyer && (
                 <div key={flyer.key} className="pk-flyer" style={{ left: flyer.left, top: flyer.top, width: flyer.size, height: flyer.size, '--dx': `${flyer.dx}px`, '--dy': `${flyer.dy}px` } as CSSProperties} aria-hidden>
@@ -290,8 +289,8 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
 
             {sputter && (
                 <div className="pk-pops" aria-hidden>
-                    <Burst kind="smoke" x={HOPPER_X} y={HOPPER_Y} spread={110} count={12} seed={11} reducedMotion={reducedMotion} />
-                    <Burst kind="pieces" x={HOPPER_X} y={HOPPER_Y} spread={140} count={16} seed={5} reducedMotion={reducedMotion} />
+                    <Burst kind="smoke" x={HOPPER_X} y={HOPPER_Y} spread={110} count={12} seed={11} />
+                    <Burst kind="pieces" x={HOPPER_X} y={HOPPER_Y} spread={140} count={16} seed={5} />
                     {POPS.map(([x, y, r], k) => (
                         <span key={k} className="pk-pop-toy" style={{ '--tx': x, '--ty': y, '--tr': `${r}deg`, '--k': k } as CSSProperties}>
                             <ToyArt kind={TOYS[k % TOYS.length]} />
@@ -304,11 +303,11 @@ export default function Pakjesband({ question, choices, views, phase, feedback, 
 }
 
 // The end screen's picture: the machine sputtered (steam, toys on the floor, dizzy eyes) or a full crate.
-export function FabriekEnding({ outcome, reducedMotion }: SkinEndingProps) {
+export function FabriekEnding({ outcome }: SkinEndingProps) {
     const failed = outcome === 'failed';
     const looks = presentLooks('ending', 4);
     return (
-        <div className={`spel-ending pk-ending${failed ? ' is-failed' : ' is-done'}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending pk-ending${failed ? ' is-failed' : ' is-done'}`}>
             <svg viewBox="0 0 560 240" preserveAspectRatio="xMidYMax meet" aria-hidden>
                 <rect className="pk-end-wall" x="-400" y="-100" width="1360" height="300" />
                 <rect className="pk-end-floor" x="-400" y="196" width="1360" height="200" />

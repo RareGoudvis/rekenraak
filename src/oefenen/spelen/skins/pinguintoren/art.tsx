@@ -156,10 +156,9 @@ interface IceBlockProps {
     crack?: CrackStage;
     crackSeed?: number;
     className?: string;
-    reducedMotion?: boolean;
 }
 
-export function IceBlock({ look, x, y, crack = 0, crackSeed = 5, className = '', reducedMotion }: IceBlockProps) {
+export function IceBlock({ look, x, y, crack = 0, crackSeed = 5, className = '' }: IceBlockProps) {
     const w = look.width;
     return (
         <g className={`pt-block${className ? ` ${className}` : ''}`}>
@@ -172,7 +171,7 @@ export function IceBlock({ look, x, y, crack = 0, crackSeed = 5, className = '',
                     <path className="pt-shine" d={`M${x + 8} ${y + 7} L${x + 18} ${y + 7}`} />
                 </>
             ) : <Deco look={look} x={x} y={y} w={w} />}
-            <CrackLines x={x} y={y} width={w} height={BH} stage={crack} seed={crackSeed} reducedMotion={reducedMotion} />
+            <CrackLines x={x} y={y} width={w} height={BH} stage={crack} seed={crackSeed} />
         </g>
     );
 }

@@ -240,8 +240,6 @@
 }
 .rc-fall-leaf:nth-child(even) { background: var(--mab-e); }
 @keyframes rc-leaf-fall { 0% { transform: translate3d(0, 0, 0) rotate(0); } 50% { transform: translate3d(-9vw, 55vh, 0) rotate(200deg); } 100% { transform: translate3d(-4vw, 110vh, 0) rotate(380deg); } }
-/* Reduced motion: the weather stands still where it is. */
-.rc-root.is-still .rc-flake, .rc-root.is-still .rc-drop, .rc-root.is-still .rc-fall-leaf { top: var(--y); }
 /* Phone upright: the HUD fills the top corners, so the sun and the moon sit smaller, between and below them. */
 @media (orientation: portrait) {
   .rc-sun, .rc-moon { top: calc(var(--sp-3) + var(--rc-u) * 120); left: 40%; width: calc(var(--rc-u) * 90); }

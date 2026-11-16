@@ -59,12 +59,6 @@ export function birdAt(f: BirdFlight, w: number, signBottom: number, bw: number,
     return { x, y };
 }
 
-// The ground's height near the right edge per landscape (share of the stage from the top): the hill, the snow, the sand.
-const PERCH_AT: Record<Land, number> = { gras: 0.86, bergen: 0.88, strand: 0.92 };
-
-/** Where the bird sits under reduced motion: on the ground near the right edge, never in the sum's way. */
-export const birdPerch = (land: Land, w: number, h: number, bw: number, bh: number) => ({ x: w * 0.93 - bw / 2, y: h * PERCH_AT[land] - bh * 0.85 });
-
 // What a balloon shows: popped (right pick), deflate (wrong pick: pfff and away), answer (the right one shows
 // itself after a wrong pick), rest (the others step back), fresh (blown up anew on the next sum), idle.
 export type SlotState = 'popped' | 'deflate' | 'answer' | 'rest' | 'fresh' | 'idle';

@@ -160,8 +160,7 @@ function Vignette({ g }: { g: Leerjaar }) {
 }
 
 // The top bar of the topics screen: six rounded tiles, one per leerjaar, each a little world of that leerjaar (the chosen one
-// larger with a thick border in its world's colour). Nothing chosen yet = the bar glows (kiosk.css, never under reduced
-// motion) and says "Kies je leerjaar".
+// larger with a thick border in its world's colour). Nothing chosen yet = the bar glows (kiosk.css) and says "Kies je leerjaar".
 export default function LeerjaarBar({ grade, onPick }: { grade: Leerjaar | null; onPick(g: Leerjaar): void }) {
     const unset = grade === null;
     return (

@@ -1,6 +1,6 @@
 /* Spelen scene kit: drifting clouds, snow, bursts, cracks and the one-shot motions (README.md).
    Same look as the skins: flat fills, the --spel-ink outline. Layers never catch taps.
-   prefers-reduced-motion and the components' reducedMotion prop: no loops, no bursts, instant states. */
+   The sky always moves, whatever the device's reduced-motion setting says. */
 
 /* ── Clouds ─────────────────────────────────────────────────────────────── */
 .spel-clouds {
@@ -30,10 +30,8 @@
   will-change: transform;
 }
 .spel-clouds.is-left .spel-cloud-track { animation-direction: reverse; }
-/* Paused: each cloud waits where it is. Reduced motion: each stands where its delay put it (--p), spread over the sky,
-   as a plain transform: a paused animation would land off-screen once prefers-reduced-motion collapses its duration. */
+/* Paused (the help panel is open): each cloud waits where it is. */
 .spel-clouds.is-still .spel-cloud-track { animation-play-state: paused; }
-.spel-clouds.is-fixed .spel-cloud-track { animation-name: none; transform: translateX(calc((100% + var(--cw)) * var(--p))); }
 .spel-cloud-track > .spel-cloud {
   position: absolute;
   left: calc(-1 * var(--cw));
@@ -86,9 +84,6 @@
 }
 .spel-snow.is-still .spel-flake-fall,
 .spel-snow.is-still .spel-flake { animation-play-state: paused; }
-/* Reduced motion: each flake hangs where its delay put it (--p), as a plain transform (see the clouds). */
-.spel-snow.is-fixed .spel-flake-fall { animation-name: none; transform: translateY(calc(-100% * (1 - var(--p)) + 12px * var(--p))); }
-.spel-snow.is-fixed .spel-flake { animation-name: none; }
 @keyframes spel-snow-fall {
   from { transform: translateY(-100%); }
   to { transform: translateY(calc(0% + 12px)); }
@@ -183,7 +178,6 @@
 .spel-crack-ink { stroke: var(--spel-ink); stroke-width: 2.5px; }
 .spel-crack-light { stroke: color-mix(in srgb, var(--kiosk-paper) 75%, transparent); stroke-width: 1.5px; }
 .spel-cracks.is-stage-2 .spel-crack-ink { stroke-width: 3px; }
-.spel-cracks.is-still .spel-crack { animation: none; }
 @keyframes spel-crack-grow { from { transform: scale(0); } to { transform: scale(1); } }
 
 /* ── One-shot motions (effects.ts): add the class, remove or replay() to play again ── */
@@ -224,11 +218,3 @@
   100% { scale: 1; opacity: 1; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .spel-shake, .spel-bounce, .spel-wiggle, .spel-pop { animation: none; }
-  .spel-cloud-track, .spel-flake-fall, .spel-flake { animation-name: none; }
-  .spel-cloud-track { transform: translateX(calc((100% + var(--cw)) * var(--p))); }
-  .spel-flake-fall { transform: translateY(calc(-100% * (1 - var(--p)) + 12px * var(--p))); }
-  .spel-burst { display: none; }
-  .spel-crack { animation: none; }
-}

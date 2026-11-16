@@ -15,8 +15,6 @@ export interface CrackLinesProps {
     seed?: number;
     // The impact point inside the box; absent = somewhere in its upper middle.
     origin?: readonly [number, number];
-    // No draw-in: the cracks are simply there.
-    reducedMotion?: boolean;
 }
 
 const LIGHT = 1.2;
@@ -32,11 +30,11 @@ function growFrom(points: readonly (readonly [number, number])[]): string {
 }
 
 /** Cracks as an SVG group, for a block or a cell inside a skin's own SVG. */
-export function CrackLines({ x = 0, y = 0, width, height, stage, seed = 5, origin, reducedMotion = false }: CrackLinesProps) {
+export function CrackLines({ x = 0, y = 0, width, height, stage, seed = 5, origin }: CrackLinesProps) {
     const segs = useMemo(() => crackLines(width, height, seed, origin), [width, height, seed, origin]);
     if (stage === 0) return null;
     return (
-        <g className={`spel-cracks is-stage-${stage}${reducedMotion ? ' is-still' : ''}`} transform={x || y ? `translate(${x} ${y})` : undefined} aria-hidden>
+        <g className={`spel-cracks is-stage-${stage}`} transform={x || y ? `translate(${x} ${y})` : undefined} aria-hidden>
             {segs.filter(s => s.stage <= stage).map(s => (
                 // Grows out of its own first point (only the newly added pieces play it).
                 <g key={s.key} className="spel-crack" style={{ transformOrigin: growFrom(s.points) }}>
@@ -59,12 +57,11 @@ export interface CracksProps {
     // rect corners, % of the width.
     radius?: number;
     origin?: readonly [number, number];
-    reducedMotion?: boolean;
     className?: string;
 }
 
 /** Cracks over an HTML element: put it inside the (positioned) element; it fills it and never catches taps. */
-export default function Cracks({ stage, seed = 5, aspect = 1, shape = 'rect', radius = 8, origin, reducedMotion = false, className }: CracksProps) {
+export default function Cracks({ stage, seed = 5, aspect = 1, shape = 'rect', radius = 8, origin, className }: CracksProps) {
     const clip = `spel-crack-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
     if (stage === 0) return null;
     const w = 100;
@@ -77,7 +74,7 @@ export default function Cracks({ stage, seed = 5, aspect = 1, shape = 'rect', ra
                 </clipPath>
             </defs>
             <g clipPath={`url(#${clip})`}>
-                <CrackLines width={w} height={h} stage={stage} seed={seed} origin={origin} reducedMotion={reducedMotion} />
+                <CrackLines width={w} height={h} stage={stage} seed={seed} origin={origin} />
             </g>
         </svg>
     );

@@ -97,8 +97,7 @@ export default function ZelfPicker() {
     useEffect(() => {
         if (!tapped.current || !choice) return;
         tapped.current = false;
-        const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-        nextRef.current?.scrollIntoView?.({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+        nextRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     }, [choice]);
     // Back from a game: the games bar in view, where the pupil picks another one.
     const cameBack = useRef(!!from);

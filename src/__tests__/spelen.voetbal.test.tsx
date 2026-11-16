@@ -45,7 +45,7 @@ const rightKey = () => typeAnswer(sp().question!.answer);
 const wrongKey = () => typeAnswer(String(Number(sp().question!.answer) + 1));
 
 // The skin on the real session, as SpelScreen wires it, with the shell's 250 ms clock (tick + a fresh render).
-function Wired({ reducedMotion = false }: { reducedMotion?: boolean }) {
+function Wired() {
     const st = useSpelStore();
     const [, setNow] = useState(0);
     useEffect(() => {
@@ -57,7 +57,7 @@ function Wired({ reducedMotion = false }: { reducedMotion?: boolean }) {
     return (
         <Voetbal question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={null}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events} reducedMotion={reducedMotion}
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events}
             runKey="voetbal:test" onFinish={st.finish} onReport={st.report} onHold={on => st.hold(on)} />
     );
 }
@@ -431,12 +431,6 @@ describe('Voetbal on the session (fake clock)', () => {
         expect(container.querySelector('.vb-svg [class*="key"]')).toBeNull();
     });
 
-    test('reduced motion: the root holds every animation still', () => {
-        start();
-        const { container } = render(<Wired reducedMotion />);
-        expect(container.querySelector('.vb-root.is-still')).not.toBeNull();
-    });
-
     test('the shot uses the skin deadline: 10 s and the keeper catches it (a miss); a wrong shot is a save too', () => {
         start();
         const { container } = render(<Wired />);
@@ -517,12 +511,12 @@ describe('Voetbal on the session (fake clock)', () => {
         expect(progressOf(sp()).msLeft).toBeLessThan(left);
     });
 
-    test('reduced motion: the break is a plain card', () => {
+    test('the break at half time: the bears have a drink on the bench', () => {
         start();
-        const { container } = render(<Wired reducedMotion />);
+        const { container } = render(<Wired />);
         wait(90_250);
         expect(container.querySelector('.vb-rust')!.textContent).toContain('Rust!');
-        expect(container.querySelector('.vb-rust-art')).toBeNull();
+        expect(container.querySelector('.vb-rust-art')).not.toBeNull();
     });
 
     test('the final whistle ends the round with the goals as its lines; 5 minutes is 300 s', () => {
@@ -550,7 +544,7 @@ describe('Voetbal on the session (fake clock)', () => {
     });
 
     test('the ending: the cup and the team', () => {
-        const { container } = render(<VoetbalEnding outcome="done" progress={progressOf(sp())} options={{}} reducedMotion={false} />);
+        const { container } = render(<VoetbalEnding />);
         expect(container.querySelector('.vb-cup')).not.toBeNull();
         expect(container.querySelectorAll('.vb-bear.is-ijs')).toHaveLength(3);
     });

@@ -1,7 +1,7 @@
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
-import type { SkinEndingProps, SkinProps } from '../types';
+import type { SkinProps } from '../types';
 import {
     KICKOFF, VOETBAL, beatsOf, endTitle, halfTimeDue, isShot, loadBest, newMatch, passArc, playOf, saveBest, sceneOf, scoreLine, shotStep,
     type Beat, type Fig, type Match, type Pose,
@@ -215,7 +215,7 @@ function shownNext(prev: Shown, beat: Beat, n: number): Shown {
 
 const figTransform = (f: Fig) => `translate(${f.x.toFixed(1)}px, ${(f.y - f.lift).toFixed(1)}px) rotate(${f.rot}deg) scale(${f.k.toFixed(3)})`;
 
-export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, onHold, onReport, sound, progress, events, options, runKey, reducedMotion }: SkinProps) {
+export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, onHold, onReport, sound, progress, events, options, runKey }: SkinProps) {
     const uid = useId().replace(/:/g, '');
     const [match, setMatch] = useState<Match>(newMatch);
     const matchRef = useRef(match);
@@ -335,7 +335,7 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
     const flightKey = `${beat.n}-${beat.beat.kind}`;
 
     return (
-        <div className={`vb-root${phase === 'help' || rust ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`vb-root${phase === 'help' || rust ? ' is-paused' : ''}`}>
             <div className="vb-world" ref={world}>
                 <svg className="vb-svg" viewBox={`0 0 400 ${viewHeight(geo)}`} preserveAspectRatio="xMidYMax meet" aria-hidden>
                     <g className={`vb-stand${scene.crowd === 'goal' ? ' is-goal' : ''}`}>
@@ -404,13 +404,11 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
                 {shout?.play === 'save' && <p key={`s${shout.n}`} className="vb-shout is-save" aria-live="polite">Gevangen! Hoge vijf!</p>}
                 {rust && (
                     <div className="vb-rust" role="status">
-                        {!reducedMotion && (
-                            <svg className="vb-rust-art" viewBox="0 0 160 80" aria-hidden>
-                                <rect className="vb-bench" x="14" y="66" width="132" height="8" rx="3" />
-                                <g transform="translate(52 70)"><g className="vb-sip"><Bear kind="ijs" pose="drink" /></g></g>
-                                <g transform="translate(108 70)"><g className="vb-sip is-late"><Bear kind="zwart" face={-1} pose="drink" /></g></g>
-                            </svg>
-                        )}
+                        <svg className="vb-rust-art" viewBox="0 0 160 80" aria-hidden>
+                            <rect className="vb-bench" x="14" y="66" width="132" height="8" rx="3" />
+                            <g transform="translate(52 70)"><g className="vb-sip"><Bear kind="ijs" pose="drink" /></g></g>
+                            <g transform="translate(108 70)"><g className="vb-sip is-late"><Bear kind="zwart" face={-1} pose="drink" /></g></g>
+                        </svg>
                         <p className="vb-rust-title">Rust!</p>
                         <p className="vb-rust-lead">Even drinken.</p>
                     </div>
@@ -432,9 +430,9 @@ const CONFETTI = 14;
 const END_FANS = fans(-20, 320, 17).filter(f => f.row > 0);
 
 // The end screen: the polar bears lift the cup in front of the cheering stand, a black bear claps along.
-export function VoetbalEnding({ reducedMotion }: SkinEndingProps) {
+export function VoetbalEnding() {
     return (
-        <div className={`spel-ending vb-ending${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending vb-ending`}>
             <svg viewBox="0 0 300 130" preserveAspectRatio="xMidYMax meet" aria-hidden>
                 <g className="vb-stand is-goal" transform="translate(0 26)">
                     <rect className="vb-stand-back" x={-300} y={14} width={900} height={66} />

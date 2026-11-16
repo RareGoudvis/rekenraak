@@ -142,9 +142,9 @@ export default function Jungle() {
             </Far>
             <Ground back />
             <Ground />
-            <Cloud top="8%" w="clamp(90px, 10vw, 180px)" dur={130} delay={-20} at="12vw" />
-            <Cloud top="30%" w="clamp(70px, 7vw, 130px)" dur={160} delay={-90} at="84vw" />
-            <Trav vb="-20 -20 40 40" w="clamp(26px, 2.4vw, 44px)" top="40%" dur={40} delay={-14} at="90vw" rev>
+            <Cloud top="8%" w="clamp(90px, 10vw, 180px)" dur={130} delay={-20} />
+            <Cloud top="30%" w="clamp(70px, 7vw, 130px)" dur={160} delay={-90} />
+            <Trav vb="-20 -20 40 40" w="clamp(26px, 2.4vw, 44px)" top="40%" dur={40} delay={-14} rev>
                 <g className="ks-bob"><Butterfly x={0} y={0} /></g>
             </Trav>
             <Air side="l"><Vine /></Air>

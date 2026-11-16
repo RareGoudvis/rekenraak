@@ -55,7 +55,7 @@ function Wired({ Skin, onFinish }: { Skin: ComponentType<SkinProps>; onFinish?(r
     return (
         <Skin question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={null}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} reducedMotion={false}
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events}
             onFinish={onFinish ?? st.finish} />
     );
 }
@@ -68,7 +68,7 @@ function WiredSounds({ onFinish, onSound }: { onFinish(r: SkinResult): void; onS
     return (
         <Schatkist question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={null}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={onSound} progress={progress} options={{}} events={st.events} reducedMotion={false} onFinish={onFinish} />
+            onFail={() => st.fail()} sound={onSound} progress={progress} options={{}} events={st.events} onFinish={onFinish} />
     );
 }
 
@@ -138,12 +138,11 @@ describe('Kerstboom versieren', () => {
 
     test('the ending: the tree as far as it got, lit only when finished', () => {
         const progress = (count: number) => progressOf({ ...sp(), meta: skinById('kerstboom')!.meta, climb: count });
-        const { container, rerender } = render(<KerstboomEnding outcome="won" progress={progress(15)} options={{}} reducedMotion={false} />);
+        const { container, rerender } = render(<KerstboomEnding outcome="won" progress={progress(15)} options={{}} />);
         expect(container.querySelector('.kb-scene.is-lit .kb-star')).not.toBeNull();
-        rerender(<KerstboomEnding outcome="done" progress={progress(6)} options={{}} reducedMotion />);
+        rerender(<KerstboomEnding outcome="done" progress={progress(6)} options={{}} />);
         expect(container.querySelector('.kb-scene.is-lit')).toBeNull();
         expect(container.querySelectorAll('.kb-decor')).toHaveLength(6);
-        expect(container.querySelector('.kb-ending.is-still')).not.toBeNull();
     });
 });
 
@@ -220,7 +219,7 @@ describe('Verborgen prent', () => {
             const { container, unmount } = render(<Wired Skin={Prent} />);
             shown.push(container.querySelector('[data-prent]')!.getAttribute('data-prent')!);
             unmount();
-            const end = render(<PrentEnding outcome="won" progress={progressOf(sp())} options={{}} reducedMotion={false} />);
+            const end = render(<PrentEnding />);
             expect(end.container.querySelector('[data-prent]')!.getAttribute('data-prent')).toBe(shown[i]);
             expect(end.container.querySelectorAll('.pr-tile')).toHaveLength(0);
             end.unmount();
@@ -339,8 +338,8 @@ describe('Schatkist', () => {
             expect(sp().score).toBe(11);
             expect(sp().helped).toBe(1);
             expect(sp().mistakes).toHaveLength(1);
-            const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{}} reducedMotion />);
-            expect(end.container.querySelector('.sk-ending.is-still .sk-chest.is-open')).not.toBeNull();
+            const end = render(<SchatkistEnding outcome="done" progress={progressOf(sp())} options={{}} />);
+            expect(end.container.querySelector('.sk-ending .sk-chest.is-open')).not.toBeNull();
         });
 
         test('help mid-hunt keeps the digits; sums still answer by keyboard', () => {

@@ -18,7 +18,7 @@ const onOrientation = (cb: () => void) => {
 };
 const usePortrait = () => useSyncExternalStore(onOrientation, () => window.matchMedia?.(PORTRAIT).matches ?? false, () => false);
 
-export default function Meadow({ board, phase, onBoardPick, reducedMotion, active, leaving }: ViewProps) {
+export default function Meadow({ board, phase, onBoardPick, active, leaving }: ViewProps) {
     const layout = meadowLayout(board.cells.length, usePortrait());
     const { beeAt, face, fresh } = usePicks(board, i => layout.cells[i]);
     const toFind = board.cells.filter(c => c.match);
@@ -57,8 +57,8 @@ export default function Meadow({ board, phase, onBoardPick, reducedMotion, activ
                             </button>
                         );
                     })}
-                    <BoardBee x={bee.x} y={bee.y} face={face} mood={fresh !== null ? 'worried' : cleared ? 'happy' : 'busy'} landed={beeAt !== null} hidden={leaving} still={reducedMotion} />
-                    {beeAt !== null && <Burst key={`nectar-${beeAt}`} kind="sparkle" {...at(beeAt)} spread={70} count={8} seed={beeAt + 4} reducedMotion={reducedMotion} />}
+                    <BoardBee x={bee.x} y={bee.y} face={face} mood={fresh !== null ? 'worried' : cleared ? 'happy' : 'busy'} landed={beeAt !== null} hidden={leaving} />
+                    {beeAt !== null && <Burst key={`nectar-${beeAt}`} kind="sparkle" {...at(beeAt)} spread={70} count={8} seed={beeAt + 4} />}
                 </div>
             </div>
         </>

@@ -1,5 +1,5 @@
 /* Race skin: the car, the road, gates, the petrol station, the HUD and the panel. Landscapes in scenery.css.
-   The scene moves by transform only (Race.tsx writes it per frame); under reduced motion nothing scrolls. */
+   The scene moves by transform only (Race.tsx writes it per frame). */
 .rc-root,
 .rc-ending {
   /* One scene unit: the size every scenery tile, gate and the car is drawn in (1 px at 800 px tall). */
@@ -385,7 +385,6 @@
 .rc-badge.is-empty { background: var(--kiosk-paper); }
 @keyframes rc-pop { from { transform: translateX(-50%) scale(.6); } to { transform: translateX(-50%) scale(1); } }
 
-
 /* ── The sum and the keypad ───────────────────────────────────────────────── */
 .rc-panel {
   position: relative;
@@ -446,17 +445,6 @@
 
 /* "Hoe los ik dit op?": everything holds still. */
 .rc-root.is-paused * { animation-play-state: paused !important; }
-
-/* Reduced motion: a still scene; the bar on top (Tijdrit) or the kilometres (Benzine) show the race. */
-.rc-root.is-still .rc-finish,
-.rc-root.is-still .rc-car.is-ghost,
-.rc-root.is-still .rc-recordflag { display: none; }
-.rc-root.is-still .rc-meter { height: 40px; }
-.rc-root.is-still[data-mode='tijdrit'] .rc-readout { top: calc(var(--sp-3) + 52px); }
-.rc-root.is-still .rc-meter-track { inset: 10px 0; }
-.rc-root.is-still .rc-meter-dot { width: 40px; height: 40px; left: calc(var(--p) * (100% - 40px)); }
-.rc-root.is-still *,
-.rc-ending.is-still * { animation: none !important; transition: none !important; }
 
 /* ── The end screen's picture ─────────────────────────────────────────────── */
 .rc-ending .rc-sky { position: absolute; inset: 0; }

@@ -52,7 +52,7 @@ function Decor({ x, y, kind }: { x: number; y: number; kind: DecorKind }) {
     );
 }
 
-function Slab({ n, cols, rowsH, uid, still }: { n: number; cols: number; rowsH: number; uid: string; still: boolean }) {
+function Slab({ n, cols, rowsH, uid }: { n: number; cols: number; rowsH: number; uid: string }) {
     const { L, R, T, B } = slabBox(cols, rowsH);
     const cx = (L + R) / 2;
     const extra = 120;
@@ -71,7 +71,7 @@ function Slab({ n, cols, rowsH, uid, still }: { n: number; cols: number; rowsH: 
                 return (
                     <g key={i} className="hx-drip" style={{ '--k': i } as CSSProperties}>
                         <path className="hx-drip-honey" d={`M${x - 18} ${y0} C${x - 16} ${y0 + len * 0.45} ${x - 6} ${y0 + len * 0.55} ${x - 7} ${y0 + len - 4} A9 9 0 1 0 ${x + 7} ${y0 + len - 4} C${x + 6} ${y0 + len * 0.55} ${x + 16} ${y0 + len * 0.45} ${x + 18} ${y0} Z`} />
-                        {!still && <path className="hx-drop" style={{ transformOrigin: `${x}px ${y0 + len + 4}px` }} d={`M${x} ${y0 + len - 2} C${x + 6} ${y0 + len + 6} ${x + 7} ${y0 + len + 12} ${x} ${y0 + len + 14} C${x - 7} ${y0 + len + 12} ${x - 6} ${y0 + len + 6} ${x} ${y0 + len - 2} Z`} />}
+                        <path className="hx-drop" style={{ transformOrigin: `${x}px ${y0 + len + 4}px` }} d={`M${x} ${y0 + len - 2} C${x + 6} ${y0 + len + 6} ${x + 7} ${y0 + len + 12} ${x} ${y0 + len + 14} C${x - 7} ${y0 + len + 12} ${x - 6} ${y0 + len + 6} ${x} ${y0 + len - 2} Z`} />
                     </g>
                 );
             })}
@@ -91,7 +91,7 @@ function Workers({ happy }: { happy: boolean }) {
     );
 }
 
-export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, active, leaving }: ViewProps) {
+export default function Comb({ board, phase, onBoardPick, sound, active, leaving }: ViewProps) {
     const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
     const layout = combLayout(board.cells.length);
     const { beeAt, face, fresh } = usePicks(board, i => layout.cells[i]);
@@ -101,7 +101,7 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
     const [seenFresh, setSeenFresh] = useState<number | null>(null);
     if (fresh !== seenFresh) {
         setSeenFresh(fresh);
-        if (fresh !== null) { setStage(reducedMotion ? 2 : 1); setShaking(fresh); }
+        if (fresh !== null) { setStage(1); setShaking(fresh); }
     }
     // The shell hands a new sound() each render: the crack sounds once per wrong cell.
     const voice = useRef(sound);
@@ -131,7 +131,7 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
                     <span className="hx-branch-wrap" aria-hidden><Branch /></span>
                     {/* After the branch: the trunk hides where the branch is cut off. */}
                     <span className="hx-trunk" aria-hidden />
-                    <Slab n={board.cells.length} cols={layout.width} rowsH={layout.height} uid={uid} still={reducedMotion} />
+                    <Slab n={board.cells.length} cols={layout.width} rowsH={layout.height} uid={uid} />
                     <Workers happy={cleared} />
                     {board.cells.map((c, i) => {
                         const { x, y } = layout.cells[i];
@@ -150,7 +150,7 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
                                         <ellipse className="hx-shine" cx="30" cy="34" rx="11" ry="5" transform="rotate(-28 30 34)" />
                                         {c.state === 'missed' && <path className="hx-chip" d={chip} />}
                                         {c.state === 'missed' && (
-                                            <CrackLines width={100} height={115.5} stage={fresh === i ? stage : 2} seed={i + 3} origin={[50, 30]} reducedMotion={reducedMotion || fresh !== i} />
+                                            <CrackLines width={100} height={115.5} stage={fresh === i ? stage : 2} seed={i + 3} origin={[50, 30]} />
                                         )}
                                     </g>
                                     <polygon className="hx-rim" points={HEX} />
@@ -159,9 +159,9 @@ export default function Comb({ board, phase, onBoardPick, reducedMotion, sound, 
                             </button>
                         );
                     })}
-                    <BoardBee x={bee.x} y={bee.y} face={face} mood={fresh !== null ? 'worried' : cleared ? 'happy' : 'busy'} landed={beeAt !== null} hidden={leaving} still={reducedMotion} />
-                    {fresh !== null && <Burst key={`crumb-${fresh}`} kind="pieces" {...at(fresh)} spread={70} count={9} seed={fresh + 1} color="var(--hx-wax-deep)" reducedMotion={reducedMotion} />}
-                    {beeAt !== null && <Burst key={`honey-${beeAt}`} kind="sparkle" {...at(beeAt)} spread={60} count={7} seed={beeAt + 2} reducedMotion={reducedMotion} />}
+                    <BoardBee x={bee.x} y={bee.y} face={face} mood={fresh !== null ? 'worried' : cleared ? 'happy' : 'busy'} landed={beeAt !== null} hidden={leaving} />
+                    {fresh !== null && <Burst key={`crumb-${fresh}`} kind="pieces" {...at(fresh)} spread={70} count={9} seed={fresh + 1} color="var(--hx-wax-deep)" />}
+                    {beeAt !== null && <Burst key={`honey-${beeAt}`} kind="sparkle" {...at(beeAt)} spread={60} count={7} seed={beeAt + 2} />}
                 </div>
             </div>
         </>

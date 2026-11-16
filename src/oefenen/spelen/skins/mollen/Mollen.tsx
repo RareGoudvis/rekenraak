@@ -56,7 +56,7 @@ function StarBit({ i }: { i: number }) {
     );
 }
 
-export default function Mollen({ question, choices, views, phase, feedback, onAnswer, progress, reducedMotion }: SkinProps) {
+export default function Mollen({ question, choices, views, phase, feedback, onAnswer, progress }: SkinProps) {
     const options = choices ?? [];
     const [view, setView] = useState<HoleView[]>(() => viewOf(newField(0), 0));
     const [picked, setPicked] = useState<{ key: string; hole: number } | null>(null);
@@ -117,7 +117,7 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div className={`ml-root${views ? ' has-pictures' : ''}${pictureClass(views)}${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} style={{ '--ml-pace': molePace(progress.streak) } as CSSProperties}>
+        <div className={`ml-root${views ? ' has-pictures' : ''}${pictureClass(views)}${phase === 'help' ? ' is-paused' : ''}`} style={{ '--ml-pace': molePace(progress.streak) } as CSSProperties}>
             <div className="ml-grass" aria-hidden />
             <div className="ml-top">
                 <p className={`ml-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
@@ -149,7 +149,7 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
                             </div>
                             <span className="ml-rim" aria-hidden />
                             {state === ' is-nope' && <span className="ml-bubble" aria-hidden>Nana!</span>}
-                            {mine && phase === 'right' && !reducedMotion && (
+                            {mine && phase === 'right' && (
                                 <>
                                     <Hammer />
                                     <span className="ml-dizzy" aria-hidden>{[0, 1, 2].map(s => <StarBit key={s} i={s} />)}</span>

@@ -42,7 +42,7 @@ describe('Eieren zoeken: egg states', () => {
 
 describe('Eieren zoeken: garden', () => {
     test('is decorative: no text, no buttons, no numbers', () => {
-        const { container } = render(<><GardenBack reducedMotion={false} paused={false} /><GardenFront /></>);
+        const { container } = render(<><GardenBack paused={false} /><GardenFront /></>);
         expect(container.textContent).toBe('');
         expect(container.querySelector('button, [tabindex]')).toBeNull();
     });

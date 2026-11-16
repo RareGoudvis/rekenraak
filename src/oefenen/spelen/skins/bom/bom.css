@@ -68,7 +68,7 @@
 .bom-root.is-hurry .bom-spark-flick { animation-duration: 200ms; }
 @keyframes bom-flick { from { transform: scale(.8) rotate(-12deg); } to { transform: scale(1.15) rotate(12deg); } }
 
-/* A mistake: the clock flashes (a colour state, so it stays under reduced motion), "−3 s" floats off, the spark jumps. */
+/* A mistake: the clock flashes (a colour state), "−3 s" floats off, the spark jumps. */
 .bom-display.is-hit rect { fill: color-mix(in srgb, var(--danger) 55%, var(--kiosk-paper)); animation: bom-flash 1000ms ease-in 450ms both; }
 .bom-display.is-hit text:not(.bom-minus) { fill: var(--kiosk-paper); }
 @keyframes bom-flash { from { fill: color-mix(in srgb, var(--danger) 55%, var(--kiosk-paper)); } to { fill: var(--bom-screen); } }
@@ -191,18 +191,6 @@
   from { transform: translateY(0) rotate(0); }
   to { transform: translateY(clamp(150px, 28vh, 260px)) rotate(540deg); }
 }
-.bom-confetti.is-still .bom-bit { animation: none; top: calc(8% + (var(--i) * 5.3%)); }
 
 /* "Hoe los ik dit op?": everything holds still. */
 .bom-root.is-paused * { animation-play-state: paused; }
-.bom-root.is-still .bom-fuse,
-.bom-root.is-still .bom-spark { transition: none; }
-.bom-root.is-still .bom-spark-flick,
-.bom-root.is-still .bom-spark-jump,
-.bom-root.is-still .bom-display rect,
-.bom-root.is-still .bom-breathe,
-.bom-root.is-still .bom-seg.is-new,
-.bom-ending.is-still .bom-hop,
-.bom-ending.is-still .bom-cloud circle,
-.bom-ending.is-still .bom-puf { animation: none; }
-.bom-ending.is-still .bom-puf { transform: rotate(-4deg); }

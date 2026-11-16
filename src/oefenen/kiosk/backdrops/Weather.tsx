@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 // The weather over a leerjaar scene: particles crossing the whole sky behind the page content (petals, bubbles,
-// sparks, rain, snow, sand). Fixed pseudo-random paths, so every render draws the same sky; under reduced motion each
-// particle rests at a point on its path (rain is left out: frozen streaks read as scratches).
+// sparks, rain, snow, sand). Fixed pseudo-random paths, so every render draws the same sky.
 
 export type WeatherKind = 'petals' | 'bubbles' | 'embers' | 'rain' | 'snow' | 'sand';
 
@@ -47,7 +46,6 @@ export default function Weather({ kind }: { kind: WeatherKind }) {
                     '--x0': `${p.x0}px`, '--y0': `${p.y0}px`,
                     '--x1': `${p.x0 + p.dx}px`, '--y1': `${p.y0 + p.dy}px`,
                     '--rot': `${p.rot}deg`, '--o': p.o, '--dur': `${p.dur}s`, '--delay': `${-t * p.dur}s`,
-                    '--rest': `translate(${p.x0 + p.dx * t}px, ${p.y0 + p.dy * t}px) rotate(${p.rot * t}deg)`,
                 } as CSSProperties;
                 return <g key={i} className="kw-p" style={style}>{shape(kind, p, i)}</g>;
             })}

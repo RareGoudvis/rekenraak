@@ -27,7 +27,7 @@ function Floe({ under = false }: { under?: boolean }) {
     return <path className={`pt-floe${under ? ' is-under' : ''}`} d={`M46 ${GROUND + 14} L58 ${GROUND} L182 ${GROUND} L194 ${GROUND + 14} Z`} />;
 }
 
-export default function Pinguintoren({ question, phase, feedback, onAnswer, progress, events, reducedMotion, sound }: SkinProps) {
+export default function Pinguintoren({ question, phase, feedback, onAnswer, progress, events, sound }: SkinProps) {
     const goal = progress.goal?.target ?? 20;
     const count = progress.goal?.count ?? progress.score;
     // One seed per round: the blocks' tints and sizes, and which one holds the frozen creature.
@@ -51,16 +51,16 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
         if (!wrongCue) return;
         say.current(wrongCue === 'crack' || wrongCue === 'break' ? 'barricade' : 'miss');
         if (wrongCue !== 'break') return;
-        const t = window.setTimeout(() => say.current('hit'), reducedMotion ? 0 : SPLASH_MS);
+        const t = window.setTimeout(() => say.current('hit'), SPLASH_MS);
         return () => window.clearTimeout(t);
-    }, [wrongCue, qKey, reducedMotion]);
+    }, [wrongCue, qKey]);
     const breakN = tower.change === 'break' ? tower.n : -1;
     useEffect(() => {
-        if (breakN < 0 || reducedMotion) return;
+        if (breakN < 0) return;
         const a = window.setTimeout(() => setBeat({ n: breakN, step: 1 }), SHATTER_MS);
         const b = window.setTimeout(() => setBeat({ n: breakN, step: 2 }), SPLASH_MS);
         return () => { window.clearTimeout(a); window.clearTimeout(b); };
-    }, [breakN, reducedMotion]);
+    }, [breakN]);
 
     if (!question) return <div className="pt-root" />;
     const flash = phase === 'right' || phase === 'wrong';
@@ -74,8 +74,7 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
     const cracked = crackedIds(tower);
     const fresh = tower.at === qKey;
     const mood = penguinMood(height, goal, { wrong: phase === 'wrong', cracked: tower.cracked });
-    const moving = !reducedMotion;
-    const broke = tower.change === 'break' && moving;
+    const broke = tower.change === 'break';
     const brokeLooks = tower.broken.map(id => blockLook(id, seed));
     const beatNow = beat.n === tower.n ? beat.step : 0;
     const drop = tower.broken.length * BH;
@@ -85,9 +84,9 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
     const healAt = onScreen(CAM_X, GROUND - Math.min(2, height) * BH / 2, scale);
 
     return (
-        <div className={`pt-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`}>
-            <Clouds className="pt-sky" layer="far" outline={false} count={3} band={[3, 22]} size={[90, 150]} seed={4} paused={phase === 'help'} reducedMotion={reducedMotion} />
-            <Clouds className="pt-sky" layer="near" count={2} band={[6, 26]} size={[120, 180]} seed={9} paused={phase === 'help'} reducedMotion={reducedMotion} />
+        <div className={`pt-root${phase === 'help' ? ' is-paused' : ''}`}>
+            <Clouds className="pt-sky" layer="far" outline={false} count={3} band={[3, 22]} size={[90, 150]} seed={4} paused={phase === 'help'} />
+            <Clouds className="pt-sky" layer="near" count={2} band={[6, 26]} size={[120, 180]} seed={9} paused={phase === 'help'} />
             <div className="pt-sea" />
             <div className="pt-world">
                 <div className="pt-stage">
@@ -97,15 +96,13 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
                             <clipPath id="pt-above"><rect x={-2000} y={-2000} width={4000 + VIEW_W} height={2000 + WATER} /></clipPath>
                             <clipPath id="pt-below"><rect x={-2000} y={WATER} width={4000 + VIEW_W} height={VIEW_H} /></clipPath>
                         </defs>
-                        {moving && (
-                            <g clipPath="url(#pt-above)">
-                                {SEALS.map(s => (
-                                    <g key={s.side} className="pt-seal-spot" style={{ transform: `translate(${CAM_X + (s.x - CAM_X) * scale}px, ${WATER}px) scale(${scale})` }}>
-                                        <g className={`pt-seal-pop is-${s.side}`}><Seal /></g>
-                                    </g>
-                                ))}
-                            </g>
-                        )}
+                        <g clipPath="url(#pt-above)">
+                            {SEALS.map(s => (
+                                <g key={s.side} className="pt-seal-spot" style={{ transform: `translate(${CAM_X + (s.x - CAM_X) * scale}px, ${WATER}px) scale(${scale})` }}>
+                                    <g className={`pt-seal-pop is-${s.side}`}><Seal /></g>
+                                </g>
+                            ))}
+                        </g>
                         <g className="pt-cam" style={cam}>
                             <Floe />
                             <g className="pt-goal">
@@ -126,12 +123,12 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
                                         const crack = cracked.includes(id);
                                         const cls = [
                                             i === top && tower.change === 'up' && fresh ? 'is-new' : '',
-                                            crack && tower.change === 'crack' && moving ? 'spel-shake' : '',
+                                            crack && tower.change === 'crack' ? 'spel-shake' : '',
                                         ].filter(Boolean).join(' ');
-                                        return <IceBlock key={id} look={looks[i]} x={blockX(looks[i])} y={blockY(i)} crack={crack ? 2 : 0} crackSeed={id + 3} className={cls} reducedMotion={reducedMotion} />;
+                                        return <IceBlock key={id} look={looks[i]} x={blockX(looks[i])} y={blockY(i)} crack={crack ? 2 : 0} crackSeed={id + 3} className={cls} />;
                                     })}
                                     {/* A right answer on cracked blocks: the cracks freeze shut. */}
-                                    {tower.change === 'heal' && moving && tower.blocks.slice(0, 2).map((id, i) => (
+                                    {tower.change === 'heal' && tower.blocks.slice(0, 2).map((id, i) => (
                                         <g key={`${tower.n}-${id}`} className="pt-healing">
                                             <IceBlock look={looks[i]} x={blockX(looks[i])} y={blockY(i)} crack={2} crackSeed={id + 3} className="is-ghost" />
                                         </g>
@@ -167,11 +164,11 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
                             <Burst key={`r${tower.n}`} kind="splash" {...xy(splashAt(CAM_X + 100))} spread={70} seed={tower.n + 2} />
                         </>
                     )}
-                    {tower.change === 'crack' && fresh && moving && <Burst key={`c${tower.n}`} kind="pieces" x={healAt.left} y={healAt.top} spread={40} count={8} color="var(--pt-ice-0)" seed={tower.n} />}
-                    {tower.change === 'heal' && fresh && moving && <Burst key={`h${tower.n}`} kind="sparkle" x={healAt.left} y={healAt.top} spread={70} seed={tower.n} />}
+                    {tower.change === 'crack' && fresh && <Burst key={`c${tower.n}`} kind="pieces" x={healAt.left} y={healAt.top} spread={40} count={8} color="var(--pt-ice-0)" seed={tower.n} />}
+                    {tower.change === 'heal' && fresh && <Burst key={`h${tower.n}`} kind="sparkle" x={healAt.left} y={healAt.top} spread={70} seed={tower.n} />}
                 </div>
             </div>
-            <Snow className="pt-snow" full falling={snowing} density={40} size={[4, 9]} seed={seed % 97} paused={phase === 'help'} reducedMotion={reducedMotion} />
+            <Snow className="pt-snow" full falling={snowing} density={40} size={[4, 9]} seed={seed % 97} paused={phase === 'help'} />
 
             <div className="pt-panel">
                 {/* One size for the sum and its answer, fitted to the panel (SpelSignBox). */}
@@ -185,7 +182,7 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
 const xy = (p: { left: string; top: string }) => ({ x: p.left, y: p.top });
 
 /** The end screen: the penguin dances on top of his tower under the flag, or waves from a smaller one. */
-export function PinguintorenEnding({ outcome, progress, reducedMotion }: SkinEndingProps) {
+export function PinguintorenEnding({ outcome, progress }: SkinEndingProps) {
     const won = outcome === 'won';
     const goal = progress.goal?.target ?? 20;
     const n = won ? 4 : Math.max(1, Math.min(4, Math.round(((progress.goal?.count ?? 0) / goal) * 4)));
@@ -193,7 +190,7 @@ export function PinguintorenEnding({ outcome, progress, reducedMotion }: SkinEnd
     const top = GROUND - n * BH;
     const pole = VIEW_W / 2 + 52;
     return (
-        <div className={`spel-ending pt-ending${reducedMotion ? ' is-still' : ''}`}>
+        <div className={`spel-ending pt-ending`}>
             <svg viewBox={`-160 ${GROUND - 4 * BH - 86} 560 ${WATER + 14 - (GROUND - 4 * BH - 86)}`} preserveAspectRatio="xMidYMax meet" aria-hidden>
                 <g style={{ transform: `translate(${30}px, ${WATER}px)` }}><Seal /></g>
                 <rect className="pt-ending-sea" x={-400} y={WATER} width={1200} height={200} />

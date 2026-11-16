@@ -108,12 +108,12 @@ export default function Monsters() {
             </Far>
             <Ground back />
             <Ground />
-            <Cloud top="12%" w="clamp(90px, 10vw, 180px)" dur={120} delay={-40} at="10vw" />
-            <Cloud top="40%" w="clamp(70px, 7vw, 130px)" dur={150} delay={-110} at="85vw" />
-            <Trav vb="-36 -30 72 56" w="clamp(44px, 4vw, 80px)" top="20%" dur={34} delay={-6} at="6vw">
+            <Cloud top="12%" w="clamp(90px, 10vw, 180px)" dur={120} delay={-40} />
+            <Cloud top="40%" w="clamp(70px, 7vw, 130px)" dur={150} delay={-110} />
+            <Trav vb="-36 -30 72 56" w="clamp(44px, 4vw, 80px)" top="20%" dur={34} delay={-6}>
                 <g className="ks-bob"><Flyer cls="ks-teal" /></g>
             </Trav>
-            <Trav vb="-36 -30 72 56" w="clamp(38px, 3.4vw, 66px)" top="50%" dur={44} delay={-26} at="90vw" rev>
+            <Trav vb="-36 -30 72 56" w="clamp(38px, 3.4vw, 66px)" top="50%" dur={44} delay={-26} rev>
                 <g className="ks-bob"><Flyer cls="ks-pink" /></g>
             </Trav>
             <Air side="r">

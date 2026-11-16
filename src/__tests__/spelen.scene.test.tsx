@@ -5,7 +5,7 @@ import { CLOUD_SHAPES, burstParticles, cloudLayout, crackLines, driftX, snowLayo
 import { Burst, Clouds, CrackLines, Cracks, Snow, replay } from '../oefenen/spelen/scene';
 
 // The scene kit: seeded geometry (clouds spread over a crossing and wrap, snow, bursts, cracks that grow)
-// and the components honour reducedMotion and paused.
+// and the components honour paused (the device's reduced-motion setting is deliberately ignored).
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
@@ -51,12 +51,10 @@ describe('Clouds', () => {
         expect(driftX({ ...c, delay: -4 }, 0, 500)).toBeCloseTo(driftX(c, 4, 500));
     });
 
-    test('renders one track per cloud; still when paused or with reduced motion', () => {
+    test('renders one track per cloud; still when paused', () => {
         const { container, rerender } = render(<Clouds count={3} />);
         expect(container.querySelectorAll('.spel-cloud-track')).toHaveLength(3);
         expect(container.querySelector('.spel-clouds.is-still')).toBeNull();
-        rerender(<Clouds count={3} reducedMotion />);
-        expect(container.querySelector('.spel-clouds.is-still')).not.toBeNull();
         rerender(<Clouds count={3} paused outline={false} />);
         expect(container.querySelector('.spel-clouds.is-still.is-flat')).not.toBeNull();
     });
@@ -81,12 +79,12 @@ describe('Snow', () => {
         expect(keys()).not.toEqual(first);
     });
 
-    test('reduced motion: a few still flakes while it snows, none once it stops', () => {
-        const { container, rerender } = render(<Snow density={30} reducedMotion />);
-        expect(container.querySelectorAll('.spel-flake-fall')).toHaveLength(10);
+    test('paused: the snow waits where it is', () => {
+        const { container, rerender } = render(<Snow density={30} />);
+        expect(container.querySelectorAll('.spel-flake-fall')).toHaveLength(30);
+        expect(container.querySelector('.spel-snow.is-still')).toBeNull();
+        rerender(<Snow density={30} paused />);
         expect(container.querySelector('.spel-snow.is-still')).not.toBeNull();
-        rerender(<Snow density={30} reducedMotion falling={false} />);
-        expect(container.querySelector('.spel-snow')).toBeNull();
     });
 });
 
@@ -101,7 +99,7 @@ describe('Burst', () => {
         for (const p of burstParticles('sparkle', 1, 80)) expect(Math.hypot(p.dx, p.dy)).toBeLessThanOrEqual(81);
     });
 
-    test('calls onDone after its particles; reduced motion draws nothing and is done at once', () => {
+    test('calls onDone after its particles', () => {
         vi.useFakeTimers();
         const done = vi.fn();
         const { container } = render(<Burst kind="sparkle" x={10} y="50%" onDone={done} />);
@@ -110,11 +108,6 @@ describe('Burst', () => {
         expect(done).not.toHaveBeenCalled();
         act(() => { vi.advanceTimersByTime(2000); });
         expect(done).toHaveBeenCalledTimes(1);
-        const still = vi.fn();
-        const r = render(<Burst kind="smoke" x={0} y={0} reducedMotion onDone={still} />);
-        expect(r.container.querySelector('.spel-burst')).toBeNull();
-        act(() => { vi.advanceTimersByTime(0); });
-        expect(still).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -142,8 +135,8 @@ describe('Cracks', () => {
         expect(container.querySelectorAll('.spel-crack-ink')).toHaveLength(3);
         rerender(<Cracks stage={2} />);
         expect(container.querySelectorAll('.spel-crack-ink').length).toBeGreaterThan(3);
-        const g = render(<svg><CrackLines x={10} y={20} width={60} height={30} stage={1} reducedMotion /></svg>);
-        expect(g.container.querySelector('.spel-cracks.is-still')?.getAttribute('transform')).toBe('translate(10 20)');
+        const g = render(<svg><CrackLines x={10} y={20} width={60} height={30} stage={1} /></svg>);
+        expect(g.container.querySelector('.spel-cracks')?.getAttribute('transform')).toBe('translate(10 20)');
     });
 });
 

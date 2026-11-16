@@ -1,5 +1,5 @@
 /* Pinguïntoren skin. Flat fills under a thick dark outline (spelen.css tokens); the outlines keep their
-   width while the camera zooms out (non-scaling stroke). Transforms only, nothing moves under reduced motion. */
+   width while the camera zooms out (non-scaling stroke). Transforms only. */
 .pt-root, .pt-ending {
   --pt-ice-0: color-mix(in srgb, var(--accent-bewerkingen) 11%, var(--kiosk-paper));
   --pt-ice-1: color-mix(in srgb, var(--accent-bewerkingen) 20%, var(--kiosk-paper));
@@ -269,18 +269,3 @@
 
 /* "Hoe los ik dit op?": everything holds still. */
 .pt-root.is-paused * { animation-play-state: paused; }
-
-.pt-root.is-still .pt-cam,
-.pt-root.is-still .pt-penguin { transition: none; }
-.pt-root.is-still .pt-penguin-art,
-.pt-root.is-still .pt-hop,
-.pt-root.is-still .pt-land,
-.pt-root.is-still .pt-dance,
-.pt-root.is-still .pt-flap,
-.pt-root.is-still .pt-shiver,
-.pt-root.is-still .pt-block.is-new,
-.pt-root.is-still .pt-tower,
-.pt-root.is-still .pt-sign-answer,
-.pt-ending.is-still .pt-penguin-art,
-.pt-ending.is-still .pt-dance,
-.pt-ending.is-still .pt-flap { animation: none; }

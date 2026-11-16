@@ -5,7 +5,7 @@ import { choiceLabel, faceChars, faceKind, signClass } from '../../spelChoice';
 import { Burst, Clouds } from '../../scene';
 import { mulberry32 } from '../../distractors';
 import { fishLeft, flightOf, type Flight } from './feed';
-import { DRIFT_STILL_STEP, driftOffsets, fedAfter, girthOf, levelOf, pickPod, type SealLook, type SpotBox } from './pod';
+import { driftOffsets, fedAfter, girthOf, levelOf, pickPod, type SealLook, type SpotBox } from './pod';
 import SealArt from './SealArt';
 import './zeehond.css';
 
@@ -67,11 +67,11 @@ const FAR_FLOES = [
     { left: 34, top: 40, w: 6, d: 64, delay: -41 },
 ];
 
-function Bucket({ left, total, fishRef, reducedMotion }: { left: number; total: number; fishRef: Ref<HTMLSpanElement>; reducedMotion: boolean }) {
+function Bucket({ left, total, fishRef }: { left: number; total: number; fishRef: Ref<HTMLSpanElement> }) {
     // Up to five fish stick out, fewer as the bucket empties; the last fish still shows one.
     const tails = left <= 0 ? 0 : Math.max(1, Math.ceil((left / Math.max(1, total)) * 5));
     return (
-        <div className={`zh-bucket${reducedMotion ? ' is-still' : ''}`} role="img" aria-label={`Nog ${left} ${left === 1 ? 'vis' : 'vissen'} in de emmer`}>
+        <div className="zh-bucket" role="img" aria-label={`Nog ${left} ${left === 1 ? 'vis' : 'vissen'} in de emmer`}>
             <span className="zh-bucket-out" ref={fishRef} aria-hidden />
             <div className="zh-bucket-fish" aria-hidden>
                 {Array.from({ length: tails }, (_, k) => <span key={k} className="zh-bucket-tail" style={{ '--k': k } as CSSProperties}><FishArt /></span>)}
@@ -93,7 +93,7 @@ function beatsOf(seed: number, n: number) {
     return Array.from({ length: n }, () => ({ bob: 4.2 + rng() * 1.8, beg: 6 + rng() * 4, bobAt: -rng() * 6, begAt: -rng() * 10 }));
 }
 
-export default function Zeehond({ question, choices, views, phase, feedback, onAnswer, progress, reducedMotion, options: picked, events }: SkinProps) {
+export default function Zeehond({ question, choices, views, phase, feedback, onAnswer, progress, options: picked, events }: SkinProps) {
     const drifting = levelOf(picked) === 'moeilijk';
     // A fresh set of seals per game (this component lives for one round).
     const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff));
@@ -122,7 +122,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
         const box = root.current?.getBoundingClientRect();
         const from = bucketOut.current?.getBoundingClientRect();
         const to = mouths.current[i]?.getBoundingClientRect();
-        setPick({ key: question.key, index: i, flight: box && from && to && !reducedMotion ? flightOf(question.key, box, from, to) : null });
+        setPick({ key: question.key, index: i, flight: box && from && to ? flightOf(question.key, box, from, to) : null });
         tapped.current = { key: question.key, index: i };
         onAnswer(options[i]);
     };
@@ -147,18 +147,16 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
             if (!t) return;
             tapped.current = null;
             const eat = () => { setFed(c => fedAfter(c, t.index, pod.length)); setLanded(t.key); };
-            if (reducedMotion) eat(); else timers.push(window.setTimeout(eat, LAND_MS));
+            timers.push(window.setTimeout(eat, LAND_MS));
         });
         return () => { off(); timers.forEach(id => window.clearTimeout(id)); };
-    }, [events, reducedMotion, pod.length]);
+    }, [events, pod.length]);
     useEffect(() => { lastPod = { looks: pod, fed }; }, [pod, fed]);
 
-    // Moeilijk: the floes drift (a frame loop writing each spot's translate), or under reduced motion jump to
-    // the moment of this question. Paused under "Hoe los ik dit op?".
+    // Moeilijk: the floes drift (a frame loop writing each spot's translate). Paused under "Hoe los ik dit op?".
     const paused = phase === 'help';
     const pausedRef = useRef(paused);
     useEffect(() => { pausedRef.current = paused; }, [paused]);
-    const stillAt = reducedMotion && question ? question.index * DRIFT_STILL_STEP + 3 : null;
     const hasQuestion = !!question;
     useEffect(() => {
         const podEl = podRef.current;
@@ -166,7 +164,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
         if (!drifting || !podEl) return;
         let boxes: SpotBox[] = [];
         let size = { width: 0, height: 0 };
-        let t = stillAt ?? 0;
+        let t = 0;
         const measure = () => {
             boxes = els.slice(0, pod.length).map(el => (el
                 ? { x: el.offsetLeft - DRIFT_EDGE, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }
@@ -184,38 +182,35 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
         const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { measure(); apply(); });
         ro?.observe(podEl);
         let raf = 0;
-        if (stillAt === null) {
-            let last = performance.now();
-            const tick = (now: number) => {
-                // About 30 frames a second is smooth for a slow drift and half the work.
-                if (now - last >= 32) {
-                    if (!pausedRef.current) t += Math.min(0.1, (now - last) / 1000);
-                    last = now;
-                    apply();
-                }
-                raf = requestAnimationFrame(tick);
-            };
+        let last = performance.now();
+        const tick = (now: number) => {
+            // About 30 frames a second is smooth for a slow drift and half the work.
+            if (now - last >= 32) {
+                if (!pausedRef.current) t += Math.min(0.1, (now - last) / 1000);
+                last = now;
+                apply();
+            }
             raf = requestAnimationFrame(tick);
-        }
+        };
+        raf = requestAnimationFrame(tick);
         return () => {
             cancelAnimationFrame(raf);
             ro?.disconnect();
             els.forEach(el => { if (el) el.style.translate = ''; });
         };
-    }, [drifting, stillAt, seed, pod.length, hasQuestion]);
+    }, [drifting, seed, pod.length, hasQuestion]);
 
     if (!question) return <div className="zh-root" />;
     const flash = phase === 'right' || phase === 'wrong';
     const left = fishLeft(progress);
     const flight = phase === 'right' ? pickedNow?.flight : null;
-    const still = reducedMotion;
 
     return (
-        <div ref={root} className={`zh-root${views ? ' has-pictures' : ''}${paused ? ' is-paused' : ''}${still ? ' is-still' : ''}${drifting ? ' is-drifting' : ''}`}>
+        <div ref={root} className={`zh-root${views ? ' has-pictures' : ''}${paused ? ' is-paused' : ''}${drifting ? ' is-drifting' : ''}`}>
             <div className="zh-sea" aria-hidden>
                 <div className="zh-sky">
-                    <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[6, 40]} speed={120} seed={seed % 97} reducedMotion={still} paused={paused} />
-                    <Clouds layer="near" count={2} size={[110, 170]} band={[4, 30]} speed={90} seed={(seed % 89) + 3} reducedMotion={still} paused={paused} />
+                    <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[6, 40]} speed={120} seed={seed % 97} paused={paused} />
+                    <Clouds layer="near" count={2} size={[110, 170]} band={[4, 30]} speed={90} seed={(seed % 89) + 3} paused={paused} />
                 </div>
                 <svg className="zh-berg" viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M0 60 L30 22 L46 34 L70 8 L96 40 L110 30 L134 60 Z" /></svg>
                 <svg className="zh-berg is-far" viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M40 60 L80 18 L100 34 L126 14 L170 60 Z" /></svg>
@@ -255,20 +250,19 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
                                     <span className="zh-body-wrap">
                                         <SealArt look={look} girth={girthOf(fed[i] ?? 0)} />
                                         <span className="zh-mouth-at" ref={el => { mouths.current[i] = el; }} aria-hidden />
-                                        {mine && phase === 'right' && still && <FishArt className="zh-fed-fish" />}
-                                        {ate && !still && <Burst key={question.key} kind="sparkle" x="50%" y="12%" spread={90} count={8} seed={question.index + 1} />}
+                                        {ate && <Burst key={question.key} kind="sparkle" x="50%" y="12%" spread={90} count={8} seed={question.index + 1} />}
                                     </span>
                                 </button>
                                 <Floe />
-                                {!still && <Splash />}
-                                {ate && !still && <Burst key={`s${question.key}`} kind="splash" x="50%" y="88%" spread={60} count={8} seed={question.index + 5} />}
+                                <Splash />
+                                {ate && <Burst key={`s${question.key}`} kind="splash" x="50%" y="88%" spread={60} count={8} seed={question.index + 5} />}
                             </div>
                         </div>
                     );
                 })}
             </div>
             <div className="zh-shore">
-                <Bucket left={left} total={progress.total ?? left} fishRef={bucketOut} reducedMotion={still} />
+                <Bucket left={left} total={progress.total ?? left} fishRef={bucketOut} />
             </div>
             {flight && (
                 <span className="zh-fly" style={{ left: flight.x, top: flight.y, '--dx': `${flight.dx}px`, '--dy': `${flight.dy}px`, '--arc': `${flight.arc}px`, '--face': flight.dx > 0 ? -1 : 1 } as CSSProperties} aria-hidden>
@@ -280,12 +274,12 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
 }
 
 /** The end picture: the game's seals, as round as they ate themselves, clapping on one floe. */
-export function ZeehondEnding({ progress, reducedMotion }: SkinEndingProps) {
+export function ZeehondEnding({ progress }: SkinEndingProps) {
     const looks = lastPod?.looks ?? pickPod(1);
     // Without a record (a reload), share the fish out evenly.
     const fed = lastPod?.fed ?? looks.map((_, i) => Math.floor((progress.right + looks.length - 1 - i) / looks.length));
     return (
-        <div className={`spel-ending zh-ending${reducedMotion ? ' is-still' : ''}`}>
+        <div className="spel-ending zh-ending">
             <div className="zh-ending-sea" aria-hidden />
             <div className="zh-ending-pod" aria-hidden>
                 {looks.map((look, i) => (

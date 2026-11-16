@@ -19,7 +19,7 @@ function propsWith(over: Partial<SkinProps> = {}): SkinProps {
         choices: ['12', '11', '13', '22'],
         phase: 'play', feedback: null,
         onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
-        progress: progressWith(), options: {}, events: createSpelEvents(), reducedMotion: false,
+        progress: progressWith(), options: {}, events: createSpelEvents(),
         ...over,
     };
 }
@@ -120,30 +120,21 @@ describe('Ballonnen skin', () => {
         expect(slots[1].querySelector('.spel-burst.is-smoke')).not.toBeNull();
     });
 
-    test('reduced motion: no shake and no puff, the deflated balloon is just shown; the bird sits on the ground', () => {
-        const events = createSpelEvents();
-        const { container, rerender } = render(<Ballonnen {...propsWith({ events, reducedMotion: true })} />);
-        fireEvent.pointerDown(container.querySelectorAll('.bal')[1], { button: 0 });
-        act(() => events.emit('wrong', { given: '11', expected: '12' }));
-        rerender(<Ballonnen {...propsWith({ events, reducedMotion: true, phase: 'wrong', feedback: { given: '11', expected: '12', correct: false } })} />);
-        expect(container.querySelector('.bal-scene')!.classList.contains('spel-shake')).toBe(false);
-        expect(container.querySelector('.spel-burst')).toBeNull();
-        expect(container.querySelector('.bal-sky.is-still .bal-slot.is-deflate')).not.toBeNull();
-        expect(container.querySelector<HTMLElement>('.bal-bird')!.dataset.k).toBe('perch');
-    });
-
-    test('tapping the bird switches the landscape round the three, never answers and never counts', () => {
+    test('tapping the flying bird switches the landscape once per flight, never answers and never counts', () => {
         const onAnswer = vi.fn();
         const sound = vi.fn();
-        const { container } = render(<Ballonnen {...propsWith({ onAnswer, sound, reducedMotion: true })} />);
+        const { container } = render(<Ballonnen {...propsWith({ onAnswer, sound })} />);
         const bird = container.querySelector<HTMLElement>('.bal-bird')!;
+        // The first flight starts after a few seconds of play; a bird on the ground is not there to tap.
         const start = landOf(container);
-        const seen = [start];
-        for (let n = 0; n < 3; n++) {
-            fireEvent.pointerDown(bird, { button: 0 });
-            seen.push(landOf(container));
-        }
-        expect(seen).toEqual([start, nextLand(start as never), nextLand(nextLand(start as never)), start]);
+        fireEvent.pointerDown(bird, { button: 0 });
+        expect(landOf(container)).toBe(start);
+        wait(8000);
+        fireEvent.pointerDown(bird, { button: 0 });
+        expect(landOf(container)).toBe(nextLand(start as never));
+        // It flees at once: a second tap in the same flight does nothing.
+        fireEvent.pointerDown(bird, { button: 0 });
+        expect(landOf(container)).toBe(nextLand(start as never));
         expect(onAnswer).not.toHaveBeenCalled();
         expect(sound).toHaveBeenCalledWith('flip');
         expect(container.querySelectorAll('.bal-land.is-on')).toHaveLength(1);

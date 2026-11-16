@@ -183,11 +183,10 @@ interface SceneProps {
     fallen?: readonly Fallen[];
     twitch?: number;
     paused?: boolean;
-    reducedMotion?: boolean;
 }
 
 /** The room with the tree: `hung` decorations (the star at DECOR_ALL) minus the gaps, lit when finished. */
-export function KerstScene({ hung, lit, popped = [], gaps = [], fallen = [], twitch = 0, paused = false, reducedMotion = false }: SceneProps) {
+export function KerstScene({ hung, lit, popped = [], gaps = [], fallen = [], twitch = 0, paused = false }: SceneProps) {
     const clip = `kb${useId().replace(/:/g, '')}`;
     const star = hung >= DECOR_ALL;
     const shown = DECOR.map((d, i) => ({ d, i })).filter(({ i }) => i < hung && !gaps.includes(i));
@@ -227,7 +226,7 @@ export function KerstScene({ hung, lit, popped = [], gaps = [], fallen = [], twi
                     {[312, 330, 352].map(y => <path key={y} className="kb-plank" d={`M-2000 ${y} L2000 ${y}`} />)}
                 </svg>
                 <div className="kb-snow-pane" style={{ left: pctX(glass.x), top: pctY(glass.y), width: `${(glass.w / VIEW_W) * 100}%`, height: `${(glass.h / VIEW_H) * 100}%` }}>
-                    <Snow density={16} size={[2, 5]} fall={[5, 9]} full paused={paused} reducedMotion={reducedMotion} seed={7} />
+                    <Snow density={16} size={[2, 5]} fall={[5, 9]} full paused={paused} seed={7} />
                 </div>
                 <svg className="kb-svg" viewBox={view} aria-hidden>
                     <defs>
@@ -276,14 +275,14 @@ export function KerstScene({ hung, lit, popped = [], gaps = [], fallen = [], twi
                 {popped.map(i => {
                     const [x, y]: Pt = i === DECOR.length ? STAR_AT : decorAt(DECOR[i]);
                     const big = i === DECOR.length;
-                    return <Burst key={`${hung}-${i}`} kind="sparkle" x={pctX(x)} y={pctY(y)} spread={big ? 110 : 62} count={big ? 14 : 9} seed={i + 3} reducedMotion={reducedMotion} />;
+                    return <Burst key={`${hung}-${i}`} kind="sparkle" x={pctX(x)} y={pctY(y)} spread={big ? 110 : 62} count={big ? 14 : 9} seed={i + 3} />;
                 })}
             </div>
         </div>
     );
 }
 
-export default function Kerstboom({ question, phase, feedback, onAnswer, progress, events, reducedMotion, sound }: SkinProps) {
+export default function Kerstboom({ question, phase, feedback, onAnswer, progress, events, sound }: SkinProps) {
     const target = progress.goal?.target ?? DECOR_ALL;
     const hung = hungFor(progress.goal?.count ?? progress.right, target);
     const counters = { right: progress.right, mistakes: progress.mistakes, hung };
@@ -302,19 +301,19 @@ export default function Kerstboom({ question, phase, feedback, onAnswer, progres
     const fallenN = st.drops.fallen.length;
     useEffect(() => {
         if (fallenN === 0) return;
-        const id = window.setTimeout(() => voice.current('hit'), reducedMotion ? 0 : LAND_MS);
+        const id = window.setTimeout(() => voice.current('hit'), LAND_MS);
         return () => window.clearTimeout(id);
-    }, [fallenN, reducedMotion]);
+    }, [fallenN]);
 
     if (!question) return <div className="kb-root" />;
     const flash = phase === 'right' || phase === 'wrong';
     const lit = hung >= DECOR_ALL;
 
     return (
-        <div className={`kb-root${phase === 'help' ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${sway ? ` is-sway-${sway % 2}` : ''}`}>
+        <div className={`kb-root${phase === 'help' ? ' is-paused' : ''}${sway ? ` is-sway-${sway % 2}` : ''}`}>
             <div className="kb-world">
                 <KerstScene hung={hung} lit={lit} popped={st.popped} gaps={st.drops.gaps} fallen={st.drops.fallen} twitch={fallenN}
-                    paused={phase === 'help'} reducedMotion={reducedMotion} />
+                    paused={phase === 'help'} />
             </div>
             <div className="kb-panel">
                 <SpelSignBox className={`kb-sign${flash ? ' is-solved' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="kb-sign-answer" />
@@ -325,12 +324,12 @@ export default function Kerstboom({ question, phase, feedback, onAnswer, progres
 }
 
 /** The end screen: the tree as far as it got, lit and twinkling when finished. */
-export function KerstboomEnding({ progress, reducedMotion }: SkinEndingProps) {
+export function KerstboomEnding({ progress }: SkinEndingProps) {
     const target = progress.goal?.target ?? DECOR_ALL;
     const hung = hungFor(progress.goal?.count ?? progress.right, target);
     return (
-        <div className={`spel-ending kb-ending${reducedMotion ? ' is-still' : ''}`}>
-            <KerstScene hung={hung} lit={hung >= DECOR_ALL} reducedMotion={reducedMotion} />
+        <div className={`spel-ending kb-ending`}>
+            <KerstScene hung={hung} lit={hung >= DECOR_ALL} />
         </div>
     );
 }

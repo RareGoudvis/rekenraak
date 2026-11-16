@@ -2,8 +2,7 @@
 
 Shared scenery and effects for the game skins, drawn in the skins' style (flat fills, the `--spel-ink`
 outline). Import from `../../scene` (the index). Every layer is `pointer-events: none`, sits `position:
-absolute; inset: 0` in the nearest positioned parent, and honours `reducedMotion` (pass the skin's prop):
-no loops, no bursts, instant states. `paused` (the help panel) freezes the moving layers.
+absolute; inset: 0` in the nearest positioned parent, and always moves (the device's reduced-motion setting is deliberately ignored). `paused` (the help panel) freezes the moving layers.
 
 - **`<Clouds />`** drifting cartoon clouds that wrap round: `count`, `speed` (s per crossing), `size` [min, max] px, `band` [top%, bottom%], `layer` far / mid / near (parallax), `tint`, `outline={false}` for soft clouds, `direction`, `seed`. Stack two for depth: `<Clouds layer="far" outline={false} count={3} /><Clouds layer="near" count={2} />`.
 - **`<Snow />`** falling flakes: `density` (flakes), `falling` (false = the flakes in the air land, no new ones; true again = a new snowfall), `full` (already snowing at the start), `size`, `fall`, `seed`.

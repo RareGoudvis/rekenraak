@@ -1,6 +1,5 @@
 /* Mollen meppen skin. A garden with six holes: flat fills under a thick dark outline (spelen.css tokens).
-   A mole comes up and goes down with a CSS transition (the skin only toggles is-up); nothing slides under
-   prefers-reduced-motion. */
+   A mole comes up and goes down with a CSS transition (the skin only toggles is-up). */
 .ml-root {
   /* One mole's width; a hole is a little wider. Two rows of three under the sign. */
   --ml-w: clamp(64px, min(15vw, 19vh), 168px);
@@ -256,18 +255,6 @@
 @media (max-height: 420px) {
   .ml-root { --ml-w: clamp(44px, 16vh, 80px); }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .ml-mole { transition: none; }
-  .ml-sign-answer, .ml-hole.is-bonked .ml-mole, .ml-hole.is-nope .ml-art, .ml-hole.is-nope .ml-mole, .ml-bubble, .ml-hole.is-answer .ml-mole::after { animation: none; }
-}
-.ml-root.is-still .ml-mole { transition: none; }
-.ml-root.is-still .ml-sign-answer,
-.ml-root.is-still .ml-hole.is-bonked .ml-mole,
-.ml-root.is-still .ml-hole.is-nope .ml-art,
-.ml-root.is-still .ml-hole.is-nope .ml-mole,
-.ml-root.is-still .ml-bubble,
-.ml-root.is-still .ml-hole.is-answer .ml-mole::after { animation: none; }
 
 /* Content packs (SpelChoiceFace): bigger moles that hold up a clock face (≥ 96 px); a phrase wraps on two lines. */
 .ml-root.has-pictures { --ml-w: clamp(64px, min(17vw, 22vh), 190px); }

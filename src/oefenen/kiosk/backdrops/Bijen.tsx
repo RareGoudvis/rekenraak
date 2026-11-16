@@ -88,12 +88,12 @@ export default function Bijen() {
             </Far>
             <Ground back />
             <Ground />
-            <Cloud top="14%" w="clamp(90px, 10vw, 180px)" dur={110} delay={-30} at="8vw" />
-            <Cloud top="34%" w="clamp(70px, 7vw, 130px)" dur={140} delay={-95} at="82vw" />
-            <Trav vb="-30 -30 60 60" w="clamp(34px, 3vw, 56px)" top="22%" dur={38} delay={-8} at="12vw">
+            <Cloud top="14%" w="clamp(90px, 10vw, 180px)" dur={110} delay={-30} />
+            <Cloud top="34%" w="clamp(70px, 7vw, 130px)" dur={140} delay={-95} />
+            <Trav vb="-30 -30 60 60" w="clamp(34px, 3vw, 56px)" top="22%" dur={38} delay={-8}>
                 <g className="ks-bob"><Bee /></g>
             </Trav>
-            <Trav vb="-30 -30 60 60" w="clamp(28px, 2.4vw, 46px)" top="55%" dur={46} delay={-30} at="88vw" rev>
+            <Trav vb="-30 -30 60 60" w="clamp(28px, 2.4vw, 46px)" top="55%" dur={46} delay={-30} rev>
                 <g className="ks-bob"><Bee /></g>
             </Trav>
             <Air side="r">

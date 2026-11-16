@@ -1,5 +1,5 @@
-/* Voetbal. Flat fills under a thick dark outline (spelen.css tokens); transforms and opacity only. Nothing moves
-   under reduced motion and everything holds still under "Hoe los ik dit op?" and at half time. */
+/* Voetbal. Flat fills under a thick dark outline (spelen.css tokens); transforms and opacity only. Everything
+   holds still under "Hoe los ik dit op?" and at half time. */
 .vb-root,
 .vb-ending {
   --vb-grass: var(--spel-grass);
@@ -352,7 +352,3 @@
 
 /* "Hoe los ik dit op?" and half time: everything holds still. */
 .vb-root.is-paused .vb-svg * { animation-play-state: paused; }
-
-.vb-root.is-still *,
-.vb-ending.is-still * { animation: none !important; transition: none !important; }
-.vb-ending.is-still .vb-confetti { display: none; }

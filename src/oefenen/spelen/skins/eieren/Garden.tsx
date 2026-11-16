@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Clouds } from '../../scene';
 
 // The spring garden behind the eggs: clouds, a fence, a tree, bushes with a bunny peeking out, flowers,
-// butterflies. Decorative only (no numbers, no pointer events); moves in CSS and stands still under reduced motion.
+// butterflies. Decorative only (no numbers, no pointer events); moves in CSS.
 
 const PICKET = 'M6 58 V20 L21 6 L36 20 V58 Z';
 
@@ -83,11 +83,11 @@ function Butterfly({ k }: { k: number }) {
 }
 
 /** Everything behind the grass line (sky, fence, tree, bushes, bunny). */
-export function GardenBack({ reducedMotion, paused }: { reducedMotion: boolean; paused: boolean }) {
+export function GardenBack({ paused }: { paused: boolean }) {
     return (
         <>
-            <Clouds layer="far" outline={false} count={3} band={[2, 22]} seed={11} reducedMotion={reducedMotion} paused={paused} />
-            <Clouds layer="near" count={2} band={[6, 20]} size={[70, 120]} seed={5} reducedMotion={reducedMotion} paused={paused} />
+            <Clouds layer="far" outline={false} count={3} band={[2, 22]} seed={11} paused={paused} />
+            <Clouds layer="near" count={2} band={[6, 20]} size={[70, 120]} seed={5} paused={paused} />
             <Tree />
             <Fence />
             <Bush className="egg-bush-a" />

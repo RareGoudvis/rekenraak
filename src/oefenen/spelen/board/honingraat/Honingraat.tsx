@@ -13,7 +13,7 @@ import './honingraat.css';
 // Honingraat (Lente): find every sum that makes the target, on a honeycomb, then in a flower meadow, then a
 // comb again (hive.ts viewAt). A full board: the bee flies happily on while the scene scrolls to the next one.
 // Moeilijk (options.niveau): now and then a wasp comes for the nest before a comb (WaspChallenge); it can
-// claim the nest (onFail). The session checks every cell; reduced motion: no scroll, no loops, instant states.
+// claim the nest (onFail). The session checks every cell.
 
 // The scroll from one board to the next (honingraat.css hx-scroll lasts as long).
 export const SCROLL_MS = 1500;
@@ -22,7 +22,7 @@ function BoardView(props: Parameters<typeof Comb>[0]) {
     return viewAt(props.board.index) === 'comb' ? <Comb {...props} /> : <Meadow {...props} />;
 }
 
-export default function Honingraat({ board, phase, onBoardPick, reducedMotion, sound, options, progress, onFail }: SkinProps) {
+export default function Honingraat({ board, phase, onBoardPick, sound, options, progress, onFail }: SkinProps) {
     const hard = options.niveau === 'moeilijk';
     const [schedule] = useState(() => waspSchedule(progress.board?.total ?? 3, mulberry32(seedOf(board?.key ?? 'honing'))));
     const [last, setLast] = useState(board ?? null);
@@ -34,7 +34,7 @@ export default function Honingraat({ board, phase, onBoardPick, reducedMotion, s
     if ((board ?? null) !== last) {
         setLast(board ?? null);
         if (board && last && board.key !== last.key) {
-            if (!reducedMotion) setLeaving(last);
+            setLeaving(last);
             setPlayed(p => [...p, ...last.cells]);
             if (hard && schedule.includes(board.index)) setWasp({ seed: seedOf(board.key) });
         }
@@ -53,10 +53,10 @@ export default function Honingraat({ board, phase, onBoardPick, reducedMotion, s
     const paused = phase === 'help';
     const active = !leaving && !wasp;
     return (
-        <div className={`hx-root${paused ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}${leaving ? ' is-scrolling' : ''}`}>
+        <div className={`hx-root${paused ? ' is-paused' : ''}${leaving ? ' is-scrolling' : ''}`}>
             <span className="hx-sun" aria-hidden />
-            <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[3, 20]} speed={110} seed={11} paused={paused} reducedMotion={reducedMotion} />
-            <Clouds layer="near" count={2} size={[120, 180]} band={[6, 26]} speed={80} seed={4} paused={paused} reducedMotion={reducedMotion} />
+            <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[3, 20]} speed={110} seed={11} paused={paused} />
+            <Clouds layer="near" count={2} size={[120, 180]} band={[6, 26]} speed={80} seed={4} paused={paused} />
             <span className="hx-ground" aria-hidden />
             {/* The far hills and the front flowers pan by a copy on each scroll (remounted, so it plays again). */}
             <span key={`h-${leaving?.key ?? 'rest'}`} className="hx-hills-wrap" aria-hidden><Hills /></span>
@@ -64,26 +64,26 @@ export default function Honingraat({ board, phase, onBoardPick, reducedMotion, s
             <div className="hx-views">
                 {leaving && (
                     <div key={leaving.key} className="hx-view is-leaving" inert>
-                        <BoardView board={leaving} phase={phase} reducedMotion={reducedMotion} sound={sound} active={false} leaving />
+                        <BoardView board={leaving} phase={phase} sound={sound} active={false} leaving />
                     </div>
                 )}
                 {board?.target && (
                     <div key={board.key} className={`hx-view${leaving ? ' is-entering' : ''}${waspOn ? ' is-under-attack' : ''}`} inert={!active}>
-                        <BoardView board={board} phase={phase} onBoardPick={onBoardPick} reducedMotion={reducedMotion} sound={sound} active={active} />
+                        <BoardView board={board} phase={phase} onBoardPick={onBoardPick} sound={sound} active={active} />
                     </div>
                 )}
             </div>
             {leaving && <span className="hx-traveller" aria-hidden><span className="hx-traveller-loop"><Bee mood="happy" /></span></span>}
-            {waspOn && <WaspChallenge sums={sums} pool={played.map(c => c.question)} seed={wasp.seed} reducedMotion={reducedMotion} sound={sound} paused={paused} onDone={waspDone} />}
+            {waspOn && <WaspChallenge sums={sums} pool={played.map(c => c.question)} seed={wasp.seed} sound={sound} paused={paused} onDone={waspDone} />}
         </div>
     );
 }
 
 /** The end screen's picture: a full comb with dancing bees, or the wasp sitting on the nest, bees peeking. */
-export function HoningraatEnding({ outcome, reducedMotion }: SkinEndingProps) {
+export function HoningraatEnding({ outcome }: SkinEndingProps) {
     const claimed = outcome === 'failed';
     return (
-        <div className={`spel-ending hx-ending${claimed ? ' is-claimed' : ' is-party'}${reducedMotion ? ' is-still' : ''}`} aria-hidden>
+        <div className={`spel-ending hx-ending${claimed ? ' is-claimed' : ' is-party'}`} aria-hidden>
             <span className="hx-ending-branch"><Branch /></span>
             <svg className="hx-ending-comb" viewBox="0 0 220 170">
                 <path className="hx-slab-wax" d="M30 10 L190 10 C210 10 214 30 214 60 C214 130 160 166 110 166 C60 166 6 130 6 60 C6 30 10 10 30 10 Z" />

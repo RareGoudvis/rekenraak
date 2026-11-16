@@ -25,7 +25,7 @@ function propsWith(over: Partial<SkinProps> = {}): SkinProps {
         choices: ['12', '11', '13', '22'],
         phase: 'play', feedback: null,
         onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
-        progress: progressWith(), options: {}, events: createSpelEvents(), reducedMotion: false,
+        progress: progressWith(), options: {}, events: createSpelEvents(),
         ...over,
     };
 }
@@ -75,11 +75,10 @@ describe('Spelen skins', () => {
         // A second mistake restarts the wobble with the other copy of the animation.
         act(() => events.emit('wrong', { given: '11', expected: '12' }));
         expect(container.querySelector('.pt-tower.is-wobble-0')).not.toBeNull();
-        // Paused under "Hoe los ik dit op?"; still under reduced motion (the break without flying halves).
-        rerender(<Pinguintoren {...at(2, { phase: 'help', reducedMotion: true }, 2)} />);
-        expect(container.querySelector('.pt-root.is-paused.is-still')).not.toBeNull();
+        // Paused under "Hoe los ik dit op?".
+        rerender(<Pinguintoren {...at(2, { phase: 'help' }, 2)} />);
+        expect(container.querySelector('.pt-root.is-paused')).not.toBeNull();
         expect(blocks()).toBe(2);
-        expect(container.querySelector('.pt-half')).toBeNull();
     });
 
     test('Pinguïntoren: the keypad answers through the session, only while playing', () => {
@@ -177,14 +176,6 @@ describe('Spelen skins', () => {
             expect(frontX(container)).toBe(0);
         });
 
-        test('reduced motion: no smoke and no stars', () => {
-            const events = createSpelEvents();
-            const { container, rerender } = render(<Zombies {...at(events, { reducedMotion: true })} />);
-            act(() => events.emit('correct', { given: '12', streak: 1 }));
-            rerender(<Zombies {...at(events, { reducedMotion: true, phase: 'right' })} />);
-            expect(container.querySelector('.zb-root.is-still .zb-zombie.is-flop')).not.toBeNull();
-            expect(container.querySelector('.zb-smoke')).toBeNull();
-        });
     });
 
     describe('Ballonnen float', () => {
@@ -226,7 +217,7 @@ describe('Spelen skins', () => {
             expect(floatPace(5)).toBeGreaterThan(floatPace(0));
         });
 
-        test('each balloon keeps its own lane and pace; reduced motion stands still inside the band', () => {
+        test('each balloon keeps its own lane and pace', () => {
             const g = STAGES['1024x768'];
             const path = floatPath(g);
             const xs = [0, 1, 2, 3].map(i => floatAt(g, path, i, 3).x);
@@ -234,11 +225,6 @@ describe('Spelen skins', () => {
             // Different paces: the four phase steps over one second are not all the same.
             const step = [0, 1, 2, 3].map(i => +((phaseAt(i, 4) - phaseAt(i, 3) + 1) % 1).toFixed(3));
             expect(new Set(step).size).toBeGreaterThan(1);
-            for (const i of [0, 1, 2, 3]) {
-                const d = g.h - floatAt(g, path, i, null).y;
-                expect(d).toBeGreaterThan(path.band[0]);
-                expect(d).toBeLessThan(path.band[1]);
-            }
         });
     });
 

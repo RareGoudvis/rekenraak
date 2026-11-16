@@ -1,6 +1,6 @@
 /* Bever skin. A side view of a stream: flat fills under a thick dark outline (spelen.css tokens). The water
    and the camera follow the shell's clock through CSS transitions; the outlines keep their width when zoomed.
-   Small loops keep the scene alive (current, reeds, clouds, a bird, a dragonfly, the babies); is-still stops them all. */
+   Small loops keep the scene alive (current, reeds, clouds, a bird, a dragonfly, the babies). */
 .bv-root,
 .bv-ending {
   --bv-water: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper));
@@ -311,11 +311,3 @@
 
 /* "Hoe los ik dit op?": everything holds still. */
 .bv-root.is-paused * { animation-play-state: paused; }
-/* Reduced motion: no loops and no glides, every picture in its resting state. */
-.bv-root.is-still,
-.bv-root.is-still *,
-.bv-ending.is-still * { animation: none !important; transition: none !important; }
-.bv-root.is-still .bv-cloud-lane { transform: translateX(var(--x0)); }
-.bv-root.is-still .bv-carried,
-.bv-root.is-still .bv-flick { display: none; }
-.bv-ending.is-still .bv-bit { top: calc(8% + (var(--i) * 6%)); }

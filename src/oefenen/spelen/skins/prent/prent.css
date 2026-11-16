@@ -1,5 +1,5 @@
 /* Verborgen prent. The pictures (prenten/) are flat fills under a thick dark outline; their palette is the
-   --pf-* tokens below, mixed from the theme. Tiles flip away with a transform; nothing moves under reduced motion. */
+   --pf-* tokens below, mixed from the theme. Tiles flip away with a transform. */
 .pr-root,
 .pr-ending,
 .pr-gallery {
@@ -149,10 +149,4 @@
 }
 
 .pr-root.is-paused * { animation-play-state: paused; }
-.pr-root.is-still .pr-tile { transition: none; }
-.pr-root.is-still *,
-.pr-ending.is-still * { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  .pr-tile { transition: none; }
-  .pr-root *, .pr-ending * { animation: none; }
-}
+

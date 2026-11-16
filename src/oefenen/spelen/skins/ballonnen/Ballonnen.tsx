@@ -5,7 +5,7 @@ import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, pictureClass, signClass } from '../../spelChoice';
 import { Burst, Clouds, replay } from '../../scene';
 import { floatAt, floatPace, floatPath, type FloatGeom, type FloatPath } from './float';
-import { birdAt, birdFlight, birdPerch, nextLand, slotState, type Land } from './scenery';
+import { birdAt, birdFlight, nextLand, slotState, type Land } from './scenery';
 import Lands from './Lands';
 import './ballonnen.css';
 
@@ -68,7 +68,7 @@ function measure(sky: HTMLDivElement): FloatGeom | null {
     };
 }
 
-export default function Ballonnen({ question, choices, views, phase, feedback, onAnswer, progress, events, reducedMotion, sound }: SkinProps) {
+export default function Ballonnen({ question, choices, views, phase, feedback, onAnswer, progress, events, sound }: SkinProps) {
     const [picked, setPicked] = useState<{ key: string; index: number } | null>(null);
     const [ribbon, setRibbon] = useState<{ count: number; at: number } | null>(null);
     const [land, setLand] = useState<Land>(keptLand);
@@ -99,7 +99,7 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
 
     // A wrong pick: the scene gives a short shake (the sign stays put and readable).
     const scene = useRef<HTMLDivElement>(null);
-    useEffect(() => events.on('wrong', () => { if (!reducedMotion) replay(scene.current, 'spel-shake'); }), [events, reducedMotion]);
+    useEffect(() => events.on('wrong', () => replay(scene.current, 'spel-shake')), [events]);
 
     useEffect(() => events.on('streak', ({ count }) => { if (count >= RIBBON_FROM) setRibbon({ count, at: Date.now() }); }), [events]);
     useEffect(() => {
@@ -116,19 +116,13 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
     // The bird keeps its own clock (s of play): the streak speeds up the balloons, never the bird.
     const birdT = useRef(0);
     const bird = useRef<HTMLButtonElement>(null);
-    const live = useRef({ phase, streak: progress.streak, reducedMotion, land });
-    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, reducedMotion, land }; });
+    const live = useRef({ phase, streak: progress.streak });
+    useLayoutEffect(() => { live.current = { phase, streak: progress.streak }; });
 
     const placeBird = (g: FloatGeom) => {
         const el = bird.current;
         if (!el) return;
         const bw = el.offsetWidth, bh = el.offsetHeight;
-        if (live.current.reducedMotion) {
-            const { x, y } = birdPerch(live.current.land, g.w, g.h, bw, bh);
-            el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-            el.dataset.k = 'perch';
-            return;
-        }
         const f = birdFlight(birdT.current);
         if (!f) {
             if (el.dataset.k) { el.dataset.k = ''; el.style.transform = ''; delete el.dataset.flee; }
@@ -144,10 +138,9 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
     const placeAll = () => {
         const st = stage.current;
         if (!st) return;
-        const still = live.current.reducedMotion;
         slots.current.forEach((el, i) => {
             if (!el) return;
-            const { x, y } = floatAt(st.g, st.path, i, still ? null : tau.current);
+            const { x, y } = floatAt(st.g, st.path, i, tau.current);
             el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
             // Its height on the stage (tests, debugging).
             el.dataset.y = y.toFixed(0);
@@ -174,11 +167,7 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
         return () => ro.disconnect();
     }, [hasQuestion]);
 
-    // Reduced motion: still balloons and a bird on the ground, placed once per change (a new landscape moves its perch).
-    useLayoutEffect(() => { placeRef.current(); }, [reducedMotion, land]);
-
     useEffect(() => {
-        if (reducedMotion) return;
         let raf = 0;
         let last: number | null = null;
         const frame = (t: number) => {
@@ -194,13 +183,13 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
         };
         raf = requestAnimationFrame(frame);
         return () => cancelAnimationFrame(raf);
-    }, [reducedMotion]);
+    }, []);
 
     // The bird: a tap switches the landscape and sends it off; it never answers and never counts as a mistake.
     const tapBird = () => {
         const el = bird.current;
         if (!el || !el.dataset.k || el.dataset.flee) return;
-        if (el.dataset.k !== 'perch') el.dataset.flee = '1';
+        el.dataset.flee = '1';
         const next = nextLand(land);
         keptLand = next;
         setLand(next);
@@ -214,11 +203,11 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
     const input = { picked: pickedIdx, fresh: freshIdx, answer: answerIdx, flash, correct: !!feedback?.correct };
 
     return (
-        <div ref={sky} className={`bal-sky is-${land}${pictureClass(views)}${paused ? ' is-paused' : ''}${reducedMotion ? ' is-still' : ''}`} data-land={land}>
+        <div ref={sky} className={`bal-sky is-${land}${pictureClass(views)}${paused ? ' is-paused' : ''}`} data-land={land}>
             <div ref={scene} className="bal-scene">
-                <Lands land={land} switched={switched} reducedMotion={reducedMotion} paused={paused} />
-                <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[10, 46]} speed={120} seed={5} paused={paused} reducedMotion={reducedMotion} />
-                <Clouds layer="near" count={2} size={[120, 190]} band={[4, 28]} speed={80} seed={12} paused={paused} reducedMotion={reducedMotion} />
+                <Lands land={land} switched={switched} paused={paused} />
+                <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[10, 46]} speed={120} seed={5} paused={paused} />
+                <Clouds layer="near" count={2} size={[120, 190]} band={[4, 28]} speed={80} seed={12} paused={paused} />
 
                 <div className="bal-field" role="group" aria-label="Kies het antwoord">
                     {SLOTS.filter(i => options[i] !== undefined).map(i => {
@@ -238,12 +227,12 @@ export default function Ballonnen({ question, choices, views, phase, feedback, o
                                         {/* Keyed per question: the new number fades in on the same balloon. */}
                                         <span key={question.key} className={`bal-num kiosk-math is-${faceKind(view)}`} style={{ '--face-chars': faceChars(view) } as CSSProperties} aria-hidden><SpelChoiceFace value={c} view={view} /></span>
                                     </button>
-                                    {state === 'popped' && !reducedMotion && (
+                                    {state === 'popped' && (
                                         <span className="bal-burst" aria-hidden>
                                             {Array.from({ length: BITS }, (_, b) => <span key={b} className="bal-bit" style={{ '--a': `${(360 / BITS) * b}deg` } as CSSProperties} />)}
                                         </span>
                                     )}
-                                    {state === 'deflate' && <Burst key={question.key} kind="smoke" x="50%" y="70%" spread={44} count={7} seed={question.index + 2} reducedMotion={reducedMotion} />}
+                                    {state === 'deflate' && <Burst key={question.key} kind="smoke" x="50%" y="70%" spread={44} count={7} seed={question.index + 2} />}
                                 </div>
                             </div>
                         );

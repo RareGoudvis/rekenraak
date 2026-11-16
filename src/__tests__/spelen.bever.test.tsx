@@ -16,7 +16,7 @@ const progressWith = (over: Partial<SkinProgress> = {}): SkinProgress => ({
 const propsWith = (over: Partial<SkinProps> = {}): SkinProps => ({
     question: { key: 'q1', text: '7 + 5 = ?', index: 0 }, choices: null, phase: 'play', feedback: null,
     onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
-    progress: progressWith(), options: {}, events: createSpelEvents(), reducedMotion: false, ...over,
+    progress: progressWith(), options: {}, events: createSpelEvents(), ...over,
 });
 const rootOf = (c: HTMLElement) => c.querySelector('.bv-root')!;
 
@@ -76,25 +76,26 @@ describe('Bever family', () => {
         expect(rootOf(container).classList.contains('is-wrong')).toBe(true);
     });
 
-    test('reduced motion: no bird, no dragonfly, no wave; the day light still follows the clock', () => {
-        const { container } = render(<Bever {...propsWith({ reducedMotion: true, progress: progressWith({ msLeft: 90_000, mistakes: 1 }) })} />);
-        expect(rootOf(container).classList.contains('is-still')).toBe(true);
-        expect(container.querySelector('.bv-bird')).toBeNull();
-        expect(container.querySelector('.bv-dfly')).toBeNull();
+    test('the birds and the dragonfly always show, a mistake rolls a wave in; the day light follows the clock', () => {
+        const { container, rerender } = render(<Bever {...propsWith({ progress: progressWith({ msLeft: 90_000, mistakes: 1 }) })} />);
+        expect(container.querySelector('.bv-bird')).not.toBeNull();
+        expect(container.querySelector('.bv-dfly')).not.toBeNull();
         expect(container.querySelector('.bv-wave')).toBeNull();
+        rerender(<Bever {...propsWith({ progress: progressWith({ msLeft: 90_000, mistakes: 2 }) })} />);
+        expect(container.querySelector('.bv-wave')).not.toBeNull();
+        rerender(<Bever {...propsWith({ progress: progressWith({ msLeft: 90_000, mistakes: 1 }) })} />);
         expect((rootOf(container) as HTMLElement).style.getPropertyValue('--bv-day')).toBe('0.5');
     });
 
     test('the endings: held = the whole family partying on the dam; broken = three babies on a log and dad swimming after them', () => {
         const p = progressWith();
-        const { container, rerender } = render(<BeverEnding outcome="won" progress={p} options={{}} reducedMotion={false} />);
+        const { container, rerender } = render(<BeverEnding outcome="won" progress={p} options={{}} />);
         expect(container.querySelectorAll('.bv-party')).toHaveLength(4);
         expect(container.querySelectorAll('.bv-baby-art .bv-hat')).toHaveLength(3);
         expect(container.querySelector('.bv-lodge')).not.toBeNull();
-        rerender(<BeverEnding outcome="failed" progress={p} options={{}} reducedMotion />);
+        rerender(<BeverEnding outcome="failed" progress={p} options={{}} />);
         expect(container.querySelectorAll('.bv-raft .bv-baby-art')).toHaveLength(3);
         expect(container.querySelector('.bv-raft .bv-log')).not.toBeNull();
         expect(container.querySelector('.bv-swim .bv-beaver-art')).not.toBeNull();
-        expect(container.querySelector('.bv-ending.is-still')).not.toBeNull();
     });
 });

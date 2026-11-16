@@ -138,12 +138,12 @@ describe('on screen', () => {
         goal: { count: right, target: 15 }, right, mistakes, misses: 0, msTotal: null,
     });
 
-    function setup(reducedMotion: boolean) {
+    function setup() {
         const sound = vi.fn();
         const props = (right: number, mistakes: number): SkinProps => ({
             question: { key: `q${right}-${mistakes}`, text: '7 + 5 = ?', index: right + mistakes }, choices: null, phase: 'play', feedback: null,
             onAnswer: () => { }, onHelp: () => { }, onMiss: () => { }, onFail: () => { }, sound, progress: progress(right, mistakes), options: {},
-            events: createSpelEvents(), reducedMotion,
+            events: createSpelEvents(),
         });
         const view = render(<Kerstboom {...props(0, 0)} />);
         return { ...view, props, sound };
@@ -151,7 +151,7 @@ describe('on screen', () => {
 
     test('two mistakes in a row: a bauble leaves the tree, lies on the floor with a tink, and the next right answer fills the gap', () => {
         vi.useFakeTimers();
-        const { container, rerender, props, sound } = setup(false);
+        const { container, rerender, props, sound } = setup();
         const decor = () => container.querySelectorAll('.kb-decor').length;
         rerender(<Kerstboom {...props(5, 0)} />);
         expect(decor()).toBe(5);
@@ -170,7 +170,7 @@ describe('on screen', () => {
     });
 
     test('presents arrive with the decorations; no number in the scene art', () => {
-        const { container, rerender, props } = setup(true);
+        const { container, rerender, props } = setup();
         expect(container.querySelectorAll('.kb-present')).toHaveLength(0);
         rerender(<Kerstboom {...props(9, 0)} />);
         expect(container.querySelectorAll('.kb-present')).toHaveLength(presentsFor(9).length);
