@@ -147,6 +147,7 @@ for (const [id, label, rights] of GAMES) {
         await toTopics(page, 2);
         await page.getByRole('button', { name: /^Optellen/ }).first().click();
         const met = page.getByRole('button', { name: /^Met brug/ }); if (await met.count()) await met.first().click();
+        { const way = page.getByRole('button', { name: 'Spelen', exact: true }); if (await way.count()) await way.click(); }
         await page.getByRole('group', { name: 'Kies een spel' }).getByRole('button', { name: new RegExp('^' + label) }).first().click();
         await page.waitForTimeout(600);
         const samen = page.getByRole('button', { name: /^Samen tegelijk/ }); if (await samen.count()) { await samen.first().click(); await page.waitForTimeout(300); }
@@ -202,6 +203,7 @@ for (const grade of [4, 1]) {
             await toTopics(page, grade);
             await page.locator(`.zelf-topic[data-topic="${topicId}"]`).click();
             await page.waitForTimeout(300);
+            { const way = page.getByRole('button', { name: 'Oefenen', exact: true }); if (await way.count()) await way.click(); }
             const begin = page.getByRole('button', { name: /Begin met oefenen/ });
             if (!(await begin.count())) { await page.locator('.zelf-choice:not(.zelf-range-btn)').first().click(); await page.waitForTimeout(300); }
             await begin.first().click();

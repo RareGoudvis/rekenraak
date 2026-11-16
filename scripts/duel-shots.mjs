@@ -43,6 +43,7 @@ try {
             await page.getByRole('button', { name: 'Leerjaar 2', exact: true }).first().click();
             await page.getByRole('button', { name: /^Optellen/ }).first().click();
             const met = page.getByRole('button', { name: /^Met brug/ }); if (await met.count()) await met.first().click();
+            { const way = page.getByRole('button', { name: 'Spelen', exact: true }); if (await way.count()) await way.click(); }
             await page.getByRole('group', { name: 'Kies een spel' }).getByRole('button', { name: new RegExp('^' + LABEL) }).first().click();
             await page.getByRole('button', { name: /^Start/ }).first().click();
             await waitPhase(page, ['ready', 'play']);
