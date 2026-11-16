@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { SkinScreenProps } from '../types';
 import DuelScreen from '../../duel/DuelScreen';
 import { teamsOf, type Teams } from '../../duel/teams';
@@ -6,9 +6,9 @@ import { ScoreStar } from '../../duel/DuelHud';
 import { useDuelStore } from '../../duel/duelStore';
 import { useDuelEvent, useDuelMatch } from '../../duel/useDuel';
 import { SIDES, otherSide, type Side } from '../../duel/types';
-import { CardWizard, GlowDefs, Impact, Portrait, Shot, SpellIcon, Wizard, type ImpactView, type WizardView } from './art';
+import { CardWizard, Decal, GlowDefs, Impact, Portrait, Shot, SpellIcon, Wizard, type DecalView, type ImpactView, type WizardView } from './art';
 import Arena, { pickArena, readLastArena, saveLastArena, type ArenaKind } from './arenas';
-import { FLOOR, MODEL, VIEW, WIZ_X } from './geometry';
+import { FLOOR, MODEL, VIEW_H, VIEW_TOP, stageOf, type Stage } from './geometry';
 import {
     SPELLS, SPELL_NAME, TOVER, TOVER_RULE, freshMarks, healthTone, ladderStep, markHit, nextSpellOf, parseLandTag, shieldOf, spellOf, spellOfFlight,
     type AttackSpell, type Spell, type WizardMarks,
@@ -31,9 +31,13 @@ function nextArena(): ArenaKind {
     return k;
 }
 
-// How long an impact's burst and a number off the bar stay.
-const IMPACT_MS = 1400;
-const POP_MS = 1300;
+// How long an impact's burst, a number off the bar and a mark on the floor stay; the hit-stop freeze.
+const IMPACT_MS = 1600;
+const POP_MS = 1500;
+const DECAL_MS = 6000;
+const HIT_STOP_MS = 100;
+// The two evil wizards' teams for 2 spelers (1 speler keeps Jij / Computer); the colours are --duel-left / -right.
+const TEAMS = { left: { name: 'Paars' }, right: { name: 'Rood' } } as const;
 
 interface Pop { id: number; side: Side; text: string; kind: Spell | 'blok' }
 interface Fx {
@@ -44,18 +48,21 @@ interface Fx {
     shieldN: Record<Side, number>;
     marks: Record<Side, WizardMarks>;
     impacts: ImpactView[];
+    decals: DecalView[];
     pops: Pop[];
-    // Screen shakes so far and how hard the latest is (1..3, the damage); flashes (lightning) so far.
+    // Screen shakes so far and how hard the latest is (1..3, the spell); the full-scene flash in the spell's tint.
     shake: { n: number; power: number };
-    flash: number;
-    // Big hits (Vuurbal, Bliksem) the arena reacts to, and the side hit last.
+    flash: { n: number; spell: AttackSpell };
+    // The hit-stop: the scene freezes a moment on impact.
+    stop: boolean;
+    // Hits the arena reacts to (every one), and the side hit last.
     jolt: number;
     look: Side | null;
 }
 const both = <T,>(v: T): Record<Side, T> => ({ left: v, right: v });
 const freshFx = (): Fx => ({
     cast: both({ n: 0, spell: 'ijs' as Spell }), hit: both({ n: 0, spell: 'ijs' as AttackSpell, amount: 0 }), chill: both(0), oops: both(0), shieldN: both(0),
-    marks: { left: freshMarks(), right: freshMarks() }, impacts: [], pops: [], shake: { n: 0, power: 1 }, flash: 0, jolt: 0, look: null,
+    marks: { left: freshMarks(), right: freshMarks() }, impacts: [], decals: [], pops: [], shake: { n: 0, power: 1 }, flash: { n: 0, spell: 'ijs' }, stop: false, jolt: 0, look: null,
 });
 
 // The health bars on top: a face, the name and the round's score, a bar with the number, the spell ladder (the next lit).
@@ -98,8 +105,9 @@ function Bars({ teams, pops }: { teams: Teams; pops: Pop[] }) {
 }
 
 // Magic fireworks over the round's winner, in its colour.
-function Fireworks({ side }: { side: Side }) {
-    const at = side === 'left' ? [[60, 10], [220, -20], [400, 30], [140, 70]] : [[740, 10], [580, -20], [400, 30], [660, 70]];
+function Fireworks({ side, stage }: { side: Side; stage: Stage }) {
+    const x0 = stage.x[side], d = side === 'left' ? 1 : -1;
+    const at = [[x0 - 60 * d, 0], [x0 + 120 * d, -10], [x0 + 260 * d, 30], [x0 + 40 * d, 60]];
     return (
         <g className={`tv-fireworks is-${side}`}>
             {at.map(([x, y], k) => (
@@ -130,6 +138,18 @@ export default function Tovenaarsduel({ meta, from, onExit }: SkinScreenProps) {
         timers.current.add(t);
     };
     const solo = st.config.players === 1;
+    // The stage's width follows the svg box's shape, so the wizards stand near the edges at every size.
+    const svg = useRef<SVGSVGElement>(null);
+    const [stage, setStage] = useState<Stage>(() => stageOf());
+    useLayoutEffect(() => {
+        const el = svg.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const measure = () => { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) setStage(s => { const n = stageOf(r.width / r.height); return n.w === s.w ? s : n; }); };
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
 
     useDuelEvent('roundStart', ({ round }) => {
         timers.current.forEach(clearTimeout);
@@ -162,20 +182,25 @@ export default function Tovenaarsduel({ meta, from, onExit }: SkinScreenProps) {
         const amount = blocked ? 0 : TOVER.damage[spell];
         const id = ids.current++;
         const pop: Pop = { id, side, text: blocked ? 'Blok!' : `-${amount}`, kind: blocked ? 'blok' : spell };
+        const power = { ijs: 1, vuur: 2, bliksem: 3 }[spell];
         setFx(v => ({
             ...v,
             impacts: [...v.impacts, { id, spell, side, blocked, amount }],
+            decals: blocked ? v.decals : [...v.decals, { id, spell, side }],
             pops: [...v.pops, pop],
             hit: blocked ? v.hit : { ...v.hit, [side]: { n: v.hit[side].n + 1, spell, amount } },
             chill: spell === 'ijs' && !blocked ? { ...v.chill, [side]: v.chill[side] + 1 } : v.chill,
             marks: blocked ? v.marks : { ...v.marks, [side]: markHit(v.marks[side], spell) },
-            shake: { n: v.shake.n + 1, power: blocked ? 1 : amount },
-            flash: spell === 'bliksem' ? v.flash + 1 : v.flash,
-            jolt: spell !== 'ijs' ? v.jolt + 1 : v.jolt,
+            shake: { n: v.shake.n + 1, power: blocked ? Math.max(1, power - 1) : power },
+            flash: { n: v.flash.n + 1, spell },
+            stop: true,
+            jolt: v.jolt + 1,
             look: side,
         }));
+        later(HIT_STOP_MS, () => setFx(v => ({ ...v, stop: false })));
         later(IMPACT_MS, () => setFx(v => ({ ...v, impacts: v.impacts.filter(i => i.id !== id) })));
         later(POP_MS, () => setFx(v => ({ ...v, pops: v.pops.filter(p => p.id !== id) })));
+        later(DECAL_MS, () => setFx(v => ({ ...v, decals: v.decals.filter(d => d.id !== id) })));
         if (blocked) playTover('shieldBlock');
         playTover(spell === 'ijs' ? 'iceShatter' : spell === 'vuur' ? 'fireBoom' : 'thunder');
     });
@@ -193,7 +218,7 @@ export default function Tovenaarsduel({ meta, from, onExit }: SkinScreenProps) {
     // 1 speler lost: the engine's soft 'lost' cue; every other match end gets the fanfare.
     useDuelEvent('matchEnd', ({ winner }) => { if (!(solo && winner === 'right')) later(300, () => playTover('fanfare')); });
 
-    const teams = teamsOf(st.config);
+    const teams = teamsOf(st.config, solo ? {} : TEAMS);
     const between = st.phase === 'roundEnd' || st.phase === 'matchEnd';
     const live = st.phase === 'play' || st.phase === 'ready';
     const max = st.config.lives;
@@ -209,28 +234,29 @@ export default function Tovenaarsduel({ meta, from, onExit }: SkinScreenProps) {
     const kos = SIDES.filter(s => st.sides[s].lives <= 0).length;
     const shake = fx.shake.n ? ` tv-shake-${fx.shake.n % 2} is-p${fx.shake.power}` : '';
     const placed = (side: Side) => (
-        <g key={side} transform={side === 'left' ? `translate(${WIZ_X.left} ${FLOOR})` : `translate(${WIZ_X.right} ${FLOOR}) scale(-1 1)`}>
+        <g key={side} transform={side === 'left' ? `translate(${stage.x.left} ${FLOOR})` : `translate(${stage.x.right} ${FLOOR}) scale(-1 1)`}>
             <Wizard v={wizard(side)} />
         </g>
     );
 
     return (
-        <DuelScreen meta={meta} onExit={onExit} className={`tv-app is-${arena}`} hearts={false} score={false} rightNote="Spreuk!"
+        <DuelScreen meta={meta} onExit={onExit} className={`tv-app is-${arena}`} hearts={false} score={false} rightNote="Spreuk!" teams={solo ? undefined : TEAMS}
             cardArt={winner ? <CardWizard side={winner} /> : undefined}
             scene={<>
                 <div className={`tv-cam${shake}`}>
                     <Arena kind={arena} impact={fx.jolt} side={fx.look} />
-                    <svg className={`tv-scene${between ? ' is-cheer' : ''}`} viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="xMidYMax meet"
+                    <svg ref={svg} className={`tv-scene${between ? ' is-cheer' : ''}${fx.stop ? ' is-stop' : ''}`} viewBox={`0 ${VIEW_TOP} ${stage.w} ${VIEW_H}`} preserveAspectRatio="xMidYMax meet"
                         role="img" aria-label={ARENA_NAME[arena]}>
                         <GlowDefs />
-                        {winner && <Fireworks side={winner} />}
+                        {fx.decals.map(d => <Decal key={d.id} d={d} stage={stage} />)}
+                        {winner && <Fireworks side={winner} stage={stage} />}
                         {/* A fixed order: moving a wizard in the DOM would restart its CSS animations. */}
                         {SIDES.map(placed)}
-                        {st.flights.map(f => <Shot key={f.id} f={f} shielded={shieldOf(st.sides[f.to])} />)}
-                        {fx.impacts.map(i => <Impact key={i.id} i={i} />)}
+                        {st.flights.map(f => <Shot key={f.id} f={f} shielded={shieldOf(st.sides[f.to])} stage={stage} />)}
+                        {fx.impacts.map(i => <Impact key={i.id} i={i} stage={stage} />)}
                     </svg>
                 </div>
-                {fx.flash > 0 && <div key={`f${fx.flash}`} className="tv-flash" aria-hidden />}
+                {fx.flash.n > 0 && <div key={`f${fx.flash.n}`} className={`tv-flash is-${fx.flash.spell}`} aria-hidden />}
                 <Bars teams={teams} pops={fx.pops} />
                 {between && kos > 0 && <p className="tv-banner" key={`k${st.round}`}>Poef!</p>}
             </>} />

@@ -11,8 +11,8 @@
   overflow: hidden;
   pointer-events: none;
 }
-.tva.is-hit-left { --amp-l: 1.7; --amp-r: .55; }
-.tva.is-hit-right { --amp-l: .55; --amp-r: 1.7; }
+.tva.is-hit-left { --amp-l: 2.4; --amp-r: .8; }
+.tva.is-hit-right { --amp-l: .8; --amp-r: 2.4; }
 .tva .is-l { --amp: var(--amp-l); }
 .tva .is-r { --amp: var(--amp-r); }
 .tva-svg { display: block; width: 100%; height: 100%; }
