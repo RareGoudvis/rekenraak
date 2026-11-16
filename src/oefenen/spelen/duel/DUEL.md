@@ -1,0 +1,211 @@
+# Duel games: how to build one
+
+A duel = two sides on one screen (left Blauw, right Oranje), or 1 speler against the computer (the bot plays
+the right side). The engine in this folder runs everything a duel shares: question streams, checking, lives,
+points, the Moeilijk clock, the bot, rounds and best of, the HUD, keypads, the round and match cards, sounds
+and music. A game supplies **a rule** (what an answer does) and **a scene** (the picture in the band on top).
+Touwtrekken (`skins/touwtrekken/`) and Kasteel (`skins/kasteel/`) are the two worked examples.
+
+## Files
+
+| File | What |
+|---|---|
+| `types.ts` | `Side`, `DuelConfig`, `DuelRule`, `DuelEffect`, `DuelCtx`, `DuelFlight`, `DuelEventMap` |
+| `rules.ts` | pure: `sumLimitMs` (Moeilijk clock), `winsNeeded` / `matchWinnerOf`, `applyEffect`, `defaultRoundOver`, `hitRule`, `ropeRule`, `leadOf`, `DUEL_TIMING`, `SHARED_TRIES` |
+| `bot.ts` | pure: `BOT` tuning table, `botTurn(level, lead, answerChars, rng)` |
+| `duelStore.ts` | the zustand store `useDuelStore` (one match at a time); dev builds expose it as `window.__duel` |
+| `options.ts` | `duelOptions(spec)` (the shared pre-start options), `MANIER_OPTION`, `duelConfigOf(chosen, extra)` |
+| `useDuel.ts` | `useDuelMatch(meta, from, rule, extra?)`, `useDuelEvent(name, fn)` |
+| `DuelScreen.tsx` | the whole screen around your scene; `DuelHud.tsx` its pieces; `teams.ts` names / colours |
+| `DuelKeypad.tsx`, `duel.css` | the keypads and all shared styles (`duel-*` classes) |
+
+## A new duel game in four files
+
+```
+skins/<id>/rule.ts      the DuelRule (pure, unit-tested) + your tuning constants
+skins/<id>/<Name>.tsx   the screen: useDuelMatch + events -> your scene -> <DuelScreen>
+skins/<id>/<id>.css     your scene; prefix your classes (tg-, kv-, rd-, mt-)
+skins/<id>/sounds.ts    optional: your own sounds (see Sounds)
+```
+
+```tsx
+// skins/taartgevecht/Taartgevecht.tsx
+export default function Taartgevecht({ meta, from, onExit }: SkinScreenProps) {
+    // Begins the match from the picked options before the first paint; stops it on unmount.
+    const st = useDuelMatch(meta, from, TAART_RULE, { stream: 'shared', wrongLockMs: 2000 });
+    const [splats, setSplats] = useState(0);
+    useDuelEvent('damage', ({ side }) => setSplats(n => n + 1));
+    return <DuelScreen meta={meta} onExit={onExit} className="tg-app" rightNote="Raak!"
+        scene={<TaartScene sides={st.sides} flights={st.flights} phase={st.phase} winner={st.roundWinner} />} />;
+}
+```
+
+Register it in `skins/registry.ts` (one entry, a `Screen`, no `Component`):
+
+```ts
+{
+    meta: {
+        id: 'taartgevecht', label: 'Taartgevecht', music: 'gek', input: 'keypad', timed: false, players: '1-2', round: {},
+        accepts: KEYPAD_NUMBER, options: duelOptions({ extras: [] }),
+        // null = your scene voices that moment itself (see Sounds)
+        sounds: { correct: null, wrong: 'plop', miss: 'plop', win: 'jingle' },
+    },
+    icon: Cake,
+    Screen: lazy(() => import('./taartgevecht/Taartgevecht')),
+},
+```
+
+`players: '1-2'` puts the tile under "Samen spelen" with the two-pupils mark. Add a blurb in
+`zelf/gameBlurbs.ts`. Nothing else in the shell changes.
+
+## The options and the config
+
+`duelOptions(spec)` gives, in order: **spelers** (1 / 2, default 2; `spec.players: 1` preselects 1),
+**niveau** (Normaal / Moeilijk), **levens** (3 / 5 / 7, default 5; rename with
+`spec.lives = { label, unit, choices, default }`), **rondes** (1 ronde / Best of 3 / Best of 5, default 3),
+then `spec.extras` (your own `SkinOption`s; use `when: { id: 'spelers', value: '2' }` for a 2-only option).
+`MANIER_OPTION` is the "Elk een eigen som / Samen één som" extra for games that offer both streams.
+
+`useDuelMatch` turns the picks into a `DuelConfig` (`duelConfigOf`); its 4th argument overrides fields:
+
+| field | meaning |
+|---|---|
+| `players` | 1 = the bot on the right |
+| `level` | `'moeilijk'` = a clock per sum per side: 10 s, −0.4 s per right answer of that side this round, floor 4 s |
+| `lives` | per side at the start of every round |
+| `bestOf` | 1 / 3 / 5 |
+| `stream` | `'own'` each side its own sums; `'shared'` one sum, both type at once, first right answer takes it |
+| `roundSeconds` | a round clock (Touwtrekken 120, Kikkers Op tijd 120); at 0 `roundOver(view, true)` decides |
+| `wrongLockMs` | shared: a wrong answer locks that keypad this long (default 2000), then it may try again; 2 wrong tries (`SHARED_TRIES`) or a time-out = out for that sum; both out = the answer shows, next sum |
+| `readyMs` | the "Ronde N" banner (default 1400; tests pass 0) |
+| `rng` | the bot's randomness (tests) |
+
+Own stream: after an answer the side sees a flash (right 700 ms, wrong 1500 ms with the answer), then its next
+sum. The flash is the cost of a wrong answer unless your rule adds one.
+
+## The rule
+
+All hooks are optional and pure; they get a `DuelCtx` and return a `DuelEffect`.
+
+```ts
+interface DuelCtx { side; other; me; them; streak; level; round; config }   // me / them: { lives, points, streak, right, wrong, flags }
+interface DuelEffect {
+    damage?: { left?: n; right?: n };            // lives off (negative = back on); never below 0, never over rule.maxLives
+    points?: { left?: n; right?: n };
+    flags?:  { left?: { guard: 1 }; ... };       // your per-side memory, merged; 0 clears; reset every round
+    launch?: { ms; to?; tag?; data?; effect? };  // something flies; its effect applies when it lands
+    tag?: string;                                // carried on the damage / points / effect events ('special', 'blocked')
+}
+```
+
+| hook | when | absent = |
+|---|---|---|
+| `right(ctx)` | a right answer (`ctx.streak` already counts it) | the other side −1 life |
+| `wrong(ctx)` | a wrong answer | nothing |
+| `timeout(ctx)` | Moeilijk: the sum's time ran out | `wrong` |
+| `land(ctx, flight)` | a launch arrives (`ctx.side` = who launched) | `flight.effect` |
+| `roundOver(view, timeUp)` | after every effect, and at the round clock | a side at 0 lives loses (both = draw); at the clock more lives, then more points, else a draw |
+| `maxLives(config)` | lives ceiling | none |
+| `cardMs` | your round-win moment before the scoreboard card | 1600 ms |
+
+The examples from the brief:
+
+```ts
+// Robotduel: punch; 3 in a row = special for 2; a wrong answer drops your guard: the next hit on you counts double.
+right: ({ other, streak, them }) => {
+    const hit = (streak % 3 === 0 ? 2 : 1) * (them.flags.guard ? 2 : 1);
+    return { damage: { [other]: hit }, flags: { [other]: { guard: 0 } }, tag: streak % 3 === 0 ? 'special' : undefined };
+},
+wrong: ({ side }) => ({ flags: { [side]: { guard: 1 } } }),
+
+// Meteorietenregen: a meteor flies 3 s; 2 in a row raise a shield (max 2) that eats one meteor on landing.
+right: ({ side, other, streak, me }) => ({
+    launch: { ms: 3000, tag: 'meteor', effect: { damage: { [other]: 1 } } },
+    ...(streak % 2 === 0 && { flags: { [side]: { shield: Math.min(2, (me.flags.shield ?? 0) + 1) } } }),
+}),
+land: ({ them }, f) => (them.flags.shield
+    ? { flags: { [f.to]: { shield: them.flags.shield - 1 } }, tag: 'blocked' }
+    : f.effect),
+
+// Kikkers: points per bug, the round to 25 (or the clock); lives = mistakes.
+wrong: ({ side }) => ({ damage: { [side]: 1 } }),
+roundOver: (v, timeUp) => /* 25 points wins, else defaultRoundOver(v, timeUp) */,
+```
+
+A rule may read your component's refs (Kikkers: which bug is nearest) because hooks run synchronously inside
+`answer()`. For things that happen without an answer (a bug flies off, a hazard), call
+`useDuelStore.getState().effect(by, effect)`: the same path, events and round check.
+
+## State you draw from (`useDuelStore()` / `st` from `useDuelMatch`)
+
+`phase` (`idle` · `ready` · `play` · `roundEnd` · `matchEnd`), `round`, `config`, `sides.left|right`
+(`lives`, `points`, `streak`, `right`, `wrong`, `flags`, `wins`, `totalRight`, `question`, `feedback`, `locked`,
+`out`, `limitMs`), `flights` (in the air: `id`, `from`, `to`, `tag`, `startedAt`, `landsAt`, `data`),
+`roundWinner`, `matchWinner`, `card` (the scoreboard / match card is up).
+
+Flights are state: draw each one from `startedAt` to `landsAt` with a CSS animation keyed by `id` (Kasteel's
+stones). The engine lands it on time; your scene never decides a hit.
+
+## Events (`useDuelEvent(name, fn)`)
+
+`roundStart {round}` · `play {round}` · `right {side, given, streak, ms}` · `wrong {side, given, expected}` ·
+`timeout {side, expected}` · `effect {by, cause, effect}` · `damage {side, by, amount, lives, tag}` ·
+`points {side, amount, points, tag}` · `launch {flight}` · `land {flight}` (just before its damage) ·
+`roundEnd {winner, round, wins}` · `matchEnd {winner, wins}`. Reset your scene's own counters on `roundStart`.
+
+## The screen (`<DuelScreen>`)
+
+Props: `meta`, `onExit`, `scene` (fills `.duel-world`, absolutely positioned), `className` (your root class;
+set `--duel-scene-h` for a taller band, default 40 %, `--duel-left` / `--duel-right` for team colours),
+`teams` (names / colours over Blauw / Oranje, Jij / Computer), `hearts` (false when your scene shows lives),
+`points` (a star with the round's points per half), `rightNote` ("Raak!"), `cardArt` (a picture on the cards).
+
+It brings: the top bar (Terug, names + round dots + "Ronde N", the round clock, sound), hearts in the band's
+corners, the "Ronde N" / "Start!" banner, two halves with name, Moeilijk ring, sum, note and keypad (1 speler:
+the computer's face on the right, the left keypad also takes the keyboard), the round card ("Volgende ronde")
+and the match card (trophy, confetti, "Nog eens", "Ander spel"). Music: `meta.music` while playing.
+Looks checked at 1280×800, 1920×1080 and 1024×768.
+
+## Sounds
+
+DuelScreen plays `meta.sounds` cues: `correct` on right, `wrong` on wrong, `miss` on a time-out, `win` at the
+match end (1 speler lost: `lost`), and a cheer for a won round. Set a cue to `null` to voice it yourself.
+Your own sounds: build a `Recipe` from `tone` / `noise` (exported by `sound.ts`) in your folder and play it
+with `playRecipe(recipe)` (same on / off and soft master as every game sound). Never edit sound.ts for them.
+
+## Tests
+
+Pure logic in `rule.ts` gets unit tests (see `spelen.duel.test.tsx` for the engine, `spelen.kasteel.test.tsx`
+for a game). Drive the store with fake timers:
+
+```ts
+du().begin({ meta, from, rule: MY_RULE, config: { players: 2, level: 'normaal', lives: 3, bestOf: 3, stream: 'own', readyMs: 0 } });
+du().answer('left', du().sides.left.question!.answer);
+vi.advanceTimersByTime(DUEL_TIMING.flashRight);
+```
+
+A screen test renders `<MyGame meta={resolveMeta(meta, { spelers: '2' })} from={from} onExit={fn} />`, then
+`act(() => vi.advanceTimersByTime(DUEL_TIMING.readyMs))`. For a deterministic bot in a screen test set
+`useDuelStore.setState(s => ({ config: { ...s.config, rng: () => 0.5 } }))` before the ready time ends (never
+mock `Math.random`: the exercise generators loop on it).
+
+## Playwright
+
+`scripts/duel-shots.mjs` plays a whole match and shoots ready / play / right / wrong / round card / match card
+per size and player count (picks go into the remembered options, so Start begins that match):
+
+```
+npm run dev -- --port 5401
+node scripts/duel-shots.mjs --url http://localhost:5401/ --game taartgevecht --label Taartgevecht --out C:/tmp/<you>-scratch/shots \
+  --sizes 1280x800,1024x768 --players 1,2 --picks '{"niveau":"moeilijk","levens":"3","rondes":"3"}'
+```
+
+By hand in a page: `window.__duel.getState()` (dev builds) has `answer(side, given)`, `effect(by, e)`,
+`nextRound()`; e.g. `const d = __duel.getState(); d.answer('left', d.sides.left.question.answer)`.
+
+## Thumbnails
+
+Add a `GAMES` row in `scripts/spel-thumbs.mjs` (`['taartgevecht', 'Taartgevecht', 2]`: right answers before the
+shot) and run `npm run spel:thumbs -- --only taartgevecht --url http://localhost:5401/`. The script hides the
+keypads, HUD, hearts, banner and cards and lets the scene band fill the picture (`DUEL_CSS`); add a `SKIN_CSS`
+line if your scene shows numbers. Look at the PNG (`--raw <dir>`) before committing the webp.

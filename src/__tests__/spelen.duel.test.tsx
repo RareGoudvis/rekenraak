@@ -11,6 +11,7 @@ import SpelOptions from '../oefenen/spelen/SpelOptions';
 import Touwtrekken from '../oefenen/spelen/skins/touwtrekken/Touwtrekken';
 import { TOUW } from '../oefenen/spelen/skins/touwtrekken/rule';
 import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
+import { playRecipe } from '../oefenen/spelen/sound';
 import { BOT, botTurn } from '../oefenen/spelen/duel/bot';
 import { duelConfigOf, duelOptions } from '../oefenen/spelen/duel/options';
 import {
@@ -94,6 +95,8 @@ describe('duel rules (pure)', () => {
         expect(wrongOf('12', () => 0.9)).toBe('11');
         expect(wrongOf('0', () => 0.9)).toBe('1');
         expect(wrongOf('3,5')).toBe('?');
+        // A game's own sound: silent without Web Audio, never a throw.
+        expect(() => playRecipe(() => { throw new Error('never called'); })).not.toThrow();
     });
 
     test('the shared options: spelers, niveau, levens, rondes, then the extras; picks make the config', () => {

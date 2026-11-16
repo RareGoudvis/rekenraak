@@ -58,7 +58,7 @@ export interface SkinMeta {
     winTitle?: string;
     // canFail skins: the end screen's title after the early end; absent = "Oei! Nog eens?".
     failTitle?: string;
-    // 2 = a game for two pupils on one screen (Touwtrekken): the picker says "2 spelers"; '1-2' = either (Kasteel).
+    // 2 = a game for two pupils on one screen: the picker says "2 spelers"; '1-2' = either (the duels: 1 = against the computer).
     players?: 2 | '1-2';
     // Which content the skin can play (accepts.ts).
     accepts: SkinAccepts;
@@ -171,8 +171,6 @@ export interface SkinProps {
     options: SkinChoices;
     // correct / wrong / help / streak / timeUp / end, for effects.
     events: SpelEvents;
-    // Deprecated: motion is always on; only kasteel/ still reads this, and goes with its rewrite.
-    reducedMotion?: boolean;
     // Stable per card + game: the key for a skin's own records on this device (Race's best time).
     runKey?: string;
     // The skin's own goal ended the round (Race: the finish line).
@@ -183,7 +181,7 @@ export interface SkinProps {
     onHold?(on: boolean): void;
 }
 
-// A game that brings its own session and screen (Touwtrekken: two players, two question streams).
+// A game that brings its own session and screen (the duel games on duel/: two players, two question streams).
 export interface SkinScreenProps {
     meta: SkinMeta;
     from: SpelFrom;
@@ -196,8 +194,6 @@ export interface SkinEndingProps {
     outcome: SpelOutcome;
     progress: SkinProgress;
     options: SkinChoices;
-    // Deprecated: motion is always on; only kasteel/ still reads this, and goes with its rewrite.
-    reducedMotion?: boolean;
 }
 
 export interface SkinEntry {

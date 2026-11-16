@@ -99,10 +99,10 @@ export function resetSoundForTests(): void {
 }
 
 // ── Recipes ─────────────────────────────────────────────────────────────────
-interface Tone { type?: OscillatorType; f0: number; f1?: number; at?: number; dur: number; vol: number; wobble?: [number, number] }
-interface Noise { at?: number; dur: number; vol: number; filter: BiquadFilterType; f0: number; f1?: number; q?: number }
+export interface Tone { type?: OscillatorType; f0: number; f1?: number; at?: number; dur: number; vol: number; wobble?: [number, number] }
+export interface Noise { at?: number; dur: number; vol: number; filter: BiquadFilterType; f0: number; f1?: number; q?: number }
 
-function tone(ac: AudioContext, dest: AudioNode, t: number, o: Tone) {
+export function tone(ac: AudioContext, dest: AudioNode, t: number, o: Tone) {
     const start = t + (o.at ?? 0);
     const osc = ac.createOscillator();
     const g = ac.createGain();
@@ -129,7 +129,7 @@ function tone(ac: AudioContext, dest: AudioNode, t: number, o: Tone) {
 }
 
 let noiseBuf: AudioBuffer | null = null;
-function noise(ac: AudioContext, dest: AudioNode, t: number, o: Noise) {
+export function noise(ac: AudioContext, dest: AudioNode, t: number, o: Noise) {
     const start = t + (o.at ?? 0);
     if (!noiseBuf || noiseBuf.sampleRate !== ac.sampleRate) {
         noiseBuf = ac.createBuffer(1, Math.ceil(ac.sampleRate * 0.5), ac.sampleRate);
@@ -152,7 +152,7 @@ function noise(ac: AudioContext, dest: AudioNode, t: number, o: Noise) {
     src.stop(start + o.dur + 0.05);
 }
 
-type Recipe = (ac: AudioContext, dest: AudioNode, t: number) => void;
+export type Recipe = (ac: AudioContext, dest: AudioNode, t: number) => void;
 const RECIPES: Record<SpelSound, Recipe> = {
     // Balloon right: a short burst and a quick drop.
     pop: (ac, d, t) => { noise(ac, d, t, { dur: 0.07, vol: 0.5, filter: 'bandpass', f0: 1800, q: 0.8 }); tone(ac, d, t, { f0: 700, f1: 180, dur: 0.09, vol: 0.35 }); },
@@ -274,6 +274,12 @@ const RECIPES: Record<SpelSound, Recipe> = {
 export function play(name: SpelSound): void {
     if (!on || !ctx || !out || ctx.state === 'closed') return;
     try { RECIPES[name](ctx, out, ctx.currentTime + 0.01); } catch { /* a missing node type: stay silent */ }
+}
+
+/** A game's own sound recipe (built from tone / noise in its folder), under the same on / off and master as play(). */
+export function playRecipe(recipe: Recipe): void {
+    if (!on || !ctx || !out || ctx.state === 'closed') return;
+    try { recipe(ctx, out, ctx.currentTime + 0.01); } catch { /* a missing node type: stay silent */ }
 }
 
 // ── Game events → sounds ────────────────────────────────────────────────────
