@@ -16,6 +16,7 @@ import {
 import { TOVER_SOUNDS, stepSound } from '../oefenen/spelen/skins/tovenaarsduel/sounds';
 import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
 import { DUEL_TIMING, freshSideView } from '../oefenen/spelen/duel/rules';
+import { STAND, stageOf } from '../oefenen/spelen/skins/tovenaarsduel/geometry';
 import type { DuelConfig, DuelFlags, DuelFlight, Side } from '../oefenen/spelen/duel/types';
 
 // Tovenaarsduel on the duel engine: the spell ladder (IJspijl 1, Vuurbal 2, Bliksem 3, Schild, again), the shield
@@ -73,6 +74,18 @@ describe('Tovenaarsduel: the pure rule', () => {
         expect([30, 18, 10, 9, 0].map(l => healthTone(l, 30))).toEqual(['ok', 'mid', 'mid', 'low', 'low']);
         expect([1, 2, 3, 4].map(stepSound)).toEqual(['step1', 'step2', 'step3', 'step4']);
         expect(TOVER_SOUNDS).toEqual(expect.arrayContaining(['iceShatter', 'fireBoom', 'thunder', 'shieldUp', 'shieldBlock', 'poof', 'fanfare']));
+    });
+});
+
+describe('Tovenaarsduel: the stage', () => {
+    test('the wizards stand near the edges at every band shape: a wide runway between them', () => {
+        for (const aspect of [2.2, 3.2, 4.4]) {
+            const st = stageOf(aspect);
+            expect(st.x.left / st.w).toBeCloseTo(STAND, 2);
+            expect(st.x.right / st.w).toBeCloseTo(1 - STAND, 2);
+        }
+        expect(STAND).toBeGreaterThanOrEqual(0.12);
+        expect(STAND).toBeLessThanOrEqual(0.15);
     });
 });
 
@@ -199,8 +212,9 @@ describe('Tovenaarsduel: the tile and the screen', () => {
         vi.useFakeTimers();
         render(<Tovenaarsduel meta={meta({ spelers: '2', levens: '20' })} from={from} onExit={() => { }} />);
         tick(DUEL_TIMING.readyMs);
-        expect(screen.getByRole('group', { name: 'Cijfers Blauw' })).toBeTruthy();
-        expect(screen.getByRole('group', { name: 'Cijfers Oranje' })).toBeTruthy();
+        expect(screen.getByRole('group', { name: 'Cijfers Paars' })).toBeTruthy();
+        expect(screen.getByRole('group', { name: 'Cijfers Rood' })).toBeTruthy();
+        expect(screen.getByRole('region', { name: 'Paars' })).toBeTruthy();
         expect(document.querySelector('.duel-hearts')).toBeNull();
         expect(screen.getAllByRole('img', { name: '20 van 20 levens' })).toHaveLength(2);
         expect(screen.getAllByRole('img', { name: 'Volgende spreuk: IJspijl' })).toHaveLength(2);

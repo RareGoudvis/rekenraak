@@ -28,7 +28,7 @@ import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelS
 //   kasteel              53 / 23          36         71        85 / 32
 //   touwtrekken          75 / 28          59         77        98 / 39
 //   kikkers              63 / 39          52         58        79 / 40
-//   tovenaarsduel        73 / 21          49         67         -
+//   tovenaarsduel        72 / 20          47         68         -
 
 let from: SpelFrom;
 beforeAll(async () => {

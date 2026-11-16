@@ -15,9 +15,9 @@ export const SPELL_NAME: Record<Spell, string> = { ijs: 'IJspijl', vuur: 'Vuurba
 export const TOVER = {
     damage: { ijs: 1, vuur: 2, bliksem: 3 } as Record<AttackSpell, number>,
     // Cast to impact: the charge glow at the staff, then the flight (art keyframes land on these).
-    castMs: { ijs: 1000, vuur: 1100, bliksem: 1000 } as Record<AttackSpell, number>,
+    castMs: { ijs: 1150, vuur: 1250, bliksem: 1100 } as Record<AttackSpell, number>,
     // The charge part of castMs: the projectile leaves the staff after this (the bolt falls from the sky).
-    chargeMs: { ijs: 320, vuur: 380, bliksem: 560 } as Record<AttackSpell, number>,
+    chargeMs: { ijs: 420, vuur: 480, bliksem: 640 } as Record<AttackSpell, number>,
     lives: { choices: [20, 30, 40], default: 30 },
     // The defeat (smoke, the hat flies, dizzy stars) before the scoreboard card.
     endMs: 3000,
