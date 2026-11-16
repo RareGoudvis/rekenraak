@@ -31,6 +31,24 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
+        version: '2.1.0',
+        date: '2026-11',
+        summary: 'Nieuw: vijf spelletjes voor twee, ook tegen de computer, en in Zelf oefenen eerst kiezen: Oefenen of Spelen.',
+        items: [
+            { kind: 'nieuw', text: 'Vijf nieuwe spelletjes voor twee op het digibord: Taartgevecht, Kikkers en vliegjes, Robotduel, Meteorietenregen en Tovenaarsduel.' },
+            { kind: 'nieuw', text: 'Alle duelspellen: alleen tegen de computer of met z’n tweeën, met levens, rondes (beste van 3 of 5) en Moeilijk met een klokje per som.' },
+            { kind: 'gewijzigd', text: 'Touwtrekken en Kasteel spelen nu ook in rondes. Touwtrekken kan ook alleen, tegen de computer. De computer is sterker en volgt het tempo van de leerling.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen: kies eerst Oefenen of Spelen. Elk spel toont eerst zijn eigen startscherm met plaatje, uitleg en keuzes.' },
+            { kind: 'nieuw', text: 'Zelf oefenen, leerjaar 1: ook tot 5, en getallen herkennen met MAB-blokjes tot 5, 10 en 20.' },
+            { kind: 'nieuw', text: 'Zelf oefenen: nieuw onderwerp Door elkaar, met + en − samen en × en : samen, vanaf leerjaar 2.' },
+            { kind: 'gewijzigd', text: 'Eenvoudig, leerjaar 1: kaarten tot 5, en MAB herkennen tot 5 en tot 10.' },
+            { kind: 'nieuw', text: 'Verborgen prent: 24 nieuwe grappige dierenfoto’s.' },
+            { kind: 'gewijzigd', text: 'Op een gsm die rechtop staat, vraagt RekenRaak om je toestel te draaien als een spel of oefening niet past.' },
+            { kind: 'opgelost', text: 'Animaties werken nu ook op toestellen waar ‘minder beweging’ aanstaat.' },
+            { kind: 'opgelost', text: 'Lange woorden zoals Kommagetallen passen nu in hun knop.' },
+        ],
+    },
+    {
         version: '2.0.1',
         date: '2026-11',
         summary: 'Zelf oefenen: levendige achtergronden per leerjaar, met weer en dieren die voorbij komen.',
