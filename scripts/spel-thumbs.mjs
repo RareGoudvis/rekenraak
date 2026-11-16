@@ -30,7 +30,7 @@ const DUMP = argv.includes('--dump');
 const GAMES = [
     ['pinguintoren', 'Pinguïntoren', 6], ['ballonnen', 'Ballonnen', 1], ['zeehond', 'Zeehondjes voeren', 0], ['zombies', 'Zombies', 2],
     ['bom', 'Bom', 3], ['bever', 'Bever', 5], ['race', 'Race', 3], ['voetbal', 'Voetbal', 3], ['touwtrekken', 'Touwtrekken', -1],
-    ['kasteel', 'Kasteel', 2], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
+    ['kasteel', 'Kasteel', 2], ['taartgevecht', 'Taartgevecht', 2], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
 ];
 
@@ -51,6 +51,8 @@ const SKIN_CSS = {
     kasteel: '.ks-bar-text { display: none !important; }',
     // The rope is a wide strip: closer in, so the bears fill the picture.
     touwtrekken: '.tt-scene { transform: scale(1.5); transform-origin: 50% 100%; }',
+    // The stage is a wide strip: closer in, so the two contestants fill the picture.
+    taartgevecht: '.tg-scene { transform: translateY(-15%) scale(1.3); transform-origin: 50% 100%; }',
     schatkist: '.sk-parchment { visibility: hidden !important; }',
     zeehond: '.zh-count { visibility: hidden !important; }',
     hartjes: '.hj-text { visibility: hidden !important; }',
