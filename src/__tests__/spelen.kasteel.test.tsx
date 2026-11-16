@@ -68,7 +68,7 @@ describe('Kasteel: the registry entry and the pre-start screen', () => {
         expect(screen.getByRole('button', { name: 'Moeilijk' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Samen één som' }));
         fireEvent.click(screen.getByRole('button', { name: '7 levens' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Best of 5' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Beste van 5' }));
         fireEvent.click(screen.getByRole('button', { name: /Start/ }));
         expect(onStart.mock.calls[0][0].chosen).toMatchObject({ spelers: '2', levens: '7', manier: 'beurt', rondes: '5' });
     });

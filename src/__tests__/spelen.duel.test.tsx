@@ -104,7 +104,7 @@ describe('duel rules (pure)', () => {
         expect(opts.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'x']);
         expect(opts.map(o => o.default)).toEqual(['2', 'normaal', '5', '3', 'a']);
         expect(opts[2].choices.map(c => c.label)).toEqual(['3 stappen', '5 stappen', '7 stappen']);
-        expect(opts[3].choices.map(c => c.label)).toEqual(['1 ronde', 'Best of 3', 'Best of 5']);
+        expect(opts[3].choices.map(c => c.label)).toEqual(['1 ronde', 'Beste van 3', 'Beste van 5']);
         expect(duelConfigOf({})).toEqual({ players: 2, level: 'normaal', lives: 5, bestOf: 3, stream: 'own' });
         expect(duelConfigOf({ spelers: '1', niveau: 'moeilijk', levens: '7', rondes: '5', manier: 'beurt' })).toEqual({ players: 1, level: 'moeilijk', lives: 7, bestOf: 5, stream: 'own' });
         expect(duelConfigOf({ spelers: '2', manier: 'beurt', rondes: '4' }, { roundSeconds: 60 })).toMatchObject({ stream: 'shared', bestOf: 3, roundSeconds: 60 });
@@ -379,7 +379,7 @@ describe('Touwtrekken on the engine', () => {
         expect(e.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'manier']);
         render(<SpelOptions meta={meta} onStart={() => { }} onBack={() => { }} />);
         expect(screen.getByRole('button', { name: '5 stappen' }).getAttribute('aria-pressed')).toBe('true');
-        expect(screen.getByRole('button', { name: 'Best of 3' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Beste van 3' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: '1 speler' }));
         expect(screen.queryByRole('button', { name: 'Samen één som' })).toBeNull();
     });

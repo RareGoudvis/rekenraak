@@ -33,7 +33,7 @@ export function duelOptions(spec: DuelOptionsSpec = {}): SkinOption[] {
             id: 'levens', label: lives.label ?? 'Hoeveel levens?', default: String(lives.default ?? DUEL_DEFAULTS.lives),
             choices: (lives.choices ?? LIVES_CHOICES).map(n => ({ value: String(n), label: unit(n) })),
         },
-        { id: 'rondes', label: 'Hoeveel rondes?', default: String(DUEL_DEFAULTS.bestOf), choices: [{ value: '1', label: '1 ronde' }, { value: '3', label: 'Best of 3' }, { value: '5', label: 'Best of 5' }] },
+        { id: 'rondes', label: 'Hoeveel rondes?', default: String(DUEL_DEFAULTS.bestOf), choices: [{ value: '1', label: '1 ronde' }, { value: '3', label: 'Beste van 3' }, { value: '5', label: 'Beste van 5' }] },
         ...(spec.extras ?? []),
     ];
 }
