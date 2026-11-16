@@ -39,7 +39,7 @@ function webpSize(buf: Buffer): { w: number; h: number } {
 
 describe('The photo manifest', () => {
     test('twelve photos, every file there (≤ 250 KB, its real size in the manifest), credits filled', () => {
-        expect(PRENT_PHOTOS).toHaveLength(12);
+        expect(PRENT_PHOTOS).toHaveLength(36);
         expect(new Set(PRENT_PHOTOS.map(p => p.id)).size).toBe(PRENT_PHOTOS.length);
         for (const p of PRENT_PHOTOS) {
             const file = join(dir, p.file);
@@ -85,7 +85,7 @@ describe('The photo manifest', () => {
     test('the pick draws from the photos, never the last one', () => {
         const ids = PRENT_PHOTOS.map(p => p.id);
         for (const last of ids) for (const r of [0, 0.3, 0.7, 0.999]) expect(pickPrent(ids, last, () => r)).not.toBe(last);
-        expect(new Set(Array.from({ length: 48 }, (_, i) => pickPrent(ids, null, () => i / 48))).size).toBe(12);
+        expect(new Set(Array.from({ length: 48 }, (_, i) => pickPrent(ids, null, () => i / 48))).size).toBe(36);
     });
 });
 
