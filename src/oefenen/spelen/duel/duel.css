@@ -1,0 +1,373 @@
+/* The shared duel screen (DuelScreen.tsx): the scene band on top, two halves below, the HUD and the cards.
+   Flat fills under the thick --spel-ink outline, the kids' sticker drop. touch-action none: two hands on the
+   board at once must never pinch-zoom or scroll the page. A game themes it from its root class:
+   --duel-left / --duel-right (team colours), --duel-scene-h (the band's share of the stage). */
+.duel-app {
+  --duel-left: var(--spel-fill-1);
+  --duel-right: var(--spel-fill-5);
+  --duel-team: var(--duel-left);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Top bar: Terug · names, round dots, round · clock, sound ─────────────── */
+.duel-scoreline {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: "left round right";
+  align-items: center;
+  gap: var(--sp-3);
+}
+.duel-score { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.duel-score.is-left { grid-area: left; justify-self: end; }
+.duel-score.is-right { grid-area: right; justify-self: start; flex-direction: row-reverse; }
+.duel-round { grid-area: round; font-weight: 900; white-space: nowrap; }
+.duel-name {
+  padding: 2px var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--duel-team);
+  color: var(--spel-ink);
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: var(--kid-drop-sm);
+}
+/* A whiteboard is read from the back of the class: the bar's names and dots grow with the screen. */
+.duel-scoreline .duel-name { font-size: clamp(16px, 2.6vmin, 30px); }
+.duel-round { font-size: clamp(18px, 3vmin, 34px); }
+.duel-dots { display: inline-flex; gap: 6px; }
+.duel-dot {
+  width: clamp(18px, 2.4vmin, 28px);
+  height: clamp(18px, 2.4vmin, 28px);
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--kiosk-paper);
+}
+.duel-dot.is-won { background: var(--spel-star); animation: duel-pop 500ms var(--ease-spring) both; }
+
+/* ── Stage: the band on top, the halves below ─────────────────────────────── */
+.duel-stage {
+  display: grid;
+  grid-template-rows: minmax(150px, var(--duel-scene-h, 40%)) minmax(0, 1fr);
+  background: var(--spel-sky);
+}
+/* The scene stays in its band: the halves get nothing drawn over them. */
+.duel-world { position: relative; min-height: 0; overflow: hidden; overflow: clip; }
+
+/* The lives in the band's top corners, as in a fighting game. */
+.duel-corner {
+  position: absolute;
+  top: var(--sp-2);
+  z-index: 3;
+  padding: 4px var(--sp-2);
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--kiosk-paper) 88%, transparent);
+  box-shadow: var(--kid-drop-sm);
+}
+.duel-corner.is-left { left: var(--sp-2); }
+.duel-corner.is-right { right: var(--sp-2); }
+.duel-hearts { display: inline-flex; gap: 2px; }
+.duel-heart {
+  width: clamp(20px, 3.4vmin, 34px);
+  height: clamp(20px, 3.4vmin, 34px);
+  color: var(--duel-heart, var(--kid-tint-ring-6));
+  stroke: var(--spel-ink);
+  stroke-width: 10px;
+  paint-order: stroke;
+  transition: color 200ms;
+}
+.duel-heart.is-lost { color: var(--kiosk-paper); animation: duel-heart-lost 520ms var(--ease-out); }
+@keyframes duel-heart-lost {
+  0% { transform: scale(1.5) rotate(-12deg); color: var(--duel-heart, var(--kid-tint-ring-6)); }
+  60% { transform: scale(.8) rotate(8deg); }
+  100% { transform: none; }
+}
+
+/* "Ronde 2", then "Start!": a big sticker in the middle of the band. */
+.duel-banner {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 4;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--spel-star);
+  color: var(--spel-ink);
+  font-size: clamp(28px, 7vmin, 72px);
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: var(--kid-drop-lg);
+  translate: -50% -50%;
+  pointer-events: none;
+  animation: duel-banner-in 420ms var(--ease-spring) both;
+}
+.duel-banner.is-go { background: var(--kid-go); animation: duel-banner-go 900ms var(--ease-out) both; }
+@keyframes duel-banner-in { from { scale: .3; opacity: 0; rotate: -8deg; } to { scale: 1; opacity: 1; rotate: 0deg; } }
+@keyframes duel-banner-go {
+  0% { scale: .4; opacity: 0; }
+  25% { scale: 1.15; opacity: 1; }
+  70% { scale: 1; opacity: 1; }
+  100% { scale: 1.4; opacity: 0; }
+}
+
+/* ── The halves ───────────────────────────────────────────────────────────── */
+.duel-halves {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2) var(--sp-2);
+  background: var(--spel-grass);
+  border-top: 3px solid var(--spel-ink);
+}
+.duel-half {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  margin-top: var(--sp-2);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--duel-team) 18%, var(--bg-surface));
+  transition: background-color 200ms;
+}
+.duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 38%, var(--bg-surface)); }
+.duel-head {
+  margin: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 800;
+}
+.duel-points { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-sheet-math); }
+.duel-points svg { color: var(--spel-star); }
+.duel-sign {
+  margin: 0;
+  padding: var(--sp-1) var(--sp-4);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  max-width: 100%;
+  /* The most it grows; SpelSignBox fits the line inside the column below this. */
+  --sign-max: clamp(20px, 4.4vmin, 52px);
+  font-size: var(--sign-max);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  box-shadow: var(--kid-drop-sm);
+}
+.duel-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+.duel-note { margin: 0; min-height: 1.4em; font-size: var(--kiosk-text-lg); font-weight: 800; white-space: pre; }
+.duel-half.is-got .duel-note { animation: duel-pop 420ms var(--ease-spring); }
+.duel-app.is-between .duel-halves { opacity: .4; }
+
+/* Moeilijk: the sum's ring empties in the team colour, the last third in the warning tone. */
+.duel-ring { position: relative; width: clamp(44px, 6vmin, 72px); height: clamp(44px, 6vmin, 72px); display: inline-grid; place-items: center; }
+.duel-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.duel-ring-bg { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.duel-ring-fill {
+  fill: none;
+  stroke: var(--duel-team);
+  stroke-width: 7px;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 0;
+  animation: duel-ring var(--dur) linear forwards;
+}
+.duel-ring.is-stopped .duel-ring-fill { animation-play-state: paused; }
+.duel-ring-icon { position: relative; width: 42%; height: 42%; color: var(--spel-ink); }
+@keyframes duel-ring {
+  0% { stroke-dashoffset: 0; }
+  66% { stroke: var(--duel-team); }
+  67% { stroke: var(--kid-warn); }
+  100% { stroke-dashoffset: 100; stroke: var(--kid-warn); }
+}
+
+/* One player's keypad: the field beside a 3 × 4 grid, keys at least --spel-tap. */
+.duel-keypad {
+  min-height: 0;
+  width: min(100%, 560px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--sp-2);
+  touch-action: none;
+}
+.duel-field {
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--kiosk-field-h);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 700;
+}
+.duel-keys {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--spel-tap), 1fr));
+  grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr));
+  gap: var(--sp-1);
+}
+/* With a comma / minus: the kiosk keypad's layout, ⌫ and the extra keys in a fourth column, 0 and OK two wide. */
+/* minmax(0, …): four keys still fit a half of a phone (two players side by side). */
+.duel-keys.has-extra { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.duel-keys.has-extra .duel-key { min-width: 0; }
+.duel-keys.has-extra .is-back { grid-column: 4; grid-row: 1 / span 2; }
+.duel-keys.has-extra.is-2 .is-back { grid-row: 1; }
+.duel-keys.has-extra .is-extra { grid-column: 4; grid-row: 3; }
+.duel-keys.has-extra .is-extra.is-first { grid-row: 2; }
+.duel-keys.has-extra .is-zero { grid-row: 4; grid-column: 1 / span 2; }
+.duel-keys.has-extra .is-ok { grid-row: 4; grid-column: 3 / span 2; }
+.duel-key {
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font: inherit;
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: none;
+  box-shadow: 0 3px 0 var(--spel-ink);
+}
+.duel-key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--spel-ink); }
+.duel-key.is-ok { background: var(--duel-team); color: var(--spel-ink); }
+.duel-key:disabled { opacity: .45; cursor: default; }
+.duel-key svg { width: 1.1em; height: 1.1em; }
+.duel-keypad.is-off .duel-key { opacity: .45; }
+
+/* ── The computer's half ──────────────────────────────────────────────────── */
+.duel-bot { min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); }
+.duel-bot-face { width: clamp(90px, 18vmin, 180px); height: auto; overflow: visible; }
+.duel-bot-head { fill: var(--duel-team); stroke: var(--spel-ink); stroke-width: 4px; }
+.duel-bot-screen { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.duel-bot-eyes circle { fill: var(--spel-ink); }
+.duel-bot-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 4px; stroke-linecap: round; }
+.duel-bot-ear { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.duel-bot-antenna { stroke: var(--spel-ink); stroke-width: 4px; }
+.duel-bot-bulb { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
+.duel-bot.is-thinking .duel-bot-eyes { animation: duel-bot-look 2.4s ease-in-out infinite; }
+.duel-bot.is-thinking .duel-bot-bulb { animation: duel-bot-blink 900ms steps(2) infinite; }
+.duel-bot.is-right .duel-bot-face { animation: duel-bot-hop 500ms var(--ease-spring); }
+.duel-bot.is-wrong .duel-bot-face { animation: spel-wiggle 500ms ease-in-out; }
+@keyframes duel-bot-look { 0%, 100% { translate: 0 0; } 30% { translate: -5px -2px; } 65% { translate: 5px -2px; } }
+@keyframes duel-bot-blink { from { fill: var(--spel-star); } to { fill: var(--kiosk-paper); } }
+@keyframes duel-bot-hop { 0% { translate: 0 0; } 40% { translate: 0 -14px; } 100% { translate: 0 0; } }
+.duel-bot-bubble {
+  margin: 0;
+  min-width: 96px;
+  min-height: 56px;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-1) var(--sp-4);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 800;
+  box-shadow: var(--kid-drop-sm);
+}
+.duel-bot-dots { display: inline-flex; gap: 8px; }
+.duel-bot-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--spel-ink); animation: duel-dot-bob 1s ease-in-out infinite; }
+.duel-bot-dots i:nth-child(2) { animation-delay: 160ms; }
+.duel-bot-dots i:nth-child(3) { animation-delay: 320ms; }
+@keyframes duel-dot-bob { 0%, 100% { translate: 0 0; opacity: .4; } 40% { translate: 0 -8px; opacity: 1; } }
+
+/* ── Cards: between rounds and the match end ───────────────────────────────── */
+.duel-card-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-3);
+  background: color-mix(in srgb, var(--spel-ink) 18%, transparent);
+  touch-action: manipulation;
+}
+.duel-card {
+  width: min(100%, 620px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--kid-radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--kid-drop-lg);
+  animation: duel-card-in 480ms var(--ease-spring) both;
+}
+.duel-card.is-match { width: min(100%, 700px); background: color-mix(in srgb, var(--duel-team) 22%, var(--bg-surface)); }
+.duel-card-title { margin: 0; text-align: center; }
+.duel-card-lead { margin: 0; text-align: center; }
+.duel-trophy {
+  width: clamp(64px, 14vmin, 120px);
+  height: clamp(64px, 14vmin, 120px);
+  margin-bottom: calc(-1 * var(--sp-2));
+  color: var(--spel-star);
+  stroke: var(--spel-ink);
+  stroke-width: 8px;
+  paint-order: stroke;
+  animation: duel-trophy 1.4s var(--ease-spring) both, duel-trophy-bob 1.6s 1.4s ease-in-out infinite alternate;
+}
+@keyframes duel-trophy { 0% { scale: 0; rotate: -30deg; } 60% { scale: 1.25; rotate: 8deg; } 100% { scale: 1; rotate: 0deg; } }
+@keyframes duel-trophy-bob { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -8px; rotate: 4deg; } }
+.duel-card-scores { margin: 0; display: flex; gap: var(--sp-4); }
+.duel-card-scores > div {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--duel-team) 25%, var(--bg-surface));
+}
+.duel-card-scores > div.is-winner { background: color-mix(in srgb, var(--duel-team) 55%, var(--bg-surface)); box-shadow: var(--kid-drop-sm); }
+.duel-card-scores dt { font-weight: 900; font-size: var(--kiosk-text-lg); }
+.duel-card-scores dd { margin: 0; }
+.duel-card-right { display: flex; align-items: center; gap: var(--sp-1); font-family: var(--font-sheet-math); font-size: var(--kiosk-text-xl); font-weight: 700; }
+.duel-card-right svg { color: var(--spel-star); }
+.duel-confetti { position: absolute; inset: 0; pointer-events: none; z-index: 7; }
+@keyframes duel-card-in { from { scale: .6; opacity: 0; translate: 0 40px; } to { scale: 1; opacity: 1; translate: 0 0; } }
+@keyframes duel-pop { 0% { scale: .4; } 60% { scale: 1.25; } 100% { scale: 1; } }
+
+/* ── Smaller and upright screens ───────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .duel-scoreline { gap: var(--sp-2); }
+}
+@media (orientation: portrait), (max-width: 760px) {
+  .duel-keypad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .duel-sign { padding: var(--sp-1) var(--sp-2); --sign-inset: calc(2 * var(--sp-2) + 2 * var(--spel-line) + 4px); --sign-min: 10px; }
+  .duel-head { gap: var(--sp-1); }
+  .duel-score .duel-name { display: none; }
+}

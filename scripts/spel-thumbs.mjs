@@ -30,16 +30,18 @@ const DUMP = argv.includes('--dump');
 const GAMES = [
     ['pinguintoren', 'Pinguïntoren', 6], ['ballonnen', 'Ballonnen', 1], ['zeehond', 'Zeehondjes voeren', 0], ['zombies', 'Zombies', 2],
     ['bom', 'Bom', 3], ['bever', 'Bever', 5], ['race', 'Race', 3], ['voetbal', 'Voetbal', 3], ['touwtrekken', 'Touwtrekken', -1],
-    ['kasteel', 'Kasteel', 6], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
+    ['kasteel', 'Kasteel', 2], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
 ];
 
 // Shared chrome that carries numbers. Every skin marks its numbers with .kiosk-math and its sum sign as <prefix>-sign;
 // the hint badges ("1, 2, 3") are <prefix>-key; the keypad is .spel-keypad (Touwtrekken: .tt-keypad).
 const COMMON_CSS = `
-.spel-keypad, .tt-keypad, .spel-topbar,
+.spel-keypad, .duel-keypad, .duel-corner, .duel-banner, .duel-card-wrap, .spel-topbar,
 .kiosk-math, [class$="-sign"], [class*="-sign "], [class$="-key"]:not(.kiosk-key) { visibility: hidden !important; }
 `;
+// Duel games (duel/DuelScreen): the scene band takes the whole stage, the two halves go.
+const DUEL_CSS = '.duel-halves { display: none !important; } .duel-stage { grid-template-rows: minmax(0, 1fr) !important; }';
 // Per-skin extras: what shows a number without .kiosk-math (svg texts, HUD, scores, hint notes).
 const SKIN_CSS = {
     pinguintoren: '.pt-goal-num { display: none !important; }',
@@ -47,14 +49,15 @@ const SKIN_CSS = {
     race: '.rc-clock, .rc-readout { visibility: hidden !important; }',
     voetbal: '.vb-hud, .vb-board text { visibility: hidden !important; }',
     kasteel: '.ks-bar-text { display: none !important; }',
-    touwtrekken: '.tt-half [class*="score"], .tt-half [class*="pts"] { visibility: hidden !important; }',
+    // The rope is a wide strip: closer in, so the bears fill the picture.
+    touwtrekken: '.tt-scene { transform: scale(1.5); transform-origin: 50% 100%; }',
     schatkist: '.sk-parchment { visibility: hidden !important; }',
     zeehond: '.zh-count { visibility: hidden !important; }',
     hartjes: '.hj-text { visibility: hidden !important; }',
     honingraat: '.hx-top, .hx-sum { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
-const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'kasteel', 'prent', 'schatkist', 'kerstboom']);
+const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom']);
 // Skins without a -world box: the street, 16:10 (zombies).
 const CLIPS = { zombies: { x: 0, y: 74, width: 640, height: 400 } };
 // A narrower window pulls the zombies' track into that 640px: the camp and the zombies in one picture.
@@ -144,7 +147,7 @@ for (const [id, label, rights] of GAMES) {
             await page.waitForTimeout(1400);
         }
         await page.waitForTimeout(id === 'ballonnen' || id === 'zeehond' ? 1500 : 700);
-        await page.addStyleTag({ content: COMMON_CSS + (SKIN_CSS[id] ?? '') });
+        await page.addStyleTag({ content: COMMON_CSS + DUEL_CSS + (SKIN_CSS[id] ?? '') });
         await page.waitForTimeout(150);
         if (DUMP) {
             console.log(`== ${id} (digits still showing after the CSS)`);

@@ -79,9 +79,9 @@ export const GAME_GROUPS: readonly { id: GameGroupId; label: string }[] = [
     { id: 'zoeken', label: 'Zoeken en koppelen' },
 ];
 
-// The category comes from the skin's meta: a board round, else a fixed two-player game, else timed, else calm (Kasteel 1-2 is timed, so "Op tijd").
+// The category comes from the skin's meta: a board round, else a duel (2 spelers, or 1 against the computer), else timed, else calm.
 export const gameGroupOf = (meta: Skin['meta']): GameGroupId =>
-    meta.input === 'board' ? 'zoeken' : meta.players === 2 ? 'samen' : meta.timed ? 'tijd' : 'rustig';
+    meta.input === 'board' ? 'zoeken' : meta.players ? 'samen' : meta.timed ? 'tijd' : 'rustig';
 
 /** The games by category (empty ones left out); inside a category gamesFor's order holds, so in-season games lead. */
 export const groupGames = (games: GameCardOf[]) =>

@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import { BLOCKS, hpTone, isGone, stageOf, type Part, type TowerState } from './castle';
 import { PIVOT, RELEASE_DEG, THROW_MS, flightTiming, launchOf, seatOf, stoneR } from './throw';
 
@@ -226,21 +226,6 @@ export function Kid({ team, cheer, flip = false }: { team: Team; cheer: boolean;
     );
 }
 
-// The foe's clock in 1 player: a ring by its bar that fills up to the next shot (CSS only, paused under help).
-export interface Reload { key: number; ms: number; offset: number }
-function ReloadRing({ r }: { r: Reload }) {
-    // Frozen at mount: a later render must not restart the fill.
-    const [style] = useState(() => ({ '--dur': `${r.ms}ms`, animationDelay: `${-Math.max(0, r.offset)}ms` }) as CSSProperties);
-    // Under the computer's bar, at its right end.
-    return (
-        <g className="ks-reload" transform={`translate(${castleMid('right') + BAR_W / 2 - 16} ${BAR_Y + 52})`}>
-            <circle className="ks-reload-bg" r="13" />
-            <circle className="ks-reload-fill" r="13" pathLength="100" style={style} transform="rotate(-90)" />
-            <circle className="ks-stone ks-ball" r="5" />
-        </g>
-    );
-}
-
 // A stone from the arm tip at the release to its aim on the other castle (scene units, so every screen
 // size and the duel's viewBox agree): x and y run linearly, a third transform adds the arc 4h·t(1−t).
 function Stone({ f }: { f: Flight }) {
@@ -269,7 +254,6 @@ export interface SceneProps {
     right: CastleView;
     flights: Flight[];
     debris: Debris[];
-    reload?: Reload | null;
     // A "Grote steen!" call from this side, keyed per big stone.
     bigCall?: { side: SideKey; key: number } | null;
     // The end screen's picture: a tighter viewBox, no life bars.
@@ -277,7 +261,7 @@ export interface SceneProps {
     bars?: boolean;
 }
 
-export function Scene({ left, right, flights, debris, reload, bigCall, view, bars = true }: SceneProps) {
+export function Scene({ left, right, flights, debris, bigCall, view, bars = true }: SceneProps) {
     const winner = left.won ? 'left' : right.won ? 'right' : null;
     const kidsAt = (side: SideKey) => [toScene(side, { x: 252, y: 0 }), toScene(side, { x: 290, y: 0 })];
     return (
@@ -303,7 +287,6 @@ export function Scene({ left, right, flights, debris, reload, bigCall, view, bar
             {flights.map(f => <Stone key={f.id} f={f} />)}
             {bars && <LifeBar side="left" v={left} />}
             {bars && <LifeBar side="right" v={right} />}
-            {reload && <ReloadRing key={`reload-${reload.key}`} r={reload} />}
             {bigCall && (
                 <g key={`big-${bigCall.key}`} transform={`translate(${toScene(bigCall.side, launchOf(false)).x} ${toScene(bigCall.side, launchOf(false)).y - 40})`}>
                     <g className="ks-call"><rect className="ks-call-bg" x="-70" y="-22" width="140" height="34" rx="17" /><text className="ks-call-text" x="0" y="2" textAnchor="middle">Grote steen!</text></g>

@@ -1,44 +1,25 @@
-/* Touwtrekken: two halves for two pupils, the rope across the top. Flat fills under a thick dark outline
-   (spelen.css tokens); the rope moves by a transform transition. touch-action none: two hands on the
-   board at once must never pinch-zoom or scroll the page. */
+/* Touwtrekken: the rope across the band of the shared duel screen (duel.css). Flat fills under a thick dark
+   outline (spelen.css tokens); the rope moves by a transform transition. */
 .tt-app {
-  --tt-left: var(--spel-fill-1);
-  --tt-right: var(--spel-fill-5);
   --tt-fur: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  --duel-scene-h: 36%;
 }
-
-/* ── Pre-start ────────────────────────────────────────────────────────────── */
-.tt-setup { touch-action: manipulation; }
-.tt-mode-sub { font-size: var(--kiosk-text); font-weight: 500; color: var(--text-muted); }
-.tt-setup-note { margin: 0; color: var(--text-muted); }
-
-/* ── Stage: the rope on top, two halves below ─────────────────────────────── */
-.tt-stage {
-  display: grid;
-  grid-template-rows: minmax(120px, 34%) minmax(0, 1fr);
-  background: var(--spel-sky);
-}
-.tt-world { position: relative; min-height: 0; }
-.tt-mode-name { font-size: var(--kiosk-text-lg); font-weight: 700; white-space: nowrap; }
 .tt-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .tt-grass { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 3px; }
+.tt-mud { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-grass)); stroke: var(--spel-ink); stroke-width: 2.5px; }
 .tt-mid { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-dasharray: 6 6; opacity: .6; }
 .tt-mark-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
 .tt-mark-flag { stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
-.tt-mark.is-left .tt-mark-flag { fill: var(--tt-left); }
-.tt-mark.is-right .tt-mark-flag { fill: var(--tt-right); }
+.tt-mark.is-left .tt-mark-flag { fill: var(--duel-left); }
+.tt-mark.is-right .tt-mark-flag { fill: var(--duel-right); }
 
 .tt-pull { transition: transform 450ms var(--ease-spring); }
 .tt-rope { fill: none; stroke: var(--spel-ink); stroke-width: 10px; stroke-linecap: round; }
 .tt-rope-twist { fill: none; stroke: var(--spel-star); stroke-width: 5px; stroke-dasharray: 10 8; stroke-linecap: round; }
 .tt-flag { fill: var(--spel-fill-0); stroke: var(--spel-ink); stroke-width: 3px; stroke-linejoin: round; }
 
-.tt-bear.is-left { --tt-team: var(--tt-left); }
-.tt-bear.is-right { --tt-team: var(--tt-right); }
+.tt-bear.is-left { --tt-team: var(--duel-left); }
+.tt-bear.is-right { --tt-team: var(--duel-right); }
 .tt-leg { fill: var(--tt-fur); stroke: var(--spel-ink); stroke-width: 3px; }
 .tt-shoe { fill: var(--spel-ink); }
 .tt-shirt { fill: var(--tt-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
@@ -50,189 +31,28 @@
 .tt-hand { fill: var(--tt-fur); stroke: var(--spel-ink); stroke-width: 3px; }
 .tt-bear-art { stroke-linejoin: round; }
 
-/* A pull: the bear leans back and heaves; the winner jumps. Feet stay as the pivot. */
-.tt-bear-move { transform-origin: 0 0; }
-.tt-bear-move.is-heave { animation: tt-heave 500ms var(--ease-out); }
+/* A pull: the bear leans back and heaves (dust at its heels); a miss: it wobbles forward; the winner jumps,
+   the other one sits down in the grass. Feet stay as the pivot. Idle: a slow breath. */
+.tt-bear-move { transform-origin: 0 0; animation: tt-breathe 2.2s ease-in-out infinite alternate; }
+.tt-bear.is-right .tt-bear-move { animation-delay: -1.1s; }
+@keyframes tt-breathe { from { transform: rotate(-2deg); } to { transform: rotate(-5deg) translateY(-2px); } }
+.tt-bear-move.is-heave { animation: tt-heave 500ms var(--ease-out) both; }
 @keyframes tt-heave {
   0% { transform: rotate(0); }
-  40% { transform: rotate(-14deg) translateX(-6px); }
+  40% { transform: rotate(-16deg) translateX(-6px); }
   100% { transform: rotate(-4deg); }
+}
+.tt-bear-move.is-slip { animation: tt-slip 560ms ease-in-out both; }
+@keyframes tt-slip {
+  0% { transform: rotate(-3deg); }
+  35% { transform: rotate(12deg) translateX(8px); }
+  65% { transform: rotate(4deg) translateX(4px); }
+  100% { transform: rotate(-2deg); }
 }
 .tt-bear-move.is-cheer { animation: tt-cheer 700ms ease-in-out infinite alternate; }
 @keyframes tt-cheer { from { transform: translateY(0); } to { transform: translateY(-26px) rotate(-6deg); } }
-
-/* ── The halves ───────────────────────────────────────────────────────────── */
-.tt-halves {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-2);
-  padding: 0 var(--sp-2) var(--sp-2);
-  background: var(--spel-grass);
-  border-top: 3px solid var(--spel-ink);
-}
-.tt-half {
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto minmax(0, 1fr);
-  justify-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-2);
-  margin-top: var(--sp-2);
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--tt-team) 18%, var(--bg-surface));
-}
-.tt-half.is-got { background: color-mix(in srgb, var(--tt-team) 34%, var(--bg-surface)); }
-.tt-team {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  font-size: var(--kiosk-text-lg);
-  font-weight: 800;
-}
-.tt-team-name {
-  padding: 0 var(--sp-3);
-  border: 3px solid var(--spel-ink);
-  border-radius: 999px;
-  background: var(--tt-team);
-  color: var(--spel-ink);
-}
-.tt-team-score { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-sheet-math); }
-.tt-team-score svg { color: var(--spel-star); }
-.tt-sign {
-  margin: 0;
-  padding: var(--sp-1) var(--sp-4);
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: var(--radius-lg);
-  background: var(--kiosk-paper);
-  color: var(--kiosk-ink);
-  max-width: 100%;
-  /* The most it grows; SpelSignBox fits the line inside the column below this. */
-  --sign-max: clamp(20px, 4vmin, 44px);
-  font-size: var(--sign-max);
-  font-weight: 700;
-  line-height: 1.15;
-  white-space: nowrap;
-}
-.tt-sign-answer {
-  display: inline-block;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-sm);
-  background: var(--kiosk-ok-soft);
-  color: var(--kiosk-ok);
-}
-.tt-note { margin: 0; min-height: 1.4em; font-size: var(--kiosk-text-lg); font-weight: 700; white-space: pre; }
-
-/* One player's keypad: the field beside a 3 × 4 grid, keys at least --spel-tap. */
-.tt-keypad {
-  min-height: 0;
-  width: min(100%, 520px);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: var(--sp-2);
-  touch-action: none;
-}
-.tt-field {
-  align-self: start;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--kiosk-field-h);
-  border: 3px solid var(--spel-ink);
-  border-radius: var(--radius-md);
-  background: var(--kiosk-paper);
-  color: var(--kiosk-ink);
-  font-size: var(--kiosk-text-xl);
-  font-weight: 700;
-}
-.tt-keys {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(var(--spel-tap), 1fr));
-  grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr));
-  gap: var(--sp-1);
-}
-/* With a comma / minus: the kiosk keypad's layout, ⌫ and the extra keys in a fourth column, 0 and OK two wide. */
-/* minmax(0, …): four keys still fit a half of a phone (two players side by side). */
-.tt-keys.has-extra { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.tt-keys.has-extra .tt-key { min-width: 0; }
-.tt-keys.has-extra .is-back { grid-column: 4; grid-row: 1 / span 2; }
-.tt-keys.has-extra.is-2 .is-back { grid-row: 1; }
-.tt-keys.has-extra .is-extra { grid-column: 4; grid-row: 3; }
-.tt-keys.has-extra .is-extra.is-first { grid-row: 2; }
-.tt-keys.has-extra .is-zero { grid-row: 4; grid-column: 1 / span 2; }
-.tt-keys.has-extra .is-ok { grid-row: 4; grid-column: 3 / span 2; }
-.tt-key {
-  min-width: var(--spel-tap);
-  min-height: var(--spel-tap);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid var(--spel-ink);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  color: var(--text-main);
-  font: inherit;
-  font-family: var(--font-sheet-math);
-  font-size: var(--kiosk-text-xl);
-  font-weight: 700;
-  cursor: pointer;
-  touch-action: none;
-}
-.tt-key:active { transform: translateY(2px); }
-.tt-key.is-ok { background: var(--tt-team); color: var(--spel-ink); }
-.tt-key:disabled { opacity: .45; cursor: default; }
-.tt-key svg { width: 1.1em; height: 1.1em; }
-.tt-keypad.is-off .tt-key { opacity: .45; }
-
-/* ── End ──────────────────────────────────────────────────────────────────── */
-.tt-end {
-  position: absolute;
-  left: 50%;
-  bottom: var(--sp-4);
-  z-index: 4;
-  width: min(calc(100% - 2 * var(--sp-3)), 640px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-4);
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-3);
-  transform: translateX(-50%);
-  touch-action: manipulation;
-}
-.tt-end .oefen-title { margin: 0; }
-.tt-end-scores { margin: 0; display: flex; gap: var(--sp-4); }
-.tt-end-scores > div {
-  min-width: 120px;
-  padding: var(--sp-2) var(--sp-3);
-  border: 3px solid var(--spel-ink);
-  border-radius: var(--radius-md);
-  text-align: center;
-}
-.tt-end-scores .is-left { background: color-mix(in srgb, var(--tt-left) 25%, var(--bg-surface)); }
-.tt-end-scores .is-right { background: color-mix(in srgb, var(--tt-right) 25%, var(--bg-surface)); }
-.tt-end-scores dt { font-weight: 800; }
-.tt-end-scores dd { margin: 0; display: flex; align-items: center; justify-content: center; gap: var(--sp-1); font-family: var(--font-sheet-math); font-size: var(--kiosk-text-xl); font-weight: 700; }
-.tt-end-scores dd svg { color: var(--spel-star); }
-.tt-app.is-ended .tt-halves { opacity: .35; }
-
-/* Upright screens: the field above the keys. */
-@media (orientation: portrait), (max-width: 760px) {
-  .tt-keypad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .tt-sign { padding: var(--sp-1) var(--sp-2); --sign-inset: calc(2 * var(--sp-2) + 2 * var(--spel-line) + 4px); --sign-min: 10px; }
-  .tt-team { gap: var(--sp-1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tt-pull { transition: none; }
-  .tt-bear-move.is-heave,
-  .tt-bear-move.is-cheer { animation: none; }
-}
+.tt-bear-move.is-fall { animation: tt-fall 700ms var(--ease-spring) both; }
+@keyframes tt-fall { from { transform: rotate(-4deg); } to { transform: rotate(24deg) translate(14px, 6px); } }
+.tt-dust circle { fill: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.tt-dust { animation: tt-dust 600ms var(--ease-out) both; }
+@keyframes tt-dust { 0% { transform: scale(.3); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateX(-20px) scale(1.4); opacity: 0; } }

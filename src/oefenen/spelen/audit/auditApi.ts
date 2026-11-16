@@ -9,7 +9,7 @@ import { SKINS, skinById } from '../skins/registry';
 import { resolveMeta } from '../skins/options';
 import { choiceCanPlay, spelChoiceOf, spelContentOf, spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import { useSpelStore } from '../useSpelStore';
-import { useDuelStore } from '../skins/touwtrekken/duelStore';
+import { useDuelStore } from '../duel/duelStore';
 
 // Dev-only presentation audit (present.html): every playable Zelf choice per leerjaar, a few real questions each, shown
 // in a real skin, flash or end screen. A Playwright script drives window.__spelAudit and takes the screenshots.
@@ -82,9 +82,8 @@ export function installAudit() {
             if (!q) return 'no question';
             const wrong = q.choices.find(c => c !== q.answer) ?? '0';
             if (entry.Screen && (!entry.screenWhen || meta.chosen?.[entry.screenWhen.id] === entry.screenWhen.value)) {
-                for (let i = 0; i < 100 && useDuelStore.getState().phase !== 'setup'; i++) await new Promise(r => setTimeout(r, 50));
-                await new Promise(r => setTimeout(r, 300));
-                useDuelStore.getState().start('samen');
+                // A duel screen begins its match on mount: wait for its sums, then put this one on both halves.
+                for (let i = 0; i < 100 && useDuelStore.getState().phase !== 'play'; i++) await new Promise(r => setTimeout(r, 50));
                 const side = { question: q, feedback: p.phase === 'wrong' ? { given: wrong, expected: q.answer, correct: false } : null, locked: false };
                 const sides = useDuelStore.getState().sides;
                 useDuelStore.setState({ sides: { left: { ...sides.left, ...side }, right: { ...sides.right, ...side } } });

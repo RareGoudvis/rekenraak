@@ -1,8 +1,6 @@
 /* Kasteel skin: two castles on a field, a catapult on each wall. Flat fills under a thick dark outline
    (spelen.css tokens). Stones leave the catapult's bucket and fly on nested CSS transforms; blocks, cracks, towers and the flag change
-   by class. Only transforms and opacity animate (light for old laptops); reduced motion = state changes only. */
-.ks-root,
-.ks-ending,
+   by class. Only transforms and opacity animate (light for old laptops). The screen is the shared duel screen (duel.css). */
 .ks-duel {
   --ks-stone: color-mix(in srgb, var(--text-muted) 26%, var(--kiosk-paper));
   --ks-brick: color-mix(in srgb, var(--text-muted) 42%, var(--kiosk-paper));
@@ -17,16 +15,6 @@
   --ks-dust: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--kiosk-paper));
   --ks-skin: var(--kid-tint-4);
 }
-.ks-root {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  background: var(--spel-sky);
-  overflow: hidden;
-  overflow: clip;
-}
-.ks-world { position: relative; z-index: 0; min-width: 0; min-height: 0; }
 .ks-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .ks-scene * { stroke-linejoin: round; stroke-linecap: round; }
 
@@ -167,11 +155,6 @@
 @keyframes ks-flash-0 { 0%, 35% { fill: var(--kiosk-paper); } 100% { fill: var(--ks-fill); } }
 @keyframes ks-flash-1 { 0%, 35% { fill: var(--kiosk-paper); } 100% { fill: var(--ks-fill); } }
 
-/* The computer's clock: the ring fills up to its next shot. */
-.ks-reload-bg { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
-.ks-reload-fill { fill: none; stroke: var(--ks-orange); stroke-width: 6px; stroke-dasharray: 100; stroke-dashoffset: 100; animation: ks-reload var(--dur) linear both; }
-@keyframes ks-reload { to { stroke-dashoffset: 0; } }
-
 .ks-call { animation: ks-call 1100ms var(--ease-out) both; }
 @keyframes ks-call { 0% { transform: scale(.3); opacity: 0; } 20% { transform: scale(1.1); opacity: 1; } 75% { transform: scale(1) translateY(-8px); opacity: 1; } 100% { transform: translateY(-20px); opacity: 0; } }
 .ks-call-bg { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3px; }
@@ -190,84 +173,6 @@
 .ks-kid.is-cheer { animation: ks-cheer 620ms ease-in-out infinite alternate; }
 @keyframes ks-cheer { from { transform: translateY(0); } to { transform: translateY(-18px) rotate(-5deg); } }
 
-/* ── The sum, the streak and the keypad (1 player) ───────────────────────── */
-.ks-panel {
-  width: min(44vw, 440px);
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
-  position: relative;
-  z-index: 1;
-}
-.ks-sign {
-  margin: 0;
-  padding: var(--sp-2) var(--sp-5);
-  border: var(--spel-line) solid var(--spel-ink);
-  border-radius: var(--radius-lg);
-  background: var(--kiosk-paper);
-  color: var(--kiosk-ink);
-  font-size: clamp(28px, 6vmin, 52px);
-  font-weight: 700;
-  line-height: 1.15;
-  white-space: nowrap;
-}
-.ks-sign-answer {
-  display: inline-block;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-sm);
-  background: var(--kiosk-ok-soft);
-  color: var(--kiosk-ok);
-}
-.ks-streak { margin: 0; display: flex; align-items: center; gap: 6px; }
-.ks-pip {
-  width: 18px;
-  height: 18px;
-  border: 3px solid var(--spel-ink);
-  border-radius: 50%;
-  background: var(--kiosk-paper);
-  transition: background-color 200ms;
-}
-.ks-pip.is-on { background: var(--spel-star); }
-.ks-streak-label { margin-left: var(--sp-1); font-weight: 800; color: var(--text-muted); }
-.ks-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
-
-@media (orientation: portrait) {
-  .ks-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  .ks-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); border-top: var(--spel-line) solid var(--spel-ink); background: var(--spel-grass); }
-  .ks-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
-}
-@media (orientation: landscape) and (max-height: 640px) {
-  .ks-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
-}
-
-/* ── 2 players: the castles on top, the halves below (Touwtrekken's) ────── */
-/* 40 %: the halves keep room for a sign of three lines (a leerjaar 6 tekst question) above the whole keypad. */
-.ks-duel-stage { grid-template-rows: minmax(150px, 40%) minmax(0, 1fr); }
-/* The field stays in its band: the halves below get no grass over them. */
-.ks-duel-world { overflow: hidden; overflow: clip; }
-.tt-end-scores .ks-end-lives { font-size: var(--kiosk-text-lg); }
-.tt-end-scores .ks-end-lives svg { color: var(--ks-low); }
-.ks-duel.is-ended .tt-halves { opacity: .35; }
-
-/* "Hoe los ik dit op?": everything holds still (stones in the air too). */
-.ks-root.is-paused * { animation-play-state: paused; }
-/* Reduced motion: no flying, tumbling or shaking, only the states (blocks gone, towers down, a heap). */
-.ks-root.is-still .ks-scene *,
-.ks-ending.is-still .ks-scene *,
-.ks-duel.is-still .ks-scene * { animation: none !important; transition: none !important; }
-.is-still .ks-castle.is-fallen .ks-standing,
-.is-still .ks-puff,
-.is-still .ks-call { opacity: 0; }
-.is-still .ks-tower.is-down { visibility: hidden; }
-/* Still: the arm stays at rest with its next stone loaded. */
-.is-still .ks-load-out { visibility: hidden; }
-/* The computer's clock ring still fills: it tells when the next stone comes. */
-.ks-root.is-still .ks-reload-fill { animation: ks-reload var(--dur) linear both !important; }
-.ks-ending .ks-scene { position: absolute; inset: 0; }
-@media (prefers-reduced-motion: reduce) {
-  .ks-duel .ks-scene * { animation: none !important; transition: none !important; }
-}
+/* A little more band than the duel default: two whole castles with their bars; 42 % still leaves the halves
+   room for a sign of three lines (a leerjaar 6 tekst question) above the whole keypad. */
+.ks-duel { --duel-scene-h: 42%; }

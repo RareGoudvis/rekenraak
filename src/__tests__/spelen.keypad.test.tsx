@@ -12,9 +12,9 @@ import { canSubmit, keyOfKeyboard, typeKey } from '../oefenen/spelen/keypadInput
 import { choiceCanPlay, kioskAnswerOf, spelContentOf, spelKeysOf, type SpelQuestion } from '../oefenen/spelen/spelQuestion';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
-import { useDuelStore } from '../oefenen/spelen/skins/touwtrekken/duelStore';
+import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
 import SpelKeypad from '../oefenen/spelen/SpelKeypad';
-import DuelKeypad from '../oefenen/spelen/skins/touwtrekken/DuelKeypad';
+import DuelKeypad from '../oefenen/spelen/duel/DuelKeypad';
 
 // The game keypads' comma and minus (round 4): shown from the round's content, typed by the kiosk's rules, checked with
 // the kiosk's own normalisation, and the content gate that lets kommagetallen, geld and negatives into the keypad games.
@@ -178,7 +178,7 @@ describe('SpelKeypad and DuelKeypad', () => {
 
     test('Touwtrekken: both keypads get the round\'s comma, typed by pointer', () => {
         const [g, t, l] = KOMMA;
-        useDuelStore.getState().setup({ meta: skinById('touwtrekken')!.meta, from: { choice: choice(g, t, l), grade: g as Leerjaar, topicId: t } });
+        useDuelStore.setState({ from: { choice: choice(g, t, l), grade: g as Leerjaar, topicId: t } });
         const onAnswer = vi.fn();
         render(<DuelKeypad label="Cijfers links" questionKey="d1" disabled={false} onAnswer={onAnswer} />);
         const pad = screen.getByRole('group', { name: 'Cijfers links' });
