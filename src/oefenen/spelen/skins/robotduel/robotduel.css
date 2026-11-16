@@ -1,0 +1,475 @@
+/* Robotduel: a neon boxing ring in a dark arena, two robots. Flat fills under the thick ink outline (spelen.css
+   tokens), glows from radial gradients (no CSS filters: iPad Safari ignores them on SVG). Only transform and
+   opacity animate. A restart = a parity class (-0 / -1, twin keyframes) or a remount by key (art.tsx). */
+.rd-app {
+  --rd-blue: var(--spel-fill-1);
+  --rd-orange: var(--spel-fill-5);
+  --rd-wall: color-mix(in srgb, var(--accent-meetkunde) 26%, var(--spel-ink));
+  --rd-neon: color-mix(in srgb, var(--accent-meetkunde) 55%, var(--kiosk-paper));
+  --rd-metal: color-mix(in srgb, var(--text-muted) 30%, var(--kiosk-paper));
+  --rd-metal-dk: color-mix(in srgb, var(--text-muted) 75%, var(--spel-ink));
+  --rd-hot: var(--kiosk-paper);
+  --rd-warm: var(--spel-star);
+  --rd-fire: var(--accent-vraagstukken);
+  --rd-warn: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-star));
+  --rd-smoke: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper));
+  --duel-scene-h: 42%;
+}
+/* The engine's "Ronde N" banner gives way to the ring's own (Robotduel.tsx Banner). */
+.rd-app .duel-banner { display: none; }
+.rd-app .duel-world { background: var(--rd-wall); }
+
+.rd-cam { position: absolute; inset: 0; }
+.rd-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.rd-scene * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* The camera shakes on a hit (harder on a special, a dropped guard, a KO). */
+.rd-shake-0 { animation: rd-shake-0 420ms ease-out; }
+.rd-shake-1 { animation: rd-shake-1 420ms ease-out; }
+.rd-shake-0.is-big { animation-duration: 620ms; }
+.rd-shake-1.is-big { animation-duration: 620ms; }
+@keyframes rd-shake-0 {
+  0%, 100% { transform: none; }
+  10% { transform: translate(calc(var(--rd-shake-x) * -1), calc(var(--rd-shake-x) * .5)); }
+  25% { transform: translate(var(--rd-shake-x), calc(var(--rd-shake-x) * -.4)); }
+  45% { transform: translate(calc(var(--rd-shake-x) * -.6), calc(var(--rd-shake-x) * .3)); }
+  65% { transform: translate(calc(var(--rd-shake-x) * .3), 0); }
+}
+@keyframes rd-shake-1 {
+  0%, 100% { transform: none; }
+  10% { transform: translate(calc(var(--rd-shake-x) * -1), calc(var(--rd-shake-x) * .5)); }
+  25% { transform: translate(var(--rd-shake-x), calc(var(--rd-shake-x) * -.4)); }
+  45% { transform: translate(calc(var(--rd-shake-x) * -.6), calc(var(--rd-shake-x) * .3)); }
+  65% { transform: translate(calc(var(--rd-shake-x) * .3), 0); }
+}
+
+/* ── Glows (gradient stops) ───────────────────────────────────────────────── */
+.rd-stop-hot { stop-color: var(--rd-hot); stop-opacity: 1; }
+.rd-stop-warm { stop-color: var(--rd-warm); stop-opacity: .85; }
+.rd-stop-cool { stop-color: var(--kid-go); stop-opacity: .85; }
+.rd-stop-warn { stop-color: var(--rd-warn); stop-opacity: .75; }
+.rd-stop-spot { stop-color: var(--rd-warm); stop-opacity: .3; }
+.rd-stop-none { stop-color: var(--rd-warm); stop-opacity: 0; }
+
+/* ── The arena ────────────────────────────────────────────────────────────── */
+.rd-wall { fill: var(--rd-wall); }
+.rd-truss { fill: var(--rd-metal-dk); stroke: var(--spel-ink); stroke-width: 2px; }
+.rd-lamp { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 2px; animation: rd-lamp 1.3s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -260ms); }
+@keyframes rd-lamp { from { opacity: .45; } to { opacity: 1; } }
+.rd-strut { fill: none; stroke: var(--rd-metal-dk); stroke-width: 5px; }
+.rd-screen-frame { fill: color-mix(in srgb, var(--spel-ink) 80%, var(--rd-metal-dk)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-screen.is-left { fill: color-mix(in srgb, var(--rd-blue) 55%, var(--spel-ink)); }
+.rd-screen.is-right { fill: color-mix(in srgb, var(--rd-orange) 55%, var(--spel-ink)); }
+.rd-screen-bolt { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-screen-flash { fill: var(--rd-hot); animation: rd-fade 380ms ease-out forwards; }
+@keyframes rd-fade { from { opacity: .9; } to { opacity: 0; } }
+
+.rd-row.is-back .rd-fan { fill: color-mix(in srgb, var(--accent-meetkunde) 14%, var(--spel-ink)); }
+.rd-row.is-mid .rd-fan { fill: color-mix(in srgb, var(--accent-bewerkingen) 22%, var(--spel-ink)); }
+.rd-row.is-front .rd-fan { fill: color-mix(in srgb, var(--accent-meetkunde) 36%, var(--spel-ink)); }
+.rd-row { animation: rd-crowd 640ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -210ms); }
+@keyframes rd-crowd { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+.rd-scene.is-cheer .rd-row { animation: rd-crowd-cheer 300ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -100ms); }
+@keyframes rd-crowd-cheer { from { transform: translateY(0); } to { transform: translateY(-13px); } }
+.rd-sign { animation: rd-sign 900ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -170ms); }
+@keyframes rd-sign { from { transform: rotate(-8deg) translateY(0); } to { transform: rotate(8deg) translateY(-6px); } }
+.rd-scene.is-cheer .rd-sign { animation-duration: 320ms; }
+.rd-stick { fill: none; stroke: var(--rd-metal); stroke-width: 3px; }
+.rd-sign-card { stroke: var(--spel-ink); stroke-width: 2.5px; }
+.rd-sign-card.is-left { fill: var(--rd-blue); }
+.rd-sign-card.is-right { fill: var(--rd-orange); }
+.rd-sign-bolt { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.rd-flash { fill: var(--rd-hot); opacity: 0; animation: rd-camera 2.9s linear infinite; animation-delay: calc(var(--k) * -570ms); }
+@keyframes rd-camera { 0%, 88% { opacity: 0; } 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+.rd-spot { fill: url(#rd-spot); animation: rd-sweep 5.2s ease-in-out infinite alternate; }
+.rd-spot.is-b { animation-delay: -2.6s; }
+@keyframes rd-sweep { from { transform: rotate(-24deg); } to { transform: rotate(24deg); } }
+
+.rd-rope { fill: none; stroke: var(--rd-neon); stroke-width: 3.5px; }
+.rd-rope-glow { fill: none; stroke: var(--accent-meetkunde); stroke-width: 11px; opacity: .35; animation: rd-neon 1.6s ease-in-out infinite alternate; }
+@keyframes rd-neon { from { opacity: .2; } to { opacity: .5; } }
+.rd-post { fill: var(--rd-metal-dk); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-pad { stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-pad.is-left { fill: var(--rd-blue); }
+.rd-pad.is-right { fill: var(--rd-orange); }
+.rd-mat { fill: color-mix(in srgb, var(--accent-bewerkingen) 14%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-mat-line { fill: none; stroke: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)); stroke-width: 3px; }
+.rd-mat-logo { fill: none; stroke: color-mix(in srgb, var(--accent-meetkunde) 35%, var(--kiosk-paper)); stroke-width: 5px; }
+.rd-mat-bolt { fill: color-mix(in srgb, var(--accent-meetkunde) 35%, var(--kiosk-paper)); }
+.rd-apron { fill: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-apron-neon { fill: none; stroke: var(--rd-neon); stroke-width: 4px; }
+
+/* Fireworks for the round's winner. */
+.rd-firework { animation: rd-firework 1.5s ease-out infinite both; animation-delay: calc(var(--k) * -310ms); }
+@keyframes rd-firework { 0% { transform: scale(.1); opacity: 1; } 55% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1.35); opacity: 0; } }
+.rd-ray { fill: none; stroke-width: 5px; }
+.rd-fireworks.is-left .rd-ray { stroke: var(--rd-blue); }
+.rd-fireworks.is-right .rd-ray { stroke: var(--rd-orange); }
+.rd-fireworks .rd-ray.is-star { stroke: var(--rd-warm); }
+
+/* ── A robot ──────────────────────────────────────────────────────────────── */
+.rd-bot { --rd-team: var(--rd-blue); --rd-eye: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper)); --g: 0deg; --gb: 0deg; --rd-ps: 3.22; }
+.rd-bot.is-right { --rd-team: var(--rd-orange); --rd-eye: color-mix(in srgb, var(--kid-go) 55%, var(--kiosk-paper)); }
+.rd-bot.is-sleek { --rd-ps: 3.38; }
+.rd-team { fill: var(--rd-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.rd-team-dk { fill: color-mix(in srgb, var(--rd-team) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.rd-metal { fill: var(--rd-metal); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-metal-dk { fill: var(--rd-metal-dk); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-boot { fill: color-mix(in srgb, var(--rd-team) 35%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-joint { fill: var(--rd-metal-dk); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; opacity: .65; }
+.rd-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: .5; }
+.rd-stripe { fill: none; stroke: var(--kiosk-paper); stroke-width: 6px; opacity: .75; }
+.rd-plate { fill: color-mix(in srgb, var(--rd-team) 50%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.rd-rivet { fill: var(--rd-metal); stroke: var(--spel-ink); stroke-width: 2px; }
+.rd-emblem { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 2px; }
+.rd-emblem-ring { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-bulb { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 2px; }
+.rd-visor { fill: color-mix(in srgb, var(--spel-ink) 88%, var(--rd-team)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-eye { fill: var(--rd-eye); animation: rd-blink 4.2s linear infinite; }
+@keyframes rd-blink { 0%, 94%, 100% { opacity: 1; } 96% { opacity: .15; } }
+.rd-eye-line { fill: none; stroke: var(--rd-eye); stroke-width: 3.5px; }
+.rd-cavity { fill: color-mix(in srgb, var(--spel-ink) 85%, var(--rd-team)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-wire { fill: none; stroke: var(--rd-warm); stroke-width: 3px; }
+.rd-core { fill: var(--rd-eye); stroke: var(--spel-ink); stroke-width: 2px; animation: rd-core 900ms ease-in-out infinite alternate; }
+@keyframes rd-core { from { opacity: .55; } to { opacity: 1; } }
+.rd-stub { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.rd-thrust { fill: none; stroke: var(--rd-eye); stroke-width: 4px; opacity: .7; }
+.rd-shadow { fill: var(--spel-ink); opacity: .35; }
+.rd-dent { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; animation: rd-fade-in 260ms ease-out both; }
+@keyframes rd-fade-in { from { opacity: 0; } to { opacity: .9; } }
+
+/* Idle: the fighting-game bounce, the two robots out of step. */
+.rd-idle { animation: rd-bob 380ms ease-in-out infinite alternate; transition: translate 260ms var(--ease-out); }
+.rd-bot.is-right .rd-idle { animation-delay: -190ms; }
+@keyframes rd-bob { from { transform: translateY(0) scaleY(1); } to { transform: translateY(5px) scaleY(.985); } }
+.rd-head, .rd-armb { transition: rotate 260ms var(--ease-out); }
+.rd-armf { rotate: var(--g); transition: rotate 260ms var(--ease-out); }
+.rd-armb { rotate: var(--gb); }
+
+/* Guard down (a wrong answer): arms drop, the head hangs, a warning glow pulses and a sign blinks above. */
+.rd-bot.is-guard { --g: 58deg; --gb: 52deg; }
+.rd-bot.is-guard .rd-idle { translate: 0 8px; }
+.rd-bot.is-guard .rd-head { rotate: 14deg; }
+.rd-aura { fill: url(#rd-glow-warn); animation: rd-aura 520ms ease-in-out infinite alternate; }
+@keyframes rd-aura { from { opacity: .45; } to { opacity: 1; } }
+.rd-warn { animation: rd-warn 420ms ease-in-out infinite alternate; }
+@keyframes rd-warn { from { transform: translateY(-4px) scale(1); } to { transform: translateY(4px) scale(1.12); } }
+.rd-warn-sign { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 4px; }
+.rd-warn-mark { fill: none; stroke: var(--spel-ink); stroke-width: 5px; }
+.rd-zap { fill: none; stroke: var(--rd-warm); stroke-width: 4px; animation: rd-zap 520ms steps(4) both; }
+@keyframes rd-zap { 0%, 50% { opacity: 1; } 25%, 75% { opacity: .2; } 100% { opacity: 0; } }
+.rd-idle.rd-oops-0 { animation: rd-bob 380ms ease-in-out infinite alternate, rd-oops-0 460ms ease-out; }
+.rd-idle.rd-oops-1 { animation: rd-bob 380ms ease-in-out infinite alternate, rd-oops-1 460ms ease-out; }
+@keyframes rd-oops-0 { 0% { translate: -5px 3px; } 25% { translate: 5px 6px; } 50% { translate: -3px 7px; } 100% { translate: 0 8px; } }
+@keyframes rd-oops-1 { 0% { translate: -5px 3px; } 25% { translate: 5px 6px; } 50% { translate: -3px 7px; } 100% { translate: 0 8px; } }
+
+/* Victory: both arms up, jumping, happy eyes. */
+.rd-bot.is-win { --g: -100deg; --gb: -45deg; }
+.rd-bot.is-win .rd-idle { animation: rd-jump 300ms ease-in-out infinite alternate; }
+@keyframes rd-jump { from { transform: translateY(0) scaleY(.97); } to { transform: translateY(-22px) scaleY(1.03); } }
+
+/* ── The punch (620 ms; the impact at 53 % = ROBOT.punchMs, then a hit-stop hold) ── */
+.rd-armf.is-punch { animation: rd-arm-up 620ms both; }
+.rd-armf.is-punch .rd-piston { animation: rd-piston 620ms both; }
+.rd-armf.is-punch .rd-fist { animation: rd-fist 620ms both; }
+@keyframes rd-arm-up { 0%, 100% { rotate: var(--g); } 22%, 76% { rotate: 0deg; } }
+@keyframes rd-piston {
+  0% { transform: scaleX(1); animation-timing-function: ease-out; }
+  30% { transform: scaleX(.7); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  53%, 68% { transform: scaleX(var(--rd-ps)); animation-timing-function: ease-in-out; }
+  100% { transform: scaleX(1); }
+}
+@keyframes rd-fist {
+  0% { transform: translateX(0); animation-timing-function: ease-out; }
+  30% { transform: translateX(-18px) rotate(-6deg); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  53% { transform: translateX(138px) scale(1.12); }
+  68% { transform: translateX(138px) scale(1.12); animation-timing-function: ease-in-out; }
+  100% { transform: translateX(0); }
+}
+.rd-lunge.rd-atk-0.is-punch { animation: rd-lunge-0 620ms both; }
+.rd-lunge.rd-atk-1.is-punch { animation: rd-lunge-1 620ms both; }
+@keyframes rd-lunge-0 {
+  0% { transform: none; animation-timing-function: ease-out; }
+  30% { transform: translateX(-10px) rotate(-3deg); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  53%, 68% { transform: translateX(40px) rotate(5deg); animation-timing-function: ease-in-out; }
+  100% { transform: none; }
+}
+@keyframes rd-lunge-1 {
+  0% { transform: none; animation-timing-function: ease-out; }
+  30% { transform: translateX(-10px) rotate(-3deg); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  53%, 68% { transform: translateX(40px) rotate(5deg); animation-timing-function: ease-in-out; }
+  100% { transform: none; }
+}
+
+/* ── The special (1250 ms: the charge, the payload at 45–72 %, the impact at 72 % = ROBOT.specialMs) ── */
+.rd-armf.is-special { animation: rd-arm-up 1250ms both; }
+.rd-charge { fill: url(#rd-glow-warm); opacity: 0; animation: rd-charge 1250ms ease-in-out both; }
+.rd-charge.is-core { fill: url(#rd-glow-cool); animation-name: rd-charge-core; }
+@keyframes rd-charge {
+  0% { transform: scale(.2); opacity: 0; }
+  10% { transform: scale(.8); opacity: 1; }
+  20% { transform: scale(1.25); }
+  28% { transform: scale(.95); }
+  36% { transform: scale(1.4); }
+  44% { transform: scale(1.6); opacity: 1; }
+  52%, 100% { transform: scale(.4); opacity: 0; }
+}
+@keyframes rd-charge-core {
+  0% { transform: scale(.2); opacity: 0; }
+  12% { transform: scale(.9); opacity: 1; }
+  24% { transform: scale(1.3); }
+  34% { transform: scale(1); }
+  46% { transform: scale(1.5); }
+  60% { transform: scale(1.9); opacity: 1; }
+  72% { transform: scale(1.4); opacity: 1; }
+  82%, 100% { transform: scale(.4); opacity: 0; }
+}
+/* The next right answer is the special: the fist glows and pulses. */
+.rd-ready { fill: url(#rd-glow-warm); animation: rd-ready-glow 420ms ease-in-out infinite alternate; }
+@keyframes rd-ready-glow { from { transform: scale(.75); opacity: .55; } to { transform: scale(1.15); opacity: 1; } }
+/* Rocket fist (the blue bruiser): it shakes on the charge, flies on a flame, then a new one pops back on. */
+.rd-bot.is-bruiser .rd-armf.is-special .rd-piston { animation: rd-piston-sp 1250ms both; }
+.rd-bot.is-bruiser .rd-armf.is-special .rd-fist { animation: rd-rocket 1250ms both; }
+@keyframes rd-piston-sp { 0%, 100% { transform: scaleX(1); } 40%, 75% { transform: scaleX(.72); } }
+@keyframes rd-rocket {
+  0% { transform: translateX(0); opacity: 1; }
+  14% { transform: translate(-14px, -2px); }
+  22% { transform: translate(-18px, 2px); }
+  30% { transform: translate(-16px, -2px); }
+  38% { transform: translate(-20px, 2px); }
+  45% { transform: translate(-20px, 0); animation-timing-function: cubic-bezier(.5, 0, .9, .5); }
+  72% { transform: translate(184px, 0) scale(1.15); opacity: 1; }
+  74% { transform: translate(184px, 0) scale(1.15); opacity: 0; }
+  86% { transform: translate(0, 0) scale(.2); opacity: 0; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+.rd-flame { opacity: 0; animation: rd-flame 1250ms linear both; }
+@keyframes rd-flame { 0%, 44% { opacity: 0; transform: scaleX(.3); } 48% { opacity: 1; transform: scaleX(1); } 56% { transform: scaleX(.8); } 64% { transform: scaleX(1.15); } 71% { opacity: 1; } 72%, 100% { opacity: 0; } }
+.rd-flame-out { fill: var(--rd-fire); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.rd-flame-in { fill: var(--rd-warm); }
+/* Laser (the orange one): the core charges, a beam shoots out and flickers. */
+.rd-beam { opacity: 0; animation: rd-beam 1250ms linear both; }
+@keyframes rd-beam {
+  0%, 60% { transform: scale(0, 1); opacity: 0; }
+  62% { transform: scale(.15, .6); opacity: 1; }
+  70% { transform: scale(1, 1.2); }
+  74% { transform: scale(1, .8); }
+  78% { transform: scale(1, 1.25); }
+  84% { transform: scale(1, .9); opacity: 1; }
+  92%, 100% { transform: scale(1, 0); opacity: 0; }
+}
+.rd-beam-out { fill: color-mix(in srgb, var(--rd-warm) 65%, var(--rd-fire)); stroke: var(--spel-ink); stroke-width: 3px; }
+.rd-beam-in { fill: var(--rd-hot); }
+.rd-lunge.rd-atk-0.is-special { animation: rd-recoil-0 1250ms both; }
+.rd-lunge.rd-atk-1.is-special { animation: rd-recoil-1 1250ms both; }
+@keyframes rd-recoil-0 { 0% { transform: none; } 42% { transform: translateX(-12px) rotate(-2deg); } 50% { transform: translateX(-26px) rotate(-5deg); } 76% { transform: translateX(-8px); } 100% { transform: none; } }
+@keyframes rd-recoil-1 { 0% { transform: none; } 42% { transform: translateX(-12px) rotate(-2deg); } 50% { transform: translateX(-26px) rotate(-5deg); } 76% { transform: translateX(-8px); } 100% { transform: none; } }
+
+/* ── Taking a hit: knocked back about the feet; a special or a dropped guard knocks harder ── */
+.rd-react.rd-hit-0 { animation: rd-knock-0 520ms ease-out; }
+.rd-react.rd-hit-1 { animation: rd-knock-1 520ms ease-out; }
+.rd-react.rd-hit-0.is-special, .rd-react.rd-hit-0.is-double { animation: rd-knock-big-0 780ms ease-out; }
+.rd-react.rd-hit-1.is-special, .rd-react.rd-hit-1.is-double { animation: rd-knock-big-1 780ms ease-out; }
+@keyframes rd-knock-0 { 0% { transform: none; } 7% { transform: translateX(-30px) rotate(-9deg); } 34% { transform: translateX(-24px) rotate(-6deg); } 100% { transform: none; } }
+@keyframes rd-knock-1 { 0% { transform: none; } 7% { transform: translateX(-30px) rotate(-9deg); } 34% { transform: translateX(-24px) rotate(-6deg); } 100% { transform: none; } }
+@keyframes rd-knock-big-0 { 0% { transform: none; } 6% { transform: translate(-64px, -12px) rotate(-16deg); } 36% { transform: translate(-52px, 0) rotate(-12deg); } 66% { transform: translateX(-8px) rotate(3deg); } 100% { transform: none; } }
+@keyframes rd-knock-big-1 { 0% { transform: none; } 6% { transform: translate(-64px, -12px) rotate(-16deg); } 36% { transform: translate(-52px, 0) rotate(-12deg); } 66% { transform: translateX(-8px) rotate(3deg); } 100% { transform: none; } }
+
+/* A plate comes off: it flies back, tumbles and lands on the mat, where it stays. */
+.rd-plate-fall { animation: rd-plate-fall 950ms both; }
+@keyframes rd-plate-fall {
+  0% { transform: none; animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+  22% { transform: translate(calc(var(--fx) * .3), -46px) rotate(calc(var(--fr) * .3)); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  76% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)); animation-timing-function: ease-out; }
+  86% { transform: translate(calc(var(--fx) - 6px), calc(var(--fy) - 12px)) rotate(var(--fr)); animation-timing-function: ease-in; }
+  100% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)); }
+}
+
+/* Hurt: sparks sputter from a torn shoulder, smoke rises from the head. */
+.rd-spark-loop { fill: none; stroke: var(--rd-warm); stroke-width: 4px; opacity: 0; animation: rd-sputter 1.1s steps(1) infinite; animation-delay: calc(var(--k) * -370ms); }
+@keyframes rd-sputter { 0% { opacity: 1; } 12% { opacity: 0; } 30% { opacity: 1; } 38%, 100% { opacity: 0; } }
+.rd-puff { fill: var(--rd-smoke); stroke: var(--spel-ink); stroke-width: 2px; opacity: 0; animation: rd-rise 1.9s ease-out infinite; animation-delay: calc(var(--k) * -630ms); }
+@keyframes rd-rise { 0% { transform: translate(0, 0) scale(.3); opacity: 0; } 18% { opacity: .9; } 100% { transform: translate(-18px, -70px) scale(1.4); opacity: 0; } }
+
+/* ── KO: the robot bursts, its parts fall on the mat, bolts bounce, smoke and sparks ── */
+.rd-part { animation-duration: 1500ms; animation-fill-mode: both; }
+.rd-part.is-legs { animation-name: rd-ko-legs; animation-duration: 700ms; animation-timing-function: ease-in; }
+@keyframes rd-ko-legs { from { transform: none; } to { transform: scaleY(.82) rotate(4deg); } }
+.rd-part.is-torso { animation-name: rd-ko-torso; }
+@keyframes rd-ko-torso {
+  0% { transform: none; animation-timing-function: ease-out; }
+  12% { transform: translate(-6px, -24px) rotate(-8deg); animation-timing-function: ease-in; }
+  56% { transform: translate(-34px, 32px) rotate(-78deg); animation-timing-function: ease-out; }
+  68% { transform: translate(-38px, 22px) rotate(-74deg); animation-timing-function: ease-in; }
+  80%, 100% { transform: translate(-40px, 32px) rotate(-76deg); }
+}
+.rd-part.is-head { animation-name: rd-ko-head; }
+@keyframes rd-ko-head {
+  0% { transform: none; animation-timing-function: ease-out; }
+  24% { transform: translate(-40px, -130px) rotate(-180deg); animation-timing-function: ease-in; }
+  58% { transform: translate(-120px, 200px) rotate(-390deg); animation-timing-function: ease-out; }
+  70% { transform: translate(-136px, 160px) rotate(-430deg); animation-timing-function: ease-in; }
+  82% { transform: translate(-148px, 200px) rotate(-450deg); animation-timing-function: ease-out; }
+  90% { transform: translate(-152px, 190px) rotate(-455deg); animation-timing-function: ease-in; }
+  100% { transform: translate(-156px, 200px) rotate(-460deg); }
+}
+.rd-part.is-armf { animation-name: rd-ko-armf; }
+@keyframes rd-ko-armf {
+  0% { transform: none; animation-timing-function: ease-out; }
+  22% { transform: translate(40px, -80px) rotate(120deg); animation-timing-function: ease-in; }
+  60% { transform: translate(84px, 156px) rotate(200deg); animation-timing-function: ease-out; }
+  74% { transform: translate(92px, 136px) rotate(190deg); animation-timing-function: ease-in; }
+  88%, 100% { transform: translate(96px, 156px) rotate(180deg); }
+}
+.rd-part.is-armb { animation-name: rd-ko-armb; }
+@keyframes rd-ko-armb {
+  0% { transform: none; animation-timing-function: ease-out; }
+  20% { transform: translate(-50px, -60px) rotate(-90deg); animation-timing-function: ease-in; }
+  60% { transform: translate(-96px, 168px) rotate(-200deg); animation-timing-function: ease-out; }
+  74% { transform: translate(-100px, 150px) rotate(-190deg); animation-timing-function: ease-in; }
+  88%, 100% { transform: translate(-104px, 168px) rotate(-180deg); }
+}
+.rd-bolt-x { animation: rd-bolt-x 1400ms linear both; animation-delay: calc(var(--k) * 45ms); }
+@keyframes rd-bolt-x { from { transform: translateX(0); } to { transform: translateX(var(--bx)); } }
+.rd-bolt-y { animation: rd-bolt-y 1400ms both; animation-delay: calc(var(--k) * 45ms); }
+@keyframes rd-bolt-y {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.3, .6, .6, 1); }
+  26% { transform: translateY(var(--bh)); animation-timing-function: cubic-bezier(.4, 0, .7, .4); }
+  56% { transform: translateY(var(--by)); animation-timing-function: cubic-bezier(.3, .6, .6, 1); }
+  70% { transform: translateY(calc(var(--by) + var(--bh) * .3)); animation-timing-function: cubic-bezier(.4, 0, .7, .4); }
+  82% { transform: translateY(var(--by)); animation-timing-function: cubic-bezier(.3, .6, .6, 1); }
+  90% { transform: translateY(calc(var(--by) + var(--bh) * .08)); animation-timing-function: cubic-bezier(.4, 0, .7, .4); }
+  100% { transform: translateY(var(--by)); }
+}
+.rd-bolt-r { animation: rd-bolt-r 1400ms ease-out both; animation-delay: calc(var(--k) * 45ms); }
+@keyframes rd-bolt-r { from { transform: rotate(0); } to { transform: rotate(var(--br)); } }
+.rd-nut, .rd-screw { fill: var(--rd-metal); stroke: var(--spel-ink); stroke-width: 2px; }
+.rd-nut-hole { fill: var(--spel-ink); }
+.rd-boom-flash { fill: var(--rd-hot); opacity: 0; animation: rd-boom-flash 520ms ease-out both; }
+@keyframes rd-boom-flash { 0% { transform: scale(.2); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+.rd-boom-puff { fill: var(--rd-smoke); stroke: var(--spel-ink); stroke-width: 3px; opacity: 0; animation: rd-boom-puff 1700ms ease-out both; animation-delay: calc(var(--k) * 60ms); }
+@keyframes rd-boom-puff { 0% { transform: scale(.2); opacity: 0; } 15% { opacity: 1; } 70% { opacity: .85; } 100% { transform: scale(1.3) translateY(-30px); opacity: 0; } }
+
+/* ── Hits: a comic star with a word and sparks ─────────────────────────────── */
+.rd-pow { animation: rd-pow 900ms both; }
+@keyframes rd-pow {
+  0% { transform: scale(.2) rotate(var(--tilt)); opacity: 0; }
+  12% { transform: scale(1.25) rotate(var(--tilt)); opacity: 1; }
+  24% { transform: scale(1) rotate(var(--tilt)); }
+  72% { transform: scale(1.05) rotate(var(--tilt)); opacity: 1; }
+  100% { transform: scale(1.15) rotate(var(--tilt)); opacity: 0; }
+}
+.rd-pow-flash { fill: var(--rd-hot); animation: rd-fade 260ms ease-out forwards; }
+.rd-pow-star { fill: var(--rd-warm); stroke: var(--spel-ink); stroke-width: 4px; }
+.rd-pow.is-big .rd-pow-star { fill: var(--rd-fire); }
+.rd-pow-ring { fill: var(--rd-warn); stroke: var(--spel-ink); stroke-width: 4px; }
+.rd-pow-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 30px; font-weight: 900; letter-spacing: 1px; }
+.rd-pow.is-big .rd-pow-text { fill: var(--rd-hot); font-size: 34px; stroke: var(--spel-ink); stroke-width: 6px; paint-order: stroke; }
+.rd-pow.is-double:not(.is-big) .rd-pow-text { font-size: 34px; }
+.rd-spark { fill: none; stroke: var(--rd-warm); stroke-width: 5px; animation: rd-spark 520ms ease-out both; animation-delay: calc(var(--k) * 30ms); }
+@keyframes rd-spark { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(.3); opacity: 0; } }
+
+/* ── The HUD over the band: health bars with a face, the special meter, the guard warning ── */
+.rd-hud {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  pointer-events: none;
+}
+.rd-bar { --rd-team: var(--rd-blue); --rd-life: var(--kid-go); display: flex; align-items: center; gap: var(--sp-2); width: min(42%, 480px); }
+.rd-bar.is-right { --rd-team: var(--rd-orange); flex-direction: row-reverse; }
+.rd-bar.is-mid { --rd-life: var(--spel-star); }
+.rd-bar.is-low { --rd-life: var(--accent-getallenkennis); }
+.rd-portrait {
+  flex: none;
+  width: clamp(40px, 7vmin, 72px);
+  height: auto;
+  border: 3px solid var(--spel-ink);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rd-team) 35%, var(--spel-ink));
+  box-shadow: var(--kid-drop-sm);
+}
+.rd-portrait .rd-bot, .rd-portrait { --rd-eye: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper)); }
+.rd-bar.is-right .rd-portrait { --rd-eye: color-mix(in srgb, var(--kid-go) 55%, var(--kiosk-paper)); }
+.rd-bar-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.rd-bar-name { color: var(--kiosk-paper); font-weight: 900; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1; }
+.rd-bar.is-right .rd-bar-name { text-align: end; }
+.rd-segs {
+  display: flex;
+  gap: 3px;
+  height: clamp(16px, 3.2vmin, 30px);
+  padding: 3px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--spel-ink) 85%, var(--rd-team));
+  transform: skewX(-16deg);
+  box-shadow: var(--kid-drop-sm);
+}
+.rd-bar.is-right .rd-segs { transform: skewX(16deg); }
+.rd-seg { flex: 1; border-radius: 2px; background: var(--rd-life); transition: background-color 300ms; }
+.rd-seg.is-lost { background: color-mix(in srgb, var(--spel-ink) 70%, var(--rd-team)); animation: rd-seg-lost 600ms ease-out; }
+@keyframes rd-seg-lost { 0% { background: var(--kiosk-paper); transform: scaleY(1.5); } 40% { background: var(--kiosk-paper); } 100% { transform: none; } }
+.rd-meter { display: flex; gap: 5px; }
+.rd-bar.is-right .rd-meter { justify-content: flex-end; }
+.rd-pip {
+  width: clamp(16px, 2.6vmin, 26px);
+  height: clamp(8px, 1.3vmin, 13px);
+  border: 2px solid var(--spel-ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--spel-ink) 70%, var(--rd-team));
+}
+.rd-pip.is-on { background: var(--spel-star); animation: duel-pop 400ms var(--ease-spring) both; }
+.rd-meter.is-ready .rd-pip.is-on { animation: rd-ready 420ms ease-in-out infinite alternate; }
+@keyframes rd-ready { from { background: var(--spel-star); transform: scale(1); } to { background: var(--kiosk-paper); transform: scale(1.18); } }
+.rd-guard {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(32px, 5vmin, 48px);
+  height: clamp(32px, 5vmin, 48px);
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--rd-warn);
+  color: var(--spel-ink);
+  font-size: clamp(20px, 3.4vmin, 32px);
+  animation: rd-warn 420ms ease-in-out infinite alternate;
+}
+
+/* ── Banners: "Ronde 2", "Vechten!", "K.O.!" ───────────────────────────────── */
+.rd-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  margin: 0;
+  color: var(--spel-star);
+  font-family: var(--kid-font);
+  font-size: clamp(34px, 9vmin, 96px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  -webkit-text-stroke: clamp(2px, .5vmin, 5px) var(--spel-ink);
+  paint-order: stroke fill;
+  text-shadow: 0 .06em 0 var(--spel-ink);
+  translate: -50% -50%;
+  pointer-events: none;
+  padding: .05em .9em .1em;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--spel-ink) 78%, transparent) 18% 82%, transparent);
+}
+.rd-banner.is-ready { animation: rd-slide-in 520ms var(--ease-spring) both; color: var(--kiosk-paper); }
+.rd-banner.is-go { animation: rd-go 1000ms var(--ease-out) both; }
+.rd-banner.is-ko { color: var(--rd-warn); font-size: clamp(44px, 12vmin, 130px); animation: rd-slam 520ms cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes rd-slide-in { from { transform: translateX(-60vw) skewX(-24deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rd-go { 0% { transform: scale(3); opacity: 0; } 18% { transform: scale(.92); opacity: 1; } 30% { transform: scale(1.05); } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+@keyframes rd-slam { 0% { transform: scale(3.2) rotate(-12deg); opacity: 0; } 60% { transform: scale(.94) rotate(-4deg); opacity: 1; } 100% { transform: scale(1) rotate(-6deg); opacity: 1; } }
+
+/* The winner on the round / match card. */
+.rd-card-art { display: block; width: clamp(84px, 15vmin, 140px); height: auto; margin: -6px auto -4px; overflow: visible; }

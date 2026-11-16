@@ -4,6 +4,7 @@ import type { SkinAccepts, SkinEntry, SkinOption } from './types';
 import { CastleTurret, ImageSquare, TreasureChest, TreeEvergreen } from '@phosphor-icons/react';
 import { Fish } from '@phosphor-icons/react';
 import { SoccerBall } from '@phosphor-icons/react';
+import { Robot } from '@phosphor-icons/react';
 import { WRONG_PENALTY_MS } from './bom/penalty';
 import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
@@ -133,6 +134,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: CastleTurret,
         Screen: lazy(() => import('./kasteel/Kasteel')),
+    },
+    {
+        // A duel (duel/ engine, DUEL.md): own sums each; a right answer is a punch (robotduel/rule.ts: 3 in a row = a
+        // special for 2, a wrong answer drops the guard so the next hit counts double). The skin voices its moments.
+        meta: {
+            music: 'race', id: 'robotduel', label: 'Robotduel', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions(), sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: Robot,
+        Screen: lazy(() => import('./robotduel/Robotduel')),
     },
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
