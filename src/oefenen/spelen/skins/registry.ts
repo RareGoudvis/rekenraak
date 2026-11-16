@@ -7,6 +7,8 @@ import { SoccerBall } from '@phosphor-icons/react';
 import { WRONG_PENALTY_MS } from './bom/penalty';
 import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
+import { BugBeetle } from '@phosphor-icons/react';
+import { WINNEN_OPTION } from './kikkers/rule';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -133,6 +135,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: CastleTurret,
         Screen: lazy(() => import('./kasteel/Kasteel')),
+    },
+    {
+        // A duel (duel/ engine, DUEL.md): a right answer = a tongue snap at a bug (fly 1, beetle 2, golden dragonfly 5),
+        // a mistake costs a life; Hoe winnen? = 2 minutes or the first to 25 (kikkers/rule.ts). The scene voices its own moments.
+        meta: {
+            id: 'kikkers', music: 'weide', label: 'Kikkers en vliegjes', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions({ extras: [WINNEN_OPTION] }),
+            sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: BugBeetle,
+        Screen: lazy(() => import('./kikkers/Kikkers')),
     },
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned

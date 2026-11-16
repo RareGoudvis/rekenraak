@@ -32,6 +32,7 @@ const GAMES = [
     ['bom', 'Bom', 3], ['bever', 'Bever', 5], ['race', 'Race', 3], ['voetbal', 'Voetbal', 3], ['touwtrekken', 'Touwtrekken', -1],
     ['kasteel', 'Kasteel', 2], ['hartjes', 'Hartjes koppelen', -1], ['honingraat', 'Honingraat', -1], ['prent', 'Verborgen prent', 8],
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
+    ['kikkers', 'Kikkers en vliegjes', 0],
 ];
 
 // Shared chrome that carries numbers. Every skin marks its numbers with .kiosk-math and its sum sign as <prefix>-sign;
@@ -49,6 +50,8 @@ const SKIN_CSS = {
     race: '.rc-clock, .rc-readout { visibility: hidden !important; }',
     voetbal: '.vb-hud, .vb-board text { visibility: hidden !important; }',
     kasteel: '.ks-bar-text { display: none !important; }',
+    // The pond is a wide strip: a little closer in, the frogs still whole.
+    kikkers: '.kv-scene { transform: scale(1.12); transform-origin: 50% 100%; } .kv-popup, .kv-goal { display: none !important; }',
     // The rope is a wide strip: closer in, so the bears fill the picture.
     touwtrekken: '.tt-scene { transform: scale(1.5); transform-origin: 50% 100%; }',
     schatkist: '.sk-parchment { visibility: hidden !important; }',
