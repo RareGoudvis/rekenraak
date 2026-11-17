@@ -28,6 +28,7 @@ export const GAME_BLURB: Record<string, string> = {
     mollen: 'Mep de mol met het juiste antwoord, snel!',
     frituur: 'Help de klanten aan de toog. Snel, voor ze het wachten beu zijn!',
     brandweer: 'Spuit het raam met het juiste antwoord uit. Hou het vuur klein!',
+    slalom: 'Ski door de poort met het juiste antwoord. Hoe sneller, hoe verder!',
 };
 
 /** The game's line; an unknown id falls back to its name. */

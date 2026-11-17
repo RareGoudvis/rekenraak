@@ -80,3 +80,4 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 - Flaky test steps.herleiding "every generated oppervlakte exercise has steps": a random samengesteld-enkel km² + mm² → mm² exercise (toParts value 1000000000000749) gets null steps, about 1 run in many. Seen by the gate 2026-11-14.
+- Flaky test spelen.bot "a 9-year-old: about 2 in 3 on Normaal, about 1 in 3 on Moeilijk": kikkers moeilijk came out 0.505 against the < 0.5 bound (the simulation is not fully seeded). Seen by the gate 2026-11-17 on r6/slalom; it passed on the run before.

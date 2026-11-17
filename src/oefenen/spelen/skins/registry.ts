@@ -16,6 +16,7 @@ import { MagicWand } from '@phosphor-icons/react';
 import { TOVER } from './tovenaarsduel/rule';
 import { Storefront } from '@phosphor-icons/react';
 import { FireTruck } from '@phosphor-icons/react';
+import { PersonSimpleSki } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -336,6 +337,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: FireTruck,
         Component: lazy(() => import('./brandweer/Brandweer')),
         Ending: lazy(() => import('./brandweer/Brandweer').then(m => ({ default: m.BrandweerEnding }))),
+    },
+    {
+        // Two minutes down a slope: each sum on a gate with three flags (choiceCount). Right = a speed step, 3 in a row a
+        // jump; wrong = a tumble back to step 1; a gate reached unanswered slips past (slalom/run.ts). The score is the
+        // metres with a best per card on this device (onReport, "Wis mijn scores"). The scene voices its moments.
+        meta: {
+            id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: TAP_CHOICE,
+            sounds: { correct: null, wrong: null },
+        },
+        icon: PersonSimpleSki,
+        Component: lazy(() => import('./slalom/Slalom')),
+        Ending: lazy(() => import('./slalom/Slalom').then(m => ({ default: m.SlalomEnding }))),
     },
 ];
 

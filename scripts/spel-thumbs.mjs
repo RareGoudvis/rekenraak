@@ -38,6 +38,7 @@ const GAMES = [
     ['tovenaarsduel', 'Tovenaarsduel', 0],
     ['voetbalkaartjes', 'Voetbalkaartjes', -1],
     ['brandweer', 'Brandweer', 1],
+    ['slalom', 'Skislalom', 0],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena.
 const QUERY = { tovenaarsduel: '?arena=school' };
@@ -93,6 +94,8 @@ const SKIN_CSS = {
     voetbalkaartjes: '.hj-text, .vk-nums { visibility: hidden !important; }',
     honingraat: '.hx-top, .hx-sum { visibility: hidden !important; }',
     frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
+    // The metres, the speed bars and the streak badge.
+    slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
 const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur']);
@@ -186,7 +189,8 @@ for (const [id, label, rights] of GAMES) {
             } else { for (const ch of String(ans)) await page.keyboard.press(ch); await page.keyboard.press('Enter'); }
             await page.waitForTimeout(1400);
         }
-        await page.waitForTimeout(id === 'ballonnen' || id === 'zeehond' ? 1500 : 700);
+        // Skislalom: the first gate comes up close, big flags in front of the skier.
+        await page.waitForTimeout(id === 'ballonnen' || id === 'zeehond' ? 1500 : id === 'slalom' ? 5600 : 700);
         await page.addStyleTag({ content: COMMON_CSS + DUEL_CSS + (SKIN_CSS[id] ?? '') });
         await page.waitForTimeout(150);
         if (DUMP) {
