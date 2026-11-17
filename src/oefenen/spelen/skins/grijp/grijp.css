@@ -1,0 +1,745 @@
+/* Grijpmachine skin (prefix gm-). A claw machine in one of five arcades: flat fills under the thick --spel-ink outline,
+   theme tokens only. Each arcade sets its palette on [data-machine]; the art files draw with class "o" for an outline. */
+.gm-root {
+  --gm-shelf-h: clamp(62px, 11.5vh, 124px);
+  --gm-ink: var(--spel-ink);
+  --gm-steel: color-mix(in srgb, var(--kid-tint-3) 45%, var(--kiosk-paper));
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) var(--gm-shelf-h);
+  overflow: hidden;
+  overflow: clip;
+  background: var(--gm-wall);
+  font-family: var(--kid-font);
+  -webkit-tap-highlight-color: transparent;
+}
+.gm-root svg .o { stroke: var(--spel-ink); stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── Palettes per machine ─────────────────────────────────────────────────── */
+.gm-root[data-machine='neon'], .gm-ending[data-machine='neon'] {
+  --gm-wall: color-mix(in srgb, var(--accent-meetkunde) 26%, var(--spel-ink));
+  --gm-floor: color-mix(in srgb, var(--accent-meetkunde) 18%, var(--spel-ink));
+  --gm-grid: color-mix(in srgb, var(--kid-tint-ring-6) 80%, var(--kiosk-paper));
+  --gm-body: var(--kid-tint-ring-6);
+  --gm-body-2: color-mix(in srgb, var(--kid-tint-ring-6) 60%, var(--spel-ink));
+  --gm-trim: color-mix(in srgb, var(--kid-tint-3) 50%, var(--kiosk-paper));
+  --gm-panel: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--spel-ink));
+  --gm-inside: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink));
+  --gm-bulb-0: var(--mab-e);
+  --gm-bulb-1: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kid-tint-2));
+  --gm-bulb-2: var(--kiosk-paper);
+  --gm-button: var(--accent-getallenkennis);
+  --gm-ball: var(--accent-getallenkennis);
+  --gm-shelf: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink));
+  --gm-plank: color-mix(in srgb, var(--kid-tint-ring-6) 70%, var(--spel-ink));
+  --gm-label: var(--kiosk-paper);
+}
+
+.gm-root[data-machine='pier'], .gm-ending[data-machine='pier'] {
+  --gm-wall: color-mix(in srgb, var(--accent-vraagstukken) 42%, var(--kid-tint-1));
+  --gm-floor: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --gm-body: var(--accent-getallenkennis);
+  --gm-body-2: color-mix(in srgb, var(--accent-getallenkennis) 60%, var(--spel-ink));
+  --gm-trim: color-mix(in srgb, var(--mab-e) 85%, var(--accent-vraagstukken));
+  --gm-panel: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--spel-ink));
+  --gm-inside: color-mix(in srgb, var(--mab-h) 30%, var(--kiosk-paper));
+  --gm-bulb-0: var(--mab-e);
+  --gm-bulb-1: var(--kiosk-paper);
+  --gm-bulb-2: color-mix(in srgb, var(--mab-e) 60%, var(--accent-vraagstukken));
+  --gm-button: var(--accent-bewerkingen);
+  --gm-ball: var(--accent-getallenkennis);
+  --gm-marquee: var(--kiosk-paper);
+  --gm-plank: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--spel-ink));
+  --gm-label: var(--spel-ink);
+}
+.gm-root[data-machine='spook'], .gm-ending[data-machine='spook'] {
+  --gm-wall: color-mix(in srgb, var(--accent-meetkunde) 22%, var(--spel-ink));
+  --gm-floor: color-mix(in srgb, var(--accent-meetkunde) 14%, var(--spel-ink));
+  --gm-body: color-mix(in srgb, var(--accent-meetkunde) 62%, var(--spel-ink));
+  --gm-body-2: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--spel-ink));
+  --gm-trim: color-mix(in srgb, var(--mab-t) 80%, var(--mab-e));
+  --gm-panel: color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink));
+  --gm-inside: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--spel-ink));
+  --gm-bulb-0: var(--accent-vraagstukken);
+  --gm-bulb-1: color-mix(in srgb, var(--mab-t) 80%, var(--mab-e));
+  --gm-bulb-2: var(--mab-e2);
+  --gm-button: var(--accent-vraagstukken);
+  --gm-ball: color-mix(in srgb, var(--mab-t) 80%, var(--mab-e));
+  --gm-marquee: color-mix(in srgb, var(--mab-t) 80%, var(--mab-e));
+  --gm-plank: color-mix(in srgb, var(--accent-meetkunde) 45%, var(--spel-ink));
+  --gm-label: var(--kiosk-paper);
+}
+.gm-root[data-machine='ruimte'], .gm-ending[data-machine='ruimte'] {
+  --gm-wall: color-mix(in srgb, var(--accent-bewerkingen) 25%, color-mix(in srgb, var(--spel-ink) 70%, var(--kiosk-paper)));
+  --gm-floor: color-mix(in srgb, var(--accent-bewerkingen) 18%, color-mix(in srgb, var(--spel-ink) 55%, var(--kiosk-paper)));
+  --gm-body: color-mix(in srgb, var(--kid-tint-3) 40%, var(--kiosk-paper));
+  --gm-body-2: color-mix(in srgb, var(--kid-tint-3) 60%, var(--spel-ink));
+  --gm-trim: var(--accent-bewerkingen);
+  --gm-panel: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink));
+  --gm-inside: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--spel-ink));
+  --gm-bulb-0: var(--mab-t);
+  --gm-bulb-1: var(--mab-e);
+  --gm-bulb-2: var(--accent-getallenkennis);
+  --gm-button: var(--accent-getallenkennis);
+  --gm-ball: var(--mab-e);
+  --gm-marquee: var(--kiosk-paper);
+  --gm-plank: color-mix(in srgb, var(--kid-tint-3) 40%, var(--spel-ink));
+  --gm-label: var(--kiosk-paper);
+}
+.gm-root[data-machine='snoep'], .gm-ending[data-machine='snoep'] {
+  --gm-wall: var(--kid-tint-6);
+  --gm-floor: var(--kid-tint-2);
+  --gm-body: color-mix(in srgb, var(--kid-tint-2) 80%, var(--accent-metendrekenen));
+  --gm-body-2: color-mix(in srgb, var(--kid-tint-2) 60%, var(--spel-ink));
+  --gm-trim: color-mix(in srgb, var(--kid-tint-ring-6) 45%, var(--kiosk-paper));
+  --gm-panel: color-mix(in srgb, var(--kid-tint-ring-6) 70%, var(--kiosk-paper));
+  --gm-inside: var(--kid-tint-5);
+  --gm-bulb-0: var(--kid-tint-ring-6);
+  --gm-bulb-1: var(--mab-e);
+  --gm-bulb-2: color-mix(in srgb, var(--kid-tint-2) 60%, var(--accent-metendrekenen));
+  --gm-button: var(--kid-tint-ring-6);
+  --gm-ball: var(--accent-getallenkennis);
+  --gm-marquee: var(--kid-tint-ring-6);
+  --gm-plank: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kid-tint-1));
+  --gm-label: var(--spel-ink);
+}
+
+/* ── The room ─────────────────────────────────────────────────────────────── */
+.gm-room { position: absolute; inset: 0; pointer-events: none; }
+.gm-wall { position: absolute; inset: 0; }
+.gm-wall > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gm-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--gm-shelf-h) + clamp(28px, 7vh, 80px));
+  background: var(--gm-floor);
+  border-top: var(--spel-line) solid var(--spel-ink);
+}
+.gm-root[data-machine='neon'] .gm-floor {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 58px, var(--gm-grid) 58px 61px),
+    repeating-linear-gradient(0deg, transparent 0 22px, var(--gm-grid) 22px 24px),
+    var(--gm-floor);
+}
+
+.gm-root[data-machine='pier'] .gm-floor {
+  background: repeating-linear-gradient(90deg, var(--gm-floor) 0 70px, color-mix(in srgb, var(--spel-ink) 40%, var(--gm-floor)) 70px 74px);
+}
+.gm-root[data-machine='spook'] .gm-floor {
+  background: repeating-conic-gradient(var(--gm-floor) 0 25%, color-mix(in srgb, var(--accent-meetkunde) 30%, var(--spel-ink)) 0 50%) 0 0 / 64px 64px;
+}
+.gm-root[data-machine='ruimte'] .gm-floor {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 96px, color-mix(in srgb, var(--spel-ink) 45%, transparent) 96px 100px),
+    repeating-linear-gradient(0deg, transparent 0 40px, color-mix(in srgb, var(--spel-ink) 45%, transparent) 40px 43px),
+    var(--gm-floor);
+}
+.gm-root[data-machine='snoep'] .gm-floor {
+  background: repeating-conic-gradient(var(--gm-floor) 0 25%, var(--kiosk-paper) 0 50%) 0 0 / 60px 60px;
+}
+
+/* A lost coin rolling across the floor now and then. */
+.gm-roll-coin { position: absolute; left: 0; bottom: calc(var(--gm-shelf-h) + clamp(6px, 2vh, 20px)); width: clamp(18px, 3vh, 30px); animation: gm-roll-coin 19s linear infinite; animation-delay: -4s; }
+.gm-roll-coin .gm-coin-art { display: block; width: 100%; height: auto; animation: gm-turn 700ms linear infinite; }
+@keyframes gm-roll-coin { 0%, 70% { translate: -60px 0; } 100% { translate: calc(100vw + 60px) 0; } }
+
+/* ── The stage, the wings and the machine ─────────────────────────────────── */
+.gm-stage {
+  --gm-mw: min(98cqw, calc(96cqh * 1000 / 940));
+  position: relative;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: end center;
+}
+.gm-wing { position: absolute; bottom: 0; top: 6%; width: calc((100cqw - var(--gm-mw)) / 2 - 1cqw); pointer-events: none; }
+.gm-wing.is-l { left: 0.5cqw; }
+.gm-wing.is-r { right: 0.5cqw; }
+.gm-wing > svg { width: 100%; height: 100%; overflow: visible; }
+.gm-wing .o, .gm-wall .o { stroke-width: 4; }
+.gm-machine { position: relative; width: var(--gm-mw); aspect-ratio: 1000 / 940; }
+.gm-cab { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; }
+.gm-cab .o { stroke-width: 6; }
+.gm-body { fill: var(--gm-body); }
+.gm-body-2 { fill: var(--gm-body-2); }
+.gm-trim { fill: var(--gm-trim); }
+.gm-panel { fill: var(--gm-panel); }
+
+/* The marquee's name and the bulbs that chase round the display. */
+.gm-marquee {
+  font-family: var(--kid-font);
+  font-weight: 900;
+  font-size: 62px;
+  letter-spacing: 5px;
+  fill: var(--gm-marquee, var(--kid-tint-ring-6));
+  stroke: var(--spel-ink);
+  stroke-width: 6px;
+  paint-order: stroke;
+  animation: gm-marquee 2.4s ease-in-out infinite;
+}
+@keyframes gm-marquee { 50% { opacity: .82; } }
+.gm-bulb { --on: var(--gm-bulb-0); fill: color-mix(in srgb, var(--on) 35%, var(--spel-ink)); animation: gm-chase 1.2s steps(1) infinite; animation-delay: calc(var(--k) * -200ms); }
+.gm-bulb.is-c1 { --on: var(--gm-bulb-1); }
+.gm-bulb.is-c2 { --on: var(--gm-bulb-2); }
+@keyframes gm-chase { 0% { fill: var(--on); } 50% { fill: color-mix(in srgb, var(--on) 35%, var(--spel-ink)); } }
+.gm-bulbs.is-blink .gm-bulb { animation-duration: 900ms; animation-delay: calc(var(--k) * -150ms); }
+
+/* The panel's parts: the joystick leans the way the claw goes, the button goes down with the claw. */
+.gm-panelbits .o { stroke-width: 5; }
+.gm-door-hole { fill: var(--spel-ink); }
+.gm-door-flap { fill: var(--gm-trim); }
+.gm-door { transform-box: view-box; }
+.gm-door-label { font-family: var(--kid-font); font-weight: 900; font-size: 26px; fill: var(--spel-ink); opacity: .7; }
+.gm-root.is-paying .gm-door { animation: gm-door 620ms var(--ease-out); }
+@keyframes gm-door { 30% { scale: 1 .2; } }
+.gm-stick-base { fill: var(--spel-ink); }
+.gm-stick-rod { fill: var(--gm-steel); }
+.gm-stick-ball { fill: var(--gm-ball); }
+.gm-stick { transform-box: view-box; transition: rotate 160ms var(--ease-out); }
+.gm-root[data-move='l'] .gm-stick { rotate: -18deg; }
+.gm-root[data-move='r'] .gm-stick { rotate: 18deg; }
+.gm-button-base { fill: color-mix(in srgb, var(--gm-button) 50%, var(--spel-ink)); }
+.gm-button-top { fill: var(--gm-button); }
+.gm-button { transition: translate 90ms; }
+.gm-root[data-press='1'] .gm-button { translate: 0 7px; }
+.gm-root[data-press='1'] .gm-button-top { fill: color-mix(in srgb, var(--gm-button) 70%, var(--kiosk-paper)); }
+.gm-slot-plate, .gm-counter-plate { fill: color-mix(in srgb, var(--spel-ink) 88%, var(--gm-panel)); }
+.gm-slot-hole { fill: var(--mab-e); animation: gm-glow 1.6s ease-in-out infinite; }
+.gm-slot-arrow { stroke: var(--mab-e); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; animation: gm-nudge 1.2s ease-in-out infinite; }
+@keyframes gm-glow { 50% { opacity: .45; } }
+@keyframes gm-nudge { 50% { translate: 0 8px; } }
+
+/* "Nog N": the coins left, on a little dark plate. */
+.gm-counter {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4%;
+  container-type: size;
+  color: var(--mab-e);
+  pointer-events: none;
+}
+.gm-counter .gm-coin-art { width: 44cqh; height: 44cqh; flex: none; }
+.gm-counter-text { font-weight: 900; font-size: 42cqh; line-height: 1; white-space: nowrap; }
+.gm-counter-text small { font-size: .78em; }
+.gm-counter-text b { display: inline-block; font-weight: 700; animation: gm-tick 360ms var(--ease-spring); }
+@keyframes gm-tick { from { scale: 1.5; } }
+.gm-coin-art .o { stroke-width: 3; }
+.gm-coin-in { position: absolute; z-index: 3; pointer-events: none; display: flex; justify-content: center; }
+.gm-coin-in .gm-coin-art { width: 46%; height: auto; animation: gm-coin-in 520ms ease-in both; }
+@keyframes gm-coin-in {
+  0% { translate: 0 -130%; rotate: -40deg; }
+  70% { translate: 0 10%; rotate: 0deg; scale: 1 1; opacity: 1; }
+  100% { translate: 0 20%; scale: .3 1; opacity: 0; }
+}
+.gm-door-at { position: absolute; pointer-events: none; }
+
+/* ── The display with the sum ─────────────────────────────────────────────── */
+.gm-display {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  box-shadow: inset 0 -6px 0 color-mix(in srgb, var(--spel-ink) 10%, transparent);
+}
+.gm-display .spel-sign-box { height: 100%; align-items: center; }
+.gm-sign {
+  --sign-max: min(56px, 58cqh);
+  --sign-inset: 24px;
+  margin: 0;
+  padding: 0 8px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--spel-ink);
+}
+.gm-sign.spel-sign-has-pic { display: flex; align-items: center; justify-content: center; gap: 8px; --sign-max: min(36px, 30cqh); }
+.gm-display .spel-sign-pic { width: 88cqh; height: 88cqh; }
+.gm-sign-answer { color: var(--kiosk-ok); }
+
+/* ── The glass ────────────────────────────────────────────────────────────── */
+.gm-glass {
+  /* One tagged prize's width: big targets, four of them beside the chute. */
+  --w: min(20cqw, 40cqh);
+  position: absolute;
+  z-index: 2;
+  container-type: size;
+  overflow: hidden;
+  overflow: clip;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--gm-inside);
+}
+.gm-root.has-pictures .gm-glass { --w: min(20cqw, 34cqh); }
+.gm-inside { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gm-inside .o { stroke-width: 4; }
+.gm-gantry {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 8;
+  height: max(8px, 2.6cqh);
+  border-bottom: 3px solid var(--spel-ink);
+  background: repeating-linear-gradient(90deg, var(--gm-steel) 0 18px, color-mix(in srgb, var(--spel-ink) 30%, var(--gm-steel)) 18px 22px);
+}
+/* The glass's reflections: two still streaks and a shine that slides across now and then. */
+.gm-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background:
+    linear-gradient(112deg, transparent 0 8%, color-mix(in srgb, var(--kiosk-paper) 22%, transparent) 8% 11%, transparent 11% 14%, color-mix(in srgb, var(--kiosk-paper) 14%, transparent) 14% 15.5%, transparent 15.5%);
+}
+.gm-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(112deg, transparent 40%, color-mix(in srgb, var(--kiosk-paper) 30%, transparent) 46%, transparent 47%, color-mix(in srgb, var(--kiosk-paper) 18%, transparent) 50%, transparent 54%);
+  background-size: 300% 100%;
+  animation: gm-shine 9s ease-in-out infinite;
+}
+@keyframes gm-shine { 0%, 55% { background-position: 100% 0; } 85%, 100% { background-position: 0 0; } }
+
+/* The chute in the front-left corner: a clear box the prize drops into. */
+.gm-chute { position: absolute; left: 0; bottom: 0; z-index: 6; width: 19%; height: 26%; pointer-events: none; }
+.gm-chute-hole {
+  position: absolute;
+  inset: 0;
+  border: 4px solid var(--spel-ink);
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0 10px 0 0;
+  background: linear-gradient(color-mix(in srgb, var(--kiosk-paper) 38%, transparent), color-mix(in srgb, var(--kiosk-paper) 14%, transparent));
+}
+.gm-chute-hole::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 10%;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--kiosk-paper) 60%, transparent);
+}
+
+/* The untagged heap behind the four prizes. */
+.gm-pile { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.gm-pile-prize { position: absolute; left: calc(var(--sx) * 1%); bottom: calc(var(--sy) * 1%); width: calc(var(--w) * var(--s)); translate: -50% 0; aspect-ratio: 1; filter: saturate(.75) brightness(.84); }
+.gm-pile-prize svg { width: 100%; height: 100%; animation: gm-wobble 3.4s ease-in-out infinite; animation-delay: calc(var(--k) * -.9s); transform-origin: 50% 100%; }
+.gm-pile-prize .o { stroke-width: 4; }
+
+/* ── The tagged prizes ────────────────────────────────────────────────────── */
+.gm-heap { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.gm-slot {
+  position: absolute;
+  left: calc(var(--sx) * 1%);
+  bottom: calc(var(--sy) * 1%);
+  z-index: 3;
+  width: var(--w);
+  height: calc(var(--w) * 1.08);
+  margin: 0 0 0 calc(var(--w) * -.5);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--spel-ink);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.gm-slot:nth-child(2n) { z-index: 2; }
+.gm-root.has-pictures .gm-slot { height: calc(var(--w) * 1.4); }
+.gm-slot:disabled { cursor: default; }
+.gm-slot:focus-visible { outline: none; }
+.gm-slot:focus-visible .gm-tag { box-shadow: 0 0 0 4px var(--kiosk-paper), 0 0 0 8px var(--accent); }
+.gm-slot[data-away='1'] { visibility: hidden; }
+.gm-plush { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1; display: block; }
+.gm-root.has-pictures .gm-plush { left: 12%; width: 76%; }
+.gm-plush svg, .gm-wobble { display: block; width: 100%; height: 100%; }
+.gm-plush .o, .gm-flyer .o { stroke-width: 3.6; }
+.gm-wobble { animation: gm-wobble 2.8s ease-in-out infinite; animation-delay: calc(var(--k) * -.75s); transform-origin: 50% 100%; }
+@keyframes gm-wobble { 0%, 100% { rotate: -2.5deg; } 50% { rotate: 2.5deg; translate: 0 -1.5%; } }
+.gm-eyes { transform-box: fill-box; transform-origin: center; animation: gm-blink 4.6s infinite; animation-delay: calc(var(--k, 0) * -1.3s); }
+@keyframes gm-blink { 0%, 94%, 100% { scale: 1 1; } 97% { scale: 1 .1; } }
+.gm-mouth { stroke: var(--spel-ink); stroke-width: 2.6; stroke-linecap: round; }
+
+/* The tag on a string, held in front of the prize. */
+.gm-tag-wrap { position: absolute; left: 50%; top: calc(var(--w) * .5); translate: -50% 0; display: flex; flex-direction: column; align-items: center; rotate: calc((var(--k) - 1.5) * 2.4deg); transform-origin: 50% 0; }
+.gm-tag-string { width: 3px; height: calc(var(--w) * .07); background: var(--spel-ink); }
+.gm-tag {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--w) * .8);
+  height: calc(var(--w) * .42);
+  padding: 0 calc(var(--w) * .06);
+  border: 3.5px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  box-shadow: 0 4px 0 var(--spel-ink);
+  font-size: calc(var(--w) * .25);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  animation: gm-tag-in 380ms var(--ease-out) both;
+  animation-delay: calc(var(--k) * 60ms);
+}
+.gm-tag::before { content: ''; position: absolute; top: 5px; left: 50%; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--spel-ink); opacity: .7; }
+@keyframes gm-tag-in { from { rotate: 0 1 0 90deg; } }
+.gm-tag.is-short { font-size: calc(var(--w) * .2); }
+.gm-tag.is-picture { width: calc(var(--w) * .9); height: calc(var(--w) * .9); min-width: 0; padding: calc(var(--w) * .05); font-size: calc(var(--w) * .18); }
+.gm-tag.is-picture > svg { width: 100%; height: 100%; }
+.gm-root.has-breuk .gm-tag.is-picture { width: var(--w); height: var(--w); }
+.gm-tag.is-words {
+  width: calc(var(--w) * .98);
+  min-width: 0;
+  height: auto;
+  min-height: calc(var(--w) * .42);
+  padding: 6px 5px 4px;
+  font-family: var(--kid-font);
+  font-size: min(calc(var(--w) * .16), calc((var(--w) * .98 - 12px) / (var(--face-chars, 1) * .6)));
+  font-weight: 800;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+}
+
+/* Grabbed: squeezed with the eyes shut. A wrong pick, back on the heap: dizzy. The right one waves its tag. */
+.gm-slot.is-grabbed .gm-plush { animation: gm-squeeze 300ms ease-out both; }
+.gm-slot.is-grabbed .gm-eyes { animation: none; scale: 1 .12; }
+@keyframes gm-squeeze { 50% { scale: 1.08 .9; } 100% { scale: 1.04 .94; } }
+.gm-slot.is-nope .gm-wobble { animation: gm-dizzy 520ms ease-in-out 3; }
+.gm-slot.is-nope .gm-tag { color: color-mix(in srgb, var(--spel-ink) 50%, var(--kiosk-paper)); }
+@keyframes gm-dizzy { 25% { rotate: -9deg; } 75% { rotate: 9deg; } }
+.gm-slot.is-answer .gm-tag { box-shadow: 0 0 0 5px var(--kiosk-ok), 0 4px 0 var(--spel-ink); color: var(--kiosk-ok); }
+.gm-slot.is-answer .gm-plush { animation: gm-hop 560ms var(--ease-out) 2; }
+@keyframes gm-hop { 40% { translate: 0 -12%; } }
+.gm-slot.is-queued .gm-tag { box-shadow: 0 0 0 5px var(--kid-ring), 0 4px 0 var(--spel-ink); }
+.gm-slot.is-fresh .gm-plush { animation: gm-rise 560ms var(--ease-spring) both; }
+@keyframes gm-rise { from { translate: 0 55%; scale: .5; opacity: 0; } }
+
+/* The prize in the claw (moved by the loop). */
+.gm-slot.gm-carried { left: 0; top: 0; bottom: auto; z-index: 5; margin: 0; pointer-events: none; }
+.gm-carried .gm-tag { animation: none; }
+
+/* ── The claw ─────────────────────────────────────────────────────────────── */
+.gm-claw {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 7;
+  width: calc(var(--w) * .8);
+  margin-left: calc(var(--w) * -.4);
+  transform: translateX(calc(var(--x, 0) * 1px));
+  pointer-events: none;
+}
+.gm-carriage {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 150%;
+  height: max(12px, 3.6cqh);
+  translate: -50% 0;
+  z-index: 9;
+  border: 3px solid var(--spel-ink);
+  border-radius: 6px;
+  background: var(--gm-trim);
+}
+.gm-cable {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 6px;
+  height: calc(var(--y, 0) * 1px + 6px);
+  margin-left: -3px;
+  border: 2px solid var(--spel-ink);
+  border-top: 0;
+  border-bottom: 0;
+  background: repeating-linear-gradient(var(--gm-steel) 0 5px, color-mix(in srgb, var(--spel-ink) 35%, var(--gm-steel)) 5px 7px);
+}
+.gm-head { position: absolute; left: 0; top: calc(var(--y, 0) * 1px); width: 100%; aspect-ratio: 120 / 130; rotate: calc(var(--rot, 0) * 1deg); transform-origin: 50% 0; }
+.gm-claw-art { display: block; width: 100%; height: 100%; }
+.gm-claw-art .o { stroke-width: 4.5; }
+.gm-prong { transform-box: view-box; }
+.gm-prong.is-l { rotate: calc(var(--open, .5) * 28deg); }
+.gm-prong.is-r { rotate: calc(var(--open, .5) * -28deg); }
+.gm-prong.is-m { scale: 1 calc(1 - var(--open, .5) * .3); }
+.gm-claw-light { fill: var(--accent-getallenkennis); animation: gm-glow 900ms steps(1) infinite; }
+.gm-say {
+  position: absolute;
+  left: 78%;
+  top: calc(var(--y, 0) * 1px + 10%);
+  padding: 2px 10px;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  font-weight: 900;
+  font-size: max(14px, calc(var(--w) * .16));
+  white-space: nowrap;
+  animation: gm-say 900ms var(--ease-spring) both;
+}
+@keyframes gm-say { from { scale: .2; opacity: 0; } 20% { scale: 1.1; opacity: 1; } }
+
+/* ── The kid peeking round the machine ────────────────────────────────────── */
+.gm-kid { position: absolute; right: 1%; top: 40%; z-index: 0; width: 13%; animation: gm-peek 23s ease-in-out infinite; animation-delay: -9s; pointer-events: none; }
+.gm-kid svg { display: block; width: 100%; }
+.gm-kid .o { stroke-width: 4; }
+.gm-kid-hair { fill: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink)); }
+.gm-kid-fringe { fill: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink)); }
+.gm-kid-skin { fill: var(--kid-tint-4); }
+.gm-kid-eye { fill: var(--spel-ink); }
+.gm-kid-mouth { fill: color-mix(in srgb, var(--accent-getallenkennis) 60%, var(--spel-ink)); }
+@keyframes gm-peek { 0%, 72%, 100% { translate: -45% 0; rotate: 0deg; } 76%, 90% { translate: 62% 0; rotate: 8deg; } 83% { translate: 62% -6%; rotate: 2deg; } }
+
+/* ── The shelf of won prizes ──────────────────────────────────────────────── */
+.gm-shelf {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 var(--sp-3) clamp(6px, 1.2vh, 12px);
+}
+.gm-places {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 15), minmax(0, 1fr));
+  align-items: end;
+  gap: .6%;
+  width: min(100%, 1180px, calc((var(--gm-shelf-h) - 22px) * var(--n, 15) * 1.06));
+  height: 100%;
+  padding: 0 1.4% clamp(10px, 1.8vh, 18px);
+}
+.gm-places::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(10px, 1.8vh, 18px);
+  border: 3px solid var(--spel-ink);
+  border-radius: 6px;
+  background: var(--gm-plank);
+  box-shadow: 0 5px 0 var(--spel-ink);
+}
+.gm-place { position: relative; aspect-ratio: 1; }
+.gm-place:not(.is-won)::before { content: ''; position: absolute; inset: 22% 16% 4%; border: 3px dashed color-mix(in srgb, var(--gm-label) 45%, transparent); border-radius: 40% 40% 20% 20%; }
+.gm-place svg { display: block; width: 100%; height: 100%; }
+.gm-place .o { stroke-width: 5; }
+.gm-place.is-landed svg { animation: gm-land 520ms var(--ease-spring); transform-origin: 50% 100%; }
+@keyframes gm-land { from { scale: 1.5 .6; } }
+.gm-shelf-label {
+  position: absolute;
+  left: max(var(--sp-3), calc(50% - min(50%, 590px)));
+  top: -12px;
+  z-index: 1;
+  padding: 1px 12px;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-sm);
+  background: var(--mab-e);
+  font-weight: 900;
+  font-size: clamp(13px, 2vh, 18px);
+  rotate: -3deg;
+  box-shadow: 0 3px 0 var(--spel-ink);
+}
+.gm-flyer {
+  position: absolute;
+  z-index: 20;
+  width: calc(var(--gm-shelf-h) * .8);
+  aspect-ratio: 1;
+  margin: calc(var(--gm-shelf-h) * -.4) 0 0 calc(var(--gm-shelf-h) * -.4);
+  pointer-events: none;
+  animation: gm-fly 700ms cubic-bezier(.3, .1, .4, 1) both;
+}
+.gm-flyer svg { width: 100%; height: 100%; }
+@keyframes gm-fly {
+  0% { translate: 0 0; scale: .4; }
+  45% { translate: calc(var(--dx) * .45) calc(var(--dy) * .45 - 90px); scale: 1.35; rotate: -12deg; }
+  100% { translate: var(--dx) var(--dy); scale: 1; rotate: 0deg; }
+}
+
+/* ── Neon arcade ──────────────────────────────────────────────────────────── */
+.gm-neon { stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; animation: gm-buzz 3.2s infinite; }
+.gm-neon.is-pink { stroke: var(--kid-tint-ring-6); }
+.gm-neon.is-cyan { stroke: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kid-tint-2)); animation-delay: -1.1s; }
+@keyframes gm-buzz { 0%, 40%, 44%, 100% { opacity: 1; } 42% { opacity: .5; } }
+.gm-neon-star { fill: var(--mab-e); animation: gm-twinkle 2.2s ease-in-out infinite; animation-delay: calc(var(--k) * -.4s); transform-box: fill-box; transform-origin: center; }
+@keyframes gm-twinkle { 50% { scale: .5; opacity: .5; } }
+.gm-disco-spot { fill: color-mix(in srgb, var(--kiosk-paper) 55%, transparent); animation: gm-spot 7s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -1.3s); }
+@keyframes gm-spot { from { translate: -120px -40px; } to { translate: 140px 60px; } }
+.gm-disco { animation: gm-disco 3s linear infinite; transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes gm-disco { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }
+.gm-disco-line { animation: gm-facet 1.6s linear infinite; }
+@keyframes gm-facet { 50% { rx: 4px; } }
+.gm-twinkle { fill: var(--kiosk-paper); animation: gm-twinkle 1.4s ease-in-out infinite; animation-delay: calc(var(--k) * -.35s); transform-box: fill-box; transform-origin: center; }
+.gm-cab-label { font-family: var(--kid-font); font-weight: 900; font-size: 26px; fill: var(--spel-ink); }
+.gm-invader { animation: gm-invader 2.4s steps(4) infinite alternate; }
+@keyframes gm-invader { from { translate: -30px 0; } to { translate: 30px 8px; } }
+.gm-pong-ball { animation: gm-pong 1.8s linear infinite; }
+@keyframes gm-pong { 0%, 100% { translate: -50px -30px; } 25% { translate: 0 30px; } 50% { translate: 48px -10px; } 75% { translate: 0 -38px; } }
+.gm-pong-l { animation: gm-paddle 1.8s ease-in-out infinite; }
+.gm-pong-r { animation: gm-paddle 1.8s ease-in-out infinite reverse; }
+@keyframes gm-paddle { 50% { translate: 0 30px; } }
+.gm-blink-text { font-family: var(--kid-font); font-weight: 900; font-size: 16px; fill: var(--mab-e); animation: gm-glow 1s steps(1) infinite; }
+.gm-neon-word { font-family: var(--kid-font); font-weight: 900; font-size: 58px; letter-spacing: 3px; fill: none; stroke: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kid-tint-2)); stroke-width: 5px; }
+.gm-neon-word .is-buzz { animation: gm-flicker 2.6s steps(1) infinite; }
+@keyframes gm-flicker { 0%, 100% { opacity: 1; } 12% { opacity: .15; } 16% { opacity: 1; } 18% { opacity: .2; } 22% { opacity: 1; } }
+.gm-neon-strip { animation: gm-buzz 2.4s infinite; }
+.gm-neon-tube { stroke: var(--spel-ink); stroke-width: 4; animation: gm-tube 1.8s ease-in-out infinite; }
+@keyframes gm-tube { 50% { opacity: .6; } }
+.gm-neon-line { stroke-linecap: round; animation: gm-buzz 2.8s infinite; }
+.gm-bolt { fill: var(--mab-e); animation: gm-bolt 1.6s ease-in-out infinite; animation-delay: calc(var(--k) * -.8s); }
+@keyframes gm-bolt { 50% { fill: var(--kiosk-paper); } }
+.gm-neon-win { font-family: var(--kid-font); font-weight: 900; font-size: 46px; fill: none; stroke: var(--mab-e); stroke-width: 4px; animation: gm-flicker 4s steps(1) infinite; }
+.gm-inside-star { stroke-width: 5; }
+
+/* ── Pier arcade ──────────────────────────────────────────────────────────── */
+.gm-marquee.is-pier { font-size: 44px; letter-spacing: 3px; animation: none; }
+.gm-flag { transform-box: fill-box; transform-origin: 50% 0; animation: gm-flutter 1.8s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.45s); }
+@keyframes gm-flutter { from { rotate: -6deg; } to { rotate: 6deg; } }
+.gm-wheel { animation: gm-turn 24s linear infinite; }
+.gm-gondola { animation: gm-turn 24s linear infinite reverse; transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes gm-turn { to { rotate: 360deg; } }
+.gm-waves { animation: gm-roll 2.4s linear infinite; }
+.gm-waves.is-in { animation-duration: 3.2s; }
+@keyframes gm-roll { to { translate: 40px 0; } }
+.gm-gull-fly { animation: gm-gull 14s linear infinite; }
+@keyframes gm-gull { 0% { translate: -40px 20px; } 50% { translate: 140px 0; } 100% { translate: 300px 26px; } }
+.gm-gull-wing { transform-box: fill-box; transform-origin: 100% 100%; animation: gm-flap 420ms ease-in-out infinite alternate; }
+@keyframes gm-flap { from { scale: 1 1; } to { scale: 1 -.6; } }
+.gm-ball { animation: gm-bob 2.6s ease-in-out infinite; animation-delay: calc(var(--k) * -.8s); }
+@keyframes gm-bob { 50% { translate: 0 -5px; } }
+.gm-floss { transform-box: fill-box; transform-origin: 50% 100%; animation: gm-floss 3.6s ease-in-out infinite; }
+@keyframes gm-floss { 0%, 100% { scale: .9; } 50% { scale: 1.06; } }
+.gm-spin { animation: gm-roll 600ms linear infinite; }
+.gm-cart-word { font-family: var(--kid-font); font-weight: 900; font-size: 24px; fill: var(--spel-ink); }
+.gm-pennant { transform-box: view-box; animation: gm-flutter 900ms ease-in-out infinite alternate; }
+.gm-sun-rays { transform-box: view-box; animation: gm-turn 30s linear infinite; }
+.gm-boat { animation: gm-sail 26s linear infinite; }
+@keyframes gm-sail { 0% { translate: -320px 0; } 100% { translate: 700px 0; } }
+.gm-tentacle { transform-box: fill-box; transform-origin: 50% 0; animation: gm-flutter 1.4s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.3s); }
+.gm-spout { transform-box: fill-box; transform-origin: 50% 100%; animation: gm-spout 5s ease-out infinite; }
+@keyframes gm-spout { 0%, 70%, 100% { scale: .2; opacity: 0; } 78% { scale: 1.1; opacity: 1; } 92% { scale: 1; opacity: 0; } }
+
+/* ── Spook arcade ─────────────────────────────────────────────────────────── */
+.gm-marquee.is-spook { font-size: 52px; letter-spacing: 3px; }
+.gm-bat-fly { animation: gm-batfly 17s linear infinite; }
+@keyframes gm-batfly { 0% { translate: -100px 330px; } 25% { translate: 400px 250px; } 50% { translate: 800px 340px; } 75% { translate: 1200px 260px; } 100% { translate: 1700px 320px; } }
+.gm-bat-wing { transform-box: view-box; animation: gm-batflap 260ms ease-in-out infinite alternate; }
+.gm-bat-wing.is-l { --flap: 22deg; }
+.gm-bat-wing.is-r { --flap: -22deg; }
+@keyframes gm-batflap { to { rotate: var(--flap); } }
+.gm-bat-hang { animation: gm-swing 3s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 150px 0; }
+@keyframes gm-swing { from { rotate: -5deg; } to { rotate: 5deg; } }
+.gm-bat-hang .gm-bat-wing { animation-duration: 1.4s; }
+.gm-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: gm-flicker-flame 380ms ease-in-out infinite alternate; }
+@keyframes gm-flicker-flame { from { scale: 1 1; rotate: -4deg; } to { scale: .86 1.12; rotate: 4deg; } }
+.gm-candle-glow { opacity: .18; animation: gm-glow 1.2s ease-in-out infinite; }
+.gm-moon { animation: gm-glow 5s ease-in-out infinite; }
+.gm-cloud-drift { animation: gm-cloud 18s linear infinite; }
+@keyframes gm-cloud { 0% { translate: -120px 0; } 100% { translate: 200px 0; } }
+.gm-grave { font-family: var(--kid-font); font-weight: 900; font-size: 26px; fill: var(--spel-ink); opacity: .6; }
+.gm-bubble { transform-box: fill-box; animation: gm-bubble 2.2s ease-in infinite; animation-delay: calc(var(--k) * -.7s); }
+@keyframes gm-bubble { 0% { translate: 0 20px; scale: .4; opacity: 0; } 30% { opacity: 1; } 100% { translate: 0 -70px; scale: 1; opacity: 0; } }
+.gm-fire { animation: gm-flicker-flame 300ms ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+.gm-drip { transform-box: fill-box; transform-origin: 50% 0; animation: gm-drip 3.4s ease-in infinite; }
+@keyframes gm-drip { 0%, 60% { scale: 1 .3; translate: 0 0; opacity: 1; } 85% { scale: 1 1.2; translate: 0 6px; opacity: 1; } 100% { translate: 0 40px; opacity: 0; } }
+.gm-side-eyes { animation: gm-side-eyes 6s infinite; animation-delay: calc(var(--k) * -2.1s); transform-box: fill-box; transform-origin: center; }
+@keyframes gm-side-eyes { 0%, 40%, 100% { opacity: 0; } 45%, 70% { opacity: 1; scale: 1 1; } 72% { scale: 1 .1; } 74%, 90% { scale: 1 1; opacity: 1; } }
+.gm-star-dot { animation: gm-glow 2.4s ease-in-out infinite; animation-delay: calc(var(--k) * -.5s); }
+.gm-spider { transform-box: view-box; animation: gm-spider 9s ease-in-out infinite; }
+@keyframes gm-spider { 0%, 100% { translate: 0 -120px; } 20%, 60% { translate: 0 0; } 30% { translate: 0 18px; } 40% { translate: 0 4px; } 50% { translate: 0 14px; } }
+.gm-spider-leg { animation: gm-wiggle-leg 500ms ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 0 50%; }
+@keyframes gm-wiggle-leg { to { rotate: 10deg; } }
+.gm-hub-eye { animation: gm-glow 1.4s ease-in-out infinite; }
+
+/* ── Space arcade ─────────────────────────────────────────────────────────── */
+.gm-marquee.is-space { font-size: 54px; letter-spacing: 3px; }
+.gm-thrust { transform-box: fill-box; transform-origin: 50% 0; animation: gm-thrust 160ms ease-in-out infinite alternate; }
+@keyframes gm-thrust { to { scale: .8 1.3; } }
+.gm-rocket-fly { animation: gm-rocket 9s ease-in infinite; }
+@keyframes gm-rocket { 0%, 55% { translate: -60px 320px; } 100% { translate: 300px -40px; } }
+.gm-comet { animation: gm-comet 7s linear infinite; }
+.gm-comet.is-in { animation-duration: 11s; animation-delay: -4s; }
+@keyframes gm-comet { 0%, 70% { translate: -80px 10px; opacity: 0; } 72% { opacity: 1; } 100% { translate: 900px 300px; opacity: 0; } }
+.gm-desk-light { animation: gm-glow 1s steps(1) infinite; animation-delay: calc(var(--k) * -.33s); }
+.gm-radar { stroke-dasharray: 160; animation: gm-radar 1.8s linear infinite; }
+@keyframes gm-radar { from { stroke-dashoffset: 320; } to { stroke-dashoffset: 0; } }
+.gm-janitor { animation: gm-sweep-walk 9s ease-in-out infinite alternate; }
+@keyframes gm-sweep-walk { from { translate: -40px 0; } to { translate: 60px 0; } }
+.gm-broom { transform-box: view-box; animation: gm-sweep 700ms ease-in-out infinite alternate; }
+@keyframes gm-sweep { from { rotate: -12deg; } to { rotate: 10deg; } }
+.gm-dust { animation: gm-dust 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes gm-dust { 0% { scale: .3; opacity: .9; } 100% { scale: 1.8; opacity: 0; translate: -20px -10px; } }
+.gm-space-word { font-family: var(--kid-font); font-weight: 900; font-size: 36px; fill: var(--mab-t); animation: gm-flicker 5s steps(1) infinite; }
+.gm-planet-bob { animation: gm-bob 4s ease-in-out infinite; }
+.gm-exhaust { transform-box: fill-box; transform-origin: 50% 0; animation: gm-thrust 200ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -70ms); }
+.gm-antenna { animation: gm-glow 1.2s steps(1) infinite; }
+.gm-beam { animation: gm-glow 1.6s ease-in-out infinite; }
+
+/* ── Candy arcade ─────────────────────────────────────────────────────────── */
+.gm-marquee.is-snoep { font-size: 46px; letter-spacing: 3px; stroke: var(--kiosk-paper); }
+.gm-lamp-sway { transform-box: view-box; animation: gm-swing 3.4s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.9s); }
+.gm-lamp-glow { opacity: .22; animation: gm-glow 2.4s ease-in-out infinite; }
+.gm-gumballs { animation: gm-jiggle 6s ease-in-out infinite; }
+@keyframes gm-jiggle { 0%, 80%, 100% { translate: 0 0; } 84% { translate: -3px 2px; } 88% { translate: 3px -2px; } 92% { translate: -2px 1px; } }
+.gm-crank { transform-box: view-box; animation: gm-crank 6s ease-in-out infinite; }
+@keyframes gm-crank { 0%, 78% { rotate: 0deg; } 92%, 100% { rotate: 360deg; } }
+.gm-gumball-out { animation: gm-gumball 6s ease-in infinite; }
+@keyframes gm-gumball { 0%, 86% { translate: 0 -20px; opacity: 0; } 88% { opacity: 1; } 94% { translate: 0 86px; } 97% { translate: 30px 80px; } 100% { translate: 90px 86px; opacity: 0; } }
+.gm-big-lolly { transform-box: view-box; animation: gm-swing 4s ease-in-out infinite alternate; }
+.gm-cherry { transform-box: view-box; animation: gm-cherry 2.2s ease-in-out infinite; }
+@keyframes gm-cherry { 0%, 100% { rotate: -6deg; } 50% { rotate: 6deg; } }
+
+/* ── End picture ──────────────────────────────────────────────────────────── */
+.gm-ending { background: var(--gm-wall); }
+.gm-ending-lights { position: absolute; left: 4%; right: 4%; top: 6%; display: flex; justify-content: space-between; }
+.gm-ending-bulb { --on: var(--gm-bulb-0); width: clamp(8px, 1.6vh, 14px); aspect-ratio: 1; border: 2px solid var(--spel-ink); border-radius: 50%; background: color-mix(in srgb, var(--on) 35%, var(--spel-ink)); animation: gm-chase-bg 1.2s steps(1) infinite; animation-delay: calc(var(--k) * -200ms); }
+.gm-ending-bulb:nth-child(3n + 1) { --on: var(--gm-bulb-1); }
+.gm-ending-bulb:nth-child(3n + 2) { --on: var(--gm-bulb-2); }
+@keyframes gm-chase-bg { 0% { background: var(--on); } 50% { background: color-mix(in srgb, var(--on) 35%, var(--spel-ink)); } }
+.gm-ending-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 10%;
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(18px, 3.8vh, 34px);
+  letter-spacing: 3px;
+  color: var(--mab-e);
+  -webkit-text-stroke: 2px var(--spel-ink);
+  paint-order: stroke fill;
+  animation: gm-jackpot 900ms var(--ease-spring) infinite alternate;
+}
+@keyframes gm-jackpot { to { scale: 1.12; } }
+.gm-ending-shelves { position: absolute; left: 5%; right: 5%; bottom: 6%; display: flex; flex-direction: column; gap: 4%; height: 54%; justify-content: flex-end; }
+.gm-ending-row { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 1%; height: 48%; padding-bottom: 8px; }
+.gm-ending-prize { height: 100%; aspect-ratio: 1; animation: gm-cheer 760ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -110ms); transform-origin: 50% 100%; }
+.gm-ending-prize svg { width: 100%; height: 100%; }
+.gm-ending-prize .o { stroke-width: 5; }
+.gm-ending-prize .gm-wave { transform-box: view-box; animation: gm-wave 520ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -90ms); }
+@keyframes gm-wave { from { rotate: -30deg; } to { rotate: 25deg; } }
+@keyframes gm-cheer { to { translate: 0 -8%; } }
+.gm-ending-plank { position: absolute; left: 0; right: 0; bottom: 0; height: 9px; border: 3px solid var(--spel-ink); border-radius: 5px; background: var(--gm-plank); }
+.gm-wave, .gm-ear { transform-box: view-box; }
+
+/* "Hoe los ik dit op?": everything waits. */
+.gm-root.is-paused *, .gm-root.is-paused *::before, .gm-root.is-paused *::after { animation-play-state: paused; }
+
+/* A low landscape screen (a phone on its side): a smaller shelf. */
+@media (max-height: 460px) and (orientation: landscape) {
+  .gm-root { --gm-shelf-h: 48px; }
+  .gm-shelf-label { display: none; }
+}

@@ -36,7 +36,7 @@ const choice = (g: number, topic: string, label: string) => {
     return c;
 };
 const skinIds = (c: ZelfChoice, g: number) => skinsFor(SKINS, spelContentOf(c, g)!).map(s => s.meta.id);
-const TAP = ['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'slalom'];
+const TAP = ['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'slalom', 'grijp'];
 
 // Questions of a choice's tekst variants over many made exercises (seeded), with the session they came from.
 function tekstQuestions(c: ZelfChoice, g: number, perVariant = 30): { q: SpelQuestion; s: OefenSessie; leafId: string; v: CardVariant }[] {
@@ -225,7 +225,7 @@ describe('the sums to leerjaar 6', () => {
 });
 
 describe('the picker and the choice topics', () => {
-    test('vergelijken, deelbaarheid and even / oneven are tap content: Ballonnen, Zeehondjes, Pakjesband, Mollen, Brandweer, Skislalom only', () => {
+    test('vergelijken, deelbaarheid and even / oneven are tap content: Ballonnen, Zeehondjes, Pakjesband, Mollen, Brandweer, Skislalom, Grijpmachine only', () => {
         for (const [g, t, label] of [
             [1, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'], [3, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
             [6, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
@@ -233,7 +233,7 @@ describe('the picker and the choice topics', () => {
         ] as const) {
             const c = choice(g, t, label);
             expect(spelContentOf(c, g), label).toMatchObject({ kind: 'choice', boards: [] });
-            expect(skinIds(c, g), label).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'brandweer', 'slalom']);
+            expect(skinIds(c, g), label).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'brandweer', 'slalom', 'grijp']);
         }
     });
 

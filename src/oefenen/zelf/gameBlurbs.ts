@@ -29,6 +29,7 @@ export const GAME_BLURB: Record<string, string> = {
     frituur: 'Help de klanten aan de toog. Snel, voor ze het wachten beu zijn!',
     brandweer: 'Spuit het raam met het juiste antwoord uit. Hou het vuur klein!',
     slalom: 'Ski door de poort met het juiste antwoord. Hoe sneller, hoe verder!',
+    grijp: 'Grijp de knuffel met het juiste antwoord. Hoeveel prijzen win jij?',
 };
 
 /** The game's line; an unknown id falls back to its name. */

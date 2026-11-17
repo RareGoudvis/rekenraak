@@ -66,10 +66,10 @@ describe('klok in the picker', () => {
     });
 
     test('klok content hides the keypad games and the number-only eggs: only the tap skins that draw pictures', () => {
-        expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
+        expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'grijp']);
         render(<GameRow games={gamesFor(PICTURE_CONTENT, new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Mollen meppen, op tijd']);
+        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Grijpmachine', 'Mollen meppen, op tijd']);
         expect(screen.queryByText('binnenkort')).toBeNull();
     });
 });
