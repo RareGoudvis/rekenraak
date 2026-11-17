@@ -1,24 +1,28 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, signClass } from '../../spelChoice';
 import { play } from '../../sound';
 import { Burst, Clouds } from '../../scene';
-import { FIRE, WINDOWS, decorOf, fireMood, fireStart, fireStep, flameScale, petOf, petWindow, rescuedOf, tooHot, windowsOf, type FireState, type Pet } from './fire';
-import { GRIP, GROUND, HOLDERS, NOZZLE_LEN, PET_ROW, PIVOT, REST, RESIDENTS, SHEET, STAGE_H, STAGE_W, aimAt, pct, petSpot, rowOf, sprayPath, winBox, winCentre, winPercent } from './geometry';
-import { Backdrop, BlockArt, FighterArt, Flames, LadderArt, PetArt, ResidentArt, SheetArt, Smoke, Sparks, TruckArt, WindowArt, type CrewPose, type CrowdMood, type FighterPose, type WinState } from './art';
+import { COLLAPSE, FIRE, WINDOWS, decorOf, fireMood, fireStart, fireStep, firstEvents, flameScale, jumpEvents, jumpsOf, petOf, petWindow, rescuedOf, tooHot, windowClocks, windowsOf, type FireState, type Pet } from './fire';
+import { BLOCK, GRIP, GROUND, HOLDERS, NOZZLE_LEN, PET_ROW, PIVOT, REST, RESIDENTS, SHEET, STAGE_H, STAGE_W, aimAt, pct, petSpot, rowOf, sprayPath, winBox, winCentre, winPercent } from './geometry';
+import { Backdrop, BlockArt, DustArt, FighterArt, Fireball, Flames, HelmetArt, LadderArt, PetArt, ResidentArt, RubbleArt, SheetArt, Smoke, Sparks, TruckArt, WindowArt, WindowClock, type CrewPose, type CrowdMood, type FighterPose, type WinState } from './art';
 import { playBrandweer } from './sounds';
 import './brandweer.css';
 
 // Brandweer: a 3 × 3 apartment block is on fire; the four options burn in four of its windows (the rest are dark, or
 // hold a plant, a lamp or a waiting pet: never a person). Tap (or 1–4) the right window: the ladder swings to its
 // floor and the hose sprays it out. The fire level (fire.ts) rises with the clock and per mistake and drops per
-// window sprayed out; the truck's heat gauge, the flames and the smoke show it. A building fully out makes way for
-// the next one; too hot = the crew shrugs and everyone waves from the lawn (the friendly early end, onFail).
-// No rAF: the session's clock drives the fire, CSS loops make the scene live.
+// window sprayed out; the truck's heat gauge, the flames and the smoke show it. Each burning window has its own clock
+// (fire.ts WINDOW_CLOCK): its flames grow, its frame glows, a ring fills; when it runs out the fire leaps to a free
+// neighbour (+1 level). A building fully out makes way for the next one. Too hot: the waiting pet jumps out, the crew
+// steps back, the empty block collapses floor by floor into a smoking heap, then everyone on the lawn cheers the crew
+// (the friendly early end, onFail). One rAF loop counts the sum's waiting time for the window clocks; CSS loops do the rest.
 
-// The too-hot moment before the end screen.
-export const TOO_HOT_MS = 1600;
+// How far the block has sunk into the ground per collapse stage (stage units; one floor ≈ 185).
+const SINK = [0, 0, 190, 380, 570, BLOCK.h + 200, BLOCK.h + 200];
+// The crew's spots on the street while the block comes down (well clear of it).
+const CLEAR = [[610, 992], [705, 996]] as const;
 // A pet's jump from its window into the sheet and over to the lawn; it lands in the sheet at JUMP_LAND.
 export const JUMP_MS = 1800;
 const JUMP_LAND = 0.42;
@@ -45,28 +49,35 @@ const detailOf = (buildings: number, pets: number) => {
     return parts.length ? `${parts.join(' en ')}!` : undefined;
 };
 
-interface Snap { key: string; buildings: number; rescued: number; supers: number; burnt: number[] }
+interface Snap { key: string; buildings: number; rescued: number; supers: number; burnt: number[]; clockAt: number }
 
-export default function Brandweer({ question, choices, views, phase, feedback, onAnswer, onFail, onReport, progress, events }: SkinProps) {
+export default function Brandweer({ question, choices, views, phase, feedback, onAnswer, onFail, onReport, onHold, progress, events }: SkinProps) {
     const options = choices ?? [];
     const elapsedMs = progress.msTotal !== null && progress.msLeft !== null ? progress.msTotal - progress.msLeft : 0;
 
-    // The fire follows the session's counts (met hulp never heats it); kept as derived state.
+    // The fire jumps so far: in this sum (due) and in the whole round (total), counted by the rAF loop below.
+    const key = question?.key ?? '';
+    const [jumps, setJumps] = useState({ key, due: 0, total: 0 });
+    const jumpsNow = jumps.key === key ? jumps : { key, due: 0, total: jumps.total };
+
+    // The fire follows the session's counts and the jumps (met hulp never heats it); kept as derived state.
     const [fire, setFire] = useState<FireState>(fireStart);
-    const counts = { elapsedMs, right: progress.right, mistakes: progress.mistakes, streak: progress.streak };
-    if (fire.elapsedMs !== counts.elapsedMs || fire.right !== counts.right || fire.mistakes !== counts.mistakes || fire.streak !== counts.streak) {
+    const counts = { elapsedMs, right: progress.right, mistakes: progress.mistakes, streak: progress.streak, jumps: jumpsNow.total };
+    if (fire.elapsedMs !== counts.elapsedMs || fire.right !== counts.right || fire.mistakes !== counts.mistakes || fire.streak !== counts.streak || fire.jumps !== counts.jumps) {
         setFire(fireStep(fire, counts));
     }
     const rescued = rescuedOf(progress.right);
 
-    // What held when this sum came: the building, the pet in its window, the windows that burned before.
-    const key = question?.key ?? '';
-    const [snap, setSnap] = useState<Snap>({ key, buildings: fire.buildings, rescued, supers: fire.supers, burnt: [] });
+    // What held when this sum came: the building, the pet in its window, the windows that burned before, the clock.
+    const [snap, setSnap] = useState<Snap>({ key, buildings: fire.buildings, rescued, supers: fire.supers, burnt: [], clockAt: elapsedMs });
     const petWin = petWindow(snap.rescued);
     const burning = question ? windowsOf(snap.key, options.length, petWin) : [];
+    const clocks = windowClocks(snap.key, burning.length, snap.clockAt);
+    const leaps = jumpsOf(firstEvents(jumpsNow.due, clocks), burning, petWin);
+    const jumped = leaps.flatMap(j => (j.to === null ? [] : [j.to]));
     if (snap.key !== key) {
         const same = fire.buildings === snap.buildings;
-        setSnap({ key, buildings: fire.buildings, rescued, supers: fire.supers, burnt: same ? [...new Set([...snap.burnt, ...burning])] : [] });
+        setSnap({ key, buildings: fire.buildings, rescued, supers: fire.supers, burnt: same ? [...new Set([...snap.burnt, ...burning, ...jumped])] : [], clockAt: elapsedMs });
     }
 
     const [aim, setAim] = useState<{ key: string; win: number } | null>(null);
@@ -88,8 +99,8 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
         return () => { window.clearTimeout(land); window.clearTimeout(done); };
     }, [jump]);
 
-    const live = useRef({ onFail, onReport });
-    useLayoutEffect(() => { live.current = { onFail, onReport }; });
+    const live = useRef({ onFail, onReport, onHold });
+    useLayoutEffect(() => { live.current = { onFail, onReport, onHold }; });
 
     // The end screen's line: buildings put out and pets saved.
     useEffect(() => {
@@ -115,14 +126,64 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
         return () => { offRight(); offWrong(); };
     }, [events]);
 
-    // Too hot: the crew shrugs for a moment, then the round ends. Never under help (the clock stands still there).
+    // The window clocks: waiting time on this sum, counted only while it waits (flashes, help and the collapse freeze it).
     const hot = tooHot(fire.level);
+    const sumMs = useRef(0);
+    const loop = useRef({ phase, hot, clocks, key });
+    useLayoutEffect(() => { loop.current = { phase, hot, clocks, key }; });
+    useLayoutEffect(() => { sumMs.current = 0; }, [key]);
+    useEffect(() => {
+        let raf = 0;
+        let last: number | null = null;
+        const frame = (t: number) => {
+            raf = requestAnimationFrame(frame);
+            // A long gap (a hidden tab) never fires several windows at once.
+            const dt = last === null ? 0 : Math.min(100, Math.max(0, t - last));
+            last = t;
+            const st = loop.current;
+            if (st.phase !== 'play' || st.hot || !st.key) return;
+            sumMs.current += dt;
+            const due = jumpEvents(sumMs.current, st.clocks).length;
+            setJumps(j => {
+                const base = j.key === st.key ? j : { key: st.key, due: 0, total: j.total };
+                return due > base.due ? { key: st.key, due, total: base.total + due - base.due } : j;
+            });
+        };
+        raf = requestAnimationFrame(frame);
+        return () => cancelAnimationFrame(raf);
+    }, []);
+    useEffect(() => { if (jumps.total > 0) playBrandweer('whoosh'); }, [jumps.total]);
+
+    // Too hot: the waiting pet jumps out first, then the empty block comes down (COLLAPSE), then the end screen.
+    const [evacuated, setEvacuated] = useState(false);
+    if (hot && !evacuated) {
+        setEvacuated(true);
+        if (!(jump && jump.from === petWin)) setJump({ n: rescued, from: petWin, pet: petOf(snap.rescued) });
+    }
+    const [stage, setStage] = useState(0);
+    const [collapsed, setCollapsed] = useState(false);
+    useEffect(() => {
+        if (!hot) return;
+        live.current.onHold?.(true);
+        playBrandweer('sirene');
+        const at = (ms: number, fn: () => void) => window.setTimeout(fn, ms);
+        const ids = [
+            at(COLLAPSE.back, () => { setStage(1); playBrandweer('rumble'); }),
+            ...COLLAPSE.floors.map((ms, k) => at(ms, () => { setStage(2 + k); playBrandweer('thud'); })),
+            at(COLLAPSE.down, () => { setStage(5); playBrandweer('crash'); }),
+            at(COLLAPSE.down + 600, () => playBrandweer('klonk')),
+            at(COLLAPSE.cheer, () => { setStage(6); play('cheer'); }),
+            at(COLLAPSE.end, () => setCollapsed(true)),
+        ];
+        return () => ids.forEach(id => window.clearTimeout(id));
+    }, [hot]);
+    // The end screen only once help is closed (the store refuses an end under help).
     const failed = useRef(false);
     useEffect(() => {
-        if (!hot || failed.current || phase === 'help') return;
-        const id = window.setTimeout(() => { failed.current = true; live.current.onFail(); }, TOO_HOT_MS);
-        return () => window.clearTimeout(id);
-    }, [hot, phase]);
+        if (!collapsed || failed.current || phase === 'help') return;
+        failed.current = true;
+        live.current.onFail();
+    }, [collapsed, phase]);
 
     const pick = (i: number) => {
         if (phase !== 'play' || !question || options[i] === undefined || hot) return;
@@ -141,6 +202,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
         return () => window.removeEventListener('keydown', onKey);
     }, []);
 
+    const clip = useId();
     if (!question) return <div className="bw-root" />;
     const flash = phase === 'right' || phase === 'wrong';
     const mine = aim && aim.key === question.key ? aim.win : null;
@@ -156,7 +218,10 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
     const stateOf = (w: number): WinState => {
         const b = burning.indexOf(w);
         if (b >= 0) return (sprayed && w === mine) || allOut ? 'out' : 'fire';
-        if (w === petWin && !(jump && jump.from === w)) return 'pet';
+        // A jumped fire goes out with the right answer (the crew sprays the rest along).
+        if (jumped.includes(w)) return phase === 'right' ? 'out' : 'fire';
+        // Once it is too hot the pet has left for good: the block that comes down is empty.
+        if (w === petWin && !evacuated && !(jump && jump.from === w)) return 'pet';
         return decorOf(w, look);
     };
 
@@ -165,14 +230,19 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
     const target = winCentre(mine ?? aim?.win ?? 4);
     // A tap before the ladder rose raises it at once.
     const up = (raised || aim !== null) && !hot;
+    const falling = hot ? stage : 0;
     const a = up ? aimAt(row) : null;
     const nozzle = nozzleOf(row, target);
-    const crewPose: CrewPose = hot ? 'shrug' : dribble ? 'oops' : allOut ? 'cheer' : 'aim';
-    const crowd: CrowdMood = hot ? 'wave' : sprayed ? 'cheer' : mood === 'hot' ? 'oh' : 'watch';
-    const holders: FighterPose = hot ? 'shrug' : allOut ? 'cheer' : 'hold';
-    const lawnPets = rescued - (jump ? 1 : 0);
+    const safe = hot && falling >= 6;
+    const crewPose: CrewPose = safe ? 'cheer' : hot ? 'shrug' : dribble ? 'oops' : allOut ? 'cheer' : 'aim';
+    const crowd: CrowdMood = safe ? 'cheer' : hot ? 'oh' : sprayed ? 'cheer' : mood === 'hot' ? 'oh' : 'watch';
+    const holders: FighterPose = safe ? 'cheer' : hot ? 'shrug' : allOut ? 'cheer' : 'hold';
+    const stepBack = hot && falling >= 1;
+    const lawnPets = rescued + (evacuated ? 1 : 0) - (jump ? 1 : 0);
+    const leap = leaps.length ? leaps[leaps.length - 1] : null;
 
-    const cls = ['bw-root', `is-${mood}`, phase === 'help' && 'is-paused', hot && 'is-toohot', phase === 'wrong' && 'is-wrong', allOut && 'is-allout'].filter(Boolean).join(' ');
+    const cls = ['bw-root', `is-${mood}`, phase === 'help' && 'is-paused', phase === 'play' && !hot && 'is-play', hot && 'is-toohot', phase === 'wrong' && 'is-wrong', allOut && 'is-allout']
+        .filter(Boolean).join(' ');
     return (
         <div className={cls} style={v({ '--bw-heat': fire.level / FIRE.max })}>
             <div className="bw-sky" aria-hidden>
@@ -189,35 +259,61 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                 <div className="bw-stage">
                     <svg className="bw-svg" viewBox={`0 0 ${STAGE_W} ${STAGE_H}`} aria-hidden>
                         <Backdrop />
-                        <g key={`block-${look}`} className={look > 0 ? 'bw-arrive' : undefined}>
-                            <BlockArt look={look} />
-                            {Array.from({ length: WINDOWS }, (_, w) => (
-                                <WindowArt key={w} i={w} state={stateOf(w)} pet={petOf(snap.rescued)} burnt={snap.burnt.includes(w) && stateOf(w) !== 'fire'} glow={mood === 'hot' && w !== petWin} />
-                            ))}
-                            {burning.map(w => stateOf(w) === 'fire' && (
-                                <g key={`${question.key}-${w}`} className="bw-ignite">
-                                    <Flames i={w} scale={scale} flare={dribble && w === mine} />
+                        <defs><clipPath id={clip}><rect x="-2400" y="-1000" width="6400" height={GROUND + 1004} /></clipPath></defs>
+                        <g clipPath={`url(#${clip})`}>
+                            <g className={`bw-sink${falling === 1 ? ' is-rumble' : ''}`} style={{ transform: `translateY(${SINK[falling]}px)` }}>
+                                <g key={`block-${look}`} className={look > 0 ? 'bw-arrive' : undefined}>
+                                    <BlockArt look={look} />
+                                    {Array.from({ length: WINDOWS }, (_, w) => (
+                                        <WindowArt key={w} i={w} state={stateOf(w)} pet={petOf(snap.rescued)} burnt={snap.burnt.includes(w) && stateOf(w) !== 'fire'} glow={mood === 'hot' && w !== petWin} />
+                                    ))}
+                                    {burning.map((w, i) => stateOf(w) === 'fire' && !hot && <WindowClock key={`${question.key}-${w}-c`} i={w} clockMs={clocks[i]} />)}
+                                    {burning.map((w, i) => stateOf(w) === 'fire' && (
+                                        <g key={`${question.key}-${w}`} className="bw-ignite">
+                                            <Flames i={w} scale={scale} flare={(dribble && w === mine) || (leap?.to === null && leap.from === w)} clockMs={hot ? undefined : clocks[i]} />
+                                        </g>
+                                    ))}
+                                    {jumped.map(w => stateOf(w) === 'fire' && (
+                                        <g key={`${question.key}-j${w}`} className="bw-ignite is-jumped">
+                                            <Flames i={w} scale={scale} flare={false} />
+                                        </g>
+                                    ))}
+                                    {[...burning, ...jumped].map(w => {
+                                        const b = winBox(w);
+                                        const out = stateOf(w) === 'out';
+                                        return <Smoke key={`s-${w}`} x={b.x + b.w / 2 + 20} y={b.y - 6} n={out ? 4 : 3} size={out ? 0.9 : mood === 'hot' ? 1.1 : 0.8} rise={out ? 150 : 110} dark={!out && mood === 'hot'} steam={out} />;
+                                    })}
+                                    {/* The roof: a thin plume while it is calm, a big dark one when it is hot. */}
+                                    <Smoke x={800} y={150} n={mood === 'hot' ? 7 : mood === 'warm' ? 5 : 3} size={mood === 'hot' ? 1.7 : mood === 'warm' ? 1.3 : 0.9} rise={260} dark={mood === 'hot'} />
+                                    {mood !== 'calm' && <Smoke x={1080} y={150} n={mood === 'hot' ? 6 : 4} size={mood === 'hot' ? 1.5 : 1.1} rise={240} dark={mood === 'hot'} />}
+                                    {[...burning, ...jumped].filter(w => stateOf(w) === 'fire').map(w => {
+                                        const b = winBox(w);
+                                        return <Sparks key={`k-${w}`} x={b.x + b.w / 2} y={b.y + 20} n={mood === 'hot' ? 6 : mood === 'warm' ? 4 : 2} />;
+                                    })}
+                                    {leap && leap.to !== null && phase === 'play' && <Fireball key={`${question.key}-leap-${jumpsNow.due}`} from={winCentre(leap.from)} to={winCentre(leap.to)} />}
                                 </g>
-                            ))}
-                            {burning.map(w => {
-                                const b = winBox(w);
-                                const out = stateOf(w) === 'out';
-                                return <Smoke key={`s-${w}`} x={b.x + b.w / 2 + 20} y={b.y - 6} n={out ? 4 : 3} size={out ? 0.9 : mood === 'hot' ? 1.1 : 0.8} rise={out ? 150 : 110} dark={!out && mood === 'hot'} steam={out} />;
-                            })}
-                            {/* The roof: a thin plume while it is calm, a big dark one when it is hot. */}
-                            <Smoke x={800} y={150} n={mood === 'hot' ? 7 : mood === 'warm' ? 5 : 3} size={mood === 'hot' ? 1.7 : mood === 'warm' ? 1.3 : 0.9} rise={260} dark={mood === 'hot'} />
-                            {mood !== 'calm' && <Smoke x={1080} y={150} n={mood === 'hot' ? 6 : 4} size={mood === 'hot' ? 1.5 : 1.1} rise={240} dark={mood === 'hot'} />}
-                            {burning.filter(w => stateOf(w) === 'fire').map(w => {
-                                const b = winBox(w);
-                                return <Sparks key={`k-${w}`} x={b.x + b.w / 2} y={b.y + 20} n={mood === 'hot' ? 6 : mood === 'warm' ? 4 : 2} />;
-                            })}
+                            </g>
                         </g>
+                        {hot && falling >= 5 && (
+                            <g className="bw-fallen">
+                                <RubbleArt />
+                                <Smoke x={820} y={GROUND - 150} n={6} size={1.6} rise={300} dark />
+                                <Smoke x={1060} y={GROUND - 120} n={5} size={1.3} rise={260} />
+                                <g transform={`translate(${BLOCK.x + BLOCK.w * 0.47} ${GROUND - 168})`}><g className="bw-helmet-bounce"><HelmetArt /></g></g>
+                                <DustArt x={BLOCK.x + BLOCK.w / 2} y={GROUND} />
+                            </g>
+                        )}
 
-                        {/* The rescue sheet in front of the door, and the crowd and the saved pets on the lawn. */}
-                        <g transform={`translate(${HOLDERS[0]} ${GROUND + 26})`}><FighterArt pose={holders} /></g>
-                        <g transform={`translate(${HOLDERS[1]} ${GROUND + 26})`}><FighterArt pose={holders} side={-1} /></g>
+                        {/* The rescue sheet in front of the door, and the crowd and the saved pets on the lawn; when the block comes down
+                            the crew folds the sheet and steps back onto the street. */}
+                        {HOLDERS.map((hx, i) => {
+                            const [x, y] = stepBack ? CLEAR[i] : [hx, GROUND + 26];
+                            return <g key={i} className="bw-holder" style={{ transform: `translate(${x}px, ${y}px)` }}><FighterArt pose={holders} side={i ? -1 : 1} /></g>;
+                        })}
                         <g transform={`translate(${SHEET.x} ${SHEET.y})`}>
-                            <g key={`sheet-${jump?.n ?? -1}`} className={jump ? 'bw-sheet-bounce' : undefined} style={v({ '--bw-jump': `${JUMP_MS}ms` })}><SheetArt rx={SHEET.rx} ry={SHEET.ry} /></g>
+                            <g className={stepBack ? 'bw-sheet-away' : undefined}>
+                                <g key={`sheet-${jump?.n ?? -1}`} className={jump ? 'bw-sheet-bounce' : undefined} style={v({ '--bw-jump': `${JUMP_MS}ms` })}><SheetArt rx={SHEET.rx} ry={SHEET.ry} /></g>
+                            </g>
                         </g>
                         {RESIDENTS.map((x, i) => (
                             <g key={i} transform={`translate(${x} ${GROUND + 22}) scale(1.18)`}>
@@ -288,7 +384,14 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                                 <Burst kind="pieces" x="58%" y="30%" spread={260} count={22} seed={fire.buildings} />
                             </span>
                         )}
-                        {hot && <span className="bw-callout is-hot">Oei, te heet!</span>}
+                        {leap && phase === 'play' && (() => {
+                            const c = pct(winCentre(leap.to ?? leap.from).x, winBox(leap.to ?? leap.from).y + 40);
+                            return <Burst key={`${question.key}-sparks-${jumpsNow.due}`} kind="sparkle" x={c.x} y={c.y} spread={90} count={12} seed={jumpsNow.total} />;
+                        })()}
+                        {hot && falling < 2 && <span className="bw-callout is-hot">Oei, te heet!</span>}
+                        {hot && falling >= 2 && falling < 5 && <Burst key={`dust-${falling}`} kind="smoke" x="58%" y="86%" spread={220} count={12} seed={falling} />}
+                        {hot && falling >= 5 && <Burst key="debris" kind="pieces" x="58%" y="80%" spread={320} count={18} seed={7} color="var(--bw-wall-dark)" />}
+                        {safe && <span className="bw-callout is-safe">Iedereen is veilig!</span>}
                     </div>
                 </div>
             </div>
@@ -311,33 +414,37 @@ function Jumper({ from, to, pet }: { from: number; to: { x: number; y: number };
 }
 
 // The end screen: held = the block is out, the crew and the residents cheer under a rainbow, the saved pets beside them;
-// too hot = smoke over the block, the crew shrugs with sooty faces and everyone waves from the lawn, nobody hurt.
+// too hot = the empty block is a smoking heap with a helmet on top, and everyone on the lawn waves and cheers: nobody hurt.
 export function BrandweerEnding({ outcome, progress }: SkinEndingProps) {
     const failed = outcome === 'failed';
-    const pets = Math.max(1, Math.min(4, rescuedOf(progress.right)));
+    const pets = Math.max(1, Math.min(4, rescuedOf(progress.right) + (failed ? 1 : 0)));
     const aim = aimAt(1);
     return (
         <div className={`spel-ending bw-ending${failed ? ' is-failed' : ' is-won'}`}>
             <svg viewBox="20 330 1640 640" preserveAspectRatio="xMidYMax meet" aria-hidden>
                 <rect className="bw-end-sky" x="-400" y="0" width="2600" height="1000" />
                 <Backdrop />
-                <BlockArt look={0} />
-                {Array.from({ length: WINDOWS }, (_, w) => <WindowArt key={w} i={w} state={failed ? (w % 2 ? 'out' : 'dark') : decorOf(w, 0)} burnt={failed || w % 3 === 0} glow={false} />)}
                 {failed ? (
                     <>
-                        {[3, 7].map(w => <Flames key={w} i={w} scale={0.75} flare={false} />)}
-                        <Smoke x={720} y={420} n={6} size={1.5} rise={260} dark />
-                        <Smoke x={1120} y={600} n={5} size={1.3} rise={260} />
+                        <RubbleArt />
+                        <Smoke x={820} y={GROUND - 150} n={6} size={1.5} rise={260} dark />
+                        <Smoke x={1060} y={GROUND - 120} n={5} size={1.2} rise={240} />
+                        <g transform={`translate(${BLOCK.x + BLOCK.w * 0.47 - 48} ${GROUND - 168}) rotate(-4)`}><HelmetArt /></g>
                     </>
                 ) : (
-                    <g className="bw-end-rainbow">
-                        {[0, 1, 2].map(k => <path key={k} className={`bw-rainbow is-${k} is-still`} d={`M${560 + k * 22} 880 A ${400 - k * 22} ${380 - k * 22} 0 0 1 ${1340 - k * 22} 880`} />)}
-                    </g>
+                    <>
+                        <BlockArt look={0} />
+                        {Array.from({ length: WINDOWS }, (_, w) => <WindowArt key={w} i={w} state={decorOf(w, 0)} burnt={w % 3 === 0} glow={false} />)}
+                        <g className="bw-end-rainbow">
+                            {[0, 1, 2].map(k => <path key={k} className={`bw-rainbow is-${k} is-still`} d={`M${560 + k * 22} 880 A ${400 - k * 22} ${380 - k * 22} 0 0 1 ${1340 - k * 22} 880`} />)}
+                        </g>
+                    </>
                 )}
                 <TruckArt level={failed ? FIRE.max : 0} />
-                <LadderArt angle={failed ? REST.angle : aim.angle} ext={failed ? REST.ext : aim.ext} nozzle={-10} pose={failed ? 'shrug' : 'cheer'} />
-                <g transform={`translate(${HOLDERS[0]} ${GROUND + 26})`}><FighterArt pose={failed ? 'shrug' : 'cheer'} /></g>
-                <g transform={`translate(${HOLDERS[1]} ${GROUND + 26})`}><FighterArt pose={failed ? 'shrug' : 'cheer'} side={-1} /></g>
+                <LadderArt angle={failed ? REST.angle : aim.angle} ext={failed ? REST.ext : aim.ext} nozzle={-10} pose="cheer" />
+                {(failed ? CLEAR : HOLDERS.map(x => [x, GROUND + 26] as const)).map(([x, y], i) => (
+                    <g key={i} transform={`translate(${x} ${y})`}><FighterArt pose="cheer" side={i ? -1 : 1} /></g>
+                ))}
                 {RESIDENTS.map((x, i) => (
                     <g key={i} transform={`translate(${x} ${GROUND + 22}) scale(1.18)`}>
                         <g className="bw-person" style={v({ '--k': i })}><ResidentArt i={i} mood={failed ? 'wave' : 'cheer'} /></g>

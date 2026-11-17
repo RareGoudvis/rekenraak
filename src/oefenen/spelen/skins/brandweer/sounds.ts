@@ -50,6 +50,28 @@ const RECIPES = {
             tone(ac, d, t, { f0: 2093, at, dur: 0.25, vol: 0.03 });
         });
     },
+    // A window's clock ran out: the fire leaps to the next window with a whoosh and a crackle.
+    whoosh: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.45, vol: 0.24, filter: 'bandpass', f0: 400, f1: 1800, q: 0.8 });
+        noise(ac, d, t, { at: 0.3, dur: 0.25, vol: 0.1, filter: 'highpass', f0: 2800 });
+    },
+    // The collapse: a low rumble, a soft thud per floor, a big crash into the heap, a helmet's clonk on the rubble.
+    rumble: (ac, d, t) => {
+        [0, 0.4].forEach(at => noise(ac, d, t, { at, dur: 0.5, vol: 0.26, filter: 'lowpass', f0: 260, f1: 120 }));
+        tone(ac, d, t, { f0: 55, f1: 45, dur: 0.9, vol: 0.2, wobble: [9, 6] });
+    },
+    thud: (ac, d, t) => {
+        tone(ac, d, t, { f0: 110, f1: 40, dur: 0.3, vol: 0.4 });
+        noise(ac, d, t, { dur: 0.35, vol: 0.28, filter: 'lowpass', f0: 700, f1: 150 });
+    },
+    crash: (ac, d, t) => {
+        tone(ac, d, t, { f0: 80, f1: 28, dur: 1.1, vol: 0.5 });
+        [0, 0.35, 0.7].forEach((at, i) => noise(ac, d, t, { at, dur: 0.5, vol: 0.45 - i * 0.12, filter: 'lowpass', f0: 1400 - i * 350, f1: 120 }));
+        [0.2, 0.4, 0.6, 0.85].forEach(at => noise(ac, d, t, { at, dur: 0.07, vol: 0.12, filter: 'bandpass', f0: 1500, q: 1.3 }));
+    },
+    klonk: (ac, d, t) => {
+        [0, 0.32, 0.52].forEach((at, i) => tone(ac, d, t, { type: 'triangle', f0: 620, f1: 480, at, dur: 0.12, vol: 0.14 - i * 0.04 }));
+    },
 } satisfies Record<string, Recipe>;
 
 export type BrandweerSound = keyof typeof RECIPES;

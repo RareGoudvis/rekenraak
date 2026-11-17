@@ -1,17 +1,21 @@
 // Brandweer: the fire level of the burning apartment block, in steps of the truck's heat gauge. Pure, so the tuning
-// is testable. The level rises with play time (help pauses the clock) and one step per counted mistake; every window
-// sprayed out cools it one step and every 3 in a row cools one more (the Superstraal). At 0 the building is fully out
-// and the next one is already burning (buildings counts them); at max it is too hot: the friendly early end.
+// is testable. The level rises with play time (help pauses the clock), one step per counted mistake and one step per
+// fire that jumps to the next window (each burning window has its own clock, WINDOW_CLOCK); every window sprayed out
+// cools it one step and every 3 in a row cools one more (the Superstraal). At 0 the building is fully out and the next
+// one is already burning (buildings counts them); at max it is too hot: the building collapses (the friendly early end).
 
-// THE tuning table. Checked with a simulated pupil over the 3 minutes (spelen.brandweer.test): at one answer every
-// 6–8 s, 80 % right holds about 9 rounds in 10, 60 % right burns down in about 2 of 3, guessing (25 %) always.
+// THE tuning table. Checked with a simulated pupil over the 3 minutes (spelen.brandweer.test, think time per sum plus the
+// flash): thinking 4–6 s, 80 % right fails about 1 round in 100, 70 % about 1 in 10, 60 % about 1 in 3; a slow
+// 6-year-old (6–9 s) at 80 % about 1 in 20; guessing (25 %) always.
 export const FIRE = {
     // The gauge's top: the building is too hot here.
     max: 10,
     // A fresh building: already burning, the gauge in its yellow zone so the first sums matter.
     start: 4,
-    // One step hotter per this much play time (the owner's first idea: 15 s).
-    riseMs: 15_000,
+    // One step hotter per this much play time (15 s before the window clocks; they carry the time pressure now).
+    riseMs: 30_000,
+    // One step per fire that jumps to a neighbouring window.
+    jump: 1,
     // One step per counted mistake (met hulp never heats).
     mistake: 1,
     // One step cooler per right answer: the window it sprayed out.
@@ -24,6 +28,10 @@ export const FIRE = {
     smoky: 5,
 } as const;
 
+// The collapse when too hot, in ms: the crew steps back, three floors drop, the rest comes down into the heap, the cheer,
+// then the end screen. The skin holds the session clock meanwhile (onHold), so the round never ends under it.
+export const COLLAPSE = { back: 1300, floors: [1900, 2350, 2800], down: 3250, cheer: 4300, end: 5800 } as const;
+
 // The block: 3 × 3 windows, numbered left to right, top to bottom.
 export const WINDOWS = 9;
 export const COLS = 3;
@@ -33,7 +41,7 @@ export const RESCUE_EVERY = 4;
 export const PETS = ['kat', 'hond', 'konijn'] as const;
 export type Pet = typeof PETS[number];
 
-export interface FireCounts { elapsedMs: number; right: number; mistakes: number; streak: number }
+export interface FireCounts { elapsedMs: number; right: number; mistakes: number; streak: number; jumps?: number }
 export interface FireState extends FireCounts {
     level: number;
     // Buildings fully put out this round.
@@ -42,17 +50,19 @@ export interface FireState extends FireCounts {
     supers: number;
 }
 
-export const fireStart = (): FireState => ({ level: FIRE.start, buildings: 0, supers: 0, elapsedMs: 0, right: 0, mistakes: 0, streak: 0 });
+export const fireStart = (): FireState => ({ level: FIRE.start, buildings: 0, supers: 0, elapsedMs: 0, right: 0, mistakes: 0, streak: 0, jumps: 0 });
 
 const ticksOf = (ms: number) => Math.floor(Math.max(0, ms) / FIRE.riseMs);
 const hotter = (level: number, by: number) => Math.min(FIRE.max, level + by);
 
 /** The state after the session's counts moved from s to now: time first, then mistakes, then the sprayed windows. Counts going back = a new round. */
 export function fireStep(s: FireState, now: FireCounts): FireState {
-    const from = now.right < s.right || now.mistakes < s.mistakes || now.elapsedMs < s.elapsedMs ? fireStart() : s;
-    if (tooHot(from.level)) return { ...from, ...now };
+    const jumps = now.jumps ?? 0;
+    const from = now.right < s.right || now.mistakes < s.mistakes || now.elapsedMs < s.elapsedMs || jumps < (s.jumps ?? 0) ? fireStart() : s;
+    if (tooHot(from.level)) return { ...from, ...now, jumps };
     let level = hotter(from.level, ticksOf(now.elapsedMs) - ticksOf(from.elapsedMs));
     level = hotter(level, FIRE.mistake * Math.max(0, now.mistakes - from.mistakes));
+    level = hotter(level, FIRE.jump * Math.max(0, jumps - (from.jumps ?? 0)));
     let { buildings, supers } = from;
     const gained = Math.max(0, now.right - from.right);
     for (let k = 0; k < gained && !tooHot(level); k++) {
@@ -63,7 +73,7 @@ export function fireStep(s: FireState, now: FireCounts): FireState {
         level -= FIRE.right + (bonus ? 1 : 0);
         if (level <= 0) { buildings++; level = FIRE.start; }
     }
-    return { level, buildings, supers, ...now };
+    return { level, buildings, supers, ...now, jumps };
 }
 
 /** The round's level from cold, for a list of moments (tests and the tuning simulation). */
@@ -74,8 +84,8 @@ export const tooHot = (level: number) => level >= FIRE.max;
 export type FireMood = 'calm' | 'warm' | 'hot';
 export const fireMood = (level: number): FireMood => (level >= FIRE.hot ? 'hot' : level >= FIRE.smoky ? 'warm' : 'calm');
 
-/** How big the flames are drawn at this level: 0.8 at a cold gauge, 1.1 at too hot (they never reach the window above). */
-export const flameScale = (level: number) => 0.8 + 0.03 * Math.min(FIRE.max, Math.max(0, level));
+/** How big the flames are drawn at this level: 0.75 at a cold gauge, 1 at too hot; a window's clock grows them by up to a fifth more. */
+export const flameScale = (level: number) => 0.75 + 0.025 * Math.min(FIRE.max, Math.max(0, level));
 
 // A small seeded hash (FNV-1a), so the same sum always lights the same windows.
 function hash(text: string): number {
@@ -119,3 +129,61 @@ export type Decor = 'dark' | 'plant' | 'lamp' | 'curtain';
 const DECOR: readonly Decor[] = ['plant', 'dark', 'curtain', 'lamp', 'dark', 'plant', 'curtain', 'dark', 'lamp'];
 /** What a window that does not burn shows, per building (a plant, a lamp, curtains, or just dark). */
 export const decorOf = (window: number, building: number): Decor => DECOR[(window + building * 4) % DECOR.length];
+
+// ── The window clocks ───────────────────────────────────────────────────────
+// Each burning window has its own clock, running only while the sum waits (flashes and help freeze it). When it runs
+// out the fire jumps to a free neighbour (left, right or up; never the pet's window) and the level goes up FIRE.jump;
+// the window's clock then starts again. A jumped fire is extra danger, never an extra choice: it has no answer and
+// burns until the sum is answered. The four clocks are staggered, so at most one window runs out at a time.
+export const WINDOW_CLOCK = {
+    // The first window's clock at the start (owner: 8 s; 10 s keeps it fair for a 6-year-old who thinks 6–9 s).
+    firstMs: 10_000,
+    // It gets this much shorter per minute played, down to minMs (8 s from the second minute).
+    shrinkPerMinMs: 1_000,
+    minMs: 8_000,
+    // Each next window's clock is this much longer.
+    stepMs: 3_000,
+} as const;
+
+/** The clocks (ms) of a sum's burning windows, one per option in order; their order is seeded per sum. */
+export function windowClocks(key: string, n: number, elapsedMs: number): number[] {
+    const first = Math.max(WINDOW_CLOCK.minMs, WINDOW_CLOCK.firstMs - WINDOW_CLOCK.shrinkPerMinMs * Math.floor(Math.max(0, elapsedMs) / 60_000));
+    const rank = Array.from({ length: n }, (_, i) => i);
+    const rng = seeded(hash(`clock-${key}`));
+    for (let i = rank.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [rank[i], rank[j]] = [rank[j], rank[i]];
+    }
+    return rank.map(r => first + r * WINDOW_CLOCK.stepMs);
+}
+
+/** Which windows' clocks ran out by sumMs of waiting, in time order (option indices; a window runs out again each clock). */
+export function jumpEvents(sumMs: number, clocks: readonly number[]): number[] {
+    const events: { at: number; i: number }[] = [];
+    clocks.forEach((d, i) => { for (let at = d; at <= sumMs; at += d) events.push({ at, i }); });
+    return events.sort((a, b) => a.at - b.at || a.i - b.i).map(e => e.i);
+}
+
+/** A free neighbour of a window for the fire to jump to (up first, then left, then right); null = none free. */
+export function jumpTarget(from: number, taken: ReadonlySet<number>): number | null {
+    const col = from % COLS;
+    const tries = [from - COLS, col > 0 ? from - 1 : -1, col < COLS - 1 ? from + 1 : -1];
+    return tries.find(w => w >= 0 && w < WINDOWS && !taken.has(w)) ?? null;
+}
+
+/** The first n events (the smallest clock alone gives n of them by n of its rounds). */
+export const firstEvents = (n: number, clocks: readonly number[]) =>
+    (n <= 0 || !clocks.length ? [] : jumpEvents(n * Math.min(...clocks), clocks).slice(0, n));
+
+export interface Jump { from: number; to: number | null }
+
+/** The jumps of a sum so far: each event's window and where its fire went (burning windows, earlier jumps and the pet are taken). */
+export function jumpsOf(events: readonly number[], burning: readonly number[], pet: number): Jump[] {
+    const taken = new Set([...burning, pet]);
+    return events.map(i => {
+        const from = burning[i];
+        const to = jumpTarget(from, taken);
+        if (to !== null) taken.add(to);
+        return { from, to };
+    });
+}
