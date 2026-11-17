@@ -26,6 +26,7 @@ export const GAME_BLURB: Record<string, string> = {
     kerstboom: 'Versier de kerstboom. Elk juist antwoord hangt er iets bij.',
     eieren: 'Zoek het ei met het juiste antwoord. Er zit een kuikentje in!',
     mollen: 'Mep de mol met het juiste antwoord, snel!',
+    frituur: 'Help de klanten aan de toog. Snel, voor ze het wachten beu zijn!',
 };
 
 /** The game's line; an unknown id falls back to its name. */

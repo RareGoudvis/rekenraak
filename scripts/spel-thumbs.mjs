@@ -34,6 +34,7 @@ const GAMES = [
     ['schatkist', 'Schatkist', 2], ['pakjesband', 'Speelgoedfabriek', 1], ['kerstboom', 'Kerstboom versieren', 9], ['eieren', 'Eieren zoeken', 2], ['mollen', 'Mollen meppen', 1],
     ['meteorietenregen', 'Meteorietenregen', 0],
     ['kikkers', 'Kikkers en vliegjes', 0],
+    ['frituur', 'Frituur', 2],
     ['tovenaarsduel', 'Tovenaarsduel', 0],
     ['voetbalkaartjes', 'Voetbalkaartjes', -1],
 ];
@@ -90,9 +91,10 @@ const SKIN_CSS = {
     hartjes: '.hj-text { visibility: hidden !important; }',
     voetbalkaartjes: '.hj-text, .vk-nums { visibility: hidden !important; }',
     honingraat: '.hx-top, .hx-sum { visibility: hidden !important; }',
+    frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
-const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom']);
+const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur']);
 // Skins without a -world box: the street, 16:10 (zombies).
 const CLIPS = { zombies: { x: 0, y: 74, width: 640, height: 400 } };
 // A narrower window pulls the zombies' track into that 640px: the camp and the zombies in one picture.

@@ -1,0 +1,484 @@
+/* Frituur skin. A Flemish frituur on a street of row houses, a queue at its counter: flat fills under a thick dark
+   outline (spelen.css tokens). The scene is one 1.25 : 1 box at the bottom of the world (its street runs on past
+   both sides); everything in it is placed in % of that box, so the queue, the bubble and the counter line up on
+   every screen. Small loops keep it alive (the sign's bulbs, steam, bubbling oil, the queue fidgeting, a pigeon). */
+@property --fr-seen { syntax: '<length>'; inherits: true; initial-value: 10000px; }
+.fr-root,
+.fr-ending {
+  --fr-wall: color-mix(in srgb, var(--mab-e) 28%, var(--kiosk-paper));
+  --fr-red: var(--accent-getallenkennis);
+  --fr-roof: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  --fr-board: var(--mab-e);
+  --fr-steel: color-mix(in srgb, var(--text-muted) 38%, var(--kiosk-paper));
+  --fr-oil: color-mix(in srgb, var(--mab-e) 65%, var(--accent-vraagstukken));
+  --fr-inside: color-mix(in srgb, var(--accent-bewerkingen) 10%, var(--kiosk-paper));
+  --fr-fry: color-mix(in srgb, var(--mab-e) 80%, var(--kiosk-paper));
+  --fr-brown: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --fr-sausage: color-mix(in srgb, var(--accent-getallenkennis) 35%, var(--fr-brown));
+  --fr-stoof: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--spel-ink));
+  --fr-curry: color-mix(in srgb, var(--accent-getallenkennis) 85%, var(--spel-ink));
+  --fr-pickle: color-mix(in srgb, var(--accent-metendrekenen) 65%, var(--spel-ink));
+  --fr-wood: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper));
+  --fr-skin-0: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--kiosk-paper));
+  --fr-skin-1: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--kiosk-paper));
+  --fr-skin-2: color-mix(in srgb, var(--fr-brown) 72%, var(--kiosk-paper));
+  --fr-pavement: color-mix(in srgb, var(--text-muted) 22%, var(--kiosk-paper));
+  --fr-ok: var(--accent-metendrekenen);
+  --fr-hot: var(--accent-vraagstukken);
+}
+.fr-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: linear-gradient(to bottom, var(--spel-sky) 30%, var(--spel-sky-low));
+  overflow: hidden;
+  overflow: clip;
+}
+.fr-world { position: relative; min-width: 0; min-height: 0; container-type: size; overflow: hidden; overflow: clip; }
+.fr-sun {
+  position: absolute;
+  top: 6%;
+  right: 8%;
+  width: clamp(40px, 8vmin, 76px);
+  aspect-ratio: 1;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50%;
+  background: var(--spel-star);
+}
+.fr-scene {
+  /* A narrow world zooms in a little: the frituur stays whole, the end of the queue runs off the right edge. */
+  --fr-w: min(120cqw, 125cqh);
+  --fr-left: max((100cqw - var(--fr-w)) * .5, (100cqw - var(--fr-w)) * .2);
+  /* How much of the scene the world shows from its left edge (a registered length, so it is fixed here, in world units). */
+  --fr-seen: calc(100cqw - var(--fr-left));
+  position: absolute;
+  left: var(--fr-left);
+  bottom: 0;
+  width: var(--fr-w);
+  aspect-ratio: 1.25;
+  container-type: inline-size;
+}
+.fr-scene svg { overflow: visible; }
+.fr-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ── Lines and fills shared by every drawing ──────────────────────────────── */
+.fr-root svg *,
+.fr-ending svg * { stroke-linejoin: round; stroke-linecap: round; }
+.fr-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.4; }
+.fr-pupil { fill: var(--spel-ink); }
+.fr-blush { fill: color-mix(in srgb, var(--accent-getallenkennis) 40%, var(--kiosk-paper)); opacity: .5; }
+.fr-mouth-open { fill: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-head, .fr-hand, .fr-skin-fill { fill: var(--skin, var(--fr-skin-0)); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-hand.is-1, .fr-head.is-1, .fr-skin-fill.is-1 { fill: var(--fr-skin-1); }
+.fr-skin-fill { stroke: none; }
+.fr-arm-line { fill: none; stroke: var(--spel-ink); stroke-width: 14; }
+.fr-arm { fill: none; stroke-width: 8; }
+.fr-arm.is-cook { stroke: var(--kiosk-paper); }
+
+/* ── The street ───────────────────────────────────────────────────────────── */
+.fr-house-wall { stroke: color-mix(in srgb, var(--spel-ink) 70%, var(--spel-sky)); stroke-width: 3; }
+.fr-house.is-0 .fr-house-wall { fill: color-mix(in srgb, color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--fr-brown)) 55%, var(--spel-sky)); }
+.fr-house.is-1 .fr-house-wall { fill: color-mix(in srgb, var(--fr-wall) 70%, var(--spel-sky)); }
+.fr-house.is-2 .fr-house-wall { fill: color-mix(in srgb, color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--fr-brown)) 50%, var(--spel-sky)); }
+.fr-house-window { fill: color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper)); stroke: color-mix(in srgb, var(--spel-ink) 60%, var(--spel-sky)); stroke-width: 3; }
+.fr-house-door { fill: color-mix(in srgb, var(--fr-brown) 60%, var(--spel-sky)); stroke: color-mix(in srgb, var(--spel-ink) 60%, var(--spel-sky)); stroke-width: 3; }
+.fr-pavement { fill: var(--fr-pavement); }
+.fr-pavement-line { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 30%, var(--fr-pavement)); stroke-width: 2.5; }
+.fr-curb { fill: color-mix(in srgb, var(--text-muted) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-lamp-post { fill: color-mix(in srgb, var(--spel-ink) 75%, var(--accent-bewerkingen)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-lamp { fill: var(--fr-board); stroke: var(--spel-ink); stroke-width: 3; }
+/* Now and then a cyclist rides past behind the queue. */
+.fr-cyclist { animation: fr-ride 26s linear infinite; animation-delay: -4s; }
+@keyframes fr-ride { 0% { transform: translateX(-340px); } 38%, 100% { transform: translateX(1150px); } }
+.fr-tyre { fill: none; stroke: var(--spel-ink); stroke-width: 4; }
+.fr-spokes { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 55%, var(--kiosk-paper)); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: fr-roll 700ms linear infinite reverse; }
+.fr-frame { fill: none; stroke: var(--spel-fill-3); stroke-width: 4; }
+.fr-helmet { fill: var(--spel-fill-0); stroke: var(--spel-ink); stroke-width: 2.5; }
+/* The pigeon: it struts left and right on the pavement and pecks. */
+.fr-pigeon { animation: fr-strut 16s linear infinite; transform-origin: 14px 14px; }
+@keyframes fr-strut {
+  0% { transform: translateX(0) scaleX(1); }
+  46% { transform: translateX(-70px) scaleX(1); }
+  50% { transform: translateX(-70px) scaleX(-1); }
+  96% { transform: translateX(0) scaleX(-1); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+.fr-pigeon-peck { animation: fr-peck 1.6s ease-in-out infinite; }
+@keyframes fr-peck { 0%, 60%, 100% { transform: rotate(0); } 70%, 80% { transform: rotate(-28deg); } 75% { transform: rotate(-18deg); } }
+.fr-pigeon-body { fill: color-mix(in srgb, var(--text-muted) 55%, var(--accent-bewerkingen)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-pigeon-wing { fill: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-pigeon-beak { fill: var(--fr-hot); stroke: var(--spel-ink); stroke-width: 1.5; }
+.fr-pigeon-leg { fill: none; stroke: var(--fr-hot); stroke-width: 2.5; }
+
+/* ── The frituur ──────────────────────────────────────────────────────────── */
+/* SYNC: 300 × 360 box (art.tsx KioskG) at the pavement line (480 of the street's 560 = 14.29 % from the bottom). */
+.fr-kiosk-art { position: absolute; left: 1%; bottom: 14.29%; width: 44%; aspect-ratio: 300 / 360; z-index: 2; }
+.fr-board { fill: var(--fr-board); stroke: var(--spel-ink); stroke-width: 4; }
+.fr-board-inner { fill: var(--kiosk-paper); stroke: var(--fr-red); stroke-width: 3; }
+.fr-name {
+  fill: var(--fr-red);
+  stroke: var(--spel-ink);
+  stroke-width: 3;
+  paint-order: stroke fill;
+  font-family: var(--kid-font);
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.fr-bulb { fill: color-mix(in srgb, var(--fr-board) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-bulb.is-a { animation: fr-blink 1.1s steps(1) infinite; }
+.fr-bulb.is-b { animation: fr-blink 1.1s steps(1) infinite; animation-delay: -.55s; }
+@keyframes fr-blink { 0% { fill: var(--kiosk-paper); } 50% { fill: color-mix(in srgb, var(--fr-red) 70%, var(--fr-board)); } }
+.fr-post { fill: var(--fr-roof); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-chimney { fill: var(--fr-steel); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-puff { fill: var(--kiosk-paper); stroke: color-mix(in srgb, var(--spel-ink) 35%, var(--kiosk-paper)); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; animation: fr-puff 4.2s ease-out infinite; animation-delay: calc(var(--k) * -1.4s); }
+@keyframes fr-puff { 0% { transform: translate(0, 6px) scale(.4); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate(18px, -54px) scale(1.4); opacity: 0; } }
+.fr-roof { fill: var(--fr-roof); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-wall { fill: var(--fr-wall); stroke: var(--spel-ink); stroke-width: 3.5; }
+.fr-wall-trim { fill: none; stroke: var(--fr-red); stroke-width: 6; }
+.fr-window-back { fill: var(--fr-inside); }
+.fr-tiles { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 14%, var(--fr-inside)); stroke-width: 2; }
+.fr-window-frame { fill: none; stroke: var(--spel-ink); stroke-width: 4; }
+.fr-menu { fill: color-mix(in srgb, var(--spel-ink) 80%, var(--accent-metendrekenen)); stroke: var(--fr-wood); stroke-width: 3; }
+.fr-menu-line { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5; opacity: .85; }
+.fr-fryer { fill: var(--fr-steel); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-oil { fill: var(--fr-oil); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-bubble-oil { fill: color-mix(in srgb, var(--fr-oil) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.2; transform-box: fill-box; transform-origin: center; animation: fr-pop 1.2s ease-in infinite; animation-delay: calc(var(--k) * -.41s); }
+@keyframes fr-pop { 0% { transform: scale(0); opacity: 0; } 30% { opacity: 1; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: translateY(-4px) scale(1.5); opacity: 0; } }
+.fr-basket-wire { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 70%, var(--fr-steel)); stroke-width: 2; }
+.fr-handle { fill: none; stroke: var(--spel-ink); stroke-width: 5; }
+.fr-basket { animation: fr-basket 5s ease-in-out infinite; }
+.fr-basket.is-late { animation-delay: -2.6s; }
+@keyframes fr-basket { 0%, 78%, 100% { transform: none; } 82% { transform: translateY(-5px) rotate(-5deg); } 86% { transform: translateY(0) rotate(0); } 90% { transform: translateY(-4px) rotate(-4deg); } 94% { transform: none; } }
+.fr-root.is-served .fr-basket { animation: fr-basket-up 700ms ease-in-out; }
+@keyframes fr-basket-up { 30% { transform: translateY(-9px) rotate(-8deg); } 55% { transform: translateY(-3px) rotate(-2deg); } 70% { transform: translateY(-7px) rotate(-6deg); } }
+/* Steam rises from the fryer past the awning; a serve sends up a big puff. */
+.fr-steam { fill: none; stroke: var(--kiosk-paper); stroke-width: 7; opacity: 0; animation: fr-steam 3s ease-out infinite; animation-delay: calc(var(--k) * -1s); }
+@keyframes fr-steam { 0% { transform: translate(0, 10px); opacity: 0; } 25% { opacity: .8; } 100% { transform: translate(8px, -90px); opacity: 0; } }
+.fr-root.is-served .fr-steam { animation-duration: 1.1s; }
+.fr-awning { animation: fr-flutter 3.4s ease-in-out infinite alternate; transform-origin: 150px 124px; }
+@keyframes fr-flutter { from { transform: scaleY(1); } to { transform: scaleY(1.05); } }
+.fr-stripe-band.is-0 { fill: var(--fr-red); }
+.fr-stripe-band.is-1 { fill: var(--kiosk-paper); }
+.fr-awning-edge { fill: none; stroke: var(--spel-ink); stroke-width: 3.5; }
+.fr-counter { fill: var(--fr-wood); stroke: var(--spel-ink); stroke-width: 3.5; }
+.fr-bottle { stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-bottle.is-ketchup { fill: var(--fr-red); }
+.fr-bottle.is-mayo { fill: var(--fr-fry); }
+.fr-bell-dome { fill: color-mix(in srgb, var(--fr-board) 60%, var(--fr-steel)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-bell-base { fill: var(--fr-roof); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-kiosk.is-serve .fr-bell { animation: fr-ring 600ms ease-out; }
+@keyframes fr-ring { 15% { transform: rotate(-12deg); } 35% { transform: rotate(9deg); } 55% { transform: rotate(-5deg); } 75% { transform: rotate(3deg); } }
+/* The cook: a white hat and apron, bobbing to the music; reaches over the counter on a serve, scratches the head on a wrong one. */
+.fr-cook { animation: fr-cook 1.8s ease-in-out infinite alternate; }
+@keyframes fr-cook { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+.fr-cook.is-oops { animation: fr-oops 400ms ease-in-out 2; }
+@keyframes fr-oops { 25% { transform: translateX(-2px) rotate(-1deg); } 75% { transform: translateX(2px) rotate(1deg); } }
+.fr-kiosk.is-serve .fr-cook-arm { animation: fr-reach 320ms var(--ease-out); }
+@keyframes fr-reach { from { transform: translate(-18px, 10px); } }
+.fr-apron { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-scarf { fill: var(--fr-red); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-toque { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-toque-band { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper)); stroke-width: 2; }
+.fr-sweat { fill: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.5; }
+
+/* ── The orders ───────────────────────────────────────────────────────────── */
+.fr-order * { stroke: var(--spel-ink); stroke-width: 2; }
+.fr-fry { fill: var(--fr-fry); }
+.fr-paper { fill: var(--kiosk-paper); }
+.fr-paper-stripe { fill: none; stroke: var(--fr-red) !important; stroke-width: 2.5 !important; }
+.fr-mayo { fill: var(--kiosk-paper); }
+.fr-mayo-line { fill: none; stroke: var(--kiosk-paper) !important; stroke-width: 2.5 !important; }
+.fr-stoof { fill: var(--fr-stoof); }
+.fr-sausage { fill: var(--fr-sausage); }
+.fr-frikandel { fill: var(--fr-brown); }
+.fr-curry { fill: none; stroke: var(--fr-curry) !important; stroke-width: 3 !important; }
+.fr-onion { fill: var(--kiosk-paper); stroke-width: 1 !important; }
+.fr-fork { fill: none; stroke: var(--fr-wood) !important; stroke-width: 2.5 !important; }
+.fr-stick { fill: none; stroke: var(--fr-wood) !important; stroke-width: 3 !important; }
+.fr-pickle { fill: var(--fr-pickle); }
+.fr-pickle-bump { fill: color-mix(in srgb, var(--fr-pickle) 50%, var(--kiosk-paper)); stroke-width: 0 !important; }
+/* The wrong snack slides out on the counter and back in. SYNC: the counter top is 30.4 % from the scene's bottom. */
+.fr-wrong-order { position: absolute; left: 38%; bottom: 30.4%; width: 7%; aspect-ratio: 40 / 44; z-index: 16; animation: fr-wrong 1.5s var(--ease-out) both; }
+@keyframes fr-wrong {
+  0% { translate: -4cqw 0; scale: .5; opacity: 0; }
+  18% { translate: 0 0; scale: 1.1; opacity: 1; }
+  28%, 64% { translate: 0 0; scale: 1; rotate: 0deg; }
+  40% { rotate: -8deg; }
+  52% { rotate: 6deg; }
+  100% { translate: -6cqw 0; scale: .6; opacity: 0; }
+}
+
+/* ── The customers ────────────────────────────────────────────────────────── */
+/* SYNC: SLOTS in Frituur.tsx; a person is 16 % of the scene wide and 40 % high (100 × 200), feet on the pavement. */
+.fr-cust { position: absolute; left: calc(var(--x) * 1%); bottom: 14.29%; width: 16%; translate: -50% 0; transition: left 650ms var(--ease-out); }
+.fr-person-art { display: block; width: 100%; aspect-ratio: 1 / 2; }
+.fr-dog-art { position: absolute; left: 60%; bottom: 0; width: 66%; aspect-ratio: 70 / 60; }
+.fr-step, .fr-idle, .fr-leave, .fr-walking { position: relative; }
+.fr-shirt { stroke: var(--spel-ink); stroke-width: 3; }
+.fr-arm.fr-shirt { stroke-width: 8; }
+.fr-shirt.is-0 { fill: var(--spel-fill-1); stroke: var(--spel-fill-1); }
+.fr-shirt.is-1 { fill: var(--spel-fill-0); stroke: var(--spel-fill-0); }
+.fr-shirt.is-2 { fill: var(--spel-fill-3); stroke: var(--spel-fill-3); }
+.fr-shirt.is-3 { fill: var(--spel-fill-4); stroke: var(--spel-fill-4); }
+.fr-shirt.is-4 { fill: var(--spel-fill-5); stroke: var(--spel-fill-5); }
+.fr-shirt.is-5 { fill: var(--spel-fill-2); stroke: var(--spel-fill-2); }
+/* The body keeps its dark outline; only the sleeves take the shirt colour as their stroke. */
+rect.fr-shirt { stroke: var(--spel-ink) !important; }
+path.fr-arm { fill: none !important; }
+.fr-stripe { fill: none; stroke: var(--kiosk-paper); stroke-width: 4; }
+.fr-collar { fill: none; stroke: var(--kiosk-paper); stroke-width: 3; }
+.fr-buttons { fill: none; stroke: var(--spel-ink); stroke-width: 4; }
+.fr-pants { stroke: var(--spel-ink); stroke-width: 3; }
+.fr-pants.is-0 { fill: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--spel-ink)); }
+.fr-pants.is-1 { fill: color-mix(in srgb, var(--text-muted) 75%, var(--kiosk-paper)); }
+.fr-pants.is-2 { fill: var(--fr-brown); }
+.fr-shoe { fill: var(--spel-ink); }
+.fr-sock { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-sock-band { fill: none; stroke: var(--fr-red); stroke-width: 4; }
+.fr-hair { stroke: var(--spel-ink); stroke-width: 3; }
+.fr-hair.is-0 { fill: color-mix(in srgb, var(--spel-ink) 85%, var(--accent-vraagstukken)); }
+.fr-hair.is-1 { fill: var(--fr-brown); }
+.fr-hair.is-2 { fill: color-mix(in srgb, var(--mab-e) 80%, var(--kiosk-paper)); }
+.fr-hair.is-3 { fill: color-mix(in srgb, var(--accent-vraagstukken) 75%, var(--accent-getallenkennis)); }
+.fr-hair.is-grey { fill: color-mix(in srgb, var(--text-muted) 30%, var(--kiosk-paper)); }
+.fr-cap { fill: color-mix(in srgb, var(--text-muted) 70%, var(--fr-brown)); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-peak, .fr-beanie { stroke: var(--spel-ink); stroke-width: 3; }
+.fr-peak.is-0, .fr-beanie.is-1 { fill: var(--spel-fill-0); }
+.fr-peak.is-1, .fr-beanie.is-2 { fill: var(--spel-fill-3); }
+.fr-peak.is-2, .fr-beanie.is-0 { fill: var(--spel-fill-1); }
+.fr-bobble { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-moustache { fill: color-mix(in srgb, var(--text-muted) 25%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-moustache.is-dark { fill: var(--fr-brown); }
+.fr-glasses { fill: none; stroke: var(--spel-ink); stroke-width: 2; }
+.fr-watch { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-cane { fill: none; stroke: var(--fr-brown); stroke-width: 5; }
+.fr-ball-white { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-ball-patch { fill: var(--spel-ink); }
+.fr-dog-fur { fill: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; }
+.fr-dog-spot { fill: var(--fr-brown); }
+.fr-dog-snout { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-dog-ear { fill: var(--fr-brown); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-dog-tail { fill: none; stroke: var(--spel-ink); stroke-width: 6; }
+.fr-tongue { fill: color-mix(in srgb, var(--accent-getallenkennis) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.8; }
+
+/* Waiting: everyone sways a little on their own beat; the second in line leans out to peek at the counter, the
+   third taps a foot; the dog wags. */
+.fr-idle { transform-origin: 50% 100%; animation: fr-sway 2.4s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.47s); }
+@keyframes fr-sway { from { rotate: -1.4deg; } to { rotate: 1.4deg; } }
+.fr-cust.is-slot-1 .fr-idle { animation: fr-peek 6.5s ease-in-out infinite; animation-delay: calc(var(--k) * -1.1s); }
+@keyframes fr-peek { 0%, 62%, 100% { translate: 0 0; rotate: 0deg; } 70%, 84% { translate: -1.4cqw 0; rotate: -9deg; } 77% { translate: -1.6cqw -.3cqw; rotate: -10deg; } }
+.fr-cust.is-slot-2 .fr-leg.is-b { animation: fr-tap .5s ease-in-out infinite alternate; }
+@keyframes fr-tap { from { transform: rotate(0); } to { transform: rotate(-9deg); } }
+.fr-dog-tail { animation: fr-wag .36s ease-in-out infinite alternate; }
+@keyframes fr-wag { from { transform: rotate(-14deg); } to { transform: rotate(16deg); } }
+.fr-dog.is-low .fr-dog-tail, .fr-dog.is-grumpy .fr-dog-tail { animation: none; transform: rotate(60deg); }
+.fr-dog.is-served .fr-dog-tail, .fr-dog.is-happy .fr-dog-tail { animation-duration: .15s; }
+.fr-dog.is-served { animation: fr-dog-hop 340ms ease-out 3; }
+@keyframes fr-dog-hop { 50% { transform: translateY(-10px); } }
+.fr-dog.is-wait .fr-dog-head { animation: fr-sniff 3.2s ease-in-out infinite; }
+@keyframes fr-sniff { 0%, 70%, 100% { transform: rotate(0); } 78%, 90% { transform: rotate(-14deg); } }
+/* Impatient: a fast foot, and the head shakes now and then. */
+.fr-cust.is-low .fr-leg.is-b { animation: fr-tap .22s ease-in-out infinite alternate; }
+.fr-cust.is-low .fr-idle { animation: fr-huff 1.6s ease-in-out infinite; }
+@keyframes fr-huff { 0%, 60%, 100% { rotate: 0deg; } 70% { rotate: -3deg; } 80% { rotate: 3deg; } 90% { rotate: -2deg; } }
+
+/* Stepping up: two quick steps (replayed per spot); a new customer walks in from the right. */
+.fr-step { animation: fr-step 650ms ease-in-out; }
+@keyframes fr-step { 25%, 75% { translate: 0 -2.5%; } 50% { translate: 0 0; } }
+.fr-step .fr-leg.is-a { animation: fr-swing 325ms ease-in-out 2 alternate; }
+.fr-step .fr-leg.is-b { animation: fr-swing 325ms ease-in-out 2 alternate-reverse; }
+@keyframes fr-swing { from { transform: rotate(14deg); } to { transform: rotate(-14deg); } }
+.fr-cust.is-new { animation: fr-enter 900ms var(--ease-out) both; }
+@keyframes fr-enter { from { translate: calc(-50% + 34cqw) 0; } to { translate: -50% 0; } }
+.fr-cust.is-new .fr-step .fr-leg { animation-iteration-count: 3; }
+
+/* Served: a hop and a thumbs up; the order flies from the window into the hand. */
+.fr-cust.is-served .fr-step { animation: fr-hop 360ms ease-out 2; }
+@keyframes fr-hop { 50% { translate: 0 -7%; } }
+.fr-held.is-served { animation: fr-hand-in 420ms var(--ease-out) both; }
+@keyframes fr-hand-in { from { transform: translate(-90px, -14px) scale(.5) rotate(-30deg); opacity: .4; } 60% { transform: translate(-30px, -22px) scale(.9) rotate(10deg); opacity: 1; } }
+/* The wrong snack: hands on the hips, a shake of the head and "?!". */
+.fr-cust.is-frown .fr-step { animation: fr-nope 380ms ease-in-out 3; }
+@keyframes fr-nope { 25% { rotate: -3deg; } 75% { rotate: 3deg; } }
+.fr-huh {
+  position: absolute;
+  left: 70%;
+  top: calc(var(--top) / 200 * 100% - 2%);
+  font-family: var(--kid-font);
+  font-weight: 900;
+  font-size: 4cqw;
+  color: var(--fr-hot);
+  -webkit-text-stroke: 1.5px var(--spel-ink);
+  animation: fr-pop-in 300ms var(--ease-spring) both;
+}
+
+/* Impatient: puffs of steam from the head. */
+.fr-fume { position: absolute; left: 56%; top: calc(var(--top) / 200 * 100% - 9%); width: 48%; overflow: visible; }
+.fr-fume circle { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; transform-box: fill-box; transform-origin: center; opacity: 0; animation: fr-fume 1.2s ease-out infinite; }
+.fr-fume circle + circle { animation-delay: -.6s; }
+@keyframes fr-fume { 0% { transform: translate(-4px, 8px) scale(.3); opacity: 0; } 25% { opacity: 1; } 100% { transform: translate(6px, -14px) scale(1.1); opacity: 0; } }
+
+/* Leaving: off to the left past the counter, a little closer to the street; eating, or stomping with "Hmpf!". */
+.fr-leaver { z-index: 15; }
+.fr-leave { animation: fr-leave 2.4s linear forwards; }
+@keyframes fr-leave {
+  0% { translate: 0 0; opacity: 1; }
+  12% { translate: -2cqw .3cqw; }
+  90% { opacity: 1; }
+  100% { translate: -66cqw 3cqw; scale: 1.06; opacity: 0; }
+}
+.fr-leaver.is-grumpy .fr-leave { animation-duration: 2s; }
+.fr-walking { animation: fr-bob 360ms ease-in-out infinite alternate; }
+@keyframes fr-bob { from { translate: 0 0; } to { translate: 0 -2%; } }
+.fr-leaver.is-grumpy .fr-walking { animation: fr-stomp 300ms ease-in infinite alternate; }
+@keyframes fr-stomp { from { translate: 0 0; rotate: -2deg; } to { translate: 0 -1.5%; rotate: 2deg; } }
+.fr-walking .fr-leg.is-a { animation: fr-swing 360ms ease-in-out infinite alternate; }
+.fr-walking .fr-leg.is-b { animation: fr-swing 360ms ease-in-out infinite alternate-reverse; }
+.fr-walking .fr-ball { animation: fr-roll 500ms linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes fr-roll { to { transform: rotate(-360deg); } }
+.fr-chew { transform-box: fill-box; transform-origin: center; animation: fr-chew 260ms ease-in-out infinite alternate; }
+@keyframes fr-chew { from { transform: scaleY(1); } to { transform: scaleY(.35); } }
+.fr-say {
+  position: absolute;
+  left: 4%;
+  top: calc(var(--top) / 200 * 100% - 9%);
+  padding: .1em .45em;
+  border: 2px solid var(--spel-ink);
+  border-radius: 1em;
+  background: var(--kiosk-paper);
+  color: var(--spel-ink);
+  font-family: var(--kid-font);
+  font-weight: 800;
+  font-size: 2.3cqw;
+  white-space: nowrap;
+  animation: fr-say 2.4s ease-out both;
+}
+.fr-leaver.is-grumpy .fr-say { color: var(--fr-hot); }
+@keyframes fr-say { 0% { scale: 0; opacity: 0; } 10% { scale: 1.15; opacity: 1; } 18%, 70% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; translate: 0 -40%; } }
+@keyframes fr-pop-in { from { scale: 0; } }
+
+/* ── The patience bar and the speech bubble ───────────────────────────────── */
+/* Just over the head of the one at the counter (--top = the head's top in the 100 × 200 box). */
+.fr-patience {
+  position: absolute;
+  left: 56%;
+  bottom: calc(14.29% + (1 - var(--top) / 200) * 40% + 1.4%);
+  width: 10%;
+  height: 2.2cqw;
+  min-height: 9px;
+  translate: -50% 0;
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--kiosk-paper);
+  overflow: hidden;
+  z-index: 12;
+  animation: fr-pop-in 300ms var(--ease-spring) 250ms both;
+}
+.fr-patience-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--left, 1));
+  background: var(--fr-ok);
+  transition: background-color 300ms;
+}
+.fr-patience.is-low { animation: fr-throb 420ms ease-in-out infinite alternate; }
+.fr-patience.is-low .fr-patience-fill { background: var(--fr-hot); }
+@keyframes fr-throb { from { scale: 1; } to { scale: 1.12; } }
+/* SYNC: left = the counter end; the tail points down at the first spot (SLOTS[0]). It never runs past the world's edge. */
+.fr-bubble { position: absolute; left: 47%; bottom: 59%; width: min(48cqw, var(--fr-seen) - 47cqw - 10px); z-index: 20; transform-origin: 8% 100%; animation: fr-bubble 340ms var(--ease-spring) 160ms both; }
+@keyframes fr-bubble { from { scale: .3; opacity: 0; } }
+.fr-bubble .spel-sign-box { justify-content: flex-start; }
+.fr-sign {
+  position: relative;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: 1.1em;
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  --sign-inset: calc(2 * var(--sp-4) + 2 * var(--spel-line) + 6px);
+  --sign-max: min(12cqi, 58px);
+  --sign-min: 14px;
+}
+/* The tail: from the bubble down to the head of the one at the counter, however tall they are (--top as above). */
+.fr-tail {
+  position: absolute;
+  left: 51%;
+  width: 4.6%;
+  top: calc(100% - 59% - 4px);
+  bottom: calc(14.29% + (1 - var(--top) / 200) * 40% + 1.4% + 2.2cqw + 6px + .6%);
+  z-index: 21;
+  overflow: visible;
+  transition: bottom 300ms var(--ease-out);
+  animation: fr-bubble 340ms var(--ease-spring) 160ms both;
+}
+.fr-tail svg { display: block; width: 100%; height: 100%; }
+.fr-tail path { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: var(--spel-line); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.fr-tail .fr-tail-fill { stroke: none; }
+.fr-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+}
+
+/* ── The keypad side ──────────────────────────────────────────────────────── */
+.fr-panel {
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  position: relative;
+  z-index: 1;
+  /* The frituur's tiled side wall: the queue may run on behind it. */
+  border-left: var(--spel-line) solid var(--spel-ink);
+  background:
+    linear-gradient(color-mix(in srgb, var(--spel-ink) 10%, var(--fr-inside)) 2px, transparent 2px) 0 0 / 40px 40px,
+    linear-gradient(90deg, color-mix(in srgb, var(--spel-ink) 10%, var(--fr-inside)) 2px, transparent 2px) 0 0 / 40px 40px,
+    var(--fr-inside);
+}
+.fr-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+.fr-tally {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-2);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--spel-ink);
+  font-family: var(--kid-font);
+  font-weight: 800;
+}
+.fr-tally-cone { width: clamp(28px, 5vmin, 44px); aspect-ratio: 40 / 44; overflow: visible; }
+.fr-tally-num { font-family: var(--font-sheet-math); font-size: clamp(24px, 4.4vmin, 40px); line-height: 1; animation: fr-pop-in 360ms var(--ease-spring); }
+.fr-tally-label { font-size: clamp(15px, 2.4vmin, 20px); }
+.fr-tally-label small { font-size: .8em; color: var(--text-muted); font-weight: 700; }
+
+@media (orientation: portrait) {
+  .fr-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .fr-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); border-left: 0; border-top: var(--spel-line) solid var(--spel-ink); }
+  .fr-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+  /* A narrow scene: the bubble may use the whole width right of the counter. */
+  .fr-bubble { width: min(52cqw, var(--fr-seen) - 47cqw - 10px); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .fr-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .fr-panel { gap: var(--sp-2); }
+}
+
+/* ── The end screen picture ───────────────────────────────────────────────── */
+.fr-ending { background: linear-gradient(to bottom, var(--spel-sky) 40%, var(--spel-sky-low)); }
+.fr-party { animation: fr-party 640ms ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.21s); }
+@keyframes fr-party { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+.fr-ending .fr-chew { animation-duration: 300ms; }
+
+.fr-root.is-paused * { animation-play-state: paused !important; }

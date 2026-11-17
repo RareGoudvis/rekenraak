@@ -14,6 +14,7 @@ import { BugBeetle } from '@phosphor-icons/react';
 import { WINNEN_OPTION } from './kikkers/rule';
 import { MagicWand } from '@phosphor-icons/react';
 import { TOVER } from './tovenaarsduel/rule';
+import { Storefront } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -306,6 +307,20 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'mollen', music: 'gek', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'nana' } },
         icon: Hammer,
         Component: lazy(() => import('./mollen/Mollen')),
+    },
+    {
+        // 3 or 5 minutes at the counter (frituur/rule.ts): the first customer's bubble holds the sum. A right answer serves
+        // them, a wrong order costs a third of their patience, an empty patience bar walks them off (onMiss). Score =
+        // customers helped, the best per card and length on this device. The scene voices its own moments (frituur/sounds.ts).
+        meta: {
+            music: 'gek',
+            id: 'frituur', label: 'Frituur', input: 'keypad', timed: true, round: { seconds: 180 }, accepts: KEYPAD_NUMBER,
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
+            sounds: { correct: null, wrong: null, miss: null },
+        },
+        icon: Storefront,
+        Component: lazy(() => import('./frituur/Frituur')),
+        Ending: lazy(() => import('./frituur/Frituur').then(m => ({ default: m.FrituurEnding }))),
     },
 ];
 
