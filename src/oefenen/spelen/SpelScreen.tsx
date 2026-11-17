@@ -192,6 +192,7 @@ export default function SpelScreen() {
                         onFinish={st.finish}
                         onReport={st.report}
                         onHold={on => st.hold(on)}
+                        onSetback={st.setback}
                         seasons={seasons}
                     />
                 </Suspense>
