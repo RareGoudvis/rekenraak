@@ -166,15 +166,45 @@ const FLAME_OUT = 'M-84 0 C-96 -38 -70 -58 -66 -92 C-52 -70 -42 -78 -34 -128 C-1
 const FLAME_MID = 'M-60 0 C-70 -30 -50 -50 -44 -78 C-34 -60 -24 -70 -16 -104 C-4 -78 8 -82 16 -124 C26 -88 40 -80 48 -92 C54 -60 70 -32 60 0 Z';
 const FLAME_IN = 'M-34 0 C-42 -22 -28 -36 -22 -54 C-14 -40 -6 -48 2 -78 C10 -52 20 -46 26 -56 C30 -34 42 -18 34 0 Z';
 
-/** The flames of a burning window, from its sill up (the window's own box); scale grows with the fire level. */
-export function Flames({ i, scale, flare }: { i: number; scale: number; flare: boolean }) {
+/** The flames of a burning window, from its sill up (the window's own box); scale grows with the fire level. clockMs = its
+ *  window clock: the flames grow over it and start again when the fire jumps (CSS, paused outside play). */
+export function Flames({ i, scale, flare, clockMs }: { i: number; scale: number; flare: boolean; clockMs?: number }) {
     const { x, y } = winBox(i);
     return (
         <g transform={`translate(${x + WIN_W / 2} ${y + WIN_H - 8})`}>
             <g className={`bw-flames${flare ? ' is-flare' : ''}`} style={v({ '--bw-flame': scale, '--k': i })}>
-                <path className="bw-flame is-out" d={FLAME_OUT} />
-                <path className="bw-flame is-mid" d={FLAME_MID} />
-                <path className="bw-flame is-in" d={FLAME_IN} />
+                <g className={clockMs ? 'bw-grow bw-clocked' : undefined} style={clockMs ? v({ '--bw-clock': `${clockMs}ms` }) : undefined}>
+                    <path className="bw-flame is-out" d={FLAME_OUT} />
+                    <path className="bw-flame is-mid" d={FLAME_MID} />
+                    <path className="bw-flame is-in" d={FLAME_IN} />
+                </g>
+            </g>
+        </g>
+    );
+}
+
+/** A burning window's clock: the frame glows hotter and a ring in its corner fills as the fire gets ready to jump. */
+export function WindowClock({ i, clockMs }: { i: number; clockMs: number }) {
+    const { x, y } = winBox(i);
+    return (
+        <g className="bw-wclock" transform={`translate(${x} ${y})`} style={v({ '--bw-clock': `${clockMs}ms` })}>
+            <rect className="bw-frame-glow bw-clocked" x="-6" y="-6" width={WIN_W + 12} height={WIN_H + 12} rx="12" />
+            <g transform={`translate(${WIN_W - 8} 8) scale(1.3)`}>
+                <circle className="bw-ring-back" r="21" />
+                <circle className="bw-ring bw-clocked" r="14" pathLength={100} transform="rotate(-90)" />
+                <path className="bw-ring-flame" d="M0 9 C-7 7 -7 -1 -3 -4 C-3 0 0 1 1 -2 C1 -6 3 -8 4 -10 C8 -5 9 1 6 5 C5 8 3 9 0 9 Z" />
+            </g>
+        </g>
+    );
+}
+
+/** A fireball leaping from one window to the next (stage units; CSS flies it once). */
+export function Fireball({ from, to }: { from: { x: number; y: number }; to: { x: number; y: number } }) {
+    return (
+        <g className="bw-leap" style={v({ '--fx': `${from.x}px`, '--fy': `${from.y}px`, '--tx': `${to.x}px`, '--ty': `${to.y}px` })}>
+            <g className="bw-leap-spin">
+                <path className="bw-flame is-out" d="M0 26 C-24 22 -26 -2 -12 -14 C-10 -4 -4 -2 -2 -10 C-2 -22 6 -30 10 -36 C22 -20 28 0 20 14 C14 24 8 26 0 26 Z" />
+                <path className="bw-flame is-in" d="M0 18 C-12 16 -12 4 -4 -2 C-2 4 2 2 4 -4 C10 2 12 10 8 14 C6 17 3 18 0 18 Z" />
             </g>
         </g>
     );
@@ -447,6 +477,49 @@ export function SheetArt({ rx, ry }: { rx: number; ry: number }) {
             <ellipse className="bw-sheet-ring" rx={rx} ry={ry} />
             <ellipse className="bw-sheet-mid" rx={rx * 0.66} ry={ry * 0.6} />
             <ellipse className="bw-sheet-dot" rx={rx * 0.22} ry={ry * 0.22} />
+        </g>
+    );
+}
+
+// ── The collapse ────────────────────────────────────────────────────────────
+/** The block after it collapsed: a heap of rubble in its footprint (stage units), broken beams, a window frame askew. */
+export function RubbleArt({ x = BLOCK.x, w = BLOCK.w }: { x?: number; w?: number }) {
+    const top = GROUND - 170;
+    return (
+        <g className="bw-rubble">
+            <path className="bw-heap" d={`M${x - 30} ${GROUND + 4} Q${x + w * 0.12} ${top + 70} ${x + w * 0.3} ${top + 30} Q${x + w * 0.45} ${top - 10} ${x + w * 0.58} ${top + 20} Q${x + w * 0.76} ${top + 40} ${x + w * 0.88} ${top + 90} Q${x + w} ${GROUND - 40} ${x + w + 30} ${GROUND + 4} Z`} />
+            {[[0.18, 104, 12], [0.34, 70, -18], [0.5, 40, 8], [0.66, 66, 24], [0.8, 110, -10], [0.27, 120, 30], [0.6, 100, -6], [0.44, 92, 18]].map(([bx, by, r], k) => (
+                <rect key={k} className="bw-brick-piece" x={x + bx * w - 22} y={top + by} width="44" height="20" rx="4" transform={`rotate(${r} ${x + bx * w} ${top + by + 10})`} />
+            ))}
+            <rect className="bw-beam" x={x + w * 0.2} y={top + 46} width="230" height="18" rx="5" transform={`rotate(-14 ${x + w * 0.2} ${top + 46})`} />
+            <rect className="bw-beam" x={x + w * 0.5} y={top + 20} width="200" height="18" rx="5" transform={`rotate(18 ${x + w * 0.5} ${top + 20})`} />
+            <g transform={`translate(${x + w * 0.66} ${top + 30}) rotate(-22)`}>
+                <rect className="bw-frame" x="0" y="0" width="120" height="96" rx="8" />
+                <rect className="bw-glass is-out" x="10" y="10" width="100" height="76" rx="4" />
+            </g>
+            <path className="bw-pipe" d={`M${x + w * 0.4} ${top + 10} q20 -40 60 -44`} />
+        </g>
+    );
+}
+
+/** A firefighter's helmet on its own (it bounces on the rubble), around its brim's middle. */
+export function HelmetArt() {
+    return (
+        <g className="bw-lone-helmet">
+            <path className="bw-helmet" d="M-30 0 Q-28 -40 0 -42 Q28 -40 30 0 Z" />
+            <path className="bw-helmet" d="M-40 0 H40 Q40 8 30 8 H-30 Q-40 8 -40 0 Z" />
+            <path className="bw-helmet-ridge" d="M0 -42 V-2" />
+        </g>
+    );
+}
+
+/** The big dust cloud when the block comes down (stage units, round its foot). */
+export function DustArt({ x, y }: { x: number; y: number }) {
+    return (
+        <g className="bw-dust" transform={`translate(${x} ${y})`}>
+            {[[-300, -40, 90], [-160, -90, 120], [0, -120, 140], [170, -90, 120], [310, -40, 95], [-80, -10, 100], [90, -10, 100]].map(([dx, dy, r], k) => (
+                <circle key={k} className="bw-dust-puff" cx={dx} cy={dy} r={r} style={v({ '--k': k })} />
+            ))}
         </g>
     );
 }

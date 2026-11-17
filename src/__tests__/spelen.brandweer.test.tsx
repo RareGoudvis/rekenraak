@@ -9,15 +9,15 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { progressOf, SPEL_FLASH_MS, useSpelStore } from '../oefenen/spelen/useSpelStore';
 import { mulberry32 } from '../oefenen/spelen/distractors';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
-import Brandweer, { BrandweerEnding, JUMP_MS, TOO_HOT_MS } from '../oefenen/spelen/skins/brandweer/Brandweer';
-import { FIRE, RESCUE_EVERY, WINDOWS, decorOf, fireMood, fireOf, fireStart, fireStep, flameScale, petWindow, rescuedOf, tooHot, windowsOf, type FireCounts } from '../oefenen/spelen/skins/brandweer/fire';
+import Brandweer, { BrandweerEnding, JUMP_MS } from '../oefenen/spelen/skins/brandweer/Brandweer';
+import { COLLAPSE, FIRE, RESCUE_EVERY, WINDOWS, WINDOW_CLOCK, decorOf, fireMood, fireOf, fireStart, fireStep, firstEvents, flameScale, jumpEvents, jumpTarget, jumpsOf, petWindow, rescuedOf, tooHot, windowClocks, windowsOf, type FireCounts } from '../oefenen/spelen/skins/brandweer/fire';
 import { aimAt, sprayPath } from '../oefenen/spelen/skins/brandweer/geometry';
 import { BRANDWEER_SOUNDS } from '../oefenen/spelen/skins/brandweer/sounds';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Brandweer: the fire level's tuning (fire.ts), the windows and pets, and the skin on the real session.
 
-const at = (elapsedMs: number, right: number, mistakes: number, streak: number): FireCounts => ({ elapsedMs, right, mistakes, streak });
+const at = (elapsedMs: number, right: number, mistakes: number, streak: number, jumps = 0): FireCounts => ({ elapsedMs, right, mistakes, streak, jumps });
 
 describe('the fire level', () => {
     test('a new building starts in the yellow; time and mistakes heat it, a sprayed window cools it', () => {
@@ -54,30 +54,70 @@ describe('the fire level', () => {
         expect(flameScale(99)).toBe(flameScale(FIRE.max));
     });
 
-    // The owner's rule: a pupil who guesses always burns down, a steady 80 % pupil holds out (3 minutes, 6–8 s per answer).
-    test('tuning: guessing always burns down, 60 % mostly, 80 % about one round in ten at most', () => {
-        const rate = (pRight: number, pace: [number, number], runs = 3000) => {
+    test('a fire that jumps to the next window heats one step', () => {
+        expect(fireOf([at(0, 0, 0, 0, 2)]).level).toBe(FIRE.start + 2 * FIRE.jump);
+        expect(fireStep(fireOf([at(0, 0, 0, 0, 2)]), at(0, 0, 0, 0, 0))).toEqual(fireStart());
+    });
+
+    // The owner's rule: fair for 6–8 year olds. Think time per sum (the window clocks run only then) plus the flash.
+    test('tuning: guessing always burns down, 60 % often, 80 % rarely, also for a slow thinker', () => {
+        const rate = (pRight: number, think: [number, number], runs = 2000) => {
             const rng = mulberry32(23);
             let fails = 0;
             for (let r = 0; r < runs; r++) {
                 let s = fireStart();
-                let t = 0, right = 0, mistakes = 0, streak = 0;
-                for (;;) {
-                    t += (pace[0] + rng() * (pace[1] - pace[0])) * 1000;
-                    if (t >= 180_000) { s = fireStep(s, at(180_000, right, mistakes, streak)); break; }
-                    if (rng() < pRight) { right++; streak++; } else { mistakes++; streak = 0; }
-                    s = fireStep(s, at(t, right, mistakes, streak));
+                let t = 0, right = 0, mistakes = 0, streak = 0, jumps = 0;
+                for (let q = 0; ; q++) {
+                    const thinkMs = (think[0] + rng() * (think[1] - think[0])) * 1000;
+                    jumps += jumpEvents(thinkMs, windowClocks(`r${r}-q${q}`, 4, t)).length;
+                    const ok = rng() < pRight;
+                    t += thinkMs + (ok ? SPEL_FLASH_MS.right : SPEL_FLASH_MS.wrong);
+                    if (t >= 180_000) { s = fireStep(s, at(180_000, right, mistakes, streak, jumps)); break; }
+                    if (ok) { right++; streak++; } else { mistakes++; streak = 0; }
+                    s = fireStep(s, at(t, right, mistakes, streak, jumps));
                     if (tooHot(s.level)) break;
                 }
                 if (tooHot(s.level)) fails++;
             }
             return fails / runs;
         };
-        expect(rate(0.25, [4, 6])).toBeGreaterThan(0.98);
-        expect(rate(0.6, [6, 8])).toBeGreaterThan(0.5);
-        expect(rate(0.8, [6, 8])).toBeLessThan(0.12);
-        expect(rate(0.8, [8, 11])).toBeLessThan(0.18);
-        expect(rate(0.9, [6, 8])).toBeLessThan(0.02);
+        expect(rate(0.25, [2, 4])).toBeGreaterThan(0.98);
+        expect(rate(0.6, [4, 6])).toBeGreaterThan(0.2);
+        expect(rate(0.7, [4, 6])).toBeLessThan(0.2);
+        expect(rate(0.8, [4, 6])).toBeLessThan(0.04);
+        expect(rate(0.8, [6, 9])).toBeLessThan(0.1);
+        expect(rate(0.9, [6, 9])).toBeLessThan(0.03);
+    });
+});
+
+describe('the window clocks', () => {
+    test('four staggered clocks per sum, shorter later in the game, seeded per sum', () => {
+        const c = windowClocks('k', 4, 0);
+        expect([...c].sort((a, b) => a - b)).toEqual([0, 1, 2, 3].map(r => WINDOW_CLOCK.firstMs + r * WINDOW_CLOCK.stepMs));
+        expect(windowClocks('k', 4, 0)).toEqual(c);
+        expect(Math.min(...windowClocks('k', 4, 60_000))).toBe(WINDOW_CLOCK.firstMs - WINDOW_CLOCK.shrinkPerMinMs);
+        expect(Math.min(...windowClocks('k', 4, 600_000))).toBe(WINDOW_CLOCK.minMs);
+    });
+
+    test('a window runs out at its clock, again each clock; events in time order', () => {
+        expect(jumpEvents(9_999, [10_000, 13_000])).toEqual([]);
+        expect(jumpEvents(13_000, [10_000, 13_000])).toEqual([0, 1]);
+        expect(jumpEvents(20_000, [10_000, 13_000])).toEqual([0, 1, 0]);
+        expect(firstEvents(3, [10_000, 13_000])).toEqual([0, 1, 0]);
+        expect(firstEvents(0, [10_000])).toEqual([]);
+    });
+
+    test('the fire jumps up, then left, then right to a free window; never into the pet, else it stays (null)', () => {
+        expect(jumpTarget(4, new Set())).toBe(1);
+        expect(jumpTarget(4, new Set([1]))).toBe(3);
+        expect(jumpTarget(4, new Set([1, 3]))).toBe(5);
+        expect(jumpTarget(3, new Set([0]))).toBe(4);
+        expect(jumpTarget(1, new Set([0, 2]))).toBeNull();
+        // Window 4 burns, its neighbours up / left are a pet and a burning window: right is free.
+        expect(jumpsOf([0], [4, 3], 1)).toEqual([{ from: 4, to: 5 }]);
+        // Two jumps never land in the same window.
+        const two = jumpsOf([0, 0], [4], 8);
+        expect(two[0].to).not.toBe(two[1].to);
     });
 });
 
@@ -140,7 +180,7 @@ function Wired() {
     return (
         <Brandweer question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} onReport={r => st.report(r)} sound={() => { }} progress={progress} options={{}} events={st.events} />
+            onFail={() => st.fail()} onReport={r => st.report(r)} onHold={on => st.hold(on)} sound={() => { }} progress={progress} options={{}} events={st.events} />
     );
 }
 const windows = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).queryAllByRole('button', { hidden: true }) as HTMLButtonElement[];
@@ -227,18 +267,60 @@ describe('the skin on the session', () => {
         expect(sp().result?.detail).toContain('1 dier gered');
     });
 
-    test('too hot: the crew shrugs, everyone waves from the lawn, then the friendly early end', () => {
+    test('a window waits too long: the fire leaps to a free neighbour, the gauge climbs; the answers stay on the four', () => {
+        start();
+        const { container } = render(<Wired />);
+        expect(container.querySelectorAll('.bw-wclock')).toHaveLength(4);
+        wait(WINDOW_CLOCK.firstMs - 200);
+        expect(container.querySelector('.bw-ignite.is-jumped')).toBeNull();
+        wait(400);
+        expect(container.querySelectorAll('.bw-ignite.is-jumped')).toHaveLength(1);
+        expect(container.querySelector('.bw-leap')).not.toBeNull();
+        expect(lit(container)).toBe(FIRE.start + FIRE.jump);
+        expect(windows()).toHaveLength(4);
+        // A right answer puts the jumped fire out too.
+        tapRight();
+        expect(container.querySelectorAll('.bw-ignite.is-jumped')).toHaveLength(0);
+    });
+
+    test('the window clocks stand still during the flashes and under help', () => {
+        start();
+        const { container } = render(<Wired />);
+        act(() => sp().openHelp());
+        wait(WINDOW_CLOCK.firstMs + 1000);
+        act(() => sp().closeHelp());
+        expect(container.querySelector('.bw-ignite.is-jumped')).toBeNull();
+        expect(lit(container)).toBe(FIRE.start);
+    });
+
+    test('too hot: the pet jumps out, the empty block comes down floor by floor, everyone is safe and cheers, then the end', () => {
         start();
         const { container } = render(<Wired />);
         for (let i = 0; i < FIRE.max - FIRE.start - 1; i++) { tapWrong(); wait(SPEL_FLASH_MS.wrong + 10); }
         tapWrong();
         expect(container.querySelector('.bw-root.is-toohot')).not.toBeNull();
-        expect(container.querySelectorAll('.bw-fighter.is-shrug')).toHaveLength(2);
-        expect(container.querySelectorAll('.bw-resident.is-wave')).toHaveLength(3);
+        expect(sp().held).toBe(true);
+        // The waiting pet leaves its window first.
+        expect(container.querySelector('.bw-jumper')).not.toBeNull();
+        expect(container.querySelectorAll('.bw-win.is-pet')).toHaveLength(0);
+        expect(container.querySelectorAll('.bw-resident.is-oh')).toHaveLength(3);
+        expect(windows().every(b => b.disabled)).toBe(true);
         // Nobody is ever in a window: only fire, pets, plants, lamps, curtains or dark glass.
         expect(container.querySelectorAll('.bw-win .bw-resident, .bw-win .bw-fighter')).toHaveLength(0);
-        expect(windows().every(b => b.disabled)).toBe(true);
-        wait(TOO_HOT_MS + 10);
+        wait(COLLAPSE.floors[0] + 10);
+        expect((container.querySelector('.bw-sink') as SVGGElement).style.transform).not.toBe('translateY(0px)');
+        wait(COLLAPSE.down - COLLAPSE.floors[0]);
+        expect(container.querySelector('.bw-rubble')).not.toBeNull();
+        expect(container.querySelector('.bw-helmet-bounce')).not.toBeNull();
+        expect(container.querySelector('.bw-dust')).not.toBeNull();
+        wait(COLLAPSE.cheer - COLLAPSE.down);
+        expect(container.querySelectorAll('.bw-resident.is-cheer')).toHaveLength(3);
+        expect(container.querySelectorAll('.bw-fighter.is-cheer')).toHaveLength(2);
+        expect(container.querySelectorAll('.bw-lawn-pet')).toHaveLength(1);
+        expect(container.querySelectorAll('.bw-win.is-pet')).toHaveLength(0);
+        expect(container.querySelector('.bw-callout.is-safe')!.textContent).toBe('Iedereen is veilig!');
+        expect(sp().phase).not.toBe('end');
+        wait(COLLAPSE.end - COLLAPSE.cheer + 10);
         expect(sp().phase).toBe('end');
         expect(sp().outcome).toBe('failed');
     });
@@ -259,14 +341,16 @@ describe('the skin on the session', () => {
 });
 
 describe('the end picture', () => {
-    test('held: a rainbow and cheering; too hot: the crew shrugs and everyone waves, nobody hurt', () => {
+    test('held: a rainbow and cheering; too hot: a smoking heap, the crew and everyone safe on the lawn', () => {
         const progress = progressOf(sp());
         const { container, unmount } = render(<BrandweerEnding outcome="won" progress={progress} options={{}} />);
         expect(container.querySelector('.bw-ending.is-won .bw-end-rainbow')).not.toBeNull();
         expect(container.querySelectorAll('.bw-resident.is-cheer')).toHaveLength(3);
         unmount();
         const failed = render(<BrandweerEnding outcome="failed" progress={progress} options={{}} />);
-        expect(failed.container.querySelectorAll('.bw-fighter.is-shrug')).toHaveLength(2);
+        expect(failed.container.querySelector('.bw-rubble')).not.toBeNull();
+        expect(failed.container.querySelectorAll('.bw-win')).toHaveLength(0);
+        expect(failed.container.querySelectorAll('.bw-fighter.is-cheer')).toHaveLength(2);
         expect(failed.container.querySelectorAll('.bw-resident.is-wave')).toHaveLength(3);
     });
 });

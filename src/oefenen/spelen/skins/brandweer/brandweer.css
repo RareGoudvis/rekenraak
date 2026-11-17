@@ -444,3 +444,68 @@ path.bw-ledge { fill: none; }
 /* ── The end screen's picture ─────────────────────────────────────────────── */
 .bw-end-sky { fill: var(--spel-sky); }
 .bw-ending.is-failed .bw-end-sky { fill: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--spel-sky)); }
+
+/* ── Window clocks: the flames grow, the frame glows, the ring fills; they start again when the fire jumps ── */
+.bw-root:not(.is-play) .bw-clocked { animation-play-state: paused; }
+.bw-grow { animation: bw-grow var(--bw-clock) linear infinite; }
+@keyframes bw-grow { from { transform: scale(.8); } to { transform: scale(1.22); } }
+.bw-frame-glow { fill: none; stroke: var(--bw-fire-1); stroke-width: 9; opacity: 0; animation: bw-frame-glow var(--bw-clock) linear infinite; }
+@keyframes bw-frame-glow {
+  0%, 45% { opacity: 0; stroke: var(--bw-fire-3); }
+  70% { opacity: .75; stroke: var(--bw-fire-2); }
+  85% { opacity: .5; }
+  100% { opacity: 1; stroke: var(--bw-fire-1); }
+}
+.bw-ring-back { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-ring { fill: none; stroke: var(--bw-fire-3); stroke-width: 10; stroke-dasharray: 100 100; stroke-dashoffset: 100; stroke-linecap: butt; animation: bw-ring-fill var(--bw-clock) linear infinite; }
+@keyframes bw-ring-fill {
+  0% { stroke-dashoffset: 100; stroke: var(--bw-fire-3); }
+  60% { stroke: var(--bw-fire-2); }
+  100% { stroke-dashoffset: 0; stroke: var(--bw-fire-1); }
+}
+.bw-ring-flame { fill: var(--bw-fire-1); stroke: var(--spel-ink); stroke-width: 1.5; }
+/* A jump: a fireball leaps over to the neighbour, which catches fire as it lands. */
+.bw-leap { animation: bw-leap 560ms ease-in-out both; }
+@keyframes bw-leap {
+  0% { transform: translate(var(--fx), var(--fy)) scale(.6); opacity: 0; }
+  12% { opacity: 1; }
+  50% { transform: translate(calc((var(--fx) + var(--tx)) / 2), calc(min(var(--fy), var(--ty)) - 90px)) scale(1.2); }
+  85% { opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(.9); opacity: 0; }
+}
+.bw-leap-spin { transform-box: fill-box; transform-origin: 50% 50%; animation: bw-spin-leap 560ms linear both; }
+@keyframes bw-spin-leap { from { rotate: -40deg; } to { rotate: 220deg; } }
+.bw-ignite.is-jumped { animation-delay: 420ms; }
+
+/* ── The collapse: the empty block sinks floor by floor behind the street, into a heap of rubble ── */
+.bw-sink { transition: transform 300ms cubic-bezier(.55, 0, 1, .45); }
+.bw-sink.is-rumble { animation: bw-rumble 110ms linear infinite; }
+@keyframes bw-rumble { 0%, 100% { translate: 0 0; } 25% { translate: -5px 1px; } 50% { translate: 4px -1px; } 75% { translate: -3px 0; } }
+.bw-holder { transition: transform 700ms var(--ease-out); }
+.bw-sheet-away { opacity: 0; transition: opacity 400ms ease; }
+.bw-root.is-toohot .bw-windows, .bw-root.is-toohot .bw-top { opacity: 0; transition: opacity 400ms ease; }
+.bw-heap { fill: var(--bw-wall-dark); stroke: var(--spel-ink); stroke-width: 5; }
+.bw-brick-piece { fill: var(--bw-red-soft); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-beam { fill: var(--bw-hair); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-pipe { fill: none; stroke: var(--bw-metal-dark); stroke-width: 9; }
+.bw-fallen .bw-rubble { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-heap-in 520ms var(--ease-spring) both; }
+@keyframes bw-heap-in { from { scale: 1 .1; } to { scale: 1 1; } }
+.bw-helmet-ridge { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.bw-helmet-bounce { animation: bw-helmet 1.7s ease-out 150ms both; }
+@keyframes bw-helmet {
+  0% { transform: translate(60px, -300px) rotate(-220deg); opacity: 0; animation-timing-function: ease-in; }
+  8% { opacity: 1; }
+  34% { transform: translate(0, 0) rotate(-10deg); animation-timing-function: ease-out; }
+  50% { transform: translate(-24px, -90px) rotate(30deg); animation-timing-function: ease-in; }
+  64% { transform: translate(-36px, 0) rotate(-6deg); animation-timing-function: ease-out; }
+  74% { transform: translate(-44px, -30px) rotate(10deg); animation-timing-function: ease-in; }
+  84%, 100% { transform: translate(-48px, 0) rotate(-4deg); }
+}
+.bw-dust-puff {
+  fill: color-mix(in srgb, var(--bw-wall-dark) 55%, var(--kiosk-paper));
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: bw-dust 2.6s ease-out calc(var(--k) * 50ms) both;
+}
+@keyframes bw-dust { 0% { scale: .2; opacity: .95; } 35% { scale: 1; opacity: .9; } 80%, 100% { scale: 1.5; opacity: 0; } }
+.bw-callout.is-safe { left: 58%; top: 4%; background: var(--kiosk-ok-soft); color: var(--kiosk-ok); animation-name: bw-callout-stay; animation-duration: 700ms; }
