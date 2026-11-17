@@ -3,16 +3,17 @@ import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import { Burst, Clouds } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { FRITUUR, headTopOf, isLow, newCounter, nextSum, patienceShare, serve, tick, timedOut, walkOff, wrongOrder, wrongOrderOf, type Counter, type Customer } from './rule';
+import { FRITUUR, headTopOf, isKid, isLow, isVisitor, newCounter, nextSum, patienceShare, serve, tick, timedOut, walkOff, wrongOrder, wrongOrderOf, type Counter, type Customer, type CustomerKind } from './rule';
 import { frituurResult, loadBest, saveIfBest } from './records';
 import { playFrituur } from './sounds';
 import { CyclistG, DogG, KioskG, OrderG, PersonG, PigeonG, StreetG, type CookPose, type Pose } from './art';
+import { UfoG, VisitorG } from './visitors';
 import './frituur.css';
 
 // Frituur: a Flemish frituur seen from the pavement, a queue of up to three customers at its counter. The first one's
 // speech bubble holds the sum; a right answer sends the order over the counter and the customer off eating, a wrong
-// one brings out the wrong snack and walks them off grumbling, as does an empty patience bar
-// (onMiss). Score = customers helped; the best per card and length stays on this device (records.ts).
+// one brings out the wrong snack: a short, silly strop and off they stomp (an empty patience bar walks them off
+// grumbling, onMiss). Now and then a fantastic visitor queues up (visitors.tsx). Score = customers helped; the best per card and length stays on this device (records.ts).
 // The queue lives in a ref driven by game time (only while the sum waits); React renders only when it changes.
 
 // The queue's spots, % of the scene's width (the counter ends at 45 %). SYNC: .fr-patience and .fr-bubble in frituur.css.
@@ -24,7 +25,23 @@ function commitTo(ref: MutableRefObject<Counter>, set: Dispatch<SetStateAction<C
     if (next.rev !== was.rev) set(next);
 }
 
+// What each kind shouts in a strop (the dog's owner shouts, the dog barks on its own).
+const SHOUT: Record<CustomerKind, string> = {
+    kind: 'Bwaah!', voetballer: 'Bwaah!', mama: 'Grrr!', papa: 'Grrr!', opa: 'Pff!', hond: 'Grrr!',
+    alien: 'Blorp!', drieoog: 'Zorg!', monster: 'Grommel!', octopus: 'Blub!', krab: 'Knip knip!', vis: 'Blubblub!', robot: 'Biep boep!', draak: 'Rawr!', yeti: 'Groaar!',
+};
+// A strop's sound: kids wail, the rest stomp and grumble.
+const stropSound = (kind: CustomerKind) => (isKid(kind) ? 'wail' : 'strop');
+
 function CustomerArt({ c, pose, item }: { c: Customer; pose: Pose; item?: Customer['order'] | null }) {
+    if (isVisitor(c.kind)) {
+        return (
+            <>
+                {(c.kind === 'alien' || c.kind === 'drieoog') && <svg className="fr-ufo-art" viewBox="0 0 70 60" aria-hidden><UfoG pose={pose} /></svg>}
+                <svg className="fr-person-art" viewBox="0 0 100 200" aria-hidden><VisitorG kind={c.kind} pose={pose} item={item} /></svg>
+            </>
+        );
+    }
     return (
         <>
             <svg className="fr-person-art" viewBox="0 0 100 200" aria-hidden><PersonG kind={c.kind} look={c.look} pose={pose} item={item} /></svg>
@@ -73,7 +90,10 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                 const next = wrongOrder(before);
                 commitTo(counter, setView, next);
                 playFrituur('huh');
-                if (next.queue[0] !== before.queue[0]) later(380, () => playFrituur('grumble'));
+                if (next.queue[0] !== before.queue[0]) {
+                    later(420, () => playFrituur(stropSound(before.queue[0].kind)));
+                    if (before.queue[0].kind === 'hond') later(700, () => playFrituur('woef'));
+                }
             }),
         ];
         return () => offs.forEach(off => off());
@@ -118,7 +138,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
     const wrongShown = phase === 'wrong' && !!feedback && feedback.given !== '';
     const frowning = wrongShown && view.wrongs > 0;
     const pose: Pose = view.served ? 'served' : frowning ? 'frown' : low ? 'low' : 'wait';
-    const cook: CookPose = view.served ? 'serve' : wrongShown ? 'oops' : 'idle';
+    const cook: CookPose = view.served ? 'serve' : wrongShown ? 'shrug' : 'idle';
     const cls = ['fr-root', phase === 'help' && 'is-paused', view.served && 'is-served', wrongShown && 'is-wrong'].filter(Boolean).join(' ');
     return (
         <div className={cls}>
@@ -133,8 +153,8 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                         <g transform="translate(600 486)"><PigeonG /></g>
                     </svg>
                     <svg className="fr-kiosk-art" viewBox="0 0 300 360" aria-hidden><KioskG cook={cook} clipId={clipId} beat={view.servedCount} /></svg>
-                    {wrongShown && (
-                        // The wrong snack on the counter; the cook takes it back.
+                    {frowning && (
+                        // The wrong snack on the counter for a customer who stays (wrongCut < 1); the cook takes it back.
                         <svg key={`w${progress.mistakes}`} className="fr-wrong-order" viewBox="-20 -22 40 44" aria-hidden>
                             <OrderG kind={wrongOrderOf(front.order, progress.mistakes)} />
                         </svg>
@@ -162,8 +182,25 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                                 <div className="fr-walking">
                                     <CustomerArt c={l.customer} pose={l.mood} item={l.mood === 'happy' ? l.customer.order : null} />
                                 </div>
-                                <span className="fr-say" aria-hidden>{l.mood === 'happy' ? 'Mmm!' : 'Hmpf!'}</span>
+                                {l.mood === 'tantrum' && (
+                                    // The strop: a tiny storm cloud over the head and steam from both ears.
+                                    <span className="fr-strop" aria-hidden>
+                                        <svg className="fr-storm" viewBox="0 0 60 46">
+                                            <path className="fr-storm-cloud" d="M10 26 Q2 26 4 18 Q6 10 16 12 Q20 2 32 4 Q42 2 46 12 Q56 10 56 20 Q56 28 46 28 Z" />
+                                            <path className="fr-bolt" d="M30 26 L23 37 L30 37 L25 46 L38 32 L31 32 L35 26 Z" />
+                                        </svg>
+                                        <svg className="fr-ears" viewBox="0 0 100 40">
+                                            {[0, 1].map(k => <g key={k} className={`fr-ear is-${k ? 'r' : 'l'}`}><circle cx={k ? 92 : 8} cy={26} r={6} /><circle cx={k ? 96 : 4} cy={14} r={4.5} /></g>)}
+                                        </svg>
+                                        {l.customer.kind === 'hond' && <span className="fr-woef">Woef!</span>}
+                                    </span>
+                                )}
+                                <span className="fr-say" aria-hidden>{l.mood === 'happy' ? 'Mmm!' : l.mood === 'tantrum' ? SHOUT[l.customer.kind] : 'Hmpf!'}</span>
                             </div>
+                            {l.snack && (
+                                // The wrong snack lands in a hand and goes flying over the shoulder.
+                                <svg className="fr-toss" viewBox="-20 -22 40 44" aria-hidden><OrderG kind={l.snack} /></svg>
+                            )}
                         </div>
                     ))}
                     {!view.served && (
@@ -199,7 +236,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
 // The end screen: the frituur with three happy customers eating in front of it.
 const END_CUSTOMERS: readonly (Customer & { x: number })[] = [
     { id: 0, kind: 'kind', look: 0, order: 'friet', x: 345 },
-    { id: 1, kind: 'opa', look: 1, order: 'stoofvlees', x: 440 },
+    { id: 1, kind: 'alien', look: 1, order: 'slijm', x: 440 },
     { id: 2, kind: 'hond', look: 2, order: 'mayo', x: 530 },
 ];
 
@@ -213,7 +250,7 @@ export function FrituurEnding(_: SkinEndingProps) {
                 {END_CUSTOMERS.map((c, i) => (
                     <g key={c.id} transform={`translate(${c.x} 262) scale(1.15)`}>
                         <g className="fr-party" style={{ '--k': i } as CSSProperties}>
-                            <PersonG kind={c.kind} look={c.look} pose="happy" item={c.order} />
+                            {isVisitor(c.kind) ? <VisitorG kind={c.kind} pose="happy" item={c.order} /> : <PersonG kind={c.kind} look={c.look} pose="happy" item={c.order} />}
                             {c.kind === 'hond' && <g transform="translate(62 140)"><DogG pose="happy" /></g>}
                         </g>
                     </g>

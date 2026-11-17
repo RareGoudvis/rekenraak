@@ -8,8 +8,10 @@ import { gameGroupOf } from '../oefenen/zelf/topicGames';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import { resolveMeta } from '../oefenen/spelen/skins/options';
 import Frituur, { FrituurEnding } from '../oefenen/spelen/skins/frituur/Frituur';
+import { DogG, PersonG } from '../oefenen/spelen/skins/frituur/art';
+import { UfoG, VisitorG } from '../oefenen/spelen/skins/frituur/visitors';
 import {
-    FRITUUR, KINDS, ORDERS, customerOf, headTopOf, helpedTitle, isLow, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut,
+    FRITUUR, KINDS, ORDERS, VISITORS, customerOf, isVisitor, headTopOf, helpedTitle, isLow, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut,
     walkOff, wrongOrder, wrongOrderOf,
 } from '../oefenen/spelen/skins/frituur/rule';
 import { FRITUUR_BEST_KEY, frituurResult, loadBest, saveIfBest, wipeBest } from '../oefenen/spelen/skins/frituur/records';
@@ -43,17 +45,26 @@ describe('Frituur: the queue', () => {
     test('customers are seeded, varied, and never the same kind twice in a row; a wrong order is never what they asked', () => {
         expect(customerOf(42, 7, null)).toEqual(customerOf(42, 7, null));
         const seen = new Set<string>();
-        for (let seed = 1; seed < 40; seed++) {
-            let prev: (typeof KINDS)[number] | null = null;
+        let visitors = 0, all = 0;
+        for (let seed = 1; seed < 60; seed++) {
+            let prev: ReturnType<typeof customerOf>['kind'] | null = null;
             for (let id = 0; id < 30; id++) {
                 const c = customerOf(seed, id, prev);
                 expect(c.kind).not.toBe(prev);
                 expect(ORDERS).toContain(c.order);
+                // Only visitors order the green alien sauce.
+                if (c.order === 'slijm') expect(['alien', 'drieoog', 'monster']).toContain(c.kind);
                 seen.add(c.kind);
+                visitors += isVisitor(c.kind) ? 1 : 0;
+                all++;
                 prev = c.kind;
             }
         }
-        expect([...seen].sort()).toEqual([...new Set(KINDS)].sort());
+        // Every person and every visitor shows up; about one customer in four is a visitor.
+        expect([...seen].sort()).toEqual([...new Set([...KINDS, ...VISITORS])].sort());
+        expect(visitors / all).toBeGreaterThan(FRITUUR.visitorChance - 0.06);
+        expect(visitors / all).toBeLessThan(FRITUUR.visitorChance + 0.06);
+        for (const v of VISITORS) expect(headTopOf(v)).toBeGreaterThan(0);
         for (const o of ORDERS) for (let n = 0; n < 12; n++) expect(wrongOrderOf(o, n)).not.toBe(o);
     });
 
@@ -90,11 +101,12 @@ describe('Frituur: the queue', () => {
         expect(nextSum(c, 0)).toBe(c);
     });
 
-    test('a wrong order walks the customer off grumbling at once; the next one steps up with a full bar', () => {
+    test('a wrong order: a little strop with the wrong snack and off they go; the next one steps up with a full bar', () => {
         const c = newCounter(5);
         const w1 = wrongOrder(c);
         expect(w1.queue[0].id).toBe(1);
-        expect(w1.leaving.at(-1)).toEqual({ customer: c.queue[0], mood: 'grumpy' });
+        expect(w1.leaving.at(-1)).toEqual({ customer: c.queue[0], mood: 'tantrum', snack: wrongOrderOf(c.queue[0].order, c.nextId) });
+        expect(w1.leaving.at(-1)!.snack).not.toBe(c.queue[0].order);
         expect(w1.wrongs).toBe(0);
         expect(patienceShare(w1.patience)).toBe(1);
     });
@@ -166,7 +178,7 @@ describe('Frituur: the registry row', () => {
         localStorage.setItem(SOUND_KEY, '0');
         resetSoundForTests();
         setSoundOn(true);
-        expect(FRITUUR_SOUNDS).toEqual(['sizzle', 'ding', 'yum', 'huh', 'grumble']);
+        expect(FRITUUR_SOUNDS).toEqual(['sizzle', 'ding', 'yum', 'huh', 'grumble', 'strop', 'wail', 'woef']);
         for (const s of FRITUUR_SOUNDS) {
             const before = made;
             playFrituur(s);
@@ -211,16 +223,19 @@ describe('Frituur: the scene', () => {
         expect(container.querySelector('.fr-tally')!.getAttribute('aria-label')).toBe('1 klant geholpen');
     });
 
-    test('a wrong answer: the wrong snack on the counter and the customer walks off grumbling; the next steps up', () => {
+    test('a wrong answer: the wrong snack goes to the customer, a little strop, and the next steps up', () => {
         const events = createSpelEvents();
         const { container, rerender } = render(<Frituur {...propsWith({ events })} />);
         const front = container.querySelector('.fr-cust.is-slot-0')!;
         act(() => { events.emit('wrong', { given: '11', expected: '12' }); });
         rerender(<Frituur {...propsWith({ events, phase: 'wrong', feedback: { given: '11', expected: '12', correct: false }, progress: progressWith({ mistakes: 1 }) })} />);
-        expect(container.querySelector('.fr-wrong-order')).not.toBeNull();
+        expect(container.querySelector('.fr-wrong-order')).toBeNull();
         expect(rootOf(container).classList.contains('is-wrong')).toBe(true);
-        expect(container.querySelector('.fr-leaver')).not.toBeNull();
+        expect(container.querySelector('.fr-leaver.is-tantrum .fr-storm')).not.toBeNull();
+        expect(container.querySelector('.fr-leaver.is-tantrum .fr-toss')).not.toBeNull();
         expect(container.querySelector('.fr-cust.is-slot-0')).not.toBe(front);
+        // The cook shrugs, sorry.
+        expect(container.querySelector('.fr-kiosk.is-shrug')).not.toBeNull();
     });
 
     test('an empty bar walks the customer off grumbling and calls onMiss once; help and the flashes freeze the bar', () => {
@@ -246,6 +261,38 @@ describe('Frituur: the scene', () => {
     test('the end picture: the frituur with happy customers eating', () => {
         const { container } = render(<FrituurEnding outcome="done" progress={progressWith()} options={{}} />);
         expect(container.querySelector('.fr-ending .fr-kiosk')).not.toBeNull();
-        expect(container.querySelectorAll('.fr-ending .fr-person.is-happy')).toHaveLength(3);
+        expect(container.querySelectorAll('.fr-ending .fr-person.is-happy, .fr-ending .fr-visitor.is-happy')).toHaveLength(3);
+    });
+
+    test('every visitor draws in every pose, with its happy moment and its own strop; aliens park a UFO', () => {
+        for (const kind of VISITORS) {
+            for (const pose of ['wait', 'low', 'served', 'happy', 'grumpy', 'tantrum', 'frown'] as const) {
+                const { container, unmount } = render(<svg><VisitorG kind={kind} pose={pose} item="friet" /></svg>);
+                const g = container.querySelector(`.fr-visitor.is-${kind}.is-${pose}`);
+                expect(g, `${kind} ${pose}`).not.toBeNull();
+                if (pose === 'served') expect(g!.querySelector('.fr-held'), kind).not.toBeNull();
+                unmount();
+            }
+        }
+        const served = (kind: (typeof VISITORS)[number], sel: string) => {
+            const { container, unmount } = render(<svg><VisitorG kind={kind} pose="served" item="slijm" /></svg>);
+            expect(container.querySelector(sel), kind).not.toBeNull();
+            unmount();
+        };
+        served('alien', '.fr-v-halo');
+        served('octopus', '.fr-v-juggle');
+        served('draak', '.fr-v-heart');
+        const { container } = render(<svg><UfoG pose="wait" /></svg>);
+        expect(container.querySelectorAll('.fr-ufo-light').length).toBeGreaterThan(2);
+    });
+
+    test('a person in a strop flails both arms; a kid cries, opa shakes his cane, the dog barks', () => {
+        const { container, rerender } = render(<svg><PersonG kind="kind" look={0} pose="tantrum" /></svg>);
+        expect(container.querySelectorAll('.fr-limb.is-l').length).toBeGreaterThan(0);
+        expect(container.querySelector('.fr-tears')).not.toBeNull();
+        rerender(<svg><PersonG kind="opa" look={0} pose="tantrum" /></svg>);
+        expect(container.querySelector('.fr-cane.fr-limb')).not.toBeNull();
+        rerender(<svg><DogG pose="tantrum" /></svg>);
+        expect(container.querySelector('.fr-dog.is-tantrum .fr-mouth-open')).not.toBeNull();
     });
 });

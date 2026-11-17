@@ -31,6 +31,24 @@ const RECIPES = {
         noise(ac, d, t, { dur: 0.12, vol: 0.12, filter: 'lowpass', f0: 600 });
         [0.45, 0.75].forEach(at => tone(ac, d, t, { f0: 110, f1: 60, at, dur: 0.1, vol: 0.18 }));
     },
+    // A strop: four quick stomps under an angry grumble and a hiss of steam.
+    strop: (ac, d, t) => {
+        [0, 0.16, 0.32, 0.48].forEach(at => tone(ac, d, t, { f0: 120, f1: 55, at, dur: 0.11, vol: 0.2 }));
+        tone(ac, d, t, { type: 'triangle', f0: 210, f1: 140, at: 0.05, dur: 0.55, vol: 0.12, wobble: [16, 22] });
+        noise(ac, d, t, { at: 0.5, dur: 0.4, vol: 0.08, filter: 'highpass', f0: 3000 });
+    },
+    // A kid's strop: a cartoon "bwaah" that wobbles down.
+    wail: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 520, f1: 330, dur: 0.7, vol: 0.13, wobble: [7, 30] });
+        [0.1, 0.3].forEach(at => tone(ac, d, t, { f0: 110, f1: 60, at, dur: 0.1, vol: 0.14 }));
+    },
+    // The dog: two short barks.
+    woef: (ac, d, t) => {
+        [0, 0.2].forEach(at => {
+            tone(ac, d, t, { type: 'triangle', f0: 420, f1: 230, at, dur: 0.12, vol: 0.18 });
+            noise(ac, d, t, { at, dur: 0.08, vol: 0.1, filter: 'bandpass', f0: 900, q: 1.2 });
+        });
+    },
 } satisfies Record<string, Recipe>;
 
 export type FrituurSound = keyof typeof RECIPES;
