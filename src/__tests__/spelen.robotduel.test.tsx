@@ -158,23 +158,29 @@ describe('Robotduel: the tile and the screen', () => {
 
     test('2 spelers: two keypads, health bars instead of hearts, a POW on a hit, the KO banner', () => {
         vi.useFakeTimers();
-        render(<Robotduel meta={meta({ spelers: '2', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Robotduel meta={meta({ spelers: '2', levens: '5' })} from={from} onExit={() => { }} />);
         tick(DUEL_TIMING.readyMs);
         expect(screen.getByRole('group', { name: 'Cijfers Blauw' })).toBeTruthy();
         expect(screen.getByRole('group', { name: 'Cijfers Oranje' })).toBeTruthy();
         expect(document.querySelector('.duel-hearts')).toBeNull();
-        expect(screen.getAllByRole('img', { name: '3 van 3 levens' })).toHaveLength(2);
+        expect(screen.getAllByRole('img', { name: '5 van 5 levens' })).toHaveLength(2);
         act(() => du().answer('left', du().sides.left.question!.answer));
         tick(ROBOT.punchMs);
         expect(document.querySelector('.rd-pow')).not.toBeNull();
-        expect(screen.getByRole('img', { name: '2 van 3 levens' })).toBeTruthy();
+        expect(screen.getByRole('img', { name: '4 van 5 levens' })).toBeTruthy();
         act(() => du().answer('right', '99999'));
         expect(screen.getByRole('img', { name: 'Dekking weg' })).toBeTruthy();
         expect(document.querySelector('.rd-bot.is-right.is-guard')).not.toBeNull();
         tick(DUEL_TIMING.flashRight);
         act(() => du().answer('left', du().sides.left.question!.answer));
         tick(ROBOT.punchMs);
-        expect(du().sides.right.lives).toBe(0);
+        // The dropped guard doubled that punch (4 -> 2); keep punching until the KO.
+        expect(du().sides.right.lives).toBe(2);
+        while (du().sides.right.lives > 0) {
+            tick(DUEL_TIMING.flashRight);
+            act(() => du().answer('left', du().sides.left.question!.answer));
+            tick(ROBOT.punchMs);
+        }
         expect(document.querySelector('.rd-bot.is-right.is-ko')).not.toBeNull();
         expect(screen.getByText('K.O.!')).toBeTruthy();
         tick(ROBOT.koMs);

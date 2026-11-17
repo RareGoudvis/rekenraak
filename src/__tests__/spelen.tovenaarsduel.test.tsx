@@ -196,15 +196,15 @@ describe('Tovenaarsduel: a match on the engine', () => {
 });
 
 describe('Tovenaarsduel: the tile and the screen', () => {
-    test('a 1-2 player duel tile; levens 20 / 30 / 40 (default 30); a blurb', () => {
+    test('a 1-2 player duel tile; levens 5-25 (default 20); a blurb', () => {
         const t = tover();
         expect(t.meta).toMatchObject({ id: 'tovenaarsduel', label: 'Tovenaarsduel', input: 'keypad', players: '1-2' });
         expect(t.Screen && !t.Component).toBeTruthy();
         expect(t.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
         const lives = t.meta.options!.find(o => o.id === 'levens')!;
-        expect(lives.choices.map(c => c.value)).toEqual(['20', '30', '40']);
-        expect(lives.default).toBe('30');
-        expect(duelConfigOf(meta().chosen).lives).toBe(30);
+        expect(lives.choices.map(c => c.value)).toEqual(['5', '10', '15', '20', '25']);
+        expect(lives.default).toBe('20');
+        expect(duelConfigOf(meta().chosen).lives).toBe(20);
         expect(GAME_BLURB.tovenaarsduel).toBeTruthy();
     });
 

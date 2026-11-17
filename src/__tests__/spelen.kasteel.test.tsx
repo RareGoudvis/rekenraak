@@ -51,9 +51,9 @@ describe('Kasteel: the registry entry and the pre-start screen', () => {
         expect(k.meta.accepts.kinds).toEqual(['number']);
         expect(k.Screen && !k.Component && !k.screenWhen).toBe(true);
         expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'manier']);
-        expect(meta().chosen).toEqual({ spelers: '1', niveau: 'normaal', levens: '5', rondes: '3', manier: 'samen' });
-        // A device that still remembers 20 levens gets the new default.
-        expect(meta({ levens: '20' }).chosen!.levens).toBe('5');
+        expect(meta().chosen).toEqual({ spelers: '1', niveau: 'normaal', levens: '10', rondes: '3', manier: 'samen' });
+        // A device that still remembers a retired choice (3 levens) gets the default.
+        expect(meta({ levens: '3' }).chosen!.levens).toBe('10');
         render(<GameRow games={gamesFor(NUMBER_CONTENT, new Date(2026, 6, 1))} onPlay={() => { }} />);
         const tile = screen.getByRole('button', { name: /^Kasteel/ });
         expect(tile.getAttribute('aria-label')).toBe('Kasteel, 1 of 2 spelers');
@@ -67,10 +67,10 @@ describe('Kasteel: the registry entry and the pre-start screen', () => {
         fireEvent.click(screen.getByRole('button', { name: '2 spelers' }));
         expect(screen.getByRole('button', { name: 'Moeilijk' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Samen één som' }));
-        fireEvent.click(screen.getByRole('button', { name: '7 levens' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Beste van 5' }));
+        fireEvent.click(within(screen.getByRole('group', { name: 'Hoeveel levens?' })).getByRole('button', { name: '15' }));
+        fireEvent.click(within(screen.getByRole('group', { name: 'Hoeveel rondes?' })).getByRole('button', { name: '5' }));
         fireEvent.click(screen.getByRole('button', { name: /Start/ }));
-        expect(onStart.mock.calls[0][0].chosen).toMatchObject({ spelers: '2', levens: '7', manier: 'beurt', rondes: '5' });
+        expect(onStart.mock.calls[0][0].chosen).toMatchObject({ spelers: '2', levens: '15', manier: 'beurt', rondes: '5' });
     });
 
     test('the shell plays the duel screen for 1 and for 2 spelers', async () => {
@@ -117,7 +117,7 @@ describe('Kasteel: the screen', () => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
         vi.setSystemTime(1_000_000);
     });
-    const two = (picks: Record<string, string> = {}) => meta({ spelers: '2', levens: '3', ...picks });
+    const two = (picks: Record<string, string> = {}) => meta({ spelers: '2', levens: '5', ...picks });
     const ready = () => tick(DUEL_TIMING.readyMs);
 
     test('2 spelers: a right answer fires; the hit counts when the stone lands; 3 in a row is a big stone; the castle falls, then the card', () => {
@@ -179,7 +179,7 @@ describe('Kasteel: the screen', () => {
         });
         expect(document.querySelectorAll('.ks-fly-x')).toHaveLength(2);
         tick(KASTEEL.flightMs + 10);
-        expect(bars()).toEqual([2, 2]);
+        expect(bars()).toEqual([4, 4]);
     });
 
     test('Samen één som: one shared sum, the first right answer fires', () => {
@@ -193,7 +193,7 @@ describe('Kasteel: the screen', () => {
     });
 
     test('1 speler: Jij against the computer, which fires on its own; the match card after 2 round wins', () => {
-        render(<Kasteel meta={meta({ spelers: '1', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Kasteel meta={meta({ spelers: '1', levens: '5' })} from={from} onExit={() => { }} />);
         // A steady computer: every answer right, mid-range in time (the match keeps this config for every round).
         act(() => useDuelStore.setState(s => ({ config: { ...s.config, rng: () => 0.5 } })));
         ready();

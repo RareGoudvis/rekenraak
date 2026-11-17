@@ -18,7 +18,8 @@ export const TOVER = {
     castMs: { ijs: 1150, vuur: 1250, bliksem: 1100 } as Record<AttackSpell, number>,
     // The charge part of castMs: the projectile leaves the staff after this (the bolt falls from the sky).
     chargeMs: { ijs: 420, vuur: 480, bliksem: 640 } as Record<AttackSpell, number>,
-    lives: { choices: [20, 30, 40], default: 30 },
+    // The shared duel list; a higher default, as its spells hit for 1–3.
+    lives: { choices: [5, 10, 15, 20, 25], default: 20 },
     // The defeat (smoke, the hat flies, dizzy stars) before the scoreboard card.
     endMs: 3000,
 } as const;
