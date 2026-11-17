@@ -94,3 +94,24 @@ export function CountMark({ ball, on }: { ball: boolean; on: boolean }) {
         ? <svg className={`hj-dot is-ball${on ? ' is-on' : ''}`} viewBox="0 0 100 94" aria-hidden><circle cx={BALL.cx} cy={BALL.cy} r={BALL.r} /><path className="hj-dot-patch" d={CENTRE_PATH} /></svg>
         : <svg className={`hj-dot${on ? ' is-on' : ''}`} viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>;
 }
+
+/** The ball a found pair of footballs kicks into the net. */
+export const KickBall = () => <BallArt side="back" look="whole" />;
+
+/** A little goal seen from the front, in two layers so the ball lands between them: the dark inside, then the mesh and the white frame (the mesh bulges when the ball goes in). */
+export function GoalNet({ part }: { part: 'back' | 'front' }) {
+    const cols = Array.from({ length: 11 }, (_, i) => 14 + i * 9.2);
+    const rows = Array.from({ length: 7 }, (_, i) => 16 + i * 9.5);
+    if (part === 'back') return <svg className="hj-goalnet" viewBox="0 0 120 90" aria-hidden><rect className="hj-goalnet-back" x={10} y={10} width={100} height={76} rx={2} /></svg>;
+    return (
+        <svg className="hj-goalnet" viewBox="0 0 120 90" aria-hidden>
+            <g className="hj-goalnet-mesh">
+                {cols.map(x => <path key={`c${x}`} d={`M${x.toFixed(1)} 12 V84`} />)}
+                {rows.map(y => <path key={`r${y}`} d={`M12 ${y.toFixed(1)} H108`} />)}
+            </g>
+            <path className="hj-goalnet-frame-ink" d="M10 86 V10 H110 V86" />
+            <path className="hj-goalnet-frame" d="M10 86 V10 H110 V86" />
+            <path className="hj-goalnet-ground" d="M2 86 H118" />
+        </svg>
+    );
+}

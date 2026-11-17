@@ -1,5 +1,5 @@
-/* Hartjes koppelen skin (Valentijn), and its Voetballen look. Sticker look: flat fills under a thick dark
-   outline (spelen.css tokens), CSS-only flips. */
+/* The pairs games: Hartjes koppelen (Valentijn, hearts) and Voetbalkaartjes (footballs on a pitch). Sticker look:
+   flat fills under a thick dark outline (spelen.css tokens), CSS-only flips. */
 .hj-root {
   --hj-pink: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper));
   --hj-pink-soft: color-mix(in srgb, var(--accent-getallenkennis) 14%, var(--kiosk-paper));
@@ -174,10 +174,123 @@
 .hj-plaster-pad { fill: color-mix(in srgb, var(--kiosk-paper) 60%, var(--hj-plaster)); stroke: color-mix(in srgb, var(--spel-ink) 35%, var(--hj-plaster)); stroke-width: 1; }
 .hj-plaster-dot { fill: color-mix(in srgb, var(--spel-ink) 35%, var(--hj-plaster)); }
 
-/* A pair found: a few small stars twinkle around both hearts. */
-.hj-sparkle { position: absolute; inset: -14%; width: 128%; height: 128%; overflow: visible; pointer-events: none; }
-.hj-sparkle path { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: hj-twinkle 800ms var(--ease-out) both; animation-delay: calc(var(--i) * 60ms); }
-@keyframes hj-twinkle { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: scale(.8); } }
+/* ── A pair found: the moment (PAIR_MOMENT_MS, hearts.ts; the percentages below follow its timeline) ──
+   0–26 %: the second card flips. 26–55 %: both cards lift off their slots and fly together (their slots stay empty
+   until 72 %). Hearts: a big heart pops where they meet, pulses and bursts into little hearts and stars (the hit,
+   PAIR_HIT_MS ≈ 72 %). Balls: one ball bounces off them in an arc into a little net, confetti and "Goal!" (≈ 72 %).
+   Every piece sits at the board's top left and moves by translate to its spot (--ax … --ny, set by PairMoment). */
+.hj-moment { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.hj-moment > * { position: absolute; left: 0; top: 0; }
+.hj-card.is-merging { animation: hj-lift-off var(--hj-moment-ms) linear both; }
+@keyframes hj-lift-off {
+  0%, 25.9% { opacity: 1; scale: 1; }
+  26%, 72% { opacity: 0; scale: .7; }
+  86% { opacity: 1; scale: 1.08; }
+  100% { opacity: 1; scale: 1; }
+}
+.hj-ghost {
+  --fx: var(--ax); --fy: var(--ay); --off: var(--oa, 0px); --turn: -14deg;
+  width: var(--hj-w);
+  height: calc(var(--hj-w) * .94);
+  margin: calc(var(--hj-w) * -.47) 0 0 calc(var(--hj-w) * -.5);
+  opacity: 0;
+  animation: hj-fly var(--hj-moment-ms) both;
+}
+.hj-ghost.is-b { --fx: var(--bx); --fy: var(--by); --off: var(--ob, 0px); --turn: 14deg; }
+.hj-ghost .hj-card { width: 100%; height: 100%; min-width: 0; min-height: 0; cursor: default; }
+@keyframes hj-fly {
+  0%, 25.9% { translate: var(--fx) var(--fy); opacity: 0; scale: 1; rotate: 0deg; }
+  26% { translate: var(--fx) var(--fy); opacity: 1; scale: 1; animation-timing-function: var(--ease-out); }
+  33% { translate: var(--fx) calc(var(--fy) - var(--hj-w) * .08); scale: 1.1; rotate: 0deg; animation-timing-function: cubic-bezier(.45, 0, .4, 1); }
+  55% { translate: calc(var(--mx) + var(--off)) var(--my); opacity: 1; scale: .72; rotate: var(--turn); }
+  61%, 100% { translate: var(--mx) var(--my); opacity: 0; scale: .45; rotate: 0deg; }
+}
+/* Hearts: one big heart that pulses and bursts. */
+.hj-big {
+  width: calc(var(--hj-w) * 1.1);
+  height: calc(var(--hj-w) * 1.03);
+  margin: calc(var(--hj-w) * -.52) 0 0 calc(var(--hj-w) * -.55);
+  translate: var(--mx) var(--my);
+  overflow: visible;
+  fill: var(--hj-pink);
+  stroke: var(--spel-ink);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  animation: hj-big var(--hj-moment-ms) both;
+}
+.hj-big-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 6; stroke-linecap: round; opacity: .85; }
+@keyframes hj-big {
+  0%, 53% { scale: 0; opacity: 1; }
+  60% { scale: 1.18; animation-timing-function: ease-in-out; }
+  65% { scale: .94; }
+  71% { scale: 1.08; opacity: 1; }
+  79%, 100% { scale: 1.45; opacity: 0; }
+}
+.hj-mini {
+  width: calc(var(--hj-w) * .4 * var(--s));
+  height: calc(var(--hj-w) * .376 * var(--s));
+  margin: calc(var(--hj-w) * -.188 * var(--s)) 0 0 calc(var(--hj-w) * -.2 * var(--s));
+  overflow: visible;
+  fill: var(--hj-pink);
+  stroke: var(--spel-ink);
+  stroke-width: 8;
+  stroke-linejoin: round;
+  opacity: 0;
+  animation: hj-mini var(--hj-moment-ms) both;
+}
+.hj-mini.is-star { fill: var(--spel-star); stroke-width: 6; }
+@keyframes hj-mini {
+  0%, 70% { translate: var(--mx) var(--my); opacity: 0; scale: .2; rotate: 0deg; }
+  73% { opacity: 1; animation-timing-function: var(--ease-out); }
+  92% { opacity: 1; }
+  100% { translate: calc(var(--mx) + var(--dx) * var(--hj-w)) calc(var(--my) + var(--dy) * var(--hj-w)); opacity: 0; scale: 1; rotate: calc(var(--dx) * 40deg); }
+}
+/* Balls: the kick off the two cards, in an arc into the net (x moves evenly, y goes up and down). */
+.hj-kick {
+  width: calc(var(--hj-w) * .5);
+  height: calc(var(--hj-w) * .47);
+  margin: calc(var(--hj-w) * -.235) 0 0 calc(var(--hj-w) * -.25);
+  opacity: 0;
+  animation: hj-kick-x var(--hj-moment-ms) both;
+}
+.hj-kick-arc { position: relative; display: block; width: 100%; height: 100%; animation: hj-kick-y var(--hj-moment-ms) both; }
+@keyframes hj-kick-x {
+  0%, 53% { translate: var(--mx) var(--my); opacity: 0; scale: .5; }
+  57% { translate: var(--mx) var(--my); opacity: 1; scale: 1; }
+  72% { translate: var(--nx) var(--ny); opacity: 1; scale: .8; }
+  80% { translate: var(--nx) calc(var(--ny) + var(--hj-w) * .06); opacity: 1; scale: .78; }
+  100% { translate: var(--nx) calc(var(--ny) + var(--hj-w) * .14); opacity: 0; scale: .74; }
+}
+@keyframes hj-kick-y {
+  0%, 57% { translate: 0 0; rotate: 0deg; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  65% { translate: 0 calc(var(--hj-w) * -.5); rotate: 220deg; animation-timing-function: cubic-bezier(.6, 0, .8, .3); }
+  72% { translate: 0 0; rotate: 420deg; }
+  100% { translate: 0 0; rotate: 470deg; }
+}
+.hj-net {
+  width: calc(var(--hj-w) * 1.05);
+  height: calc(var(--hj-w) * .79);
+  margin: calc(var(--hj-w) * -.47) 0 0 calc(var(--hj-w) * -.525);
+  translate: var(--nx) var(--ny);
+  opacity: 0;
+  animation: hj-net var(--hj-moment-ms) both;
+}
+@keyframes hj-net {
+  0%, 40% { scale: 0; opacity: 0; }
+  50% { scale: 1.12; opacity: 1; }
+  56%, 71% { scale: 1; opacity: 1; }
+  76% { scale: 1.1 1.04; }
+  84% { scale: 1; opacity: 1; }
+  100% { scale: .9; opacity: 0; }
+}
+.hj-goalnet { display: block; width: 100%; height: 100%; overflow: visible; }
+.hj-goalnet-back { fill: color-mix(in srgb, var(--spel-grass) 55%, var(--spel-ink)); }
+.hj-goalnet-mesh path { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.8; }
+.hj-goalnet-mesh { transform-box: view-box; transform-origin: 60px 48px; animation: hj-mesh var(--hj-moment-ms) both; }
+@keyframes hj-mesh { 0%, 71% { scale: 1; } 77% { scale: 1.08 1.12; } 86%, 100% { scale: 1; } }
+.hj-goalnet-frame-ink { fill: none; stroke: var(--spel-ink); stroke-width: 11; stroke-linejoin: round; stroke-linecap: round; }
+.hj-goalnet-frame { fill: none; stroke: var(--kiosk-paper); stroke-width: 5.5; stroke-linejoin: round; stroke-linecap: round; }
+.hj-goalnet-ground { fill: none; stroke: var(--spel-ink); stroke-width: 4; stroke-linecap: round; opacity: .35; }
 
 /* ── Voetballen: footballs on a mown pitch ────────────────────────────────── */
 .hj-root.is-ball { background: repeating-linear-gradient(90deg, var(--spel-grass) 0 12.5%, var(--hj-grass-2) 12.5% 25%); }
@@ -199,26 +312,26 @@
 .hj-ball-crease { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
 .hj-root.is-ball .hj-card.is-broken .hj-text { top: 64%; }
 .hj-root.is-ball .hj-card.is-broken .hj-pic { top: 64%; height: 48%; }
-/* A pair of balls: "Goal!" over the board and a burst of confetti. */
-.hj-goal {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 6;
+/* A pair of balls: "Goal!" over the net, with the confetti. */
+.hj-moment > .hj-goal {
+  left: var(--nx);
+  top: calc(var(--ny) - var(--hj-w) * .5);
+  z-index: 3;
   margin: 0;
   padding: var(--sp-1) var(--sp-6);
   border: var(--spel-line) solid var(--spel-ink);
   border-radius: var(--radius-pill);
   background: var(--spel-star);
   box-shadow: 0 6px 0 var(--spel-ink);
-  font-size: var(--kiosk-text-xl);
+  font-size: var(--kiosk-text-lg);
   font-weight: 900;
+  white-space: nowrap;
   translate: -50% -50%;
   rotate: -6deg;
   pointer-events: none;
-  animation: hj-goal 900ms var(--ease-spring) both;
+  animation: hj-goal 820ms var(--ease-spring) both;
 }
-@keyframes hj-goal { 0% { scale: .3; opacity: 0; } 25% { scale: 1.12; opacity: 1; } 75% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; } }
+@keyframes hj-goal { 0% { scale: .3; opacity: 0; } 22% { scale: 1.12; opacity: 1; } 70% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; translate: -50% -90%; } }
 
 /* "Hoe los ik dit op?": everything waits. */
 .hj-root.is-paused *,

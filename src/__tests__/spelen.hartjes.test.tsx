@@ -11,15 +11,17 @@ import { resolveMeta } from '../oefenen/spelen/skins/options';
 import { skinAccepts } from '../oefenen/spelen/accepts';
 import { buildBoard, pairsBoard } from '../oefenen/spelen/board/board';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
-import { cardLook, gridOf, lookOf, PAIRS_SIZE } from '../oefenen/spelen/board/hartjes/hearts';
+import { cardLook, gridOf, pairMomentAt, PAIR_HIT_MS, PAIR_MOMENT_MS, PAIRS_SIZE } from '../oefenen/spelen/board/hartjes/hearts';
+import { OPTIONS_KEY, loadChoices } from '../oefenen/spelen/skins/options';
 import { mulberry32 } from '../oefenen/spelen/distractors';
 import type { SkinChoices, SkinProps } from '../oefenen/spelen/skins/types';
 import SpelScreen from '../oefenen/spelen/SpelScreen';
 import { resetKiosk } from './helpers/oefenKiosk';
 import { useOefenStore } from '../oefenen/useOefenStore';
 
-// Hartjes koppelen round 4: Normaal (12 cards) and Moeilijk (16), the Voetballen look, and a sum's card after its
-// logged mistake (broken, then patched once paired). The pairing and logging rules themselves: spelen.board.test.tsx.
+// Hartjes koppelen: Normaal (12 cards) and Moeilijk (16), a sum's card after its logged mistake (broken, then patched
+// once paired), and a found pair's moment. The footballs: spelen.voetbalkaartjes.test.tsx. The pairing and logging
+// rules themselves: spelen.board.test.tsx.
 
 let data: EenvoudigData;
 let choice: ZelfChoice;
@@ -59,16 +61,47 @@ describe('Hartjes: the rules for the cards, pure', () => {
         expect(gridOf(6).landscape).toEqual({ cols: 3, rows: 2 });
     });
 
-    test('the options: Hartjes or Voetballen, Normaal 6 pairs or Moeilijk 8; the default round stays Normaal', () => {
+    test('the options: Normaal 6 pairs or Moeilijk 8 (no look pick any more); the default round stays Normaal', () => {
+        expect(HARTJES().options!.map(o => o.id)).toEqual(['niveau']);
         expect(HARTJES().round.board).toEqual({ kind: 'pairs', boards: 2, size: 6, strikes: 2 });
         expect(metaWith({}).round.board!.size).toBe(PAIRS_SIZE.normaal);
         expect(metaWith({ niveau: 'moeilijk' }).round.board).toEqual({ kind: 'pairs', boards: 2, size: 8, strikes: 2 });
-        expect(metaWith({ look: 'voetballen', niveau: 'moeilijk' }).chosen).toEqual({ look: 'voetballen', niveau: 'moeilijk' });
-        expect(lookOf({ look: 'voetballen' })).toBe('voetballen');
-        expect(lookOf({})).toBe('hartjes');
-        expect(lookOf({ look: 'iets anders' })).toBe('hartjes');
-        // The Valentijn shelf tag stays on the one tile (the hearts picture).
+        // A look picked before the split is dropped; Moeilijk stays.
+        expect(metaWith({ look: 'voetballen', niveau: 'moeilijk' }).chosen).toEqual({ niveau: 'moeilijk' });
         expect(HARTJES().season).toBe('valentijn');
+    });
+
+    test('a device that remembered Voetballen: the pick falls back cleanly and the cards are hearts', async () => {
+        localStorage.setItem(OPTIONS_KEY, JSON.stringify({ hartjes: { look: 'voetballen', niveau: 'moeilijk' } }));
+        expect(loadChoices(HARTJES())).toEqual({ niveau: 'moeilijk' });
+        act(() => start(loadChoices(HARTJES())));
+        expect(cells()).toHaveLength(PAIRS_SIZE.moeilijk);
+        // Even a stale look handed straight to the skin draws hearts.
+        const Hartjes = (await import('../oefenen/spelen/board/hartjes/Hartjes')).default;
+        const props = { board: sp().board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound: vi.fn(), options: { look: 'voetballen' } } as unknown as SkinProps;
+        const { container } = render(<Hartjes {...props} />);
+        expect(screen.getByRole('group', { name: 'Hartjes' })).toBeTruthy();
+        expect(container.querySelector('.hj-root.is-ball, .hj-pitch, .hj-ball')).toBeNull();
+        localStorage.removeItem(OPTIONS_KEY);
+    });
+
+    test('a pair\'s moment: both centres, the meeting point between them, the net on the roomier side and inside the board', () => {
+        const at = pairMomentAt({ x: 0, y: 0, w: 100, h: 94 }, { x: 200, y: 100, w: 100, h: 94 }, { w: 800, h: 400 });
+        expect(at.a).toEqual([50, 47]);
+        expect(at.b).toEqual([250, 147]);
+        expect(at.mid).toEqual([150, 97]);
+        expect(at.netLeft).toBe(false);
+        expect(at.net[0]).toBeGreaterThan(at.mid[0]);
+        const right = pairMomentAt({ x: 600, y: 0, w: 100, h: 94 }, { x: 700, y: 0, w: 100, h: 94 }, { w: 800, h: 400 });
+        expect(right.netLeft).toBe(true);
+        expect(right.net[0]).toBeLessThan(right.mid[0]);
+        // Near an edge the net stays on the board.
+        const edge = pairMomentAt({ x: 0, y: 0, w: 100, h: 94 }, { x: 0, y: 0, w: 100, h: 94 }, { w: 160, h: 120 });
+        expect(edge.net[0]).toBeLessThanOrEqual(160 - 45);
+        expect(edge.net[1]).toBeGreaterThanOrEqual(36);
+        // Under a second, and the heart bursts inside it.
+        expect(PAIR_MOMENT_MS).toBeLessThan(1000);
+        expect(PAIR_HIT_MS).toBeLessThan(PAIR_MOMENT_MS);
     });
 });
 
@@ -117,7 +150,7 @@ describe('Hartjes Moeilijk: 16 cards', () => {
     }, 15_000);
 });
 
-describe('Hartjes: a broken heart, a plaster, and the Voetballen look', () => {
+describe('Hartjes: a broken heart, a plaster, and a found pair', () => {
     const wrongFor = (i: number) => cells()[(i + 1) % cells().length].question.answer;
     const card = (root: HTMLElement, cell: number, side: 'sum' | 'answer') => root.querySelector<HTMLButtonElement>(`[data-cell="${cell}"].is-${side}`)!;
 
@@ -140,38 +173,47 @@ describe('Hartjes: a broken heart, a plaster, and the Voetballen look', () => {
         expect(sp().history.filter(h => h.exerciseKey === cells()[0].question.key)).toHaveLength(1);
     }, 15_000);
 
-    test('Voetballen: balls on a pitch, "Bal, dicht"; a mistake flattens the ball with its own cue, a pair says Goal!', async () => {
-        act(() => start({ look: 'voetballen' }));
-        const { container } = render(<SpelScreen />);
-        const group = await screen.findByRole('group', { name: 'Ballen' });
-        const all = within(group).getAllByRole('button');
-        expect(all).toHaveLength(12);
-        expect(all.every(b => b.getAttribute('aria-label') === 'Bal, dicht')).toBe(true);
-        expect(container.querySelector('.hj-root.is-ball .hj-pitch')).toBeTruthy();
-        expect(container.querySelector('.hj-deco')).toBeNull();
-        expect(group.querySelectorAll('.hj-ball')).toHaveLength(24);
-        act(() => { sp().boardPick(0, wrongFor(0)); sp().boardPick(0, wrongFor(0)); });
-        expect(card(group, 0, 'sum').querySelector('.hj-ball.is-broken .hj-ball-crease')).toBeTruthy();
+    test('a found pair: both cards lift off and a big heart bursts into little hearts, then the moment goes; taps never wait', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        act(() => start({}));
+        const Hartjes = (await import('../oefenen/spelen/board/hartjes/Hartjes')).default;
+        const sound = vi.fn();
+        const props = { board: sp().board, phase: 'play', onBoardPick: (c: number, g: string, s?: boolean) => sp().boardPick(c, g, s), onBoardFocus: vi.fn(), sound, options: {} } as unknown as SkinProps;
+        const { container, rerender } = render(<Hartjes {...props} />);
+        const group = screen.getByRole('group', { name: 'Hartjes' });
         fireEvent.click(card(group, 1, 'sum'));
         fireEvent.click(card(group, 1, 'answer'));
-        expect(screen.getByText('Goal!')).toBeTruthy();
-    }, 15_000);
+        rerender(<Hartjes {...props} board={sp().board} />);
+        const moment = container.querySelector('.hj-moment.is-heart')!;
+        expect(moment).toBeTruthy();
+        expect(moment.querySelectorAll('.hj-ghost')).toHaveLength(2);
+        expect(moment.querySelector('.hj-big')).toBeTruthy();
+        expect(moment.querySelectorAll('.hj-mini')).toHaveLength(8);
+        expect(group.querySelectorAll('.hj-card.is-merging')).toHaveLength(2);
+        // The other cards stay tappable during the moment.
+        expect(card(group, 2, 'sum').disabled).toBe(false);
+        act(() => { vi.advanceTimersByTime(PAIR_HIT_MS); });
+        expect(sound).toHaveBeenCalledWith('launch');
+        expect(container.querySelector('.hj-moment .spel-burst.is-sparkle')).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(2000); });
+        expect(container.querySelector('.hj-moment')).toBeNull();
+        expect(card(group, 1, 'sum').classList.contains('is-solved')).toBe(true);
+        vi.useRealTimers();
+    });
 
-    test('the skin voices a break itself: hit for a heart, caught for a ball; never for a first strike', async () => {
+    test('the skin voices a heart breaking itself (hit), never for a first strike', async () => {
         const Hartjes = (await import('../oefenen/spelen/board/hartjes/Hartjes')).default;
-        for (const [look, cue] of [['hartjes', 'hit'], ['voetballen', 'caught']] as const) {
-            act(() => start({ look }));
-            const sound = vi.fn();
-            const props = { board: sp().board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound, options: { look } } as unknown as SkinProps;
-            const { rerender } = render(<Hartjes {...props} />);
-            act(() => sp().boardPick(0, wrongFor(0)));
-            rerender(<Hartjes {...props} board={sp().board} />);
-            expect(sound).not.toHaveBeenCalledWith(cue);
-            act(() => sp().boardPick(0, wrongFor(0)));
-            rerender(<Hartjes {...props} board={sp().board} />);
-            expect(sound).toHaveBeenCalledWith(cue);
-            cleanup();
-        }
-        expect(HARTJES().sounds).toMatchObject({ wrong: null, hit: 'krak', caught: 'whoosh' });
+        act(() => start({}));
+        const sound = vi.fn();
+        const props = { board: sp().board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound, options: {} } as unknown as SkinProps;
+        const { rerender } = render(<Hartjes {...props} />);
+        act(() => sp().boardPick(0, wrongFor(0)));
+        rerender(<Hartjes {...props} board={sp().board} />);
+        expect(sound).not.toHaveBeenCalledWith('hit');
+        act(() => sp().boardPick(0, wrongFor(0)));
+        rerender(<Hartjes {...props} board={sp().board} />);
+        expect(sound).toHaveBeenCalledWith('hit');
+        expect(sound).not.toHaveBeenCalledWith('caught');
+        expect(HARTJES().sounds).toMatchObject({ wrong: null, hit: 'krak', launch: 'sparkle' });
     });
 });

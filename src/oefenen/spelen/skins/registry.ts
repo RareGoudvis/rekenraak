@@ -196,13 +196,13 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
         // first and then a wrong answer, twice for the same sum, logs that sum once (board/session.ts) and breaks its
-        // heart (the skin voices it: hit; a ball going flat: caught). Answers up to 5 characters ("10/12") fit a card;
-        // breuken pair a picture with its breuk, or a breuk with its vereenvoudigde breuk. Voetballen is a look option.
+        // heart (the skin voices it: hit). Answers up to 5 characters ("10/12") fit a card; breuken pair a picture with its
+        // breuk, or a breuk with its vereenvoudigde breuk. Hearts only: the footballs are Voetbalkaartjes. A pair's big heart bursts: launch.
         meta: {
             music: 'zacht',
             id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn', options: HARTJES_OPTIONS,
             round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
-            sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop', hit: 'krak', caught: 'whoosh' },
+            sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop', hit: 'krak', launch: 'sparkle' },
         },
         icon: Heart,
         Component: lazy(() => import('../board/hartjes/Hartjes')),
@@ -223,6 +223,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: Hexagon,
         Component: lazy(() => import('../board/honingraat/Honingraat')),
         Ending: lazy(() => import('../board/honingraat/Honingraat').then(m => ({ default: m.HoningraatEnding }))),
+    },
+    {
+        // Year-round: Hartjes koppelen's board with footballs (board/voetbalkaartjes/), a Wij – Zij scoreboard on top. A pair
+        // kicks a ball into a net (tok, then launch as it goes in); a sum's logged mistake flattens its ball (caught).
+        meta: {
+            music: 'sport',
+            id: 'voetbalkaartjes', label: 'Voetbalkaartjes', input: 'board', timed: false, options: HARTJES_OPTIONS,
+            round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
+            sounds: { correct: 'tok', wrong: null, flip: 'flip', nomatch: 'plop', caught: 'whoosh', launch: 'zwoesj' },
+        },
+        icon: SoccerBall,
+        Component: lazy(() => import('../board/voetbalkaartjes/Voetbalkaartjes')),
     },
     {
         // A funny animal under 4 × 4 tiles: each right answer flips one away (random order), 16 show it all. A mistake

@@ -35,6 +35,7 @@ const GAMES = [
     ['meteorietenregen', 'Meteorietenregen', 0],
     ['kikkers', 'Kikkers en vliegjes', 0],
     ['tovenaarsduel', 'Tovenaarsduel', 0],
+    ['voetbalkaartjes', 'Voetbalkaartjes', -1],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena.
 const QUERY = { tovenaarsduel: '?arena=school' };
@@ -87,6 +88,7 @@ const SKIN_CSS = {
     schatkist: '.sk-parchment { visibility: hidden !important; }',
     zeehond: '.zh-count { visibility: hidden !important; }',
     hartjes: '.hj-text { visibility: hidden !important; }',
+    voetbalkaartjes: '.hj-text, .vk-nums { visibility: hidden !important; }',
     honingraat: '.hx-top, .hx-sum { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.

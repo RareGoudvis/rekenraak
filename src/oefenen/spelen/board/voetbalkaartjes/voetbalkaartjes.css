@@ -1,0 +1,45 @@
+/* Voetbalkaartjes: the scoreboard above the cards (the cards, pitch and pair moment are hartjes.css). Sticker look:
+   a dark board under the --spel-ink outline, the two teams as coloured chips, the numbers in paper white. */
+.vk-board {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px var(--sp-2);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--spel-ink) 88%, var(--accent-metendrekenen));
+  box-shadow: 0 4px 0 var(--spel-ink);
+  color: var(--kiosk-paper);
+  font-weight: 900;
+  line-height: 1;
+}
+.vk-team {
+  padding: 4px var(--sp-2);
+  border: 2px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  font-size: var(--kiosk-text);
+  color: var(--kiosk-paper);
+}
+.vk-team.is-wij { background: var(--spel-fill-1); }
+.vk-team.is-zij { background: var(--spel-fill-0); }
+.vk-nums { display: inline-flex; align-items: center; gap: 6px; font-size: var(--kiosk-text-lg); font-variant-numeric: tabular-nums; }
+.vk-num {
+  min-width: 1.3em;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--kiosk-paper) 12%, transparent);
+  text-align: center;
+}
+/* A goal: the number pops and glows gold for a moment. */
+.vk-num.is-goal { animation: vk-goal 620ms var(--ease-spring) both; }
+@keyframes vk-goal {
+  0% { scale: .4; color: var(--spel-star); }
+  45% { scale: 1.35; color: var(--spel-star); }
+  100% { scale: 1; color: var(--kiosk-paper); }
+}
+.vk-dash { opacity: .7; }
+
+@media (max-height: 460px) {
+  .vk-board { padding: 2px 6px; }
+  .vk-nums { font-size: var(--kiosk-text); }
+}

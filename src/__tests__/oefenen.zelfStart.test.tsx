@@ -227,7 +227,7 @@ describe('Topic cards and the Keuze screen', () => {
         fireEvent.click(card('Hoofdrekenen', 'Vermenigvuldigen'));
         fireEvent.click(screen.getByRole('button', { name: 'Keer 10 en 100' }));
         fireEvent.click(screen.getByRole('button', { name: 'Spelen' }));
-        fireEvent.click(screen.getByRole('button', { name: /^Voetbal/ }));
+        fireEvent.click(screen.getByRole('button', { name: /^Voetbal, / }));
         expect(sp().phase).toBe('idle');
         // The game's own start: its picture, name, line and what it plays (owner 2026-11-16).
         expect(screen.getByRole('heading', { name: 'Voetbal' })).toBeTruthy();
@@ -236,7 +236,7 @@ describe('Topic cards and the Keuze screen', () => {
         expect(screen.getByText('Vermenigvuldigen: Keer 10 en 100')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: /Ander spel/ }));
         expect(screen.getByRole('region', { name: 'Spelen' })).toBeTruthy();
-        fireEvent.click(screen.getByRole('button', { name: /^Voetbal/ }));
+        fireEvent.click(screen.getByRole('button', { name: /^Voetbal, / }));
         fireEvent.click(screen.getByRole('button', { name: '5 minuten' }));
         fireEvent.click(screen.getByRole('button', { name: 'Start spel' }));
         expect(sp().meta).toMatchObject({ id: 'voetbal', round: { seconds: 300 } });

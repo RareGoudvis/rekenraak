@@ -109,16 +109,16 @@ describe('Spelen at leerjaar 4: only the breuken', () => {
         expect(choiceCanPlay(sums.find(c => c.label === 'Breuken')!, 4)).toBe(false);
     });
 
-    test('the picker: picture games for herkennen, plus Hartjes; Gelijkwaardige breuken also Honingraat; no keypad game', () => {
+    test('the picker: picture games for herkennen, plus the pairs games; Gelijkwaardige breuken also Honingraat; no keypad game', () => {
         const ids = (c: ZelfChoice, g: number) => skinsFor(SKINS, spelContentOf(c, g)!).map(s => s.meta.id);
-        expect(ids(byLabel(3, 'Breuk in een figuur'), 3)).toEqual(['ballonnen', 'zeehond', 'hartjes', 'pakjesband', 'mollen']);
-        expect(ids(byLabel(4, 'Breuken vergelijken'), 4)).toEqual(['ballonnen', 'zeehond', 'hartjes', 'honingraat', 'pakjesband', 'mollen']);
+        expect(ids(byLabel(3, 'Breuk in een figuur'), 3)).toEqual(['ballonnen', 'zeehond', 'hartjes', 'voetbalkaartjes', 'pakjesband', 'mollen']);
+        expect(ids(byLabel(4, 'Breuken vergelijken'), 4)).toEqual(['ballonnen', 'zeehond', 'hartjes', 'honingraat', 'voetbalkaartjes', 'pakjesband', 'mollen']);
         expect(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4)).toEqual({ ...PICTURE_CONTENT, boards: ['pairs', 'target'] });
-        // The klok fills no board: Hartjes and Honingraat stay out.
+        // The klok fills no board: the board games stay out.
         expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
         render(<GameRow games={gamesFor(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4), new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Mollen meppen, op tijd', 'Hartjes koppelen', 'Honingraat']);
+        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Mollen meppen, op tijd', 'Hartjes koppelen', 'Honingraat', 'Voetbalkaartjes']);
     });
 
     test('a board round plays only the cards that fill it', () => {
