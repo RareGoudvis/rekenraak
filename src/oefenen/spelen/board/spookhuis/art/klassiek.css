@@ -1,0 +1,274 @@
+/* Klassiek spookhuis (art/klassiek.tsx): a plum-striped parlour with floorboards, moonlight, portraits, a clock.
+   Furniture goes where the cards leave room: data-room on .sph-root (wide / narrow / none, Spookhuis.tsx), the free
+   sides --sph-side and the strip above the cards --sph-ctop. A piece and its glow share one class, so they line up. */
+.sph-root.is-klassiek,
+.sph-ending.is-klassiek {
+  --sph-night: color-mix(in srgb, var(--accent-meetkunde) 9%, color-mix(in srgb, var(--accent-bewerkingen) 9%, var(--spel-ink)));
+  --sph-k-wall: color-mix(in srgb, var(--accent-meetkunde) 44%, color-mix(in srgb, var(--accent-bewerkingen) 10%, var(--spel-ink)));
+  --sph-k-wall-stripe: color-mix(in srgb, var(--accent-meetkunde) 56%, color-mix(in srgb, var(--accent-getallenkennis) 8%, var(--spel-ink)));
+  --sph-k-floor: color-mix(in srgb, var(--accent-vraagstukken) 42%, var(--spel-ink));
+  --sph-k-floor-low: color-mix(in srgb, var(--accent-vraagstukken) 34%, var(--spel-ink));
+  --sph-k-plank: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--spel-ink));
+  --sph-k-wood: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--spel-ink));
+  --sph-k-wood-dark: color-mix(in srgb, var(--accent-vraagstukken) 36%, var(--spel-ink));
+  --sph-k-gold: color-mix(in srgb, var(--mab-e) 78%, var(--accent-vraagstukken));
+  --sph-k-sky: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
+  --sph-k-moon: color-mix(in srgb, var(--mab-e) 30%, var(--kiosk-paper));
+  --sph-k-curtain: color-mix(in srgb, var(--accent-getallenkennis) 48%, var(--spel-ink));
+  --sph-k-rug: color-mix(in srgb, var(--accent-getallenkennis) 40%, var(--spel-ink));
+  --sph-k-rug-edge: color-mix(in srgb, var(--mab-e) 60%, var(--accent-vraagstukken));
+  --sph-k-ghost: color-mix(in srgb, var(--accent-bewerkingen) 6%, var(--kiosk-paper));
+  --sph-k-pumpkin: var(--accent-vraagstukken);
+  --sph-k-pumpkin-dark: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-ink));
+  --sph-k-leaf: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--spel-ink));
+  --sph-k-bat: color-mix(in srgb, var(--accent-meetkunde) 34%, var(--spel-ink));
+  --sph-k-skin: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--kiosk-paper));
+  --sph-k-cat: color-mix(in srgb, var(--text-muted) 50%, var(--kiosk-paper));
+  --sph-k-back: color-mix(in srgb, var(--accent-meetkunde) 62%, var(--spel-ink));
+  --sph-k-back-line: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--kiosk-paper));
+}
+
+/* ── The room: wall, skirting, floorboards, rug ─────────────────────────── */
+.sph-k-room {
+  --wall-h: 40%;
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 34px, var(--sph-k-plank) 34px 37px) 0 100% / 100% calc(100% - var(--wall-h)) no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 21%, var(--sph-k-plank) 21% calc(21% + 3px)) 0 100% / 100% calc(100% - var(--wall-h)) no-repeat,
+    linear-gradient(var(--sph-k-floor), var(--sph-k-floor-low)) 0 100% / 100% calc(100% - var(--wall-h)) no-repeat,
+    repeating-linear-gradient(90deg, var(--sph-k-wall) 0 26px, var(--sph-k-wall-stripe) 26px 34px);
+  transition: filter 700ms var(--ease-out);
+}
+.sph-k-room.is-lit { filter: brightness(1.18); }
+.sph-k-room > *, .sph-k-life > * { position: absolute; display: block; }
+.sph-k-room svg, .sph-k-life svg, .sph-party svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sph-k-skirting {
+  left: 0;
+  right: 0;
+  top: calc(var(--wall-h) - 14px);
+  height: 16px;
+  background: var(--sph-k-wood-dark);
+  border-block: 3px solid var(--spel-ink);
+}
+.sph-k-rug {
+  left: 12%;
+  right: 12%;
+  top: 52%;
+  bottom: 5%;
+  border: 4px solid var(--spel-ink);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--sph-k-rug) 0 58%, var(--sph-k-rug-edge) 58% 62%, var(--sph-k-rug) 62%);
+}
+
+/* ── Where the furniture stands ──────────────────────────────────────────── */
+.sph-k-window { left: 1.5cqw; top: 3cqh; width: min(calc(var(--sph-side, 0px) - 3cqw), 260px, 26cqh); aspect-ratio: 120 / 160; }
+.sph-k-candles { left: 1.5cqw; bottom: 2cqh; width: min(calc(var(--sph-side, 0px) - 3cqw), 200px, 20cqh); aspect-ratio: 80 / 110; }
+.sph-k-p1 { right: 1.5cqw; top: calc(min(18cqmin, 150px) * .7); width: min(calc(var(--sph-side, 0px) - 3cqw), 190px, 17cqh); aspect-ratio: 100 / 124; }
+.sph-k-clockbox { right: max(1.5cqw, calc((var(--sph-side, 0px) - min(calc(var(--sph-side, 0px) * .6), 120px)) / 2)); bottom: 1cqh; width: min(calc(var(--sph-side, 0px) * .6), 120px, 22cqh); aspect-ratio: 60 / 170; }
+/* The kat hangs in the strip above the cards, beside the sign. */
+.sph-k-p2 { left: calc(var(--sph-side, 0px) + 2cqw); top: 4px; height: clamp(0px, calc(var(--sph-ctop, 90px) - 10px), 120px); aspect-ratio: 100 / 124; }
+.sph-k-cobweb { right: 0; top: 0; width: min(18cqmin, 150px); aspect-ratio: 1; }
+.sph-k-spider { right: min(7cqmin, 56px); top: 0; width: 30px; height: clamp(50px, calc(var(--sph-ctop, 90px) - 6px), 130px); }
+
+.sph-root[data-room="narrow"] .sph-k-candles { display: none; }
+.sph-root[data-room="narrow"] .sph-k-window { width: min(calc(var(--sph-side, 0px) - 12px), 26cqh); left: 6px; }
+.sph-root[data-room="narrow"] .sph-k-clockbox { width: min(calc(var(--sph-side, 0px) - 16px), 90px, 22cqh); right: 8px; }
+.sph-root[data-room="narrow"] .sph-k-p1,
+.sph-root[data-room="none"] .sph-k-p1 { right: calc(var(--sph-side, 0px) + 2cqw); top: 4px; width: auto; height: clamp(0px, calc(var(--sph-ctop, 90px) - 10px), 120px); }
+.sph-root[data-room="none"] .sph-k-p2 { left: 2cqw; }
+.sph-root[data-room="none"] .sph-k-p1 { right: calc(2cqw + min(18cqmin, 150px) * .6); }
+.sph-root[data-room="none"] :is(.sph-k-window, .sph-k-shaft) { display: none; }
+/* No room beside the cards: the candles and the clock stand low in the corners (a short last row leaves them free). */
+.sph-root[data-room="none"] .sph-k-candles { width: auto; height: 24cqh; left: 2cqw; }
+.sph-root[data-room="none"] .sph-k-clockbox { width: auto; height: 34cqh; right: 3cqw; }
+
+/* ── The window: a creaking shutter, the moon and its light on the floor ─── */
+.sph-k-wood, .sph-k-shutter-wood { fill: var(--sph-k-wood); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sph-k-sky { fill: var(--sph-k-sky); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-k-star { fill: var(--sph-k-moon); }
+.sph-k-bar { fill: none; stroke: var(--sph-k-wood-dark); stroke-width: 5; }
+.sph-k-bar.is-glow { stroke: color-mix(in srgb, var(--sph-k-wood-dark) 85%, transparent); }
+.sph-k-crack { fill: none; stroke: var(--sph-k-moon); stroke-width: 1.4; stroke-linecap: round; opacity: .7; }
+.sph-k-curtain { fill: var(--sph-k-curtain); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-k-shutter-slat { fill: none; stroke: var(--sph-k-wood-dark); stroke-width: 2.5; }
+.sph-k-shutter { transform-box: view-box; transform-origin: 98px 105px; animation: sph-k-creak 7s ease-in-out infinite; }
+@keyframes sph-k-creak {
+  0%, 60%, 100% { transform: skewY(0deg) scaleX(1); }
+  68% { transform: skewY(-4deg) scaleX(.7); }
+  74% { transform: skewY(-1deg) scaleX(.92); }
+  80% { transform: skewY(-3deg) scaleX(.8); }
+}
+.sph-k-moon { fill: var(--sph-k-moon); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-moon-dent { fill: color-mix(in srgb, var(--sph-k-moon) 75%, var(--sph-k-sky)); }
+.sph-k-moon-halo { fill: color-mix(in srgb, var(--sph-k-moon) 22%, transparent); animation: sph-k-halo 5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes sph-k-halo { 50% { scale: 1.15; opacity: .7; } }
+.sph-k-shaft {
+  left: calc(1.5cqw + min(calc(var(--sph-side, 0px) - 3cqw), 200px, 26cqh) * .2);
+  top: calc(3cqh + min(calc(var(--sph-side, 0px) - 3cqw), 200px, 26cqh) * .62);
+  width: calc(min(calc(var(--sph-side, 0px) - 3cqw), 200px, 26cqh) * 2.2);
+  height: 72cqh;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--sph-k-moon) 16%, transparent), color-mix(in srgb, var(--sph-k-moon) 7%, transparent) 55%, transparent);
+  clip-path: polygon(8% 0, 36% 0, 100% 100%, 30% 100%);
+  filter: blur(6px);
+  animation: sph-k-shaft 6s ease-in-out infinite;
+}
+@keyframes sph-k-shaft { 50% { opacity: .65; } }
+
+/* ── Portraits: the eyes follow the light (--fx / --fy from useFollow), lit = a big grin ─── */
+.sph-k-portrait { display: block; width: 100%; height: 100%; }
+.sph-k-frame { fill: var(--sph-k-gold); stroke: var(--spel-ink); stroke-width: 3.5; }
+.sph-k-canvas { fill: color-mix(in srgb, var(--accent-metendrekenen) 26%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.is-kat .sph-k-canvas { fill: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--spel-ink)); }
+.sph-k-coat { fill: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-collar { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-k-skin { fill: var(--sph-k-skin); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-hat { fill: var(--spel-ink); }
+.sph-k-mustache { fill: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 1.5; }
+.sph-k-ruff { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-cat { fill: var(--sph-k-cat); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-k-cat-ear { fill: none; stroke: color-mix(in srgb, var(--accent-getallenkennis) 40%, var(--kiosk-paper)); stroke-width: 3; stroke-linecap: round; }
+.sph-k-nose { fill: color-mix(in srgb, var(--accent-getallenkennis) 50%, var(--kiosk-paper)); }
+.sph-k-whisker { fill: none; stroke: var(--spel-ink); stroke-width: 1; }
+.sph-k-grin { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; transform-box: fill-box; transform-origin: center top; transition: scale 260ms var(--ease-spring); }
+.sph-k-portrait.is-lit .sph-k-grin { scale: 1.5 1.9; }
+.sph-k-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5; }
+.sph-k-pupil { fill: var(--spel-ink); translate: calc(var(--fx, 0) * 2.6px) calc(var(--fy, 0) * 2.8px); transition: translate 140ms var(--ease-out); }
+.sph-k-portrait.is-lit .sph-k-eye { animation: sph-k-blink 900ms ease-in-out; transform-box: fill-box; transform-origin: center; }
+@keyframes sph-k-blink { 45% { scale: 1 .1; } 0%, 30%, 60%, 100% { scale: 1; } }
+
+/* ── The clock: a swinging pendulum, the minute hand creeping round ─────── */
+.sph-k-clock { fill: var(--sph-k-wood); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-k-clock-face { fill: var(--sph-k-moon); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-tick { fill: var(--spel-ink); }
+.sph-k-hand { stroke: var(--spel-ink); stroke-width: 2.4; stroke-linecap: round; transform-box: view-box; transform-origin: 30px 30px; }
+.sph-k-hand.is-minute { animation: sph-k-turn 60s linear infinite; }
+@keyframes sph-k-turn { to { rotate: 360deg; } }
+.sph-k-clock-glass { fill: color-mix(in srgb, var(--sph-k-wood-dark) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-pendulum { transform-box: view-box; transform-origin: 30px 62px; animation: sph-k-swing 2s ease-in-out infinite alternate; }
+@keyframes sph-k-swing { from { rotate: -14deg; } to { rotate: 14deg; } }
+.sph-k-rod { stroke: var(--sph-k-gold); stroke-width: 2.5; }
+.sph-k-bob { fill: var(--sph-k-gold); stroke: var(--spel-ink); stroke-width: 2; }
+
+/* ── The candelabra and its flames ──────────────────────────────────────── */
+.sph-k-table { fill: var(--sph-k-wood); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.sph-k-brass { fill: none; stroke: var(--sph-k-gold); stroke-width: 4; stroke-linecap: round; }
+.sph-k-candle { fill: var(--sph-k-moon); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-k-drip { stroke: var(--sph-k-moon); stroke-width: 3; stroke-linecap: round; }
+.sph-k-flame-halo { fill: color-mix(in srgb, var(--mab-e) 30%, transparent); filter: blur(3px); }
+.sph-k-flame-fire { fill: var(--mab-e); stroke: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-ink)); stroke-width: 1.4; }
+.sph-k-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: sph-k-flicker 1.3s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -.45s); }
+@keyframes sph-k-flicker { 0% { scale: 1 1; } 40% { scale: .9 1.12; } 70% { scale: 1.06 .94; } 100% { scale: .96 1.06; } }
+
+/* ── Cobweb, spider, bats ─────────────────────────────────────────────────── */
+.sph-k-web { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); stroke-width: 1.4; }
+.sph-k-thread { stroke: color-mix(in srgb, var(--kiosk-paper) 75%, transparent); stroke-width: 1.2; }
+.sph-k-spider svg { overflow: visible; }
+.sph-k-spider-body { animation: sph-k-dangle 3.2s ease-in-out infinite; }
+.sph-k-spider .sph-k-thread { transform-box: view-box; transform-origin: 20px 0; animation: sph-k-thread 3.2s ease-in-out infinite; }
+@keyframes sph-k-dangle { 0%, 100% { translate: 0 -26px; } 50% { translate: 0 8px; } }
+@keyframes sph-k-thread { 0%, 100% { scale: 1 .66; } 50% { scale: 1 1.1; } }
+.sph-k-spider-fill { fill: var(--sph-k-bat); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-k-legs { fill: none; stroke: var(--spel-ink); stroke-width: 2.4; stroke-linecap: round; }
+.sph-k-bat {
+  left: 0;
+  top: 0;
+  width: clamp(46px, 7cqmin, 84px);
+  aspect-ratio: 80 / 50;
+  animation: sph-k-fly calc(17s + var(--i) * 6s) linear infinite;
+  animation-delay: calc(var(--i) * -7s - 3s);
+}
+@keyframes sph-k-fly {
+  0% { translate: -12cqw calc(var(--sph-ctop, 90px) * .3); }
+  25% { translate: 25cqw calc(var(--sph-ctop, 90px) * .05); }
+  50% { translate: 55cqw calc(var(--sph-ctop, 90px) * .5); }
+  75% { translate: 85cqw calc(var(--sph-ctop, 90px) * .15); }
+  100% { translate: 112cqw calc(var(--sph-ctop, 90px) * .35); }
+}
+.sph-k-bat:nth-child(even) { scale: -1 1; animation-direction: reverse; }
+.sph-k-bat-bob { display: block; width: 100%; height: 100%; animation: sph-bob 1.4s ease-in-out infinite; }
+.sph-k-batbody { fill: var(--sph-k-bat); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-k-wing path { fill: var(--sph-k-bat); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-k-wing { transform-box: view-box; animation: sph-k-flap 280ms ease-in-out infinite alternate; }
+.sph-k-wing.is-l { transform-origin: 34px 24px; }
+.sph-k-wing.is-r { transform-origin: 46px 24px; }
+@keyframes sph-k-flap { from { scale: 1 1; } to { scale: 1 -.45; } }
+.sph-k-bateye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.2; }
+.sph-k-batpupil { fill: var(--spel-ink); }
+.sph-k-batsmile { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.4; stroke-linecap: round; }
+.sph-k-fang { fill: var(--kiosk-paper); }
+
+/* ── The sheet ghost ─────────────────────────────────────────────────────── */
+.sph-k-ghost { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sph-k-ghost) 55%, transparent)); }
+.sph-k-sheet { fill: var(--sph-k-ghost); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sph-k-sheet-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 4; stroke-linecap: round; }
+.sph-k-ghost-eye { fill: var(--spel-ink); }
+.sph-k-ghost-glint { fill: var(--kiosk-paper); }
+.sph-k-cheek { fill: color-mix(in srgb, var(--accent-getallenkennis) 35%, var(--kiosk-paper)); }
+.sph-k-ghost-mouth { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sph-k-ghost-arm path { fill: var(--sph-k-ghost); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sph-k-ghost-arm { transform-box: view-box; }
+.sph-k-ghost-arm.is-front { transform-origin: 76px 50px; }
+.sph-k-ghost-arm.is-back { transform-origin: 24px 58px; }
+.sph-k-ghost-bob { animation: sph-bob 1.6s ease-in-out infinite; }
+.sph-k-ghost.is-wave .sph-k-ghost-arm.is-front { animation: sph-k-wave 420ms ease-in-out infinite alternate; }
+@keyframes sph-k-wave { from { rotate: -10deg; } to { rotate: 28deg; } }
+/* Reaching for a card: the arm comes down and pokes. */
+.sph-k-ghost.is-reach .sph-k-ghost-arm.is-front { animation: sph-k-reach 2800ms ease-in-out both; }
+@keyframes sph-k-reach { 0%, 30% { rotate: 0deg; } 40%, 50% { rotate: 70deg; } 46% { rotate: 85deg; } 62%, 100% { rotate: 0deg; } }
+
+/* ── The pumpkin ─────────────────────────────────────────────────────────── */
+.sph-k-pumpkin-body { fill: var(--sph-k-pumpkin); stroke: var(--spel-ink); stroke-width: 4; stroke-linejoin: round; }
+.sph-k-rib { fill: none; stroke: var(--sph-k-pumpkin-dark); stroke-width: 2.5; }
+.sph-k-stem { fill: var(--sph-k-leaf); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-k-leaf { fill: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-xeye { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
+.sph-k-silly-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
+.sph-k-tongue { fill: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-k-cut { fill: color-mix(in srgb, var(--sph-k-pumpkin-dark) 55%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sph-k-pumpkin.is-lit .sph-k-cut { fill: var(--mab-e); animation: sph-k-glow 1.8s ease-in-out infinite alternate; }
+@keyframes sph-k-glow { to { fill: color-mix(in srgb, var(--mab-e) 60%, var(--kiosk-paper)); } }
+.sph-k-pumpkin.is-lit { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mab-e) 70%, transparent)); animation: sph-k-pop 420ms var(--ease-spring) both; }
+@keyframes sph-k-pop { from { scale: .4; } }
+.sph-k-pumpkin.is-off .sph-k-pumpkin-body { fill: color-mix(in srgb, var(--sph-k-pumpkin) 30%, var(--spel-ink)); }
+.sph-k-pumpkin.is-off .sph-k-rib { stroke: var(--spel-ink); }
+.sph-k-pumpkin.is-off .sph-k-stem, .sph-k-pumpkin.is-off .sph-k-leaf { fill: color-mix(in srgb, var(--accent-metendrekenen) 25%, var(--spel-ink)); }
+.sph-mistake .sph-k-pumpkin { animation: sph-k-wobble 520ms ease-in-out 3 alternate; transform-box: fill-box; transform-origin: 50% 90%; }
+@keyframes sph-k-wobble { from { rotate: -8deg; } to { rotate: 8deg; } }
+
+/* ── The card back: a purple card with a little ghost ───────────────────── */
+.sph-k-back-fill { fill: var(--sph-k-back); stroke: var(--spel-ink); stroke-width: 4; vector-effect: non-scaling-stroke; }
+.sph-k-back-line { fill: none; stroke: var(--sph-k-back-line); stroke-width: 2; stroke-dasharray: 5 4; opacity: .7; vector-effect: non-scaling-stroke; }
+.sph-k-back-ghost { fill: var(--sph-k-back-line); stroke: var(--spel-ink); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.sph-k-back-eye { fill: var(--spel-ink); }
+.sph-k-back-dot { fill: var(--sph-k-back-line); opacity: .6; }
+
+/* ── The lights-on crowd: bats upside down on a rail, clapping; ghosts rise and wave ── */
+.sph-k-rail { left: 4%; right: 4%; top: 3%; height: 10px; border: 3px solid var(--spel-ink); border-radius: 5px; background: var(--sph-k-wood); animation: sph-k-rail 500ms var(--ease-out) both; }
+@keyframes sph-k-rail { from { translate: 0 -40px; } }
+.sph-k-hanger {
+  top: calc(3% + 6px);
+  left: var(--x);
+  width: clamp(44px, 12cqmin, 110px);
+  aspect-ratio: 80 / 50;
+  translate: -50% 0;
+  animation: sph-k-drop 600ms var(--ease-spring) both;
+  animation-delay: calc(var(--i) * 120ms);
+}
+@keyframes sph-k-drop { from { translate: -50% -140%; } }
+.sph-k-batart.is-hang { rotate: 180deg; }
+.sph-k-batart.is-hang .sph-k-wing { animation: sph-k-clap 300ms ease-in-out infinite alternate; }
+.sph-k-batart.is-hang .sph-k-wing.is-l { --clap: 34deg; }
+.sph-k-batart.is-hang .sph-k-wing.is-r { --clap: -34deg; }
+@keyframes sph-k-clap { from { rotate: 0deg; } to { rotate: var(--clap); } }
+.sph-k-crowd {
+  bottom: -4%;
+  left: calc(22% + var(--i) * 28%);
+  width: clamp(70px, calc(22cqmin - var(--i) * 3cqmin), 220px);
+  aspect-ratio: 100 / 110;
+  translate: -50% 0;
+  animation: sph-k-rise 900ms var(--ease-spring) both;
+  animation-delay: calc(200ms + var(--i) * 160ms);
+}
+@keyframes sph-k-rise { from { translate: -50% 110%; } }
+.sph-k-lantern { bottom: 2%; left: calc(6% + var(--i) * 84%); width: clamp(36px, 9cqmin, 90px); aspect-ratio: 100 / 92; translate: -50% 0; }

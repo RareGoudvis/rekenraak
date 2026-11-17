@@ -1,0 +1,328 @@
+/* Spookhuis: memory cards on the floor of a dark haunted place, read by a flashlight. Sticker look (flat fills under the
+   --spel-ink outline). The dark is two layers: the room (dim, its life stays visible) and, over the board only, the
+   floor (the cards almost black). Both have the light's hole at --lx / --ly (radius --sph-r), set by Spookhuis.tsx.
+   Stacking in .sph-root: room 0, closed cards 0, floor dark 1, room dark 2, the light's warm glow 3, the room's life 3,
+   an open card 4 (it lights up by itself), the flipper and the pair moment 6, the sign 7, the lights-on crowd 8.
+   The board (.sph-grid) is no stacking context on purpose, so an open card's slot rises above the dark.
+   Theme colours (--sph-night …) come from art/<theme>.css. */
+.sph-root {
+  --sph-max: 280px;
+  --sph-top-h: 92px;
+  --sph-r: 130px;
+  --sph-night: color-mix(in srgb, var(--accent-meetkunde) 22%, color-mix(in srgb, var(--accent-bewerkingen) 18%, var(--spel-ink)));
+  --sph-warm: var(--mab-e);
+  --sph-paper: color-mix(in srgb, var(--mab-e) 14%, var(--kiosk-paper));
+  --sph-paper-solved: color-mix(in srgb, var(--accent-vraagstukken) 26%, var(--kiosk-paper));
+  --sph-paper-line: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  overflow: hidden;
+  overflow: clip;
+  container-type: size;
+  background: var(--sph-night);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sph-room { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.sph-room > *, .sph-life > * { pointer-events: none; }
+
+/* ── The dark and the light ─────────────────────────────────────────────── */
+.sph-room-dark,
+.sph-floor-dark,
+.sph-glow,
+.sph-life { position: absolute; pointer-events: none; }
+.sph-room-dark {
+  inset: 0;
+  z-index: 2;
+  background: var(--sph-night);
+  opacity: var(--sph-room-dark, .5);
+  -webkit-mask-image: radial-gradient(circle var(--sph-r) at var(--lx, 50%) var(--ly, 50%), transparent 0 42%, black 100%);
+  mask-image: radial-gradient(circle var(--sph-r) at var(--lx, 50%) var(--ly, 50%), transparent 0 42%, black 100%);
+  transition: opacity 700ms var(--ease-out);
+}
+/* Over the board only, with soft edges; together with the room's dark it is --sph-floor-dark (about 90 %). */
+.sph-floor-dark {
+  --pad: calc(var(--sph-w) * .35);
+  inset: calc(var(--pad) * -1);
+  z-index: 1;
+  background: var(--sph-night);
+  opacity: calc((var(--sph-floor-dark, .9) - var(--sph-room-dark, .5)) / (1 - var(--sph-room-dark, .5)));
+  -webkit-mask-image:
+    radial-gradient(circle var(--sph-r) at calc(var(--lx, 50%) - var(--gx, 0px) + var(--pad)) calc(var(--ly, 50%) - var(--gy, 0px) + var(--pad)), transparent 0 42%, black 100%),
+    linear-gradient(to right, transparent, black var(--pad), black calc(100% - var(--pad)), transparent),
+    linear-gradient(to bottom, transparent, black var(--pad), black calc(100% - var(--pad)), transparent);
+  -webkit-mask-composite: source-in, source-in;
+  mask-image:
+    radial-gradient(circle var(--sph-r) at calc(var(--lx, 50%) - var(--gx, 0px) + var(--pad)) calc(var(--ly, 50%) - var(--gy, 0px) + var(--pad)), transparent 0 42%, black 100%),
+    linear-gradient(to right, transparent, black var(--pad), black calc(100% - var(--pad)), transparent),
+    linear-gradient(to bottom, transparent, black var(--pad), black calc(100% - var(--pad)), transparent);
+  mask-composite: intersect;
+  transition: opacity 700ms var(--ease-out);
+}
+/* The flashlight's warm tint and a faint rim, so the light reads as a torch beam. */
+.sph-glow {
+  inset: 0;
+  z-index: 3;
+  background: radial-gradient(circle calc(var(--sph-r) * 1.02) at var(--lx, 50%) var(--ly, 50%),
+    color-mix(in srgb, var(--sph-warm) 14%, transparent) 0, color-mix(in srgb, var(--sph-warm) 9%, transparent) 62%,
+    color-mix(in srgb, var(--sph-warm) 16%, transparent) 88%, transparent 100%);
+  transition: opacity 700ms var(--ease-out);
+}
+.sph-life { inset: 0; z-index: 3; overflow: hidden; }
+/* The lights are on (a board cleared): the dark and the torch go. */
+.sph-root.is-lit .sph-room-dark,
+.sph-root.is-lit .sph-floor-dark,
+.sph-root.is-lit .sph-glow { opacity: 0; }
+
+/* ── The sign and the pairs found ─────────────────────────────────────────── */
+.sph-top { position: relative; z-index: 9; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2) var(--sp-4); }
+.sph-sign {
+  margin: 0;
+  padding: var(--sp-1) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--sph-paper);
+  box-shadow: 0 4px 0 var(--spel-ink);
+  color: var(--kiosk-ink);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 800;
+  text-align: center;
+}
+.sph-count {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px 8px;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--sph-night) 70%, var(--spel-ink));
+}
+.sph-mark { display: block; width: 30px; height: 30px; }
+.sph-mark > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* ── The board: cards per row from gridOf (hearts.ts), sized to the stage ─── */
+.sph-grid {
+  --sph-cols: var(--sph-cols-l);
+  --sph-rows: var(--sph-rows-l);
+  /* A card's width; its height is .86 ×, its slot 1.08 × .98. */
+  --sph-w: max(var(--spel-tap), min(var(--sph-max), calc((100cqw - 2 * var(--sp-4)) / var(--sph-cols) / 1.08), calc((100cqh - var(--sph-top-h)) / var(--sph-rows) / .98)));
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: calc(var(--sph-cols) * var(--sph-w) * 1.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+}
+@container (orientation: portrait) {
+  .sph-grid { --sph-cols: var(--sph-cols-p); --sph-rows: var(--sph-rows-p); }
+}
+@container (max-aspect-ratio: 1 / 2) {
+  .sph-grid { --sph-cols: var(--sph-cols-t); --sph-rows: var(--sph-rows-t); }
+}
+@container (orientation: landscape) and (max-height: 380px) {
+  .sph-grid { --sph-cols: var(--sph-cols-s); --sph-rows: var(--sph-rows-s); }
+}
+.sph-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--sph-w) * 1.08);
+  height: calc(var(--sph-w) * .98);
+  perspective: 900px;
+  animation: sph-in 420ms var(--ease-spring) both;
+  animation-delay: calc(var(--k) * 26ms);
+}
+/* A turned or found card shines by itself: above the dark. */
+.sph-slot.is-up { z-index: 4; }
+@keyframes sph-in { from { opacity: 0; transform: scale(.6) rotate(-8deg); } }
+.sph-card {
+  position: relative;
+  display: block;
+  width: var(--sph-w);
+  height: calc(var(--sph-w) * .86);
+  min-width: var(--spel-tap);
+  min-height: var(--spel-tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  font: inherit;
+  cursor: pointer;
+  rotate: var(--tilt, 0deg);
+  transition: rotate 320ms var(--ease-out), scale 320ms var(--ease-spring);
+  -webkit-tap-highlight-color: transparent;
+}
+.sph-card:disabled { cursor: default; }
+.sph-card:focus-visible { outline: none; }
+.sph-card:focus-visible .sph-back-art { filter: drop-shadow(0 0 0 var(--sph-warm)) drop-shadow(0 0 6px var(--sph-warm)); }
+.sph-card:not(:disabled):active .sph-flip { transform: scale(.96); }
+/* Turned up it straightens and lifts a little off the floor. */
+.sph-card.is-open { rotate: 0deg; scale: 1.04; }
+.sph-card.is-solved { scale: .96; }
+.sph-card.is-nope { animation: sph-nope 420ms 400ms ease-in-out both; }
+@keyframes sph-nope { 20% { translate: -5px 0; } 40% { translate: 5px 0; } 60% { translate: -3px 0; } 80% { translate: 3px 0; } }
+.sph-flip { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 380ms var(--ease-out); }
+.sph-card.is-open .sph-flip { transform: rotateY(180deg); }
+.sph-side { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--sph-w) * .09); }
+.sph-front { transform: rotateY(180deg); }
+.sph-back-art, .sph-face-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+/* An open card glows warm, as if it held its own little light. */
+.sph-card.is-open:not(.is-solved) .sph-front { box-shadow: 0 0 calc(var(--sph-w) * .12) color-mix(in srgb, var(--sph-warm) 55%, transparent); }
+.sph-card.is-solved .sph-front { box-shadow: 0 0 calc(var(--sph-w) * .08) color-mix(in srgb, var(--sph-warm) 30%, transparent); }
+.sph-face-paper { fill: var(--sph-paper); stroke: var(--spel-ink); stroke-width: 4; vector-effect: non-scaling-stroke; }
+.sph-face-paper.is-solved { fill: var(--sph-paper-solved); }
+.sph-face-corner { fill: none; stroke: var(--sph-paper-line); stroke-width: 2; stroke-linecap: round; opacity: .55; vector-effect: non-scaling-stroke; }
+.sph-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* Every sum on the board one size: the widest line (--sph-chars) fits the card. */
+  font-size: min(calc(var(--sph-w) * .19), calc(var(--sph-w) * .8 / (var(--sph-chars, 1) * .6)));
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: right;
+  white-space: nowrap;
+  transition: opacity 160ms;
+}
+.sph-line { display: block; }
+.sph-card .sph-text.is-breuk { font-size: calc(var(--sph-w) * .3); }
+.sph-card.is-answer .sph-text { font-size: calc(var(--sph-w) * .27); }
+.sph-root.has-pictures { --sph-max: 290px; }
+.sph-pic { position: absolute; top: 50%; left: 50%; width: 66%; height: 72%; transform: translate(-50%, -50%); transition: opacity 160ms; }
+
+/* ── A logged mistake: the sum's card turns into the place's picture for a moment (MISTAKE_MS) ── */
+.sph-card.is-mistake .sph-text,
+.sph-card.is-mistake .sph-pic { opacity: 0; }
+.sph-mistake { position: absolute; inset: 4% 12%; animation: sph-mistake var(--sph-mistake-ms, 1250ms) var(--ease-spring) both; }
+.sph-mistake > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes sph-mistake {
+  0% { scale: 0; rotate: -30deg; }
+  16% { scale: 1.15; rotate: 6deg; }
+  24% { scale: .95; rotate: -4deg; }
+  32%, 84% { scale: 1; rotate: 0deg; }
+  100% { scale: 0; rotate: 20deg; }
+}
+
+/* ── A pair found: the moment (PAIR_MOMENT_MS, haunt.ts; the percentages follow its timeline) ──
+   0–18 %: the second card flips. 18–38 %: both cards lift off and fly together, their slots empty until 56 %.
+   41 % (PAIR_HIT_MS): a puff, and the visitor pops out; it plays to 88 %, then floats up and fades. Every piece sits at
+   the board's top left and moves by translate to its spot (--ax … --my, set by PairMoment). */
+.sph-moment { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.sph-moment > * { position: absolute; left: 0; top: 0; }
+/* The puff sits behind the visitor, the sparkles and coins fly in front. */
+.sph-moment > .spel-burst.is-smoke { z-index: 0; }
+.sph-pop { z-index: 1; }
+.sph-card > .spel-burst { z-index: auto; }
+.sph-card.is-merging { animation: sph-lift-off var(--sph-moment-ms) linear both; }
+@keyframes sph-lift-off {
+  0%, 17.9% { opacity: 1; }
+  18%, 56% { opacity: 0; scale: .7; }
+  66% { opacity: 1; scale: 1.08; }
+  100% { opacity: 1; }
+}
+.sph-fly {
+  --fx: var(--ax); --fy: var(--ay); --off: var(--oa, 0px); --turn: -12deg;
+  width: var(--sph-w);
+  height: calc(var(--sph-w) * .86);
+  margin: calc(var(--sph-w) * -.43) 0 0 calc(var(--sph-w) * -.5);
+  opacity: 0;
+  animation: sph-fly var(--sph-moment-ms) both;
+}
+.sph-fly.is-b { --fx: var(--bx); --fy: var(--by); --off: var(--ob, 0px); --turn: 12deg; }
+.sph-fly .sph-card { width: 100%; height: 100%; min-width: 0; min-height: 0; rotate: 0deg; scale: 1; cursor: default; }
+.sph-fly-face { position: absolute; inset: 0; }
+@keyframes sph-fly {
+  0%, 17.9% { translate: var(--fx) var(--fy); opacity: 0; scale: 1; rotate: 0deg; }
+  18% { translate: var(--fx) var(--fy); opacity: 1; scale: 1; animation-timing-function: var(--ease-out); }
+  24% { translate: var(--fx) calc(var(--fy) - var(--sph-w) * .1); scale: 1.08; animation-timing-function: cubic-bezier(.45, 0, .4, 1); }
+  38% { translate: calc(var(--mx) + var(--off)) var(--my); opacity: 1; scale: .7; rotate: var(--turn); }
+  42%, 100% { translate: var(--mx) var(--my); opacity: 0; scale: .35; rotate: 0deg; }
+}
+.sph-pop {
+  width: calc(var(--sph-w) * 1.25);
+  height: calc(var(--sph-w) * 1.25);
+  margin: calc(var(--sph-w) * -.75) 0 0 calc(var(--sph-w) * -.625);
+  translate: var(--mx) var(--my);
+  opacity: 0;
+  animation: sph-pop var(--sph-moment-ms) both;
+}
+.sph-pop > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes sph-pop {
+  0%, 39.9% { scale: 0; opacity: 0; }
+  40% { scale: .2; opacity: 1; translate: var(--mx) var(--my); animation-timing-function: var(--ease-spring); }
+  48% { scale: 1.12; }
+  54%, 86% { scale: 1; opacity: 1; translate: var(--mx) var(--my); }
+  100% { scale: .9; opacity: 0; translate: var(--mx) calc(var(--my) - var(--sph-w) * .6); }
+}
+
+/* ── The card-flipper's flight (FLIPPER_FLIGHT_MS; it is above the card at FLIPPER_TURN_MS ≈ 45 %) ── */
+.sph-flipper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  width: var(--fs);
+  height: var(--fs);
+  margin: calc(var(--fs) * -.5) 0 0 calc(var(--fs) * -.5);
+  pointer-events: none;
+  animation: sph-flight var(--sph-flight-ms, 2800ms) both;
+}
+.sph-flipper-turn { display: block; width: 100%; height: 100%; scale: var(--fdir, 1) 1; }
+.sph-flipper-turn > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes sph-flight {
+  0% { translate: var(--f0x) var(--f0y); opacity: 0; animation-timing-function: var(--ease-out); }
+  8% { opacity: 1; }
+  38% { translate: var(--f1x) var(--f1y); animation-timing-function: ease-in-out; }
+  52% { translate: var(--f1x) calc(var(--f1y) - var(--fs) * .06); animation-timing-function: ease-in; }
+  92% { opacity: 1; }
+  100% { translate: var(--f2x) var(--f2y); opacity: 0; }
+}
+/* Its line, in a little bubble above it, as the card turns back. */
+.sph-says {
+  position: absolute;
+  left: 50%;
+  bottom: 96%;
+  padding: 2px var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: var(--kiosk-text);
+  font-weight: 900;
+  white-space: nowrap;
+  translate: -50% 0;
+  animation: sph-says 1500ms var(--ease-spring) both;
+}
+@keyframes sph-says { 0% { scale: 0; } 15% { scale: 1.15; } 25%, 80% { scale: 1; opacity: 1; } 100% { scale: .9; opacity: 0; } }
+
+/* ── The lights-on crowd (the last board's end, and the end screen) ───────── */
+.sph-party { position: absolute; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; }
+.sph-party > * { position: absolute; }
+.sph-ending { container-type: size; --sph-side: 22cqw; --sph-ctop: 34cqh; }
+.sph-ending .sph-room { position: absolute; inset: 0; }
+
+/* "Hoe los ik dit op?": everything waits. */
+.sph-root.is-paused *,
+.sph-root.is-paused *::after { animation-play-state: paused; }
+
+@media (orientation: portrait) {
+  .sph-root { --sph-top-h: 118px; }
+}
+@media (max-height: 460px) {
+  .sph-root { padding-top: var(--sp-2); --sph-top-h: 60px; }
+  .sph-mark { width: 22px; height: 22px; }
+}
+
+/* Shared by the themes: a slow float up and down. */
+@keyframes sph-bob { 50% { translate: 0 -6px; } }
+
+/* The zombie is drawn facing left (arms out, the Zombies game's way): it turns the other way round in flight. */
+.sph-root.is-zombie .sph-flipper-turn { scale: calc(var(--fdir, 1) * -1) 1; }
