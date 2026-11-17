@@ -127,7 +127,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // the flag must go, 2 minutes per round, best of 1 / 3 / 5. No help and no Nakijken.
         meta: {
             id: 'touwtrekken', music: 'zacht', label: 'Touwtrekken', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
-            options: duelOptions({ lives: { label: 'Hoe ver trekken?', unit: n => `${n} stappen` }, extras: [MANIER_OPTION] }),
+            options: duelOptions({ lives: { label: 'Hoe ver trekken?' }, extras: [MANIER_OPTION] }),
             sounds: { correct: 'plok', wrong: 'plop', miss: 'plop', win: 'jingle' },
         },
         icon: FlagPennant,

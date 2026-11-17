@@ -4,8 +4,9 @@ import type { DuelBestOf, DuelConfig, DuelLevel, DuelStream } from './types';
 // The pre-start choices every duel game shares (SpelOptions shows them, remembered per device), and the
 // DuelConfig they make. A game adds its own options after these (Touwtrekken's manier, Kikkers' modus).
 
-export const LIVES_CHOICES = [3, 5, 7] as const;
-export const DUEL_DEFAULTS = { lives: 5, bestOf: 3 } as const;
+// Owner 2026-11-17: longer duels (a Robotduel round was over in a minute), one list for every duel incl. Tovenaarsduel.
+export const LIVES_CHOICES = [5, 10, 15, 20, 25] as const;
+export const DUEL_DEFAULTS = { lives: 10, bestOf: 3 } as const;
 
 export interface DuelOptionsSpec {
     // The lives row in this game's words (Touwtrekken: "Hoe ver trekken?", "5 stappen").
@@ -25,7 +26,8 @@ export const MANIER_OPTION: SkinOption = {
 /** A duel game's option list: spelers, niveau, levens, rondes, then the game's extras. */
 export function duelOptions(spec: DuelOptionsSpec = {}): SkinOption[] {
     const lives = spec.lives ?? {};
-    const unit = lives.unit ?? ((n: number) => `${n} levens`);
+    // Bare numbers: the question says what they count, and five choices must fit one row.
+    const unit = lives.unit ?? ((n: number) => `${n}`);
     return [
         { id: 'spelers', label: 'Hoeveel spelers?', default: String(spec.players ?? 2), choices: [{ value: '1', label: '1 speler' }, { value: '2', label: '2 spelers' }] },
         { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] },
@@ -33,7 +35,7 @@ export function duelOptions(spec: DuelOptionsSpec = {}): SkinOption[] {
             id: 'levens', label: lives.label ?? 'Hoeveel levens?', default: String(lives.default ?? DUEL_DEFAULTS.lives),
             choices: (lives.choices ?? LIVES_CHOICES).map(n => ({ value: String(n), label: unit(n) })),
         },
-        { id: 'rondes', label: 'Hoeveel rondes?', default: String(DUEL_DEFAULTS.bestOf), choices: [{ value: '1', label: '1 ronde' }, { value: '3', label: 'Beste van 3' }, { value: '5', label: 'Beste van 5' }] },
+        { id: 'rondes', label: 'Hoeveel rondes?', default: String(DUEL_DEFAULTS.bestOf), choices: [{ value: '1', label: '1' }, { value: '3', label: '3' }, { value: '5', label: '5' }] },
         ...(spec.extras ?? []),
     ];
 }

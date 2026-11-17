@@ -102,11 +102,11 @@ describe('duel rules (pure)', () => {
     test('the shared options: spelers, niveau, levens, rondes, then the extras; picks make the config', () => {
         const opts = duelOptions({ lives: { label: 'Hoe ver?', unit: n => `${n} stappen` }, extras: [{ id: 'x', label: 'X', default: 'a', choices: [{ value: 'a', label: 'A' }] }] });
         expect(opts.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'x']);
-        expect(opts.map(o => o.default)).toEqual(['2', 'normaal', '5', '3', 'a']);
-        expect(opts[2].choices.map(c => c.label)).toEqual(['3 stappen', '5 stappen', '7 stappen']);
-        expect(opts[3].choices.map(c => c.label)).toEqual(['1 ronde', 'Beste van 3', 'Beste van 5']);
-        expect(duelConfigOf({})).toEqual({ players: 2, level: 'normaal', lives: 5, bestOf: 3, stream: 'own' });
-        expect(duelConfigOf({ spelers: '1', niveau: 'moeilijk', levens: '7', rondes: '5', manier: 'beurt' })).toEqual({ players: 1, level: 'moeilijk', lives: 7, bestOf: 5, stream: 'own' });
+        expect(opts.map(o => o.default)).toEqual(['2', 'normaal', '10', '3', 'a']);
+        expect(opts[2].choices.map(c => c.label)).toEqual(['5 stappen', '10 stappen', '15 stappen', '20 stappen', '25 stappen']);
+        expect(opts[3].choices.map(c => c.label)).toEqual(['1', '3', '5']);
+        expect(duelConfigOf({})).toEqual({ players: 2, level: 'normaal', lives: 10, bestOf: 3, stream: 'own' });
+        expect(duelConfigOf({ spelers: '1', niveau: 'moeilijk', levens: '15', rondes: '5', manier: 'beurt' })).toEqual({ players: 1, level: 'moeilijk', lives: 15, bestOf: 5, stream: 'own' });
         expect(duelConfigOf({ spelers: '2', manier: 'beurt', rondes: '4' }, { roundSeconds: 60 })).toMatchObject({ stream: 'shared', bestOf: 3, roundSeconds: 60 });
     });
 });
@@ -350,7 +350,7 @@ describe('Touwtrekken on the engine', () => {
         fireEvent.pointerDown(b, { pointerId: team === 'Blauw' ? 1 : 2, pointerType: 'touch', isPrimary: team === 'Blauw' });
     };
     const type = (team: string, answer: string) => { for (const d of answer) down(team, d); down(team, 'ok'); };
-    const two = (picks: Record<string, string> = {}) => resolveMeta(meta, { spelers: '2', levens: '3', ...picks });
+    const two = (picks: Record<string, string> = {}) => resolveMeta(meta, { spelers: '2', levens: '5', ...picks });
     const ready = () => act(() => { vi.advanceTimersByTime(DUEL_TIMING.readyMs); });
 
     test('the registry entry and its options: 1 or 2 spelers, how far, rondes, manier for 2', () => {
@@ -359,17 +359,17 @@ describe('Touwtrekken on the engine', () => {
         expect(e.Screen && !e.Component).toBe(true);
         expect(e.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'manier']);
         render(<SpelOptions meta={meta} onStart={() => { }} onBack={() => { }} />);
-        expect(screen.getByRole('button', { name: '5 stappen' }).getAttribute('aria-pressed')).toBe('true');
-        expect(screen.getByRole('button', { name: 'Beste van 3' })).toBeTruthy();
+        expect(within(screen.getByRole('group', { name: 'Hoe ver trekken?' })).getByRole('button', { name: '10' }).getAttribute('aria-pressed')).toBe('true');
+        expect(within(screen.getByRole('group', { name: 'Hoeveel rondes?' })).getByRole('button', { name: '3' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: '1 speler' }));
         expect(screen.queryByRole('button', { name: 'Samen één som' })).toBeNull();
     });
 
-    test('both keypads in the same tick; each right answer pulls the rope; 3 steps win the round; the round card', () => {
+    test('both keypads in the same tick; each right answer pulls the rope; 5 steps win the round; the round card', () => {
         render(<Touwtrekken meta={two()} from={from} onExit={vi.fn()} />);
         expect(du().phase).toBe('ready');
         ready();
-        expect(du().config).toMatchObject({ lives: 3, roundSeconds: TOUW.seconds, stream: 'own' });
+        expect(du().config).toMatchObject({ lives: 5, roundSeconds: TOUW.seconds, stream: 'own' });
         const a = q('left').answer, b = q('right').answer;
         act(() => {
             for (let i = 0; i < Math.max(a.length, b.length); i++) {
@@ -384,12 +384,12 @@ describe('Touwtrekken on the engine', () => {
         expect(screen.getAllByText('Trek!')).toHaveLength(2);
         act(() => { vi.advanceTimersByTime(DUEL_TIMING.flashRight); });
         expect(within(pad('Blauw')).getByLabelText('Antwoord').textContent).toBe('');
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             act(() => type('Oranje', q('right').answer));
             act(() => { vi.advanceTimersByTime(DUEL_TIMING.flashRight); });
         }
         expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'right' });
-        expect(document.querySelector('.tt-pull')!.getAttribute('data-rope')).toBe('3');
+        expect(document.querySelector('.tt-pull')!.getAttribute('data-rope')).toBe('5');
         expect(document.querySelector('.tt-bear.is-right .is-cheer')).toBeTruthy();
         expect(screen.queryByRole('dialog')).toBeNull();
         act(() => { vi.advanceTimersByTime(TOUW.cardMs); });
@@ -404,7 +404,7 @@ describe('Touwtrekken on the engine', () => {
         const onExit = vi.fn();
         render(<Touwtrekken meta={two({ rondes: '1' })} from={from} onExit={onExit} />);
         ready();
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             act(() => type('Blauw', q('left').answer));
             act(() => { vi.advanceTimersByTime(DUEL_TIMING.flashRight); });
         }

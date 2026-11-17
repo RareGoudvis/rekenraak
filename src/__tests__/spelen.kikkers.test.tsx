@@ -61,7 +61,7 @@ describe('Kikkers en vliegjes: the registry entry', () => {
         expect(k.meta).toMatchObject({ id: 'kikkers', label: 'Kikkers en vliegjes', input: 'keypad', players: '1-2', music: 'weide' });
         expect(k.Screen && !k.Component).toBe(true);
         expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'winnen']);
-        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '5', rondes: '3', winnen: 'tijd' });
+        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '10', rondes: '3', winnen: 'tijd' });
         expect(k.meta.options!.at(-1)!.choices.map(c => c.label)).toEqual(['Op tijd', 'Tot 25 punten']);
         expect([modeOf(undefined), modeOf({ winnen: 'doel' })]).toEqual(['tijd', 'doel']);
         expect(gameBlurb('kikkers', 'x')).toMatch(/libel/);
@@ -235,7 +235,7 @@ describe('Kikkers en vliegjes: the screen on the engine', () => {
     const ready = () => tick(DUEL_TIMING.readyMs);
 
     test('Tot 25, 2 spelers: right answers snap bugs for points (a tongue each), mistakes cost lives with a dizzy frog; 25 takes the round', () => {
-        render(<Kikkers meta={meta({ spelers: '2', levens: '3', winnen: 'doel' })} from={from} onExit={() => { }} />);
+        render(<Kikkers meta={meta({ spelers: '2', levens: '5', winnen: 'doel' })} from={from} onExit={() => { }} />);
         expect(screen.getByText(/Wie eerst 25 punten heeft/)).toBeTruthy();
         ready();
         expect(du().roundEndsAt).toBeNull();
@@ -247,7 +247,7 @@ describe('Kikkers en vliegjes: the screen on the engine', () => {
         expect(document.querySelector('.kv-frog-at.is-left .kv-lunge')).toBeTruthy();
         tick(DUEL_TIMING.flashRight);
         act(() => du().answer('right', wrongOf(q('right').answer)));
-        expect(du().sides.right.lives).toBe(2);
+        expect(du().sides.right.lives).toBe(4);
         expect(document.querySelector('.kv-frog-at.is-right .kv-sway')).toBeTruthy();
         expect(document.querySelector('.kv-splash')).toBeTruthy();
         // Keep scoring until 25.
@@ -266,7 +266,7 @@ describe('Kikkers en vliegjes: the screen on the engine', () => {
     });
 
     test('Op tijd: a 2-minute round clock; at the end the frog with the most points wins; 0 lives ends it sooner', () => {
-        render(<Kikkers meta={meta({ spelers: '2', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Kikkers meta={meta({ spelers: '2', levens: '5' })} from={from} onExit={() => { }} />);
         ready();
         expect(du().roundEndsAt).toBe(Date.now() + KIKKER.seconds * 1000);
         act(() => du().answer('right', q('right').answer));
@@ -277,7 +277,7 @@ describe('Kikkers en vliegjes: the screen on the engine', () => {
         ready();
         expect(du().sides.right.points).toBe(0);
         expect(document.querySelector('.kv-frog.is-flop')).toBeNull();
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             act(() => du().answer('left', wrongOf(q('left').answer)));
             tick(DUEL_TIMING.flashWrong);
         }
@@ -286,12 +286,12 @@ describe('Kikkers en vliegjes: the screen on the engine', () => {
     });
 
     test('Moeilijk: a time-out costs a life too; 1 speler plays the computer', () => {
-        render(<Kikkers meta={meta({ spelers: '1', niveau: 'moeilijk', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Kikkers meta={meta({ spelers: '1', niveau: 'moeilijk', levens: '5' })} from={from} onExit={() => { }} />);
         act(() => useDuelStore.setState(s => ({ config: { ...s.config, rng: () => 0.99 } })));
         ready();
         expect(screen.getAllByText('Computer').length).toBeGreaterThan(0);
         const limit = du().sides.left.limitMs!;
         tick(limit + 10);
-        expect(du().sides.left.lives).toBe(2);
+        expect(du().sides.left.lives).toBe(4);
     });
 });

@@ -57,7 +57,7 @@ describe('Meteorietenregen: the registry entry', () => {
         expect(m).toMatchObject({ id: 'meteorietenregen', label: 'Meteorietenregen', input: 'keypad', timed: false, players: '1-2' });
         expect(m.accepts.kinds).toEqual(['number']);
         expect(m.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
-        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '5', rondes: '3' });
+        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '10', rondes: '3' });
         // The launch is the scene's own sound.
         expect(m.sounds!.correct).toBeNull();
         expect(MUSIC_IDS).toContain(m.music);
@@ -223,7 +223,7 @@ describe('Meteorietenregen: the screen', () => {
     const hearts = (side: Side) => Number(document.querySelector(`.duel-corner.is-${side} .duel-hearts`)!.getAttribute('data-lives'));
 
     test('2 spelers: meteors fly, a hit takes a heart and a part, shields go up and block, the base explodes, fireworks, the card', () => {
-        const { container } = render(<Meteorietenregen meta={meta({ spelers: '2', levens: '3' })} from={from} onExit={() => { }} />);
+        const { container } = render(<Meteorietenregen meta={meta({ spelers: '2', levens: '5' })} from={from} onExit={() => { }} />);
         ready();
         expect(container.querySelectorAll('.mt-base')).toHaveLength(2);
         expect(container.querySelector('.mt-rover')).toBeTruthy();
@@ -239,8 +239,8 @@ describe('Meteorietenregen: the screen', () => {
         expect(container.querySelector('.mt-meteor')).toBeNull();
         expect(container.querySelector('.mt-fx.is-hit')).toBeTruthy();
         expect(screen.getByText('BOEM!')).toBeTruthy();
-        expect(hearts('right')).toBe(2);
-        expect(parts()).toBe(PARTS.length - 2);
+        expect(hearts('right')).toBe(4);
+        expect(parts()).toBe(partsStanding(4, 5));
         // Right: 2 in a row = a green dome over its base.
         tick(DUEL_TIMING.flashRight);
         rights('right', 2);
@@ -254,9 +254,9 @@ describe('Meteorietenregen: the screen', () => {
         expect(container.querySelector('.mt-fx.is-block')).toBeTruthy();
         expect(container.querySelector('.mt-dome.is-breaking')).toBeTruthy();
         expect(screen.getByText('Geblokt!')).toBeTruthy();
-        expect(hearts('right')).toBe(2);
-        // Two more hits: the right base explodes into a crater, the left side cheers under fireworks.
-        for (let i = 0; i < 2; i++) { tick(DUEL_TIMING.flashRight); act(() => du().answer('left', q('left').answer)); tick(METEOR.flightMs + 10); }
+        expect(hearts('right')).toBe(4);
+        // Four more hits: the right base explodes into a crater, the left side cheers under fireworks.
+        for (let i = 0; i < 4; i++) { tick(DUEL_TIMING.flashRight); act(() => du().answer('left', q('left').answer)); tick(METEOR.flightMs + 10); }
         expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'left' });
         expect(container.querySelector('.mt-base.is-right .mt-crater')).toBeTruthy();
         expect(container.querySelector('.mt-fx.is-boom')).toBeTruthy();

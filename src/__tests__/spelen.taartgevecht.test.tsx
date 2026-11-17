@@ -47,7 +47,7 @@ describe('Taartgevecht: the registry entry', () => {
         expect(t.meta).toMatchObject({ id: 'taartgevecht', label: 'Taartgevecht', input: 'keypad', timed: false, players: '1-2', music: 'gek' });
         expect(t.Screen && !t.Component).toBeTruthy();
         expect(t.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
-        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '5', rondes: '3' });
+        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '10', rondes: '3' });
         // The scene voices the throw and the dizzy lock itself.
         expect(t.meta.sounds).toMatchObject({ correct: null, wrong: null });
         expect(GAME_BLURB.taartgevecht).toBeTruthy();
@@ -97,7 +97,7 @@ describe('Taartgevecht: the screen', () => {
     const ready = () => tick(DUEL_TIMING.readyMs);
 
     test('2 spelers: one shared sum; a pie flies and splats; the cream stays; the last pie ends the round', () => {
-        render(<Taartgevecht meta={meta({ spelers: '2', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Taartgevecht meta={meta({ spelers: '2', levens: '5' })} from={from} onExit={() => { }} />);
         ready();
         expect(du().config).toMatchObject({ stream: 'shared', wrongLockMs: TAART.wrongLockMs });
         expect(du().sides.left.question).toBe(du().sides.right.question);
@@ -107,25 +107,27 @@ describe('Taartgevecht: the screen', () => {
         expect(document.querySelectorAll('.tg-fly')).toHaveLength(1);
         expect(document.querySelector('.tg-arm.is-throw')).toBeTruthy();
         tick(TAART.flightMs - 20);
-        expect(lives()).toEqual([3, 3]);
+        expect(lives()).toEqual([5, 5]);
         tick(30);
-        expect(lives()).toEqual([3, 2]);
+        expect(lives()).toEqual([5, 4]);
         expect(document.querySelector('.tg-fly')).toBeNull();
         expect(document.querySelector('.tg-splat')).toBeTruthy();
         expect(who('right').classList).toContain('is-hit');
-        expect(who('right').querySelectorAll('.tg-blob')).toHaveLength(creamBlobs(1, 3));
+        expect(who('right').querySelectorAll('.tg-blob')).toHaveLength(creamBlobs(1, 5));
         expect(document.querySelector('.tg-crowd.is-ooh')).toBeTruthy();
         tick(DUEL_TIMING.sharedNext);
         expect(who('right').classList).toContain('is-idle');
-        expect(who('right').querySelectorAll('.tg-blob')).toHaveLength(creamBlobs(1, 3));
+        expect(who('right').querySelectorAll('.tg-blob')).toHaveLength(creamBlobs(1, 5));
         // Right throws back.
         act(() => du().answer('right', q().answer));
         tick(TAART.flightMs + 10);
-        expect(lives()).toEqual([2, 2]);
+        expect(lives()).toEqual([4, 4]);
         tick(DUEL_TIMING.sharedNext);
-        act(() => du().answer('left', q().answer));
-        tick(TAART.flightMs + 10);
-        tick(DUEL_TIMING.sharedNext);
+        for (let i = 0; i < 3; i++) {
+            act(() => du().answer('left', q().answer));
+            tick(TAART.flightMs + 10);
+            tick(DUEL_TIMING.sharedNext);
+        }
         // Right has 1 life: the last pie is slow, the camera leans in.
         act(() => du().answer('left', q().answer));
         expect(document.querySelector('.tg-fly.is-final')).toBeTruthy();
@@ -153,41 +155,41 @@ describe('Taartgevecht: the screen', () => {
     });
 
     test('a wrong answer: that contestant is dizzy for the 2 s lock and loses no life; the other may still throw', () => {
-        render(<Taartgevecht meta={meta({ spelers: '2', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Taartgevecht meta={meta({ spelers: '2', levens: '5' })} from={from} onExit={() => { }} />);
         ready();
         const wrong = String(Number(q().answer) + 1);
         act(() => du().answer('left', wrong));
         expect(du().sides.left.locked).toBe(true);
         expect(who('left').classList).toContain('is-dizzy');
         expect(who('left').querySelector('.tg-stars')).toBeTruthy();
-        expect(lives()).toEqual([3, 3]);
+        expect(lives()).toEqual([5, 5]);
         tick(TAART.wrongLockMs + 10);
         expect(who('left').classList).toContain('is-idle');
         act(() => du().answer('right', q().answer));
         tick(TAART.flightMs + 10);
-        expect(lives()).toEqual([2, 3]);
+        expect(lives()).toEqual([4, 5]);
     });
 
     test('Moeilijk: a time-out throws nothing; both out = the answer shows and the next sum comes', () => {
-        render(<Taartgevecht meta={meta({ spelers: '2', levens: '3', niveau: 'moeilijk' })} from={from} onExit={() => { }} />);
+        render(<Taartgevecht meta={meta({ spelers: '2', levens: '5', niveau: 'moeilijk' })} from={from} onExit={() => { }} />);
         ready();
         const first = q().key;
         expect(du().sides.left.limitMs).toBe(SUM_CLOCK.startMs);
         expect(document.querySelectorAll('.duel-ring')).toHaveLength(2);
         tick(SUM_CLOCK.startMs + 10);
-        expect(lives()).toEqual([3, 3]);
+        expect(lives()).toEqual([5, 5]);
         expect(du().flights).toHaveLength(0);
         tick(DUEL_TIMING.flashWrong + 10);
         expect(q().key).not.toBe(first);
     });
 
     test('1 speler: the computer is a robot chef on the right that throws on its own', () => {
-        render(<Taartgevecht meta={meta({ spelers: '1', levens: '3' })} from={from} onExit={() => { }} />);
+        render(<Taartgevecht meta={meta({ spelers: '1', levens: '5' })} from={from} onExit={() => { }} />);
         act(() => useDuelStore.setState(s => ({ config: { ...s.config, rng: () => 0.5 } })));
         ready();
         expect(who('right').classList).toContain('is-robot');
         expect(screen.getAllByText('Computer').length).toBeGreaterThan(0);
         tick(12_000);
-        expect(du().sides.left.lives).toBeLessThan(3);
+        expect(du().sides.left.lives).toBeLessThan(5);
     });
 });
