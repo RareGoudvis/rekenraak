@@ -6,7 +6,8 @@ import { isKid, type CustomerKind, type OrderKind } from './rule';
 // on its bottom edge, facing a little to the left (the counter); the dog in 70 × 60; the frituur in 300 × 360;
 // an order is centred on 0,0 (about 34 units tall); the street is 700 × 560 with the pavement at 480.
 
-export type Pose = 'wait' | 'low' | 'frown' | 'served' | 'happy' | 'grumpy';
+// tantrum = a short strop after the wrong snack (arms flailing, shouting), before stomping off.
+export type Pose = 'wait' | 'low' | 'frown' | 'served' | 'happy' | 'grumpy' | 'tantrum';
 type Pt = readonly [number, number];
 
 interface Body {
@@ -43,6 +44,8 @@ function armsOf(b: Body, kind: CustomerKind, pose: Pose): Arms {
         // Hands on the hips: "dat heb ik niet besteld".
         case 'frown': return make([lx - 13, ly + a * 0.45], [lx - 1, ly + a * 0.8], [rx + 13, ry + a * 0.45], [rx + 1, ry + a * 0.8]);
         case 'grumpy': return crossed();
+        // A strop: both arms up and flailing (CSS swings them round the shoulders).
+        case 'tantrum': return make([lx - 15, ly - a * 0.15], [lx - 12, ly - a * 0.72], [rx + 15, ry - a * 0.15], [rx + 12, ry - a * 0.72]);
         // Impatient: a grown-up looks at the watch, a kid folds the arms.
         case 'low': return isKid(kind) ? crossed() : make([lx - 5, ly + a * 0.5], [lx - 6, ly + a], [rx + 10, ry + a * 0.65], [cx + 3, ly + a * 0.38]);
         default: return make([lx - 5, ly + a * 0.5], [lx - 6, ly + a], [rx + 5, ry + a * 0.5], [rx + 6, ry + a]);
@@ -110,7 +113,7 @@ function Face({ b, pose, kind }: { b: Body; pose: Pose; kind: CustomerKind }): R
     const [cx, cy] = b.head;
     const e1 = cx - 6, e2 = cx + 5, ey = cy - 1;
     const glasses = kind === 'opa';
-    const brows = pose === 'grumpy' ? `M${e1 - 4} ${ey - 7} L${e1 + 3} ${ey - 4} M${e2 - 3} ${ey - 4} L${e2 + 4} ${ey - 7}`
+    const brows = pose === 'grumpy' || pose === 'tantrum' ? `M${e1 - 4} ${ey - 7} L${e1 + 3} ${ey - 4} M${e2 - 3} ${ey - 4} L${e2 + 4} ${ey - 7}`
         : pose === 'frown' ? `M${e1 - 4} ${ey - 8} Q${e1} ${ey - 10} ${e1 + 3} ${ey - 7} M${e2 - 3} ${ey - 5} L${e2 + 4} ${ey - 5}`
         : pose === 'low' ? `M${e1 - 4} ${ey - 4} L${e1 + 3} ${ey - 7} M${e2 - 3} ${ey - 7} L${e2 + 4} ${ey - 4}` : null;
     // Looking at the watch: the eyes go down to the right; otherwise a little to the left, at the counter.
@@ -133,8 +136,16 @@ function Face({ b, pose, kind }: { b: Body; pose: Pose; kind: CustomerKind }): R
                 : pose === 'happy' ? <ellipse className="fr-mouth-open fr-chew" cx={cx - 2} cy={cy + 8} rx={3.4} ry={2.8} />
                 : pose === 'frown' ? <ellipse className="fr-mouth-open" cx={cx - 1} cy={cy + 9} rx={2.6} ry={3.2} />
                 : pose === 'grumpy' ? <path className="fr-line" d={`M${cx - 6} ${cy + 10} Q${cx - 1} ${cy + 6} ${cx + 4} ${cy + 10}`} />
+                : pose === 'tantrum' ? <ellipse className="fr-mouth-open fr-shout" cx={cx - 1} cy={cy + 9} rx={5} ry={4.5} />
                 : pose === 'low' ? <path className="fr-line" d={`M${cx - 6} ${cy + 9} Q${cx - 3} ${cy + 7} ${cx} ${cy + 9} Q${cx + 3} ${cy + 11} ${cx + 5} ${cy + 9}`} />
                 : <path className="fr-line" d={`M${cx - 6} ${cy + 7} Q${cx - 1} ${cy + 12} ${cx + 4} ${cy + 7}`} />}
+            {pose === 'tantrum' && isKid(kind) && (
+                // A kid's strop: tears spraying out sideways.
+                <g className="fr-tears">
+                    <path className="fr-tear" d={`M${e1 - 4} ${ey + 2} q-6 -2 -10 2`} />
+                    <path className="fr-tear is-r" d={`M${e2 + 4} ${ey + 2} q6 -2 10 2`} />
+                </g>
+            )}
             {kind === 'opa' && <path className="fr-moustache" d={`M${cx - 9} ${cy + 6} Q${cx - 5} ${cy + 2} ${cx - 1} ${cy + 5} Q${cx + 3} ${cy + 2} ${cx + 7} ${cy + 6} Q${cx - 1} ${cy + 10} ${cx - 9} ${cy + 6} Z`} />}
         </g>
     );
@@ -174,24 +185,30 @@ export function PersonG({ kind, look, pose, item }: { kind: CustomerKind; look: 
     const skin = `is-${look % 3}`;
     const shirt = `fr-shirt is-${look % 6}`;
     const hand = pose === 'served' ? arms.hl : pose === 'happy' ? arms.hl : null;
+    // The arms swing round their shoulders (a strop).
+    const oL = { transformOrigin: `${b.sh[0][0]}px ${b.sh[0][1]}px` };
+    const oR = { transformOrigin: `${b.sh[1][0]}px ${b.sh[1][1]}px` };
     return (
         <g className={`fr-person is-${kind} is-${pose}`} style={{ '--skin': `var(--fr-skin-${look % 3})` } as CSSProperties}>
             <HairBack kind={kind} look={look} b={b} />
             <Legs b={b} kind={kind} look={look} />
             {/* The arm behind the body first, so a crossed arm lies over the shirt. */}
-            <path className="fr-arm-line" d={arms.r} />
-            <path className={`fr-arm ${shirt}`} d={arms.r} />
+            <path className="fr-arm-line fr-limb is-r" d={arms.r} style={oR} />
+            <path className={`fr-arm fr-limb is-r ${shirt}`} d={arms.r} style={oR} />
             <rect className={shirt} x={tx} y={ty} width={tw} height={th} rx={trx} />
             {kind === 'voetballer' && <path className="fr-stripe" d={`M${tx + tw * 0.33} ${ty + 2} V${ty + th - 2} M${tx + tw * 0.67} ${ty + 2} V${ty + th - 2}`} />}
             {kind === 'opa' && <path className="fr-buttons" d={`M${cx + 1} ${ty + 14} v0.1 M${cx + 1} ${ty + 26} v0.1 M${cx + 1} ${ty + 38} v0.1`} />}
             {kind === 'mama' && <path className="fr-collar" d={`M${cx - 8} ${ty + 1} L${cx} ${ty + 10} L${cx + 8} ${ty + 1}`} />}
-            <path className="fr-arm-line" d={arms.l} />
-            <path className={`fr-arm ${shirt}`} d={arms.l} />
-            <circle className={`fr-hand ${skin}`} cx={arms.hl[0]} cy={arms.hl[1]} r={5} />
-            <circle className={`fr-hand ${skin}`} cx={arms.hr[0]} cy={arms.hr[1]} r={5} />
+            <path className="fr-arm-line fr-limb is-l" d={arms.l} style={oL} />
+            <path className={`fr-arm fr-limb is-l ${shirt}`} d={arms.l} style={oL} />
+            <circle className={`fr-hand fr-limb is-l ${skin}`} cx={arms.hl[0]} cy={arms.hl[1]} r={5} style={oL} />
+            <circle className={`fr-hand fr-limb is-r ${skin}`} cx={arms.hr[0]} cy={arms.hr[1]} r={5} style={oR} />
             {pose === 'served' && <rect className={`fr-hand ${skin}`} x={arms.hr[0] - 2.5} y={arms.hr[1] - 12} width={5} height={9} rx={2.5} />}
             {pose === 'low' && !isKid(kind) && <circle className="fr-watch" cx={arms.hr[0] - 1} cy={arms.hr[1] + 4} r={3.6} />}
-            {kind === 'opa' && <path className="fr-cane" d={`M${arms.hr[0] + 4} ${b.legs[1] + 4} L${arms.hr[0] + 2} ${b.legs[0] + 4} Q${arms.hr[0] + 2} ${b.legs[0] - 6} ${arms.hr[0] - 6} ${b.legs[0] - 2}`} />}
+            {kind === 'opa' && (pose === 'tantrum'
+                // Opa shakes his cane in the air.
+                ? <path className="fr-cane fr-limb is-r" style={oR} d={`M${arms.hr[0]} ${arms.hr[1] + 10} L${arms.hr[0] + 4} ${arms.hr[1] - 34} Q${arms.hr[0] + 5} ${arms.hr[1] - 44} ${arms.hr[0] - 4} ${arms.hr[1] - 41}`} />
+                : <path className="fr-cane" d={`M${arms.hr[0] + 4} ${b.legs[1] + 4} L${arms.hr[0] + 2} ${b.legs[0] + 4} Q${arms.hr[0] + 2} ${b.legs[0] - 6} ${arms.hr[0] - 6} ${b.legs[0] - 2}`} />)}
             <rect className={`fr-skin-fill ${skin}`} x={cx - 5} y={cy + r - 4} width={10} height={9} />
             <circle className={`fr-head ${skin}`} cx={cx} cy={cy} r={r} />
             <Hair kind={kind} look={look} b={b} />
@@ -213,6 +230,7 @@ export function PersonG({ kind, look, pose, item }: { kind: CustomerKind; look: 
 /** The dog beside its owner (70 × 60, paws on the bottom edge). */
 export function DogG({ pose }: { pose: Pose }): ReactNode {
     const sad = pose === 'low' || pose === 'grumpy' || pose === 'frown';
+    const bark = pose === 'tantrum';
     return (
         <g className={`fr-dog is-${pose}`}>
             <path className="fr-dog-tail" d="M54 31 Q66 22 62 10" style={{ transformOrigin: '54px 31px' }} />
@@ -228,6 +246,9 @@ export function DogG({ pose }: { pose: Pose }): ReactNode {
                 {pose === 'happy' ? (
                     // A bit of sausage for the dog too.
                     <rect className="fr-sausage" x={-9} y={25} width={14} height={5} rx={2.5} transform="rotate(-8 -2 27)" />
+                ) : bark ? (
+                    // Barking: the jaw drops open.
+                    <path className="fr-mouth-open" d="M-1 26 L9 28 L2 33 Z" />
                 ) : !sad && <path className="fr-tongue" d="M4 29 Q5 36 9 34 Q10 31 8 29 Z" />}
             </g>
         </g>
@@ -261,6 +282,11 @@ function Tray({ children }: { children?: ReactNode }): ReactNode {
 export function OrderG({ kind }: { kind: OrderKind }): ReactNode {
     switch (kind) {
         case 'friet': return <g className="fr-order"><Cone /></g>;
+        case 'slijm': return (
+            <g className="fr-order"><Cone />
+                <path className="fr-slijm" d="M-10 -9 Q-12 -18 -3 -16 Q0 -24 6 -16 Q13 -16 10 -8 L9 -2 Q7 1 6 -3 L5 -6 Q0 -4 -5 -6 L-6 0 Q-8 3 -9 -1 Z" />
+            </g>
+        );
         case 'mayo': return <g className="fr-order"><Cone /><path className="fr-mayo" d="M-9 -9 Q-11 -17 -3 -16 Q-1 -23 5 -16 Q12 -16 9 -8 Q0 -5 -9 -9 Z" /></g>;
         case 'stoofvlees': return (
             <g className="fr-order"><Tray>
@@ -299,12 +325,13 @@ const BULBS = Array.from({ length: 10 }, (_, i) => 44 + i * 23.5);
 const STEAM = [[64, 234, 0], [94, 230, 1], [122, 236, 2]] as const;
 const OIL_BUBBLES = [[52, 0], [70, 1], [88, 2], [104, 3], [122, 4], [62, 5], [114, 6]] as const;
 
-export type CookPose = 'idle' | 'serve' | 'oops';
+// shrug = the wrong snack went out: an apologetic shrug, palm up.
+export type CookPose = 'idle' | 'serve' | 'shrug';
 
 /** The frituur (300 × 360, ground at 360): the sign, the awning, the window with its fryer and cook, the counter. */
 export function KioskG({ cook, clipId, beat = 0 }: { cook: CookPose; clipId: string; beat?: number }): ReactNode {
-    const arm = cook === 'serve' ? 'M232 244 Q262 238 290 246' : cook === 'oops' ? 'M232 244 Q244 220 224 204' : 'M232 244 Q246 258 252 270';
-    const hand: Pt = cook === 'serve' ? [290, 246] : cook === 'oops' ? [224, 204] : [252, 270];
+    const arm = cook === 'serve' ? 'M232 244 Q262 238 290 246' : cook === 'shrug' ? 'M232 244 Q256 246 262 226' : 'M232 244 Q246 258 252 270';
+    const hand: Pt = cook === 'serve' ? [290, 246] : cook === 'shrug' ? [262, 224] : [252, 270];
     return (
         <g className={`fr-kiosk is-${cook}`}>
             {/* The chimney over the fryer puffs now and then. */}
@@ -344,12 +371,14 @@ export function KioskG({ cook, clipId, beat = 0 }: { cook: CookPose; clipId: str
                     <circle className="fr-pupil" cx={217} cy={216} r={2.2} />
                     <circle className="fr-pupil" cx={226} cy={216} r={2.2} />
                     <path className="fr-moustache is-dark" d="M213 223 Q218 219 222 222 Q226 219 230 223 Q222 228 213 223 Z" />
-                    {cook === 'oops' ? <ellipse className="fr-mouth-open" cx={222} cy={228} rx={2.4} ry={2.8} /> : <path className="fr-line" d="M216 227 Q222 232 228 227" />}
-                    {cook === 'oops' && <path className="fr-sweat" d="M236 200 Q240 207 236 209 Q232 207 236 200 Z" />}
+                    {cook === 'shrug' ? <path className="fr-line" d="M216 229 Q219 226 222 229 Q225 232 228 229" /> : <path className="fr-line" d="M216 227 Q222 232 228 227" />}
+                    {cook === 'shrug' && <path className="fr-line" d="M213 209 Q217 206 220 209 M223 209 Q227 206 230 209" />}
+                    {cook === 'shrug' && <path className="fr-sweat" d="M236 200 Q240 207 236 209 Q232 207 236 200 Z" />}
                     <g key={`arm-${beat}`} className="fr-cook-arm">
                         <path className="fr-arm-line" d={arm} />
                         <path className="fr-arm is-cook" d={arm} />
                         <circle className="fr-hand is-1" cx={hand[0]} cy={hand[1]} r={5} />
+                        {cook === 'shrug' && <path className="fr-hand is-1" d={`M${hand[0] - 6} ${hand[1] - 2} Q${hand[0]} ${hand[1] - 9} ${hand[0] + 7} ${hand[1] - 4}`} />}
                     </g>
                 </g>
                 {/* The fryer: two baskets in bubbling oil. */}

@@ -173,8 +173,8 @@
 /* The cook: a white hat and apron, bobbing to the music; reaches over the counter on a serve, scratches the head on a wrong one. */
 .fr-cook { animation: fr-cook 1.8s ease-in-out infinite alternate; }
 @keyframes fr-cook { from { transform: translateY(0); } to { transform: translateY(-2px); } }
-.fr-cook.is-oops { animation: fr-oops 400ms ease-in-out 2; }
-@keyframes fr-oops { 25% { transform: translateX(-2px) rotate(-1deg); } 75% { transform: translateX(2px) rotate(1deg); } }
+.fr-cook.is-shrug { animation: fr-shrug 520ms ease-in-out 2; }
+@keyframes fr-shrug { 50% { transform: translateY(-4px); } }
 .fr-kiosk.is-serve .fr-cook-arm { animation: fr-reach 320ms var(--ease-out); }
 @keyframes fr-reach { from { transform: translate(-18px, 10px); } }
 .fr-apron { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
@@ -189,6 +189,7 @@
 .fr-paper { fill: var(--kiosk-paper); }
 .fr-paper-stripe { fill: none; stroke: var(--fr-red) !important; stroke-width: 2.5 !important; }
 .fr-mayo { fill: var(--kiosk-paper); }
+.fr-slijm { fill: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--mab-e)); }
 .fr-mayo-line { fill: none; stroke: var(--kiosk-paper) !important; stroke-width: 2.5 !important; }
 .fr-stoof { fill: var(--fr-stoof); }
 .fr-sausage { fill: var(--fr-sausage); }
@@ -213,8 +214,10 @@
 /* ── The customers ────────────────────────────────────────────────────────── */
 /* SYNC: SLOTS in Frituur.tsx; a person is 16 % of the scene wide and 40 % high (100 × 200), feet on the pavement. */
 .fr-cust { position: absolute; left: calc(var(--x) * 1%); bottom: 14.29%; width: 16%; translate: -50% 0; transition: left 650ms var(--ease-out); }
-.fr-person-art { display: block; width: 100%; aspect-ratio: 1 / 2; }
-.fr-dog-art { position: absolute; left: 60%; bottom: 0; width: 66%; aspect-ratio: 70 / 60; }
+.fr-person-art { position: relative; z-index: 1; display: block; width: 100%; aspect-ratio: 1 / 2; }
+.fr-dog-art { position: absolute; z-index: 2; left: 60%; bottom: 0; width: 66%; aspect-ratio: 70 / 60; }
+/* The aliens' UFO parks just behind them. */
+.fr-ufo-art { position: absolute; z-index: 0; left: 62%; bottom: 0; width: 64%; aspect-ratio: 70 / 60; }
 .fr-step, .fr-idle, .fr-leave, .fr-walking { position: relative; }
 .fr-shirt { stroke: var(--spel-ink); stroke-width: 3; }
 .fr-arm.fr-shirt { stroke-width: 8; }
@@ -482,3 +485,198 @@ path.fr-arm { fill: none !important; }
 .fr-ending .fr-chew { animation-duration: 300ms; }
 
 .fr-root.is-paused * { animation-play-state: paused !important; }
+
+/* ── The fantastic visitors (visitors.tsx) ────────────────────────────────── */
+.fr-visitor {
+  --fr-v-alien: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--kiosk-paper));
+  --fr-v-three: color-mix(in srgb, var(--accent-meetkunde) 55%, var(--kiosk-paper));
+  --fr-v-monster: color-mix(in srgb, var(--accent-vraagstukken) 72%, var(--kiosk-paper));
+  --fr-v-octo: color-mix(in srgb, color-mix(in srgb, var(--accent-getallenkennis) 50%, var(--accent-meetkunde)) 50%, var(--kiosk-paper));
+  --fr-v-crab: color-mix(in srgb, var(--accent-getallenkennis) 80%, var(--accent-vraagstukken));
+  --fr-v-dragon: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--accent-bewerkingen));
+  --fr-v-yeti: var(--kiosk-paper);
+}
+.fr-visitor * { stroke-linejoin: round; stroke-linecap: round; }
+.fr-v-alien { --c: var(--fr-v-alien); }
+.fr-v-three { --c: var(--fr-v-three); }
+.fr-v-monster { --c: var(--fr-v-monster); }
+.fr-v-octo { --c: var(--fr-v-octo); }
+.fr-v-crab { --c: var(--fr-v-crab); }
+.fr-v-dragon { --c: var(--fr-v-dragon); }
+.fr-v-yeti { --c: var(--fr-v-yeti); }
+.fr-v-suit { --c: var(--mab-e); }
+.fr-v-metal { --c: var(--fr-steel); }
+.fr-v-alien, .fr-v-three, .fr-v-monster, .fr-v-octo, .fr-v-crab, .fr-v-dragon, .fr-v-yeti, .fr-v-suit, .fr-v-metal { fill: var(--c); stroke: var(--spel-ink); stroke-width: 3; }
+path.fr-v-limb { fill: none; stroke: var(--c); }
+.fr-v-limb-line { fill: none; stroke: var(--spel-ink); }
+.fr-v-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-stalk { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.fr-v-stalk.is-crab { stroke-width: 4; }
+.fr-v-shoe { fill: var(--spel-ink); }
+.fr-v-boot { fill: color-mix(in srgb, var(--spel-ink) 70%, var(--accent-bewerkingen)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-spot { fill: color-mix(in srgb, var(--spel-ink) 16%, transparent); }
+.fr-v-spot.is-dark { fill: color-mix(in srgb, var(--spel-ink) 22%, transparent); }
+.fr-v-spot.is-light { fill: color-mix(in srgb, var(--kiosk-paper) 55%, transparent); }
+.fr-v-horn { fill: color-mix(in srgb, var(--mab-e) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-fur { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-tooth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-v-halo { fill: color-mix(in srgb, var(--fr-ok) 35%, transparent); stroke: none; transform-box: fill-box; transform-origin: center; animation: fr-v-glow 600ms ease-in-out infinite alternate; }
+@keyframes fr-v-glow { from { transform: scale(.9); opacity: .4; } to { transform: scale(1.06); opacity: 1; } }
+.fr-v-light { fill: var(--fr-board); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-v-handle { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-pail { fill: var(--fr-red); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-water { fill: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper)); }
+.fr-v-crab-legs { fill: none; stroke: var(--spel-ink); stroke-width: 4; }
+.fr-v-crab-shell { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 45%, var(--fr-v-crab)); stroke-width: 2.5; }
+.fr-v-glass { fill: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; fill-opacity: .85; }
+.fr-v-fishy { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2.2; }
+.fr-v-fin { fill: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-v-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 4; opacity: .85; }
+.fr-v-bubble { fill: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); stroke: var(--spel-ink); stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: fr-v-bubble 2.2s ease-in infinite; animation-delay: calc(var(--k) * -.7s); }
+@keyframes fr-v-bubble { 0% { transform: translateY(18px) scale(.4); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-10px) scale(1); opacity: 0; } }
+.fr-v-panel { fill: color-mix(in srgb, var(--spel-ink) 70%, var(--fr-steel)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-v-button { stroke: var(--spel-ink); stroke-width: 1.5; }
+.fr-v-button.is-0 { fill: var(--fr-red); }
+.fr-v-button.is-1 { fill: var(--fr-board); }
+.fr-v-button.is-2 { fill: var(--fr-ok); }
+.fr-v-screen { fill: color-mix(in srgb, var(--spel-ink) 88%, var(--accent-bewerkingen)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-screen-ink { fill: var(--fr-ok); }
+.fr-v-screen-line { fill: none; stroke: var(--fr-ok); stroke-width: 3; }
+.fr-visitor.is-served .fr-v-screen-ink { fill: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--kiosk-paper)); }
+.fr-visitor.is-tantrum .fr-v-screen-ink, .fr-visitor.is-tantrum .fr-v-screen-line { fill: var(--fr-red); stroke: var(--fr-red); }
+.fr-visitor.is-tantrum .fr-v-screen-line { fill: none; }
+.fr-v-wing { fill: color-mix(in srgb, var(--fr-v-dragon) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2.5; transform-origin: 62px 126px; animation: fr-v-flap 1.4s ease-in-out infinite alternate; }
+@keyframes fr-v-flap { from { transform: rotate(0); } to { transform: rotate(-10deg); } }
+.fr-v-belly { fill: color-mix(in srgb, var(--mab-e) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-v-belly-line { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 35%, transparent); stroke-width: 2; }
+.fr-v-heart { fill: color-mix(in srgb, var(--accent-getallenkennis) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: fr-v-rise 900ms ease-out both; }
+@keyframes fr-v-rise { from { transform: translate(6px, 14px) scale(.3); opacity: 0; } 30% { opacity: 1; } to { transform: translate(-4px, -14px) scale(1.3); opacity: .9; } }
+.fr-v-flame { fill: var(--fr-hot); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-v-burp { transform-origin: 18px 108px; animation: fr-v-burp 1.4s ease-out both; }
+@keyframes fr-v-burp { 0% { transform: scale(0); } 20% { transform: scale(1.2); } 45% { transform: scale(1); opacity: 1; } 100% { transform: translate(-10px, -16px) scale(1.6); opacity: 0; } }
+.fr-v-burp .fr-v-flame { animation: fr-v-smoke 1.4s ease-out both; }
+@keyframes fr-v-smoke { 0%, 30% { fill: var(--fr-hot); } 60%, 100% { fill: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper)); } }
+.fr-v-yeti-face { fill: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-v-nose { fill: var(--spel-ink); }
+.fr-v-ink circle { fill: color-mix(in srgb, var(--spel-ink) 75%, var(--accent-meetkunde)); transform-box: fill-box; transform-origin: center; animation: fr-v-ink 1.6s ease-out both; }
+@keyframes fr-v-ink { from { transform: scale(0); opacity: 0; } 25% { transform: scale(1.1); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+.fr-v-snow circle { fill: var(--kiosk-paper); stroke: color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper)); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: fr-v-snow 500ms ease-out infinite; animation-delay: calc(var(--k) * -.12s); }
+@keyframes fr-v-snow { from { transform: translateY(0) scale(.4); opacity: 1; } to { transform: translateY(-14px) scale(1.2); opacity: 0; } }
+
+/* Idle: every visitor has its own small loop. */
+.fr-v-eyeball { animation: fr-v-blink 4.2s infinite; }
+@keyframes fr-v-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.fr-v-antennae { animation: fr-v-wobble 1.5s ease-in-out infinite alternate; }
+@keyframes fr-v-wobble { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+.fr-v-squish { animation: fr-v-squish 1.3s ease-in-out infinite alternate; }
+@keyframes fr-v-squish { from { transform: scale(1, 1); } to { transform: scale(1.04, .96); } }
+.fr-v-tent { animation: fr-v-tent 1.1s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -.22s); }
+@keyframes fr-v-tent { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+.fr-v-bucket { animation: fr-v-tent 1.6s ease-in-out infinite alternate; }
+.fr-v-pincer { animation: fr-v-pinch 1.8s ease-in-out infinite; }
+@keyframes fr-v-pinch { 0%, 60%, 100% { transform: rotate(0); } 75% { transform: rotate(-22deg); } }
+.fr-v-fish { transform-box: fill-box; transform-origin: center; animation: fr-v-swim 2.6s ease-in-out infinite alternate; }
+@keyframes fr-v-swim { from { transform: translateX(-3px) rotate(-4deg); } to { transform: translateX(5px) rotate(4deg); } }
+.fr-v-antenna-light { animation: fr-v-beep 1.2s steps(1) infinite; }
+@keyframes fr-v-beep { 0% { fill: var(--fr-board); } 50% { fill: var(--kiosk-paper); } }
+.fr-v-head { animation: fr-v-tilt 5s ease-in-out infinite; }
+@keyframes fr-v-tilt { 0%, 70%, 100% { transform: rotate(0); } 78%, 90% { transform: rotate(-8deg); } }
+.fr-v-tail { animation: fr-v-tail 1.5s ease-in-out infinite alternate; }
+@keyframes fr-v-tail { from { transform: rotate(-6deg); } to { transform: rotate(8deg); } }
+.fr-ufo-leg { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.fr-ufo-body { animation: fr-ufo 1.6s ease-in-out infinite alternate; }
+@keyframes fr-ufo { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+.fr-ufo-light { fill: var(--fr-board); stroke: var(--spel-ink); stroke-width: 1.5; animation: fr-blink 900ms steps(1) infinite; }
+.fr-ufo-light.is-1 { animation-delay: -.45s; }
+.fr-ufo.is-tantrum .fr-ufo-light { animation: none; fill: var(--fr-red); }
+
+/* Served: the aliens glow (the halo), the octopus juggles, the crab claps, the fish flips, the robot beeps hearts. */
+.fr-v-juggle { animation: fr-v-juggle 900ms linear infinite; }
+@keyframes fr-v-juggle { to { transform: rotate(360deg); } }
+.fr-visitor.is-krab.is-served .fr-limb.is-l { animation: fr-v-clap 220ms ease-in-out infinite alternate; }
+.fr-visitor.is-krab.is-served .fr-limb.is-r { animation: fr-v-clap 220ms ease-in-out infinite alternate-reverse; }
+@keyframes fr-v-clap { from { transform: rotate(-10deg); } to { transform: rotate(12deg); } }
+.fr-visitor.is-vis.is-served .fr-v-fish { animation: fr-v-spin 700ms ease-in-out; }
+@keyframes fr-v-spin { to { transform: rotate(360deg); } }
+.fr-visitor.is-served .fr-v-antenna-light { animation-duration: .3s; }
+
+/* ── The strop after a wrong snack ────────────────────────────────────────── */
+/* Step aside in front of the counter (the next one steps up), stamp and flail, then stomp off. */
+.fr-leaver.is-tantrum .fr-leave { animation: fr-strop 3.8s linear forwards; }
+@keyframes fr-strop {
+  0% { translate: 0 0; opacity: 1; }
+  8%, 52% { translate: -12cqw 3cqw; }
+  92% { opacity: 1; }
+  100% { translate: -66cqw 3.4cqw; scale: 1.06; opacity: 0; }
+}
+.fr-leaver.is-tantrum .fr-walking { animation: fr-stamp 190ms ease-in-out infinite alternate; }
+@keyframes fr-stamp { from { translate: 0 0; rotate: -3deg; } to { translate: 0 -2.4%; rotate: 3deg; } }
+.fr-leaver.is-tantrum .fr-leg.is-a { animation: fr-swing 190ms ease-in-out infinite alternate; }
+.fr-leaver.is-tantrum .fr-leg.is-b { animation: fr-swing 190ms ease-in-out infinite alternate-reverse; }
+.fr-leaver.is-tantrum .fr-limb.is-l { animation: fr-flail 210ms ease-in-out 9 alternate; }
+.fr-leaver.is-tantrum .fr-limb.is-r { animation: fr-flail 210ms ease-in-out 9 alternate-reverse; }
+@keyframes fr-flail { from { transform: rotate(-18deg); } to { transform: rotate(16deg); } }
+.fr-shout { transform-box: fill-box; transform-origin: center; animation: fr-chew 190ms ease-in-out infinite alternate; }
+.fr-tear { fill: none; stroke: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper)); stroke-width: 3.5; stroke-dasharray: 3 4; animation: fr-tears 300ms linear infinite; }
+@keyframes fr-tears { to { stroke-dashoffset: -14; } }
+.fr-strop { position: absolute; inset: 0; pointer-events: none; animation: fr-strop-fx 3.8s linear both; }
+@keyframes fr-strop-fx { 0%, 4% { opacity: 0; } 8%, 55% { opacity: 1; } 64%, 100% { opacity: 0; } }
+.fr-storm { position: absolute; left: 22%; top: calc(var(--top) / 200 * 100% - 22%); width: 60%; overflow: visible; animation: fr-storm 900ms ease-in-out infinite alternate; }
+@keyframes fr-storm { from { translate: -4% 0; } to { translate: 4% -4%; } }
+.fr-storm-cloud { fill: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-bolt { fill: var(--fr-board); stroke: var(--spel-ink); stroke-width: 2; animation: fr-bolt 420ms steps(1) infinite; }
+@keyframes fr-bolt { 0% { opacity: 1; } 50% { opacity: 0; } }
+.fr-ears { position: absolute; left: 20%; width: 60%; top: calc((var(--top) + 6) / 200 * 100%); overflow: visible; }
+.fr-ear circle { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; transform-box: fill-box; transform-origin: center; animation: fr-ear 700ms ease-out infinite; }
+.fr-ear circle + circle { animation-delay: -.35s; }
+.fr-ear.is-l circle { --dx: -8px; }
+.fr-ear.is-r circle { --dx: 8px; }
+@keyframes fr-ear { 0% { transform: translate(0, 4px) scale(.3); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(var(--dx), -12px) scale(1.1); opacity: 0; } }
+/* The shout sits beside the head, on the counter side, clear of the storm cloud. */
+.fr-leaver.is-tantrum .fr-say { left: auto; right: 78%; top: calc(var(--top) / 200 * 100% + 2%); color: var(--fr-hot); font-size: 2.8cqw; animation: fr-say-strop 3.8s ease-out both; }
+@keyframes fr-say-strop { 0%, 5% { scale: 0; opacity: 0; } 10% { scale: 1.25; opacity: 1; } 14% { scale: 1; rotate: -4deg; } 22% { rotate: 4deg; } 30% { rotate: -3deg; } 38%, 55% { rotate: 0deg; opacity: 1; } 65%, 100% { opacity: 0; } }
+.fr-woef {
+  position: absolute;
+  left: 76%;
+  top: 58%;
+  padding: .1em .4em;
+  border: 2px solid var(--spel-ink);
+  border-radius: 1em;
+  background: var(--kiosk-paper);
+  color: var(--spel-ink);
+  font-family: var(--kid-font);
+  font-weight: 800;
+  font-size: 2.2cqw;
+  white-space: nowrap;
+  animation: fr-woef 450ms ease-in-out infinite alternate;
+}
+@keyframes fr-woef { from { scale: 1; } to { scale: 1.15; } }
+/* The dog barks, then turns its back on the counter. */
+.fr-leaver.is-tantrum .fr-dog-art { animation: fr-dog-back 3.8s steps(1) both; }
+@keyframes fr-dog-back { 0% { scale: 1 1; } 26% { scale: -1 1; } }
+.fr-dog.is-tantrum { animation: fr-dog-hop 200ms ease-out 6; }
+.fr-dog.is-tantrum .fr-dog-tail { animation: none; transform: rotate(-30deg); }
+/* The wrong snack: into the hand, a shake, then over the shoulder. */
+.fr-toss { position: absolute; z-index: 3; left: 4%; top: 46%; width: 36%; aspect-ratio: 40 / 44; overflow: visible; animation: fr-toss 1.9s ease-in both; }
+@keyframes fr-toss {
+  0% { translate: -14cqw 3cqw; scale: .5; rotate: 0deg; opacity: 0; }
+  14% { translate: -12cqw .6cqw; scale: 1; opacity: 1; }
+  24% { translate: -12.4cqw 0; rotate: -18deg; }
+  34% { translate: -11.6cqw .2cqw; rotate: 14deg; }
+  60% { translate: -5cqw -15cqw; rotate: 320deg; }
+  82% { translate: 2cqw -6cqw; rotate: 560deg; opacity: 1; }
+  100% { translate: 6cqw 6cqw; rotate: 720deg; opacity: 0; }
+}
+/* Visitors' own strops. */
+.fr-visitor.is-tantrum .fr-v-glow { fill: color-mix(in srgb, var(--accent-getallenkennis) 35%, var(--c)); }
+.fr-visitor.is-tantrum .fr-v-antennae { animation: fr-v-wobble 120ms ease-in-out infinite alternate; }
+.fr-visitor.is-tantrum .fr-v-tent { animation-duration: 180ms; }
+.fr-visitor.is-tantrum .fr-v-pincer { animation: fr-v-pinch 200ms ease-in-out infinite; }
+.fr-visitor.is-tantrum .fr-v-fish { animation: fr-v-spin 500ms linear infinite; }
+.fr-visitor.is-tantrum .fr-v-bubble { animation-duration: .6s; }
+.fr-visitor.is-tantrum .fr-v-antenna-light { animation: fr-v-alarm 240ms steps(1) infinite; }
+@keyframes fr-v-alarm { 0% { fill: var(--fr-red); } 50% { fill: var(--kiosk-paper); } }
+.fr-visitor.is-tantrum .fr-v-tail { animation: fr-v-tail 160ms ease-in-out infinite alternate; }
+.fr-visitor.is-tantrum .fr-v-squish { animation-duration: .2s; }
+.fr-visitor.is-monster.is-tantrum .fr-v-fur { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(1.8); }
+.fr-visitor.is-tantrum .fr-v-wing { animation-duration: .18s; }

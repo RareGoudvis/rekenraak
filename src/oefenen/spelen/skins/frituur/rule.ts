@@ -22,23 +22,38 @@ export const FRITUUR = {
     queue: 3,
     // Customers still walking off at once (each walk is a few seconds of CSS).
     leaving: 3,
+    // The share of customers that is a fantastic visitor (an alien, a crab, a yeti...) instead of a person.
+    visitorChance: 0.25,
+    // A visitor that likes slime orders the green alien sauce this often.
+    slimeChance: 0.5,
 } as const;
 
 // Kids come twice as often as the rest (a school frituur); never the same kind twice in a row.
 export const KINDS = ['kind', 'mama', 'papa', 'opa', 'voetballer', 'hond', 'kind'] as const;
-export type CustomerKind = typeof KINDS[number];
-export const ORDERS = ['friet', 'curryworst', 'frikandel', 'stoofvlees', 'mayo', 'augurk'] as const;
+// The fantastic visitors (visitors.tsx draws them); they order the same food and play by the same rules.
+export const VISITORS = ['alien', 'drieoog', 'monster', 'octopus', 'krab', 'vis', 'robot', 'draak', 'yeti'] as const;
+export type PersonKind = typeof KINDS[number];
+export type VisitorKind = typeof VISITORS[number];
+export type CustomerKind = PersonKind | VisitorKind;
+// slijm = friet with green alien sauce: only visitors order it, but anyone may get it by mistake.
+export const ORDERS = ['friet', 'curryworst', 'frikandel', 'stoofvlees', 'mayo', 'augurk', 'slijm'] as const;
 export type OrderKind = typeof ORDERS[number];
+const PEOPLE_ORDERS = ORDERS.filter(o => o !== 'slijm');
+const SLIME_EATERS: readonly CustomerKind[] = ['alien', 'drieoog', 'monster'];
 // Looks per kind (shirt, hair, skin tone pick from this).
 export const LOOKS = 6;
 
 export const isKid = (kind: CustomerKind) => kind === 'kind' || kind === 'voetballer';
-/** The top of the head (hair and hats included) in a person's 100 × 200 box: the patience bar floats just above it. SYNC: art.tsx bodies. */
-export const headTopOf = (kind: CustomerKind) => (isKid(kind) ? 78 : kind === 'opa' ? 24 : kind === 'hond' ? 16 : 19);
+export const isVisitor = (kind: CustomerKind): kind is VisitorKind => (VISITORS as readonly string[]).includes(kind);
+// The top of each visitor (antennae and horns included) in its 100 × 200 box. SYNC: visitors.tsx.
+const VISITOR_TOP: Record<VisitorKind, number> = { alien: 58, drieoog: 14, monster: 78, octopus: 64, krab: 108, vis: 14, robot: 14, draak: 70, yeti: 16 };
+/** The top of the head (hair and hats included) in a customer's 100 × 200 box: the patience bar floats just above it. SYNC: art.tsx bodies. */
+export const headTopOf = (kind: CustomerKind) => (isVisitor(kind) ? VISITOR_TOP[kind] : isKid(kind) ? 78 : kind === 'opa' ? 24 : kind === 'hond' ? 16 : 19);
 
 export interface Customer { id: number; kind: CustomerKind; look: number; order: OrderKind }
 export interface Patience { total: number; left: number; grace: number }
-export interface Leaver { customer: Customer; mood: 'happy' | 'grumpy' }
+// happy = off eating; grumpy = the bar ran out; tantrum = the wrong snack (`snack`): a short strop, then off.
+export interface Leaver { customer: Customer; mood: 'happy' | 'grumpy' | 'tantrum'; snack?: OrderKind }
 
 export interface Counter {
     seed: number;
@@ -68,11 +83,15 @@ const fresh = (streak: number): Patience => {
 /** Customer number `id` of this round: seeded, so a round's queue is the same on a replay of its seed. */
 export function customerOf(seed: number, id: number, prev: CustomerKind | null): Customer {
     const rng = mulberry32((seed ^ Math.imul(id + 1, 0x9e3779b1)) >>> 0);
-    let k = Math.floor(rng() * KINDS.length);
-    if (KINDS[k] === prev) k = (k + 1 + Math.floor(rng() * (KINDS.length - 1))) % KINDS.length;
+    const bag: readonly CustomerKind[] = rng() < FRITUUR.visitorChance ? VISITORS : KINDS;
+    let k = Math.floor(rng() * bag.length);
+    if (bag[k] === prev) k = (k + 1 + Math.floor(rng() * (bag.length - 1))) % bag.length;
     // Still the same kind (the bag holds 'kind' twice): the next one that differs.
-    while (KINDS[k] === prev) k = (k + 1) % KINDS.length;
-    return { id, kind: KINDS[k], look: Math.floor(rng() * LOOKS), order: ORDERS[Math.floor(rng() * ORDERS.length)] };
+    while (bag[k] === prev) k = (k + 1) % bag.length;
+    const kind = bag[k];
+    const look = Math.floor(rng() * LOOKS);
+    const order = SLIME_EATERS.includes(kind) && rng() < FRITUUR.slimeChance ? 'slijm' : PEOPLE_ORDERS[Math.floor(rng() * PEOPLE_ORDERS.length)];
+    return { id, kind, look, order };
 }
 
 /** What comes over the counter on a wrong answer: never what they asked for. */
@@ -88,11 +107,12 @@ export function newCounter(seed: number): Counter {
 }
 
 /** The customer at the counter leaves (happy with their order, or grumbling); the queue steps up, a new one joins at the back. */
-export function walkOff(c: Counter, mood: Leaver['mood'], streak: number): Counter {
+export function walkOff(c: Counter, mood: Leaver['mood'], streak: number, snack?: OrderKind): Counter {
     const [front, ...rest] = c.queue;
     const joins = customerOf(c.seed, c.nextId, c.queue.at(-1)?.kind ?? null);
+    const leaver: Leaver = snack ? { customer: front, mood, snack } : { customer: front, mood };
     return {
-        ...c, queue: [...rest, joins], nextId: c.nextId + 1, leaving: [...c.leaving, { customer: front, mood }].slice(-FRITUUR.leaving),
+        ...c, queue: [...rest, joins], nextId: c.nextId + 1, leaving: [...c.leaving, leaver].slice(-FRITUUR.leaving),
         patience: fresh(streak), served: false, wrongs: 0, rev: c.rev + 1,
     };
 }
@@ -100,11 +120,11 @@ export function walkOff(c: Counter, mood: Leaver['mood'], streak: number): Count
 /** A right answer: the order goes over the counter. */
 export const serve = (c: Counter): Counter => (c.served ? c : { ...c, served: true, servedCount: c.servedCount + 1, rev: c.rev + 1 });
 
-/** A wrong answer: the wrong order comes out and costs `wrongCut` of the patience; an empty bar walks them off. */
+/** A wrong answer: the wrong order comes out and costs `wrongCut` of the patience; empty = a little tantrum, then off. */
 export function wrongOrder(c: Counter): Counter {
     if (c.served) return c;
     const left = Math.max(0, c.patience.left - c.patience.total * FRITUUR.wrongCut);
-    if (left <= 0) return walkOff(c, 'grumpy', 0);
+    if (left <= 0) return walkOff(c, 'tantrum', 0, wrongOrderOf(c.queue[0].order, c.nextId));
     return { ...c, patience: { ...c.patience, left }, wrongs: c.wrongs + 1, rev: c.rev + 1 };
 }
 
