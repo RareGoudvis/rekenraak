@@ -68,7 +68,7 @@ export interface SkinMeta {
     season?: Season;
 }
 
-export type Season = 'sinterklaas' | 'kerst' | 'valentijn' | 'pasen' | 'lente';
+export type Season = 'halloween' | 'sinterklaas' | 'kerst' | 'valentijn' | 'carnaval' | 'pasen' | 'lente' | 'winter' | 'zomer';
 
 // What a skin hands back when its own finish ends the round (Race), for the end screen.
 export interface SkinResult {
@@ -179,6 +179,9 @@ export interface SkinProps {
     onReport?(result: SkinResult): void;
     // The skin's own pause (Voetbal's half time): the round's clock stops until onHold(false).
     onHold?(on: boolean): void;
+    // Today's seasons (seasons.ts, SEASONS order), fixed for the round: a skin with a seasonal look picks it in its own
+    // pure variantOf(seasons); every other skin ignores this. The shell always passes it; absent (a test) = no season.
+    seasons?: readonly Season[];
 }
 
 // A game that brings its own session and screen (the duel games on duel/: two players, two question streams).
@@ -187,6 +190,8 @@ export interface SkinScreenProps {
     from: SpelFrom;
     // Back to the game tiles of this choice.
     onExit(): void;
+    // Today's seasons, as SkinProps.seasons.
+    seasons?: readonly Season[];
 }
 
 // The end screen's picture for a skin (the bomb with a smiley, the PUF! cloud, the beaver on its log).

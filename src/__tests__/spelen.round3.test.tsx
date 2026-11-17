@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { act, render, cleanup, screen, within, fireEvent } from '@testing-library/react';
-import type { ComponentType } from 'react';
+import { lazy, type ComponentType } from 'react';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
-import type { SkinPhase, SkinProps } from '../oefenen/spelen/skins/types';
+import type { Season, SkinEntry, SkinPhase, SkinProps, SkinScreenProps } from '../oefenen/spelen/skins/types';
+import SpelScreen from '../oefenen/spelen/SpelScreen';
 import GameRow from '../oefenen/zelf/GameRow';
 import { GAME_GROUPS, gameGroupOf, gamesFor } from '../oefenen/zelf/topicGames';
 import { NUMBER_CONTENT, skinAccepts, skinsFor } from '../oefenen/spelen/accepts';
-import { brusselsDay, easterSunday, seasonsOn } from '../oefenen/spelen/seasons';
+import { SEASONS, SEASON_LABEL, brusselsDay, easterSunday, seasonalVariant, seasonsOn } from '../oefenen/spelen/seasons';
 import { loadEenvoudigData } from '../config/eenvoudig/cards';
 import { choicesFor, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore } from '../oefenen/useOefenStore';
@@ -117,19 +118,53 @@ describe('seasons', () => {
     });
 
     test('each season by its dates, edges included', () => {
+        expect(seasonsOn(day('2026-10-14'))).toEqual([]);
+        expect(seasonsOn(day('2026-10-15'))).toEqual(['halloween']);
+        expect(seasonsOn(day('2026-10-31'))).toEqual(['halloween']);
+        expect(seasonsOn(day('2026-11-01'))).toEqual(['halloween']);
+        expect(seasonsOn(day('2026-11-02'))).toEqual([]);
         expect(seasonsOn(day('2026-11-14'))).toEqual([]);
         expect(seasonsOn(day('2026-11-15'))).toEqual(['sinterklaas']);
         expect(seasonsOn(day('2026-12-06'))).toEqual(['sinterklaas']);
         expect(seasonsOn(day('2026-12-07'))).toEqual(['kerst']);
         expect(seasonsOn(day('2026-12-25'))).toEqual(['kerst']);
         expect(seasonsOn(day('2027-01-06'))).toEqual(['kerst']);
-        expect(seasonsOn(day('2027-01-07'))).toEqual([]);
-        expect(seasonsOn(day('2027-02-01'))).toEqual(['valentijn']);
-        expect(seasonsOn(day('2027-02-14'))).toEqual(['valentijn']);
-        expect(seasonsOn(day('2027-02-15'))).toEqual([]);
+        expect(seasonsOn(day('2027-01-07'))).toEqual(['winter']);
+        expect(seasonsOn(day('2027-01-30'))).toEqual(['winter']);
+        expect(seasonsOn(day('2027-02-14'))).toEqual(['valentijn', 'winter']);
+        expect(seasonsOn(day('2027-02-15'))).toEqual(['winter']);
+        expect(seasonsOn(day('2027-02-28'))).toEqual(['winter']);
+        expect(seasonsOn(day('2027-03-01'))).toEqual([]);
         expect(seasonsOn(day('2026-05-31'))).toEqual(['lente']);
-        expect(seasonsOn(day('2026-06-01'))).toEqual([]);
+        expect(seasonsOn(day('2026-06-01'))).toEqual(['zomer']);
+        expect(seasonsOn(day('2026-06-30'))).toEqual(['zomer']);
+        expect(seasonsOn(day('2026-07-01'))).toEqual([]);
         expect(seasonsOn(day('2026-08-15'))).toEqual([]);
+    });
+
+    test('Carnaval: the ten days before Aswoensdag (Easter − 46) and that day; Winter ends on 29 Feb in a leap year', () => {
+        // 2027: Easter 28 Mar → Aswoensdag 10 Feb → 31 Jan to 10 Feb, inside Winter and partly Valentijn.
+        expect(seasonsOn(day('2027-01-30'))).not.toContain('carnaval');
+        expect(seasonsOn(day('2027-01-31'))).toEqual(['carnaval', 'winter']);
+        expect(seasonsOn(day('2027-02-01'))).toEqual(['valentijn', 'carnaval', 'winter']);
+        expect(seasonsOn(day('2027-02-10'))).toEqual(['valentijn', 'carnaval', 'winter']);
+        expect(seasonsOn(day('2027-02-11'))).toEqual(['valentijn', 'winter']);
+        // 2028 (a leap year): Easter 16 Apr → Aswoensdag 1 Mar → 20 Feb to 1 Mar.
+        expect(seasonsOn(day('2028-02-19'))).toEqual(['winter']);
+        expect(seasonsOn(day('2028-02-20'))).toEqual(['carnaval', 'winter']);
+        expect(seasonsOn(day('2028-02-29'))).toEqual(['carnaval', 'winter']);
+        expect(seasonsOn(day('2028-03-01'))).toEqual(['carnaval']);
+        expect(seasonsOn(day('2028-03-02'))).toEqual([]);
+        expect(SEASONS.every(x => SEASON_LABEL[x].length > 0)).toBe(true);
+        expect(SEASON_LABEL).toMatchObject({ halloween: 'Halloween', winter: 'Winter', carnaval: 'Carnaval', zomer: 'Zomer' });
+    });
+
+    test('a seasonal look: the first of the seasons of the day that has one (SEASONS order), else the year-round look', () => {
+        const looks = { winter: 'sneeuw', valentijn: 'roze' } as const;
+        expect(seasonalVariant(seasonsOn(day('2027-02-01')), looks, 'gewoon')).toBe('roze');
+        expect(seasonalVariant(seasonsOn(day('2027-02-20')), looks, 'gewoon')).toBe('sneeuw');
+        expect(seasonalVariant(seasonsOn(day('2026-08-15')), looks, 'gewoon')).toBe('gewoon');
+        expect(seasonalVariant([], looks, 'gewoon')).toBe('gewoon');
     });
 
     test('Pasen: the three weeks before Easter Monday and that day; overlaps list both', () => {
@@ -152,14 +187,17 @@ describe('seasons', () => {
         expect(brusselsDay(new Date('2026-11-14T23:30:00Z'))).toEqual({ y: 2026, m: 11, d: 15 });
         expect(seasonsOn(new Date('2026-11-14T23:30:00Z'))).toEqual(['sinterklaas']);
         // Summer time: 22:30 UTC on 31 May is 1 June there.
-        expect(seasonsOn(new Date('2026-05-31T22:30:00Z'))).toEqual([]);
+        expect(seasonsOn(new Date('2026-05-31T22:30:00Z'))).toEqual(['zomer']);
     });
 
     test('the games bar: in-season games first with nu!, then the rest; out of season no nu!', () => {
         const seasonal = SKINS.filter(s => s.meta.season);
         for (const s of seasonal) {
-            const at = { sinterklaas: '2026-11-20', kerst: '2026-12-20', valentijn: '2027-02-10', pasen: '2027-03-10', lente: '2027-05-10' }[s.meta.season!];
-            const games = gamesFor(NUMBER_CONTENT, day(at));
+            const at: Record<Season, string> = {
+                halloween: '2026-10-25', sinterklaas: '2026-11-20', kerst: '2026-12-20', valentijn: '2027-02-10', carnaval: '2028-02-25', pasen: '2027-03-10',
+                lente: '2027-05-10', winter: '2027-01-20', zomer: '2027-06-15',
+            };
+            const games = gamesFor(NUMBER_CONTENT, day(at[s.meta.season!]));
             render(<GameRow games={games} onPlay={vi.fn()} />);
             const first = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').filter(b => /nu extra leuk$/.test(b.getAttribute('aria-label')!));
             expect(first.map(b => b.querySelector('.zelf-play-title')!.textContent)).toContain(s.meta.label);
@@ -178,6 +216,39 @@ describe('seasons', () => {
         expect(tiles.every(t => !t.disabled)).toBe(true);
         fireEvent.click(screen.getByRole('button', { name: 'Ballonnen' }));
         expect(onPlay).toHaveBeenCalledWith(expect.objectContaining({ meta: expect.objectContaining({ id: 'ballonnen' }) }));
+    });
+});
+
+describe('the seasons of the day reach every game', () => {
+    const seen: (readonly Season[] | undefined)[] = [];
+    const FakeSkin = (p: SkinProps) => { seen.push(p.seasons); return <p>nep</p>; };
+    const FakeScreen = (p: SkinScreenProps) => { seen.push(p.seasons); return <p>nep scherm</p>; };
+    const fake = (id: string, part: Partial<SkinEntry>) => ({ meta: { ...skinById('ballonnen')!.meta, id }, icon: skinById('ballonnen')!.icon, ...part });
+    const list = SKINS as (typeof SKINS[number])[];
+    afterEach(() => { list.splice(list.findIndex(s => s.meta.id.startsWith('nep')), 1); window.history.replaceState(null, '', '/'); seen.length = 0; });
+
+    test('the shell hands a skin the seasons of the (faked) day, read once per round; a game with its own screen too', async () => {
+        list.push(fake('nep', { Component: lazy(async () => ({ default: FakeSkin })) }));
+        window.history.replaceState(null, '', '/?spelDatum=2027-02-05');
+        act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('nep')!.meta }));
+        const { rerender } = render(<SpelScreen />);
+        await screen.findByText('nep');
+        expect(seen.at(-1)).toEqual(['valentijn', 'carnaval', 'winter']);
+        // The day changes mid-round: the round keeps its seasons; the next round reads the day again.
+        window.history.replaceState(null, '', '/?spelDatum=2026-10-25');
+        rerender(<SpelScreen />);
+        expect(seen.at(-1)).toEqual(['valentijn', 'carnaval', 'winter']);
+        act(() => sp().restart());
+        expect(seen.at(-1)).toEqual(['halloween']);
+    });
+
+    test('a duel-style Screen gets them as well', async () => {
+        list.push(fake('nepduel', { Screen: lazy(async () => ({ default: FakeScreen })) }));
+        window.history.replaceState(null, '', '/?spelDatum=2027-06-10');
+        act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('nepduel')!.meta }));
+        render(<SpelScreen />);
+        await screen.findByText('nep scherm');
+        expect(seen.at(-1)).toEqual(['zomer']);
     });
 });
 

@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { HELP_TOPICS, HANDLEIDING_URL } from '../components/layout/helpTopics';
+import { SKINS } from '../oefenen/spelen/skins/registry';
 
 // The teacher manual (handleiding.html) is hand-written; its figures come from
 // `npm run handleiding:shots`. The gate checks the parts that break silently: a missing or
@@ -56,5 +57,10 @@ describe('handleiding.html', () => {
     test('teacher text without em dashes', () => {
         expect(html).not.toContain('—');
         for (const t of HELP_TOPICS) expect([t.title, ...t.bullets].join(' ')).not.toContain('—');
+    });
+
+    test('the Zelf oefenen help counts the ready games from the registry', () => {
+        const ready = SKINS.filter(s => s.Component || s.Screen).length;
+        expect(HELP_TOPICS.find(t => t.id === 'zelf')!.bullets.join(' ')).toContain(`${ready} spelen in vier groepen`);
     });
 });

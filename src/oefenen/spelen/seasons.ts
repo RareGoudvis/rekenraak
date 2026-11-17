@@ -3,10 +3,24 @@ import type { Season } from './skins/types';
 // The seasonal shelf: which seasons a day falls in, on the Belgian calendar (Europe/Brussels local date).
 // Pure apart from pickerToday(). Overlapping seasons are all listed; a game is never locked outside its season.
 
-export const SEASONS: readonly Season[] = ['sinterklaas', 'kerst', 'valentijn', 'pasen', 'lente'];
+// The order is the priority: a skin's variantOf takes the first match, so the short holidays come before the broad
+// seasons they overlap (Valentijn and Carnaval fall in Winter, Pasen in Lente).
+export const SEASONS: readonly Season[] = ['halloween', 'sinterklaas', 'kerst', 'valentijn', 'carnaval', 'pasen', 'lente', 'winter', 'zomer'];
 
 // The small tag on a shelf tile.
-export const SEASON_LABEL: Record<Season, string> = { sinterklaas: 'Sinterklaas', kerst: 'Kerst', valentijn: 'Valentijn', pasen: 'Pasen', lente: 'Lente' };
+export const SEASON_LABEL: Record<Season, string> = {
+    halloween: 'Halloween', sinterklaas: 'Sinterklaas', kerst: 'Kerst', valentijn: 'Valentijn', carnaval: 'Carnaval', pasen: 'Pasen', lente: 'Lente', winter: 'Winter', zomer: 'Zomer',
+};
+
+// Halloween: two weeks of build-up to 31 Oct, through the first day of the herfstvakantie (owner may tune).
+const HALLOWEEN = { from: 1015, to: 1101 };
+// Winter: after the Kerst shelf until the end of February (29 Feb in a leap year).
+const WINTER = { from: 107, to: 229 };
+// Zomer: June, the last school month before the summer holiday.
+const ZOMER = { from: 601, to: 630 };
+// Carnaval: the ten days before Aswoensdag, and that day (Aswoensdag = Easter Sunday − 46 days).
+const CARNAVAL_DAYS = 10;
+const ASWOENSDAG_BEFORE_EASTER = 46;
 
 export interface DayOf { y: number; m: number; d: number }
 
@@ -41,16 +55,29 @@ const md = (day: DayOf) => day.m * 100 + day.d;
 export function seasonsOn(at: Date): Season[] {
     const day = brusselsDay(at);
     const n = md(day);
-    const easterMonday = ord(easterSunday(day.y)) + 1;
+    const easter = ord(easterSunday(day.y));
+    const easterMonday = easter + 1;
+    const aswoensdag = easter - ASWOENSDAG_BEFORE_EASTER;
+    const within = (r: { from: number; to: number }) => n >= r.from && n <= r.to;
     const inSeason: Record<Season, boolean> = {
+        halloween: within(HALLOWEEN),
         sinterklaas: n >= 1115 && n <= 1206,
         kerst: n >= 1207 || n <= 106,
         valentijn: n >= 201 && n <= 214,
         // The three weeks before Easter Monday, and that day.
         pasen: ord(day) >= easterMonday - 21 && ord(day) <= easterMonday,
         lente: n >= 321 && n <= 531,
+        carnaval: ord(day) >= aswoensdag - CARNAVAL_DAYS && ord(day) <= aswoensdag,
+        winter: within(WINTER),
+        zomer: within(ZOMER),
     };
     return SEASONS.filter(s => inSeason[s]);
+}
+
+/** A skin's seasonal look: the first of today's seasons (SEASONS order) that has one, else the year-round look. */
+export function seasonalVariant<T>(seasons: readonly Season[], looks: Partial<Record<Season, T>>, yearRound: T): T {
+    for (const s of seasons) if (looks[s] !== undefined) return looks[s] as T;
+    return yearRound;
 }
 
 /** Today for the picker; the dev build accepts ?spelDatum=YYYY-MM-DD to try a season (screenshots, tests by hand). */

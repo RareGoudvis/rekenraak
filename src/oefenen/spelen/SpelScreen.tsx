@@ -8,7 +8,8 @@ import { stepsVisualFor } from '../../components/steps/stepsVisuals';
 import { mabOnlyFor } from '../../services/stepsAvailability';
 import { progressOf, useSpelStore } from './useSpelStore';
 import { skinById } from './skins/registry';
-import type { SkinPhase } from './skins/types';
+import type { Season, SkinPhase } from './skins/types';
+import { pickerToday, seasonsOn } from './seasons';
 import { powerOfTen, type SumFacts } from './distractors';
 import SpelEnd from './SpelEnd';
 import { SpelQuestionLine, SpelVisual } from './SpelVisual';
@@ -89,6 +90,15 @@ function HelpPanel() {
     );
 }
 
+// Today's seasons, read once per round (a new session); ?spelDatum= fakes the day in dev builds.
+function useRoundSeasons(round: unknown): readonly Season[] {
+    const [at, setAt] = useState(() => ({ round, seasons: seasonsOn(pickerToday()) }));
+    if (at.round === round) return at.seasons;
+    const next = { round, seasons: seasonsOn(pickerToday()) };
+    setAt(next);
+    return next.seasons;
+}
+
 // The game shell: top bar (Terug, progress, score, Hoe los ik dit op?), the skin, the help panel, the end screen.
 export default function SpelScreen() {
     const st = useSpelStore();
@@ -100,6 +110,7 @@ export default function SpelScreen() {
     // A game with its own screen (the duels) does this itself.
     const upright = useMedia(UPRIGHT_PHONE) && !own;
     const sessie = st.sessie;
+    const seasons = useRoundSeasons(sessie);
     useEffect(() => { useSpelStore.getState().setAway(upright); }, [upright, sessie]);
     useEffect(() => () => useSpelStore.getState().setAway(false), []);
     useSpelSounds(st.events, st.meta?.sounds);
@@ -107,7 +118,7 @@ export default function SpelScreen() {
     useSpelMusic(st.meta?.music, !own && !upright && !!entry?.Component && st.phase !== 'end');
     if (own && entry?.Screen && st.meta && st.from) {
         const Screen = entry.Screen;
-        return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} /></Suspense>;
+        return <Suspense fallback={<p className="oefen-lead spel-loading">Even laden…</p>}><Screen meta={st.meta} from={st.from} onExit={st.otherGame} seasons={seasons} /></Suspense>;
     }
     if (st.phase === 'end') return <div className="oefen-app"><SpelEnd /></div>;
     if (!st.meta || !entry?.Component) return null;
@@ -181,6 +192,7 @@ export default function SpelScreen() {
                         onFinish={st.finish}
                         onReport={st.report}
                         onHold={on => st.hold(on)}
+                        seasons={seasons}
                     />
                 </Suspense>
                 {st.phase === 'help' && <HelpPanel />}

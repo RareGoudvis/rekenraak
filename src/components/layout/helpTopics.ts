@@ -1,4 +1,8 @@
 import type { BetaModule } from '../../config/beta';
+import { SKINS } from '../../oefenen/spelen/skins/registry';
+
+// Counted from the registry (ready games only), so the line never goes stale when a game is added.
+const GAME_COUNT = SKINS.filter(s => s.Component || s.Screen).length;
 
 // The in-app help: one short topic per part of the app, each pointing to its section on the
 // static manual (handleiding.html). handleiding.test.ts checks every anchor exists on that page.
@@ -125,7 +129,7 @@ export const HELP_TOPICS: HelpTopic[] = [
         bullets: [
             'Op rekenraak.be/kind.html kiezen leerlingen zelf wat ze oefenen, zonder link van jou.',
             'Ze kiezen hun leerjaar (zes tegels), een onderwerp (kaarten met een spel- of oefenbadge) en op één scherm wat en hoeveel: 3, 5 of 10 oefeningen, of 1, 3 of 5 minuten.',
-            'Daaronder staan 18 spelen in vier groepen: Rustig spelen, Op tijd, Samen spelen en Zoeken en koppelen. Fouten worden bijgehouden en kunnen achteraf nagekeken worden.',
+            `Daaronder staan ${GAME_COUNT} spelen in vier groepen: Rustig spelen, Op tijd, Samen spelen en Zoeken en koppelen. Fouten worden bijgehouden en kunnen achteraf nagekeken worden.`,
             'Hoe los ik dit op? toont de stappen (die som telt met hulp). De luidsprekerknop wisselt tussen Uit, Geluid en Geluid + muziek.',
             'Terug naar begin bovenaan laat hen iets anders kiezen. Je vindt de link en een QR-code ook in Oefenmodus.',
         ],
