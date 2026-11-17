@@ -1,0 +1,503 @@
+/* Skislalom skin. A snowy slope seen from behind the skier: flat fills under the thick dark outline (spelen.css
+   tokens). Slalom.tsx places every moving thing with a transform each frame; this file draws and animates them. */
+/* The colours, shared by the game and its end-screen picture. */
+.sl-root,
+.sl-ending {
+  /* One metre beside the skier, in px (set by Slalom.tsx from the scene's size; SYNC: run.ts VIEW.unit). */
+  --sl-u: var(--sl-unit, 170px);
+  --sl-crouch: 0;
+  --sl-fast: 0;
+  --sl-snow: var(--kiosk-paper);
+  --sl-snow-shade: color-mix(in srgb, var(--accent-bewerkingen) 12%, var(--kiosk-paper));
+  --sl-snow-deep: color-mix(in srgb, var(--accent-bewerkingen) 24%, var(--kiosk-paper));
+  --sl-spray: color-mix(in srgb, var(--accent-bewerkingen) 16%, var(--kiosk-paper));
+  --sl-line: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper));
+  --sl-pine: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--spel-ink));
+  --sl-pine-light: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--spel-ink));
+  --sl-bark: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--spel-ink));
+  --sl-rock: color-mix(in srgb, var(--accent-bewerkingen) 30%, color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper)));
+  --sl-rock-far: color-mix(in srgb, var(--accent-bewerkingen) 30%, color-mix(in srgb, var(--spel-ink) 18%, var(--kiosk-paper)));
+  --sl-red: var(--accent-getallenkennis);
+  --sl-blue: var(--accent-bewerkingen);
+  --sl-jacket: var(--accent-vraagstukken);
+  --sl-pants: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
+  --sl-helmet: var(--mab-e);
+  --sl-carrot: var(--accent-vraagstukken);
+  --sl-skier-h: calc(var(--sl-u) * 1.5);
+}
+.sl-root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  overflow: clip;
+  background: var(--sl-snow);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sl-root svg { overflow: visible; }
+
+/* ── The sky, the mountains and the cable car ─────────────────────────────── */
+.sl-sky {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 37%;
+  background: linear-gradient(var(--spel-sky), var(--spel-sky-low));
+}
+.sl-mountains { position: absolute; left: 0; bottom: 0; width: 100%; height: 72%; }
+.sl-peak-far { fill: var(--sl-rock-far); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-peak { fill: var(--sl-rock); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sl-peak-far-snow,
+.sl-peak-snow { fill: var(--sl-snow); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-pylon { fill: none; stroke: var(--spel-ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.sl-cable { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.sl-hanger { stroke: var(--spel-ink); stroke-width: 3; }
+.sl-cabin-box { fill: var(--sl-red); stroke: var(--spel-ink); stroke-width: 3; }
+.sl-cabin-window { fill: var(--spel-sky); stroke: var(--spel-ink); stroke-width: 2; }
+/* The cabins ride the sagging cable (points on its curve, run.ts-free: Mountains' path M208 198 Q800 230 1384 152). */
+.sl-cabin { animation: sl-ride 34s linear infinite; animation-delay: calc(var(--i) * -17s); }
+@keyframes sl-ride {
+  0% { transform: translate(208px, 198px); opacity: 0; }
+  3% { opacity: 1; }
+  25% { transform: translate(504px, 207px); }
+  50% { transform: translate(798px, 203px); }
+  75% { transform: translate(1092px, 184px); }
+  97% { opacity: 1; }
+  100% { transform: translate(1384px, 152px); opacity: 0; }
+}
+
+/* ── The slope ────────────────────────────────────────────────────────────── */
+.sl-ground { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sl-snowfield { fill: var(--sl-snow-shade); }
+.sl-piste { fill: var(--sl-snow); }
+.sl-groove { fill: none; stroke: var(--sl-snow-shade); stroke-width: 3; }
+.sl-bank { fill: none; stroke: var(--sl-snow-deep); stroke-width: 10; stroke-linecap: round; }
+.sl-crest { fill: none; stroke: var(--spel-ink); stroke-width: var(--spel-line); }
+
+/* Speed lines fanning out from the vanishing point, stronger the faster he goes. */
+.sl-lines { position: absolute; left: 50%; top: 36%; width: 0; height: 0; opacity: var(--sl-fast); pointer-events: none; }
+.sl-lines i {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  width: 6px;
+  height: 22vmin;
+  border-radius: 6px;
+  background: linear-gradient(transparent, var(--sl-line));
+  transform-origin: 3px 0;
+  animation: sl-line 0.7s linear infinite;
+  animation-delay: calc(var(--i) * -0.29s);
+}
+/* Each line runs outward along its own angle (--a, Slalom.tsx LINE_ANGLES), growing as it nears. */
+@keyframes sl-line {
+  from { transform: rotate(var(--a)) translateY(8vmin) scaleY(0.3); opacity: 0; }
+  25% { opacity: 1; }
+  to { transform: rotate(var(--a)) translateY(80vmin) scaleY(1.6); opacity: 0; }
+}
+
+/* ── Things beside the piste (placed by Slalom.tsx: translate + scale, feet at the anchor) ── */
+.sl-world { position: absolute; inset: 0; pointer-events: none; }
+.sl-prop { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+.sl-prop > svg,
+.sl-prop > .sl-record-flag { position: absolute; bottom: 0; left: 0; translate: -50% 0; }
+.sl-prop.is-tree > svg { height: calc(var(--sl-u) * 5); width: calc(var(--sl-u) * 5 * 100 / 160); }
+.sl-prop.is-crowd > svg { width: calc(var(--sl-u) * 3.4); height: calc(var(--sl-u) * 3.4 * 108 / 140); }
+.sl-prop.is-ripple > svg { width: calc(var(--sl-u) * 3); height: calc(var(--sl-u) * 3 * 16 / 120); }
+.sl-prop.is-snowman > svg { height: calc(var(--sl-u) * 1.45); width: calc(var(--sl-u) * 1.45 * 100 / 136); }
+
+.sl-trunk { fill: var(--sl-bark); stroke: var(--spel-ink); stroke-width: 3; }
+.sl-needles { fill: var(--sl-pine); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-pine-snow { fill: var(--sl-snow); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sl-pine-art { transform-origin: 50% 100%; animation: sl-sway-tree 4.4s ease-in-out infinite; }
+.sl-prop:nth-child(3n) .sl-pine-art { animation-duration: 5.2s; animation-delay: -1.7s; }
+@keyframes sl-sway-tree { 50% { rotate: 1.6deg; } }
+
+.sl-ripple { fill: var(--sl-snow-shade); }
+
+/* The fans: bobbing, waving; after a gate taken right they jump. */
+.sl-fan-body { fill: var(--tone); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-fan-scarf { fill: var(--hat); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sl-fan-arm { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
+.sl-fan-face { fill: var(--kid-tint-4); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sl-fan-eye { fill: var(--spel-ink); }
+.sl-fan-mouth { fill: var(--spel-ink); }
+.sl-fan-hat { fill: var(--hat); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-fan-pom { fill: var(--sl-snow); stroke: var(--spel-ink); stroke-width: 2; }
+.sl-flagstick { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.sl-fanflag { fill: var(--sl-red); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; transform-origin: 14px -96px; animation: sl-flap 0.7s ease-in-out infinite alternate; }
+.sl-fence { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-fence-net { fill: none; stroke: var(--spel-ink); stroke-width: 1.6; opacity: 0.55; }
+.sl-fan { animation: sl-bob 1.1s ease-in-out infinite; animation-delay: calc(var(--i) * -0.31s); }
+.sl-fan-arm { transform-origin: 0 -40px; animation: sl-wave 0.6s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.2s); }
+.sl-world.is-cheer .sl-fan { animation: sl-cheer 0.42s ease-out 2 both; animation-delay: calc(var(--i) * 0.06s); }
+@keyframes sl-bob { 50% { translate: 0 -2px; } }
+@keyframes sl-wave { from { rotate: -8deg; } to { rotate: 10deg; } }
+@keyframes sl-cheer { 40% { translate: 0 -16px; } }
+
+/* The snowman beside the piste: pops out of the snow, laughs while the skier sits. */
+.sl-ball { fill: var(--sl-snow); stroke: var(--spel-ink); stroke-width: 3; }
+.sl-mound { fill: var(--sl-snow-shade); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sl-coal { fill: var(--spel-ink); }
+.sl-coal-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.sl-snow-mouth { fill: var(--spel-ink); }
+.sl-carrot { fill: var(--sl-carrot); stroke: var(--spel-ink); stroke-width: 1.6; stroke-linejoin: round; }
+.sl-stickarm { fill: none; stroke: var(--sl-bark); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.sl-snowscarf { fill: var(--sl-red); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sl-snowhat { fill: var(--spel-ink); }
+.sl-snowhat-band { fill: var(--sl-red); }
+.sl-prop.is-snowman > svg { animation: sl-pop-up 420ms var(--ease-spring) both; transform-origin: 50% 100%; }
+.sl-snowman-art.is-laughing .sl-snowhead { transform-origin: 0 -84px; animation: sl-laugh 0.26s ease-in-out infinite alternate; }
+@keyframes sl-pop-up { from { scale: 0.2 0; } to { scale: 1; } }
+@keyframes sl-laugh { from { rotate: -7deg; translate: 0 1px; } to { rotate: 7deg; translate: 0 -2px; } }
+.sl-bubble {
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--sl-u) * 1.55);
+  translate: -50% 0;
+  padding: calc(var(--sl-u) * .04) calc(var(--sl-u) * .1);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font: 900 calc(var(--sl-u) * .24) / 1.1 Nunito, var(--font-ui, sans-serif);
+  white-space: nowrap;
+  animation: sl-bubble 1s ease-in-out infinite alternate;
+}
+@keyframes sl-bubble { from { rotate: -4deg; } to { rotate: 4deg; } }
+
+/* The record flag: where the pupil's best run on this card ended. */
+.sl-record-flag { display: block; height: calc(var(--sl-u) * 3.2); width: calc(var(--sl-u) * 3.2 * 90 / 124); }
+.sl-record-flag svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sl-recflag { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; transform-origin: 0 -116px; animation: sl-flap 0.8s ease-in-out infinite alternate; }
+.sl-record-text {
+  position: absolute;
+  left: 9%;
+  top: 9%;
+  color: var(--kiosk-ink);
+  font: 900 calc(var(--sl-u) * .34) / 1 Nunito, var(--font-ui, sans-serif);
+}
+
+/* ── The gates ────────────────────────────────────────────────────────────── */
+.sl-gates { position: absolute; inset: 0; pointer-events: none; }
+.sl-gate { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+.sl-gate.is-open { animation: sl-gate-in 380ms var(--ease-spring) both; }
+/* Gone through: Slalom.tsx fades it out (run.ts SLALOM.fadeMs). */
+.sl-gate.is-gone .sl-flag { animation: none; }
+@keyframes sl-gate-in { from { opacity: 0; } to { opacity: 1; } }
+.sl-flag {
+  --sl-flag-w: calc(var(--sl-u) * 2.2);
+  position: absolute;
+  left: calc(var(--lane-x) - var(--sl-flag-w) / 2);
+  bottom: 0;
+  width: var(--sl-flag-w);
+  height: calc(var(--sl-u) * 2.5);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiosk-ink);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  animation: sl-rise 420ms var(--ease-spring) both;
+  animation-delay: calc(var(--lane) * 60ms);
+  transform-origin: 50% 100%;
+}
+.sl-flag.is-lane-0 { --lane: 0; --sl-cloth: var(--sl-red); }
+.sl-flag.is-lane-1 { --lane: 1; --sl-cloth: var(--sl-blue); }
+.sl-flag.is-lane-2 { --lane: 2; --sl-cloth: var(--sl-red); }
+.sl-flag:disabled { cursor: default; }
+.sl-flag:focus-visible { outline: none; }
+.sl-flag:focus-visible .sl-plate { stroke: var(--kid-ring); stroke-width: 4; }
+@keyframes sl-rise { from { scale: 1 0.1; } to { scale: 1; } }
+.sl-gate-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sl-gpole { fill: none; stroke: var(--spel-ink); stroke-width: 3.2; stroke-linecap: round; }
+.sl-cloth { fill: var(--sl-cloth); stroke: var(--spel-ink); stroke-width: 1.8; stroke-linejoin: round; }
+.sl-cloth-fold { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 35%, transparent); stroke-width: 1.2; }
+.sl-plate { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.6; }
+.sl-pennant { fill: var(--sl-cloth); stroke: var(--spel-ink); stroke-width: 1.4; stroke-linejoin: round; animation: sl-pennant 0.5s ease-in-out infinite alternate; }
+.sl-pennant.is-l { transform-origin: 8px 8px; }
+.sl-pennant.is-r { transform-origin: 92px 8px; animation-delay: -0.25s; }
+/* The banner flaps in the wind, harder as the skier shoots through. */
+.sl-banner { transform-origin: 50px 4px; animation: sl-flap-banner 0.9s ease-in-out infinite alternate; }
+.sl-flag.is-lane-1 .sl-banner { animation-delay: -0.3s; }
+.sl-flag.is-lane-2 .sl-banner { animation-delay: -0.6s; }
+.sl-flag.is-right .sl-banner,
+.sl-flag.is-wrong .sl-banner { animation: sl-whip 0.16s ease-in-out 5 alternate; }
+@keyframes sl-flap-banner { from { scale: 1 1; skew: 0 -1.5deg; } to { scale: 1 0.96; skew: 0 1.5deg; } }
+@keyframes sl-whip { from { scale: 1 1; skew: 0 -6deg; } to { scale: 1 0.82; skew: 0 6deg; } }
+@keyframes sl-pennant { from { scale: 1 1; } to { scale: 0.8 1.15; } }
+@keyframes sl-flap { from { scale: 1 1; } to { scale: 0.92 1.04; } }
+/* A wrong flag's pole gets knocked: it wobbles. */
+.sl-flag.is-wrong .sl-gate-art { transform-origin: 50% 100%; animation: sl-knock 0.6s ease-out both; }
+@keyframes sl-knock { 20% { rotate: -9deg; } 45% { rotate: 6deg; } 70% { rotate: -3deg; } 100% { rotate: 0deg; } }
+/* The right answer after a wrong one: its plate glows green while the sign shows it. */
+.sl-flag.is-answer .sl-plate { fill: var(--kiosk-ok-soft); stroke: var(--kiosk-ok); stroke-width: 3; }
+.sl-flag.is-answer .sl-num { color: var(--kiosk-ok); }
+.sl-flag.is-right .sl-plate { fill: var(--kiosk-ok-soft); }
+
+/* The number on the plate (plate: x 20–80 %, y 7.5–37.5 % of the flag; GateArt). Up to 5 characters fit (accepts). */
+.sl-num {
+  position: absolute;
+  left: 20%;
+  top: 7.5%;
+  width: 60%;
+  height: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: min(calc(var(--sl-flag-w) * .26), calc(var(--sl-flag-w) * .54 / (max(var(--sl-chars, 2), 2) * .6)));
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.sl-num.is-words {
+  white-space: normal;
+  text-align: center;
+  font-size: min(calc(var(--sl-flag-w) * .14), calc(var(--sl-flag-w) * .56 / (var(--face-chars, 1) * .6)));
+  line-height: 1.05;
+}
+
+/* ── The skier ────────────────────────────────────────────────────────────── */
+.sl-skier {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 3100;
+  pointer-events: none;
+  /* SYNC: Slalom.tsx CARVE_MS. */
+  transition: transform 320ms cubic-bezier(.3, .7, .3, 1), rotate 220ms ease-out;
+}
+.sl-gates { z-index: 3000; }
+.sl-world { z-index: 1; }
+.sl-skier.is-lean-l { rotate: -13deg; }
+.sl-skier.is-lean-r { rotate: 13deg; }
+.sl-skier-body {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--sl-skier-h) * -70 / 182);
+  width: calc(var(--sl-skier-h) * 140 / 182);
+  height: var(--sl-skier-h);
+  transform-origin: 50% 100%;
+  /* Little S-turns all the time: he is never standing still. */
+  animation: sl-sway 1.4s ease-in-out infinite alternate;
+}
+.sl-skier.is-roll .sl-skier-body,
+.sl-skier.is-sit .sl-skier-body { animation: none; }
+.sl-skier-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+@keyframes sl-sway { from { rotate: -3deg; translate: -3% 0; } to { rotate: 3deg; translate: 3% 0; } }
+
+.sl-shadow { fill: color-mix(in srgb, var(--sl-snow-deep) 80%, var(--spel-ink)); opacity: 0.35; }
+.sl-ski { fill: var(--sl-red); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-ski-stripe { fill: none; stroke: var(--kiosk-paper); stroke-width: 2; stroke-linecap: round; }
+.sl-pole { fill: none; stroke: var(--spel-ink); stroke-width: 3.5; stroke-linecap: round; }
+.sl-boot { fill: var(--spel-ink); }
+.sl-pants { fill: var(--sl-pants); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-jacket { fill: var(--sl-jacket); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-bib { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-bib-star { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 1.6; stroke-linejoin: round; }
+.sl-arm { fill: none; stroke: var(--sl-jacket); stroke-width: 11; stroke-linecap: round; }
+.sl-glove { fill: var(--sl-red); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sl-helmet { fill: var(--sl-helmet); stroke: var(--spel-ink); stroke-width: 3; }
+.sl-helmet-stripe { fill: var(--sl-red); }
+.sl-strap { fill: none; stroke: var(--spel-ink); stroke-width: 5; stroke-linecap: round; }
+.sl-snowcap { fill: var(--sl-snow); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-dizzy { animation: sl-spin 1.1s linear infinite; }
+.sl-dizzy-star { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 1.5; stroke-linejoin: round; }
+@keyframes sl-spin { to { rotate: 360deg; } }
+.sl-arm-ink { fill: none; stroke: var(--spel-ink); stroke-width: 16; stroke-linecap: round; }
+
+/* The tuck deepens with the speed step: the upper body sinks, the knees bend. */
+.sl-upper { transform: translateY(calc(var(--sl-crouch) * 16px)); transition: transform 400ms ease-out; }
+.sl-legs { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(calc(1 - var(--sl-crouch) * .26)); transition: transform 400ms ease-out; }
+
+/* The tumble: he rolls head over heels (skis and poles fly off on their own), sits, hops back up. */
+.sl-skier-art.is-roll .sl-skis,
+.sl-skier-art.is-roll .sl-pole { display: none; }
+.sl-skier-art.is-roll { transform-origin: 50% 60%; animation: sl-roll 600ms cubic-bezier(.3, .6, .5, 1) both; }
+@keyframes sl-roll {
+  0% { rotate: 0deg; translate: 0 0; scale: 1; }
+  35% { rotate: 150deg; translate: 0 -28%; scale: 0.92; }
+  70% { rotate: 300deg; translate: 0 -6%; scale: 1 0.86; }
+  100% { rotate: 360deg; translate: 0 4%; scale: 1.04 0.8; }
+}
+.sl-skier-art.is-sit { animation: sl-plonk 260ms ease-out both; transform-origin: 50% 100%; }
+@keyframes sl-plonk { from { scale: 1.1 0.85; } to { scale: 1; } }
+.sl-skier.is-up .sl-skier-body { animation: sl-hop-up 380ms var(--ease-spring) both; }
+@keyframes sl-hop-up { 0% { translate: 0 0; scale: 1.1 0.85; } 45% { translate: 0 -16%; scale: 0.95 1.06; } 100% { translate: 0 0; scale: 1; } }
+.sl-skier-body.is-jump .sl-skier-art { animation: sl-jump 640ms cubic-bezier(.3, .7, .5, 1) both; transform-origin: 50% 100%; }
+@keyframes sl-jump {
+  0% { translate: 0 0; rotate: 0deg; }
+  15% { translate: 0 0; scale: 1.06 0.9; }
+  50% { translate: 0 -42%; rotate: -6deg; scale: 1; }
+  85% { translate: 0 0; rotate: 2deg; scale: 1.08 0.9; }
+  100% { translate: 0 0; rotate: 0deg; scale: 1; }
+}
+
+/* The skis and poles flying off: each its own arc, landing stuck in the snow beside him. */
+.sl-fly { position: absolute; left: 0; bottom: calc(var(--sl-skier-h) * .35); width: calc(var(--sl-u) * .16); height: calc(var(--sl-u) * .76); translate: -50% 0; animation: 650ms cubic-bezier(.25, .6, .45, 1) both; }
+.sl-fly.is-pole-l,
+.sl-fly.is-pole-r { width: calc(var(--sl-u) * .08); height: calc(var(--sl-u) * .84); }
+.sl-fly svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sl-fly.is-ski-l { animation-name: sl-fly-ski-l; }
+.sl-fly.is-ski-r { animation-name: sl-fly-ski-r; }
+.sl-fly.is-pole-l { animation-name: sl-fly-pole-l; }
+.sl-fly.is-pole-r { animation-name: sl-fly-pole-r; }
+@keyframes sl-fly-ski-l {
+  0% { translate: -50% 0; rotate: 0deg; }
+  45% { translate: calc(-50% - var(--sl-u) * .7) calc(var(--sl-u) * -1.1); rotate: -160deg; }
+  100% { translate: calc(-50% - var(--sl-u) * 1.15) calc(var(--sl-u) * .3); rotate: -200deg; }
+}
+@keyframes sl-fly-ski-r {
+  0% { translate: -50% 0; rotate: 0deg; }
+  45% { translate: calc(-50% + var(--sl-u) * .9) calc(var(--sl-u) * -1.3); rotate: 200deg; }
+  100% { translate: calc(-50% + var(--sl-u) * 1.2) calc(var(--sl-u) * .25); rotate: 160deg; }
+}
+@keyframes sl-fly-pole-l {
+  0% { translate: -50% 0; rotate: 0deg; }
+  45% { translate: calc(-50% - var(--sl-u) * .3) calc(var(--sl-u) * -1.5); rotate: -260deg; }
+  100% { translate: calc(-50% - var(--sl-u) * .62) calc(var(--sl-u) * .2); rotate: -340deg; }
+}
+@keyframes sl-fly-pole-r {
+  0% { translate: -50% 0; rotate: 0deg; }
+  45% { translate: calc(-50% + var(--sl-u) * .4) calc(var(--sl-u) * -1.4); rotate: 300deg; }
+  100% { translate: calc(-50% + var(--sl-u) * .7) calc(var(--sl-u) * .22); rotate: 380deg; }
+}
+
+/* Snow spraying off the skis while he goes fast (on top of the bursts on every carve). */
+.sl-spray-trail { position: absolute; left: 50%; bottom: 2%; width: 0; height: 0; opacity: var(--sl-fast); }
+.sl-spray-trail::before,
+.sl-spray-trail::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--sl-u) * -.14);
+  top: calc(var(--sl-u) * -.14);
+  width: calc(var(--sl-u) * .28);
+  height: calc(var(--sl-u) * .28);
+  border: 2px solid var(--sl-snow-deep);
+  border-radius: 50%;
+  background: var(--sl-snow);
+  animation: sl-trail 0.5s ease-out infinite;
+}
+.sl-spray-trail::after { animation-delay: -0.25s; animation-name: sl-trail-r; }
+@keyframes sl-trail { from { translate: -40% 0; scale: 0.4; opacity: 1; } to { translate: -260% 90%; scale: 1.4; opacity: 0; } }
+@keyframes sl-trail-r { from { translate: 40% 0; scale: 0.4; opacity: 1; } to { translate: 260% 90%; scale: 1.4; opacity: 0; } }
+.sl-spray { z-index: 3200; --burst-color: var(--sl-spray); }
+
+/* ── The sum, the distance and the callouts ───────────────────────────────── */
+.sl-top { position: absolute; left: 0; right: 0; top: 0; z-index: 3400; display: flex; justify-content: center; padding: var(--sp-3) var(--sp-3) 0; pointer-events: none; }
+.sl-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  box-shadow: 0 5px 0 var(--spel-ink);
+  pointer-events: auto;
+}
+.sl-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: sl-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes sl-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+.sl-hud {
+  position: absolute;
+  left: var(--sp-3);
+  top: var(--sp-3);
+  z-index: 3400;
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--kiosk-paper) 88%, transparent);
+  color: var(--kiosk-ink);
+  pointer-events: none;
+}
+.sl-metres { margin: 0; display: flex; align-items: center; gap: var(--sp-2); font: 900 clamp(20px, 4vmin, 36px) / 1 Nunito, var(--font-ui, sans-serif); font-variant-numeric: tabular-nums; }
+.sl-metres svg { font-size: 1.1em; }
+/* Five bars, taller per step, filling from blue to red as he speeds up. */
+.sl-speed { display: flex; align-items: flex-end; gap: 4px; height: clamp(16px, 3vmin, 26px); }
+.sl-speed i {
+  width: clamp(9px, 1.6vmin, 14px);
+  height: calc(40% + var(--i) * 15%);
+  border: 2px solid var(--spel-ink);
+  border-radius: 3px;
+  background: var(--kiosk-paper);
+}
+.sl-speed i.is-on { background: color-mix(in srgb, var(--sl-red) calc(var(--i) * 25%), var(--sl-blue)); animation: sl-pip 300ms var(--ease-spring) both; }
+@keyframes sl-pip { from { scale: 1 0.3; } to { scale: 1; } }
+.sl-best { font: 800 clamp(12px, 2vmin, 17px) / 1 Nunito, var(--font-ui, sans-serif); color: color-mix(in srgb, var(--kiosk-ink) 70%, transparent); }
+
+.sl-call {
+  position: absolute;
+  left: 50%;
+  top: 23%;
+  z-index: 3500;
+  margin: 0;
+  translate: -50% 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--mab-e);
+  color: var(--kiosk-ink);
+  font: 900 clamp(26px, 6vmin, 54px) / 1 Nunito, var(--font-ui, sans-serif);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sl-call 1100ms ease-out both;
+}
+.sl-call.is-miss { background: var(--kid-tint-3); }
+.sl-call.is-record { background: var(--kid-tint-2); }
+@keyframes sl-call {
+  0% { scale: 0.3; opacity: 0; }
+  18% { scale: 1.12; opacity: 1; }
+  30% { scale: 1; }
+  80% { opacity: 1; translate: -50% 0; }
+  100% { opacity: 0; translate: -50% -40%; }
+}
+.sl-streak {
+  position: absolute;
+  right: var(--sp-3);
+  top: var(--sp-3);
+  z-index: 3400;
+  padding: var(--sp-1) var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--mab-e);
+  color: var(--kiosk-ink);
+  font: 900 clamp(18px, 3.4vmin, 30px) / 1 Nunito, var(--font-ui, sans-serif);
+}
+
+/* "Hoe los ik dit op?": everything waits. */
+.sl-root.is-paused *,
+.sl-root.is-paused *::before,
+.sl-root.is-paused *::after { animation-play-state: paused; }
+
+/* ── The end screen's picture ─────────────────────────────────────────────── */
+.sl-ending { background: var(--spel-sky); }
+.sl-finish-sky { fill: var(--spel-sky); }
+.sl-finish-snow { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.sl-finish-banner { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.sl-finish-check { fill: var(--spel-ink); }
+.sl-ending .sl-gpole { stroke-width: 5; }
+.sl-ending-skier { position: absolute; left: 50%; bottom: 6%; height: 52%; aspect-ratio: 140 / 182; translate: -50% 0; animation: sl-hop-end 0.9s ease-in-out infinite alternate; }
+.sl-ending-snowman { position: absolute; right: 9%; bottom: 8%; height: 44%; aspect-ratio: 100 / 136; }
+.sl-ending-skier svg,
+.sl-ending-snowman svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+@keyframes sl-hop-end { from { translate: -50% 0; } to { translate: -50% -8%; } }

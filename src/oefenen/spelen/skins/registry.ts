@@ -14,6 +14,7 @@ import { BugBeetle } from '@phosphor-icons/react';
 import { WINNEN_OPTION } from './kikkers/rule';
 import { MagicWand } from '@phosphor-icons/react';
 import { TOVER } from './tovenaarsduel/rule';
+import { PersonSimpleSki } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -294,6 +295,18 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'mollen', music: 'gek', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'nana' } },
         icon: Hammer,
         Component: lazy(() => import('./mollen/Mollen')),
+    },
+    {
+        // Two minutes down a slope: each sum on a gate with three flags (choiceCount). Right = a speed step, 3 in a row a
+        // jump; wrong = a tumble back to step 1; a gate reached unanswered slips past (slalom/run.ts). The score is the
+        // metres with a best per card on this device (onReport, "Wis mijn scores"). The scene voices its moments.
+        meta: {
+            id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, accepts: TAP_CHOICE,
+            sounds: { correct: null, wrong: null },
+        },
+        icon: PersonSimpleSki,
+        Component: lazy(() => import('./slalom/Slalom')),
+        Ending: lazy(() => import('./slalom/Slalom').then(m => ({ default: m.SlalomEnding }))),
     },
 ];
 
