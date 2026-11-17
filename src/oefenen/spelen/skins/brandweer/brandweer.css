@@ -1,0 +1,446 @@
+/* Brandweer skin: a burning apartment block, a ladder truck, the residents on the lawn (art.tsx). Flat fills under the
+   thick --spel-ink outline, theme tokens mixed into fire-brigade colours. Every loop is CSS (transforms and opacity);
+   the stage keeps the SVG's 16:10 box so the window buttons sit on their windows (SYNC geometry.ts STAGE_W / STAGE_H). */
+.bw-root,
+.bw-ending {
+  --bw-red: color-mix(in srgb, var(--accent-getallenkennis) 88%, var(--spel-ink));
+  --bw-red-dark: color-mix(in srgb, var(--accent-getallenkennis) 60%, var(--spel-ink));
+  --bw-red-soft: color-mix(in srgb, var(--accent-getallenkennis) 45%, var(--kiosk-paper));
+  --bw-metal: color-mix(in srgb, var(--text-muted) 28%, var(--kiosk-paper));
+  --bw-metal-dark: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper));
+  --bw-navy: color-mix(in srgb, var(--accent-bewerkingen) 42%, var(--spel-ink));
+  --bw-yellow: var(--spel-star);
+  --bw-skin: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--kiosk-paper));
+  --bw-hair: color-mix(in srgb, var(--accent-vraagstukken) 35%, var(--spel-ink));
+  --bw-water: color-mix(in srgb, var(--accent-bewerkingen) 62%, var(--kiosk-paper));
+  --bw-water-light: color-mix(in srgb, var(--accent-bewerkingen) 18%, var(--kiosk-paper));
+  --bw-fire-1: var(--accent-getallenkennis);
+  --bw-fire-2: var(--accent-vraagstukken);
+  --bw-fire-3: var(--spel-star);
+  --bw-glass: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--spel-ink));
+  --bw-glass-fire: color-mix(in srgb, var(--accent-vraagstukken) 62%, var(--spel-star));
+  --bw-glass-glow: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--bw-glass));
+  --bw-glass-out: color-mix(in srgb, var(--text-muted) 55%, var(--spel-ink));
+  --bw-smoke: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper));
+  --bw-smoke-dark: color-mix(in srgb, var(--text-muted) 75%, var(--spel-ink));
+  --bw-wall: color-mix(in srgb, var(--accent-vraagstukken) 20%, var(--kiosk-paper));
+  --bw-wall-dark: color-mix(in srgb, var(--accent-vraagstukken) 38%, var(--kiosk-paper));
+  --bw-heat: 0;
+}
+.bw-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  overflow: clip;
+  background: linear-gradient(var(--spel-sky), var(--spel-sky-low) 70%);
+}
+/* The fire tints the sky warmer as the gauge climbs. */
+.bw-sky { position: absolute; inset: 0; pointer-events: none; }
+.bw-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 70% at 58% 62%, color-mix(in srgb, var(--accent-vraagstukken) 55%, transparent), transparent 70%);
+  opacity: calc(.15 + var(--bw-heat) * .75);
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+.bw-svg *, .bw-ending svg * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── The sum ──────────────────────────────────────────────────────────────── */
+.bw-top { position: relative; z-index: 4; display: flex; justify-content: center; padding: var(--sp-3) var(--sp-3) 0; }
+.bw-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 7vmin, 60px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.bw-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: bw-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes bw-grow { from { transform: scale(.6); } to { transform: scale(1); } }
+
+/* ── The stage: a 16:10 box at the bottom, as big as fits ───────────────────── */
+.bw-scene { position: relative; z-index: 1; container-type: size; }
+.bw-stage {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  translate: -50% 0;
+  width: min(100cqw, 160cqh);
+  aspect-ratio: 16 / 10;
+  container-type: inline-size;
+}
+.bw-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bw-windows, .bw-fx { position: absolute; inset: 0; pointer-events: none; }
+.bw-windows { z-index: 2; }
+.bw-fx { z-index: 3; }
+
+/* ── Street and neighbours ─────────────────────────────────────────────────── */
+.bw-house-wall { stroke: var(--spel-ink); stroke-width: 4; fill: color-mix(in srgb, var(--accent-bewerkingen) 12%, var(--bw-metal)); }
+.bw-house.is-1 .bw-house-wall { fill: color-mix(in srgb, var(--accent-vraagstukken) 18%, var(--bw-metal)); }
+.bw-house.is-2 .bw-house-wall { fill: color-mix(in srgb, var(--accent-metendrekenen) 14%, var(--bw-metal)); }
+.bw-house-roof { fill: color-mix(in srgb, var(--accent-getallenkennis) 30%, var(--bw-metal-dark)); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-house-win { fill: color-mix(in srgb, var(--accent-bewerkingen) 20%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-backdrop .bw-house { opacity: .9; }
+.bw-trunk { fill: var(--bw-hair); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-crown circle { fill: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-crown { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-sway 5s ease-in-out infinite alternate; }
+.bw-lamp-post { fill: var(--bw-metal-dark); stroke: var(--spel-ink); stroke-width: 3; }
+path.bw-lamp-post { fill: none; stroke-width: 8; }
+.bw-lamp-head { fill: var(--bw-yellow); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-lawn { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-walk { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-street { fill: color-mix(in srgb, var(--text-muted) 70%, var(--spel-ink)); }
+.bw-kerb { stroke: var(--spel-ink); stroke-width: 6; }
+.bw-dash { fill: var(--kiosk-paper); opacity: .8; }
+
+/* ── The block ─────────────────────────────────────────────────────────────── */
+.bw-block.is-look-1 { --bw-wall: color-mix(in srgb, var(--accent-bewerkingen) 18%, var(--kiosk-paper)); --bw-wall-dark: color-mix(in srgb, var(--accent-bewerkingen) 34%, var(--kiosk-paper)); }
+.bw-block.is-look-2 { --bw-wall: color-mix(in srgb, var(--accent-metendrekenen) 22%, var(--kiosk-paper)); --bw-wall-dark: color-mix(in srgb, var(--accent-metendrekenen) 40%, var(--kiosk-paper)); }
+.bw-block.is-look-3 { --bw-wall: color-mix(in srgb, var(--accent-meetkunde) 18%, var(--kiosk-paper)); --bw-wall-dark: color-mix(in srgb, var(--accent-meetkunde) 34%, var(--kiosk-paper)); }
+.bw-wall { fill: var(--bw-wall); stroke: var(--spel-ink); stroke-width: 5; }
+.bw-ground { fill: var(--bw-wall-dark); stroke: var(--spel-ink); stroke-width: 5; }
+.bw-brick { fill: none; stroke: var(--bw-wall-dark); stroke-width: 5; }
+.bw-parapet, .bw-ledge { fill: var(--bw-wall-dark); stroke: var(--spel-ink); stroke-width: 4; }
+path.bw-ledge { fill: none; }
+.bw-low-win { fill: var(--bw-glass); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-glint { fill: none; stroke: var(--kiosk-paper); stroke-width: 4; opacity: .5; }
+.bw-door { fill: var(--bw-hair); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-door-glass { fill: var(--bw-glass); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-knob { fill: var(--bw-yellow); stroke: var(--spel-ink); stroke-width: 2; }
+.bw-awning { fill: var(--bw-red-soft); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-awning-stripe { fill: none; stroke: var(--kiosk-paper); stroke-width: 7; }
+.bw-bush circle { fill: color-mix(in srgb, var(--accent-metendrekenen) 78%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-metal { fill: none; stroke: var(--bw-metal-dark); stroke-width: 6; }
+.bw-tank-body, .bw-tank-lid { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-bird-body { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-bird-wing { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.bw-beak { fill: var(--bw-fire-2); stroke: var(--spel-ink); stroke-width: 2; }
+.bw-legs { stroke: var(--bw-fire-2); stroke-width: 3; }
+.bw-ink { fill: var(--spel-ink); }
+.bw-ink-line { fill: none; stroke: var(--spel-ink); stroke-width: 1.6; }
+.bw-pigeon { animation: bw-peck 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes bw-peck {
+  0%, 60%, 100% { transform: translateX(0) rotate(0); }
+  66% { transform: translateX(10px) rotate(12deg); }
+  72% { transform: translateX(10px) rotate(0); }
+  80% { transform: translateX(26px) rotate(0); }
+  88% { transform: translateX(26px) rotate(14deg); }
+}
+/* A new building slides in from the right (the truck drives on to the next fire). */
+.bw-arrive { animation: bw-arrive 720ms var(--ease-out) both; }
+@keyframes bw-arrive { from { transform: translateX(1000px); } to { transform: translateX(0); } }
+.bw-windows.is-arrive { animation: bw-arrive-html 720ms var(--ease-out) both; }
+@keyframes bw-arrive-html { from { translate: 62.5% 0; } to { translate: 0 0; } }
+
+/* ── Windows ──────────────────────────────────────────────────────────────── */
+.bw-frame { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 5; }
+.bw-glass { fill: var(--bw-glass); stroke: var(--spel-ink); stroke-width: 3; transition: fill 600ms ease; }
+.bw-glass.is-fire { fill: var(--bw-glass-fire); animation: bw-glass 900ms ease-in-out infinite alternate; }
+.bw-glass.is-glow { fill: var(--bw-glass-glow); animation: bw-glass 1.6s ease-in-out infinite alternate; }
+.bw-glass.is-out { fill: var(--bw-glass-out); }
+.bw-glass.is-lamp { fill: color-mix(in srgb, var(--bw-yellow) 30%, var(--bw-glass)); }
+@keyframes bw-glass { from { opacity: 1; } to { opacity: .82; } }
+.bw-mullion { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-sill { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-reflect { fill: var(--kiosk-paper); opacity: .18; }
+.bw-soot { fill: var(--spel-ink); opacity: .32; }
+.bw-cord { stroke: var(--spel-ink); stroke-width: 3; }
+.bw-shade { fill: var(--bw-yellow); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-beam { fill: var(--bw-yellow); opacity: .28; animation: bw-glass 2.4s ease-in-out infinite alternate; }
+.bw-drape { fill: var(--bw-red-soft); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-tie { fill: none; stroke: var(--bw-yellow); stroke-width: 5; }
+.bw-leaves path { fill: color-mix(in srgb, var(--accent-metendrekenen) 75%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-leaves { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-sway 3.2s ease-in-out infinite alternate; }
+.bw-pot { fill: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--accent-getallenkennis)); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-drip { fill: var(--bw-water); stroke: var(--spel-ink); stroke-width: 1.5; animation: bw-drip 900ms ease-in calc(var(--k) * 160ms) infinite; }
+@keyframes bw-drip { from { transform: translateY(0); opacity: 1; } to { transform: translateY(40px); opacity: 0; } }
+@keyframes bw-sway { from { rotate: -3deg; } to { rotate: 3deg; } }
+
+/* Flames: three layers that flicker at their own pace; the group grows with the fire (--bw-flame). */
+.bw-flames { transform: scale(var(--bw-flame, 1)); transition: transform 800ms var(--ease-spring); }
+.bw-flame { transform-box: fill-box; transform-origin: 50% 100%; stroke: var(--spel-ink); stroke-width: 4; }
+.bw-flame.is-out { fill: var(--bw-fire-1); animation: bw-flicker 620ms ease-in-out calc(var(--k) * -90ms) infinite alternate; }
+.bw-flame.is-mid { fill: var(--bw-fire-2); stroke-width: 0; animation: bw-flicker 480ms ease-in-out calc(var(--k) * -70ms) infinite alternate-reverse; }
+.bw-flame.is-in { fill: var(--bw-fire-3); stroke-width: 0; animation: bw-flicker 360ms ease-in-out calc(var(--k) * -50ms) infinite alternate; }
+@keyframes bw-flicker {
+  0% { transform: scale(1, 1) skewX(0deg); }
+  50% { transform: scale(1.05, .9) skewX(4deg); }
+  100% { transform: scale(.95, 1.08) skewX(-4deg); }
+}
+.bw-ignite { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-ignite 420ms var(--ease-spring) both; }
+@keyframes bw-ignite { from { scale: 0 .2; opacity: 0; } to { scale: 1 1; opacity: 1; } }
+/* A wrong window: its flames puff up for a moment. */
+.bw-flames.is-flare { animation: bw-flare 900ms var(--ease-out) both; }
+@keyframes bw-flare { 0% { scale: 1; } 30% { scale: 1.35 1.5; } 100% { scale: 1; } }
+
+.bw-puff {
+  fill: var(--bw-smoke);
+  stroke: var(--spel-ink);
+  stroke-width: 3;
+  animation: bw-puff 2.8s linear infinite;
+  animation-delay: calc(var(--k) * -2.8s / var(--n));
+}
+.bw-smoke.is-dark .bw-puff { fill: var(--bw-smoke-dark); }
+.bw-smoke.is-steam .bw-puff { fill: var(--kiosk-paper); stroke-width: 2; animation-duration: 1.6s; animation-delay: calc(var(--k) * -1.6s / var(--n)); }
+@keyframes bw-puff {
+  0% { transform: translate(var(--x0), 0) scale(calc(var(--s) * .6)); opacity: 0; }
+  10% { opacity: .95; }
+  70% { opacity: .9; }
+  100% { transform: translate(calc(var(--x0) + var(--drift)), var(--rise)) scale(calc(var(--s) * 1.5)); opacity: 0; }
+}
+.bw-spark { fill: var(--bw-fire-3); stroke: var(--bw-fire-1); stroke-width: 1.5; animation: bw-spark 1.5s ease-out calc(var(--k) * -260ms) infinite; }
+@keyframes bw-spark {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(var(--drift), -150px); opacity: 0; }
+}
+
+/* ── The tap targets: a whole window, the number on a card in its lower half ── */
+.bw-window {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  color: var(--kiosk-ink);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  animation: spel-pop 380ms var(--ease-spring) both;
+}
+.bw-window:disabled { cursor: default; }
+.bw-window:focus-visible { outline: none; }
+.bw-window:focus-visible .bw-num { box-shadow: 0 0 0 4px var(--kiosk-paper), 0 0 0 8px var(--spel-ink); }
+.bw-num {
+  position: absolute;
+  top: 66%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 52%;
+  padding: .04em .32em;
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  /* A long number ("89 991", --num-chars) shrinks so its card stays inside the window. */
+  font-size: min(2.7cqw, calc(10.4cqw / (var(--num-chars, 3) * .62 + .8)));
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.bw-num.is-short { font-size: 2.6cqw; }
+.bw-num.is-words {
+  white-space: normal;
+  width: 92%;
+  min-width: 0;
+  border-radius: var(--radius-md);
+  /* A long word or measure (--face-chars, spelChoice faceChars) shrinks until its longest part fits. */
+  font-size: min(1.6cqw, calc((11cqw - 8px) / (var(--face-chars, 1) * .6)));
+  line-height: 1.1;
+}
+.bw-window:not(:disabled):hover .bw-num { scale: 1.06; }
+.bw-window.is-hit .bw-num { background: var(--kiosk-ok-soft); color: var(--kiosk-ok); animation: bw-hit 520ms var(--ease-spring) 280ms both; }
+@keyframes bw-hit { 0% { scale: 1; } 40% { scale: 1.25; } 100% { scale: 1; } }
+.bw-window.is-miss .bw-num { animation: spel-shake 420ms ease-out both; }
+.bw-window.is-rest .bw-num { opacity: .55; transition: opacity var(--dur-slow) var(--ease-out); }
+/* The window with the answer lights up with a ring while the sign shows it. */
+.bw-window.is-answer::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 6px solid var(--kiosk-ok);
+  border-radius: 14px;
+  animation: bw-ring 800ms ease-in-out 2 alternate both;
+}
+@keyframes bw-ring { from { transform: scale(1); } to { transform: scale(1.06); } }
+.bw-window.is-answer .bw-num { color: var(--kiosk-ok); }
+
+/* ── The ladder truck ──────────────────────────────────────────────────────── */
+.bw-chassis { fill: var(--spel-ink); }
+.bw-body, .bw-cab { fill: var(--bw-red); stroke: var(--spel-ink); stroke-width: 5; }
+.bw-band { stroke: var(--bw-yellow); stroke-width: 10; }
+.bw-cab-glass { fill: var(--bw-water-light); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-door-line { fill: none; stroke: var(--bw-red-dark); stroke-width: 4; }
+.bw-bumper, .bw-turntable { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-pivot, .bw-hub { fill: var(--bw-metal-dark); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-headlight { fill: var(--bw-yellow); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-tyre { fill: var(--spel-ink); }
+.bw-reel { fill: var(--bw-red-dark); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-reel-hub { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-lightbar { fill: var(--bw-metal-dark); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-dome { fill: var(--accent-bewerkingen); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-halo { fill: var(--accent-bewerkingen); opacity: 0; }
+/* The blue lights flash in turn, always (a fire truck at work). */
+.bw-beacon .bw-dome { animation: bw-dome 700ms steps(1) infinite; }
+.bw-beacon .bw-halo { animation: bw-halo 700ms steps(1) infinite; }
+.bw-beacon.is-b .bw-dome, .bw-beacon.is-b .bw-halo { animation-delay: -350ms; }
+@keyframes bw-dome { 0% { fill: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper)); } 50% { fill: var(--accent-bewerkingen); } }
+@keyframes bw-halo { 0% { opacity: .45; } 50% { opacity: 0; } }
+.bw-driver { animation: bw-nod 2.8s ease-in-out infinite; }
+@keyframes bw-nod { 0%, 80%, 100% { transform: translateY(0); } 88% { transform: translateY(-4px); } }
+
+.bw-gauge-panel { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-gauge-flame { fill: var(--bw-fire-2); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-seg { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 3; transition: fill 400ms ease; }
+.bw-seg.is-on.is-green { fill: var(--accent-metendrekenen); }
+.bw-seg.is-on.is-yellow { fill: var(--bw-yellow); }
+.bw-seg.is-on.is-orange { fill: var(--bw-fire-2); }
+.bw-seg.is-on.is-red { fill: var(--bw-fire-1); }
+.bw-root.is-hot .bw-gauge-panel { animation: bw-gauge 600ms ease-in-out infinite alternate; }
+.bw-root.is-hot .bw-gauge-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-flicker 300ms ease-in-out infinite alternate; }
+@keyframes bw-gauge { from { fill: var(--kiosk-paper); } to { fill: var(--bw-red-soft); } }
+
+.bw-section .bw-rail { fill: var(--bw-metal); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-section.is-fly .bw-rail { fill: color-mix(in srgb, var(--bw-metal) 70%, var(--kiosk-paper)); }
+.bw-rung { stroke: var(--bw-metal-dark); stroke-width: 5; }
+/* The ladder swings to the tapped floor and slides out; the basket counter-turns so it stays level. */
+.bw-ladder, .bw-level { transition: transform 460ms var(--ease-spring); }
+.bw-fly { transition: transform 460ms var(--ease-out); }
+.bw-nozzle { transition: transform 300ms var(--ease-out); }
+.bw-cage { fill: color-mix(in srgb, var(--bw-red) 30%, transparent); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-cage-bars { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.bw-hose { fill: none; stroke: var(--bw-red-dark); stroke-width: 7; }
+.bw-nozzle-body { fill: var(--bw-metal-dark); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-nozzle-tip { fill: var(--bw-yellow); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-limb-ink, .bw-limb { fill: none; }
+.bw-limb-ink { stroke: var(--spel-ink); stroke-width: 14; }
+.bw-limb { stroke-width: 8; }
+.bw-arm .bw-limb { stroke: var(--bw-navy); }
+
+/* The water: a jet that draws along its arc, a bright core, then fades as the window steams. */
+.bw-jet, .bw-jet-core, .bw-rainbow { fill: none; stroke-dasharray: 100 200; stroke-dashoffset: 100; }
+.bw-jet { stroke: var(--bw-water); stroke-width: 16; animation: bw-jet 640ms ease-out 200ms both; }
+.bw-jet-core { stroke: var(--bw-water-light); stroke-width: 5; animation: bw-jet 640ms ease-out 230ms both; }
+.bw-spray.is-super .bw-jet { stroke-width: 30; }
+.bw-spray.is-super .bw-jet-core { stroke-width: 10; }
+@keyframes bw-jet { 0% { stroke-dashoffset: 100; opacity: 1; } 45% { stroke-dashoffset: 0; opacity: 1; } 80% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.bw-rainbow { stroke-width: 12; opacity: .8; animation: bw-rainbow 1.1s ease-out 380ms both; }
+.bw-rainbow.is-0 { stroke: var(--bw-fire-1); }
+.bw-rainbow.is-1 { stroke: var(--bw-yellow); }
+.bw-rainbow.is-2 { stroke: var(--accent-bewerkingen); }
+.bw-rainbow.is-still { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; stroke-width: 16; opacity: .75; }
+@keyframes bw-rainbow { 0% { stroke-dashoffset: 100; opacity: 0; } 30% { opacity: .85; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.bw-jet.is-weak { stroke-width: 11; animation: bw-jet 500ms ease-out both; }
+.bw-drop { fill: var(--bw-water); stroke: var(--spel-ink); stroke-width: 2; animation: bw-fall 700ms ease-in calc(120ms + var(--k) * 140ms) both; }
+@keyframes bw-fall { from { transform: translateY(0); opacity: 1; } to { transform: translateY(130px); opacity: 0; } }
+
+/* ── People and pets ──────────────────────────────────────────────────────── */
+.bw-skin { fill: var(--bw-skin); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-helmet { fill: var(--bw-yellow); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-coat { fill: var(--bw-navy); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-trousers { fill: var(--bw-navy); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-boot { fill: var(--spel-ink); }
+.bw-stripe { fill: none; stroke: var(--bw-yellow); stroke-width: 5; }
+.bw-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-brow { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-open { fill: var(--spel-ink); }
+.bw-soot-dab { fill: var(--spel-ink); opacity: .45; }
+.bw-fighter.is-cheer, .bw-fighter.is-shrug { animation: bw-hop 600ms ease-in-out infinite alternate; }
+.bw-crew-up { animation: bw-nod 2.2s ease-in-out infinite; }
+.bw-basket.is-cheer .bw-crew-up, .bw-basket.is-oops .bw-crew-up { animation: bw-hop 300ms ease-in-out 4 alternate; }
+
+.bw-leg { fill: var(--bw-navy); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-robe { stroke: var(--spel-ink); stroke-width: 3; fill: var(--spel-fill-4); }
+.bw-resident.is-0 .bw-robe { fill: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--kiosk-paper)); }
+.bw-resident.is-1 .bw-robe { fill: color-mix(in srgb, var(--accent-meetkunde) 40%, var(--kiosk-paper)); }
+.bw-resident.is-2 .bw-robe { fill: color-mix(in srgb, var(--accent-metendrekenen) 45%, var(--kiosk-paper)); }
+.bw-pj-dots { stroke: var(--bw-yellow); stroke-width: 7; }
+.bw-belt { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.bw-arm-p .bw-limb { stroke: var(--bw-skin); }
+.bw-brush { stroke: var(--accent-bewerkingen); stroke-width: 5; }
+.bw-teddy { fill: var(--bw-hair); stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-hair { fill: var(--bw-hair); stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-curlers circle { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-specs { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-person { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-sway 2.4s ease-in-out calc(var(--k) * -0.8s) infinite alternate; }
+.bw-resident.is-cheer, .bw-resident.is-wave { animation: bw-hop 420ms ease-in-out calc(var(--k, 0) * -140ms) infinite alternate; }
+.bw-resident.is-oh { animation: bw-lean 1.4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes bw-hop { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+@keyframes bw-lean { from { rotate: -3deg; } to { rotate: 3deg; } }
+
+.bw-fur { fill: color-mix(in srgb, var(--accent-vraagstukken) 72%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-pet.is-hond .bw-fur { fill: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--bw-hair)); }
+.bw-pet.is-konijn .bw-fur { fill: var(--bw-metal); }
+.bw-paws { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-tail .bw-limb-ink { stroke-width: 15; }
+.bw-tail .bw-limb { stroke-width: 9; stroke: color-mix(in srgb, var(--accent-vraagstukken) 72%, var(--kiosk-paper)); }
+.bw-pet.is-hond .bw-tail .bw-limb { stroke: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--bw-hair)); }
+.bw-tail { transform-box: fill-box; transform-origin: 0% 100%; animation: bw-wag 900ms ease-in-out infinite alternate; }
+.bw-pet.is-hond .bw-tail { animation-duration: 260ms; }
+@keyframes bw-wag { from { rotate: -10deg; } to { rotate: 12deg; } }
+.bw-stripe-pet { fill: none; stroke: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--spel-ink)); stroke-width: 4; }
+.bw-nose { fill: var(--bw-red-soft); stroke: var(--spel-ink); stroke-width: 1.5; }
+.bw-ear { fill: var(--bw-hair); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-muzzle { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-tongue { fill: var(--bw-red-soft); stroke: var(--spel-ink); stroke-width: 2; }
+.bw-tailball { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-teeth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5; }
+.bw-ears { transform-box: fill-box; transform-origin: 50% 100%; animation: bw-sway 1.3s ease-in-out infinite alternate; }
+.bw-pet.is-wait { animation: bw-nod 1.8s ease-in-out infinite; }
+.bw-lawn-pet { animation: spel-pop 400ms var(--ease-spring) both, bw-hop 500ms ease-in-out calc(400ms + var(--k) * -170ms) infinite alternate; }
+
+/* The rescue sheet: it squashes when a pet lands in it. */
+.bw-sheet-ring { fill: var(--bw-red); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-sheet-mid { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.bw-sheet-dot { fill: var(--bw-red); }
+.bw-sheet-bounce { transform-box: fill-box; transform-origin: 50% 50%; animation: bw-sheet var(--bw-jump) ease-out both; }
+@keyframes bw-sheet { 0%, 40% { scale: 1 1; } 44% { scale: 1.12 .45; } 52% { scale: .96 1.2; } 60%, 100% { scale: 1 1; } }
+/* A pet's jump: out of the window, down into the sheet, a bounce up and over to the lawn. */
+.bw-jumper { animation: bw-jump var(--bw-jump) both; }
+@keyframes bw-jump {
+  0% { transform: translate(var(--fx), var(--fy)); animation-timing-function: ease-out; }
+  12% { transform: translate(calc(var(--fx) + (var(--sx) - var(--fx)) * .2), calc(var(--fy) - 50px)); animation-timing-function: ease-in; }
+  42% { transform: translate(var(--sx), var(--sy)); animation-timing-function: ease-out; }
+  62% { transform: translate(calc(var(--sx) + (var(--lx) - var(--sx)) * .5), calc(var(--sy) - 180px)); animation-timing-function: ease-in; }
+  100% { transform: translate(var(--lx), var(--ly)); }
+}
+.bw-jumper-spin { transform-box: fill-box; transform-origin: 50% 50%; animation: bw-spin var(--bw-jump) ease-in-out both; }
+@keyframes bw-spin { 0%, 12% { rotate: 0deg; } 40% { rotate: 360deg; } 60% { rotate: 360deg; } 80%, 100% { rotate: 720deg; } }
+
+/* ── Callouts over the scene ──────────────────────────────────────────────── */
+.bw-callout {
+  position: absolute;
+  translate: -50% 0;
+  padding: .1em .5em;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-family: var(--kid-font);
+  font-size: 3.2cqw;
+  font-weight: 900;
+  white-space: nowrap;
+  animation: bw-callout 1300ms var(--ease-spring) both;
+}
+.bw-callout.is-super { top: 44%; background: var(--bw-water-light); }
+.bw-callout.is-out { left: 58%; top: 4%; background: var(--bw-yellow); font-size: 4.4cqw; }
+.bw-callout.is-hot { left: 58%; top: 4%; background: var(--bw-red-soft); animation-name: bw-callout-stay; animation-duration: 600ms; }
+@keyframes bw-callout { 0% { scale: .3; opacity: 0; } 20% { scale: 1.1; opacity: 1; } 30% { scale: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes bw-callout-stay { 0% { scale: .3; opacity: 0; } 60% { scale: 1.1; opacity: 1; } 100% { scale: 1; opacity: 1; } }
+
+/* Too hot: the glow fills the sky; the crew and residents react in their own art. */
+.bw-root.is-toohot .bw-sky { position: absolute; inset: 0; pointer-events: none; }
+.bw-glow { opacity: 1; }
+
+/* "Hoe los ik dit op?": everything waits. */
+.bw-root.is-paused *,
+.bw-root.is-paused *::after { animation-play-state: paused; }
+
+/* ── The end screen's picture ─────────────────────────────────────────────── */
+.bw-end-sky { fill: var(--spel-sky); }
+.bw-ending.is-failed .bw-end-sky { fill: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--spel-sky)); }

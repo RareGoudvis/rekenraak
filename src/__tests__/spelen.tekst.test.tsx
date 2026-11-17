@@ -225,7 +225,7 @@ describe('the sums to leerjaar 6', () => {
 });
 
 describe('the picker and the choice topics', () => {
-    test('vergelijken, deelbaarheid and even / oneven are tap content: Ballonnen, Zeehondjes, Pakjesband, Mollen only', () => {
+    test('vergelijken, deelbaarheid and even / oneven are tap content: Ballonnen, Zeehondjes, Pakjesband, Mollen, Brandweer only', () => {
         for (const [g, t, label] of [
             [1, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'], [3, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
             [6, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
@@ -233,7 +233,7 @@ describe('the picker and the choice topics', () => {
         ] as const) {
             const c = choice(g, t, label);
             expect(spelContentOf(c, g), label).toMatchObject({ kind: 'choice', boards: [] });
-            expect(skinIds(c, g), label).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen']);
+            expect(skinIds(c, g), label).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'brandweer']);
         }
     });
 

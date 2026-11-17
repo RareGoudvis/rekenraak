@@ -14,6 +14,7 @@ import { BugBeetle } from '@phosphor-icons/react';
 import { WINNEN_OPTION } from './kikkers/rule';
 import { MagicWand } from '@phosphor-icons/react';
 import { TOVER } from './tovenaarsduel/rule';
+import { FireTruck } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -294,6 +295,20 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: { id: 'mollen', music: 'gek', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'nana' } },
         icon: Hammer,
         Component: lazy(() => import('./mollen/Mollen')),
+    },
+    {
+        // 3 minutes; the four options burn in four windows of a 3 × 3 block. The fire level (brandweer/fire.ts) rises with
+        // the clock and per mistake, each window sprayed out cools it; a block fully out = the next one, too hot = the early end.
+        // Five characters, like the other tap targets (measured 2026-11-17: "89 991" fits a window at 1024 × 768). The scene
+        // voices its own spray, dribble, siren and pets (correct / wrong: null).
+        meta: {
+            id: 'brandweer', music: 'tikken', label: 'Brandweer', input: 'choice', choiceCount: 4, timed: true, round: { seconds: 180 }, canFail: true,
+            winTitle: 'Alles geblust!', failTitle: 'Oei! Het brandt te hard. Nog eens?', accepts: TAP_CHOICE,
+            sounds: { correct: null, wrong: null, win: 'cheer', fail: 'wahwah' },
+        },
+        icon: FireTruck,
+        Component: lazy(() => import('./brandweer/Brandweer')),
+        Ending: lazy(() => import('./brandweer/Brandweer').then(m => ({ default: m.BrandweerEnding }))),
     },
 ];
 

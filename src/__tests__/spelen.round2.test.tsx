@@ -130,8 +130,8 @@ describe('The friendly early end', () => {
             sp().fail();
             expect(sp().phase).toBe('play');
         }
-        // Owner-approved early ends; the Speelgoedfabriek's machine sputters (2026-11-15); Race only in Benzine (an empty tank); Honingraat's wasp in Moeilijk.
-        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'pakjesband', 'race', 'honingraat'].includes(s.meta.id))).toEqual([]);
+        // Owner-approved early ends; the Speelgoedfabriek's machine sputters (2026-11-15); Race only in Benzine (an empty tank); Honingraat's wasp in Moeilijk; Brandweer too hot (2026-11-17).
+        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'pakjesband', 'race', 'honingraat', 'brandweer'].includes(s.meta.id))).toEqual([]);
         sp().start(startWith(CAN_FAIL));
         sp().openHelp();
         sp().fail();
