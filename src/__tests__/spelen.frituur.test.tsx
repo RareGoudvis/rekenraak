@@ -90,19 +90,13 @@ describe('Frituur: the queue', () => {
         expect(nextSum(c, 0)).toBe(c);
     });
 
-    test('a wrong order costs a third of the patience; the third one empties it and they walk off grumbling', () => {
+    test('a wrong order walks the customer off grumbling at once; the next one steps up with a full bar', () => {
         const c = newCounter(5);
         const w1 = wrongOrder(c);
-        expect(w1.queue[0]).toBe(c.queue[0]);
-        expect(w1.wrongs).toBe(1);
-        expect(w1.patience.left).toBeCloseTo(c.patience.total * (2 / 3));
-        const w2 = wrongOrder(w1);
-        expect(w2.queue[0]).toBe(c.queue[0]);
-        const w3 = wrongOrder(w2);
-        expect(w3.queue[0].id).toBe(1);
-        expect(w3.leaving.at(-1)).toEqual({ customer: c.queue[0], mood: 'grumpy' });
-        expect(w3.wrongs).toBe(0);
-        expect(patienceShare(w3.patience)).toBe(1);
+        expect(w1.queue[0].id).toBe(1);
+        expect(w1.leaving.at(-1)).toEqual({ customer: c.queue[0], mood: 'grumpy' });
+        expect(w1.wrongs).toBe(0);
+        expect(patienceShare(w1.patience)).toBe(1);
     });
 
     test('walking off keeps only the last few leavers; the end title counts the customers helped', () => {
@@ -217,20 +211,16 @@ describe('Frituur: the scene', () => {
         expect(container.querySelector('.fr-tally')!.getAttribute('aria-label')).toBe('1 klant geholpen');
     });
 
-    test('a wrong answer: the wrong snack on the counter, a frown and a shorter bar; the same customer asks again', () => {
+    test('a wrong answer: the wrong snack on the counter and the customer walks off grumbling; the next steps up', () => {
         const events = createSpelEvents();
         const { container, rerender } = render(<Frituur {...propsWith({ events })} />);
         const front = container.querySelector('.fr-cust.is-slot-0')!;
         act(() => { events.emit('wrong', { given: '11', expected: '12' }); });
         rerender(<Frituur {...propsWith({ events, phase: 'wrong', feedback: { given: '11', expected: '12', correct: false }, progress: progressWith({ mistakes: 1 }) })} />);
         expect(container.querySelector('.fr-wrong-order')).not.toBeNull();
-        expect(container.querySelector('.fr-cust.is-slot-0.is-frown .fr-huh')).not.toBeNull();
         expect(rootOf(container).classList.contains('is-wrong')).toBe(true);
-        rerender(<Frituur {...propsWith({ events, question: { key: 'q2', text: '3 + 4 = ?', index: 1 }, progress: progressWith({ mistakes: 1 }) })} />);
-        expect(container.querySelector('.fr-cust.is-slot-0')).toBe(front);
-        expect(container.querySelector('.fr-leaver')).toBeNull();
-        // The bar starts from what is left (two thirds).
-        expect(Number((container.querySelector('.fr-patience') as HTMLElement).style.getPropertyValue('--left'))).toBeCloseTo(2 / 3, 2);
+        expect(container.querySelector('.fr-leaver')).not.toBeNull();
+        expect(container.querySelector('.fr-cust.is-slot-0')).not.toBe(front);
     });
 
     test('an empty bar walks the customer off grumbling and calls onMiss once; help and the flashes freeze the bar', () => {

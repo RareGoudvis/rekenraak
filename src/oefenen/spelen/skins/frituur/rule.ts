@@ -2,7 +2,7 @@ import { mulberry32 } from '../../distractors';
 
 // Frituur: the queue at the counter. Pure, so the tuning is testable: the customer at the counter asks the sum on
 // screen and waits on a patience bar that drains with game time (help and the flashes freeze it). A right answer
-// serves them (they leave on the next sum), a wrong order cuts their patience, an empty bar walks them off.
+// serves them (they leave on the next sum), a wrong order or an empty bar walks them off grumbling.
 
 // THE tuning table (the owner tunes it after playing).
 export const FRITUUR = {
@@ -12,8 +12,8 @@ export const FRITUUR = {
     perStreakMs: 500,
     // Never less: even a long streak leaves time to read a leerjaar 6 sum and type it.
     floorMs: 7_000,
-    // A wrong order costs this share of the customer's full patience.
-    wrongCut: 1 / 3,
+    // A wrong order costs this share of the customer's full patience: all of it, they walk off at once (owner 2026-11-17).
+    wrongCut: 1,
     // Under this share left the customer gets impatient (checks a watch, taps a foot, whines).
     lowAt: 0.35,
     // The bar waits this long for a new customer, who is still stepping up to the counter.
@@ -100,7 +100,7 @@ export function walkOff(c: Counter, mood: Leaver['mood'], streak: number): Count
 /** A right answer: the order goes over the counter. */
 export const serve = (c: Counter): Counter => (c.served ? c : { ...c, served: true, servedCount: c.servedCount + 1, rev: c.rev + 1 });
 
-/** A wrong answer: the wrong order comes out and a third of the patience goes; an empty bar walks them off. */
+/** A wrong answer: the wrong order comes out and costs `wrongCut` of the patience; an empty bar walks them off. */
 export function wrongOrder(c: Counter): Counter {
     if (c.served) return c;
     const left = Math.max(0, c.patience.left - c.patience.total * FRITUUR.wrongCut);

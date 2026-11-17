@@ -11,7 +11,7 @@ import './frituur.css';
 
 // Frituur: a Flemish frituur seen from the pavement, a queue of up to three customers at its counter. The first one's
 // speech bubble holds the sum; a right answer sends the order over the counter and the customer off eating, a wrong
-// one brings out the wrong snack (a third of their patience goes), an empty patience bar walks them off grumbling
+// one brings out the wrong snack and walks them off grumbling, as does an empty patience bar
 // (onMiss). Score = customers helped; the best per card and length stays on this device (records.ts).
 // The queue lives in a ref driven by game time (only while the sum waits); React renders only when it changes.
 
