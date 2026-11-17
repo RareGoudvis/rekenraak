@@ -17,6 +17,7 @@ import { TOVER } from './tovenaarsduel/rule';
 import { Storefront } from '@phosphor-icons/react';
 import { FireTruck } from '@phosphor-icons/react';
 import { PersonSimpleSki } from '@phosphor-icons/react';
+import { Flashlight as FlashlightIcon } from '@phosphor-icons/react';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -238,6 +239,20 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: SoccerBall,
         Component: lazy(() => import('../board/voetbalkaartjes/Voetbalkaartjes')),
+    },
+    {
+        // Halloween: Hartjes koppelen's memory (same round and accepts) on the floor of a dark haunted place, read by a
+        // flashlight that follows the pointer (board/spookhuis/). One of three places per round (spookhuis/pick.ts); a
+        // visitor turns a lone open card back now and then (never a mistake). Pairs and mistakes are voiced by the skin.
+        meta: {
+            music: 'griezel',
+            id: 'spookhuis', label: 'Spookhuis', input: 'board', timed: false, season: 'halloween', options: HARTJES_OPTIONS,
+            round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
+            sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop' },
+        },
+        icon: FlashlightIcon,
+        Component: lazy(() => import('../board/spookhuis/Spookhuis')),
+        Ending: lazy(() => import('../board/spookhuis/Spookhuis').then(m => ({ default: m.SpookhuisEnding }))),
     },
     {
         // A funny animal under 4 × 4 tiles: each right answer flips one away (random order), 16 show it all. A mistake

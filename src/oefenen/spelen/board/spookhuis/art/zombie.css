@@ -1,0 +1,196 @@
+/* Zombiehuis (art/zombie.tsx): a stone cellar under a boarded-up farmhouse, a flickering bulb, silly green zombies.
+   Furniture goes where the cards leave room (data-room, --sph-side, --sph-ctop: see klassiek.css). */
+.sph-root.is-zombie,
+.sph-ending.is-zombie {
+  --sph-night: color-mix(in srgb, var(--accent-metendrekenen) 9%, color-mix(in srgb, var(--accent-bewerkingen) 5%, var(--spel-ink)));
+  --sph-warm: color-mix(in srgb, var(--mab-e) 80%, var(--accent-metendrekenen));
+  --sph-paper-solved: color-mix(in srgb, var(--accent-metendrekenen) 30%, var(--kiosk-paper));
+  --sph-z-stone: color-mix(in srgb, var(--text-muted) 55%, color-mix(in srgb, var(--accent-metendrekenen) 12%, var(--spel-ink)));
+  --sph-z-stone-line: color-mix(in srgb, var(--text-muted) 25%, var(--spel-ink));
+  --sph-z-floor: color-mix(in srgb, var(--accent-vraagstukken) 32%, var(--spel-ink));
+  --sph-z-plank-line: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--spel-ink));
+  --sph-z-wood: color-mix(in srgb, var(--accent-vraagstukken) 48%, var(--spel-ink));
+  --sph-z-wood-light: color-mix(in srgb, var(--accent-vraagstukken) 52%, var(--kiosk-paper));
+  --sph-z-skin: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--mab-e));
+  --sph-z-pants: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--spel-ink));
+  --sph-z-sky: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--spel-ink));
+  --sph-z-moon: color-mix(in srgb, var(--mab-e) 35%, var(--kiosk-paper));
+  --sph-z-bulb: color-mix(in srgb, var(--mab-e) 70%, var(--kiosk-paper));
+  --sph-z-brain: color-mix(in srgb, var(--accent-getallenkennis) 32%, var(--kiosk-paper));
+  --sph-z-back: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+}
+
+/* ── The room: stone wall, floorboards ───────────────────────────────────── */
+.sph-z-room {
+  --wall-h: 42%;
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 17%, var(--sph-z-plank-line) 17% calc(17% + 3px)) 0 100% / 100% calc(100% - var(--wall-h)) no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 40px, var(--sph-z-plank-line) 40px 43px) 0 100% / 100% calc(100% - var(--wall-h)) no-repeat,
+    linear-gradient(var(--sph-z-floor), var(--sph-z-floor)) 0 100% / 100% calc(100% - var(--wall-h)) no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 33px, var(--sph-z-stone-line) 33px 36px),
+    repeating-linear-gradient(90deg, transparent 0 66px, var(--sph-z-stone-line) 66px 69px) 0 0 / 100% 36px,
+    repeating-linear-gradient(90deg, transparent 0 33px, var(--sph-z-stone-line) 33px 36px, transparent 36px 66px) 0 36px / 100% 72px,
+    var(--sph-z-stone);
+  transition: filter 700ms var(--ease-out);
+}
+.sph-z-room.is-lit { filter: brightness(1.25); }
+.sph-z-room > *, .sph-z-life > * { position: absolute; display: block; }
+.sph-z-room svg, .sph-z-life svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sph-z-skirting { left: 0; right: 0; top: calc(var(--wall-h) - 12px); height: 14px; background: var(--sph-z-wood); border-block: 3px solid var(--spel-ink); }
+
+/* ── Where the furniture stands ──────────────────────────────────────────── */
+.sph-z-bulb { left: calc(var(--sph-side, 0px) + 3cqw); top: 0; width: clamp(50px, calc(var(--sph-ctop, 90px) * .9), 110px); aspect-ratio: 100 / 200; }
+.sph-z-window { right: 1.5cqw; top: 5cqh; width: min(calc(var(--sph-side, 0px) - 3cqw), 240px, 26cqh); aspect-ratio: 1; }
+.sph-z-shelf { left: 1.5cqw; top: 14cqh; width: min(calc(var(--sph-side, 0px) - 3cqw), 240px, 26cqh); aspect-ratio: 120 / 150; }
+.sph-z-crates { right: 1.5cqw; bottom: 1cqh; width: min(calc(var(--sph-side, 0px) - 3cqw), 240px, 26cqh); aspect-ratio: 120 / 110; }
+.sph-z-handbox { left: calc(1.5cqw + min(calc(var(--sph-side, 0px) - 3cqw), 120px) * .2); bottom: 0; width: min(calc(var(--sph-side, 0px) - 3cqw), 90px, 14cqh); aspect-ratio: 60 / 90; }
+.sph-root[data-room="narrow"] .sph-z-shelf { display: none; }
+.sph-root[data-room="narrow"] :is(.sph-z-window, .sph-z-crates) { width: min(calc(var(--sph-side, 0px) - 12px), 26cqh); right: 6px; }
+.sph-root[data-room="none"] .sph-z-shelf { display: none; }
+.sph-root[data-room="none"] .sph-z-crates { width: auto; height: 22cqh; right: 2cqw; }
+.sph-root[data-room="none"] .sph-z-handbox { width: auto; height: 16cqh; left: 4cqw; }
+.sph-root[data-room="none"] .sph-z-window { right: 3cqw; top: 6px; width: auto; height: clamp(0px, calc(var(--sph-ctop, 90px) - 14px), 110px); }
+.sph-root[data-room="none"] .sph-z-bulb { left: 4cqw; }
+
+/* ── The bulb: it flickers now and then; three flies circle it ───────────── */
+.sph-z-wire { stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-socket { fill: var(--sph-z-stone-line); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-z-glass { fill: color-mix(in srgb, var(--sph-z-bulb) 50%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-glass.is-on { fill: var(--sph-z-bulb); }
+.sph-z-halo { fill: color-mix(in srgb, var(--sph-z-bulb) 30%, transparent); filter: blur(5px); }
+.sph-z-cone { fill: color-mix(in srgb, var(--sph-z-bulb) 8%, transparent); filter: blur(4px); }
+.sph-z-bulbglow { animation: sph-z-flicker 6s steps(1) infinite; }
+@keyframes sph-z-flicker {
+  0%, 61%, 66%, 70%, 100% { opacity: 1; }
+  62%, 68% { opacity: .25; }
+  64% { opacity: .7; }
+}
+.sph-z-fly { fill: var(--spel-ink); transform-box: view-box; transform-origin: 50px 92px; animation: sph-z-buzz calc(1.6s + var(--i) * .5s) linear infinite; animation-delay: calc(var(--i) * -.7s); }
+@keyframes sph-z-buzz {
+  0% { transform: rotate(0deg) translate(24px, 0) rotate(0deg); }
+  50% { transform: rotate(180deg) translate(18px, 4px) rotate(-180deg); }
+  100% { transform: rotate(360deg) translate(24px, 0) rotate(-360deg); }
+}
+
+/* ── The boarded window and the zombies shuffling past behind it ─────────── */
+.sph-z-frame { fill: var(--sph-z-wood); stroke: var(--spel-ink); stroke-width: 3.5; }
+.sph-z-pane { fill: var(--sph-z-sky); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-pane.is-glow { fill: color-mix(in srgb, var(--sph-z-sky) 85%, var(--sph-z-moon)); stroke: none; }
+.sph-z-moon { fill: var(--sph-z-moon); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-z-plank { fill: var(--sph-z-wood-light); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-z-nail { fill: var(--spel-ink); }
+.sph-z-passer { animation: sph-z-pass 13s linear infinite; animation-delay: -4s; }
+@keyframes sph-z-pass {
+  0% { translate: -90px 0; }
+  55%, 100% { translate: 140px 0; }
+}
+.sph-z-passer .sph-z-bob { animation-duration: 700ms; }
+
+/* ── Shelf, crates, barrel ───────────────────────────────────────────────── */
+.sph-z-wood { fill: var(--sph-z-wood); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-z-jar { fill: color-mix(in srgb, var(--c) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-z-lid { fill: var(--sph-z-stone-line); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-z-box { fill: var(--sph-z-wood-light); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-boxline { fill: none; stroke: var(--sph-z-wood); stroke-width: 3; }
+.sph-z-barrel { fill: var(--sph-z-wood); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-hoop { fill: none; stroke: var(--spel-ink); stroke-width: 4; }
+
+/* ── The hand from the floor: every 11 s it pops up, wiggles, sinks ──────── */
+.sph-z-handskin { fill: var(--sph-z-skin); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-z-cuff { fill: var(--sph-z-pants); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-dirt { fill: var(--sph-z-floor); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-z-hand-rise { transform-box: view-box; transform-origin: 30px 90px; animation: sph-z-rise 11s ease-in-out infinite; animation-delay: 3s; }
+@keyframes sph-z-rise {
+  0%, 2% { translate: 0 70px; rotate: 0deg; }
+  8% { translate: 0 0; }
+  12% { rotate: -14deg; } 16% { rotate: 12deg; } 20% { rotate: -10deg; } 24% { rotate: 10deg; }
+  28% { translate: 0 0; rotate: 0deg; }
+  34%, 100% { translate: 0 70px; rotate: 0deg; }
+}
+.sph-z-hand.is-wave .sph-z-hand-rise { animation: sph-z-wave 700ms ease-in-out infinite alternate; }
+@keyframes sph-z-wave { from { rotate: -14deg; } to { rotate: 14deg; } }
+
+/* ── The zombie ──────────────────────────────────────────────────────────── */
+.sph-z-skin { fill: var(--sph-z-skin); stroke: var(--spel-ink); stroke-width: 3.5; }
+.sph-z-shirt { fill: color-mix(in srgb, var(--shirt) 60%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-z-stitch { fill: none; stroke: var(--spel-ink); stroke-width: 1.6; }
+.sph-z-pants { fill: var(--sph-z-pants); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-shoe { fill: var(--spel-ink); }
+.sph-z-hair { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.sph-z-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-z-pupil { fill: var(--spel-ink); }
+.sph-z-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 3; stroke-linecap: round; }
+.sph-z-tooth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5; }
+.sph-z-patch { stroke: var(--spel-ink); stroke-width: 1.8; stroke-linecap: round; }
+.sph-z-arm-ink { fill: none; stroke: var(--spel-ink); stroke-width: 15; stroke-linecap: round; }
+.sph-z-arm-skin { fill: none; stroke: var(--sph-z-skin); stroke-width: 8; stroke-linecap: round; }
+.sph-z-arm-skin.is-back { stroke: color-mix(in srgb, var(--spel-ink) 18%, var(--sph-z-skin)); }
+.sph-z-arm, .sph-z-leg, .sph-z-head, .sph-z-bob { transform-box: view-box; }
+.sph-z-arm.is-a { transform-origin: 38px 72px; }
+.sph-z-arm.is-b { transform-origin: 40px 78px; }
+.sph-z-head { transform-origin: 50px 62px; }
+.sph-z-leg.is-a { transform-origin: 39px 96px; }
+.sph-z-leg.is-b { transform-origin: 61px 96px; }
+.sph-z-bob { transform-origin: 50px 126px; animation: sph-z-shamble 900ms ease-in-out infinite alternate; }
+@keyframes sph-z-shamble { from { rotate: -5deg; translate: 0 0; } to { rotate: 5deg; translate: 0 -3px; } }
+.sph-z-zombie:is(.is-shamble, .is-reach) .sph-z-leg.is-a { animation: sph-z-step 900ms ease-in-out infinite alternate; }
+.sph-z-zombie:is(.is-shamble, .is-reach) .sph-z-leg.is-b { animation: sph-z-step 900ms ease-in-out infinite alternate-reverse; }
+@keyframes sph-z-step { from { rotate: -12deg; } to { rotate: 12deg; } }
+.sph-z-zombie:is(.is-shamble, .is-reach) .sph-z-head { animation: sph-z-loll 1800ms ease-in-out infinite; }
+@keyframes sph-z-loll { 0%, 100% { rotate: -6deg; } 50% { rotate: 8deg; } }
+/* Reaching for a card: the near arm swings down and pokes it. */
+.sph-z-zombie.is-reach .sph-z-arm.is-a { animation: sph-z-reach 2800ms ease-in-out both; }
+@keyframes sph-z-reach { 0%, 30% { rotate: 0deg; } 40%, 50% { rotate: -60deg; } 46% { rotate: -72deg; } 62%, 100% { rotate: 0deg; } }
+/* The goofy dance: arms up and down in turn, a hip sway, head bopping. */
+.sph-z-zombie.is-dance .sph-z-bob { animation: sph-z-sway 500ms ease-in-out infinite alternate; }
+@keyframes sph-z-sway { from { rotate: -9deg; translate: -3px 0; } to { rotate: 9deg; translate: 3px -5px; } }
+.sph-z-zombie.is-dance .sph-z-arm.is-a { animation: sph-z-arm-up 500ms ease-in-out infinite alternate; }
+.sph-z-zombie.is-dance .sph-z-arm.is-b { animation: sph-z-arm-up 500ms ease-in-out infinite alternate-reverse; }
+@keyframes sph-z-arm-up { from { rotate: 0deg; } to { rotate: 80deg; } }
+.sph-z-zombie.is-dance .sph-z-head { animation: sph-z-bop 250ms ease-in-out infinite alternate; }
+@keyframes sph-z-bop { from { rotate: -8deg; } to { rotate: 10deg; } }
+.sph-z-zombie.is-dance .sph-z-leg.is-a { animation: sph-z-kick 500ms ease-in-out infinite alternate; }
+@keyframes sph-z-kick { from { rotate: 0deg; } to { rotate: 28deg; } }
+
+/* ── The brain jelly ─────────────────────────────────────────────────────── */
+.sph-z-plate { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-brain { fill: var(--sph-z-brain); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sph-z-fold { fill: none; stroke: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-ink)); stroke-width: 2.5; stroke-linecap: round; }
+.sph-z-shine { fill: var(--kiosk-paper); opacity: .8; }
+.sph-z-jeye { fill: var(--spel-ink); }
+.sph-z-jmouth { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
+.sph-z-wobble { transform-box: view-box; transform-origin: 50px 76px; animation: sph-z-jiggle 260ms ease-in-out infinite alternate; }
+@keyframes sph-z-jiggle { from { scale: 1.08 .92; } to { scale: .94 1.07; } }
+
+/* ── The counter's bulbs ─────────────────────────────────────────────────── */
+.sph-z-mark-glass { fill: color-mix(in srgb, var(--sph-z-bulb) 25%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-z-mark-base { fill: var(--text-muted); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-z-mark-wire { fill: none; stroke: var(--spel-ink); stroke-width: 2; }
+.sph-z-mark.is-on .sph-z-mark-glass { fill: var(--sph-z-bulb); }
+.sph-z-mark.is-on { filter: drop-shadow(0 0 6px var(--sph-z-bulb)); animation: sph-z-ping 420ms var(--ease-spring) both; }
+@keyframes sph-z-ping { from { scale: .4; } }
+
+/* ── The card back: a weathered plank with a green hand print ───────────── */
+.sph-z-back-fill { fill: var(--sph-z-back); stroke: var(--spel-ink); stroke-width: 4; vector-effect: non-scaling-stroke; }
+.sph-z-back-grain { fill: none; stroke: color-mix(in srgb, var(--sph-z-back) 70%, var(--spel-ink)); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.sph-z-back-hand { fill: color-mix(in srgb, var(--sph-z-skin) 80%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.sph-z-back-nail { fill: var(--sph-z-stone); stroke: var(--spel-ink); stroke-width: 1; }
+
+/* ── The lights-on crowd: three zombies dance, hands wave from the floor ─── */
+.sph-z-dancer {
+  bottom: 2%;
+  left: calc(25% + var(--i) * 25%);
+  width: clamp(70px, 22cqmin, 200px);
+  aspect-ratio: 100 / 130;
+  translate: -50% 0;
+  animation: sph-z-in 700ms var(--ease-spring) both;
+  animation-delay: calc(var(--i) * 140ms);
+}
+@keyframes sph-z-in { from { translate: -50% 120%; } }
+.sph-z-dancer:nth-child(2) .sph-z-zombie { scale: -1 1; }
+.sph-z-cheer { bottom: 0; left: calc(6% + var(--i) * 88%); width: clamp(34px, 9cqmin, 80px); aspect-ratio: 60 / 90; translate: -50% 0; }
+.sph-z-disco { left: 22%; top: 0; width: clamp(40px, 12cqmin, 100px); aspect-ratio: 100 / 200; translate: -50% -30%; }
+.sph-z-disco .sph-z-cone { fill: color-mix(in srgb, var(--sph-z-bulb) 16%, transparent); }
+.sph-z-disco .sph-z-bulbglow { animation: none; }

@@ -20,6 +20,7 @@ export const GAME_BLURB: Record<string, string> = {
     hartjes: 'Draai de hartjes om en zoek een som met haar antwoord.',
     honingraat: 'Zoek alle sommen die het getal maken. Moeilijk: pas op voor de wesp!',
     voetbalkaartjes: 'Zoek een som met haar antwoord. Elk paar is een goal voor jouw ploeg!',
+    spookhuis: 'Zoek de paren met je zaklamp. Spoken, zombies of piraten draaien kaarten om!',
     prent: 'Elk juist antwoord draait een tegel om. Welk grappig dier zit eronder?',
     schatkist: 'Vind de cijfers van de code en open de schatkist. Ook met tijd.',
     pakjesband: 'Stuur het juiste pakje naar de kist. Te veel foutjes en de machine sputtert!',

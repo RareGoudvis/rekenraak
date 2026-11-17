@@ -39,12 +39,22 @@ const GAMES = [
     ['voetbalkaartjes', 'Voetbalkaartjes', -1],
     ['brandweer', 'Brandweer', 1],
     ['slalom', 'Skislalom', 0],
+    ['spookhuis', 'Spookhuis', -1],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena.
-const QUERY = { tovenaarsduel: '?arena=school' };
+const QUERY = { tovenaarsduel: '?arena=school', spookhuis: '?spook=klassiek' };
 // Duel games with 2 spelers (no keyboard): the moment of the picture, staged through window.__duel (dev builds).
 const duelAnswer = (page, side) => page.evaluate(s => { const d = window.__duel.getState(); const q = d.sides[s].question; if (q && !d.sides[s].feedback) d.answer(s, q.answer); }, side);
 const DUEL_PLAY = {
+    // Spookhuis (not a duel): the torch on a card, and a found pair's ghost popping out.
+    spookhuis: async page => {
+        const at = async (cell, side) => { const b = await page.locator(`.sph-slot [data-cell="${cell}"].is-${side}`).boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+        await page.locator('.sph-slot [data-cell="0"].is-sum').click();
+        await page.locator('.sph-slot [data-cell="0"].is-answer').click();
+        await page.mouse.move(...(await at(2, 'sum')), { steps: 6 });
+        // With the pause below the shot is about 1.5 s in: the ghost waves, its sparkles have faded.
+        await page.waitForTimeout(600);
+    },
     // Left: 4 in a row (both shields up), then a meteor from the right on its way down onto them.
     meteorietenregen: async page => {
         for (let i = 0; i < 4; i++) { await duelAnswer(page, 'left'); await page.waitForTimeout(800); }
@@ -96,6 +106,7 @@ const SKIN_CSS = {
     frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
     // The metres, the speed bars and the streak badge.
     slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
+    spookhuis: '.sph-text, .sph-count { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
 const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur']);

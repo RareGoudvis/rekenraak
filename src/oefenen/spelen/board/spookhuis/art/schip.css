@@ -1,0 +1,216 @@
+/* Spookschip (art/schip.tsx): the hold of a sunken ghost ship, green water light, swinging lanterns, goofy skeletons.
+   Furniture goes where the cards leave room (data-room, --sph-side, --sph-ctop: see klassiek.css). */
+.sph-root.is-schip,
+.sph-ending.is-schip {
+  --sph-night: color-mix(in srgb, var(--accent-metendrekenen) 7%, color-mix(in srgb, var(--accent-bewerkingen) 10%, var(--spel-ink)));
+  --sph-paper: color-mix(in srgb, var(--accent-vraagstukken) 16%, var(--kiosk-paper));
+  --sph-paper-solved: color-mix(in srgb, var(--mab-e) 40%, var(--kiosk-paper));
+  --sph-s-hull: color-mix(in srgb, var(--accent-vraagstukken) 34%, color-mix(in srgb, var(--accent-metendrekenen) 8%, var(--spel-ink)));
+  --sph-s-hull-line: color-mix(in srgb, var(--accent-vraagstukken) 16%, var(--spel-ink));
+  --sph-s-rib: color-mix(in srgb, var(--accent-vraagstukken) 24%, var(--spel-ink));
+  --sph-s-deck: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--spel-ink));
+  --sph-s-wood: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
+  --sph-s-brass: color-mix(in srgb, var(--mab-e) 70%, var(--accent-vraagstukken));
+  --sph-s-sea: color-mix(in srgb, var(--accent-metendrekenen) 55%, color-mix(in srgb, var(--accent-bewerkingen) 25%, var(--kiosk-paper)));
+  --sph-s-sea-dim: color-mix(in srgb, var(--accent-metendrekenen) 30%, var(--spel-ink));
+  --sph-s-bone: color-mix(in srgb, var(--mab-e) 12%, var(--kiosk-paper));
+  --sph-s-ghost: color-mix(in srgb, var(--accent-metendrekenen) 22%, var(--kiosk-paper));
+  --sph-s-gold: var(--mab-e);
+  --sph-s-rust: color-mix(in srgb, var(--accent-vraagstukken) 60%, var(--spel-ink));
+  --sph-s-coat: color-mix(in srgb, var(--accent-getallenkennis) 55%, var(--spel-ink));
+  --sph-s-map: color-mix(in srgb, var(--accent-vraagstukken) 40%, color-mix(in srgb, var(--spel-ink) 66%, var(--kiosk-paper)));
+}
+
+/* ── The hold: planks, ribs, the deck; it rocks a little (Room and Life together, so the glows stay put) ── */
+.sph-s-room {
+  --deck-h: 38%;
+  position: absolute;
+  inset: -3%;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 30px, var(--sph-s-hull-line) 30px 33px) 0 100% / 100% var(--deck-h) no-repeat,
+    linear-gradient(var(--sph-s-deck), var(--sph-s-deck)) 0 100% / 100% var(--deck-h) no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 24px, var(--sph-s-hull-line) 24px 27px),
+    var(--sph-s-hull);
+  transition: filter 700ms var(--ease-out);
+}
+.sph-s-room, .sph-s-life { transform-origin: 50% 140%; animation: sph-s-rock 9s ease-in-out infinite; }
+.sph-s-life { position: absolute; inset: -3%; }
+@keyframes sph-s-rock { 0%, 100% { rotate: -.7deg; } 50% { rotate: .7deg; } }
+.sph-s-room.is-lit { filter: brightness(1.22); }
+.sph-s-room > *, .sph-s-life > * { position: absolute; display: block; }
+.sph-s-room svg, .sph-s-life svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sph-s-ribs {
+  inset: 0 0 var(--deck-h) 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 22px), var(--sph-s-rib) calc(25% - 22px) 25%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 120% at 50% 100%, transparent 50%, black 51%);
+  mask-image: radial-gradient(ellipse 80% 120% at 50% 100%, transparent 50%, black 51%);
+}
+
+/* ── Where the furniture stands (the hold is 106 % of the stage: 3 % hangs off each edge) ─── */
+.sph-s-port.is-a { left: calc(3% + 1.5cqw); top: calc(3% + 4cqh); width: min(calc(var(--sph-side, 0px) - 3cqw), 200px, 22cqh); aspect-ratio: 1; }
+.sph-s-port.is-b { right: calc(3% + 1.5cqw); top: calc(3% + 34cqh); width: min(calc(var(--sph-side, 0px) - 3cqw), 130px, 18cqh); aspect-ratio: 1; }
+.sph-s-lantern.is-a { left: calc(3% + var(--sph-side, 0px) + 3cqw); top: 3%; height: clamp(0px, calc(var(--sph-ctop, 90px) - 4px), 120px); aspect-ratio: 60 / 130; }
+.sph-s-lantern.is-b { right: calc(3% + 1.5cqw + (var(--sph-side, 0px) - 3cqw) * .3); top: 3%; height: min(26cqh, 190px); aspect-ratio: 60 / 130; }
+.sph-s-skelbox { left: calc(3% + 1.5cqw); bottom: calc(3% + 1cqh); width: min(calc(var(--sph-side, 0px) - 3cqw), 200px, 24cqh); aspect-ratio: 100 / 150; }
+.sph-s-chestbox-at { right: calc(3% + 1.5cqw); bottom: calc(3% + 2cqh); width: min(calc(var(--sph-side, 0px) - 3cqw), 220px, 24cqh); aspect-ratio: 120 / 100; }
+.sph-s-parrotbox { right: calc(3% + var(--sph-side, 0px) + 3cqw); top: 3%; height: clamp(0px, calc(var(--sph-ctop, 90px) - 6px), 110px); aspect-ratio: 80 / 90; }
+.sph-root[data-room="wide"] .sph-s-lantern.is-b { top: calc(3% + 2cqh); }
+.sph-root[data-room="wide"] .sph-s-port.is-b { top: calc(3% + 30cqh); }
+.sph-root[data-room="narrow"] :is(.sph-s-port.is-b, .sph-s-lantern.is-b) { display: none; }
+.sph-root[data-room="narrow"] :is(.sph-s-port.is-a, .sph-s-skelbox) { left: calc(3% + 6px); width: min(calc(var(--sph-side, 0px) - 12px), 22cqh); }
+.sph-root[data-room="narrow"] .sph-s-chestbox-at { right: calc(3% + 6px); width: min(calc(var(--sph-side, 0px) - 12px), 22cqh); }
+.sph-root[data-room="none"] :is(.sph-s-port.is-b, .sph-s-lantern.is-b) { display: none; }
+.sph-root[data-room="none"] .sph-s-skelbox { width: auto; height: 30cqh; left: calc(3% + 2cqw); }
+.sph-root[data-room="none"] .sph-s-chestbox-at { width: auto; height: 18cqh; right: calc(3% + 2cqw); }
+.sph-root[data-room="none"] .sph-s-port.is-a { left: calc(3% + 3cqw); top: calc(3% + 6px); width: auto; height: clamp(0px, calc(var(--sph-ctop, 90px) - 14px), 100px); }
+.sph-root[data-room="none"] .sph-s-lantern.is-a { left: calc(3% + 3cqw + min(calc(var(--sph-ctop, 90px) - 14px), 100px) + 2cqw); }
+.sph-root[data-room="none"] .sph-s-parrotbox { right: calc(3% + 3cqw); }
+
+/* ── Portholes: green water light, a fish, bubbles ─────────────────────── */
+.sph-s-rim { fill: var(--sph-s-brass); stroke: var(--spel-ink); stroke-width: 4; }
+.sph-s-bolt { fill: color-mix(in srgb, var(--sph-s-brass) 60%, var(--spel-ink)); }
+.sph-s-water { fill: var(--sph-s-sea); }
+.sph-s-water.is-dim { fill: var(--sph-s-sea-dim); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-s-glass { fill: none; stroke: var(--spel-ink); stroke-width: 3; }
+.sph-s-glowring { fill: color-mix(in srgb, var(--sph-s-sea) 30%, transparent); filter: blur(6px); animation: sph-s-pulse 4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes sph-s-pulse { 50% { scale: 1.12; opacity: .6; } }
+.sph-s-glint { fill: none; stroke: var(--kiosk-paper); stroke-width: 3; stroke-linecap: round; opacity: .7; }
+.sph-s-weed { fill: none; stroke: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--spel-ink)); stroke-width: 4; stroke-linecap: round; animation: sph-s-sway 3s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 50px 90px; }
+@keyframes sph-s-sway { from { rotate: -6deg; } to { rotate: 6deg; } }
+.sph-s-fish { fill: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.5; animation: sph-s-swim 9s linear infinite; }
+.sph-s-port.is-b .sph-s-fish { animation-delay: -4.5s; animation-direction: reverse; }
+.sph-s-fish circle { fill: var(--spel-ink); stroke: none; }
+@keyframes sph-s-swim { 0% { translate: -20px 46px; } 50% { translate: 110px 56px; } 100% { translate: 110px 56px; } }
+.sph-s-bubble { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.5; animation: sph-s-rise 3s ease-in infinite; animation-delay: calc(var(--i) * -1s); }
+@keyframes sph-s-rise { from { translate: 0 0; opacity: 1; } to { translate: 4px -70px; opacity: 0; } }
+
+/* ── Lanterns ────────────────────────────────────────────────────────────── */
+.sph-s-swing { transform-box: view-box; transform-origin: 30px 0; animation: sph-s-swing 3.4s ease-in-out infinite alternate; }
+.sph-s-lantern.is-b .sph-s-swing { animation-delay: -1.7s; }
+@keyframes sph-s-swing { from { rotate: -9deg; } to { rotate: 9deg; } }
+.sph-s-rope { stroke: color-mix(in srgb, var(--sph-s-brass) 40%, var(--spel-ink)); stroke-width: 3; }
+.sph-s-iron { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-s-lamp { fill: color-mix(in srgb, var(--mab-e) 30%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-s-ring { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-s-lamp-halo { fill: color-mix(in srgb, var(--mab-e) 30%, transparent); filter: blur(5px); }
+.sph-s-flame { fill: var(--mab-e); stroke: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-ink)); stroke-width: 1.5; transform-box: fill-box; transform-origin: 50% 100%; animation: sph-s-flicker 900ms ease-in-out infinite alternate; }
+@keyframes sph-s-flicker { from { scale: .9 1.1; } to { scale: 1.08 .92; } }
+
+/* ── The treasure chest ──────────────────────────────────────────────────── */
+.sph-s-chestbox { fill: var(--sph-s-wood); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sph-s-band { fill: none; stroke: var(--sph-s-brass); stroke-width: 5; }
+.sph-s-lock { fill: var(--sph-s-brass); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-s-keyhole { fill: var(--spel-ink); }
+.sph-s-chestglow { fill: var(--sph-s-gold); filter: blur(2px); animation: sph-s-pulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.sph-s-chesthalo { fill: color-mix(in srgb, var(--sph-s-gold) 18%, transparent); filter: blur(8px); animation: sph-s-pulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.sph-s-chesthalo.is-open { fill: color-mix(in srgb, var(--sph-s-gold) 40%, transparent); }
+.sph-s-gold { fill: var(--sph-s-gold); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-s-coin { fill: var(--sph-s-gold); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-s-gem { fill: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-s-lid { transform-box: view-box; transform-origin: 60px 54px; }
+.sph-s-chest.is-open .sph-s-lid { transform: translateY(-14px) scaleY(.6) rotate(-6deg); animation: sph-s-open 520ms var(--ease-spring) both; }
+@keyframes sph-s-open { from { transform: none; } }
+.sph-s-chest.is-open .sph-s-hoard { animation: sph-s-spill 600ms 200ms var(--ease-spring) both; transform-box: view-box; transform-origin: 60px 56px; }
+@keyframes sph-s-spill { from { scale: .3; translate: 0 14px; } }
+.sph-pop .sph-s-chest.is-open .sph-s-lid { animation: sph-s-open 520ms 860ms var(--ease-spring) both; }
+.sph-pop .sph-s-chest.is-open .sph-s-hoard { animation-delay: 1000ms; }
+
+/* ── The skeleton pirate ─────────────────────────────────────────────────── */
+.sph-s-barrel { fill: var(--sph-s-wood); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-s-hoop { fill: none; stroke: var(--spel-ink); stroke-width: 3.5; }
+.sph-s-coat { fill: var(--sph-s-coat); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-s-bone { fill: none; stroke: var(--sph-s-bone); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.sph-s-bone-ink { fill: none; stroke: var(--spel-ink); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.sph-s-bonefill { fill: var(--sph-s-bone); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sph-s-rib { fill: none; stroke: var(--sph-s-bone); stroke-width: 3; stroke-linecap: round; }
+.sph-s-hat { fill: var(--spel-ink); }
+.sph-s-hatband { fill: none; stroke: var(--sph-s-coat); stroke-width: 3; }
+.sph-s-socket { fill: var(--spel-ink); }
+.sph-s-patch { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 2; }
+.sph-s-glint:not(.is-eye) { fill: color-mix(in srgb, var(--sph-s-sea) 70%, var(--kiosk-paper)); stroke: none; opacity: 1; }
+.sph-s-nose { fill: var(--spel-ink); }
+.sph-s-teeth { fill: none; stroke: var(--spel-ink); stroke-width: 1.8; }
+.sph-s-skull { transform-box: view-box; transform-origin: 50px 64px; rotate: calc(var(--fx, 0) * 12deg); transition: rotate 200ms var(--ease-out); }
+.sph-s-skull .sph-s-glint { translate: calc(var(--fx, 0) * 2px) calc(var(--fy, 0) * 2px); }
+.sph-s-skull.is-lit .sph-s-teeth { animation: sph-s-chatter 160ms linear 6 alternate; }
+@keyframes sph-s-chatter { to { translate: 0 2px; } }
+.sph-s-arm { transform-box: view-box; }
+.sph-s-arm.is-l { transform-origin: 34px 74px; }
+.sph-s-arm.is-r { transform-origin: 66px 74px; }
+.sph-s-skel:not(.is-cheer) .sph-s-arm.is-r { animation: sph-s-tap 2.6s ease-in-out infinite; }
+@keyframes sph-s-tap { 0%, 70%, 100% { rotate: 0deg; } 80% { rotate: -20deg; } 90% { rotate: 0deg; } }
+.sph-s-hatwave { fill: var(--spel-ink); }
+.sph-s-skel.is-cheer .sph-s-arm.is-l { animation: sph-s-cheer 380ms ease-in-out infinite alternate; }
+.sph-s-skel.is-cheer .sph-s-arm.is-r { animation: sph-s-cheer-r 380ms ease-in-out infinite alternate; }
+@keyframes sph-s-cheer { from { rotate: 80deg; } to { rotate: 104deg; } }
+@keyframes sph-s-cheer-r { from { rotate: -80deg; } to { rotate: -104deg; } }
+.sph-s-skel.is-cheer .sph-s-skel-body { transform-box: view-box; transform-origin: 50px 130px; animation: sph-s-hop 380ms ease-in-out infinite alternate; }
+@keyframes sph-s-hop { to { translate: 0 -8px; } }
+
+/* ── The parrot skeleton ─────────────────────────────────────────────────── */
+.sph-s-perch { stroke: var(--sph-s-wood); stroke-width: 7; stroke-linecap: round; }
+.sph-s-beak { fill: color-mix(in srgb, var(--sph-s-bone) 70%, var(--sph-s-rust)); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-s-crest { fill: none; stroke: var(--sph-s-bone); stroke-width: 3; stroke-linecap: round; }
+.sph-s-feather { stroke: var(--spel-ink); stroke-width: 1.5; }
+.sph-s-parrot-bob { transform-box: view-box; transform-origin: 40px 70px; animation: sph-s-nod 2.2s ease-in-out infinite; }
+@keyframes sph-s-nod { 0%, 60%, 100% { rotate: 0deg; } 70% { rotate: 10deg; } 80% { rotate: -4deg; } 90% { rotate: 8deg; } }
+.sph-s-pwing { transform-box: view-box; transform-origin: 30px 44px; }
+.sph-s-parrot.is-flap .sph-s-pwing { animation: sph-s-flap 220ms ease-in-out infinite alternate; }
+@keyframes sph-s-flap { to { rotate: 50deg; } }
+
+/* ── Drips from the deck above (in the strip over the cards) ────────────── */
+.sph-s-drip {
+  left: calc(8% + var(--i) * 28%);
+  top: 3%;
+  width: 6px;
+  height: 9px;
+  border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+  background: var(--sph-s-sea);
+  animation: sph-s-drip calc(3.2s + var(--i) * .9s) ease-in infinite;
+  animation-delay: calc(var(--i) * -1.3s);
+}
+@keyframes sph-s-drip { 0%, 30% { translate: 0 0; opacity: 0; scale: .3; } 40% { opacity: 1; scale: 1; } 100% { translate: 0 calc(var(--sph-ctop, 90px) - 10px); opacity: 0; } }
+
+/* ── The ghost pirate ────────────────────────────────────────────────────── */
+.sph-s-ghost { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sph-s-ghost) 60%, transparent)); }
+.sph-s-ghostbody { fill: color-mix(in srgb, var(--sph-s-ghost) 88%, transparent); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.sph-s-tricorn { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sph-s-skullmark { fill: var(--sph-s-bone); }
+.sph-s-ghosteye { fill: var(--spel-ink); }
+.sph-s-glint.is-eye { fill: var(--kiosk-paper); stroke: none; opacity: 1; }
+.sph-s-beard { fill: color-mix(in srgb, var(--sph-s-ghost) 60%, var(--accent-metendrekenen)); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-s-ghostmouth { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
+.sph-s-ghost-bob { animation: sph-bob 1.5s ease-in-out infinite; }
+.sph-s-ghostarm { transform-box: view-box; transform-origin: 77px 54px; animation: sph-s-shake-fist 500ms ease-in-out infinite alternate; }
+@keyframes sph-s-shake-fist { from { rotate: -6deg; } to { rotate: 14deg; } }
+.sph-s-ghost.is-reach .sph-s-ghostarm { animation: sph-s-reach 2800ms ease-in-out both; }
+@keyframes sph-s-reach { 0%, 30% { rotate: 0deg; } 40%, 50% { rotate: 70deg; } 46% { rotate: 85deg; } 62%, 100% { rotate: 0deg; } }
+
+/* ── The rusty anchor (the mistake) and the coins ───────────────────────── */
+.sph-s-anchorline { fill: none; stroke: var(--sph-s-rust); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 0 var(--spel-ink)) drop-shadow(1.5px 1.5px 0 var(--spel-ink)) drop-shadow(-1.5px -1.5px 0 var(--spel-ink)); }
+.sph-s-rust { stroke: color-mix(in srgb, var(--sph-s-rust) 50%, var(--spel-ink)); stroke-width: 3; stroke-linecap: round; }
+.sph-s-seaweed { fill: none; stroke: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--spel-ink)); stroke-width: 3.5; stroke-linecap: round; }
+.sph-mistake .sph-s-anchor { animation: sph-s-clank 1250ms ease-out both; transform-box: view-box; transform-origin: 50% 0; }
+@keyframes sph-s-clank { 0% { translate: 0 -40px; } 18% { translate: 0 0; } 26% { rotate: 8deg; } 36% { rotate: -6deg; } 46% { rotate: 3deg; } 56%, 100% { rotate: 0deg; } }
+.sph-s-markcoin { fill: color-mix(in srgb, var(--sph-s-gold) 25%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 3; }
+.sph-s-markrim { fill: none; stroke: color-mix(in srgb, var(--sph-s-gold) 40%, var(--spel-ink)); stroke-width: 2; }
+.sph-s-markx { stroke: color-mix(in srgb, var(--sph-s-gold) 40%, var(--spel-ink)); stroke-width: 2.5; stroke-linecap: round; }
+.sph-s-mark.is-on .sph-s-markcoin { fill: var(--sph-s-gold); }
+.sph-s-mark.is-on :is(.sph-s-markrim, .sph-s-markx) { stroke: color-mix(in srgb, var(--sph-s-gold) 50%, var(--spel-ink)); }
+.sph-s-mark.is-on { filter: drop-shadow(0 0 5px var(--sph-s-gold)); animation: sph-s-spin 520ms var(--ease-out) both; }
+@keyframes sph-s-spin { from { scale: .2 1; } }
+
+/* ── The card back: a little treasure map ───────────────────────────────── */
+.sph-s-back-fill { fill: var(--sph-s-map); stroke: var(--spel-ink); stroke-width: 4; vector-effect: non-scaling-stroke; }
+.sph-s-back-coast { fill: color-mix(in srgb, var(--accent-metendrekenen) 35%, var(--sph-s-map)); stroke: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink)); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.sph-s-back-path { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.sph-s-back-x { stroke: var(--accent-getallenkennis); stroke-width: 4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.sph-s-back-rose { stroke: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink)); stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+/* ── The lights-on crowd: two skeleton pirates cheer, the chest is open, coins rain ── */
+.sph-s-crew { bottom: 0; left: calc(18% + var(--i) * 64%); width: clamp(70px, 20cqmin, 180px); aspect-ratio: 100 / 150; translate: -50% 0; animation: sph-s-in 700ms var(--ease-spring) both; animation-delay: calc(var(--i) * 160ms); }
+@keyframes sph-s-in { from { translate: -50% 120%; } }
+.sph-s-partychest { bottom: 2%; left: 50%; width: clamp(80px, 26cqmin, 230px); aspect-ratio: 120 / 100; translate: -50% 0; }
+.sph-s-partyparrot { top: 4%; left: 24%; width: clamp(50px, 14cqmin, 120px); aspect-ratio: 80 / 90; translate: -50% 0; }
+.sph-s-rain { top: 0; left: calc(8% + var(--i) * 17%); width: clamp(20px, 5cqmin, 40px); aspect-ratio: 1; animation: sph-s-coinfall calc(1.6s + var(--i) * .25s) linear infinite; animation-delay: calc(var(--i) * -.4s); }
+@keyframes sph-s-coinfall { from { translate: 0 -40px; rotate: 0deg; } to { translate: 0 100cqh; rotate: 360deg; } }
