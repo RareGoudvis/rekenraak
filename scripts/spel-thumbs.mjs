@@ -37,6 +37,7 @@ const GAMES = [
     ['frituur', 'Frituur', 2],
     ['tovenaarsduel', 'Tovenaarsduel', 0],
     ['voetbalkaartjes', 'Voetbalkaartjes', -1],
+    ['brandweer', 'Brandweer', 1],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena.
 const QUERY = { tovenaarsduel: '?arena=school' };
