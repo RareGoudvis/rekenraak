@@ -135,3 +135,95 @@ export function eggLayout(count: number, seed: number): Drift[] {
         tone: i % 4,
     }));
 }
+
+// ── Scenes: a short character moment running along the strip ────────────────
+export type SceneId = 'sint' | 'witch' | 'ghosts' | 'sled' | 'snowman' | 'parade' | 'cupid' | 'bunny' | 'butterflies' | 'flowers' | 'icecream';
+// A season's scenes take turns, in this order.
+export const SCENES: Record<Season, readonly SceneId[]> = {
+    halloween: ['witch', 'ghosts'], sinterklaas: ['sint'], kerst: ['sled', 'snowman'], winter: ['snowman', 'sled'], carnaval: ['parade'],
+    valentijn: ['cupid'], pasen: ['bunny'], lente: ['butterflies', 'flowers'], zomer: ['icecream'],
+};
+// How long each scene runs, ms (its CSS keyframes are written in fractions of this).
+export const SCENE_MS: Record<SceneId, number> = {
+    sint: 8000, witch: 6500, ghosts: 4200, sled: 7000, snowman: 7500, parade: 9000, cupid: 7500, bunny: 9000, butterflies: 7500, flowers: 6000, icecream: 9000,
+};
+// Start to start, ms: often enough to be a surprise, rare enough to stay a treat (owner: every 10 to 15 s).
+export const SCENE_GAP: readonly [number, number] = [10_000, 15_000];
+// The first one comes soon after the page opens, so a pupil sees one.
+export const FIRST_SCENE: readonly [number, number] = [2500, 5000];
+// A scene never starts within this long of the last one's end.
+const SCENE_REST_MS = 1500;
+
+/** The seeded waits before each scene (the first, then each start to the next), ms. */
+export function sceneWaits(seed: number, count: number, season: Season): number[] {
+    const rng = mulberry32(seed ^ 0x5ce7e);
+    return Array.from({ length: count }, (_, i) => {
+        if (i === 0) return Math.round(between(rng, FIRST_SCENE));
+        const before = SCENE_MS[sceneAt(season, i - 1)];
+        return Math.max(Math.round(between(rng, SCENE_GAP)), before + SCENE_REST_MS);
+    });
+}
+
+/** The i-th scene of a season (they take turns). */
+export const sceneAt = (season: Season, i: number): SceneId => SCENES[season][i % SCENES[season].length];
+
+// Where the strip's tiles are, px in the strip (measured when a scene starts).
+export interface TileBox { x: number; y: number; w: number; h: number }
+export interface StripGeo { w: number; h: number; tiles: TileBox[] }
+
+/** The strip in jsdom or before layout: a plausible stand-in, so the plans still have numbers. */
+export function geoOr(geo: StripGeo | null): StripGeo {
+    if (geo && geo.w > 0 && geo.tiles.length === 6) return geo;
+    return { w: 900, h: 160, tiles: Array.from({ length: 6 }, (_, i) => ({ x: 200 + i * 110, y: 36, w: 100, h: 100 })) };
+}
+
+/** Where scenes stand, puppet-theatre style: the tiles are the booth's wall. Walkers' feet low behind the tiles (their
+ *  heads and shoulders show above them, the whole figure beside them); fliers fill the sky and dip behind the tiles. */
+export function walkLine(geo: StripGeo): { feet: number; size: number; tile: number; top: number; sky: number } {
+    const tile = Math.min(...geo.tiles.map(t => t.h));
+    const top = Math.min(...geo.tiles.map(t => t.y));
+    const feet = top + tile * 0.8;
+    // Capped by the tile: on a phone the label's line above the tiles is tall, and the figures would dwarf the tiles.
+    return { feet, size: Math.max(28, Math.min(feet - 2, tile * 1.5)), tile, top, sky: Math.max(24, Math.min(top + tile * 0.3, tile * 0.95)) };
+}
+
+/** When something crossing from x0 to x1 in `ms` is at x, ms after it set off. */
+export const crossAt = (x: number, x0: number, x1: number, ms: number) => Math.round(((x - x0) / (x1 - x0)) * ms);
+
+// Tile reactions the scene sets off: the tiles shiver (Halloween's ghosts) or one blushes (Valentijn's cupid).
+export interface TileCue { at: number; ms: number; kind: 'shiver' | 'blush'; tile?: number }
+
+// Cupid: crosses in this share of the scene, shoots this many tiles, and a heart takes this long to land.
+const CUPID_RUN = 0.92;
+const CUPID_SHOTS = 3;
+export const HEART_FLIGHT_MS = 420;
+
+/** Which tiles (0–5) a scene picks, seeded: the ghosts' and cupid's targets, left to right. */
+export function pickTiles(seed: number, n: number): number[] {
+    const rng = mulberry32(seed ^ 0x7111e5);
+    const all = [0, 1, 2, 3, 4, 5];
+    for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
+    return all.slice(0, n).sort((a, b) => a - b);
+}
+
+/** Cupid's flight and shots: he crosses left to right above the tiles and shoots each target as he passes it. */
+export function cupidPlan(geo: StripGeo, seed: number) {
+    const { sky } = walkLine(geo);
+    const w = sky * 1.3;
+    const x0 = -w, x1 = geo.w + w, run = Math.round(SCENE_MS.cupid * CUPID_RUN);
+    const shots = pickTiles(seed, CUPID_SHOTS).map(tile => {
+        const t = geo.tiles[tile];
+        const cx = t.x + t.w / 2;
+        // He lets go a little before he is above it: the heart flies forward and down.
+        const at = Math.max(0, crossAt(cx - w * 0.9, x0, x1, run));
+        return { tile, at, x0: cx - w * 0.45, x1: cx, y1: t.y + t.h * 0.2 };
+    });
+    return { x0, x1, run, w, shots };
+}
+
+/** The tile reactions of a scene, ms after its start. */
+export function sceneCues(id: SceneId, geo: StripGeo, seed: number): TileCue[] {
+    if (id === 'ghosts') return [{ at: 900, ms: 1400, kind: 'shiver' }];
+    if (id === 'cupid') return cupidPlan(geo, seed).shots.map(s => ({ at: s.at + HEART_FLIGHT_MS, ms: 2600, kind: 'blush', tile: s.tile }));
+    return [];
+}

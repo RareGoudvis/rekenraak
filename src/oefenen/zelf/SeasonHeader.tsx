@@ -33,24 +33,26 @@ const WEAR: Record<Season, ReactNode> = {
         <ellipse className="zf-orange" cx="27" cy="23" rx="9" ry="10.5" />
         <ellipse className="zf-orange" cx="20" cy="23" rx="9.5" ry="11.5" />
         <path className="zf-green" d="M18.6 12.4 Q18.4 7 22.6 4.6 L24 6.8 Q21.2 8.6 21.6 12.2 Z" />
-        <path className="zf-night zf-ns" d="M13.4 20.6 L16.6 17 L18 21.4 Z M26.6 20.6 L23.4 17 L22 21.4 Z M13 26 L16 28.6 L18.4 26.4 L20.6 29 L23 26.4 L25 28.6 L27.4 26 Q20 33 13 26 Z" />
+        <path className="zf-night zf-ns zf-blink" d="M13.4 20.6 L16.6 17 L18 21.4 Z M26.6 20.6 L23.4 17 L22 21.4 Z" />
+        <path className="zf-night zf-ns zf-glow" d="M13 26 L16 28.6 L18.4 26.4 L20.6 29 L23 26.4 L25 28.6 L27.4 26 Q20 33 13 26 Z" />
     </>,
     sinterklaas: <>
         <path className="zf-red" d="M19 38 L18 18 Q19 8 30 2 Q41 8 42 18 L41 38 Z" />
         <path className="zf-gold" d="M18.5 30.5 H41.5 L41 38 H19 Z" />
         <path className="zf-gold zf-thin" d="M28.4 9 h3.2 v5.2 h5 v3.2 h-5 v8 h-3.2 v-8 h-5 v-3.2 h5 Z" />
+        <path className="zf-white zf-ns zf-glint" d="M33 6 L34 10 L38 11 L34 12 L33 16 L32 12 L28 11 L32 10 Z" />
     </>,
     // The tip hangs to the left, away from the chosen tile's check.
     kerst: <g transform="matrix(-1 0 0 1 60 0)">
         <path className="zf-red" d="M14 32 C16 16 28 6 42 8 C50 9 54 16 52.5 24 L47.5 23.5 C46.5 18 42 15.5 37.5 16.5 C43 21 46 27 46 32 Z" />
         <rect className="zf-white" x="11" y="28.5" width="38" height="9.5" rx="4.75" />
-        <circle className="zf-white" cx="50" cy="25.5" r="5.2" />
+        <circle className="zf-white zf-pom" cx="50" cy="25.5" r="5.2" />
     </g>,
     winter: <>
         <path className="zf-blue" d="M14 33 Q14 12 30 11 Q46 12 46 33 Z" />
         <path className="zf-white zf-ns" d="M14.8 24 Q30 18.5 45.2 24 L45.7 28.4 Q30 23 14.3 28.4 Z" />
         <rect className="zf-blue-deep" x="12" y="29.5" width="36" height="8.5" rx="3.5" />
-        <circle className="zf-white" cx="30" cy="9" r="5.6" />
+        <circle className="zf-white zf-pom" cx="30" cy="9" r="5.6" />
     </>,
     carnaval: <g transform="rotate(14 31 38)">
         <path className="zf-purple" d="M20 37 L31 6 L42 37 Q31 40.5 20 37 Z" />
@@ -59,34 +61,41 @@ const WEAR: Record<Season, ReactNode> = {
         <circle className="zf-gold zf-ns" cx="31.6" cy="16" r="1.8" />
         <circle className="zf-pinkdeep zf-ns" cx="25.4" cy="32.4" r="1.9" />
         <circle className="zf-pinkdeep zf-ns" cx="35" cy="21" r="1.7" />
-        <path className="zf-gold" d="M31 1 L32.6 4.6 L36.4 5 L33.6 7.6 L34.4 11.4 L31 9.4 L27.6 11.4 L28.4 7.6 L25.6 5 L29.4 4.6 Z" />
+        <path className="zf-gold zf-twinkle" d="M31 1 L32.6 4.6 L36.4 5 L33.6 7.6 L34.4 11.4 L31 9.4 L27.6 11.4 L28.4 7.6 L25.6 5 L29.4 4.6 Z" />
     </g>,
     valentijn: <>
         <path className="zf-cord" d="M11 39 Q30 27 49 39" />
+        <g className="zf-bop is-l">
         <path className="zf-spring" d="M20 33.6 Q15 27 19.5 20" />
-        <path className="zf-spring" d="M40 33.6 Q45 27 40.5 20" />
         <path className="zf-red" d="M19.5 20.5 C13 16 11 13 11 10 C11 7.4 13 6 15 6 C16.8 6 18.4 7 19.5 8.8 C20.6 7 22.2 6 24 6 C26 6 28 7.4 28 10 C28 13 26 16 19.5 20.5 Z" />
+        </g>
+        <g className="zf-bop is-r">
+        <path className="zf-spring" d="M40 33.6 Q45 27 40.5 20" />
         <path className="zf-red" d="M40.5 20.5 C34 16 32 13 32 10 C32 7.4 34 6 36 6 C37.8 6 39.4 7 40.5 8.8 C41.6 7 43.2 6 45 6 C47 6 49 7.4 49 10 C49 13 47 16 40.5 20.5 Z" />
+        </g>
     </>,
     pasen: <>
         <ellipse className="zf-white" cx="22" cy="19" rx="6.6" ry="17" transform="rotate(-14 22 19)" />
         <ellipse className="zf-pink zf-ns" cx="22.2" cy="20" rx="3" ry="12" transform="rotate(-14 22.2 20)" />
+        <g className="zf-flop">
         <path className="zf-white" d="M35 35 Q36 20 40 12 Q44 4 49 6 Q53 9 47 18 Q42 26 41 36 Z" />
         <path className="zf-pink zf-ns" d="M39.2 32 Q39.6 22 42.6 15 Q45.4 9.4 47.4 10 Q48.6 11.4 45 17.6 Q42 23 41.6 31 Z" />
+        </g>
         <path className="zf-cord is-pink" d="M10 39 Q30 29 50 39" />
     </>,
     lente: <g transform="translate(-2 2)">
         <path className="zf-green" d="M16 28 Q8 30 6 36 Q14 37 17 30 Z" />
+        <g className="zf-spin">
         {[0, 60, 120, 180, 240, 300].map(a => (
             <ellipse key={a} className="zf-white" cx="16" cy="12" rx="3.8" ry="7" transform={`rotate(${a} 16 19)`} />
         ))}
         <circle className="zf-gold" cx="16" cy="19" r="4.6" />
-    </g>,
+    </g></g>,
     zomer: <>
         <path className="zf-night" d="M5 7 H27 Q28.5 19 17 20 Q6 20 5 7 Z" />
         <path className="zf-night" d="M33 7 H55 Q54 20 43 20 Q31.5 19 33 7 Z" />
         <path className="zf-cord is-dark" d="M27 9.5 Q30 7 33 9.5" />
-        <path className="zf-shine" d="M9 10 L12.5 10 M37 10 L40.5 10" />
+        <path className="zf-shine zf-sweep" d="M9 10 L12.5 10 M37 10 L40.5 10" />
     </>,
 };
 
@@ -233,14 +242,18 @@ const DRIFT_ART: Record<DriftKind, ReactNode> = {
     glint: <svg viewBox="0 0 24 24"><path d={STAR} /></svg>,
 };
 
-// Valentijn's trick: a few small hearts rising from the toy (px out, px up, ms late).
-const PUFF: readonly [number, number, number][] = [[-20, -34, 0], [-8, -46, 90], [6, -40, 40], [18, -30, 130], [0, -24, 200]];
+// A trick's puff: a few small things flying up and out of the toy (share of the toy's size out, up; ms late).
+const PUFF: readonly [number, number, number][] = [[-0.5, -0.6, 0], [-0.2, -0.85, 90], [0.15, -0.75, 40], [0.45, -0.55, 130], [0, -0.45, 200], [-0.35, -0.3, 160]];
+const BAT_SVG = <svg viewBox="0 0 60 60" className="zf-art"><Bat /></svg>;
+const PUFF_ART: Partial<Record<Season, ReactNode>> = {
+    valentijn: <svg viewBox="0 0 24 24"><path d={HEART} /></svg>,
+    halloween: BAT_SVG,
+};
 
-// The toy's last tap: how many so far, whether it still plays, and where the toy sits in the strip (px).
-export interface Trick { n: number; on: boolean; x: number; y: number }
+// The toy's last tap: how many so far, whether it still plays, where the toy sits in the strip and its size (px).
+export interface Trick { n: number; on: boolean; x: number; y: number; s: number }
 
-/** The band behind the tiles: the season's particles, and the toy's trick when it reaches the strip. */
-export function SeasonBand({ season, seed, trick }: { season: Season; seed: number; trick: Trick }) {
+export function SeasonBand({ season, seed, trick, scene }: { season: Season; seed: number; trick: Trick; scene: ReactNode }) {
     const spec = BAND[season];
     const drifts = spec.drift ? driftLayout(spec.drift, seed) : [];
     const eggs = spec.eggs ? eggLayout(spec.eggs, seed) : [];
@@ -270,17 +283,31 @@ export function SeasonBand({ season, seed, trick }: { season: Season; seed: numb
             {spec.cross === 'nuts' && (
                 <span className="zf-cross is-nuts">{[0, 1, 2].map(i => <i key={i} className="zf-nut" style={{ left: i * 16, animationDelay: `${-i * 0.18}s` }} />)}</span>
             )}
-            {trick.n > 0 && season === 'carnaval' && <Burst key={trick.n} kind="pieces" x={at.left} y={at.top} spread={40} count={14} seed={trick.n} />}
+            {scene}
+            {trick.n > 0 && <Burst key={`s${trick.n}`} kind={season === 'zomer' ? 'splash' : 'sparkle'} x={at.left} y={at.top} spread={trick.s * 0.9} seed={trick.n}
+                color={season === 'kerst' || season === 'winter' ? 'var(--zf-white)' : undefined} />}
+            {trick.n > 0 && season === 'carnaval' && <Burst key={trick.n} kind="pieces" x={at.left} y={at.top} spread={trick.s * 0.8} count={22} seed={trick.n} />}
             {trick.n > 0 && season === 'sinterklaas' && (
-                <Burst key={trick.n} kind="pieces" className="zf-nuts" x={at.left} y={at.top} spread={34} count={9} seed={trick.n} color="var(--zf-nut)" />
+                <Burst key={trick.n} kind="pieces" className="zf-nuts" x={at.left} y={at.top} spread={trick.s * 0.6} count={12} seed={trick.n} color="var(--zf-nut)" />
             )}
-            {trick.n > 0 && season === 'valentijn' && (
-                <span key={trick.n} className="zf-puff" style={at}>
+            {trick.n > 0 && PUFF_ART[season] && (
+                <span key={trick.n} className={`zf-puff is-${season}`} style={{ ...at, '--puff': `${Math.round(trick.s * 0.26)}px` } as CSSProperties}>
                     {PUFF.map(([dx, dy, ms]) => (
-                        <i key={dx} style={{ '--dx': `${dx}px`, '--dy': `${dy}px`, animationDelay: `${ms}ms` } as CSSProperties}><svg viewBox="0 0 24 24"><path d={HEART} /></svg></i>
+                        <i key={dx} style={{ '--dx': `${Math.round(dx * trick.s)}px`, '--dy': `${Math.round(dy * trick.s)}px`, animationDelay: `${ms}ms` } as CSSProperties}>{PUFF_ART[season]}</i>
                     ))}
                 </span>
             )}
         </div>
     );
 }
+
+/** A tile's blush (cheeks and a small heart) while cupid's heart has just landed on it. */
+export const SeasonBlush = () => (
+    <span className="zf-react is-blush" aria-hidden>
+        <svg viewBox="0 0 100 100">
+            <ellipse className="zf-cheek" cx="20" cy="58" rx="10" ry="6.4" />
+            <ellipse className="zf-cheek" cx="80" cy="58" rx="10" ry="6.4" />
+            <path className="zf-blush-heart" d="M18 32 C9 26 6 22 6 17 C6 13 9 10.6 12.6 10.6 C15 10.6 17 12 18 14 C19 12 21 10.6 23.4 10.6 C27 10.6 30 13 30 17 C30 22 27 26 18 32 Z" />
+        </svg>
+    </span>
+);
