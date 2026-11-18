@@ -91,6 +91,8 @@ interface SpelState {
     report(result: SkinResult): void;
     // The skin's own pause on (true) or off: the clock stops, the round and its answers wait on the skin.
     hold(on: boolean, now?: number): void;
+    // A goal round's skin takes one off the climb (Aquarium's cat), never below 0; the round goes on.
+    setback(): void;
     // The screen's own pause on (true) or off; independent of help and of a skin's hold.
     setAway(on: boolean, now?: number): void;
     restart(): void;
@@ -294,6 +296,12 @@ export const useSpelStore = create<SpelState>()((set, get) => {
         report(result) {
             const { phase } = get();
             if (phase !== 'idle' && phase !== 'end') set({ result });
+        },
+
+        setback() {
+            const { phase, meta, climb } = get();
+            if (!meta?.round.goal || (phase !== 'play' && phase !== 'right' && phase !== 'wrong')) return;
+            set({ climb: Math.max(0, climb - 1) });
         },
 
         hold(on, now = Date.now()) {

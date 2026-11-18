@@ -179,6 +179,8 @@ export interface SkinProps {
     onReport?(result: SkinResult): void;
     // The skin's own pause (Voetbal's half time): the round's clock stops until onHold(false).
     onHold?(on: boolean): void;
+    // Goal rounds: the skin's own setback takes one off the climb, never below 0 (Aquarium: the cat took a fish).
+    onSetback?(): void;
     // Today's seasons (seasons.ts, SEASONS order), fixed for the round: a skin with a seasonal look picks it in its own
     // pure variantOf(seasons); every other skin ignores this. The shell always passes it; absent (a test) = no season.
     seasons?: readonly Season[];

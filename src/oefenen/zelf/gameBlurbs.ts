@@ -31,6 +31,7 @@ export const GAME_BLURB: Record<string, string> = {
     brandweer: 'Spuit het raam met het juiste antwoord uit. Hou het vuur klein!',
     slalom: 'Ski door de poort met het juiste antwoord. Hoe sneller, hoe verder!',
     grijp: 'Grijp de knuffel met het juiste antwoord. Hoeveel prijzen win jij?',
+    aquarium: 'Vul het aquarium met vissen en planten. Pas op voor de kat!',
 };
 
 /** The game's line; an unknown id falls back to its name. */

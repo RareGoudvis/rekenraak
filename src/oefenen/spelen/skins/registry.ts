@@ -20,6 +20,8 @@ import { PersonSimpleSki } from '@phosphor-icons/react';
 import { Flashlight as FlashlightIcon } from '@phosphor-icons/react';
 import { Joystick } from '@phosphor-icons/react';
 import { GRIJP } from './grijp/claw';
+import { FishSimple } from '@phosphor-icons/react';
+import { TANK_GOAL } from './aquarium/tank';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -379,6 +381,19 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: Joystick,
         Component: lazy(() => import('./grijp/Grijpmachine')),
         Ending: lazy(() => import('./grijp/Grijpmachine').then(m => ({ default: m.GrijpEnding }))),
+    },
+    {
+        // Zomer (calm): each right answer drops the next fish, plant or decoration into the tank (aquarium/tank.ts), the
+        // 20th fills it; one round in 10 that is a rare white goldfish (its own end title). A single mistake never costs
+        // (goalKeep); two in a row and the cat scoops the newest fish out (onSetback: one off the climb, the next right
+        // answer drops a fresh one in). 30 questions at most. The scene voices its own moments (aquarium/sounds.ts).
+        meta: {
+            id: 'aquarium', music: 'zee', label: 'Aquarium', input: 'keypad', timed: false, round: { questions: 30, goal: TANK_GOAL, goalKeep: true }, season: 'zomer',
+            winTitle: 'Het aquarium is vol!', accepts: KEYPAD_NUMBER, sounds: { correct: null, wrong: null, win: 'jingle' },
+        },
+        icon: FishSimple,
+        Component: lazy(() => import('./aquarium/Aquarium')),
+        Ending: lazy(() => import('./aquarium/Aquarium').then(m => ({ default: m.AquariumEnding }))),
     },
 ];
 

@@ -41,9 +41,10 @@ const GAMES = [
     ['slalom', 'Skislalom', 0],
     ['spookhuis', 'Spookhuis', -1],
     ['grijp', 'Grijpmachine', 2],
+    ['aquarium', 'Aquarium', 9],
 ];
-// A game's page query (dev builds): Tovenaarsduel's arena, Spookhuis' place, Grijpmachine's arcade.
-const QUERY = { tovenaarsduel: '?arena=school', spookhuis: '?spook=klassiek', grijp: '?grijp=pier' };
+// A game's page query (dev builds): Tovenaarsduel's arena, Spookhuis' place, Grijpmachine's arcade, Aquarium's seed.
+const QUERY = { tovenaarsduel: '?arena=school', spookhuis: '?spook=klassiek', grijp: '?grijp=pier', aquarium: '?aquarium=12345' };
 // Duel games with 2 spelers (no keyboard): the moment of the picture, staged through window.__duel (dev builds).
 const duelAnswer = (page, side) => page.evaluate(s => { const d = window.__duel.getState(); const q = d.sides[s].question; if (q && !d.sides[s].feedback) d.answer(s, q.answer); }, side);
 const DUEL_PLAY = {
@@ -112,7 +113,7 @@ const SKIN_CSS = {
     grijp: '.gm-counter { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
-const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur']);
+const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur', 'aquarium']);
 // Skins without a -world box: the street, 16:10 (zombies).
 const CLIPS = { zombies: { x: 0, y: 74, width: 640, height: 400 } };
 // A narrower window pulls the zombies' track into that 640px: the camp and the zombies in one picture.
