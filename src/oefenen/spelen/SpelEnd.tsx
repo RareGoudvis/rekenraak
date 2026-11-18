@@ -68,7 +68,8 @@ export default function SpelEnd() {
                         <CheckCircle weight="bold" aria-hidden /> Nakijken
                     </button>
                 </>
-            ) : (
+            ) : outcome === 'failed' ? null : (
+                // A friendly fail (out of chances) can come without a logged mistake: no "Super!" beside it.
                 <p className="spel-end-clean">Geen foutjes. Super!</p>
             )}
             <div className="spel-end-more">
