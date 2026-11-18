@@ -13,7 +13,7 @@ import { TEKST_LEAVES, type NumberAsk, type TekstPlay, type WordAsk } from './te
 // The tekst pack (owner 2026-11-15): Zelf oefenen content that is no + − × : sum but still asks one number or one
 // word, written on the sign (afronden, herleidingen, plaatswaarde, vergelijken, deelbaarheid …; tekstLeaves.ts).
 // Numbers play in every game, typed or tapped (a comma or a minus: the keypad shows that key, the digit lock sits out);
-// a word only in the tap games. The session, the check and Nakijken stay the kiosk's own.
+// a word in the tap games and, through the choice pad, the keypad games. The session, the check and Nakijken stay the kiosk's own.
 
 // A variant's settings as its kiosk session gets them (registry defaults, the card, the kiosk's seed).
 const settings = new Map<string, Record<string, unknown>>();
@@ -119,7 +119,7 @@ export const TEKST_PACK: SpelPack = {
         try { ask = leaf.ask(made.exercise, made.constraints, rng, d); } catch { return null; }
         if (!ask || !ask.text.includes('?')) return null;
         const q = ask.kind === 'number' ? numberQuestion(ask, play, rng, choiceCount, leaf.chars?.(made.constraints), keysOf(type.leafId, made.constraints)) : wordQuestion(ask, rng, choiceCount);
-        // A word answer never reaches a keypad game.
+        // A word answer is a choice: a keypad game shows it on the choice pad, never types it.
         return q && (ask.kind === 'words' || play === 'tap' ? { ...q, kind: 'choice' } : q);
     },
 };

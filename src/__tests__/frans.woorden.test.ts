@@ -155,7 +155,7 @@ const start = (choice: ZelfChoice, id: string): SpelStart => ({ choice, grade: 5
 describe('in the games', () => {
     beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null }); sp().otherGame(); });
 
-    test('every word choice plays; the narrow games only where the words fit', () => {
+    test('every word choice plays; the narrow games only where the words fit, the keypad games through the choice pad', () => {
         for (const card of WOORD_CARDS.filter(c => c.lists.every(l => l === 'dagen' || l === 'maanden'))) for (const c of FRANS_ZELF.choices(5, `frans:${card.id}`)) {
             expect(choiceCanPlay(c, 5)).toBe(true);
             expect(spelContentOf(c, 5)).toMatchObject({ kind: 'choice', boards: ['pairs'] });
@@ -168,7 +168,9 @@ describe('in the games', () => {
         const nlFr = ids('frans:dagen', 'Nederlands → Frans');
         expect(nlFr).toContain('pakjesband');
         for (const small of ['brandweer', 'grijp', 'slalom']) expect(nlFr).not.toContain(small);
-        for (const keypad of ['pinguintoren', 'zombies', 'bom', 'kasteel', 'race', 'schatkist', 'eieren', 'honingraat']) expect(frNl).not.toContain(keypad);
+        // The keypad games take the words through the choice pad; the ones that need a number (a lock code, numbers only) stay out.
+        for (const pad of ['pinguintoren', 'zombies', 'bom', 'kasteel', 'race']) expect(frNl).toContain(pad);
+        for (const numeric of ['schatkist', 'eieren', 'honingraat']) expect(frNl).not.toContain(numeric);
     });
 
     test('a tap round: "mercredi = ?" on the sign, the exercise\'s own words, checked by the kiosk', () => {

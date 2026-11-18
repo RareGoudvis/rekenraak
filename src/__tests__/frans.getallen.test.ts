@@ -6,7 +6,7 @@ import { FRANS_ZELF } from '../talen/frans/fransZelf';
 import { buildZelfSessie, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore, currentInput } from '../oefenen/useOefenStore';
 import { stepLineText } from '../services/math/workedSteps';
-import { choiceCanPlay, spelContentOf } from '../oefenen/spelen/spelQuestion';
+import { choiceCanPlay, padRoundOf, spelContentOf } from '../oefenen/spelen/spelQuestion';
 import { skinsFor } from '../oefenen/spelen/accepts';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { useSpelStore, type SpelStart } from '../oefenen/spelen/useSpelStore';
@@ -183,6 +183,11 @@ describe('numbers in the games', () => {
         const words = ids('frans:getallen-100', 'Cijfer → Frans');
         expect(words).toEqual(expect.arrayContaining(['ballonnen', 'hartjes']));
         expect(ids('frans:getallen-20', 'Cijfer → Frans')).toContain('pakjesband');
+        // The choice pad: the short words to 20 on the keypad games, the long ones to 100 only in the tap games.
+        const pin = skinById('pinguintoren')!.meta;
+        expect(padRoundOf(pin, { choice: choiceOf('frans:getallen-20', 'Cijfer → Frans'), grade: 5 })).toBe(true);
+        expect(padRoundOf(pin, { choice: choiceOf('frans:getallen-100', 'Cijfer → Frans'), grade: 5 })).toBe(false);
+        expect(padRoundOf(pin, { choice: choiceOf('frans:getallen-100', 'Frans → cijfer'), grade: 5 })).toBe(false);
     });
 
     test('a keypad round: "soixante-douze = ?" on the sign, the typed number checked', () => {
