@@ -38,5 +38,21 @@
 .fr-bubble :is(path, rect) { fill: var(--kid-card); stroke-width: 3.5; }
 .fr-bubble .fr-bubble-join { stroke: none; }
 .fr-bubble text { font-family: var(--kid-font); font-size: 26px; font-weight: 900; fill: var(--kid-ink); text-anchor: middle; }
+.fr-cal-page { fill: var(--kid-card); }
+.fr-cal-back { fill: var(--kid-fr-plate); }
+.fr-cal-head { fill: var(--kid-fr-red); }
+.fr-cal-ring { fill: var(--kid-fr-navy); stroke-width: 3; }
+.fr-cal text { font-family: var(--kid-font); font-weight: 900; text-anchor: middle; }
+.fr-cal-head-text { font-size: 32px; fill: var(--kid-card); }
+.fr-cal-day { font-size: 92px; fill: var(--kid-ink); }
+.fr-cal-foot { font-size: 26px; fill: var(--kid-fr-blue); }
+.fr-sun { fill: var(--kid-fr-gold); }
+.fr-sun-ray { fill: none; stroke-width: 6; }
+.fr-snow-disc { fill: var(--kid-card); }
+.fr-snow { fill: none; stroke: var(--kid-fr-blue) !important; stroke-width: 6; }
+.fr-cycle { fill: none; stroke-width: 5; stroke-dasharray: 2 12; }
+.fr-cycle-head { fill: var(--kid-ink); stroke-width: 2; }
+.fr-tag rect { fill: var(--kid-card); stroke-width: 3.5; }
+.fr-tag text { font-family: var(--kid-font); font-size: 26px; font-weight: 900; fill: var(--kid-ink); text-anchor: middle; }
 .fr-badge { width: 86%; height: 86%; }
 .zelf-topic-thumb.is-drawn { background: var(--kid-sky); }
