@@ -1,0 +1,321 @@
+/* The Zelf home's seasonal header (SeasonHeader.tsx): a band behind the leerjaar tiles, a hat on one tile and a toy
+   beside them. The strip clips everything to its rounded box; only the toy takes taps. Animations always play. */
+.zelf-years.has-fx {
+  position: relative;
+  isolation: isolate;
+  /* Clip, not a scroll box: a scroll box in the page's flex column would lose its height. */
+  flex-shrink: 0;
+  overflow: hidden;
+  overflow: clip;
+  column-gap: 16px;
+  /* The season palette, from the kid and backdrop tokens. */
+  --zf-line: var(--kid-ink);
+  --zf-red: color-mix(in srgb, var(--mab-d) 82%, var(--ks-white));
+  --zf-gold: var(--mab-e);
+  --zf-yellow: color-mix(in srgb, var(--mab-e) 70%, var(--ks-white));
+  --zf-white: var(--ks-white);
+  --zf-pink: var(--ks-pink);
+  --zf-pinkdeep: color-mix(in srgb, var(--kid-tint-ring-6) 72%, var(--ks-white));
+  --zf-orange: color-mix(in srgb, var(--accent-vraagstukken) 78%, var(--ks-white));
+  --zf-green: color-mix(in srgb, var(--mab-t) 78%, var(--ks-white));
+  --zf-blue: color-mix(in srgb, var(--mab-h) 72%, var(--ks-white));
+  --zf-blue-deep: color-mix(in srgb, var(--mab-h) 88%, var(--kid-ink));
+  --zf-sky: color-mix(in srgb, var(--mab-h) 26%, var(--ks-white));
+  --zf-purple: color-mix(in srgb, var(--accent-meetkunde) 78%, var(--ks-white));
+  --zf-night: color-mix(in srgb, var(--kid-ink) 84%, var(--accent-meetkunde));
+  --zf-wood: var(--ks-wood);
+  --zf-nut: var(--ks-wood-dark);
+  --zf-glass: color-mix(in srgb, var(--mab-h) 14%, var(--ks-white));
+}
+.zelf-years.has-fx > :not(.zf-band) { position: relative; z-index: 1; }
+/* The label and the toy: the toy at the strip's far end, after the tiles; under the big "Kies je leerjaar" when that
+   takes the room (wide screens, where it shares the tiles' line). On a phone the toy joins the label's line and the
+   tiles keep their own row. */
+.zf-side { display: contents; }
+.zf-side > * { position: relative; z-index: 1; }
+.zf-side > .zelf-years-label { order: 0; }
+.zelf-years.has-fx .zelf-years-row { order: 1; }
+.zf-side > .zf-toy { order: 2; }
+@media (min-width: 1080px) {
+  .zelf-years.has-fx.is-unset .zf-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+}
+
+/* ── Drawing: flat fills, the ink outline ─────────────────────────────────── */
+.zf-art { display: block; overflow: visible; }
+.zf-art * { stroke: var(--zf-line); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.zf-art .zf-thin { stroke-width: 1.2; }
+.zf-art .zf-ns { stroke: none; }
+.zf-red { fill: var(--zf-red); }
+.zf-gold { fill: var(--zf-gold); }
+.zf-yellow { fill: var(--zf-yellow); }
+.zf-white { fill: var(--zf-white); }
+.zf-pink { fill: var(--zf-pink); }
+.zf-pinkdeep { fill: var(--zf-pinkdeep); }
+.zf-orange { fill: var(--zf-orange); }
+.zf-green { fill: var(--zf-green); }
+.zf-blue { fill: var(--zf-blue); }
+.zf-blue-deep { fill: var(--zf-blue-deep); }
+.zf-sky { fill: var(--zf-sky); }
+.zf-purple { fill: var(--zf-purple); }
+.zf-night { fill: var(--zf-night); }
+.zf-wood { fill: var(--zf-wood); }
+.zf-glass { fill: var(--zf-glass); }
+.zf-art .zf-eye { fill: var(--zf-line); stroke: none; }
+.zf-art .zf-rim { fill: none; }
+.zf-art .zf-mouth { fill: none; stroke-width: 1.4; }
+.zf-art .zf-shine { fill: none; stroke: var(--zf-white); stroke-width: 2.6; }
+.zf-art .zf-seam { fill: none; stroke-width: 1; }
+.zf-art .zf-cord { fill: none; stroke: var(--zf-red); stroke-width: 3; }
+.zf-art .zf-cord.is-pink { stroke: var(--zf-pinkdeep); }
+.zf-art .zf-cord.is-dark { stroke: var(--zf-night); stroke-width: 1.6; }
+.zf-art .zf-spring { fill: none; stroke: var(--zf-night); stroke-width: 1.6; }
+.zf-art .zf-streamer { fill: none; stroke-width: 3; }
+.zf-art .zf-streamer.is-red { stroke: var(--zf-red); }
+.zf-art .zf-streamer.is-blue { stroke: var(--zf-blue); }
+.zf-art .zf-streamer.is-gold { stroke: var(--zf-gold); }
+.zf-art .zf-wingb { fill: color-mix(in srgb, var(--zf-white) 80%, var(--zf-sky)); stroke-width: 1.4; }
+.zf-art g, .zf-art path, .zf-art ellipse, .zf-art circle { transform-box: view-box; }
+
+/* ── The hat on the worn tile (inside the tile, so the tile's own clip keeps it in) ── */
+.zf-wear { position: absolute; pointer-events: none; }
+/* Above the number, overlapping only its top: the leerjaar stays easy to read. */
+.zf-wear.is-hat { left: 50%; top: -3%; width: 44%; height: auto; translate: -50% 0; }
+.zf-wear.is-carnaval { top: -5%; }
+.zf-wear.is-pasen { top: -4%; }
+.zf-wear.is-lente { left: 30%; top: 4%; }
+/* Clear of the chosen tile's check in the top-right corner. */
+.zf-wear.is-valentijn { left: 44%; }
+.zf-wear.is-zomer { top: 5%; width: 40%; rotate: -8deg; }
+.zf-wear.is-corner { left: 4%; bottom: 3%; width: 34%; height: auto; }
+.zf-wear.is-hat { animation: zf-wobble 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
+.zf-wear.is-zomer, .zf-wear.is-corner { animation: none; }
+
+/* ── The toy: a flex item beside the tiles (never over them); its art moves, its box keeps the tap ── */
+.zf-toy {
+  --toy: max(44px, calc(var(--year) * 0.74));
+  flex: none;
+  width: var(--toy);
+  height: var(--toy);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.zf-toy:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 2px; }
+.zf-toy-art { display: block; width: 100%; height: 100%; pointer-events: none; }
+.zf-toy-art .zf-art { width: 100%; height: 100%; }
+
+/* Idle: each toy moves a little, so it looks tappable. */
+.zf-toy.is-halloween .zf-toy-art, .zf-toy.is-lente .zf-toy-art { animation: zf-hover 1.6s ease-in-out infinite alternate; }
+.zf-wing { animation: zf-flap 0.36s ease-in-out infinite alternate; }
+.zf-wing.is-l { transform-origin: 25px 30px; }
+.zf-wing.is-r { transform-origin: 35px 30px; }
+.zf-wingb { animation: zf-buzz 0.12s linear infinite alternate; }
+.zf-wingb.is-l { transform-origin: 32px 26px; }
+.zf-wingb.is-r { transform-origin: 38px 26px; }
+.zf-toy.is-sinterklaas .zf-toy-art { animation: zf-wiggle 3s ease-in-out infinite; transform-origin: 50% 95%; }
+.zf-globe { transform-origin: 30px 56px; animation: zf-wiggle 4s ease-in-out infinite; }
+.zf-globe-flakes { animation: zf-settle 4s ease-in-out infinite; }
+.zf-streamers { animation: zf-wave 1.4s ease-in-out infinite alternate; transform-origin: 34px 30px; }
+.zf-heart { transform-origin: 30px 30px; animation: zf-beat 1.4s ease-in-out infinite; }
+.zf-egg { transform-origin: 30px 57px; animation: zf-wiggle 3.4s ease-in-out infinite; }
+.zf-chick { transform: translateY(8px); }
+.zf-ball { transform-origin: 30px 30px; animation: zf-roll 3s ease-in-out infinite alternate; }
+
+/* The tricks (TRICK_MS in headerSeason.ts = these lengths). */
+.zf-toy.is-trick.is-halloween .zf-toy-art { animation: zf-loop 1.3s cubic-bezier(.45, .05, .55, .95); }
+.zf-toy.is-trick .zf-lid { animation: zf-lid 1.2s cubic-bezier(.3, .6, .4, 1); transform-origin: 8px 29px; }
+.zf-toy.is-trick.is-sinterklaas .zf-toy-art { animation: zf-squash 0.5s ease-out; }
+.zf-toy.is-trick .zf-globe { animation: zf-shake 1.1s ease-in-out; }
+.zf-toy.is-trick .zf-globe-flakes { animation: zf-swirl 1.6s ease-out; transform-origin: 30px 27px; }
+.zf-toy.is-trick .zf-popper { animation: zf-recoil 0.6s cubic-bezier(.3, .6, .4, 1); }
+.zf-toy.is-trick .zf-streamers { animation: zf-shoot 1.1s ease-out; }
+.zf-toy.is-trick .zf-heart { animation: zf-thump 1.3s ease-in-out; }
+.zf-toy.is-trick .zf-egg { animation: zf-shake 0.45s ease-in-out; }
+.zf-toy.is-trick .zf-egg-top { animation: zf-hatch 2.6s cubic-bezier(.3, .6, .4, 1); transform-origin: 30px 34px; }
+.zf-toy.is-trick .zf-chick { animation: zf-chick 2.6s cubic-bezier(.3, .6, .4, 1); }
+.zf-toy.is-trick.is-lente .zf-toy-art { animation: zf-eight 1.6s ease-in-out; }
+.zf-toy.is-trick.is-zomer .zf-toy-art { animation: zf-bounce 1.3s linear; }
+.zf-toy.is-trick .zf-ball { animation: zf-spin 1.3s ease-out; }
+
+/* ── The band: behind the tiles, clipped to the strip, never a tap target ── */
+.zf-band {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  /* A soft seasonal sky over the white strip (light snow needs something to show against). */
+  background: linear-gradient(180deg, var(--zf-tint) 0%, color-mix(in srgb, var(--zf-tint) 40%, var(--kid-card)) 100%);
+  /* The scene kit's confetti takes the season's colours. */
+  --spel-fill-0: var(--zf-red);
+  --spel-fill-1: var(--zf-gold);
+  --spel-fill-2: var(--zf-blue);
+  --spel-fill-3: var(--zf-green);
+  --spel-fill-4: var(--zf-purple);
+  --spel-fill-5: var(--zf-pinkdeep);
+}
+.zf-band * { pointer-events: none; }
+.zelf-years.zf-halloween { --zf-tint: color-mix(in srgb, var(--accent-meetkunde) 15%, var(--kid-card)); }
+.zelf-years.zf-sinterklaas { --zf-tint: color-mix(in srgb, var(--mab-d) 11%, var(--kid-card)); }
+.zelf-years:is(.zf-kerst, .zf-winter) { --zf-tint: color-mix(in srgb, var(--mab-h) 26%, var(--kid-card)); }
+.zelf-years.zf-carnaval { --zf-tint: color-mix(in srgb, var(--mab-e) 18%, var(--kid-card)); }
+.zelf-years.zf-valentijn { --zf-tint: color-mix(in srgb, var(--kid-tint-ring-6) 13%, var(--kid-card)); }
+.zelf-years.zf-pasen { --zf-tint: color-mix(in srgb, var(--mab-e) 14%, var(--kid-card)); }
+.zelf-years.zf-lente { --zf-tint: color-mix(in srgb, var(--mab-t) 13%, var(--kid-card)); }
+.zelf-years.zf-zomer { --zf-tint: color-mix(in srgb, var(--accent-vraagstukken) 14%, var(--kid-card)); }
+/* Wider than the strip, so a gust never shows an empty edge. */
+.zf-band .spel-snow { inset: 0 -48px; }
+.zf-band.is-trick .spel-snow { animation: zf-gust 1.6s ease-in-out; }
+
+.zf-drift { position: absolute; top: 0; width: 0; height: 100%; animation-timing-function: linear; animation-iteration-count: infinite; animation-fill-mode: both; }
+.zf-drift.is-confetti, .zf-drift.is-petal { animation-name: zf-fall; }
+.zf-drift.is-heart { animation-name: zf-rise; }
+.zf-drift.is-glint { height: auto; animation-name: zf-twinkle; animation-timing-function: ease-in-out; }
+.zf-p { position: absolute; left: 0; display: block; animation: zf-sway 2.4s ease-in-out infinite alternate; }
+.zf-drift.is-confetti .zf-p, .zf-drift.is-petal .zf-p { top: 100%; margin-top: -12px; }
+.zf-drift.is-heart .zf-p { top: 100%; }
+.zf-p svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.zf-p path { stroke: var(--zf-line); stroke-width: 2; stroke-linejoin: round; }
+
+.zf-drift.is-confetti .zf-p { height: auto !important; aspect-ratio: 2 / 1; border-radius: 2px; box-shadow: 0 0 0 1.5px var(--zf-line); animation-name: zf-tumble; animation-duration: 1.6s; }
+.zf-drift.is-confetti .is-tone-0 { background: var(--zf-red); }
+.zf-drift.is-confetti .is-tone-1 { background: var(--zf-gold); }
+.zf-drift.is-confetti .is-tone-2 { background: var(--zf-blue); }
+.zf-drift.is-confetti .is-tone-3 { background: var(--zf-green); }
+.zf-drift.is-petal .zf-p { border-radius: 80% 0 80% 0; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--zf-line) 55%, transparent); animation-name: zf-flutter; animation-duration: 2.8s; }
+.zf-drift.is-petal .is-tone-0, .zf-drift.is-petal .is-tone-2 { background: var(--zf-pink); }
+.zf-drift.is-petal .is-tone-1 { background: var(--zf-white); }
+.zf-drift.is-petal .is-tone-3 { background: color-mix(in srgb, var(--zf-pink) 55%, var(--zf-white)); }
+.zf-drift.is-heart .zf-p path { fill: var(--zf-red); }
+.zf-drift.is-heart .is-tone-1 path, .zf-drift.is-heart .is-tone-3 path { fill: var(--zf-pinkdeep); }
+.zf-drift.is-heart .is-tone-2 path { fill: var(--zf-pink); }
+.zf-drift.is-glint .zf-p { animation: none; }
+.zf-drift.is-glint .zf-p path { fill: var(--zf-gold); stroke-width: 1.6; }
+
+/* Pasen: eggs peeking up from the strip's bottom edge, most of them half behind a tile. */
+.zf-peek {
+  position: absolute;
+  bottom: -8px;
+  display: block;
+  border: 2px solid var(--zf-line);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--zf-sky);
+  rotate: var(--rot);
+  transform-origin: 50% 100%;
+  animation: zf-wiggle 3s ease-in-out infinite;
+}
+.zf-peek.is-tone-1 { background: var(--zf-pink); }
+.zf-peek.is-tone-2 { background: var(--zf-yellow); }
+.zf-peek.is-tone-3 { background: color-mix(in srgb, var(--zf-green) 60%, var(--zf-white)); }
+
+/* Halloween: a cobweb in the corner, a bat flitting along now and then. */
+.zf-web { position: absolute; left: 0; top: 0; width: clamp(28px, 4.5vw, 48px); height: auto; }
+.zf-web path { fill: none; stroke: color-mix(in srgb, var(--zf-line) 32%, transparent); stroke-width: 1.2; stroke-linecap: round; }
+.zf-cross { position: absolute; inset: 0; animation: zf-cross 14s linear infinite; }
+.zf-cross.is-bat { animation-delay: -9s; }
+.zf-cross.is-bat > i { position: absolute; left: 0; top: 4px; display: block; width: clamp(22px, 3.4vw, 34px); height: auto; margin-left: -40px; animation: zf-hover 0.9s ease-in-out infinite alternate; }
+.zf-cross.is-bat .zf-art { width: 100%; height: auto; }
+/* Sinterklaas: three pepernoten hopping along the bottom edge. */
+.zf-cross.is-nuts { animation-duration: 18s; animation-delay: -4s; }
+.zf-nut {
+  position: absolute;
+  bottom: 3px;
+  margin-left: -60px;
+  width: 10px;
+  height: 9px;
+  border: 1.5px solid var(--zf-line);
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(circle at 35% 35%, var(--zf-wood) 0 30%, var(--zf-nut) 32%);
+  animation: zf-hop 0.55s cubic-bezier(.3, .6, .5, 1) infinite alternate;
+}
+/* The kit's pieces are sized for a game screen: a little bigger here, with a thinner rim, so they read as colour. */
+.zf-band .spel-burst.is-pieces .spel-particle { width: calc(var(--size) * 1.9); height: calc(var(--size) * 1.2); border-width: 1.5px; }
+.zf-band .spel-burst.zf-nuts .spel-particle { width: calc(var(--size) * 1.8); height: calc(var(--size) * 1.6); border-radius: 50%; }
+
+/* Valentijn's trick: small hearts rising from the toy. */
+.zf-puff { position: absolute; width: 0; height: 0; }
+.zf-puff i { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; animation: zf-puff 1.1s ease-out both; }
+.zf-puff svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.zf-puff path { fill: var(--zf-pinkdeep); stroke: var(--zf-line); stroke-width: 2; }
+
+@media (max-width: 599px) {
+  .zf-side > .zf-toy { order: 1; }
+  .zelf-years.has-fx .zelf-years-row { order: 2; }
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+@keyframes zf-wobble { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }
+@keyframes zf-hover { from { translate: 0 -3px; } to { translate: 0 3px; } }
+@keyframes zf-flap { from { scale: 1 1; } to { scale: 1 0.55; } }
+@keyframes zf-buzz { from { scale: 1 1; } to { scale: 0.75 0.85; } }
+@keyframes zf-wiggle { 0%, 80%, 100% { rotate: 0deg; } 85% { rotate: -6deg; } 90% { rotate: 6deg; } 95% { rotate: -3deg; } }
+@keyframes zf-settle { from { translate: 0 -1px; } 50% { translate: 0 2px; } to { translate: 0 -1px; } }
+@keyframes zf-wave { from { rotate: -5deg; } to { rotate: 5deg; } }
+@keyframes zf-beat { 0%, 60%, 100% { scale: 1; } 70% { scale: 1.08; } 80% { scale: 0.98; } 90% { scale: 1.05; } }
+@keyframes zf-roll { from { rotate: -10deg; translate: 0 1px; } to { rotate: 10deg; translate: 0 -2px; } }
+/* Loop-the-loop: a full circle up and back, the bat turning with it. */
+@keyframes zf-loop {
+  0% { translate: 0 0; rotate: 0deg; }
+  25% { translate: 18% -15%; rotate: -90deg; }
+  50% { translate: 0 -30%; rotate: -180deg; }
+  75% { translate: -18% -15%; rotate: -270deg; }
+  100% { translate: 0 0; rotate: -360deg; }
+}
+@keyframes zf-lid { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 -16px; rotate: -18deg; } 70% { translate: 0 -10px; rotate: -10deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes zf-squash { 0% { scale: 1; } 30% { scale: 1.08 0.9; } 60% { scale: 0.96 1.05; } 100% { scale: 1; } }
+@keyframes zf-shake { 0%, 100% { rotate: 0deg; } 15% { rotate: -14deg; } 35% { rotate: 12deg; } 55% { rotate: -9deg; } 75% { rotate: 5deg; } }
+@keyframes zf-swirl { from { rotate: 0deg; } to { rotate: 540deg; } }
+@keyframes zf-recoil { 0% { translate: 0 0; } 25% { translate: -4px 4px; scale: 0.94; } 100% { translate: 0 0; scale: 1; } }
+@keyframes zf-shoot { 0% { scale: 0.4; opacity: 0.2; } 30% { scale: 1.2; opacity: 1; } 100% { scale: 1; } }
+@keyframes zf-thump { 0%, 100% { scale: 1; } 15% { scale: 1.25; } 30% { scale: 0.95; } 45% { scale: 1.2; } 60% { scale: 1; } }
+@keyframes zf-hatch {
+  0% { translate: 0 0; rotate: 0deg; }
+  20%, 75% { translate: -9px -18px; rotate: -34deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+@keyframes zf-chick { 0% { transform: translateY(8px); } 22%, 75% { transform: translateY(-5px); } 30% { transform: translateY(-2px); } 100% { transform: translateY(8px); } }
+/* A figure of eight, flown sideways. */
+@keyframes zf-eight {
+  0%, 100% { translate: 0 0; }
+  12.5% { translate: 14% -14%; }
+  25% { translate: 22% -2%; }
+  37.5% { translate: 14% 10%; }
+  50% { translate: 0 0; }
+  62.5% { translate: -14% -14%; }
+  75% { translate: -22% -2%; }
+  87.5% { translate: -14% 10%; }
+}
+@keyframes zf-bounce {
+  0% { translate: 0 0; scale: 1 1; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  35% { translate: 0 -24%; scale: 1; animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+  62% { translate: 0 0; scale: 1.12 0.86; animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  80% { translate: 0 -10%; scale: 1; animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+  100% { translate: 0 0; scale: 1; }
+}
+@keyframes zf-spin { from { rotate: 0deg; } to { rotate: 360deg; } }
+@keyframes zf-gust { 0%, 100% { translate: 0 0; } 30% { translate: 40px 0; } 65% { translate: -28px 0; } }
+@keyframes zf-fall {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10%, 85% { opacity: 1; }
+  100% { transform: translateY(calc(0% + 14px)); opacity: 0; }
+}
+@keyframes zf-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  15%, 75% { opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+@keyframes zf-twinkle { 0%, 100% { scale: 0; opacity: 0; } 45%, 55% { scale: 1; opacity: 1; } }
+@keyframes zf-sway { from { translate: calc(-0.5 * var(--sway)) 0; } to { translate: calc(0.5 * var(--sway)) 0; } }
+@keyframes zf-tumble { from { translate: calc(-0.5 * var(--sway)) 0; rotate: 0deg; } to { translate: calc(0.5 * var(--sway)) 0; rotate: var(--rot); } }
+@keyframes zf-flutter { from { translate: calc(-0.5 * var(--sway)) 0; rotate: -30deg; } to { translate: calc(0.5 * var(--sway)) 0; rotate: 60deg; } }
+@keyframes zf-cross { 0% { translate: 0 0; } 40%, 100% { translate: calc(100% + 120px) 0; } }
+@keyframes zf-hop { from { translate: 0 0; } to { translate: 0 -11px; } }
+@keyframes zf-puff {
+  0% { translate: 0 0; scale: 0.3; opacity: 0; }
+  20% { opacity: 1; scale: 1; }
+  100% { translate: var(--dx) var(--dy); scale: 0.7; opacity: 0; }
+}

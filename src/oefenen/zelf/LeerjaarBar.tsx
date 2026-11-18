@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
 import { Sticker } from '../kiosk/backdrops/parts';
+import { useSeasonHeader } from './useSeasonHeader';
 
 // One small scene per leerjaar, a still from its backdrop (kiosk/backdrops): the same far layer, ground and main figure,
 // in the same merged-sticker style. The art keeps to the bottom strip and the corners; the number stands on the sky.
@@ -161,17 +162,22 @@ function Vignette({ g }: { g: Leerjaar }) {
 
 // The top bar of the topics screen: six rounded tiles, one per leerjaar, each a little world of that leerjaar (the chosen one
 // larger with a thick border in its world's colour). Nothing chosen yet = the bar glows (kiosk.css) and says "Kies je leerjaar".
-export default function LeerjaarBar({ grade, onPick }: { grade: Leerjaar | null; onPick(g: Leerjaar): void }) {
+// In a season the bar dresses up (useSeasonHeader.tsx); `today` is for tests.
+export default function LeerjaarBar({ grade, onPick, today }: { grade: Leerjaar | null; onPick(g: Leerjaar): void; today?: Date }) {
     const unset = grade === null;
+    const fx = useSeasonHeader(grade, today);
+    const label = <h2 id="zelf-years-label" className="zelf-years-label">{unset ? 'Kies je leerjaar' : 'leerjaar'}</h2>;
     return (
-        <section className={`zelf-years${unset ? ' is-unset' : ''}`} aria-labelledby="zelf-years-label">
-            <h2 id="zelf-years-label" className="zelf-years-label">{unset ? 'Kies je leerjaar' : 'leerjaar'}</h2>
+        <section className={`zelf-years${unset ? ' is-unset' : ''}${fx?.className ?? ''}`} aria-labelledby="zelf-years-label">
+            {fx?.band}
+            {fx ? <div className="zf-side">{label}{fx.toy}</div> : label}
             <div className="zelf-years-row">
                 {LEERJAREN.map(g => (
                     <button key={g} type="button" className={`zelf-year is-${g}`} aria-pressed={g === grade}
                         aria-label={`Leerjaar ${g}`} onClick={() => onPick(g)}>
                         <Vignette g={g} />
                         <span className="zy-num" aria-hidden>{g}</span>
+                        {fx?.wornOn === g && fx.wear}
                     </button>
                 ))}
             </div>
