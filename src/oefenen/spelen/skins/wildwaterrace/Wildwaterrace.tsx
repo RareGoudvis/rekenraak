@@ -23,7 +23,9 @@ import './wildwaterrace.css';
 // a helmet full of leaves), the surfed wave of a catch-up, and the finish over the waterfall into the lake.
 
 const H = 300;
-const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 128, scale: 1 }, right: { y: 214, scale: 1.16 } };
+// Two lanes of their own on the river, a rope of buoys between them (DIVIDE): a raft is about 80 units high.
+const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 104, scale: 1.05 }, right: { y: 224, scale: 1.05 } };
+const DIVIDE = 163;
 // The raft's nose is this far in front of its middle (art.tsx draws it round the middle).
 const NOSE = 56;
 const CALL_MS = 1100;
@@ -111,7 +113,6 @@ export default function Wildwaterrace({ meta, from, onExit }: SkinScreenProps) {
             mood: won && reached ? 'cheer' : crash ? 'oops' : vh.outcome === 'clear' && (o?.move === 'dive' || o?.move === 'hop') ? 'cheer' : 'idle',
             dizzy: crash && o?.move === 'spin', duck: vh.outcome === 'clear' && o?.move === 'duck', wet: crash && o?.move === 'splash', leaves: crash && o?.move === 'leaves',
         };
-        const c = fx.calls[side];
         return (
             <g className={`ww-raft-at is-${side}${vh.waiting && st.phase === 'play' ? ' is-waiting' : ''}${won && reached ? ' is-over' : ''}${winner && !won ? ' is-lost' : ''}`}>
                 <g transform={`translate(${-NOSE} 0)`}>
@@ -125,7 +126,6 @@ export default function Wildwaterrace({ meta, from, onExit }: SkinScreenProps) {
                         </g>
                     </g>
                 </g>
-                {c && <g key={`c${c.n}`} transform={`translate(${side === 'left' ? 70 : 90} ${side === 'left' ? -30 : -44})`}><text className={`ww-call is-${c.tone}`} x={0} y={0}>{c.text}</text></g>}
             </g>
         );
     };
@@ -137,19 +137,26 @@ export default function Wildwaterrace({ meta, from, onExit }: SkinScreenProps) {
             if (WILD_FRONT.includes(kind) !== (layer === 'front')) return null;
             return (
                 <g key={o.key} ref={course.obstacleRef(side, o.key, layer)} visibility="hidden" data-kind={kind}>
-                    <g transform={`scale(${scale})`}><WildObstacle kind={kind} state={o.outcome ?? 'ahead'} /></g>
+                    <g transform={`scale(${scale})`}><g className="crs-arrive"><WildObstacle kind={kind} state={o.outcome ?? 'ahead'} /></g></g>
                 </g>
             );
         };
         return (
             <g transform={`translate(0 ${y})`}>
-                <Flow w={w} groundRef={course.groundRef(side, 200)} />
-                {course.obstacles[side].map(o => obstacle(o, 'back'))}
+                {/* The waterfall spans the whole river; everything else keeps to its own lane (the clip). */}
                 {course.finish?.side === side && (
                     <g ref={course.finishRef()} visibility="hidden"><g transform="translate(-10 0)"><Waterfall top={BANK.far - y} bottom={BANK.near - y} w={w} /></g></g>
                 )}
-                <g ref={course.vehicleRef(side)}><g transform={`scale(${scale})`}>{raft(side)}</g></g>
-                {course.obstacles[side].map(o => obstacle(o, 'front'))}
+                <g clipPath={`url(#ww-lane-${side})`}>
+                    <Flow w={w} groundRef={course.groundRef(side, 200)} />
+                    {course.obstacles[side].map(o => obstacle(o, 'back'))}
+                    <g ref={course.vehicleRef(side)}><g transform={`scale(${scale})`}>{raft(side)}</g></g>
+                    {course.obstacles[side].map(o => obstacle(o, 'front'))}
+                    {/* The comic word beside the raft, over the obstacles (scene units). */}
+                    <g ref={course.vehicleRef(side, 'call')}>
+                        {fx.calls[side] && <text key={`c${fx.calls[side]!.n}`} className={`ww-call is-${fx.calls[side]!.tone}`} x={14} y={-30}>{fx.calls[side]!.text}</text>}
+                    </g>
+                </g>
             </g>
         );
     };
@@ -160,8 +167,22 @@ export default function Wildwaterrace({ meta, from, onExit }: SkinScreenProps) {
             scene={(
                 <div className={`ww-scene${st.phase === 'ready' ? ' is-ready' : ''}${between ? ' is-between' : ''}`} data-points={SIDES.map(s => st.sides[s].points).join(',')}>
                     <svg ref={svg} className="ww-svg" viewBox={`0 0 ${w} ${H}`} preserveAspectRatio="xMidYMax meet" role="img" aria-label="Twee vlotten varen een wilde rivier af langs de hindernissen naar de waterval">
+                        <defs>
+                            <clipPath id="ww-lane-left"><rect x={-40} y={-300} width={w + 80} height={300 + DIVIDE - LANE.left.y} /></clipPath>
+                            <clipPath id="ww-lane-right"><rect x={-40} y={DIVIDE - LANE.right.y} width={w + 80} height={300} /></clipPath>
+                        </defs>
                         <RiverBed w={w} />
                         <Banks w={w} layerRef={course.layerRef('banks', 560, 1)} />
+                        {/* The rope of buoys between the lanes: each raft keeps to its own side of the river. */}
+                        <g ref={course.layerRef('rope', 120, 1)} className="ww-rope-line">
+                            {Array.from({ length: Math.ceil(w / 120) + 2 }, (_, i) => (
+                                <g key={i} transform={`translate(${i * 120} ${DIVIDE})`}>
+                                    <path className="ww-rope-cord" d="M0 0 Q30 5 60 0 Q90 5 120 0" />
+                                    <g className="ww-buoy"><ellipse cx={0} cy={0} rx={9} ry={7} /><path d="M-9 0 h18" /></g>
+                                    <g className="ww-buoy is-b"><ellipse cx={60} cy={0} rx={9} ry={7} /><path d="M51 0 h18" /></g>
+                                </g>
+                            ))}
+                        </g>
                         {lane('left')}
                         {lane('right')}
                     </svg>

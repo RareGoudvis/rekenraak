@@ -124,11 +124,11 @@
 
 /* The moves (origin: the raft's middle). Clears carry on; crashes end where they began. */
 .ww-move.is-clear-swerve { animation: ww-swerve 760ms ease-in-out; }
-@keyframes ww-swerve { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 4px 34px; rotate: 14deg; } 65% { translate: 4px 30px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes ww-swerve { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 4px 18px; rotate: 14deg; } 65% { translate: 4px 16px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
 .ww-move.is-clear-around { animation: ww-around 820ms ease-in-out; }
-@keyframes ww-around { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 0 -34px; rotate: -16deg; } 70% { translate: 0 -24px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes ww-around { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 0 -18px; rotate: -16deg; } 70% { translate: 0 -12px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
 .ww-move.is-clear-hop { animation: ww-hop 640ms cubic-bezier(.3, .6, .4, 1); }
-@keyframes ww-hop { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 0 -34px; rotate: -10deg; scale: 1.05; } 70% { translate: 0 0; rotate: 6deg; scale: 1.08 .9; } 100% { translate: 0 0; rotate: 0deg; scale: 1; } }
+@keyframes ww-hop { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 0 -24px; rotate: -10deg; scale: 1.05; } 70% { translate: 0 0; rotate: 6deg; scale: 1.08 .9; } 100% { translate: 0 0; rotate: 0deg; scale: 1; } }
 .ww-move.is-clear-dive { animation: ww-dive 800ms ease-in-out; }
 @keyframes ww-dive { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 10px 8px; rotate: 18deg; scale: .95; } 55% { translate: 14px 14px; rotate: -8deg; scale: 1.06 .9; } 100% { translate: 0 0; rotate: 0deg; scale: 1; } }
 .ww-move.is-clear-duck { animation: ww-duck 760ms ease-out; }
@@ -161,8 +161,8 @@
 }
 
 .ww-call {
-  font: 900 40px var(--kid-font); text-anchor: middle; fill: var(--kiosk-paper);
-  stroke: var(--spel-ink); stroke-width: 8px; paint-order: stroke; animation: ww-call 1100ms ease-out forwards;
+  font: 900 25px var(--kid-font); text-anchor: start; fill: var(--kiosk-paper);
+  stroke: var(--spel-ink); stroke-width: 5px; paint-order: stroke; animation: ww-call 1100ms ease-out forwards;
 }
 .ww-call.is-clear, .ww-call.is-wave { fill: var(--mab-e); }
 .ww-call.is-win { fill: var(--kid-go); }
@@ -243,3 +243,14 @@
 /* The round is over: what was still drifting toward the rafts sinks away (the lake is no place for a log). */
 .ww-scene.is-between [data-kind] > g { animation: ww-sink 600ms ease-in both; }
 @keyframes ww-sink { to { opacity: 0; scale: .9; } }
+
+/* The rope of buoys between the lanes: the buoys bob on the current. */
+.ww-rope-cord { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; }
+.ww-buoy ellipse { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-buoy.is-b ellipse { fill: var(--kiosk-paper); }
+.ww-buoy path { stroke: var(--kiosk-paper); stroke-width: 3px; }
+.ww-buoy.is-b path { stroke: var(--accent-getallenkennis); }
+.ww-buoy { animation: ww-buoy 1.4s ease-in-out infinite alternate; }
+.ww-buoy.is-b { animation-delay: -.7s; }
+@keyframes ww-buoy { from { translate: 0 -2px; } to { translate: 0 2px; } }
+.ww-ob-rocks, .ww-ob-log, .ww-ob-whirl, .ww-ob-drop, .ww-ob-croc { --crs-origin: 50% 50%; }

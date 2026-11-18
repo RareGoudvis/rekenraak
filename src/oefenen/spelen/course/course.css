@@ -28,3 +28,7 @@
 .crs-flag-edge { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
 .crs-flag-cloth { transform-box: fill-box; transform-origin: 0 50%; animation: crs-flag 1s ease-in-out infinite alternate; }
 @keyframes crs-flag { from { transform: skewY(-5deg); } to { transform: skewY(5deg) scale(.94, 1); } }
+
+/* A new obstacle grows in at the band's right edge, so the pupil sees what is coming (wrap it in .crs-arrive). */
+.crs-arrive { transform-box: fill-box; transform-origin: var(--crs-origin, 50% 100%); animation: crs-arrive 900ms cubic-bezier(.3, 1.4, .5, 1) both; }
+@keyframes crs-arrive { from { scale: .45; opacity: .4; } to { scale: 1; opacity: 1; } }

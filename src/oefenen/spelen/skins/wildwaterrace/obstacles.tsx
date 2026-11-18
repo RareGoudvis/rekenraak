@@ -37,10 +37,10 @@ function Log({ state }: { state: ObState }) {
     return (
         <g className={`ww-ob-log is-${state}`} transform="translate(40 0)">
             <g className="ww-log-bob">
-                <ellipse className="ww-foam-ring" style={v({ '--i': 0 })} rx={30} ry={58} />
-                <rect className="ww-log" x={-14} y={-52} width={28} height={104} rx={14} />
-                <ellipse className="ww-log-end" cx={0} cy={-46} rx={14} ry={7} />
-                <path className="ww-log-ring" d="M-6 -46 a6 3 0 1 0 12 0 a6 3 0 1 0 -12 0" />
+                <ellipse className="ww-foam-ring" style={v({ '--i': 0 })} rx={28} ry={50} />
+                <rect className="ww-log" x={-14} y={-44} width={28} height={88} rx={14} />
+                <ellipse className="ww-log-end" cx={0} cy={-38} rx={14} ry={7} />
+                <path className="ww-log-ring" d="M-6 -38 a6 3 0 1 0 12 0 a6 3 0 1 0 -12 0" />
                 <path className="ww-log-bark" d="M-8 -20 v14 M6 0 v18 M-4 26 v14" />
                 <g className="ww-frog" transform="translate(0 6)">
                     <ellipse className="ww-frog-body" rx={9} ry={7} />
@@ -107,7 +107,7 @@ function Branch({ state }: { state: ObState }) {
         <g className={`ww-ob-branch is-${state}`} transform="translate(10 0)">
             {/* A tree on the far bank leans over the lane: its low branch hangs at helmet height. */}
             <g className="ww-branch-sway">
-                <path className="ww-branch-wood" d="M40 -160 C 34 -110 30 -60 26 -26" />
+                <path className="ww-branch-wood" d="M44 -90 C 38 -70 32 -50 26 -26" />
                 <path className="ww-branch-wood is-twig" d="M30 -70 L8 -52 M28 -46 L48 -34" />
                 {[[26, -30, 16], [6, -50, 14], [48, -36, 13], [36, -60, 15], [16, -76, 12]].map(([x, y, r], k) => (
                     <circle key={k} className="ww-branch-leaf" style={v({ '--k': k })} cx={x} cy={y} r={r} />

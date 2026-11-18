@@ -5,8 +5,9 @@ import type { Side } from '../../duel/types';
 // A truck is drawn with its front bumper at x 0 and its tyres on y 0; an obstacle with its near edge at x 0.
 
 export const H = 300;
-// Each lane's ground line and how big its truck and obstacles are drawn (the back lane smaller: depth).
-export const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 210, scale: 0.56 }, right: { y: 290, scale: 0.72 } };
+// Each lane's ground line and how big its truck and obstacles are drawn: two lanes of their own, the crash barrier
+// between them (the left lane's ground + 6), the small grandstand above. A truck is 175 units high: 0.5 = 88.
+export const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 170, scale: 0.5 }, right: { y: 298, scale: 0.5 } };
 // The tiles the backdrop and the dirt repeat in (they scroll by whole tiles without a seam).
 export const TILE = { stand: 640, wall: 200, dirt: 260, tyres: 64 } as const;
 // The truck: its wheels (x of the hubs) and their radius; its length behind the bumper.

@@ -100,8 +100,9 @@
 .mtk-clod { fill: var(--mtk-dirt); opacity: .65; }
 .mtk-stone { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-track { fill: none; stroke: var(--mtk-dirt); stroke-width: 6px; opacity: .45; stroke-dasharray: 14 8; }
-.mtk-tyre-stack { fill: var(--mtk-tyre); stroke: var(--spel-ink); stroke-width: 2px; }
-.mtk-tyre-hole { fill: var(--mtk-dirt-deep); }
+.mtk-barrier { fill: color-mix(in srgb, var(--text-muted) 25%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-barrier-stripe.is-0 { fill: var(--duel-left); }
+.mtk-barrier-stripe.is-1 { fill: var(--duel-right); }
 .mtk-cone path:first-child { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2px; }
 .mtk-cone-band { stroke: var(--kiosk-paper); stroke-width: 3px; }
 
@@ -183,7 +184,7 @@
 @keyframes mtk-jump {
   0% { translate: 0 0; rotate: 0deg; }
   16% { translate: 0 -30px; rotate: -14deg; }
-  45% { translate: 0 -104px; rotate: -4deg; }
+  45% { translate: 0 -62px; rotate: -4deg; }
   72% { translate: 0 -28px; rotate: 8deg; }
   82% { translate: 0 0; rotate: 1deg; scale: 1.06 .9; }
   91% { translate: 0 -8px; rotate: 0deg; scale: 1 1; }
@@ -193,7 +194,7 @@
 @keyframes mtk-shadow { 0%, 100% { scale: 1; opacity: .22; } 45% { scale: .5; opacity: .1; } }
 /* Over the tyre wall: a quick high hop. */
 .mtk-move.is-clear-hop { animation: mtk-hop 620ms cubic-bezier(.3, .6, .4, 1); }
-@keyframes mtk-hop { 0% { translate: 0 0; rotate: 0deg; } 20% { translate: 0 -26px; rotate: -10deg; } 50% { translate: 0 -78px; rotate: 0deg; } 80% { translate: 0 -6px; rotate: 6deg; } 90% { translate: 0 0; scale: 1.05 .92; } 100% { translate: 0 0; scale: 1 1; } }
+@keyframes mtk-hop { 0% { translate: 0 0; rotate: 0deg; } 20% { translate: 0 -24px; rotate: -10deg; } 50% { translate: 0 -54px; rotate: 0deg; } 80% { translate: 0 -6px; rotate: 6deg; } 90% { translate: 0 0; scale: 1.05 .92; } 100% { translate: 0 0; scale: 1 1; } }
 /* Through the mud at full speed: it skims and bounces, nose up. */
 .mtk-move.is-clear-skim { animation: mtk-skim 700ms ease-out; }
 @keyframes mtk-skim { 0% { translate: 0 0; rotate: 0deg; } 25% { translate: 0 -10px; rotate: -6deg; } 50% { translate: 0 -2px; rotate: -3deg; } 70% { translate: 0 -8px; rotate: -4deg; } 100% { translate: 0 0; rotate: 0deg; } }
@@ -213,7 +214,7 @@
 @keyframes mtk-flip {
   0% { translate: 0 0; rotate: 0deg; }
   12% { translate: 6px -10px; rotate: -24deg; }
-  50% { translate: -30px -120px; rotate: -200deg; }
+  50% { translate: -30px -52px; rotate: -200deg; }
   80% { translate: -26px -6px; rotate: -350deg; }
   88% { translate: -24px 0; rotate: -360deg; scale: 1.08 .86; }
   100% { translate: 0 0; rotate: -360deg; scale: 1 1; }
@@ -358,11 +359,11 @@
 .mtk-press-stripes { fill: none; stroke: var(--spel-ink); stroke-width: 5px; }
 .mtk-press-teeth { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2px; }
 .mtk-press { animation: mtk-press-idle 1.6s ease-in-out infinite alternate; }
-@keyframes mtk-press-idle { from { translate: 0 -10px; } to { translate: 0 4px; } }
+@keyframes mtk-press-idle { from { translate: 0 -6px; } to { translate: 0 2px; } }
 .mtk-ob-crusher.is-clear .mtk-press { animation: mtk-press-slam 900ms cubic-bezier(.6, 0, .9, .4) both; }
-@keyframes mtk-press-slam { 0% { translate: 0 -10px; } 30% { translate: 0 -24px; } 46% { translate: 0 212px; } 54% { translate: 0 200px; } 75% { translate: 0 212px; } 100% { translate: 0 0; } }
+@keyframes mtk-press-slam { 0% { translate: 0 -6px; } 30% { translate: 0 -10px; } 46% { translate: 0 180px; } 54% { translate: 0 170px; } 75% { translate: 0 180px; } 100% { translate: 0 0; } }
 .mtk-ob-crusher.is-crash .mtk-press { animation: mtk-press-squash 1000ms cubic-bezier(.5, 0, .5, 1) both; }
-@keyframes mtk-press-squash { 0% { translate: 0 -10px; } 14% { translate: 0 122px; } 55% { translate: 0 122px; } 72% { translate: 0 -30px; } 100% { translate: 0 -20px; } }
+@keyframes mtk-press-squash { 0% { translate: 0 -6px; } 14% { translate: 0 86px; } 55% { translate: 0 86px; } 72% { translate: 0 -8px; } 100% { translate: 0 0; } }
 .mtk-clang-line { stroke: var(--kiosk-paper); stroke-width: 4px; transform: rotate(var(--a)); opacity: 0; animation: mtk-clang 500ms ease-out both; }
 .mtk-ob-crusher.is-clear .mtk-clang-line { animation-delay: 420ms; }
 @keyframes mtk-clang { 0% { opacity: 1; scale: .6; } 100% { opacity: 0; scale: 1.5; } }
@@ -396,8 +397,8 @@
 .mtk-call.is-turbo .mtk-call-bg { fill: var(--mtk-fire-2); }
 .mtk-call.is-crash .mtk-call-bg { fill: var(--kiosk-paper); }
 .mtk-call.is-win .mtk-call-bg { fill: var(--kid-go); }
-.mtk-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 40px; font-weight: 900; }
-.mtk-call-bg { stroke-width: 5px; }
+.mtk-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 22px; font-weight: 900; }
+.mtk-call-bg { stroke-width: 3px; }
 
 .mtk-finish-post { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
 .mtk-check.is-0 { fill: var(--kiosk-paper); }

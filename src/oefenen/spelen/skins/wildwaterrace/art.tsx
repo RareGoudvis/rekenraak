@@ -150,16 +150,16 @@ export function Banks({ w, layerRef }: { w: number; layerRef: Ref<SVGGElement> }
             <path className="ww-bank-line" d={`M ${edge(0, TILE.bank, BANK.near + 10, 4, 2)}`} />
             <path className="ww-bank-line" d={`M0 ${BANK.near - 4} L ${TILE.bank} ${BANK.near - 4}`} />
             {[0, 1, 2, 3, 4, 5].map(t => (
-                <g key={t} transform={`translate(${30 + t * 92 + wob(t, 3) * 18} ${44 + wob(t, 5) * 10})`}><Tree kind={t % 3 === 1 ? 'pine' : 'round'} s={0.72 + (wob(t, 7) + 1) * 0.12} k={t} /></g>
+                <g key={t} transform={`translate(${30 + t * 92 + wob(t, 3) * 18} ${28 + wob(t, 5) * 5})`}><Tree kind={t % 3 === 1 ? 'pine' : 'round'} s={0.5 + (wob(t, 7) + 1) * 0.08} k={t} /></g>
             ))}
             {[0, 1, 2, 3].map(t => (
-                <g key={`r${t}`} className="ww-reeds" transform={`translate(${60 + t * 140 + wob(t, 2) * 30} 298)`}>
+                <g key={`r${t}`} className="ww-reeds" transform={`translate(${60 + t * 140 + wob(t, 2) * 30} 304) scale(.6)`}>
                     <path d="M0 0 C -2 -14 -6 -24 -10 -34 M 6 0 C 6 -16 8 -26 12 -38 M -6 0 C -8 -10 -14 -18 -20 -24 M 12 0 C 14 -8 20 -16 26 -20" />
                     <ellipse className="ww-cattail" cx="12" cy="-40" rx="3" ry="7" />
                     <ellipse className="ww-cattail" cx="-10" cy="-36" rx="3" ry="6" />
                 </g>
             ))}
-            <g transform={`translate(${TILE.bank * 0.4} ${BANK.near + 18})`}><path className="ww-stone" d="M-14 4 C -14 -6 10 -8 14 2 C 10 8 -10 8 -14 4 Z" /></g>
+            <g transform={`translate(${TILE.bank * 0.4} ${BANK.near + 12}) scale(.6)`}><path className="ww-stone" d="M-14 4 C -14 -6 10 -8 14 2 C 10 8 -10 8 -14 4 Z" /></g>
         </g>
     );
     return <g ref={layerRef}>{Array.from({ length: tilesFor(w, TILE.bank) }, (_, i) => tile(i))}</g>;

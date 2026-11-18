@@ -99,11 +99,14 @@ function StandTile({ x0 }: { x0: number }) {
 
 export function Stand({ w, layerRef, cheer }: { w: number; layerRef: Ref<SVGGElement>; cheer: number }) {
     return (
-        <g className={`mtk-crowd${cheer ? ` is-cheer-${cheer % 2}` : ''}`}>
-            <g ref={layerRef}>{Array.from({ length: tilesFor(w, TILE.stand) }, (_, i) => <StandTile key={i} x0={i * TILE.stand} />)}</g>
+        // A small grandstand along the top: the lanes below get the band's height.
+        <g className={`mtk-crowd${cheer ? ` is-cheer-${cheer % 2}` : ''}`} transform={`scale(${STAND_SCALE})`}>
+            <g ref={layerRef}>{Array.from({ length: tilesFor(w / STAND_SCALE, TILE.stand) }, (_, i) => <StandTile key={i} x0={i * TILE.stand} />)}</g>
         </g>
     );
 }
+
+const STAND_SCALE = 0.5;
 
 /** The arena wall: boards in the team colours with stars and stripes; it scrolls faster than the crowd. */
 export function Wall({ w, layerRef }: { w: number; layerRef: Ref<SVGGElement> }) {
@@ -111,14 +114,14 @@ export function Wall({ w, layerRef }: { w: number; layerRef: Ref<SVGGElement> })
         <g>
             <g ref={layerRef}>
                 {Array.from({ length: tilesFor(w, TILE.wall) }, (_, i) => (
-                    <g key={i} transform={`translate(${i * TILE.wall} 122)`}>
+                    <g key={i} transform={`translate(${i * TILE.wall} 58)`}>
                         <rect className={`mtk-board is-${i % 3}`} x={0} y={0} width={TILE.wall} height={26} />
                         <path className="mtk-board-mark" d={i % 3 === 0 ? 'M70 13 l6 -8 l6 8 l-6 8 Z M100 13 l6 -8 l6 8 l-6 8 Z M130 13 l6 -8 l6 8 l-6 8 Z' : i % 3 === 1 ? 'M40 7 h120 M40 19 h120' : 'M100 4 l3 6 l7 1 l-5 5 l1 7 l-6 -3 l-6 3 l1 -7 l-5 -5 l7 -1 Z'} />
                         <rect className="mtk-board-post" x={-3} y={-2} width={6} height={30} rx={2} />
                     </g>
                 ))}
             </g>
-            <rect className="mtk-wall-cap" x={-20} y={118} width={w + 40} height={6} rx={3} />
+            <rect className="mtk-wall-cap" x={-20} y={54} width={w + 40} height={6} rx={3} />
         </g>
     );
 }
@@ -141,15 +144,15 @@ export function Dirt({ w, y, h, groundRef, seed }: { w: number; y: number; h: nu
     );
 }
 
-/** The tyre row between the lanes: the back truck drives behind it. */
-export function TyreRow({ w, y, layerRef }: { w: number; y: number; layerRef: Ref<SVGGElement> }) {
+/** The crash barrier between the lanes (concrete blocks with the team colours): each truck keeps to its own lane. */
+export function Barrier({ w, y, layerRef }: { w: number; y: number; layerRef: Ref<SVGGElement> }) {
     return (
         <g ref={layerRef}>
             {Array.from({ length: tilesFor(w, TILE.tyres) }, (_, i) => (
                 <g key={i} transform={`translate(${i * TILE.tyres} ${y})`}>
-                    <ellipse className="mtk-tyre-stack" rx={24} ry={8} />
-                    <ellipse className="mtk-tyre-hole" rx={11} ry={3.5} />
-                    {i % 5 === 2 && <g className="mtk-cone" transform="translate(32 -4)"><path d="M-7 4 L0 -18 L7 4 Z" /><path className="mtk-cone-band" d="M-4 -6 h8" /></g>}
+                    <path className="mtk-barrier" d={`M1 22 L6 4 Q8 0 12 0 L${TILE.tyres - 12} 0 Q${TILE.tyres - 8} 0 ${TILE.tyres - 6} 4 L${TILE.tyres - 1} 22 Z`} />
+                    <path className={`mtk-barrier-stripe is-${i % 2}`} d={`M8 6 L${TILE.tyres - 8} 6 L${TILE.tyres - 7} 11 L7 11 Z`} />
+                    {i % 4 === 1 && <g className="mtk-cone" transform="translate(32 -1)"><path d="M-6 2 L0 -16 L6 2 Z" /><path className="mtk-cone-band" d="M-3.5 -6 h7" /></g>}
                 </g>
             ))}
         </g>
@@ -282,7 +285,6 @@ export function Truck({ t, refs }: { t: TruckView; refs: TruckRefs }) {
                 </g>
             </g>
             {t.won && <DonutDust />}
-            {t.call && <Call key={`c${t.call.n}`} text={t.call.text} tone={t.call.tone} />}
         </g>
     );
 }
@@ -333,14 +335,14 @@ function DonutDust() {
     );
 }
 
-/** A comic word that pops up over the truck ("Sprong!", "Vast!", "Turbo!"). */
-function Call({ text, tone }: { text: string; tone: string }) {
-    const w = Math.max(140, text.length * 26 + 44);
+/** A comic word beside the truck, in its own lane (scene units, the truck's bumper at x 0): "Sprong!", "Vast!". */
+export function Call({ text, tone }: { text: string; tone: string }) {
+    const w = Math.max(70, text.length * 15 + 26);
     return (
-        <g transform={`translate(${-TRUCK_LEN / 2} -214)`}>
+        <g transform={`translate(${16 + w / 2} -58)`}>
             <g className={`mtk-call is-${tone}`}>
-                <rect className="mtk-call-bg" x={-w / 2} y={-32} width={w} height={62} rx={31} />
-                <text className="mtk-call-text" x={0} y={13} textAnchor="middle">{text}</text>
+                <rect className="mtk-call-bg" x={-w / 2} y={-18} width={w} height={34} rx={17} />
+                <text className="mtk-call-text" x={0} y={7} textAnchor="middle">{text}</text>
             </g>
         </g>
     );
@@ -397,9 +399,9 @@ function Mud({ state, gap }: { state: ObstacleArt['state']; gap: number }) {
             <path className="mtk-mud-shine" d="M-60 0 q20 -4 40 0 M20 3 q16 -3 30 0" />
             {[-50, 10, 60].map((x, k) => <circle key={x} className="mtk-bubble" style={v({ '--k': k })} cx={x} cy={1} r={4} />)}
             <g className="mtk-mud-sign" transform="translate(126 0)">
-                <path className="mtk-post" d="M0 0 V-40" />
-                <path className="mtk-sign-board" d="M-14 -60 L14 -60 L14 -38 L-14 -38 Z" />
-                <path className="mtk-sign-mark" d="M-8 -44 q4 -10 8 -4 q4 -10 8 0" />
+                <path className="mtk-post" d="M0 0 V-60" />
+                <path className="mtk-sign-board" d="M0 -118 L30 -66 L-30 -66 Z" />
+                <path className="mtk-sign-mark" d="M-14 -76 q7 -16 14 -6 q7 -16 14 0" />
             </g>
         </g>
     );
@@ -437,7 +439,7 @@ function Crusher({ state, gap, layer }: { state: ObstacleArt['state']; gap: numb
         // The press hangs over the lane, in front of a truck under it.
         return (
             <g className={`mtk-ob-crusher is-${state}`}>
-                <g transform={`translate(${px} -296)`}>
+                <g transform={`translate(${px} -262)`}>
                     <g className="mtk-press">
                         <rect className="mtk-piston" x={-7} y={-30} width={14} height={72} />
                         <rect className="mtk-press-head" x={-62} y={40} width={124} height={34} rx={5} />
@@ -445,17 +447,17 @@ function Crusher({ state, gap, layer }: { state: ObstacleArt['state']; gap: numb
                         <path className="mtk-press-teeth" d="M-60 74 l8 8 l8 -8 l8 8 l8 -8 l8 8 l8 -8 l8 8 l8 -8 l8 8 l8 -8 l8 8 l8 -8 l8 8 l8 -8" />
                     </g>
                 </g>
-                {state !== 'ahead' && <g className="mtk-clang" transform={`translate(${px} ${state === 'clear' ? -6 : -100})`}>{[0, 1, 2, 3, 4].map(k => <path key={k} className="mtk-clang-line" style={v({ '--a': `${-90 + (k - 2) * 34}deg` })} d="M0 -16 L0 -30" />)}</g>}
+                {state !== 'ahead' && <g className="mtk-clang" transform={`translate(${px} ${state === 'clear' ? -6 : -110})`}>{[0, 1, 2, 3, 4].map(k => <path key={k} className="mtk-clang-line" style={v({ '--a': `${-90 + (k - 2) * 34}deg` })} d="M0 -16 L0 -30" />)}</g>}
             </g>
         );
     }
     // A tower on the near side of the track and its arm reaching back over the lane.
     return (
         <g className={`mtk-ob-crusher is-${state}`}>
-            <rect className="mtk-tower" x={40} y={-310} width={28} height={310} rx={3} />
-            <path className="mtk-lattice" d={Array.from({ length: 10 }, (_, i) => `M40 ${-300 + i * 30} L68 ${-270 + i * 30} M68 ${-300 + i * 30} L40 ${-270 + i * 30}`).join(' ')} />
-            <rect className="mtk-arm-beam" x={px - 40} y={-322} width={120 - px} height={18} rx={4} />
-            <circle className="mtk-warn" cx={54} cy={-326} r={7} />
+            <rect className="mtk-tower" x={40} y={-262} width={28} height={262} rx={3} />
+            <path className="mtk-lattice" d={Array.from({ length: 8 }, (_, i) => `M40 ${-254 + i * 30} L68 ${-224 + i * 30} M68 ${-254 + i * 30} L40 ${-224 + i * 30}`).join(' ')} />
+            <rect className="mtk-arm-beam" x={px - 40} y={-272} width={120 - px} height={14} rx={4} />
+            <circle className="mtk-warn" cx={54} cy={-266} r={6} />
         </g>
     );
 }
@@ -485,6 +487,11 @@ function Oil({ state, gap }: { state: ObstacleArt['state']; gap: number }) {
         <g className={`mtk-ob-oil is-${state}`} transform={`translate(${under(gap)} 0)`}>
             <path className="mtk-oil" d="M-96 2 C -90 -8 -50 -10 -30 -6 C -10 -12 30 -12 50 -6 C 80 -8 100 -2 92 4 C 70 10 30 8 0 9 C -40 10 -90 10 -96 2 Z" />
             <path className="mtk-oil-sheen" d="M-60 -1 q18 -4 34 0 M10 -2 q14 -3 26 1" />
+            <g className="mtk-mud-sign" transform="translate(150 0)">
+                <path className="mtk-post" d="M0 0 V-60" />
+                <path className="mtk-sign-board" d="M0 -118 L30 -66 L-30 -66 Z" />
+                <path className="mtk-sign-mark" d="M-12 -74 q6 -6 12 0 q6 6 12 0 M-8 -86 q4 -4 8 0 q4 4 8 0" />
+            </g>
             <g className="mtk-barrel" transform="translate(112 0)">
                 <rect className="mtk-barrel-body" x={-12} y={-34} width={24} height={34} rx={4} />
                 <path className="mtk-barrel-ring" d="M-12 -24 h24 M-12 -10 h24" />

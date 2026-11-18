@@ -23,7 +23,9 @@ import './drakenrace.css';
 
 // The scene is H units high; its width follows the band's shape.
 const H = 300;
-const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 116, scale: 0.6 }, right: { y: 226, scale: 0.72 } };
+// Two lanes of their own, a line of clouds between them (DIVIDE): a dragon is about 120 units high, 0.58 = 70.
+const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 96, scale: 0.58 }, right: { y: 234, scale: 0.58 } };
+const DIVIDE = 165;
 // The dragon's snout is this far in front of its body's middle (art.tsx draws it round the middle).
 const NOSE = 96;
 // The lane's wisps of cloud repeat every TILE units.
@@ -126,7 +128,6 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
         const mood: DragonMood = won ? 'won' : crash ? 'stall' : vh.outcome === 'clear' ? 'beat' : 'idle';
         const move = o ? `${vh.outcome}-${o.move}` : 'none';
         const fire = vh.outcome === 'clear' && (o?.move === 'through' || o?.move === 'roll') ? vh.n : 0;
-        const c = fx.calls[side];
         return (
             <g className={`dk-dragon-at is-${side}${vh.waiting && st.phase === 'play' ? ' is-waiting' : ''}${won ? ' is-won' : ''}${winner && winner !== side ? ' is-lost' : ''}`}>
                 {/* The wind behind it while it flies (its opacity follows the speed). */}
@@ -142,11 +143,6 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
                         </g>
                     </g>
                 </g>
-                {c && (
-                    <g key={`c${c.n}`} transform={`translate(-60 ${side === 'left' ? -64 : -110})`}>
-                        <text className={`dk-call is-${c.tone}`} x={0} y={0}>{c.text}</text>
-                    </g>
-                )}
             </g>
         );
     };
@@ -154,7 +150,8 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
     const lane = (side: Side) => {
         const { y, scale } = LANE[side];
         return (
-            <g transform={`translate(0 ${y})`}>
+            // Each lane in its own clip: a swoop or a crash never reaches into the other lane.
+            <g clipPath={`url(#dk-lane-${side})`}><g transform={`translate(0 ${y})`}>
                 {/* Wisps of cloud at the lane's height scroll with it: the dragon's speed. */}
                 <g ref={course.groundRef(side, TILE)} className="dk-wisps">
                     {Array.from({ length: Math.ceil(w / TILE) + 2 }, (_, i) => (
@@ -168,7 +165,7 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
                     const kind = kindOf(side, o.index);
                     return (
                         <g key={o.key} ref={course.obstacleRef(side, o.key)} visibility="hidden" data-kind={kind}>
-                            <g transform={`scale(${scale})`}><g key={kind} className={kind === 'storm' ? 'dk-ob-arrive' : undefined}><DraakObstacle kind={kind} state={o.outcome ?? 'ahead'} /></g></g>
+                            <g transform={`scale(${scale})`}><g key={kind} className={kind === 'storm' ? 'dk-ob-arrive' : 'crs-arrive'}><DraakObstacle kind={kind} state={o.outcome ?? 'ahead'} /></g></g>
                         </g>
                     );
                 })}
@@ -178,8 +175,12 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
                         <g transform={`scale(${scale})`}><g transform={`translate(${Math.round(COURSE.goalOver / scale)} -128)`}><Gong ring={fx.ring} h={300} /></g></g>
                     </g>
                 )}
-                <g ref={course.vehicleRef(side)}><g transform={`scale(${scale})`}>{dragon(side)}</g></g>
-            </g>
+                <g ref={course.vehicleRef(side)}>
+                    <g transform={`scale(${scale})`}>{dragon(side)}</g>
+                    {/* The comic word beside the dragon, in its own lane (scene units). */}
+                    {fx.calls[side] && <text key={`c${fx.calls[side]!.n}`} className={`dk-call is-${fx.calls[side]!.tone}`} x={20} y={10}>{fx.calls[side]!.text}</text>}
+                </g>
+            </g></g>
         );
     };
 
@@ -192,8 +193,20 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
                     <Backdrop />
                     <Clouds layer="far" outline={false} count={4} band={[6, 44]} size={[90, 160]} direction="left" speed={50} tint="var(--dk-cloud)" />
                     <svg ref={svg} className="dk-svg" viewBox={`0 0 ${w} ${H}`} preserveAspectRatio="xMidYMax meet" role="img" aria-label="Twee draken racen door de lucht over de hindernissen naar de gong">
+                        <defs>
+                            <clipPath id="dk-lane-left"><rect x={-40} y={-200} width={w + 80} height={DIVIDE + 200} /></clipPath>
+                            <clipPath id="dk-lane-right"><rect x={-40} y={DIVIDE} width={w + 80} height={H} /></clipPath>
+                        </defs>
                         {lane('left')}
                         {lane('right')}
+                        {/* The line of clouds between the lanes: each dragon keeps to its own sky. */}
+                        <g ref={course.layerRef('divide', 240, 1)} className="dk-divide">
+                            {Array.from({ length: Math.ceil(w / 240) + 2 }, (_, i) => (
+                                <g key={i} transform={`translate(${i * 240} ${DIVIDE})`}>
+                                    {[[0, 0, 16], [26, -6, 20], [56, -2, 15], [84, 2, 12], [110, -4, 17], [140, 0, 14], [168, -5, 19], [200, 0, 15], [226, -3, 13]].map(([x, y2, r]) => <circle key={x} cx={x} cy={y2} r={r} />)}
+                                </g>
+                            ))}
+                        </g>
                         {fire.length > 0 && <Fireworks at={fire} />}
                     </svg>
                     <Clouds layer="near" count={2} band={[70, 92]} size={[110, 160]} direction="left" speed={22} seed={11} tint="var(--dk-cloud-near)" />

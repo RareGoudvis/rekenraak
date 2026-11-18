@@ -50,14 +50,15 @@ function Cloud({ state, storm }: { state: ObState; storm: boolean }) {
 function Tower({ state }: { state: ObState }) {
     return (
         <g className={`dk-ob-tower is-${state}`}>
-            <rect className="dk-stone" x={14} y={-70} width={86} height={420} />
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(r => <path key={r} className="dk-mortar" d={`M14 ${-40 + r * 38} h86 M${r % 2 ? 40 : 58} ${-40 + r * 38} v38`} />)}
-            <path className="dk-stone" d="M6 -70 h102 v-22 h-14 v10 h-16 v-10 h-14 v10 h-16 v-10 h-14 v10 h-14 v-10 h-14 Z" />
-            <path className="dk-tower-roof" d="M0 -92 L57 -170 L114 -92 Z" />
-            <path className="dk-mortar" d="M57 -170 V-200" />
-            <g transform="translate(57 -200)"><path className="dk-pennant" d="M0 0 L30 8 L0 16 Z" /></g>
-            <path className="dk-window" d="M44 -20 a13 13 0 0 1 26 0 v26 h-26 Z" />
-            <g className="dk-window-face"><circle cx={52} cy={-6} r={2.4} /><circle cx={62} cy={-6} r={2.4} /></g>
+            {/* It stands up from below the lane: its roof just under the flying height, so a dragon swoops over it. */}
+            <rect className="dk-stone" x={14} y={34} width={86} height={240} />
+            {[0, 1, 2, 3, 4, 5].map(r => <path key={r} className="dk-mortar" d={`M14 ${64 + r * 38} h86 M${r % 2 ? 40 : 58} ${64 + r * 38} v38`} />)}
+            <path className="dk-stone" d="M6 34 h102 v-18 h-14 v8 h-16 v-8 h-14 v8 h-16 v-8 h-14 v8 h-14 v-8 h-14 Z" />
+            <path className="dk-tower-roof" d="M8 16 L57 -26 L106 16 Z" />
+            <path className="dk-mortar" d="M57 -26 V-50" />
+            <g transform="translate(57 -50)"><path className="dk-pennant" d="M0 0 L26 7 L0 14 Z" /></g>
+            <path className="dk-window" d="M44 66 a13 13 0 0 1 26 0 v24 h-26 Z" />
+            <g className="dk-window-face"><circle cx={52} cy={78} r={2.4} /><circle cx={62} cy={78} r={2.4} /></g>
             {state === 'crash' && <g className="dk-bonk-dust">{[0, 1, 2, 3].map(k => <circle key={k} style={v({ '--k': k })} cx={10} cy={-10 + k * 10} r={9} />)}</g>}
         </g>
     );
@@ -97,7 +98,7 @@ function Birds({ state }: { state: ObState }) {
 /** A floating island with a tree full of apples, a little waterfall off its edge. */
 function Island({ state }: { state: ObState }) {
     return (
-        <g className={`dk-ob-island is-${state}`} transform="translate(70 30)">
+        <g className={`dk-ob-island is-${state}`} transform="translate(70 26) scale(.8)">
             <g className="dk-island-float">
                 <path className="dk-fall" d="M42 2 L42 120 L54 120 L52 2 Z" />
                 <path className="dk-rock" d="M-74 0 C -64 44 -24 76 2 104 C 24 66 58 40 74 0 Z" />
@@ -128,7 +129,7 @@ function Gate({ state }: { state: ObState }) {
                 <path className="dk-arc-core is-2" d="M0 -66 L8 -42 L-8 -14 L8 10 L-10 34 L0 66" />
             </g>
             {[-1, 1].map(s => (
-                <g key={s} transform={`translate(0 ${s * 80})`}>
+                <g key={s} transform={`translate(0 ${s * 76})`}>
                     <g className="dk-pylon-bob" style={v({ '--k': s })}>
                         <path className="dk-crystal" d={s < 0 ? 'M-16 -30 L0 -52 L16 -30 L10 14 L-10 14 Z' : 'M-16 30 L0 52 L16 30 L10 -14 L-10 -14 Z'} />
                         <path className="dk-crystal-shine" d={s < 0 ? 'M-6 -30 L0 -42 L4 -30' : 'M-6 30 L0 42 L4 30'} />

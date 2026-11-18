@@ -166,8 +166,8 @@
 
 /* The comic word over a dragon at an obstacle. */
 .dk-call {
-  font: 900 46px var(--kid-font); text-anchor: middle; fill: var(--kiosk-paper);
-  stroke: var(--spel-ink); stroke-width: 9px; paint-order: stroke; animation: dk-call 1150ms ease-out forwards;
+  font: 900 25px var(--kid-font); text-anchor: start; fill: var(--kiosk-paper);
+  stroke: var(--spel-ink); stroke-width: 5px; paint-order: stroke; animation: dk-call 1150ms ease-out forwards;
 }
 .dk-call.is-clear { fill: var(--dk-zap); }
 .dk-call.is-storm { fill: var(--dk-storm-lite); }
@@ -203,24 +203,24 @@
 @keyframes dk-through { 0% { translate: 0 0; } 25% { translate: 24px 0; scale: 1.08 .92; } 60% { translate: 10px 0; scale: 1 1; } 100% { translate: 0 0; } }
 .dk-move.is-clear-through .dk-wing, .dk-move.is-clear-over .dk-wing, .dk-move.is-clear-under .dk-wing, .dk-move.is-clear-roll .dk-wing { animation-duration: 200ms; }
 .dk-move.is-clear-over { animation: dk-over 820ms cubic-bezier(.3, .6, .4, 1); }
-@keyframes dk-over { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 -150px; rotate: -18deg; } 60% { translate: 0 -120px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dk-over { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 -44px; rotate: -14deg; } 60% { translate: 0 -34px; rotate: 8deg; } 100% { translate: 0 0; rotate: 0deg; } }
 .dk-move.is-clear-under { animation: dk-under 820ms cubic-bezier(.3, .6, .4, 1); }
-@keyframes dk-under { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 110px; rotate: 16deg; } 60% { translate: 0 90px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dk-under { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 50px; rotate: 14deg; } 60% { translate: 0 40px; rotate: -6deg; } 100% { translate: 0 0; rotate: 0deg; } }
 .dk-move.is-clear-roll { transform-origin: -96px 0; animation: dk-roll 900ms ease-in-out; }
-@keyframes dk-roll { 0% { translate: 0 0; rotate: 0deg; } 40% { translate: 0 -150px; rotate: -200deg; } 80% { translate: 0 -30px; rotate: -360deg; } 100% { translate: 0 0; rotate: -360deg; } }
+@keyframes dk-roll { 0% { translate: 0 0; rotate: 0deg; } 40% { translate: 0 -40px; rotate: -200deg; } 80% { translate: 0 -10px; rotate: -360deg; } 100% { translate: 0 0; rotate: -360deg; } }
 
 .dk-move.is-crash-zap { animation: dk-zap 900ms ease-out; }
 .dk-move.is-crash-zap .dk-dragon-art { animation: dk-flicker 500ms steps(1); }
-@keyframes dk-zap { 0% { translate: 0 0; rotate: 0deg; } 10% { translate: -12px 4px; rotate: -14deg; } 22% { translate: 8px -3px; rotate: 10deg; } 34% { translate: -10px 2px; rotate: -8deg; } 50% { translate: -30px 30px; rotate: 20deg; } 80% { translate: -10px 10px; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dk-zap { 0% { translate: 0 0; rotate: 0deg; } 10% { translate: -12px 4px; rotate: -14deg; } 22% { translate: 8px -3px; rotate: 10deg; } 34% { translate: -10px 2px; rotate: -8deg; } 50% { translate: -30px 20px; rotate: 20deg; } 80% { translate: -10px 10px; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
 @keyframes dk-flicker { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: .45; } }
 .dk-move.is-crash-bonk { animation: dk-bonk 1000ms cubic-bezier(.3, .7, .4, 1); }
-@keyframes dk-bonk { 0% { translate: 0 0; scale: 1 1; } 10% { translate: 10px 0; scale: .7 1.15; } 22% { translate: -20px 6px; scale: 1.05 .95; rotate: -10deg; } 55% { translate: -40px 60px; rotate: 30deg; scale: 1 1; } 80% { translate: -20px 20px; rotate: 6deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dk-bonk { 0% { translate: 0 0; scale: 1 1; } 10% { translate: 10px 0; scale: .7 1.15; } 22% { translate: -20px 6px; scale: 1.05 .95; rotate: -10deg; } 55% { translate: -40px 36px; rotate: 30deg; scale: 1 1; } 80% { translate: -20px 14px; rotate: 6deg; } 100% { translate: 0 0; rotate: 0deg; } }
 .dk-move.is-crash-feathers { transform-origin: -96px 0; animation: dk-tumble 1000ms ease-in-out; }
 @keyframes dk-tumble { 0% { rotate: 0deg; translate: 0 0; } 45% { rotate: 300deg; translate: -40px 40px; } 75% { rotate: 360deg; translate: -20px 16px; } 100% { rotate: 360deg; translate: 0 0; } }
 .dk-move.is-crash-tangle { animation: dk-tangle 1000ms ease-in-out; }
 @keyframes dk-tangle { 0% { translate: 0 0; } 10% { translate: 10px -4px; rotate: 6deg; } 20% { translate: 2px 2px; rotate: -6deg; } 30% { translate: 8px -2px; rotate: 6deg; } 40% { translate: 0 0; rotate: -4deg; } 70% { translate: -30px 30px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
 .dk-move.is-crash-boing { transform-origin: -96px 0; animation: dk-boing 1000ms cubic-bezier(.3, .7, .4, 1); }
-@keyframes dk-boing { 0% { translate: 0 0; scale: 1 1; } 12% { translate: 8px 0; scale: .75 1.12; } 40% { translate: -110px -40px; rotate: -200deg; scale: 1 1; } 70% { translate: -60px 0; rotate: -360deg; } 100% { translate: 0 0; rotate: -360deg; } }
+@keyframes dk-boing { 0% { translate: 0 0; scale: 1 1; } 12% { translate: 8px 0; scale: .75 1.12; } 40% { translate: -110px -16px; rotate: -200deg; scale: 1 1; } 70% { translate: -60px 0; rotate: -360deg; } 100% { translate: 0 0; rotate: -360deg; } }
 .dk-move.is-crash-zap .dk-wing, .dk-move.is-crash-bonk .dk-wing, .dk-move.is-crash-feathers .dk-wing { animation-play-state: paused; }
 .dk-goagain { animation: dk-goagain 500ms ease-out; }
 @keyframes dk-goagain { 0% { scale: 1 1; } 30% { scale: 1.08 .9; } 60% { scale: .96 1.05; } 100% { scale: 1 1; } }
@@ -332,3 +332,7 @@
 .dk-ob-balloon.is-crash .dk-env { transform-box: fill-box; transform-origin: 50% 50%; animation: dk-env-boing 600ms ease-out; }
 @keyframes dk-env-boing { 15% { scale: .85 1.08; } 40% { scale: 1.08 .94; } 70% { scale: .97 1.02; } 100% { scale: 1 1; } }
 .dk-boing-lines path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; animation: dk-gone 600ms ease-out calc(var(--k) * 60ms) both; }
+
+/* The line of clouds between the lanes. */
+.dk-divide circle { fill: var(--dk-cloud-near); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-ob-balloon, .dk-ob-cloud, .dk-ob-island, .dk-ob-gate, .dk-ob-birds { --crs-origin: 50% 50%; }

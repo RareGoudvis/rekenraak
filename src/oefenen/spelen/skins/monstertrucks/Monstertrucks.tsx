@@ -9,7 +9,7 @@ import { COURSE, courseKind } from '../../course/course';
 import { useCourse, type ContactInfo } from '../../course/useCourse';
 import { useBandWidth } from '../../course/useBandWidth';
 import CourseBar from '../../course/CourseBar';
-import { Confetti, Dirt, FinishArch, Obstacle, Sky, Stand, Truck, TruckBodyCard, TyreRow, Wall, type TruckView } from './art';
+import { Confetti, Dirt, FinishArch, Obstacle, Sky, Stand, Truck, TruckBodyCard, Barrier, Call, Wall, type TruckView } from './art';
 import { H, LANE, TILE } from './geometry';
 import { TRUCK_FRONT, TRUCK_KINDS, TRUCK_OBSTACLES, TRUCK_RULE, type TruckKind } from './rule';
 import { playTruck, soundOfContact } from './sounds';
@@ -109,10 +109,11 @@ export default function Monstertrucks({ meta, from, onExit }: SkinScreenProps) {
         const { y, scale } = LANE[side];
         const gap = COURSE.contactGap / scale;
         return (
-            <g transform={`translate(0 ${y})`}>
+            // Each lane in its own clip: a jump or a crash never reaches into the other lane.
+            <g clipPath={`url(#mtk-lane-${side})`}><g transform={`translate(0 ${y})`}>
                 {course.obstacles[side].map(o => (
                     <g key={o.key} ref={course.obstacleRef(side, o.key)} visibility="hidden" data-kind={kindAt(st.round, o.index)}>
-                        <g transform={`scale(${scale})`}><Obstacle kind={kindAt(st.round, o.index)} state={o.outcome ?? 'ahead'} gap={gap} layer="back" /></g>
+                        <g transform={`scale(${scale})`}><g className="crs-arrive"><Obstacle kind={kindAt(st.round, o.index)} state={o.outcome ?? 'ahead'} gap={gap} layer="back" /></g></g>
                     </g>
                 ))}
                 {course.finish?.side === side && (
@@ -125,10 +126,14 @@ export default function Monstertrucks({ meta, from, onExit }: SkinScreenProps) {
                 </g>
                 {course.obstacles[side].filter(o => TRUCK_FRONT.includes(kindAt(st.round, o.index))).map(o => (
                     <g key={o.key} ref={course.obstacleRef(side, o.key, 'front')} visibility="hidden">
-                        <g transform={`scale(${scale})`}><Obstacle kind={kindAt(st.round, o.index)} state={o.outcome ?? 'ahead'} gap={gap} layer="front" /></g>
+                        <g transform={`scale(${scale})`}><g className="crs-arrive"><Obstacle kind={kindAt(st.round, o.index)} state={o.outcome ?? 'ahead'} gap={gap} layer="front" /></g></g>
                     </g>
                 ))}
-            </g>
+                {/* The comic word beside the truck, over the obstacles (scene units). */}
+                <g ref={course.vehicleRef(side, 'call')}>
+                    {fx.calls[side] && <Call key={`c${fx.calls[side]!.n}`} text={fx.calls[side]!.text} tone={fx.calls[side]!.tone} />}
+                </g>
+            </g></g>
         );
     };
 
@@ -138,14 +143,18 @@ export default function Monstertrucks({ meta, from, onExit }: SkinScreenProps) {
             scene={(
                 <div className={`mtk-scene${between ? ' is-between' : ''}`} data-points={SIDES.map(s => st.sides[s].points).join(',')}>
                     <svg ref={svg} className="mtk-svg" viewBox={`0 0 ${w} ${H}`} preserveAspectRatio="xMidYMax meet" role="img" aria-label="Twee monstertrucks racen door de arena over de hindernissen">
+                        <defs>
+                            <clipPath id="mtk-lane-left"><rect x={-40} y={-200} width={w + 80} height={LANE.left.y + 210} /></clipPath>
+                            <clipPath id="mtk-lane-right"><rect x={-40} y={LANE.left.y + 12} width={w + 80} height={H} /></clipPath>
+                        </defs>
                         <Sky w={w} />
                         <Stand w={w} layerRef={course.layerRef('stand', TILE.stand, 0.18)} cheer={fx.cheer} />
                         <Wall w={w} layerRef={course.layerRef('wall', TILE.wall, 0.5)} />
-                        <rect className="mtk-dirt" x={-20} y={148} width={w + 40} height={H - 148 + 20} />
-                        <Dirt w={w} y={152} h={56} groundRef={course.groundRef('left', TILE.dirt)} seed={3} />
+                        <rect className="mtk-dirt" x={-20} y={74} width={w + 40} height={H - 74 + 20} />
+                        <Dirt w={w} y={112} h={60} groundRef={course.groundRef('left', TILE.dirt)} seed={3} />
+                        <Dirt w={w} y={232} h={66} groundRef={course.groundRef('right', TILE.dirt)} seed={8} />
                         {lane('left')}
-                        <TyreRow w={w} y={226} layerRef={course.layerRef('tyres', TILE.tyres, 0.92)} />
-                        <Dirt w={w} y={236} h={62} groundRef={course.groundRef('right', TILE.dirt)} seed={8} />
+                        <Barrier w={w} y={LANE.left.y + 6} layerRef={course.layerRef('barrier', TILE.tyres, 1)} />
                         {lane('right')}
                         {winner && reached && <Confetti w={w} seed={winner === 'left' ? 5 : 9} />}
                     </svg>

@@ -152,8 +152,8 @@ export function useCourse(spec: CourseSpec) {
         finish,
         /** A vehicle's front in the band now (for an event handler that places a burst). */
         noseNow: (side: Side) => lanes.current[side].nose,
-        /** The vehicle's group: moved to its front's place in the band (x only). */
-        vehicleRef: (side: Side) => bind(`v-${side}`, (el, l) => set(el, `translate(${l[side].nose.toFixed(1)} 0)`)),
+        /** The vehicle's group (or another that follows it, by id: its call over the obstacles): at its front's place (x only). */
+        vehicleRef: (side: Side, id = '') => bind(`v-${side}${id}`, (el, l) => set(el, `translate(${l[side].nose.toFixed(1)} 0)`)),
         /** An obstacle's group: at its place in the lane, hidden until it has one (a layer over the vehicle has its own). */
         obstacleRef: (side: Side, key: string, layer = 'back') => bind(`o-${side}-${key}-${layer}`, (el, l) => {
             const at = placed.current[side].get(key);
