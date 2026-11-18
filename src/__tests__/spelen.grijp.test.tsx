@@ -305,7 +305,8 @@ describe('Grijpmachine: a round on the session', () => {
     test('a tap stops the clock: the claw on its way never times out', () => {
         start('onmogelijk');
         render(<Wired />);
-        for (let t = 0; t < 11_000; t += 100) wait(100);
+        // Tap at 9 s of the 12 s clock: the claw's trip runs past 12 s (11 s left no margin under a loaded gate).
+        for (let t = 0; t < 9_000; t += 100) wait(100);
         tapValue(sp().question!.answer);
         wait(4000);
         expect(names()).toEqual(['correct']);
