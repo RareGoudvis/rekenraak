@@ -1,0 +1,109 @@
+/* The Over page (Zelf home): a calm sheet for parents over the picker. Kid tokens, no new colours. */
+
+/* The quiet button beside the home note: small, light outline, never as loud as a leerjaar tile. */
+.over-btn {
+  min-height: var(--kiosk-tap);
+  padding: 0 var(--sp-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  border: 2px solid color-mix(in srgb, var(--kid-ink) 22%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--kid-card) 70%, transparent);
+  color: var(--kid-muted);
+  font: inherit;
+  font-size: var(--text-md);
+  font-weight: 800;
+  cursor: pointer;
+}
+.over-btn svg { width: 18px; height: 18px; }
+.over-btn:hover { border-color: color-mix(in srgb, var(--kid-ink) 45%, transparent); color: var(--kid-ink); }
+
+.zelf-home-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2) var(--sp-4);
+  margin-top: 4px;
+}
+.zelf-home-foot .zelf-home-note { margin: 0; }
+
+.over-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(var(--sp-3), env(safe-area-inset-top)) max(var(--sp-3), env(safe-area-inset-right)) max(var(--sp-3), env(safe-area-inset-bottom)) max(var(--sp-3), env(safe-area-inset-left));
+  background: color-mix(in srgb, var(--kid-ink) 40%, transparent);
+  font-family: var(--kid-font);
+  animation: over-fade 160ms ease-out;
+}
+.over-card {
+  width: min(100%, 680px);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius);
+  background: var(--kid-card);
+  box-shadow: var(--shadow-3);
+  color: var(--kid-ink);
+  text-align: left;
+  overflow: hidden;
+  animation: over-rise 200ms ease-out;
+}
+.over-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-5);
+  border-bottom: 2px solid color-mix(in srgb, var(--kid-ink) 12%, transparent);
+  background: var(--kid-oefenen-soft);
+}
+.over-head-icon { display: inline-flex; color: var(--accent); }
+.over-head-icon svg { width: 36px; height: 36px; }
+.over-head-text { flex: 1; min-width: 0; }
+.over-title { margin: 0; font-size: var(--text-2xl); font-weight: 900; line-height: 1.15; }
+.over-sub { margin: 2px 0 0; color: var(--kid-muted); font-size: var(--text-md); font-weight: 700; }
+.over-close { flex: none; }
+
+.over-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--sp-2) var(--sp-5) var(--sp-5);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.5;
+}
+.over-section { padding: var(--sp-3) 0; }
+.over-section + .over-section { border-top: 2px dashed color-mix(in srgb, var(--kid-ink) 12%, transparent); }
+.over-section h2 { margin: 0 0 var(--sp-1); font-size: var(--text-xl); font-weight: 900; line-height: 1.25; }
+.over-section p { margin: var(--sp-1) 0; color: var(--kid-muted); }
+.over-list { margin: var(--sp-1) 0; padding-left: 1.3em; color: var(--kid-muted); }
+.over-list li + li { margin-top: 2px; }
+.over-link { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 800; text-underline-offset: 3px; }
+.over-link svg { width: 18px; height: 18px; flex: none; }
+
+.over-wipe-btn { margin-top: var(--sp-2); }
+.over-wipe-btn svg { width: 20px; height: 20px; }
+.over-confirm { margin-top: var(--sp-2); padding: var(--sp-3) var(--sp-4); border: 2px solid var(--kid-warn); border-radius: var(--kid-radius-sm); background: var(--kid-pick); }
+.over-section .over-confirm-q { margin: 0 0 var(--sp-2); color: var(--kid-ink); font-weight: 800; }
+.over-confirm-btns { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.over-section .over-done { margin-top: var(--sp-2); padding: var(--sp-2) var(--sp-4); border-radius: var(--kid-radius-sm); background: var(--kiosk-ok-soft); color: var(--kiosk-ok); font-weight: 800; }
+
+/* A phone: the sheet fills the screen and the header tightens. */
+@media (max-width: 560px), (max-height: 480px) {
+  .over-overlay { padding: 0; }
+  .over-card { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .over-head { padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4); }
+  .over-head-icon svg { width: 28px; height: 28px; }
+  .over-title { font-size: var(--text-xl); }
+  .over-body { padding: var(--sp-1) var(--sp-4) var(--sp-4); font-size: var(--text-md); }
+  .over-section h2 { font-size: var(--text-lg); }
+}
+
+@keyframes over-fade { from { opacity: 0; } }
+@keyframes over-rise { from { transform: translateY(12px); opacity: 0; } }

@@ -16,6 +16,7 @@ import { SECTION_TINT, topicIcon } from './topicIcons';
 import LeerjaarBar from './LeerjaarBar';
 import TopicCard from './TopicCard';
 import GameRow from './GameRow';
+import OverButton from './OverPage';
 import { gamesFor, topicCardOf } from './topicGames';
 import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { readRange, readTafels, readWay, saveRange, saveTafels, saveWay, type ZelfWay } from './zelfPicks';
@@ -165,7 +166,10 @@ export default function ZelfPicker() {
                             })}
                         </div>
                     )}
-                    <p className="zelf-home-note">Heb je een link of QR-code van je juf of meester? Open die dan.</p>
+                    <footer className="zelf-home-foot">
+                        <p className="zelf-home-note">Heb je een link of QR-code van je juf of meester? Open die dan.</p>
+                        <OverButton />
+                    </footer>
                 </main>
             </>
         );
