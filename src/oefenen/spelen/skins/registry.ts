@@ -23,6 +23,8 @@ import { Joystick } from '@phosphor-icons/react';
 import { GRIJP } from './grijp/claw';
 import { FishSimple } from '@phosphor-icons/react';
 import { TANK_GOAL } from './aquarium/tank';
+import { Truck } from '@phosphor-icons/react';
+import { TRUCK } from './monstertrucks/rule';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -202,6 +204,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: MagicWand,
         Screen: lazy(() => import('./tovenaarsduel/Tovenaarsduel')),
+    },
+    {
+        // A race duel (DUEL.md): gas = +1, 3 in a row = a ramp jump over junk cars (+3 in all), a mistake = a wheelie
+        // (monstertrucks/rule.ts). No lives: the levens row is the race's length. The scene voices its moments.
+        meta: {
+            music: 'race', id: 'monstertrucks', label: 'Monstertrucks', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions({ lives: TRUCK.finish }),
+            sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: Truck,
+        Screen: lazy(() => import('./monstertrucks/Monstertrucks')),
     },
     {
         // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
