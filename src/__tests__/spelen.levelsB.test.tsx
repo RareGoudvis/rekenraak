@@ -246,11 +246,13 @@ describe('Mollen: how long a mole stays up follows the clock', () => {
         for (const t of [0, 60_000, 600_000]) expect(moleUpMs('makkelijk', t)).toBe(MOLE.easyUpMs);
         expect(MOLE.easyUpMs).toBeGreaterThan(MOLE.upMs);
         for (const l of ['normaal', 'moeilijk', 'onmogelijk'] as const) {
-            expect(moleUpMs(l, 0)).toBe(MOLE.upMs);
-            expect(moleUpMs(l, 60_000)).toBeCloseTo(MOLE.upMs * 11 / 12);
+            expect(moleUpMs(l, 0)).toBeCloseTo(MOLE.upMs * MOLE.levelUp[l]);
+            expect(moleUpMs(l, 60_000)).toBeCloseTo(MOLE.upMs * MOLE.levelUp[l] * 11 / 12);
         }
+        // Each level starts quicker, so the three differ from the first mole on.
+        expect([moleUpMs('normaal', 0), moleUpMs('moeilijk', 0), moleUpMs('onmogelijk', 0)].map(Math.round)).toEqual([2500, 2000, 1625]);
         // At the end of the two minutes: Normaal and Moeilijk at 10 s of the clock's 12, Onmogelijk at 9 s.
-        expect([moleUpMs('normaal', 120_000), moleUpMs('moeilijk', 120_000), moleUpMs('onmogelijk', 120_000)].map(Math.round)).toEqual([2083, 2083, 1875]);
-        expect(moleUpMs('onmogelijk', 600_000)).toBeCloseTo(MOLE.upMs * 4 / 12);
+        expect([moleUpMs('normaal', 120_000), moleUpMs('moeilijk', 120_000), moleUpMs('onmogelijk', 120_000)].map(Math.round)).toEqual([2083, 1667, 1219]);
+        expect(moleUpMs('onmogelijk', 600_000)).toBeCloseTo(MOLE.upMs * 0.65 * 4 / 12);
     });
 });

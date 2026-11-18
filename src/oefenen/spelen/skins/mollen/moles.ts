@@ -12,6 +12,8 @@ export const MOLE = {
     upMs: 2500,
     // Makkelijk: a little longer than the old pace, and it never gets shorter.
     easyUpMs: 3000,
+    // A round lasts 2 minutes, so the clock alone barely separates the levels: each level also starts quicker.
+    levelUp: { normaal: 1, moeilijk: 0.8, onmogelijk: 0.65 },
     everyMs: 850,
     // At most this many up at once.
     maxUp: 3,
@@ -40,7 +42,7 @@ export interface MoleField {
 /** How long a mole stays up (before the streak's pace) after gameMs of play: it shrinks with the level's clock (levels/clock.ts). */
 export function moleUpMs(level: Level, gameMs: number): number {
     const sum = clockMs(level, gameMs);
-    return sum === null ? MOLE.easyUpMs : MOLE.upMs * (sum / CLOCK.startMs);
+    return sum === null || level === 'makkelijk' ? MOLE.easyUpMs : MOLE.upMs * MOLE.levelUp[level] * (sum / CLOCK.startMs);
 }
 
 /** The pace for a streak: 1 at no streak, a little faster per right answer in a row. */
