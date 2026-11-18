@@ -52,7 +52,7 @@ export default function TopBar({ now }: Props) {
             </span>
             <span className="kiosk-progress kiosk-pill" aria-label={total !== null ? `Oefening ${shownAt} van ${total}` : `Oefening ${shownAt}`}>
                 {dots > 0 && (
-                    <span className="kiosk-dots" aria-hidden>
+                    <span className={`kiosk-dots${dots > 10 ? ' is-long' : ''}`} aria-hidden>
                         {Array.from({ length: dots }, (_, i) => (
                             <span key={i} className={`kiosk-dot${i < made ? ' is-done' : i === made && run.current ? ' is-now' : ''}`} />
                         ))}

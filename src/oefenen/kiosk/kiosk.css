@@ -52,9 +52,26 @@
   --kid-radius: 24px;
   --kid-radius-sm: 18px;
   --kid-radius-lg: 28px;
-  --kid-drop: 0 6px 0 var(--kid-ink);
-  --kid-drop-sm: 0 4px 0 var(--kid-ink);
-  --kid-drop-lg: 0 7px 0 var(--kid-ink);
+  /* Only what a pupil can tap carries the black sticker bar (--kid-press*, sunk to --kid-pressed on :active);
+     surfaces, labels, badges, sum boxes and disabled buttons are flat (owner 2026-11-17).
+     A transparent zero shadow, not none, so it can stand in a shadow list. */
+  --kid-press: 0 6px 0 var(--kid-ink);
+  --kid-press-sm: 0 4px 0 var(--kid-ink);
+  --kid-press-lg: 0 7px 0 var(--kid-ink);
+  --kid-pressed: 0 1px 0 var(--kid-ink);
+  --kid-flat: 0 0 0 0 transparent;
+  /* The old names are surfaces now: the game skins' badges and signs (portraits, health bars, goals) go flat with them. */
+  --kid-drop: var(--kid-flat);
+  --kid-drop-sm: var(--kid-flat);
+  --kid-drop-lg: var(--kid-flat);
+  /* One selected look everywhere: the state accent filled in, plus a small check (kid-check below). */
+  --kid-sel: var(--accent);
+  --kid-sel-ink: var(--accent-on);
+  /* The two ways on the Keuze screen: Oefenen sky blue, Spelen sunny orange-yellow; -soft = the tile that is not open. */
+  --kid-oefenen: #4CB8F5;
+  --kid-oefenen-soft: #D2EEFD;
+  --kid-spelen: #FFB82E;
+  --kid-spelen-soft: #FFEBC2;
   /* Leerjaar badges and topic groups. */
   --kid-tint-1: #FDE68A;
   --kid-tint-2: #BBF7D0;
@@ -235,7 +252,7 @@ html:has(.oefen-body),
 
 /* ── Buttons: white stickers (ink outline, solid drop); press = sink into the drop ── */
 .kiosk-btn {
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   min-height: var(--kiosk-tap);
   padding: 0 var(--sp-4);
   display: inline-flex;
@@ -251,8 +268,8 @@ html:has(.oefen-body),
   font-weight: 800;
   cursor: pointer;
 }
-.kiosk-btn:active:not(:disabled) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
-.kiosk-btn:disabled { opacity: 0.45; cursor: default; }
+.kiosk-btn:active:not(:disabled) { transform: translateY(3px); --kid-sh: var(--kid-pressed); }
+.kiosk-btn:disabled { opacity: 0.45; cursor: default; --kid-sh: var(--kid-flat); }
 .kiosk-btn-primary { background: var(--kid-go); }
 /* Help actions (Toon de stappen, Nakijken): the state blue, white text. */
 .kiosk-btn-help { background: var(--accent); color: var(--accent-on); }
@@ -260,7 +277,7 @@ html:has(.oefen-body),
 /* Never red (no red in Oefenen): the armed confirm of Stoppen / Wissen is ink, so it reads as serious. */
 .kiosk-btn-danger.is-armed { background: var(--kid-ink); color: var(--kid-card); }
 .kiosk-btn-big {
-  --kid-sh: var(--kid-drop);
+  --kid-sh: var(--kid-press);
   min-height: 64px;
   padding: 0 var(--sp-8);
   border-radius: 22px;
@@ -269,6 +286,94 @@ html:has(.oefen-body),
 }
 
 .kiosk-btn, .kiosk-key, .kiosk-choice, .kiosk-check-wide, .zelf-choice, .kiosk-tray-piece { transition: transform 0.08s ease-out; }
+
+/* ── Selected: the accent fill (set per component) + a small check. A tile or round sticker wears it as a white
+   badge on its corner (::before the disc, ::after the tick); a segment shows the tick before its word. ── */
+.oefen-body,
+.oefen-preview {
+  --kid-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='black' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+:is(.zelf-choice, .zelf-tafel, .zelf-way, .kiosk-choice) { position: relative; }
+:is(.zelf-choice, .zelf-tafel, .zelf-way)[aria-pressed="true"]::before,
+:is(.zelf-choice, .zelf-tafel, .zelf-way)[aria-pressed="true"]::after,
+.kiosk-choice.is-picked::before,
+.kiosk-choice.is-picked::after,
+.zelf-year[aria-pressed="true"]::before,
+.zelf-year[aria-pressed="true"]::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: -11px;
+  right: -11px;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  pointer-events: none;
+}
+:is(.zelf-choice, .zelf-tafel, .zelf-way)[aria-pressed="true"]::before,
+.kiosk-choice.is-picked::before,
+.zelf-year[aria-pressed="true"]::before { border: 2.5px solid var(--kid-ink); background: var(--kid-card); }
+:is(.zelf-choice, .zelf-tafel, .zelf-way)[aria-pressed="true"]::after,
+.kiosk-choice.is-picked::after,
+.zelf-year[aria-pressed="true"]::after {
+  background: var(--kid-sel);
+  -webkit-mask: var(--kid-check) center / 18px no-repeat;
+  mask: var(--kid-check) center / 18px no-repeat;
+}
+/* The leerjaar tile clips its art: the badge sits inside its corner. */
+.zelf-year[aria-pressed="true"]::before,
+.zelf-year[aria-pressed="true"]::after { top: 6%; right: 6%; width: 26%; height: 26%; }
+.zelf-year[aria-pressed="true"]::after { -webkit-mask-size: 64%; mask-size: 64%; }
+/* A round tafel is small: the badge a little smaller, on its rim. */
+.zelf-tafel[aria-pressed="true"]::before,
+.zelf-tafel[aria-pressed="true"]::after { top: -8px; right: -8px; width: 24px; height: 24px; }
+.zelf-tafel[aria-pressed="true"]::after { -webkit-mask-size: 15px; mask-size: 15px; }
+
+/* ── Segmented choice (game options, Hoe lang wil je oefenen?): flush segments in one outlined pill ── */
+.kid-option { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.kid-option-label { margin: 0; font-size: var(--kiosk-text); font-weight: 900; line-height: 1.1; text-align: left; }
+.kid-seg {
+  display: flex;
+  overflow: hidden;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-key);
+}
+.kid-seg-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--opt-row, 48px);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--kid-ink);
+  font: inherit;
+  font-size: var(--kiosk-text);
+  font-weight: 800;
+  line-height: 1.1;
+  cursor: pointer;
+}
+@media (hover: hover) { .kid-seg-btn:hover:not([aria-pressed="true"]) { background: var(--kid-card); } }
+/* Segments sit flush with a thin divider; the picked one is filled in (owner 2026-11-17). */
+.kid-seg-btn + .kid-seg-btn { border-left: 2px solid color-mix(in srgb, var(--kid-ink) 22%, transparent); }
+.kid-seg-btn[aria-pressed="true"] { background: var(--kid-sel); color: var(--kid-sel-ink); font-weight: 900; }
+.kid-seg-btn[aria-pressed="true"]::before {
+  content: '';
+  width: 0.9em;
+  height: 0.9em;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: var(--kid-check) center / contain no-repeat;
+  mask: var(--kid-check) center / contain no-repeat;
+}
+/* A narrow segment (a phone, five lives options) keeps the fill and drops the tick. */
+@media (max-width: 599px) { .kid-seg-btn[aria-pressed="true"]::before { display: none; } }
 
 /* ── Top bar: pills on the sky ─────────────────────────────────────────────── */
 .kiosk-topbar {
@@ -335,6 +440,10 @@ html:has(.oefen-body),
 }
 /* A phone or a small tablet: the dots give way to the "4 / 10" text alone. */
 @media (max-width: 760px) { .kiosk-dots { display: none; } }
+/* 11 to 20 exercises (Zelf offers 20): smaller dots, and only where the bar has room for them beside its buttons. */
+.kiosk-dots.is-long { gap: 3px; }
+.kiosk-dots.is-long .kiosk-dot { width: 11px; height: 11px; border-width: 2px; }
+@media (max-width: 1199px) { .kiosk-dots.is-long { display: none; } }
 /* Stoppen and its two-tap confirm (StopButton): one unit, so the armed pair never splits across a wrap. */
 .kiosk-stop {
   display: inline-flex;
@@ -406,7 +515,6 @@ html:has(.oefen-body),
   color: var(--kiosk-ink);
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius-lg);
-  box-shadow: var(--kid-drop-lg);
 }
 
 .kiosk-instruction {
@@ -629,7 +737,6 @@ html:has(.oefen-body),
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius-lg);
   background: var(--kid-card);
-  box-shadow: var(--kid-drop-lg);
 }
 
 .kiosk-answer {
@@ -727,7 +834,7 @@ html:has(.oefen-body),
   display: flex;
   align-items: center;
   justify-content: center;
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: clamp(12px, 2vmin, 18px);
   background: var(--kid-key);
@@ -741,7 +848,7 @@ html:has(.oefen-body),
 .kiosk-key:active:not(:disabled),
 .kiosk-choice:active,
 .kiosk-check-wide:active:not(:disabled),
-.kiosk-tray-piece:active:not(:disabled) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.kiosk-tray-piece:active:not(:disabled) { transform: translateY(3px); --kid-sh: var(--kid-pressed); }
 /* A word key ('spatie') in the text face so it fits a one-wide key on a landscape phone. */
 .kiosk-key-word { font-family: var(--kid-font); font-size: var(--kiosk-text); font-weight: 800; }
 .kiosk-key-back,
@@ -757,7 +864,7 @@ html:has(.oefen-body),
   font-weight: 900;
 }
 .kiosk-key-check:disabled,
-.kiosk-check-wide:disabled { opacity: 0.45; cursor: default; --kid-sh: none; }
+.kiosk-check-wide:disabled { opacity: 0.45; cursor: default; --kid-sh: var(--kid-flat); }
 /* A static how-to line for an action key (Lenen) under the keypad. */
 .kiosk-keypad-hint {
   flex: none;
@@ -778,7 +885,7 @@ html:has(.oefen-body),
   gap: clamp(8px, 1.4vmin, 12px);
 }
 .kiosk-choice {
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   min-height: var(--kiosk-tap);
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius-sm);
@@ -869,14 +976,11 @@ html:has(.oefen-body),
   font-weight: 800;
   white-space: nowrap;
 }
-.kiosk-key:disabled { opacity: 0.45; cursor: default; --kid-sh: none; }
-/* Picked: the yellow sticker with its ring. */
-.kiosk-choice.is-picked {
-  --kid-sh: 0 0 0 4px var(--kid-ring), var(--kid-drop-sm);
-  background: var(--kid-pick);
-}
+.kiosk-key:disabled { opacity: 0.45; cursor: default; --kid-sh: var(--kid-flat); }
+/* Picked: the one selected look (accent fill + check, kid-check). */
+.kiosk-choice.is-picked { background: var(--kid-sel); color: var(--kid-sel-ink); }
 .kiosk-check-wide {
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   flex: none;
   min-height: max(var(--kiosk-tap), 64px);
   border: var(--kid-line) solid var(--kid-ink);
@@ -917,7 +1021,7 @@ html:has(.oefen-body),
   justify-content: center;
   gap: 2px;
   padding: var(--sp-1);
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius-sm);
   background: var(--kid-card);
@@ -930,8 +1034,9 @@ html:has(.oefen-body),
   /* size, not inline-size: the grid sizes the tile from the panel, the figure follows the tile. */
   container-type: size;
 }
-.kiosk-tray-piece.is-laid { --kid-sh: 0 0 0 4px var(--kid-ring), var(--kid-drop-sm); background: var(--kid-pick); }
-.kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; --kid-sh: none; }
+/* Laid: the coin or block keeps its own colours, so only the tile turns yellow (no ring). */
+.kiosk-tray-piece.is-laid { background: var(--kid-pick); }
+.kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; --kid-sh: var(--kid-flat); }
 /* The sheet's coin / block figures are em of --sheet-size-math: a bill (56 px at 13pt) fills
    about 80% of the tile's width and a coin (2.65 em) 70% of its height (the badge takes the
    rest), capped so a Chromebook's big tiles do not draw 150 px coins. */
@@ -1077,7 +1182,6 @@ html:has(.oefen-body),
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: 22px;
   background: var(--kid-card);
-  box-shadow: 0 5px 0 var(--kid-ink);
   text-align: center;
 }
 .kiosk-counter dt { font-size: var(--kiosk-text); font-weight: 800; color: var(--kid-muted); }
@@ -1102,7 +1206,6 @@ html:has(.oefen-body),
   border: var(--kid-line) solid var(--kid-ink);
   background: var(--kid-card);
   border-radius: 22px;
-  box-shadow: 0 5px 0 var(--kid-ink);
   overflow: hidden;
 }
 .kiosk-table th,
@@ -1259,8 +1362,8 @@ html:has(.oefen-body),
 .kiosk-steps-hint { font-size: var(--kiosk-text); font-weight: 700; color: var(--kid-muted); font-family: var(--kid-font); }
 .kiosk-steps-answer { font-size: var(--kiosk-text-lg); color: var(--accent); }
 @keyframes kiosk-steps-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), var(--kid-drop); }
-  50% { box-shadow: 0 0 0 10px transparent, var(--kid-drop); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), var(--kid-press); }
+  50% { box-shadow: 0 0 0 10px transparent, var(--kid-press); }
 }
 .kiosk-steps-pulse { animation: kiosk-steps-pulse 1.4s ease-in-out infinite; }
 
@@ -1374,7 +1477,6 @@ html:has(.oefen-body),
   border-radius: 14px;
   background: var(--kid-card);
   color: var(--kid-ink);
-  box-shadow: var(--kid-drop-sm);
   font-family: var(--kid-font);
   font-weight: 700;
   font-size: calc(var(--kiosk-text) * 0.85);
@@ -1456,7 +1558,7 @@ html:has(.oefen-body),
   gap: 16px;
 }
 .zelf-choice {
-  --kid-sh: 0 5px 0 var(--kid-ink);
+  --kid-sh: var(--kid-press-sm);
   min-height: max(var(--kiosk-tap), 76px);
   padding: var(--sp-2) 14px;
   display: flex;
@@ -1477,10 +1579,10 @@ html:has(.oefen-body),
   cursor: pointer;
 }
 @media (hover: hover) { .zelf-choice:hover:not(.is-picked) { transform: translateY(-2px); } }
-.zelf-choice:active { transform: translateY(3px); --kid-sh: 0 2px 0 var(--kid-ink); }
+.zelf-choice:active { transform: translateY(3px); --kid-sh: var(--kid-pressed); }
 .zelf-choice.is-picked,
-.zelf-choice[aria-pressed="true"] { --kid-sh: 0 0 0 4px var(--kid-ring), 0 6px 0 var(--kid-ink); background: var(--kid-pick); }
-.zelf-choice:disabled { cursor: default; }
+.zelf-choice[aria-pressed="true"] { background: var(--kid-sel); color: var(--kid-sel-ink); }
+.zelf-choice:disabled { cursor: default; --kid-sh: var(--kid-flat); }
 .zelf-choice-text { min-width: 0; }
 
 /* The topics screen: the leerjaar bar, then the topic cards. Tighter than the other screens, so the
@@ -1489,7 +1591,7 @@ html:has(.oefen-body),
 /* Read out, not shown: the leerjaar bar and the cards say it already. */
 .zelf-home-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
 
-/* Leerjaar: six rounded tiles, each a little world of its leerjaar (backdrops/); the chosen one grows and gets a thick border in its world's colour. */
+/* Leerjaar: six rounded tiles, each a little world of its leerjaar (backdrops/); the chosen one grows, its sky takes the selected fill and a check. */
 .zelf-years {
   --year: clamp(64px, min(13.5vmin, 12.5vw), 108px);
   width: min(100%, 1100px);
@@ -1502,13 +1604,12 @@ html:has(.oefen-body),
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius-lg);
   background: var(--kid-card);
-  box-shadow: var(--kid-drop);
 }
 .zelf-years-label { margin: 0; font-size: var(--kiosk-text); font-weight: 900; color: var(--kid-muted); }
 .zelf-years.is-unset .zelf-years-label { font-size: var(--kiosk-text-lg); color: var(--kid-ink); }
 .zelf-years-row { display: flex; gap: clamp(10px, 2vw, 22px); padding: 4px; }
 .zelf-year {
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   --w-sky: var(--kid-tint-3);
   position: relative;
   width: var(--year);
@@ -1526,13 +1627,13 @@ html:has(.oefen-body),
   color: var(--kid-ink);
   cursor: pointer;
 }
-/* Each world's palette: sky, ground, two accents, its selected-border colour (the backdrops' pastels, a shade deeper). */
-.zelf-year.is-1 { --w-sky: #D8EDFF; --ks-sky-top: #BBDDFD; --ks-ground: #A9E2A4; --ks-ground-back: #C8EEC2; --ks-far1: #CBEDC4; --w-ring: #C98F00; }
-.zelf-year.is-2 { --w-sky: #E5E4FF; --ks-sky-top: #CFCBFB; --ks-ground: #B7E5D0; --ks-ground-back: #D4D2F6; --ks-far1: #DAD7F8; --w-ring: #0E9F8E; }
-.zelf-year.is-3 { --w-sky: #FFE7CF; --ks-sky-top: #FFD6B4; --ks-ground: #F2C7A2; --ks-ground-back: #F8DABF; --ks-far1: #F6D3B8; --w-ring: #E2531A; }
-.zelf-year.is-4 { --w-sky: #DCF2E4; --ks-sky-top: #C2E7D1; --ks-ground: #93D6A4; --ks-ground-back: #BDE8C6; --ks-far1: #C4E8CD; --w-ring: #1E8E4E; }
-.zelf-year.is-5 { --w-sky: #E4EEF9; --ks-sky-top: #CCDDF3; --ks-ground: #FFFFFF; --ks-ground-back: #EEF4FB; --ks-far1: #CCDBEE; --w-ring: #3B82D6; }
-.zelf-year.is-6 { --w-sky: #FFF0D6; --ks-sky-top: #FFE1AE; --ks-ground: #F5DAA4; --ks-ground-back: #FAE8C4; --ks-far1: #F7E0B6; --w-ring: #B7791F; }
+/* Each world's palette: sky, ground and two accents (the backdrops' pastels). */
+.zelf-year.is-1 { --w-sky: #D8EDFF; --ks-sky-top: #BBDDFD; --ks-ground: #A9E2A4; --ks-ground-back: #C8EEC2; --ks-far1: #CBEDC4; }
+.zelf-year.is-2 { --w-sky: #E5E4FF; --ks-sky-top: #CFCBFB; --ks-ground: #B7E5D0; --ks-ground-back: #D4D2F6; --ks-far1: #DAD7F8; }
+.zelf-year.is-3 { --w-sky: #FFE7CF; --ks-sky-top: #FFD6B4; --ks-ground: #F2C7A2; --ks-ground-back: #F8DABF; --ks-far1: #F6D3B8; }
+.zelf-year.is-4 { --w-sky: #DCF2E4; --ks-sky-top: #C2E7D1; --ks-ground: #93D6A4; --ks-ground-back: #BDE8C6; --ks-far1: #C4E8CD; }
+.zelf-year.is-5 { --w-sky: #E4EEF9; --ks-sky-top: #CCDDF3; --ks-ground: #FFFFFF; --ks-ground-back: #EEF4FB; --ks-far1: #CCDBEE; }
+.zelf-year.is-6 { --w-sky: #FFF0D6; --ks-sky-top: #FFE1AE; --ks-ground: #F5DAA4; --ks-ground-back: #FAE8C4; --ks-far1: #F7E0B6; }
 .zelf-year[class*="is-"] { background: linear-gradient(180deg, var(--ks-sky-top) 0%, var(--w-sky) 70%); }
 .zy-art { position: absolute; inset: 0; width: 100%; height: 100%; --ks-line: color-mix(in srgb, var(--kid-ink) 45%, var(--w-sky)); }
 .zy-art * { stroke: var(--ks-line); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
@@ -1560,17 +1661,18 @@ html:has(.oefen-body),
   line-height: 1;
   color: var(--kid-ink);
 }
-.zelf-year:active:not([aria-pressed="true"]) { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.zelf-year:active:not([aria-pressed="true"]) { transform: translateY(3px); --kid-sh: var(--kid-pressed); }
 .zelf-year:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
-.zelf-year[aria-pressed="true"] { border: 5px solid var(--w-ring); --kid-sh: 0 0 0 2px var(--kid-ink), var(--kid-drop-sm); transform: scale(1.12); }
+.zelf-year[aria-pressed="true"] { background: linear-gradient(180deg, var(--kid-sel) 0%, color-mix(in srgb, var(--kid-sel) 70%, var(--kid-card)) 75%); transform: scale(1.12); }
+.zelf-year[aria-pressed="true"] .zy-num { color: var(--kid-sel-ink); }
 
 .zelf-year { transition: transform 0.12s ease-out; }
 /* First visit: the bar glows gently until a tile is picked (the words say the same). */
 .zelf-years.is-unset { animation: zelf-glow 1.8s ease-in-out infinite; }
 
 @keyframes zelf-glow {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--kid-ring) 0%, transparent), var(--kid-drop); }
-  50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--kid-ring) 60%, transparent), var(--kid-drop); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--kid-ring) 0%, transparent); }
+  50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--kid-ring) 60%, transparent); }
 }
 @media (max-width: 599px) {
   .zelf-years { --year: 46px; gap: 6px; padding: 8px 8px 10px; }
@@ -1600,7 +1702,7 @@ html:has(.oefen-body),
   gap: 18px;
 }
 .zelf-play-tile {
-  --kid-sh: var(--kid-drop);
+  --kid-sh: var(--kid-press);
   position: relative;
   flex: none;
   min-width: 0;
@@ -1616,8 +1718,8 @@ html:has(.oefen-body),
   text-align: left;
   cursor: pointer;
 }
-.zelf-play-tile:disabled { cursor: default; }
-.zelf-play-tile:active:not(:disabled) { transform: translateY(4px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.zelf-play-tile:disabled { cursor: default; --kid-sh: var(--kid-flat); }
+.zelf-play-tile:active:not(:disabled) { transform: translateY(4px); --kid-sh: var(--kid-pressed); }
 .zelf-play-tile:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
 @media (hover: hover) {
   .zelf-play-tile:hover:not(:disabled) { transform: translateY(-3px) rotate(-1deg); }
@@ -1679,7 +1781,7 @@ html:has(.oefen-body),
 .zelf-topics.is-dim { opacity: 0.5; filter: grayscale(0.6); }
 .zelf-grid-topics { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .zelf-topic {
-  --kid-sh: var(--kid-drop);
+  --kid-sh: var(--kid-press);
   position: relative;
   min-width: 0;
   padding: 0;
@@ -1694,8 +1796,8 @@ html:has(.oefen-body),
   text-align: center;
   cursor: pointer;
 }
-.zelf-topic:disabled { cursor: default; }
-.zelf-topic:active:not(:disabled) { transform: translateY(4px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.zelf-topic:disabled { cursor: default; --kid-sh: var(--kid-flat); }
+.zelf-topic:active:not(:disabled) { transform: translateY(4px); --kid-sh: var(--kid-pressed); }
 .zelf-topic:focus-visible { outline: 4px solid var(--kid-ring); outline-offset: 3px; }
 @media (hover: hover) {
   .zelf-topic:hover:not(:disabled) { transform: translateY(-3px) rotate(-1deg); }
@@ -1774,10 +1876,11 @@ html:has(.oefen-body),
 .zelf-range-label { font-size: var(--kiosk-text-lg); font-weight: 900; }
 .zelf-range .zelf-range-btn { min-height: 60px; padding: 0 24px; justify-content: center; font-size: var(--kiosk-text-lg); font-weight: 900; white-space: nowrap; }
 .zelf-range-pill { font-size: var(--kiosk-text); font-weight: 900; }
-/* Welke tafels: round number stickers to toggle, Alle / Geen beside them. */
-.zelf-tafels { display: flex; flex-wrap: wrap; gap: 12px; }
+/* Welke tafels: round number stickers to toggle, 1 to 10 on one row and the bigger ones below, then Alle / Geen. */
+.zelf-tafels { display: flex; flex-direction: column; gap: 12px; }
+.zelf-tafels-row { display: flex; flex-wrap: wrap; gap: 12px; }
 .zelf-tafel {
-  --kid-sh: var(--kid-drop-sm);
+  --kid-sh: var(--kid-press-sm);
   width: 60px;
   height: 60px;
   padding: 0;
@@ -1794,24 +1897,25 @@ html:has(.oefen-body),
   font-weight: 700;
   cursor: pointer;
 }
-.zelf-tafel[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--kid-ring), var(--kid-drop-sm); background: var(--kid-pick); color: var(--kid-ink); }
-.zelf-tafel:active { transform: translateY(3px); --kid-sh: 0 1px 0 var(--kid-ink); }
+.zelf-tafel[aria-pressed="true"] { background: var(--kid-sel); color: var(--kid-sel-ink); }
+.zelf-tafel:active { transform: translateY(3px); --kid-sh: var(--kid-pressed); }
 .zelf-tafels-quick { display: flex; gap: 10px; }
 .zelf-step .zelf-ops { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .zelf-hint { margin: 0; font-size: var(--kiosk-text); font-weight: 800; color: var(--kid-muted); text-align: right; }
 @media (max-width: 599px) {
-  .zelf-tafels { gap: 8px; }
+  .zelf-tafels, .zelf-tafels-row { gap: 8px; }
   .zelf-tafel { width: 52px; height: 52px; font-size: 21px; }
   .zelf-step .zelf-ops .zelf-choice { min-height: 64px; padding: 6px; font-size: var(--kiosk-text); }
   .zelf-range .zelf-range-btn { min-height: 52px; padding: 0 14px; font-size: var(--kiosk-text); }
 }
 
-/* Oefenen or Spelen: two big tiles side by side (a segmented choice), the open one's part in a sticker panel below. */
+/* Oefenen or Spelen: two big tiles side by side (a segmented choice), each in its own cheerful colour; the open one
+   full colour with the check, the other its light shade; the open part in a flat panel edged in the same colour. */
 .zelf-ways { scroll-margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); }
 .zelf-way {
-  --kid-sh: var(--kid-drop);
-  --way-tint: var(--kid-tint-3);
-  --way-ring: var(--kid-tint-ring-3);
+  --kid-sh: var(--kid-press);
+  --way: var(--kid-oefenen);
+  --way-soft: var(--kid-oefenen-soft);
   min-width: 0;
   min-height: clamp(84px, 13vh, 120px);
   padding: 12px 18px;
@@ -1820,7 +1924,7 @@ html:has(.oefen-body),
   gap: 14px;
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius);
-  background: var(--kid-card);
+  background: var(--way-soft);
   box-shadow: var(--kid-sh);
   color: var(--kid-ink);
   font: inherit;
@@ -1828,11 +1932,11 @@ html:has(.oefen-body),
   cursor: pointer;
   transition: transform 0.08s ease-out;
 }
-.zelf-way.is-spelen { --way-tint: var(--kid-tint-4); --way-ring: var(--kid-tint-ring-4); }
+.zelf-way.is-spelen { --way: var(--kid-spelen); --way-soft: var(--kid-spelen-soft); }
 @media (hover: hover) { .zelf-way:hover:not([aria-pressed="true"]) { transform: translateY(-2px); } }
-.zelf-way:active { transform: translateY(4px); --kid-sh: 0 1px 0 var(--kid-ink); }
-/* The open way: its tint fills the tile and a thick ring in its colour, so the panel below reads as its part. */
-.zelf-way[aria-pressed="true"] { --kid-sh: 0 0 0 5px var(--way-ring), var(--kid-drop); background: var(--way-tint); }
+.zelf-way:active { transform: translateY(4px); --kid-sh: var(--kid-pressed); }
+.zelf-way[aria-pressed="true"] { background: var(--way); }
+.zelf-way[aria-pressed="true"] .zelf-way-why { color: var(--kid-ink); }
 .zelf-way-icon {
   width: clamp(52px, 8vh, 72px);
   height: clamp(52px, 8vh, 72px);
@@ -1842,7 +1946,7 @@ html:has(.oefen-body),
   justify-content: center;
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: 50%;
-  background: var(--way-tint, var(--kid-tint-3));
+  background: var(--way, var(--kid-oefenen));
   color: var(--kid-ink);
 }
 .zelf-way[aria-pressed="true"] .zelf-way-icon { background: var(--kid-card); }
@@ -1851,7 +1955,8 @@ html:has(.oefen-body),
 .zelf-way-title { font-size: var(--kiosk-text-xl); font-weight: 900; line-height: 1.1; }
 .zelf-way-why { font-size: var(--kiosk-text); font-weight: 700; line-height: 1.2; color: var(--kid-muted); }
 /* The open part: a notch under its own tile ties the two together. */
-.zelf-part { position: relative; }
+.zelf-part { --way: var(--kid-oefenen); position: relative; }
+.zelf-part.is-spelen { --way: var(--kid-spelen); }
 .zelf-ways + .zelf-part { margin-top: 4px; }
 .zelf-ways + .zelf-part::before {
   content: '';
@@ -1860,8 +1965,8 @@ html:has(.oefen-body),
   left: calc(25% - 14px);
   width: 24px;
   height: 24px;
-  border-top: var(--kid-line) solid var(--kid-ink);
-  border-left: var(--kid-line) solid var(--kid-ink);
+  border-top: var(--kid-line) solid var(--way);
+  border-left: var(--kid-line) solid var(--way);
   background: var(--kid-card);
   transform: rotate(45deg);
 }
@@ -1869,10 +1974,9 @@ html:has(.oefen-body),
 .zelf-part.is-spelen { padding-bottom: 6px; }
 .zelf-panel {
   padding: 14px 18px 18px;
-  border: var(--kid-line) solid var(--kid-ink);
+  border: var(--kid-line) solid var(--way, var(--kid-ink));
   border-radius: var(--kid-radius);
   background: var(--kid-card);
-  box-shadow: var(--kid-drop);
 }
 .zelf-panel-head { display: flex; align-items: center; gap: 14px; }
 .zelf-panel-text { display: flex; flex-direction: column; gap: 2px; }
@@ -1884,28 +1988,18 @@ html:has(.oefen-body),
   .zelf-panel-title, .zelf-way-title { font-size: var(--kiosk-text-lg); }
   .zelf-way { padding: 10px 12px; gap: 10px; }
   .zelf-way-icon { width: 44px; height: 44px; }
-  .zelf-step .zelf-amount-row .zelf-choice { padding: 0 12px; min-height: 52px; }
 }
-/* Hoeveel: the counts and minutes as small stickers, Start beside them. */
-.zelf-amounts { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 20px; }
-.zelf-amount-row { display: flex; flex-wrap: wrap; gap: 10px; }
-.zelf-step .zelf-amount-row .zelf-choice {
-  --kid-sh: var(--kid-drop-sm);
-  min-height: 56px;
-  padding: 0 18px;
-  border-radius: 16px;
-  font-size: var(--kiosk-text);
-  font-weight: 800;
+/* Hoe lang wil je oefenen?: the game options' segments (kid-seg), two per line; Begin met oefenen bottom right. */
+.zelf-howlong { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 900; line-height: 1.15; text-align: left; }
+.zelf-amounts { --opt-row: clamp(44px, 5.6vh, 54px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 12px 24px; }
+.zelf-seg-unit { display: flex; align-items: center; gap: 10px; }
+.zelf-seg-unit > .kid-seg { flex: 1 1 auto; }
+.zelf-seg-word { font-weight: 800; color: var(--kid-muted); }
+.zelf-go { grid-column: 2; justify-self: end; margin-top: 4px; }
+@media (max-width: 599px) {
+  .zelf-amounts { grid-template-columns: minmax(0, 1fr); }
+  .zelf-go { grid-column: 1; justify-self: stretch; }
 }
-.zelf-step .zelf-amount-row .zelf-choice[aria-pressed="true"] { --kid-sh: 0 0 0 3px var(--kid-ring), var(--kid-drop-sm); }
-.zelf-amount-or { align-self: center; color: var(--kid-muted); font-weight: 800; }
-/* Counts on one line, "of op tijd" and the minutes on the next. */
-.zelf-amount-row.is-stack { flex-direction: column; align-items: flex-start; }
-.zelf-amount-time { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-/* Hulp met MAB-blokjes: a switch-like sticker with its state in words. */
-.zelf-mab { align-self: flex-start; }
-.zelf-mab[aria-pressed="true"] { background: var(--kid-pick); }
-.zelf-go { margin-left: auto; }
 
 /* A 'card' steps visual (MAB) under the exercise while the steps are open: the card is idle then, so the blocks get
    about three times the room of the side panel. Tablets and laptops only: a phone never shows MAB (mab.css). */
@@ -1920,8 +2014,7 @@ html:has(.oefen-body),
     background: var(--kid-card);
     border: var(--kid-line) solid var(--kid-ink);
     border-radius: var(--kid-radius-lg);
-    box-shadow: var(--kid-drop-lg);
-  }
+    }
   .kiosk-card-col > .steps-visual > * { width: 100%; margin: 0; }
   .kiosk-card-col .sv-mab-svg { max-height: 48vh; max-width: calc(var(--mab-w, 240px) * 3.4); }
   .has-card-visual .kiosk-card { flex: 0 1 auto; }

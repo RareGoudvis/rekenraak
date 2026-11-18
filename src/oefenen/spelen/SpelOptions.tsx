@@ -37,11 +37,11 @@ export default function SpelOptions({ meta, blurb, note, onStart, onBack }: Prop
             {shown.length > 0 && (
                 <div className={`spel-options-panel${shown.length > 2 ? ' is-many' : ''}`}>
                     {shown.map(o => (
-                        <div key={o.id} className="spel-option">
-                            <p className="spel-option-label" id={`spel-opt-${o.id}`}>{o.label}</p>
-                            <div role="group" aria-labelledby={`spel-opt-${o.id}`} className="spel-seg">
+                        <div key={o.id} className="kid-option">
+                            <p className="kid-option-label" id={`spel-opt-${o.id}`}>{o.label}</p>
+                            <div role="group" aria-labelledby={`spel-opt-${o.id}`} className="kid-seg">
                                 {o.choices.map(c => (
-                                    <button key={c.value} type="button" aria-pressed={chosen[o.id] === c.value} className="spel-seg-btn"
+                                    <button key={c.value} type="button" aria-pressed={chosen[o.id] === c.value} className="kid-seg-btn"
                                         onClick={() => setChosen(p => ({ ...p, [o.id]: c.value }))}>{c.label}</button>
                                 ))}
                             </div>

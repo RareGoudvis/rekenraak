@@ -56,6 +56,30 @@ describe('Zelf oefenen picker', () => {
         expect(st().run).not.toBeNull();
     });
 
+    test('Hoe lang wil je oefenen?: count and minutes as segments, one row active, 20 is new; MAB Aan / Uit (owner 2026-11-17)', async () => {
+        render(<OefenApp />);
+        click('Leerjaar 2');
+        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
+        topic('Hoofdrekenen', 'Optellen');
+        fireEvent.click(screen.getAllByRole('button').filter(b => !/Terug/.test(b.textContent ?? ''))[0]);
+        click('Oefenen');
+        expect(screen.getByRole('heading', { name: 'Hoe lang wil je oefenen?' })).toBeTruthy();
+        const pressed = (group: string) => within(screen.getByRole('group', { name: group })).getAllByRole('button')
+            .filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent);
+        expect(within(screen.getByRole('group', { name: 'Aantal oefeningen' })).getAllByRole('button').map(b => b.textContent)).toEqual(['3', '5', '10', '20']);
+        expect(pressed('Aantal oefeningen')).toEqual(['5']);
+        expect(pressed('Tijd')).toEqual([]);
+        click('1 minuut');
+        expect(pressed('Aantal oefeningen')).toEqual([]);
+        expect(pressed('Tijd')).toEqual(['1']);
+        click('20 oefeningen');
+        expect(pressed('Hulp met MAB-blokjes')).toEqual(['Aan']);
+        fireEvent.click(within(screen.getByRole('group', { name: 'Hulp met MAB-blokjes' })).getByRole('button', { name: 'Uit' }));
+        click('Begin met oefenen');
+        expect(st().sessie!.total).toBe(20);
+        expect(st().sessie!.noMab).toBe(true);
+    });
+
     test('a timed choice sets the timer and no total', async () => {
         render(<OefenApp />);
         click('Leerjaar 1');
