@@ -14,7 +14,8 @@ import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import Taartgevecht from '../oefenen/spelen/skins/taartgevecht/Taartgevecht';
 import { TAART, TAART_RULE, creamBlobs, isFinalPie } from '../oefenen/spelen/skins/taartgevecht/rule';
 import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
-import { DUEL_TIMING, SUM_CLOCK, freshSideView } from '../oefenen/spelen/duel/rules';
+import { DUEL_TIMING, freshSideView } from '../oefenen/spelen/duel/rules';
+import { CLOCK } from '../oefenen/spelen/levels/clock';
 import type { DuelCtx } from '../oefenen/spelen/duel/types';
 import type { SpelFrom } from '../oefenen/spelen/useSpelStore';
 
@@ -46,7 +47,7 @@ describe('Taartgevecht: the registry entry', () => {
         const t = taart();
         expect(t.meta).toMatchObject({ id: 'taartgevecht', label: 'Taartgevecht', input: 'keypad', timed: false, players: '1-2', music: 'gek' });
         expect(t.Screen && !t.Component).toBeTruthy();
-        expect(t.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
+        expect(t.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes']);
         expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '10', rondes: '3' });
         // The scene voices the throw and the dizzy lock itself.
         expect(t.meta.sounds).toMatchObject({ correct: null, wrong: null });
@@ -174,9 +175,9 @@ describe('Taartgevecht: the screen', () => {
         render(<Taartgevecht meta={meta({ spelers: '2', levens: '5', niveau: 'moeilijk' })} from={from} onExit={() => { }} />);
         ready();
         const first = q().key;
-        expect(du().sides.left.limitMs).toBe(SUM_CLOCK.startMs);
+        expect(du().sides.left.limitMs).toBe(CLOCK.startMs);
         expect(document.querySelectorAll('.duel-ring')).toHaveLength(2);
-        tick(SUM_CLOCK.startMs + 10);
+        tick(CLOCK.startMs + 10);
         expect(lives()).toEqual([5, 5]);
         expect(du().flights).toHaveLength(0);
         tick(DUEL_TIMING.flashWrong + 10);

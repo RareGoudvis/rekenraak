@@ -268,6 +268,8 @@
 .spel-options-panel.is-many .kid-option.is-wide { grid-column: 1 / -1; }
 .spel-options-panel.is-many .kid-option.is-alone .kid-seg { width: fit-content; min-width: calc(50% - 11px); max-width: 100%; }
 .spel-options-panel.is-many .kid-option.is-alone .kid-seg-btn { flex-basis: auto; padding: 0 20px; }
+/* Two choices share their half by label length, so "Elk een eigen som" fits beside "Samen één som" on one line. */
+.spel-options-panel .kid-seg:has(> .kid-seg-btn:nth-child(2):last-child) > .kid-seg-btn { flex-basis: auto; padding: 0 8px; }
 .spel-options-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .spel-options-start { min-height: 64px; min-width: min(100%, 280px); }
 /* A phone: picture above the text, one option per line. */

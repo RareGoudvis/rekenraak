@@ -8,7 +8,9 @@
 .lv-slash { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
 .lv-fire { fill: var(--accent-vraagstukken); stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 .lv-core { fill: var(--mab-e); }
+/* A level with more icons gets more room (Onmogelijk with its check, clock and flames), never a clipped word. */
+.kid-option.is-wide .kid-seg-btn { flex: 1 1 auto; padding: 0 10px; }
 /* A phone: the icons above the word, so four levels still fit one line. */
 @media (max-width: 599px) {
-  .kid-seg-btn:has(.lv-icon) { flex-direction: column; gap: 2px; padding: 4px 4px; }
+  .kid-option.is-wide .kid-seg-btn { flex-direction: column; gap: 2px; padding: 4px 4px; }
 }

@@ -1,4 +1,5 @@
 import type { OefenHistoryEntry } from '../../../services/oefenen/types';
+import type { Level } from '../levels/levels';
 import type { SpelQuestion } from '../spelQuestion';
 
 // The duel engine's contract (DUEL.md): two sides, their question streams, lives, points, rounds and the
@@ -8,7 +9,8 @@ export type Side = 'left' | 'right';
 export const SIDES: readonly Side[] = ['left', 'right'];
 export const otherSide = (s: Side): Side => (s === 'left' ? 'right' : 'left');
 
-export type DuelLevel = 'normaal' | 'moeilijk';
+// The four levels (levels/levels.ts): Makkelijk = no clock (and a gentle bot), the others the shared clock per sum.
+export type DuelLevel = Level;
 // own = each side its own sums; shared = one sum for both, typed at once, the first right answer takes it.
 export type DuelStream = 'own' | 'shared';
 export type DuelBestOf = 1 | 3 | 5;
@@ -97,7 +99,7 @@ export interface DuelRule {
     right?(ctx: DuelCtx): DuelEffect;
     // A wrong answer. Absent = nothing (the flash or the lock is the cost).
     wrong?(ctx: DuelCtx): DuelEffect;
-    // Moeilijk: a sum's time ran out. Absent = rule.wrong.
+    // A sum's time ran out (every level but Makkelijk). Absent = rule.wrong.
     timeout?(ctx: DuelCtx): DuelEffect;
     // A flight arrives (ctx.side = who launched it). Absent = flight.effect as it is.
     land?(ctx: DuelCtx, flight: DuelFlight): DuelEffect;
@@ -123,7 +125,7 @@ export interface DuelSide extends DuelSideView {
     tries: number;
     out: boolean;
     shownAt: number;
-    // Moeilijk: when this sum times out, and its full time (the ring). null = no clock.
+    // When this sum times out, and its full time (the ring; levels/clock.ts). null = no clock (Makkelijk).
     deadline: number | null;
     limitMs: number | null;
     // How long this side takes per sum lately (bot.ts nextPace; the bot follows the pupil's pace); null = no answer yet.

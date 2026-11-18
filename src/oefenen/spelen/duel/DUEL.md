@@ -2,7 +2,7 @@
 
 A duel = two sides on one screen (left Blauw, right Oranje), or 1 speler against the computer (the bot plays
 the right side). The engine in this folder runs everything a duel shares: question streams, checking, lives,
-points, the Moeilijk clock, the bot, rounds and best of, the HUD, keypads, the round and match cards, sounds
+points, the clock per sum (the four levels), the bot, rounds and best of, the HUD, keypads, the round and match cards, sounds
 and music. A game supplies **a rule** (what an answer does) and **a scene** (the picture in the band on top).
 Touwtrekken (`skins/touwtrekken/`) and Kasteel (`skins/kasteel/`) are the two worked examples.
 
@@ -11,8 +11,9 @@ Touwtrekken (`skins/touwtrekken/`) and Kasteel (`skins/kasteel/`) are the two wo
 | File | What |
 |---|---|
 | `types.ts` | `Side`, `DuelConfig`, `DuelRule`, `DuelEffect`, `DuelCtx`, `DuelFlight`, `DuelEventMap` |
-| `rules.ts` | pure: `sumLimitMs` (Moeilijk clock), `winsNeeded` / `matchWinnerOf`, `applyEffect`, `defaultRoundOver`, `hitRule`, `ropeRule`, `leadOf`, `DUEL_TIMING`, `SHARED_TRIES` |
-| `bot.ts` | pure: `BOT` tuning table, `botTurn(level, { lead, answerChars, paceMs, shared }, rng)`: it follows the pupil's pace (`nextPace`, the store keeps `paceMs` per side) and a rubber band on the lead; win rates per game in `spelen.bot.test.ts` |
+| `rules.ts` | pure: `winsNeeded` / `matchWinnerOf`, `applyEffect`, `defaultRoundOver`, `hitRule`, `ropeRule`, `leadOf`, `DUEL_TIMING`, `SHARED_TRIES` |
+| `bot.ts` | pure: `BOT` tuning table (a row per level), `botTurn(level, { lead, answerChars, paceMs, shared }, rng)`: it follows the pupil's pace (`nextPace`, the store keeps `paceMs` per side) and a rubber band on the lead; with a clock the store has it answer at the latest `BOT.beatClockMs` before the ring runs out; win rates per game and level in `spelen.bot.test.ts` |
+| `../levels/` | shared with the solo games: `levels.ts` (`Level`, `levelOption`, `levelOf`), `clock.ts` (`clockMs(level, elapsedMs)`: the clock rule) |
 | `duelStore.ts` | the zustand store `useDuelStore` (one match at a time); dev builds expose it as `window.__duel` |
 | `options.ts` | `duelOptions(spec)` (the shared pre-start options), `MANIER_OPTION`, `duelConfigOf(chosen, extra)` |
 | `useDuel.ts` | `useDuelMatch(meta, from, rule, extra?)`, `useDuelEvent(name, fn)` |
@@ -61,8 +62,9 @@ Register it in `skins/registry.ts` (one entry, a `Screen`, no `Component`):
 ## The options and the config
 
 `duelOptions(spec)` gives, in order: **spelers** (1 / 2, default 2; `spec.players: 1` preselects 1),
-**niveau** (Normaal / Moeilijk), **levens** (3 / 5 / 7, default 5; rename with
-`spec.lives = { label, unit, choices, default }`), **rondes** (1 ronde / Best of 3 / Best of 5, default 3),
+**levens** (5 / 10 / 15 / 20 / 25, default 10; rename with `spec.lives = { label, unit, choices, default }`),
+**niveau** (`levelOption({ clock: true })`: Makkelijk / Normaal / Moeilijk / Onmogelijk with their clock and flame
+icons, default Normaal, a whole line; shown for 1 and 2 spelers), **rondes** (1 / 3 / 5, default 3),
 then `spec.extras` (your own `SkinOption`s; use `when: { id: 'spelers', value: '2' }` for a 2-only option).
 `MANIER_OPTION` is the "Elk een eigen som / Samen één som" extra for games that offer both streams.
 
@@ -71,7 +73,7 @@ then `spec.extras` (your own `SkinOption`s; use `when: { id: 'spelers', value: '
 | field | meaning |
 |---|---|
 | `players` | 1 = the bot on the right |
-| `level` | `'moeilijk'` = a clock per sum per side: 10 s, −0.4 s per right answer of that side this round, floor 4 s |
+| `level` | `makkelijk` = no clock; `normaal` / `moeilijk` / `onmogelijk` = a clock per sum per side from the shared rule (`levels/clock.ts`): 12 s through the round's first minute, then −1 s every 60 / 45 / 30 s, floor 8 / 6 / 4 s. Elapsed = the round's play time (a pause does not count); every round starts again at 12 s. 1 speler: the level also picks the bot's row (gentle / normal / stronger / strongest); 2 spelers: only the clock |
 | `lives` | per side at the start of every round |
 | `bestOf` | 1 / 3 / 5 |
 | `stream` | `'own'` each side its own sums; `'shared'` one sum, both type at once, first right answer takes it |
@@ -102,7 +104,7 @@ interface DuelEffect {
 |---|---|---|
 | `right(ctx)` | a right answer (`ctx.streak` already counts it) | the other side −1 life |
 | `wrong(ctx)` | a wrong answer | nothing |
-| `timeout(ctx)` | Moeilijk: the sum's time ran out | `wrong` |
+| `timeout(ctx)` | the sum's time ran out (every level but Makkelijk) | `wrong` |
 | `land(ctx, flight)` | a launch arrives (`ctx.side` = who launched) | `flight.effect` |
 | `roundOver(view, timeUp)` | after every effect, and at the round clock | a side at 0 lives loses (both = draw); at the clock more lives, then more points, else a draw |
 | `maxLives(config)` | lives ceiling | none |
@@ -164,7 +166,7 @@ own HUD shows the score: Robotduel's bars, Kasteel's life bars, both with `Score
 
 It brings: the top bar (Terug, names + round dots + "Ronde N", the round clock, sound), the lives (hearts) and
 the round's score (a star) in the band's top corners, the "Ronde N" / "Start!" banner, two halves in the team
-colours (no name pill: the colour says whose half it is) with the sum (the Moeilijk ring beside it, on the
+colours (no name pill: the colour says whose half it is) with the sum (the clock ring beside it, on the
 outer edge), the note and a keypad (1 speler: the computer's face on the right, the left keypad also takes the
 keyboard), the round card ("Volgende ronde") and the match card (trophy, confetti, "Nog eens", "Ander spel").
 Music: `meta.music` while playing. The halves never shrink under their content (a keypad of 48 px keys), so on
@@ -190,7 +192,8 @@ Pure logic in `rule.ts` gets unit tests (see `spelen.duel.test.tsx` for the engi
 for a game). Drive the store with fake timers:
 
 ```ts
-du().begin({ meta, from, rule: MY_RULE, config: { players: 2, level: 'normaal', lives: 3, bestOf: 3, stream: 'own', readyMs: 0 } });
+du().begin({ meta, from, rule: MY_RULE, config: { players: 2, level: 'makkelijk', lives: 3, bestOf: 3, stream: 'own', readyMs: 0 } });
+// level 'makkelijk' = no clock per sum, so a test can wait without time-outs; 'normaal' and up time out after 12 s.
 du().answer('left', du().sides.left.question!.answer);
 vi.advanceTimersByTime(DUEL_TIMING.flashRight);
 ```
@@ -208,7 +211,7 @@ per size and player count (picks go into the remembered options, so Start begins
 ```
 npm run dev -- --port 5401
 node scripts/duel-shots.mjs --url http://localhost:5401/ --game taartgevecht --label Taartgevecht --out C:/tmp/<you>-scratch/shots \
-  --sizes 1280x800,1024x768 --players 1,2 --picks '{"niveau":"moeilijk","levens":"3","rondes":"3"}'
+  --sizes 1280x800,1024x768 --players 1,2 --picks '{"niveau":"onmogelijk","levens":"5","rondes":"3"}'
 ```
 
 By hand in a page: `window.__duel.getState()` (dev builds) has `answer(side, given)`, `effect(by, e)`,

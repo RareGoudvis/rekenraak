@@ -49,7 +49,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); du().stop(); listeners.clear(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('the duel engine pauses', () => {
-    test('Moeilijk: a paused sum clock keeps what was left and runs out that much later; answers wait', () => {
+    test('a paused sum clock keeps what was left and runs out that much later; answers wait; the pause is no game time', () => {
         const outs: Side[] = [];
         const off = du().events.on('timeout', e => outs.push(e.side));
         begin();
@@ -64,10 +64,13 @@ describe('the duel engine pauses', () => {
         expect(du().sides.left.right).toBe(0);
         du().resume();
         expect(du().sides.left.deadline).toBe(deadline + 60_000);
-        vi.advanceTimersByTime(6_000 - 1);
+        vi.advanceTimersByTime(8_000 - 1);
         expect(outs).toEqual([]);
         vi.advanceTimersByTime(1);
         expect(outs.sort()).toEqual(['left', 'right']);
+        // 12 s of play, not 72 s: the next sums still get the first minute's 12 s.
+        vi.advanceTimersByTime(1_500);
+        expect(du().sides.left.limitMs).toBe(12_000);
         off();
     });
 

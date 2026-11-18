@@ -174,7 +174,7 @@ describe('Tovenaarsduel: a match on the engine', () => {
         begin(20, 'moeilijk');
         cast('left');
         cast('left');
-        vi.advanceTimersByTime(10_000);
+        vi.advanceTimersByTime(12_000);
         expect(du().sides.left.streak).toBe(0);
     });
 
@@ -200,7 +200,7 @@ describe('Tovenaarsduel: the tile and the screen', () => {
         const t = tover();
         expect(t.meta).toMatchObject({ id: 'tovenaarsduel', label: 'Tovenaarsduel', input: 'keypad', players: '1-2' });
         expect(t.Screen && !t.Component).toBeTruthy();
-        expect(t.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
+        expect(t.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes']);
         const lives = t.meta.options!.find(o => o.id === 'levens')!;
         expect(lives.choices.map(c => c.value)).toEqual(['5', '10', '15', '20', '25']);
         expect(lives.default).toBe('20');

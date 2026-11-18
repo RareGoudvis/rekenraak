@@ -6,14 +6,15 @@ import type { OefenHistoryEntry, OefenSessie } from '../../../services/oefenen/t
 import { kioskAnswerOf, spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import { spelSessieOf, type SpelFrom } from '../useSpelStore';
 import type { SkinMeta } from '../skins/types';
-import { botTurn, nextPace } from './bot';
+import { clockMs } from '../levels/clock';
+import { BOT, botTurn, nextPace } from './bot';
 import { createDuelEvents, type DuelEvents } from './events';
-import { DUEL_TIMING, SHARED_TRIES, applyEffect, defaultRoundOver, freshSideView, leadOf, matchWinnerOf, sumLimitMs, wrongOf } from './rules';
+import { DUEL_TIMING, SHARED_TRIES, applyEffect, defaultRoundOver, freshSideView, leadOf, matchWinnerOf, wrongOf } from './rules';
 import { SIDES, otherSide, type DuelConfig, type DuelCtx, type DuelEffect, type DuelEventMap, type DuelFlight, type DuelRule, type DuelSide, type DuelSideView, type Side } from './types';
 
 // THE duel engine (DUEL.md): one match of two sides on one screen. Its own small session beside useSpelStore
 // (which only holds the choice): two question streams (or one shared), lives and points per side, the game's
-// rule for what an answer does, flights that land later, the Moeilijk clock per sum, the bot for 1 speler,
+// rule for what an answer does, flights that land later, the clock per sum (levels/clock.ts), the bot for 1 speler,
 // rounds and best of. Runtime only: nothing stored, no help and no Nakijken.
 
 // idle = nothing on; ready = the "Ronde N" banner; play; roundEnd = between rounds; matchEnd = the winner is known.
@@ -89,6 +90,8 @@ export const useDuelStore = create<DuelState>()((set, get) => {
     // Paused: the timers that were running and the ms each had left.
     const frozen = new Map<string, { left: number; fn: (at: number) => void }>();
     let pausedAt = 0;
+    // When this round's sums began, in the caller's clock; a pause moves it on, so the clock rule reads game time.
+    let playAt = 0;
     const later = (id: string, ms: number, fn: (at: number) => void, from = Date.now()) => {
         clearTimeout(timers.get(id)?.t);
         const due = from + ms;
@@ -177,7 +180,9 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         const { config, sides } = get();
         const lead = leadOf(viewOf(sides.right), viewOf(sides.left), config.lives);
         const turn = botTurn(config.level, { lead, answerChars: q.answer.length, paceMs: sides.left.paceMs, shared: config.stream === 'shared' }, rng);
-        later('bot', turn.delayMs, () => {
+        // A person racing the ring answers just before it runs out rather than letting it run out.
+        const left = me.deadline === null ? Infinity : me.deadline - Date.now() - BOT.beatClockMs;
+        later('bot', Math.max(0, Math.min(turn.delayMs, left)), () => {
             const cur = get().sides.right;
             if (!playing() || cur.question?.key !== q.key || cur.feedback || cur.locked || cur.out) return;
             submit('right', turn.correct, turn.correct ? q.answer : wrongOf(q.answer, rng), Date.now());
@@ -185,8 +190,8 @@ export const useDuelStore = create<DuelState>()((set, get) => {
     };
 
     const pose = (side: Side, q: SpelQuestion | null, now: number) => {
-        const { config, sides } = get();
-        const limit = config.level === 'moeilijk' && q ? sumLimitMs(sides[side].right) : null;
+        const { config } = get();
+        const limit = q ? clockMs(config.level, now - playAt) : null;
         patchSide(side, { question: q, feedback: null, locked: false, tries: 0, out: false, shownAt: now, deadline: limit === null ? null : now + limit, limitMs: limit });
         if (limit !== null && q) later(`deadline-${side}`, limit, at => timeout(side, q.key, at), now);
         else cancel(`deadline-${side}`);
@@ -309,6 +314,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
 
     const play = (now: number) => {
         const { config, round, events } = get();
+        playAt = now;
         set({ phase: 'play', roundEndsAt: config.roundSeconds ? now + config.roundSeconds * 1000 : null });
         events.emit('play', { round });
         if (config.roundSeconds) later('round', config.roundSeconds * 1000, () => checkRound(true));
@@ -381,6 +387,7 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         resume(now = Date.now()) {
             if (!get().paused) return;
             const shift = Math.max(0, now - pausedAt);
+            playAt += shift;
             const by = (t: number | null) => (t === null ? null : t + shift);
             const moved = (s: DuelSide): DuelSide => ({ ...s, deadline: by(s.deadline), shownAt: s.shownAt + shift });
             set(st => ({

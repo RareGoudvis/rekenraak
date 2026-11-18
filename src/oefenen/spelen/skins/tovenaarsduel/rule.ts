@@ -3,7 +3,7 @@ import type { DuelFlight, DuelRule, DuelSideView } from '../../duel/types';
 // Tovenaarsduel on the duel engine: own sums each. Every right answer casts a spell by itself (no choosing, so the
 // rhythm of the sums never breaks); the spell follows that side's streak (owner 2026-11-16): 1 in a row = IJspijl
 // (1), 2 = Vuurbal (2), 3 = Bliksem (3), 4 = Schild on yourself (blocks the next hit), then IJspijl again. A wrong
-// answer or a Moeilijk time-out breaks the streak (the engine resets it): back to IJspijl. The frost of an IJspijl
+// answer or a time-out breaks the streak (the engine resets it): back to IJspijl. The frost of an IJspijl
 // is only a picture, it never freezes a keypad or a clock. 0 lives = the wizard is defeated, round lost.
 
 export const SPELLS = ['ijs', 'vuur', 'bliksem', 'schild'] as const;

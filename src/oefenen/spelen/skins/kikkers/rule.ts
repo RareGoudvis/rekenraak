@@ -4,7 +4,7 @@ import type { SkinChoices, SkinOption } from '../types';
 import { BUG_POINTS, type BugKind } from './pond';
 
 // Kikkers en vliegjes on the duel engine: a right answer = a tongue snap at a bug (its points for that frog),
-// a mistake (wrong or a Moeilijk time-out) costs that frog a life. A round ends at 0 lives, and either at the
+// a mistake (wrong or a time-out) costs that frog a life. A round ends at 0 lives, and either at the
 // 2-minute clock (most points wins) or when a frog reaches 25 points (Hoe winnen?).
 
 export const KIKKER = {

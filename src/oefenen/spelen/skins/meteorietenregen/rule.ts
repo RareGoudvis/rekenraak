@@ -3,7 +3,7 @@ import type { DuelFlight, DuelRule, DuelSideView, Side } from '../../duel/types'
 // Meteorietenregen on the duel engine: two bases on Mars, own sums each. A right answer launches a meteor at
 // the other base (it lands 3 s later); every 2 right in a row raise an energy shield (at most 2 stacked), and a
 // shield eats one meteor when it lands. An unshielded hit costs a life; 0 = the base explodes, round lost.
-// A wrong answer or a Moeilijk time-out only breaks the streak (the engine resets it): shields that are up stay.
+// A wrong answer or a time-out only breaks the streak (the engine resets it): shields that are up stay.
 
 export const METEOR = {
     flightMs: 3000,

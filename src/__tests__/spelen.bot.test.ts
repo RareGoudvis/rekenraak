@@ -17,18 +17,21 @@ import { TOVER, TOVER_RULE } from '../oefenen/spelen/skins/tovenaarsduel/rule';
 import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelSim';
 
 // The computer opponent (duel/bot.ts) against simulated pupils, through the real store and every duel game's own
-// rule (flights, shields, specials, the shared race of Taartgevecht, the rope's clock, the frogs' points).
-// Owner target (2026-11-16) for a 9-year-old (4–7 s per answer, 85 % right): about 65–70 % pupil wins on
-// Normaal and 30–35 % on Moeilijk, and close matches for slower and faster pupils.
-// Measured 2026-11-16 (200 rounds per cell, seed 42; SIM_PRINT=1 prints it), pupil round wins:
-//   game               average N / M   slower N   fast M     (old bot, average N / M)
-//   robotduel            64 / 31          49         76        77 / 38
-//   meteorietenregen     64 / 39          52         64        94 / 35
-//   taartgevecht         77 / 33          72         58       100 / 23
-//   kasteel              53 / 23          36         71        85 / 32
-//   touwtrekken          75 / 28          59         77        98 / 39
-//   kikkers              63 / 39          52         58        79 / 40
-//   tovenaarsduel        72 / 20          47         68         -
+// rule (flights, shields, specials, the shared race of Taartgevecht, the rope's clock, the frogs' points), at each
+// of the four levels (Makkelijk no clock, the others the shared clock per sum, levels/clock.ts).
+// Owner target (2026-11-17) for a 9-year-old (4–7 s per answer, 85 % right): 85+ % pupil round wins on Makkelijk,
+// about 2 in 3 on Normaal, about 1 in 3 on Moeilijk, under 20 % on Onmogelijk; close matches for slower and faster pupils.
+// Measured 2026-11-18 (200 rounds per cell, 5 lives, seed 42; SIM_PRINT=1 prints it), pupil round wins:
+//   game               avg M / N / Mo / O    slower M / N   fast Mo
+//   robotduel            86 / 63 / 35 / 16      78 / 49        73
+//   meteorietenregen     96 / 63 / 33 /  7      93 / 45        71
+//   taartgevecht        100 / 73 / 28 /  2      98 / 57        57
+//   kasteel              89 / 55 / 25 /  7      81 / 42        70
+//   touwtrekken          97 / 75 / 50 / 12      90 / 57        73
+//   kikkers              88 / 60 / 35 / 10      75 / 49        60
+//   tovenaarsduel        99 / 64 / 25 /  1      99 / 47        72
+//   mean                 93 / 64 / 33 /  7
+// (At 10 lives, the game default, a check run gave about the same means: the rubber band keeps the levels apart.)
 
 let from: SpelFrom;
 beforeAll(async () => {
@@ -65,33 +68,47 @@ const rate = (g: Game, level: DuelLevel, kid: KidModel) => simulateRounds({
     meta: resolveMeta(skinById(g.id)!.meta, { spelers: '1' }), from, rule: g.rule, level, kid, rounds: ROUNDS, stream: g.stream, extra: g.extra, lives: g.lives,
 }).kidWins;
 
+const LEVEL_ROWS: DuelLevel[] = ['makkelijk', 'normaal', 'moeilijk', 'onmogelijk'];
+const pct = (x: number) => String(Math.round(x * 100)).padStart(4);
+
 describe('the bot against simulated pupils, every duel game', () => {
-    test('a 9-year-old: about 2 in 3 on Normaal, about 1 in 3 on Moeilijk (each game near, all games on target)', () => {
-        const n: number[] = [], m: number[] = [];
+    test('a 9-year-old: 85+ % on Makkelijk, about 2 in 3 on Normaal, about 1 in 3 on Moeilijk, under 20 % on Onmogelijk', () => {
+        const by: Record<DuelLevel, number[]> = { makkelijk: [], normaal: [], moeilijk: [], onmogelijk: [] };
         for (const g of GAMES) {
-            const rn = rate(g, 'normaal', KIDS.average), rm = rate(g, 'moeilijk', KIDS.average);
-            if (process.env.SIM_PRINT) console.log(g.id.padEnd(18), Math.round(rn * 100), Math.round(rm * 100));
+            const r = LEVEL_ROWS.map(l => rate(g, l, KIDS.average));
+            if (process.env.SIM_PRINT) console.log(g.id.padEnd(18), r.map(pct).join(''));
+            const [rk, rn, rm, ro] = r;
+            expect(rk, `${g.id} makkelijk`).toBeGreaterThan(0.75);
             expect(rn, `${g.id} normaal`).toBeGreaterThan(0.5);
             expect(rn, `${g.id} normaal`).toBeLessThan(0.85);
-            // Tovenaarsduel's spells come in bursts, so at its 20-life default Moeilijk sits near 10 % (was 17 % at 30); the mean below still holds.
-            expect(rm, `${g.id} moeilijk`).toBeGreaterThan(g.id === 'tovenaarsduel' ? 0.04 : 0.15);
-            expect(rm, `${g.id} moeilijk`).toBeLessThan(0.5);
-            n.push(rn); m.push(rm);
+            // Tovenaarsduel's spells come in bursts, so at its 20-life default Moeilijk sits near 10 %; the mean below still holds.
+            expect(rm, `${g.id} moeilijk`).toBeGreaterThan(g.id === 'tovenaarsduel' ? 0.04 : 0.12);
+            expect(rm, `${g.id} moeilijk`).toBeLessThan(0.55);
+            expect(ro, `${g.id} onmogelijk`).toBeLessThan(0.3);
+            // Every step up is harder.
+            expect(rk).toBeGreaterThan(rn);
+            expect(rn).toBeGreaterThan(rm);
+            expect(rm).toBeGreaterThan(ro);
+            LEVEL_ROWS.forEach((l, i) => by[l].push(r[i]));
         }
         const mean = (a: number[]) => a.reduce((s, x) => s + x, 0) / a.length;
-        expect(mean(n)).toBeGreaterThan(0.62);
-        expect(mean(n)).toBeLessThan(0.72);
-        expect(mean(m)).toBeGreaterThan(0.28);
-        expect(mean(m)).toBeLessThan(0.4);
-    }, 120_000);
+        if (process.env.SIM_PRINT) console.log('mean'.padEnd(18), LEVEL_ROWS.map(l => pct(mean(by[l]))).join(''));
+        expect(mean(by.makkelijk)).toBeGreaterThan(0.85);
+        expect(mean(by.normaal)).toBeGreaterThan(0.62);
+        expect(mean(by.normaal)).toBeLessThan(0.72);
+        expect(mean(by.moeilijk)).toBeGreaterThan(0.28);
+        expect(mean(by.moeilijk)).toBeLessThan(0.4);
+        expect(mean(by.onmogelijk)).toBeLessThan(0.2);
+    }, 240_000);
 
-    test('slower and faster pupils still get a match: the slower wins Normaal often, the fast one does not sweep Moeilijk', () => {
+    test('slower and faster pupils still get a match: the slower wins Makkelijk and Normaal often, the fast one does not sweep Moeilijk', () => {
         for (const g of GAMES) {
-            const slow = rate(g, 'normaal', KIDS.slower), fast = rate(g, 'moeilijk', KIDS.fast);
-            if (process.env.SIM_PRINT) console.log(g.id.padEnd(18), 'slower normaal', Math.round(slow * 100), 'fast moeilijk', Math.round(fast * 100));
+            const easy = rate(g, 'makkelijk', KIDS.slower), slow = rate(g, 'normaal', KIDS.slower), fast = rate(g, 'moeilijk', KIDS.fast);
+            if (process.env.SIM_PRINT) console.log(g.id.padEnd(18), 'slower makkelijk', pct(easy), 'slower normaal', pct(slow), 'fast moeilijk', pct(fast));
+            expect(easy, `${g.id} slower makkelijk`).toBeGreaterThan(0.6);
             expect(slow, `${g.id} slower normaal`).toBeGreaterThan(0.3);
             expect(fast, `${g.id} fast moeilijk`).toBeGreaterThan(0.45);
             expect(fast, `${g.id} fast moeilijk`).toBeLessThan(0.9);
         }
-    }, 120_000);
+    }, 240_000);
 });

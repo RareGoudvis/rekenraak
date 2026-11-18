@@ -1,6 +1,6 @@
 import { otherSide, SIDES, type DuelBestOf, type DuelEffect, type DuelRoundView, type DuelRule, type DuelSideView, type Side } from './types';
 
-// The duel engine's pure rules: the Moeilijk clock, best of, applying an effect, the default round end,
+// The duel engine's pure rules: best of, applying an effect, the default round end,
 // and ready-made rules a game can start from. No timers and no store here (spelen.duel.test).
 
 export const DUEL_TIMING = {
@@ -19,12 +19,6 @@ export const DUEL_TIMING = {
 
 // Shared stream: wrong tries per side on one sum before that side is out for it.
 export const SHARED_TRIES = 2;
-
-// Moeilijk: 10 s per sum, 0.4 s less after each right answer of that side this round, never under 4 s.
-export const SUM_CLOCK = { startMs: 10_000, stepMs: 400, floorMs: 4_000 } as const;
-
-/** Moeilijk: a side's time for its next sum after `rights` right answers this round. */
-export const sumLimitMs = (rights: number) => Math.max(SUM_CLOCK.floorMs, SUM_CLOCK.startMs - SUM_CLOCK.stepMs * Math.max(0, rights));
 
 /** Round wins that take the match: best of 3 = 2. */
 export const winsNeeded = (bestOf: DuelBestOf) => Math.floor(bestOf / 2) + 1;

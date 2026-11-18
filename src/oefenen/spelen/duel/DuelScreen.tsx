@@ -111,7 +111,7 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
                                             : shared && me.locked ? 'Even wachten…' : ' ';
                         return (
                             <section key={side} className={`duel-half is-${side}${got ? ' is-got' : ''}${bot ? ' is-bot' : ''}`} aria-label={teams[side].name} style={teamStyle(teams[side])}>
-                                {/* The half's colour says whose it is; the Moeilijk ring sits beside the sum, on the outer edge. */}
+                                {/* The half's colour says whose it is; the clock ring sits beside the sum, on the outer edge. */}
                                 <div className="duel-ask">
                                     {q && (
                                         <SpelSignBox className={`duel-sign${closed ? ' is-solved' : ''}`} question={q} feedback={closed ? { expected: q.answer } : null} flash={closed}
