@@ -1,0 +1,232 @@
+/* The seasonal header's scenes (SeasonScenes.tsx): in the band behind the tiles, so they never take a tap. Positions are
+   px from the measured strip; each scene's keyframes are fractions of its SCENE_MS (--scene). Animations always play. */
+.zf-scene { position: absolute; inset: 0; pointer-events: none; }
+.zf-scene * { pointer-events: none; }
+.zf-scene .zf-art { width: 100%; height: 100%; }
+
+/* Extra colours for the characters. */
+.zf-grey { fill: color-mix(in srgb, var(--kid-ink) 22%, var(--ks-white)); }
+.zf-skin { fill: color-mix(in srgb, var(--ks-cheek) 40%, var(--ks-belly)); }
+.zf-greenskin { fill: color-mix(in srgb, var(--mab-t) 38%, var(--ks-white)); }
+.zf-straw { fill: color-mix(in srgb, var(--mab-e) 55%, var(--ks-wood)); }
+.zf-nutfill { fill: var(--zf-nut); }
+.zf-stripe { fill: var(--zf-white); }
+.zf-scene .zf-stripe, .zf-scene .is-stilts .zf-stripe { fill: var(--zf-red); }
+.zf-art .zf-shade { fill: color-mix(in srgb, var(--mab-h) 16%, var(--ks-white)); }
+.zf-art :is(.zf-soot, .zf-stick, .zf-antler, .zf-stalk, .zf-spoke, .zf-bowline, .zf-string, .zf-antenna, .zf-zig, .zf-handle, .zf-cattail) { fill: none; }
+.zf-art .zf-soot { stroke: color-mix(in srgb, var(--kid-ink) 35%, transparent); stroke-width: 2.4; }
+.zf-art .zf-stick { stroke: var(--zf-wood); stroke-width: 3; }
+.zf-art .zf-antler { stroke: var(--zf-nut); stroke-width: 3; }
+.zf-art .zf-stalk { stroke: color-mix(in srgb, var(--mab-t) 70%, var(--kid-ink)); stroke-width: 2.6; }
+.zf-art .zf-spoke { stroke: var(--zf-white); stroke-width: 1.6; }
+.zf-art .zf-bowline { stroke: var(--zf-gold); stroke-width: 3; }
+.zf-art .zf-string { stroke-width: 0.8; }
+.zf-art .zf-antenna { stroke-width: 1.2; }
+.zf-art .zf-zig { stroke: var(--zf-white); stroke-width: 1.6; }
+.zf-art .zf-handle { stroke: var(--zf-wood); stroke-width: 2.4; }
+.zf-art .zf-cattail { stroke: var(--zf-night); stroke-width: 3; }
+
+/* ── Shared motion ───────────────────────────────────────────────────────── */
+.zf-run { position: absolute; left: 0; animation: zf-run linear both; }
+.zf-at { position: absolute; }
+.zf-art .zf-leg { transform-box: fill-box; transform-origin: 50% 6%; animation: zf-swing 0.42s ease-in-out infinite alternate; }
+.zf-art .zf-leg.is-b { animation-delay: -0.42s; }
+/* A body bobbing to its steps. */
+.zf-trot > svg, .zf-march > svg { animation: zf-step 0.42s ease-in-out infinite alternate; }
+.zf-march.is-stilts > svg { animation-duration: 0.6s; }
+.zf-march.is-stilts .zf-leg { animation-duration: 0.6s; }
+.zf-march.is-stilts .zf-leg.is-b { animation-delay: -0.6s; }
+.zf-art .zf-tail, .zf-art .zf-plume, .zf-art .zf-hair, .zf-art .zf-cape { transform-box: fill-box; animation: zf-flick 0.5s ease-in-out infinite alternate; }
+.zf-art .zf-tail { transform-origin: 100% 0; }
+.zf-art .zf-plume { transform-origin: 0 100%; }
+.zf-art .zf-hair, .zf-art .zf-cape { transform-origin: 0 0; animation-duration: 0.3s; }
+
+/* Sinterklaas: the Piet hops after the horse, tumbles once and throws pepernoten. */
+.zf-hop.is-piet > svg { transform-origin: 50% 60%; animation: zf-piet calc(var(--scene) * 0.9) linear var(--d, 0ms) both; }
+.zf-art .zf-arm { transform-box: fill-box; transform-origin: 0 100%; animation: zf-throw 0.9s ease-in-out infinite; }
+
+/* Halloween: the witch swoops (a dip before she climbs), her trail twinkles; ghosts rise behind the tiles. */
+.zf-swoop > svg { animation: zf-swoop calc(var(--scene) * 0.5) ease-in-out infinite alternate; }
+.zf-art .zf-hat { transform-box: fill-box; transform-origin: 50% 100%; animation: zf-flick 0.6s ease-in-out infinite alternate; }
+.zf-art .zf-cattail { transform-box: fill-box; transform-origin: 0 100%; animation: zf-flick 0.5s ease-in-out infinite alternate; }
+.zf-spark { position: absolute; display: block; width: 14px; height: 14px; margin: -7px 0 0 -7px; opacity: 0; animation: zf-spark 1.3s ease-out both; }
+.zf-spark svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.zf-spark path { fill: var(--zf-gold); stroke: var(--zf-line); stroke-width: 2; stroke-linejoin: round; }
+.zf-spark.is-white path { fill: var(--zf-white); }
+.zf-ghost { translate: 0 0; animation: zf-ghost var(--scene) cubic-bezier(.3, .6, .4, 1) both; }
+.zf-ghost > svg { animation: zf-sway-y 0.7s ease-in-out infinite alternate; }
+.zf-art .zf-boo { transform-box: fill-box; transform-origin: 50% 50%; animation: zf-boo var(--scene) ease-out var(--d, 0ms) both; }
+.zf-boo-say {
+  position: absolute;
+  left: 60%;
+  top: -10%;
+  padding: 0 6px;
+  border: 2px solid var(--zf-line);
+  border-radius: 10px;
+  background: var(--kid-card);
+  font-size: var(--text-sm);
+  font-weight: 900;
+  line-height: 1.4;
+  color: var(--zf-line);
+  white-space: nowrap;
+  opacity: 0;
+  animation: zf-say var(--scene) ease-out both;
+}
+/* The tiles shiver when the ghosts say boo (useSeasonHeader: is-shiver while it lasts). */
+.zelf-years.is-shiver .zelf-year { animation: zf-shiver 0.12s linear infinite alternate; }
+
+/* Kerst / winter: the sled glides with a little bump, the reindeer gallops, its nose glows. */
+.zf-glide > svg { animation: zf-step 0.5s ease-in-out infinite alternate; }
+.zf-art .zf-gallop { transform-box: fill-box; transform-origin: 50% 100%; animation: zf-gallop 0.42s ease-in-out infinite alternate; }
+.zf-art .zf-nose { animation: zf-nose 0.6s ease-in-out infinite alternate; }
+.zf-art .zf-wave, .zf-wave { transform-box: fill-box; transform-origin: 0 100%; animation: zf-wave-arm 0.5s ease-in-out infinite alternate; }
+/* The snowman builds himself: rolls, drops, hat, nose, arms, a wave, then he melts away. */
+.zf-snowman > svg { overflow: visible; }
+.zf-art :is(.zf-sm-base, .zf-sm-mid, .zf-sm-head, .zf-sm-hat, .zf-sm-nose, .zf-sm-arm, .zf-sm-scarf, .zf-sm-face, .zf-sm-melt) { transform-box: fill-box; animation-duration: var(--scene); animation-fill-mode: both; animation-timing-function: linear; }
+.zf-art .zf-sm-base { transform-origin: 50% 50%; animation-name: zf-sm-roll; }
+.zf-art .zf-sm-mid { animation-name: zf-sm-drop1; }
+.zf-art .zf-sm-head { animation-name: zf-sm-drop2; }
+.zf-art .zf-sm-scarf { animation-name: zf-sm-pop1; transform-origin: 50% 50%; }
+.zf-art .zf-sm-hat { transform-origin: 50% 100%; animation-name: zf-sm-hat; }
+.zf-art .zf-sm-nose { transform-origin: 0 50%; animation-name: zf-sm-nose; }
+.zf-art .zf-sm-face { transform-origin: 50% 50%; animation-name: zf-sm-pop2; }
+.zf-art .zf-sm-arm.is-l { transform-origin: 100% 100%; animation-name: zf-sm-arm; }
+.zf-art .zf-sm-arm.is-r { transform-origin: 0 100%; animation-name: zf-sm-wave; }
+.zf-art .zf-sm-melt { transform-origin: 50% 100%; animation-name: zf-sm-melt; }
+
+/* Carnaval: a little parade, the drum beating, confetti thrown. */
+.zf-art :is(.zf-stick-l, .zf-stick-r) { transform-box: fill-box; animation: zf-drum 0.21s ease-in-out infinite alternate; }
+.zf-art .zf-stick-l { transform-origin: 0 0; }
+.zf-art .zf-stick-r { transform-origin: 100% 0; animation-delay: -0.21s; }
+.zf-art .zf-throw { transform-box: fill-box; transform-origin: 0 100%; animation: zf-throw 0.8s ease-in-out infinite; }
+
+/* Valentijn: cupid flaps across, pulls his bow at each shot; the hearts fly into the tiles. */
+.zf-fly > .zf-cupid { width: 100%; height: 100%; animation: zf-sway-y 0.5s ease-in-out infinite alternate; }
+.zf-art .zf-cwing { transform-box: fill-box; transform-origin: 100% 100%; animation: zf-flap 0.18s ease-in-out infinite alternate; }
+.zf-cupid .zf-bow { transform-box: fill-box; transform-origin: 0 50%; animation: var(--pull); }
+.zf-arrow-heart { position: absolute; left: 0; top: 0; display: block; opacity: 0; animation-name: zf-heart-fly; animation-timing-function: cubic-bezier(.3, .2, .6, 1); animation-fill-mode: both; }
+.zf-arrow-heart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.zf-arrow-heart path { fill: var(--zf-red); stroke: var(--zf-line); stroke-width: 2; }
+
+/* Pasen: the bunny hops (a crouch before each leap), the eggs it hides slide out from behind the tiles. */
+.zf-bounce-run > svg { transform-origin: 50% 100%; animation: zf-bunny-hop 0.62s cubic-bezier(.4, 0, .6, 1) infinite; }
+.zf-art .zf-ear { transform-box: fill-box; transform-origin: 50% 100%; animation: zf-flick 0.31s ease-in-out infinite alternate; }
+.zf-hidden-egg { opacity: 0; animation: zf-egg-peek 4200ms cubic-bezier(.3, .6, .4, 1) both; }
+.zf-hidden-egg > svg { width: 100%; height: 100%; }
+
+/* Lente: butterflies on wavy paths, flowers sprouting at the tiles' corners. */
+.zf-flutterpath { width: 100%; height: 100%; animation: zf-wavy 1.6s ease-in-out infinite alternate; }
+.zf-flutter-run.is-back .zf-flutterpath > svg { scale: -1 1; }
+.zf-art .zf-bfly-wing { transform-box: fill-box; animation: zf-bfly 0.16s ease-in-out infinite alternate; }
+.zf-art .zf-bfly-wing.is-l { transform-origin: 100% 50%; }
+.zf-art .zf-bfly-wing.is-r { transform-origin: 0 50%; }
+.zf-sprout { animation: zf-sprout var(--scene) ease-out both; transform-origin: 50% 100%; }
+.zf-sprout > svg { transform-origin: 50% 100%; animation: zf-sway-r 1.2s ease-in-out infinite alternate; }
+.zf-art .zf-bloom { transform-box: fill-box; transform-origin: 50% 50%; animation: zf-bloom var(--scene) ease-out var(--d, 0ms) both; }
+
+/* Zomer: the cart rides past, a gull dives, takes the cone and is off; the ice-cream man is startled. */
+.zf-ride > svg { animation: zf-step 0.36s ease-in-out infinite alternate; }
+.zf-art .zf-wheel { animation: zf-roll-wheel 0.9s linear infinite; }
+.zf-art .zf-umbrella { transform-box: fill-box; transform-origin: 50% 100%; animation: zf-flick 0.7s ease-in-out infinite alternate; }
+.zf-art .zf-cone { animation: zf-gone var(--scene) step-end both; }
+.zf-art .zf-oops { transform-box: fill-box; transform-origin: 50% 100%; animation: zf-oops var(--scene) ease-out both; }
+.zf-gull { position: absolute; left: 0; top: 0; animation-name: zf-gull; animation-fill-mode: both; animation-timing-function: linear; }
+.zf-art .zf-gull-cone { animation: zf-got 3000ms step-end var(--d, 0ms) both; }
+.zf-art .zf-gwing { transform-box: fill-box; transform-origin: 50% 100%; animation: zf-flap 0.2s ease-in-out infinite alternate; }
+.zf-art .zf-gwing.is-back { animation-delay: -0.2s; }
+
+/* ── Tile reactions (inside the tile, untappable) ─────────────────────────── */
+.zf-react { position: absolute; inset: 0; pointer-events: none; }
+.zf-react svg { width: 100%; height: 100%; }
+.zf-react .zf-cheek { fill: color-mix(in srgb, var(--zf-pinkdeep) 70%, transparent); }
+.zf-react .zf-blush-heart { fill: var(--zf-red); stroke: var(--zf-line); stroke-width: 2; }
+.zf-react.is-blush { animation: zf-blush 2600ms ease-out both; }
+.zf-react .zf-blush-heart { transform-box: fill-box; transform-origin: 50% 50%; animation: zf-heart-pop 900ms cubic-bezier(.3, 1.6, .5, 1) both; }
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes zf-run { from { translate: var(--x0) 0; } to { translate: var(--x1) 0; } }
+@keyframes zf-swing { from { rotate: -20deg; } to { rotate: 20deg; } }
+@keyframes zf-step { from { translate: 0 0; } to { translate: 0 -5%; } }
+@keyframes zf-flick { from { rotate: -6deg; } to { rotate: 8deg; } }
+@keyframes zf-piet {
+  0%, 36% { rotate: 0deg; translate: 0 0; }
+  41% { rotate: 0deg; translate: 0 6%; }
+  50% { rotate: -200deg; translate: 0 -38%; }
+  58% { rotate: -360deg; translate: 0 0; }
+  61% { rotate: -360deg; translate: 0 4%; }
+  64%, 100% { rotate: -360deg; translate: 0 0; }
+}
+@keyframes zf-throw { 0%, 60%, 100% { rotate: 0deg; } 75% { rotate: -50deg; } 85% { rotate: 20deg; } }
+@keyframes zf-swoop {
+  0% { translate: 0 -6%; rotate: 2deg; }
+  30% { translate: 0 18%; rotate: -6deg; }
+  100% { translate: 0 -14%; rotate: 8deg; }
+}
+@keyframes zf-spark { 0% { opacity: 0; scale: 0; } 15% { opacity: 1; scale: 1.2; } 60% { opacity: 1; scale: 0.9; } 100% { opacity: 0; scale: 0.2; translate: 0 10px; } }
+@keyframes zf-ghost {
+  0% { translate: 0 30%; }
+  18% { translate: 0 var(--peek); }
+  22% { translate: 0 calc(var(--peek) * 0.9); }
+  62% { translate: 0 calc(var(--peek) * 0.95); }
+  70% { translate: 0 calc(var(--peek) * 1.12); }
+  90%, 100% { translate: 0 30%; }
+}
+@keyframes zf-boo { 0%, 30% { scale: 0.4; } 36% { scale: 1.5; } 44%, 100% { scale: 1; } }
+@keyframes zf-say { 0%, 30% { opacity: 0; scale: 0.4; } 36% { opacity: 1; scale: 1.15; } 42%, 60% { opacity: 1; scale: 1; } 70%, 100% { opacity: 0; scale: 0.8; } }
+@keyframes zf-shiver { from { translate: -1.5px 0; rotate: -1.4deg; } to { translate: 1.5px 0; rotate: 1.4deg; } }
+@keyframes zf-sway-y { from { translate: 0 -4%; } to { translate: 0 4%; } }
+@keyframes zf-sway-r { from { rotate: -5deg; } to { rotate: 5deg; } }
+@keyframes zf-gallop { from { rotate: -3deg; translate: 0 0; } to { rotate: 3deg; translate: 0 -6%; } }
+@keyframes zf-nose { from { fill: var(--zf-red); } to { fill: color-mix(in srgb, var(--zf-red) 50%, var(--ks-white)); } }
+@keyframes zf-wave-arm { from { rotate: -10deg; } to { rotate: 22deg; } }
+@keyframes zf-sm-roll { 0% { translate: -260% 0; rotate: -540deg; } 12% { translate: 6% 0; rotate: 10deg; } 15%, 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes zf-sm-drop1 { 0%, 14% { translate: 0 -400%; opacity: 0; } 15% { opacity: 1; } 22% { translate: 0 0; scale: 1.08 0.9; } 25%, 100% { translate: 0 0; scale: 1; } }
+@keyframes zf-sm-drop2 { 0%, 24% { translate: 0 -500%; opacity: 0; } 25% { opacity: 1; } 32% { translate: 0 0; scale: 1.08 0.9; } 35%, 100% { translate: 0 0; scale: 1; } }
+@keyframes zf-sm-hat { 0%, 36% { translate: 0 -300%; rotate: -40deg; opacity: 0; } 37% { opacity: 1; } 44% { translate: 0 0; rotate: 8deg; } 48%, 100% { translate: 0 0; rotate: -4deg; } }
+@keyframes zf-sm-pop1 { 0%, 46% { scale: 0; } 51% { scale: 1.2; } 54%, 100% { scale: 1; } }
+@keyframes zf-sm-nose { 0%, 50% { scale: 0 1; } 55% { scale: 1.3 1; } 58%, 100% { scale: 1 1; } }
+@keyframes zf-sm-pop2 { 0%, 38% { scale: 0; } 42%, 100% { scale: 1; } }
+@keyframes zf-sm-arm { 0%, 56% { scale: 0; } 62%, 100% { scale: 1; } }
+@keyframes zf-sm-wave { 0%, 58% { scale: 0; rotate: 0deg; } 63% { scale: 1; rotate: 0deg; } 67% { rotate: -28deg; } 71% { rotate: 6deg; } 75% { rotate: -28deg; } 79%, 100% { rotate: 0deg; scale: 1; } }
+@keyframes zf-sm-melt { 0%, 84% { scale: 1 1; opacity: 1; } 96% { scale: 1.3 0.15; opacity: 1; } 100% { scale: 1.4 0.05; opacity: 0; } }
+@keyframes zf-drum { from { rotate: -14deg; } to { rotate: 18deg; } }
+@keyframes zf-flap { from { scale: 1 1; } to { scale: 0.6 0.8; } }
+@keyframes zf-pull { 0% { translate: 0 0; } 60% { translate: -10% 0; } 75% { translate: 6% 0; } 100% { translate: 0 0; } }
+@keyframes zf-heart-fly {
+  0% { opacity: 0; translate: var(--hx0) var(--hy0); scale: 0.5; }
+  15% { opacity: 1; scale: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; translate: var(--hx1) var(--hy1); scale: 0.8; }
+}
+@keyframes zf-bunny-hop {
+  0% { translate: 0 0; scale: 1.08 0.9; }
+  20% { translate: 0 0; scale: 1 1; }
+  55% { translate: 0 -34%; scale: 0.96 1.06; }
+  90% { translate: 0 0; scale: 1.04 0.96; }
+  100% { translate: 0 0; scale: 1.08 0.9; }
+}
+@keyframes zf-egg-peek {
+  0% { opacity: 0; translate: 0 0; }
+  5% { opacity: 1; }
+  40% { translate: 0 0; rotate: 0deg; }
+  52% { translate: var(--out) 0; rotate: 12deg; }
+  58% { translate: calc(var(--out) * 0.92) 0; rotate: -6deg; }
+  64%, 86% { translate: calc(var(--out) * 0.95) 0; rotate: 0deg; }
+  100% { translate: 0 0; opacity: 1; }
+}
+@keyframes zf-wavy { from { translate: 0 -30%; } to { translate: 0 30%; } }
+@keyframes zf-bfly { from { scale: 1 1; } to { scale: 0.3 1; } }
+@keyframes zf-sprout { 0% { scale: 1 0; } 18% { scale: 1 1.06; } 24%, 82% { scale: 1 1; } 96%, 100% { scale: 1 0; } }
+@keyframes zf-bloom { 0%, 14% { scale: 0; rotate: -90deg; } 26% { scale: 1.25; rotate: 10deg; } 32%, 100% { scale: 1; rotate: 0deg; } }
+@keyframes zf-roll-wheel { to { rotate: 360deg; } }
+@keyframes zf-gone { 0% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes zf-oops { 0%, 50% { scale: 0; } 54% { scale: 1.4; } 58%, 80% { scale: 1; } 86%, 100% { scale: 0; } }
+@keyframes zf-got { 0% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@keyframes zf-gull {
+  0% { translate: var(--gx0) var(--gy0); animation-timing-function: cubic-bezier(.4, 0, .9, .6); }
+  50% { translate: var(--gx1) var(--gy1); animation-timing-function: cubic-bezier(.2, .5, .6, 1); }
+  58% { translate: calc(var(--gx1) - 20px) calc(var(--gy1) + 6px); }
+  100% { translate: var(--gx2) var(--gy2); }
+}
+@keyframes zf-blush { 0% { opacity: 0; } 12%, 78% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes zf-heart-pop { 0% { scale: 0; } 60% { scale: 1.3; } 100% { scale: 1; } }

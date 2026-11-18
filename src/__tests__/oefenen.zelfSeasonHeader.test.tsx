@@ -3,7 +3,10 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent, act } from '@testing-library/react';
 import LeerjaarBar from '../oefenen/zelf/LeerjaarBar';
 import OefenApp from '../oefenen/OefenApp';
-import { BAND, CHICK_PEEP_MS, HEADER_ORDER, TOY_LABEL, TOY_SOUND, TRICK_MS, driftLayout, eggLayout, headerSeasonOf, headerSeed, wornTile, type Season } from '../oefenen/zelf/headerSeason';
+import {
+    BAND, CHICK_PEEP_MS, FIRST_SCENE, HEADER_ORDER, HEART_FLIGHT_MS, SCENES, SCENE_GAP, SCENE_MS, TOY_LABEL, TOY_SOUND, TRICK_MS, cupidPlan, driftLayout, eggLayout, geoOr,
+    headerSeasonOf, headerSeed, pickTiles, sceneAt, sceneCues, sceneWaits, wornTile, type Season,
+} from '../oefenen/zelf/headerSeason';
 import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
 import { SEASONS } from '../oefenen/spelen/seasons';
 import { LEERJAREN, type Leerjaar } from '../config/gradePresets';
@@ -88,6 +91,53 @@ describe('the seeded layout', () => {
     });
 });
 
+describe('the scenes: when and what', () => {
+    test('every season has its scenes, each shorter than the gap between two', () => {
+        for (const s of SEASONS) {
+            expect(SCENES[s].length, s).toBeGreaterThan(0);
+            for (const id of SCENES[s]) expect(SCENE_MS[id], id).toBeLessThanOrEqual(SCENE_GAP[0] - 1000);
+        }
+        expect(SCENES.halloween).toEqual(['witch', 'ghosts']);
+        expect([0, 1, 2, 3].map(i => sceneAt('lente', i))).toEqual(['butterflies', 'flowers', 'butterflies', 'flowers']);
+    });
+
+    test('seeded waits: one soon after opening, then every 10 to 15 s', () => {
+        for (const s of SEASONS) {
+            const w = sceneWaits(20261205, 12, s);
+            expect(w).toEqual(sceneWaits(20261205, 12, s));
+            expect(w[0]).toBeGreaterThanOrEqual(FIRST_SCENE[0]);
+            expect(w[0]).toBeLessThanOrEqual(FIRST_SCENE[1]);
+            for (const ms of w.slice(1)) {
+                expect(ms).toBeGreaterThanOrEqual(SCENE_GAP[0]);
+                expect(ms).toBeLessThanOrEqual(SCENE_GAP[1]);
+            }
+        }
+        expect(sceneWaits(1, 6, 'zomer')).not.toEqual(sceneWaits(2, 6, 'zomer'));
+    });
+
+    test('picked tiles are distinct, left to right', () => {
+        for (let seed = 0; seed < 30; seed++) {
+            const p = pickTiles(seed, 3);
+            expect(new Set(p).size).toBe(3);
+            expect([...p].sort((a, b) => a - b)).toEqual(p);
+        }
+    });
+
+    test('cupid shoots each target as he passes it; the tile blushes when the heart lands', () => {
+        const geo = geoOr(null);
+        const plan = cupidPlan(geo, 7);
+        expect(plan.shots).toHaveLength(3);
+        const times = plan.shots.map(s => s.at);
+        expect([...times].sort((a, b) => a - b)).toEqual(times);
+        for (const s of plan.shots) expect(s.at).toBeLessThan(plan.run);
+        const cues = sceneCues('cupid', geo, 7);
+        expect(cues.map(c => c.tile)).toEqual(plan.shots.map(s => s.tile));
+        expect(cues.map(c => c.at)).toEqual(plan.shots.map(s => s.at + HEART_FLIGHT_MS));
+        expect(sceneCues('ghosts', geo, 7)).toEqual([expect.objectContaining({ kind: 'shiver' })]);
+        expect(sceneCues('sint', geo, 7)).toEqual([]);
+    });
+});
+
 const tile = (g: Leerjaar) => screen.getByRole('button', { name: `Leerjaar ${g}` });
 
 describe('LeerjaarBar in season', () => {
@@ -143,6 +193,65 @@ describe('LeerjaarBar in season', () => {
         expect(onPick.mock.calls.map(c => c[0])).toEqual([...LEERJAREN]);
         // The decorations never take a tap themselves.
         expect(sound.play).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('LeerjaarBar scenes', () => {
+    test.each(SEASONS)('%s: its first scene comes by itself, runs, and goes', s => {
+        vi.useFakeTimers();
+        const at = day(ONE_DAY[s]);
+        const { container } = render(<LeerjaarBar grade={2} onPick={() => { }} today={at} />);
+        const first = sceneWaits(headerSeed(at), 1, s)[0];
+        expect(container.querySelector('.zf-scene')).toBeNull();
+        act(() => { vi.advanceTimersByTime(first + 5); });
+        const scene = container.querySelector(`.zf-band .zf-scene.is-${SCENES[s][0]}`)!;
+        expect(scene).toBeTruthy();
+        expect(scene.getAttribute('aria-hidden')).toBe('true');
+        act(() => { vi.advanceTimersByTime(SCENE_MS[SCENES[s][0]] + 5); });
+        expect(container.querySelector('.zf-scene')).toBeNull();
+    });
+
+    test('a toy tap starts the scene at once; tiles still pick during it', () => {
+        vi.useFakeTimers();
+        const onPick = vi.fn();
+        const { container } = render(<LeerjaarBar grade={2} onPick={onPick} today={day(ONE_DAY.sinterklaas)} />);
+        fireEvent.click(screen.getByRole('button', { name: TOY_LABEL.sinterklaas }));
+        expect(container.querySelector('.zf-scene.is-sint')).toBeTruthy();
+        // A second tap while it runs plays the trick, not a second scene.
+        fireEvent.click(screen.getByRole('button', { name: TOY_LABEL.sinterklaas }));
+        expect(container.querySelectorAll('.zf-scene')).toHaveLength(1);
+        for (const g of LEERJAREN) fireEvent.click(tile(g));
+        expect(onPick).toHaveBeenCalledTimes(6);
+    });
+
+    test('Halloween ghosts: the tiles shiver for a moment', () => {
+        vi.useFakeTimers();
+        const { container } = render(<LeerjaarBar grade={2} onPick={() => { }} today={day(ONE_DAY.halloween)} />);
+        const bar = container.querySelector('.zelf-years')!;
+        // Witch first, then the ghosts.
+        fireEvent.click(screen.getByRole('button', { name: TOY_LABEL.halloween }));
+        act(() => { vi.advanceTimersByTime(SCENE_MS.witch + 5); });
+        fireEvent.click(screen.getByRole('button', { name: TOY_LABEL.halloween }));
+        expect(container.querySelector('.zf-scene.is-ghosts')).toBeTruthy();
+        expect(bar.classList.contains('is-shiver')).toBe(false);
+        act(() => { vi.advanceTimersByTime(1000); });
+        expect(bar.classList.contains('is-shiver')).toBe(true);
+        act(() => { vi.advanceTimersByTime(1500); });
+        expect(bar.classList.contains('is-shiver')).toBe(false);
+    });
+
+    test('Valentijn: the hearts of cupid make the tiles they hit blush', () => {
+        vi.useFakeTimers();
+        const at = day(ONE_DAY.valentijn);
+        const { container } = render(<LeerjaarBar grade={2} onPick={() => { }} today={at} />);
+        fireEvent.click(screen.getByRole('button', { name: TOY_LABEL.valentijn }));
+        // The scene's seed is the day's for the first scene; jsdom measures nothing, so the stand-in strip is used.
+        const cues = sceneCues('cupid', geoOr(null), headerSeed(at));
+        act(() => { vi.advanceTimersByTime(cues[0].at + 5); });
+        expect(tile((cues[0].tile! + 1) as Leerjaar).querySelector('.zf-react.is-blush')).toBeTruthy();
+        expect(container.querySelectorAll('.zf-react.is-blush').length).toBeGreaterThan(0);
+        act(() => { vi.advanceTimersByTime(SCENE_MS.cupid + 3000); });
+        expect(container.querySelectorAll('.zf-react')).toHaveLength(0);
     });
 });
 

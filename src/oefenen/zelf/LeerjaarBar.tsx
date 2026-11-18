@@ -168,7 +168,7 @@ export default function LeerjaarBar({ grade, onPick, today }: { grade: Leerjaar 
     const fx = useSeasonHeader(grade, today);
     const label = <h2 id="zelf-years-label" className="zelf-years-label">{unset ? 'Kies je leerjaar' : 'leerjaar'}</h2>;
     return (
-        <section className={`zelf-years${unset ? ' is-unset' : ''}${fx?.className ?? ''}`} aria-labelledby="zelf-years-label">
+        <section ref={fx?.barRef} className={`zelf-years${unset ? ' is-unset' : ''}${fx?.className ?? ''}`} aria-labelledby="zelf-years-label">
             {fx?.band}
             {fx ? <div className="zf-side">{label}{fx.toy}</div> : label}
             <div className="zelf-years-row">
@@ -177,7 +177,7 @@ export default function LeerjaarBar({ grade, onPick, today }: { grade: Leerjaar 
                         aria-label={`Leerjaar ${g}`} onClick={() => onPick(g)}>
                         <Vignette g={g} />
                         <span className="zy-num" aria-hidden>{g}</span>
-                        {fx?.wornOn === g && fx.wear}
+                        {fx?.tile(g)}
                     </button>
                 ))}
             </div>
