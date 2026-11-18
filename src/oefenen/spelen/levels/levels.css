@@ -12,9 +12,15 @@
 .kid-option.is-wide .kid-seg-btn { flex: 1 1 auto; padding: 0 10px; }
 /* The segments share the line by content: Onmogelijk with its clock, two flames and the tick never clips. */
 .kid-seg:has(.lv-icon) .kid-seg-btn { flex: 1 1 auto; padding: 0 8px; }
-/* A phone: the icons above the word, so four levels still fit one line. */
-@media (max-width: 599px) {
+/* A narrow row (a phone, either way up): the icons above the word and no tick, so four levels still fit one line;
+   narrower still, a smaller word, never a clipped one ("Onmogelijk" at 390 px). */
+.kid-option.is-wide:has(.lv-icon) { container-type: inline-size; }
+@container (max-width: 600px) {
   .kid-option.is-wide .kid-seg-btn { flex-direction: column; gap: 2px; padding: 4px 4px; }
+  .kid-option.is-wide .kid-seg-btn[aria-pressed="true"]::before { display: none; }
+}
+@container (max-width: 420px) {
+  .kid-option.is-wide .kid-seg-btn { font-size: calc(var(--kiosk-text) * 0.8); }
 }
 
 /* The clock per sum (SumClockRing): a clock face whose ring empties as the sum waits (--sc-left, 1 → 0). */

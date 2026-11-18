@@ -252,6 +252,8 @@
   font-size: var(--kiosk-text);
   font-weight: 800;
 }
+/* A long topic ("Maaltafels: Maal- en deeltafels van 1 tot 10") wraps: a rounded rectangle, the text clear of its corners (pillWrap.ts). */
+.spel-options-note[data-wrapped] { border-radius: var(--radius-md); padding: 4px 16px; line-height: 1.25; }
 /* The options: label above a segmented row, two per line when there are many. */
 .spel-options-panel {
   display: grid;
