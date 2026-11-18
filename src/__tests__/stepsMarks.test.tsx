@@ -5,7 +5,9 @@ import SheetPages from '../components/sheet/SheetPages';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { decodeTutor, encodeTutorPage, tutorPageMarks, tutorStepsOf, TUTOR_HASH_PREFIX } from '../services/oefenen/tutorPayload';
 import { stepsFor } from '../services/stepsAvailability';
+import { decodeShareHash, encodeShareLink, parseWorksheetFile } from '../services/persistence';
 import { makeBlock, generateFor } from './helpers/makeBlock';
+import type { DocSettings } from '../store/types';
 import type { PackedPage } from '../services/layout/pagePacker';
 import type { MeasuredHeights } from '../hooks/useMeasuredHeights';
 import type { SheetDnd } from '../hooks/useSheetDnd';
@@ -33,9 +35,9 @@ const dnd: SheetDnd = {
     handleProps: () => ({ onPointerDown: () => { } }), blockProps: () => ({ onPointerDown: () => { } }),
 };
 
-function sheet(blocks: MathBlock[], tutorQr: boolean) {
+function sheet(blocks: MathBlock[], tutorQr: boolean, extra: Partial<DocSettings> = {}) {
     const base = useWorksheetStore.getState().docSettings;
-    useWorksheetStore.setState({ blocks, docSettings: { ...base, tutorQr } });
+    useWorksheetStore.setState({ blocks, docSettings: { ...base, tutorQr, ...extra } });
     const order = Object.fromEntries(blocks.map((b, i) => [b.id, i + 1]));
     return render(<SheetPages packedPages={[page(blocks)]} blockOrder={order} measured={measured} dnd={dnd} onOpenSplit={() => { }} />).container;
 }
@@ -120,5 +122,46 @@ describe('stappenhulp marks on the sheet', () => {
         const root = sheet([all(), some(), none()], false);
         expect(root.querySelectorAll('.steps-glyph').length).toBe(0);
         expect(root.querySelector('.tutor-qr-legend')).toBeNull();
+    });
+});
+
+describe('stappen-icoon placement (docSettings.stepsGlyph)', () => {
+    const all = () => hr('all', [eq(475, 368), eq(236, 148)]);
+    const title = (root: HTMLElement) => cell(root, 'all').querySelector<HTMLElement>('.print-opdracht')!;
+
+    it('absent = rechts: the mark is the last child of the title row, outside the title text', () => {
+        expect(useWorksheetStore.getState().docSettings.stepsGlyph).toBeUndefined();
+        const row = title(sheet([all()], true));
+        expect(row.querySelectorAll('.steps-glyph').length).toBe(1);
+        expect(row.lastElementChild?.classList.contains('steps-glyph-right')).toBe(true);
+    });
+
+    it('links: a label before the title text, none on the right', () => {
+        const row = title(sheet([all()], true, { stepsGlyph: 'links' }));
+        expect(row.querySelectorAll('.steps-glyph').length).toBe(1);
+        expect(row.querySelector('.steps-glyph-right')).toBeNull();
+        const left = row.firstElementChild!;
+        expect(left.querySelector('.steps-glyph')).not.toBeNull();
+        expect(left.firstElementChild?.querySelector('.steps-glyph')).not.toBeNull();
+    });
+
+    it('verborgen: no mark and no footer legend, the QR stays', () => {
+        const root = sheet([all()], true, { stepsGlyph: 'verborgen' });
+        expect(root.querySelectorAll('.steps-glyph').length).toBe(0);
+        expect(root.querySelector('.tutor-qr-legend')).toBeNull();
+        expect(root.querySelector('.tutor-qr-foot')).not.toBeNull();
+    });
+
+    it('travels with the sheet; an old sheet without it loads as rechts', () => {
+        const st = useWorksheetStore.getState();
+        const state = { blocks: [all()], header: st.header, footer: st.footer, docSettings: { ...st.docSettings, tutorQr: true, stepsGlyph: 'links' as const }, baseSettings: st.baseSettings, selectedGrade: null };
+        const link = encodeShareLink(state)!;
+        const decoded = decodeShareHash(link.slice(link.indexOf('#')))!;
+        expect(decoded.docSettings.stepsGlyph).toBe('links');
+        const file = JSON.parse(JSON.stringify(decoded));
+        delete file.docSettings.stepsGlyph;
+        expect(parseWorksheetFile(JSON.stringify(file)).docSettings.stepsGlyph).toBeUndefined();
+        const root = sheet([all()], true, file.docSettings);
+        expect(title(root).lastElementChild?.classList.contains('steps-glyph-right')).toBe(true);
     });
 });

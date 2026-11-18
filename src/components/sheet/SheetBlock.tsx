@@ -97,6 +97,7 @@ function SheetBlock({
   stepsMarks = '', blockProps, onFitWidth, onWiden, windowTopPx = 0, windowHeightPx,
 }: SheetBlockProps) {
   const lower = windowTopPx > 0;
+  const stepsSide = docSettings.stepsGlyph ?? 'rechts';
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
   // title row and takes no number, so the opdracht numbering skips over it.
@@ -202,11 +203,14 @@ function SheetBlock({
                 <Lock size={14} />
               </span>
             )}
+            {stepsMarks === 'all' && stepsSide === 'links' && (docSettings.opdrachtTitelStyle === 'boxed'
+              ? <><span style={{ display: 'inline-flex', flexShrink: 0 }}><StepsGlyph size="1em" /></span><span style={{ width: '1.5px', alignSelf: 'stretch', background: '#000' }} /></>
+              : <span style={{ ...styles.badge('mag'), display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}><StepsGlyph size="1em" /></span>)}
             <EditableInstruction block={block} prefix={docSettings.numberBlocks && index != null ? `${index}. ` : ''} />
-            {/* Every sum opens in the stappenhulp: one mark for the block; the negative margin keeps it by the title, not a gap away. */}
-            {stepsMarks === 'all' && <span style={{ display: 'inline-flex', marginLeft: '-6px', flexShrink: 0 }}><StepsGlyph size="1em" /></span>}
           </div>
           {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
+          {/* Every sum opens in the stappenhulp: one mark for the block, at the far right of the title line so it does not read as part of the sentence. */}
+          {stepsMarks === 'all' && stepsSide === 'rechts' && <span className="steps-glyph-right" style={{ display: 'inline-flex', flexShrink: 0, marginLeft: '12px' }}><StepsGlyph size="1em" /></span>}
         </div>}
 
         {(() => {

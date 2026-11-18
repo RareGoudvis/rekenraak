@@ -426,6 +426,14 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         </div>
                         <p style={{ ...S.hintText, margin: '0 0 var(--sp-2)' }}>In de stappenhulp verschijnt een knop die nieuwe oefeningen van dezelfde soort opent in Oefenmodus, met de instellingen van dat blok.</p>
                     </>)}
+                    {docSettings.tutorQr && (<>
+                        <label style={S.label}>Stappen-icoon bij de opdracht</label>
+                        <div className="seg-group" role="group" aria-label="Stappen-icoon bij de opdracht">
+                            {([['links', 'Links'], ['rechts', 'Rechts'], ['verborgen', 'Verborgen']] as const).map(([v, l]) => (
+                                <button key={v} className="seg-btn" aria-pressed={(docSettings.stepsGlyph ?? 'rechts') === v} onClick={() => updateDocSettings({ stepsGlyph: v })}>{l}</button>
+                            ))}
+                        </div>
+                    </>)}
                     {docSettings.tutorQr && (
                         <div style={S.switchRow}>
                             <span style={S.switchText}>Uitleg naast de QR-code</span>
