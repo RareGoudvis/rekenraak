@@ -214,3 +214,49 @@
 .sph-s-partyparrot { top: 4%; left: 24%; width: clamp(50px, 14cqmin, 120px); aspect-ratio: 80 / 90; translate: -50% 0; }
 .sph-s-rain { top: 0; left: calc(8% + var(--i) * 17%); width: clamp(20px, 5cqmin, 40px); aspect-ratio: 1; animation: sph-s-coinfall calc(1.6s + var(--i) * .25s) linear infinite; animation-delay: calc(var(--i) * -.4s); }
 @keyframes sph-s-coinfall { from { translate: 0 -40px; rotate: 0deg; } to { translate: 0 100cqh; rotate: 360deg; } }
+
+/* ── Round 6 detailing (owner 2026-11-18): the octopus at the porthole, the crab, the cheer ── */
+.sph-s-octo-skin { fill: color-mix(in srgb, var(--accent-meetkunde) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; }
+.sph-s-octo-arm { fill: none; stroke: color-mix(in srgb, var(--accent-meetkunde) 55%, var(--kiosk-paper)); stroke-width: 7; stroke-linecap: round; }
+.sph-s-octo-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5; }
+.sph-s-octo-pupil { fill: var(--spel-ink); }
+.sph-s-octo-smile { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; }
+.sph-s-octo-spot { fill: color-mix(in srgb, var(--accent-meetkunde) 75%, var(--spel-ink)); }
+.sph-s-octo { animation: sph-s-octo 12s ease-in-out infinite; animation-delay: -1s; }
+@keyframes sph-s-octo {
+  0%, 48% { translate: 0 46px; }
+  56% { translate: 0 -2px; }
+  60%, 84% { translate: 0 0; }
+  92%, 100% { translate: 0 46px; }
+}
+.sph-s-octo-arm.is-wave { transform-box: view-box; transform-origin: 64px 76px; animation: sph-s-octo-wave 12s ease-in-out infinite; animation-delay: -1s; }
+@keyframes sph-s-octo-wave { 0%, 60% { rotate: 0deg; } 64%, 72% { rotate: -24deg; } 68%, 76% { rotate: 10deg; } 80%, 100% { rotate: 0deg; } }
+
+/* The crab: across the floor and back now and then, sideways, legs and claws busy. */
+.sph-s-crab { left: 0; bottom: calc(3% + 1.5cqh); width: clamp(40px, 6cqmin, 72px); aspect-ratio: 80 / 50; animation: sph-s-crab 20s linear infinite; animation-delay: -6s; }
+@keyframes sph-s-crab {
+  0% { translate: -12cqw 0; }
+  40% { translate: 104cqw 0; }
+  50% { translate: 104cqw 0; scale: -1 1; }
+  90% { translate: -12cqw 0; scale: -1 1; }
+  100% { translate: -12cqw 0; }
+}
+.sph-s-crab-walk { display: block; width: 100%; height: 100%; animation: sph-s-crab-bob 260ms ease-in-out infinite alternate; }
+@keyframes sph-s-crab-bob { from { translate: 0 0; } to { translate: 0 -2px; } }
+.sph-s-crab-shell { fill: color-mix(in srgb, var(--accent-getallenkennis) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sph-s-crab-leg, .sph-s-crab-stalk { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.sph-s-crab-legs { transform-box: view-box; transform-origin: 40px 34px; animation: sph-s-crab-legs 180ms ease-in-out infinite alternate; }
+@keyframes sph-s-crab-legs { from { scale: 1 1; } to { scale: .92 1.08; } }
+.sph-s-claw { transform-box: view-box; animation: sph-s-snap 700ms ease-in-out infinite alternate; }
+.sph-s-claw.is-l { transform-origin: 18px 22px; }
+.sph-s-claw.is-r { transform-origin: 62px 22px; animation-delay: -350ms; }
+@keyframes sph-s-snap { from { rotate: 0deg; } to { rotate: -12deg; } }
+
+/* A pair found: the lanterns swing hard, the parrot flaps, the chest glows up. */
+.sph-root.is-cheer-0 .sph-s-lantern > svg { animation: sph-s-cheer-0 1.4s ease-out; }
+.sph-root.is-cheer-1 .sph-s-lantern > svg { animation: sph-s-cheer-1 1.4s ease-out; }
+.sph-s-lantern > svg { transform-origin: 50% 0; }
+@keyframes sph-s-cheer-0 { 0%, 100% { rotate: 0deg; } 20% { rotate: 16deg; } 45% { rotate: -12deg; } 70% { rotate: 6deg; } }
+@keyframes sph-s-cheer-1 { 0%, 100% { rotate: 0deg; } 20% { rotate: 16deg; } 45% { rotate: -12deg; } 70% { rotate: 6deg; } }
+.sph-root:is(.is-cheer-0, .is-cheer-1) .sph-s-pwing { animation: sph-s-flap 220ms ease-in-out infinite alternate; }
+.sph-root:is(.is-cheer-0, .is-cheer-1) .sph-s-chestbox-at > svg { filter: brightness(1.5); transition: filter 300ms; }

@@ -5,7 +5,8 @@ import './zombie.css';
 // of jars, crates and a barrel, a boarded window. Above it: a bare bulb that flickers (flies circling it), zombies
 // shuffling past behind the window's planks, now and then a zombie hand popping out of the floor to wave. Silly, never
 // scary (the Zombies game's style: round, green, googly eyes). A zombie shambles across to turn cards back ("Breinnn!"),
-// a pair makes one dance, a mistake is a wobbly brain jelly. The pair counter is a row of little bulbs.
+// a pair makes one dance, a mistake is a wobbly brain jelly. The pair counter is a row of little bulbs. The jars bubble,
+// a cobweb sways in the corner, now and then a zombie peeks over the barrel; a found pair makes the cellar cheer.
 
 const v = (vars: Record<string, string | number>) => vars as CSSProperties;
 
@@ -101,6 +102,8 @@ function Shelf() {
                 <g key={i}>
                     <rect className="sph-z-jar" x={x} y={52 - h} width={20} height={h} rx={5} style={v({ '--c': `var(--spel-fill-${c})` })} />
                     <rect className="sph-z-lid" x={x + 2} y={48 - h} width={16} height={6} rx={2} />
+                    {/* Whatever is in the jar bubbles away. */}
+                    {[0, 1].map(k => <circle key={k} className="sph-z-bub" cx={x + 7 + k * 6} cy={49} r={1.8 - k * .4} style={v({ '--h': h - 9, '--i': i * 2 + k })} />)}
                 </g>
             ))}
             {[[16, 22], [46, 30], [80, 26]].map(([x, h], i) => <rect key={i} className="sph-z-box" x={x} y={112 - h} width={26} height={h} rx={2} />)}
@@ -117,6 +120,43 @@ function Crates() {
             <path className="sph-z-hoop" d="M66 52 Q90 58 114 52 M66 88 Q90 94 114 88" />
             <rect className="sph-z-box" x={20} y={8} width={40} height={38} rx={3} />
             <path className="sph-z-boxline" d="M20 27 H60" />
+        </svg>
+    );
+}
+
+/** A zombie peeking over the barrel (the crates' box): it rises, looks round with its googly eyes, sinks back. */
+function PeekZombie() {
+    const id = useId();
+    return (
+        <svg viewBox="0 0 120 110">
+            <defs><clipPath id={`${id}b`}><rect x={60} y={-80} width={60} height={116} /></clipPath></defs>
+            <g clipPath={`url(#${id}b)`}>
+                <g className="sph-z-peek">
+                    <circle className="sph-z-skin" cx={90} cy={22} r={17} />
+                    <path className="sph-z-hair" d="M83 6 Q87 0 91 6 Q95 0 99 7" />
+                    <g className="sph-z-peek-eyes">
+                        <circle className="sph-z-eye" cx={83} cy={20} r={6.5} />
+                        <circle className="sph-z-eye" cx={98} cy={18} r={5} />
+                        <circle className="sph-z-pupil" cx={82} cy={22} r={2.8} />
+                        <circle className="sph-z-pupil" cx={99} cy={17} r={2.2} />
+                    </g>
+                    <path className="sph-z-mouth" d="M84 31 Q91 35 97 30" />
+                </g>
+            </g>
+            {/* Its fingers on the barrel's rim. */}
+            <g className="sph-z-peek is-hand">
+                {[76, 82, 98, 104].map(x => <rect key={x} className="sph-z-handskin" x={x - 2.6} y={30} width={5.2} height={9} rx={2.6} />)}
+            </g>
+        </svg>
+    );
+}
+
+/** A cobweb for a corner, swaying a little. */
+function ZWeb() {
+    return (
+        <svg viewBox="0 0 100 100">
+            {[0, 30, 60, 90].map(a => { const r = (a * Math.PI) / 180; return <path key={a} className="sph-z-web" d={`M0 0 L${Math.cos(r) * 96} ${Math.sin(r) * 96}`} />; })}
+            {[30, 56, 82].map(d => <path key={d} className="sph-z-web" d={`M${d} 0 Q${d * .78} ${d * .3} ${d * .87} ${d * .5} Q${d * .55} ${d * .62} ${d * .5} ${d * .87} Q${d * .3} ${d * .78} 0 ${d}`} />)}
         </svg>
     );
 }
@@ -180,6 +220,8 @@ export function Life({ lit }: { lit: boolean }) {
             <span className="sph-z-bulb is-glow"><Bulb glow /></span>
             <span className="sph-z-window is-glow"><WindowLife /></span>
             <span className="sph-z-handbox"><Hand /></span>
+            <span className="sph-z-crates is-peek"><PeekZombie /></span>
+            <span className="sph-z-webbox"><ZWeb /></span>
         </div>
     );
 }

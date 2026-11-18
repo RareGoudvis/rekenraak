@@ -1,11 +1,12 @@
-import type { CSSProperties } from 'react';
+import { useId, type CSSProperties } from 'react';
 import { useFollow } from './beam';
 import './klassiek.css';
 
 // Klassiek spookhuis: an old parlour at night. Under the dark: striped wallpaper, floorboards, a moonlit window whose
 // shutter creaks, two portraits whose eyes follow the light (they grin when it finds them), a grandfather clock and a
 // candelabra. Above it: the moon, the window's light on the floor, candle flames, bats, a spider bobbing on its thread.
-// Friendly sheet ghosts turn cards back and pop out of a pair; a mistake is a silly pumpkin.
+// Friendly sheet ghosts turn cards back and pop out of a pair; a mistake is a silly pumpkin. Now and then a little ghost
+// peeks out from behind the clock, dust drifts in the moonlight, the cobweb sways; a found pair makes the room cheer.
 
 const v = (vars: Record<string, string | number>) => vars as CSSProperties;
 
@@ -133,6 +134,31 @@ function Cobweb() {
     );
 }
 
+/** A little ghost behind the grandfather clock (same box as the clock): now and then it peeks out, looks round, ducks back. */
+function PeekGhost() {
+    const id = useId();
+    return (
+        <svg viewBox="0 0 60 170">
+            {/* Only what is left of the clock's side shows: the rest of it is behind the clock. */}
+            <defs><clipPath id={`${id}c`}><rect x={-80} y={0} width={88} height={170} /></clipPath></defs>
+            <g clipPath={`url(#${id}c)`}>
+                <g className="sph-k-peek">
+                    <path className="sph-k-sheet" d="M-26 100 V62 Q-26 36 0 36 Q26 36 26 62 V100 Z" />
+                    <g className="sph-k-peek-eyes">
+                        <ellipse className="sph-k-ghost-eye" cx={-12} cy={60} rx={4} ry={5.4} />
+                        <ellipse className="sph-k-ghost-eye" cx={1} cy={60} rx={4} ry={5.4} />
+                        <circle className="sph-k-ghost-glint" cx={-11} cy={58} r={1.4} />
+                        <circle className="sph-k-ghost-glint" cx={2} cy={58} r={1.4} />
+                    </g>
+                    <path className="sph-k-peek-mouth" d="M-10 72 Q-5 77 0 72" />
+                </g>
+            </g>
+            {/* Its little hand curls round the clock's edge. */}
+            <g className="sph-k-peek is-hand">{[80, 88, 96].map(y => <rect key={y} className="sph-k-sheet" x={9} y={y} width={10} height={7} rx={3.5} />)}</g>
+        </svg>
+    );
+}
+
 /** A little round bat; wings flap (CSS), hang = upside down, clapping its wings. */
 export function Bat({ hang }: { hang?: boolean }) {
     return (
@@ -216,6 +242,8 @@ export function Life({ lit }: { lit: boolean }) {
             <span className="sph-k-shaft" />
             <span className="sph-k-window is-glow"><WindowGlow /></span>
             <span className="sph-k-candles is-glow"><Candelabra glow /></span>
+            <span className="sph-k-motes">{[12, 30, 46, 22, 58, 38, 70, 50].map((x, i) => <i key={i} style={v({ '--i': i, '--x': `${x}%` })} />)}</span>
+            <span className="sph-k-clockbox is-peek"><PeekGhost /></span>
             <span className="sph-k-spider">
                 <svg viewBox="0 0 40 120">
                     <path className="sph-k-thread" d="M20 0 V78" />

@@ -272,3 +272,65 @@
 }
 @keyframes sph-k-rise { from { translate: -50% 110%; } }
 .sph-k-lantern { bottom: 2%; left: calc(6% + var(--i) * 84%); width: clamp(36px, 9cqmin, 90px); aspect-ratio: 100 / 92; translate: -50% 0; }
+
+/* ── Round 6 detailing (owner 2026-11-18): the peeking ghost, dust in the moonlight, the cobweb's sway, the cheer ── */
+/* The little ghost behind the clock: hidden most of the time, then it slides out, looks left and right, blinks, ducks. */
+.sph-k-peek { transform-box: view-box; transform-origin: 8px 100px; animation: sph-k-peek 11s ease-in-out infinite; animation-delay: -4s; }
+.sph-k-peek.is-hand { animation-name: sph-k-peek-hand; }
+@keyframes sph-k-peek {
+  0%, 56% { translate: 44px 0; rotate: 0deg; }
+  61% { translate: -3px 0; rotate: -8deg; }
+  64%, 84% { translate: 0 0; rotate: -4deg; }
+  90%, 100% { translate: 44px 0; rotate: 0deg; }
+}
+@keyframes sph-k-peek-hand { 0%, 58% { opacity: 0; } 62%, 86% { opacity: 1; } 89%, 100% { opacity: 0; } }
+.sph-k-peek-eyes { animation: sph-k-peek-look 11s ease-in-out infinite; animation-delay: -4s; }
+@keyframes sph-k-peek-look { 0%, 64% { translate: 0 0; scale: 1; } 68%, 72% { translate: -3px 0; scale: 1; } 76%, 79% { translate: 3px 1px; scale: 1; } 80% { translate: 3px 1px; scale: 1 .1; } 81%, 100% { translate: 0 0; scale: 1; } }
+.sph-k-peek-eyes { transform-box: fill-box; transform-origin: center; }
+.sph-k-peek-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 2.4; stroke-linecap: round; }
+.sph-k-clockbox.is-peek { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--sph-k-ghost) 45%, transparent)); }
+
+/* Dust drifting up through the moonlight (the shaft's box and shape). */
+.sph-k-motes {
+  left: calc(1.5cqw + min(calc(var(--sph-side, 0px) - 3cqw), 200px, 26cqh) * .2);
+  top: calc(3cqh + min(calc(var(--sph-side, 0px) - 3cqw), 200px, 26cqh) * .62);
+  width: calc(min(calc(var(--sph-side, 0px) - 3cqw), 200px, 26cqh) * 2.2);
+  height: 72cqh;
+  clip-path: polygon(8% 0, 36% 0, 100% 100%, 30% 100%);
+  pointer-events: none;
+}
+.sph-k-motes i {
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sph-k-moon) 75%, transparent);
+  animation: sph-k-mote calc(7s + var(--i) * .6s) linear infinite;
+  animation-delay: calc(var(--i) * -1.3s);
+}
+@keyframes sph-k-mote {
+  0% { translate: 0 60cqh; opacity: 0; }
+  20% { opacity: .9; }
+  50% { translate: 18px 34cqh; }
+  80% { opacity: .7; }
+  100% { translate: -6px 6cqh; opacity: 0; }
+}
+.sph-root[data-room="none"] :is(.sph-k-motes, .sph-k-clockbox.is-peek) { display: none; }
+
+/* The cobweb sways a little in the draught. */
+.sph-k-cobweb > svg { transform-origin: 100% 0; animation: sph-k-web 5.5s ease-in-out infinite alternate; }
+@keyframes sph-k-web { from { rotate: -2.5deg; scale: 1 1; } to { rotate: 2deg; scale: .98 1.03; } }
+
+/* A pair found: the candles flare, the portraits grin, the spider hops and the peeking ghost waves out. */
+.sph-root.is-cheer-0 .sph-k-candles.is-glow > svg { animation: sph-k-flare-0 1.4s ease-out; }
+.sph-root.is-cheer-1 .sph-k-candles.is-glow > svg { animation: sph-k-flare-1 1.4s ease-out; }
+.sph-k-candles.is-glow > svg { transform-origin: 50% 30%; }
+@keyframes sph-k-flare-0 { 0%, 100% { scale: 1; filter: none; } 25% { scale: 1.4; filter: brightness(1.5); } }
+@keyframes sph-k-flare-1 { 0%, 100% { scale: 1; filter: none; } 25% { scale: 1.4; filter: brightness(1.5); } }
+.sph-root:is(.is-cheer-0, .is-cheer-1) .sph-k-grin { scale: 1.5 1.9; }
+.sph-root.is-cheer-0 .sph-k-spider > svg { animation: sph-k-hop-0 900ms var(--ease-spring); }
+.sph-root.is-cheer-1 .sph-k-spider > svg { animation: sph-k-hop-1 900ms var(--ease-spring); }
+@keyframes sph-k-hop-0 { 40% { translate: 0 -30%; rotate: 360deg; } }
+@keyframes sph-k-hop-1 { 40% { translate: 0 -30%; rotate: 360deg; } }

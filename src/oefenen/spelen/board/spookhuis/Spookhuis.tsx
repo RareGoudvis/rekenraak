@@ -29,6 +29,8 @@ import './spookhuis.css';
 const TICK_MS = 100;
 // Before the pupil moves the light, it sweeps slowly over the cards by itself (a hint that it can move): one loop.
 const IDLE_LOOP_MS = 9000;
+// The room's cheer after a pair (ms): about the pair moment's visitor; SYNC: art/<theme>.css .is-cheer-N animations.
+const CHEER_MS = 1800;
 
 // A card = one side of one sum: id = cell * 2 (the sum) or cell * 2 + 1 (its answer). SYNC: board/hartjes/Hartjes.tsx.
 const cellOf = (id: number) => id >> 1;
@@ -72,10 +74,13 @@ function Card({ id, board, art, theme, up, nope, merging, mistake, tilt, disable
     const solved = cell.state === 'solved';
     const open = up || solved;
     const face = isSum(id) ? sumFace(q) : answerFace(q);
+    // Once turned up, a closed card plays its turn back (a fresh board's cards never do).
+    const [wasOpen, setWasOpen] = useState(open);
+    if (open && !wasOpen) setWasOpen(true);
     const label = solved ? `${faceText(sumFace(q))} is ${faceText(answerFace(q))}, gevonden` : open ? faceText(face) : theme.closed;
     const Back = art.CardBack;
     return (
-        <button type="button" className={`sph-card${open ? ' is-open' : ''}${solved ? ' is-solved' : ''}${isSum(id) ? ' is-sum' : ' is-answer'}${nope ? ' is-nope' : ''}${merging ? ' is-merging' : ''}${mistake ? ' is-mistake' : ''}`}
+        <button type="button" className={`sph-card${open ? ' is-open' : wasOpen ? ' is-shut' : ''}${solved ? ' is-solved' : ''}${isSum(id) ? ' is-sum' : ' is-answer'}${nope ? ' is-nope' : ''}${merging ? ' is-merging' : ''}${mistake ? ' is-mistake' : ''}`}
             style={{ '--tilt': `${tilt}deg` } as CSSProperties} onClick={onTap} disabled={disabled || open} aria-label={label} data-cell={cellOf(id)}
             onFocus={e => { if (focusVisible(e.currentTarget)) onFocusCard(e.currentTarget); }}>
             {/* The poof behind the card, so it puffs out around the picture. */}
@@ -85,6 +90,8 @@ function Card({ id, board, art, theme, up, nope, merging, mistake, tilt, disable
                 <span className="sph-side sph-front" aria-hidden>
                     <CardFront solved={solved} />
                     <Face face={face} />
+                    {/* A glint sweeps the face as it lands. */}
+                    <span className="sph-shine" />
                     {mistake && <span className="sph-mistake"><art.Mistake /></span>}
                 </span>
             </span>
@@ -140,10 +147,10 @@ interface Visit { id: number; trick: boolean; card: number | null; elapsed: numb
 
 interface BoardProps extends Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound'> {
     board: SpelBoard; art: ThemeArt; theme: ThemeInfo; beam: BeamStore; last: boolean;
-    moveBeam(p: Pt): void; onLit(lit: boolean): void; root: RefObject<HTMLDivElement | null>;
+    moveBeam(p: Pt): void; onLit(lit: boolean): void; onPair(): void; root: RefObject<HTMLDivElement | null>;
 }
 
-function SpookBoard({ board, phase, onBoardPick, onBoardFocus, sound, art, theme, beam, last, moveBeam, onLit, root }: BoardProps) {
+function SpookBoard({ board, phase, onBoardPick, onBoardFocus, sound, art, theme, beam, last, moveBeam, onLit, onPair, root }: BoardProps) {
     const order = useMemo(() => shuffled(board.cells.length * 2, board.key), [board.key, board.cells.length]);
     const seed = useMemo(() => seedOf(board.key), [board.key]);
     const [up, setUp] = useState<number[]>([]);
@@ -187,8 +194,11 @@ function SpookBoard({ board, phase, onBoardPick, onBoardFocus, sound, art, theme
     }, [up]);
     useEffect(() => {
         if (flourish === null) return;
+        onPair();
         const t = window.setTimeout(() => setFlourish(null), PAIR_TAIL_MS);
         return () => window.clearTimeout(t);
+        // onPair is the root's stable setter wrapper.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [flourish]);
 
     const found = solvedCount;
@@ -336,6 +346,16 @@ export default function Spookhuis({ board, phase, onBoardPick, onBoardFocus, sou
     const rootRef = useRef<HTMLDivElement>(null);
     const [beam] = useState(() => new BeamStore());
     const [lit, setLit] = useState(false);
+    // A pair found: the room cheers for a moment (candles flare, portraits grin, ...: art/<theme>.css .is-cheer-N);
+    // the count alternates the class so two pairs in a row both play.
+    const [cheer, setCheer] = useState(0);
+    const [cheering, setCheering] = useState(false);
+    useEffect(() => {
+        if (!cheer) return;
+        const t = window.setTimeout(() => setCheering(false), CHEER_MS);
+        return () => window.clearTimeout(t);
+    }, [cheer]);
+    const onPair = useMemo(() => () => { setCheer(n => n + 1); setCheering(true); }, []);
     // The pupil has not moved the light yet: it sweeps by itself.
     const [idle, setIdle] = useState(true);
     const sweep = useRef<{ id: number | null; x: number; y: number; swept: boolean }>({ id: null, x: 0, y: 0, swept: false });
@@ -390,13 +410,13 @@ export default function Spookhuis({ board, phase, onBoardPick, onBoardFocus, sou
     const roomStyle = { '--sph-room-dark': ROOM_DARK, '--sph-flight-ms': `${FLIPPER_FLIGHT_MS}ms`, '--sph-mistake-ms': `${MISTAKE_MS}ms` } as CSSProperties;
     return (
         <BeamContext.Provider value={beam}>
-            <div ref={rootRef} className={`sph-root is-${theme}${lit ? ' is-lit' : ''}${idle ? ' is-idle' : ''}${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}`}
+            <div ref={rootRef} className={`sph-root is-${theme}${lit ? ' is-lit' : ''}${cheering ? ` is-cheer-${cheer % 2}` : ''}${idle ? ' is-idle' : ''}${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}`}
                 style={roomStyle} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
                 onKeyDown={() => setIdle(false)}
                 onClickCapture={e => { if (sweep.current.swept) { e.stopPropagation(); e.preventDefault(); sweep.current.swept = false; } }}>
                 <div className="sph-room" aria-hidden><art.Room lit={lit} /></div>
                 {board && <SpookBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} art={art} theme={info}
-                    beam={beam} last={last} moveBeam={p => { setIdle(false); moveBeam(p); }} onLit={setLit} root={rootRef} />}
+                    beam={beam} last={last} moveBeam={p => { setIdle(false); moveBeam(p); }} onLit={setLit} onPair={onPair} root={rootRef} />}
                 <div className="sph-room-dark" aria-hidden />
                 <div className="sph-glow" aria-hidden />
                 <div className="sph-life" aria-hidden><art.Life lit={lit} /></div>

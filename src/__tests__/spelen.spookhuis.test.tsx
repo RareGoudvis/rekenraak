@@ -136,7 +136,13 @@ describe('Spookhuis: the game', () => {
         expect(container.querySelector('.sph-root.is-klassiek .sph-room-dark')).toBeTruthy();
         expect(container.querySelector('.sph-floor-dark')).toBeTruthy();
         expect(container.querySelector('.sph-k-portrait')).toBeTruthy();
+        // The room's small life: a ghost peeking from behind the clock, dust in the moonlight.
+        expect(container.querySelector('.sph-k-clockbox.is-peek .sph-k-peek')).toBeTruthy();
+        expect(container.querySelectorAll('.sph-k-motes i').length).toBeGreaterThan(4);
+        // A fresh board's cards never play the turn back.
+        expect(container.querySelector('.sph-card.is-shut')).toBeNull();
         fireEvent.click(card(group, 0, 'sum'));
+        expect(card(group, 0, 'sum').querySelector('.sph-shine')).toBeTruthy();
         expect(card(group, 0, 'sum').closest('.sph-slot')!.classList.contains('is-up')).toBe(true);
         expect(card(group, 0, 'sum').getAttribute('aria-label')).not.toBe('Kaart, dicht');
     }, 15_000);
@@ -152,11 +158,14 @@ describe('Spookhuis: the game', () => {
         const moment = container.querySelector('.sph-moment')!;
         expect(moment.querySelectorAll('.sph-fly')).toHaveLength(2);
         expect(moment.querySelector('.sph-pop .sph-k-ghost')).toBeTruthy();
+        // The room cheers with it for a moment.
+        expect(container.querySelector('.sph-root.is-cheer-1')).toBeTruthy();
         act(() => { vi.advanceTimersByTime(PAIR_HIT_MS + 20); });
         expect(moment.querySelector('.spel-burst.is-sparkle')).toBeTruthy();
         expect(container.querySelector('.sph-k-pumpkin.is-lit')).toBeTruthy();
         act(() => { vi.advanceTimersByTime(3000); });
         expect(container.querySelector('.sph-moment')).toBeNull();
+        expect(container.querySelector('.sph-root[class*="is-cheer"]')).toBeNull();
     }, 15_000);
 
     test('a logged mistake turns the sum\'s card into the place\'s picture for a moment (Zombiehuis: a brain jelly)', async () => {
@@ -179,6 +188,10 @@ describe('Spookhuis: the game', () => {
         act(() => { vi.advanceTimersByTime(2500); });
         expect(container.querySelector('.sph-mistake')).toBeNull();
         expect(card(group, 0, 'sum').getAttribute('aria-label')).toBe('Kaart, dicht');
+        // Turned back, it played the turn the other way; the cellar's life: bubbling jars, a zombie over the barrel.
+        expect(card(group, 0, 'sum').classList.contains('is-shut')).toBe(true);
+        expect(container.querySelectorAll('.sph-z-bub').length).toBeGreaterThan(0);
+        expect(container.querySelector('.sph-z-crates.is-peek .sph-z-peek')).toBeTruthy();
     }, 15_000);
 
     test('the visitor turns a lone open card back: no mistake, no point (Spookschip: the ghost pirate, "Arrr!")', async () => {
@@ -187,6 +200,9 @@ describe('Spookhuis: the game', () => {
         act(() => start());
         const { container } = render(<SpelScreen />);
         const group = await screen.findByRole('group', { name: 'Kaarten in het spookschip' });
+        // The hold's life: an octopus at a porthole, a crab on the floor.
+        expect(container.querySelector('.sph-s-octo')).toBeTruthy();
+        expect(container.querySelector('.sph-s-crab .sph-s-crab-art')).toBeTruthy();
         fireEvent.click(card(group, 2, 'sum'));
         // The card has lain open alone far longer than FLIPPER_LONE_MS once the visitor is due.
         act(() => { vi.advanceTimersByTime(FLIPPER_EVERY_MS + 300); });
