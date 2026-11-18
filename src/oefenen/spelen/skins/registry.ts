@@ -35,8 +35,9 @@ import { Waves } from '@phosphor-icons/react';
 import { WILD } from './wildwaterrace/rule';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
-// keypad gets a second field; until then they say number only.
-const KEYPAD_NUMBER: SkinAccepts = { kinds: ['number'] };
+// keypad gets a second field; until then they say number only. pad: word choices (Frans) swap the keypad for the
+// choice pad; none of these games reads the answer as a number (Schatkist does: its lock code takes digits only).
+const KEYPAD_NUMBER: SkinAccepts = { kinds: ['number'], pad: true };
 // Tap skins show the options on their targets: session distractors for a number, or the exercise's own choices.
 // Measured 2026-11-14 at 1180×820: "89 991" stays readable on a balloon, mole and parcel (the label scales with the target).
 const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 5 };

@@ -91,3 +91,9 @@ export function wrongOf(answer: string, rng: () => number = Math.random): string
     const n = Number(answer);
     return String(n === 0 || rng() < 0.5 ? n + 1 : n - 1);
 }
+
+/** The bot's miss on the choice pad: one of the sum's other choices (a word it tapped), else wrongOf. */
+export function wrongChoiceOf(q: { answer: string; choices: readonly string[] }, rng: () => number = Math.random): string {
+    const others = q.choices.filter(c => c !== q.answer);
+    return others.length ? others[Math.min(others.length - 1, Math.floor(rng() * others.length))] : wrongOf(q.answer, rng);
+}

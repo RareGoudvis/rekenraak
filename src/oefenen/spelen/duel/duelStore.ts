@@ -3,13 +3,13 @@ import { checkAnswer } from '../../../services/oefenen/check';
 import { kioskFor } from '../../../services/oefenen/kiosk';
 import { madePerSlot, nextExercise, nextType } from '../../../services/oefenen/scheduler';
 import type { OefenHistoryEntry, OefenSessie } from '../../../services/oefenen/types';
-import { kioskAnswerOf, spelQuestionOf, type SpelQuestion } from '../spelQuestion';
+import { choiceCountOf, kioskAnswerOf, padRoundOf, spelQuestionOf, type SpelQuestion } from '../spelQuestion';
 import { spelSessieOf, type SpelFrom } from '../useSpelStore';
 import type { SkinMeta } from '../skins/types';
 import { clockMs } from '../levels/clock';
 import { BOT, botTurn, nextPace } from './bot';
 import { createDuelEvents, type DuelEvents } from './events';
-import { DUEL_TIMING, SHARED_TRIES, applyEffect, defaultRoundOver, freshSideView, leadOf, matchWinnerOf, wrongOf } from './rules';
+import { DUEL_TIMING, SHARED_TRIES, applyEffect, defaultRoundOver, freshSideView, leadOf, matchWinnerOf, wrongChoiceOf, wrongOf } from './rules';
 import { SIDES, otherSide, type DuelConfig, type DuelCtx, type DuelEffect, type DuelEventMap, type DuelFlight, type DuelRule, type DuelSide, type DuelSideView, type Side } from './types';
 
 // THE duel engine (DUEL.md): one match of two sides on one screen. Its own small session beside useSpelStore
@@ -43,6 +43,8 @@ export interface DuelState {
     card: boolean;
     // Paused (a phone held upright, the "Draai je toestel" prompt): every clock stands still, answers wait.
     paused: boolean;
+    // Word choices (Frans): each human side answers on the choice pad, the sums carry six choices.
+    pad: boolean;
     events: DuelEvents;
 
     // A new match (fresh session) from the picked config; the first round starts with its banner.
@@ -61,13 +63,13 @@ export interface DuelState {
 }
 
 /** The next question of one stream: the session's scheduler, as useSpelStore draws it. */
-export function drawFor(s: OefenSessie, history: readonly OefenHistoryEntry[]): SpelQuestion | null {
+export function drawFor(s: OefenSessie, history: readonly OefenHistoryEntry[], choiceCount?: number): SpelQuestion | null {
     const seen = new Set(history.map(h => h.exerciseKey));
     const madeBy = madePerSlot(s, history);
     for (let tries = 0; tries < MAX_DRAWS; tries++) {
         const pick = nextType(s, history);
         const made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
-        const q = pick && made ? spelQuestionOf(pick.type, pick.slot, made) : null;
+        const q = pick && made ? spelQuestionOf(pick.type, pick.slot, made, choiceCount) : null;
         if (q) return q;
     }
     return null;
@@ -179,13 +181,15 @@ export const useDuelStore = create<DuelState>()((set, get) => {
         if (!isBot('right') || !playing() || !q || me.feedback || me.locked || me.out) return;
         const { config, sides } = get();
         const lead = leadOf(viewOf(sides.right), viewOf(sides.left), config.lives);
-        const turn = botTurn(config.level, { lead, answerChars: q.answer.length, paceMs: sides.left.paceMs, shared: config.stream === 'shared' }, rng);
+        const pad = get().pad;
+        // On the pad an answer is one tap, never typed letter by letter.
+        const turn = botTurn(config.level, { lead, answerChars: pad ? 1 : q.answer.length, paceMs: sides.left.paceMs, shared: config.stream === 'shared' }, rng);
         // A person racing the ring answers just before it runs out rather than letting it run out.
         const left = me.deadline === null ? Infinity : me.deadline - Date.now() - BOT.beatClockMs;
         later('bot', Math.max(0, Math.min(turn.delayMs, left)), () => {
             const cur = get().sides.right;
             if (!playing() || cur.question?.key !== q.key || cur.feedback || cur.locked || cur.out) return;
-            submit('right', turn.correct, turn.correct ? q.answer : wrongOf(q.answer, rng), Date.now());
+            submit('right', turn.correct, turn.correct ? q.answer : pad ? wrongChoiceOf(q, rng) : wrongOf(q.answer, rng), Date.now());
         });
     };
 
@@ -201,13 +205,13 @@ export const useDuelStore = create<DuelState>()((set, get) => {
     const nextOwn = (side: Side, now = Date.now()) => {
         const { sessie, sides } = get();
         if (!sessie || !playing()) return;
-        pose(side, drawFor(sessie, sides[side].history), now);
+        pose(side, drawFor(sessie, sides[side].history, choiceCountOf(get().meta, get().pad)), now);
     };
 
     const nextShared = (now = Date.now()) => {
         const { sessie, shared } = get();
         if (!sessie || !playing()) return;
-        const q = drawFor(sessie, shared);
+        const q = drawFor(sessie, shared, choiceCountOf(get().meta, get().pad));
         for (const side of SIDES) pose(side, q, now);
     };
 
@@ -337,14 +341,14 @@ export const useDuelStore = create<DuelState>()((set, get) => {
 
     return {
         phase: 'idle', meta: null, from: null, sessie: null, config: DEFAULT_CONFIG, rule: {}, round: 1,
-        sides: { left: freshSide(5), right: freshSide(5) }, shared: [], flights: [], roundEndsAt: null, roundWinner: null, matchWinner: null, card: false, paused: false,
+        sides: { left: freshSide(5), right: freshSide(5) }, shared: [], flights: [], roundEndsAt: null, roundWinner: null, matchWinner: null, card: false, paused: false, pad: false,
         events: createDuelEvents(),
 
         begin({ meta, from, rule, config, now = Date.now() }) {
             clearAll();
             set({
                 // No question cap: a match runs as long as its rounds do (a solo game's 20-question round would starve a side).
-                meta, from, rule, config, round: 1, sessie: { ...spelSessieOf({ ...from, meta, now }), total: undefined }, shared: [], matchWinner: null,
+                meta, from, rule, config, round: 1, pad: padRoundOf(meta, from), sessie: { ...spelSessieOf({ ...from, meta, now }), total: undefined }, shared: [], matchWinner: null,
                 sides: { left: freshSide(config.lives), right: freshSide(config.lives) },
             });
             startRound(now);

@@ -225,7 +225,7 @@ describe('the sums to leerjaar 6', () => {
 });
 
 describe('the picker and the choice topics', () => {
-    test('vergelijken, deelbaarheid and even / oneven are tap content: Ballonnen, Zeehondjes, Pakjesband, Mollen, Brandweer, Skislalom, Grijpmachine only', () => {
+    test('vergelijken, deelbaarheid and even / oneven are word content: the tap games, and the keypad games through the choice pad (not Schatkist)', () => {
         for (const [g, t, label] of [
             [1, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'], [3, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
             [6, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
@@ -233,7 +233,10 @@ describe('the picker and the choice topics', () => {
         ] as const) {
             const c = choice(g, t, label);
             expect(spelContentOf(c, g), label).toMatchObject({ kind: 'choice', boards: [] });
-            expect(skinIds(c, g), label).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'brandweer', 'slalom', 'grijp']);
+            // Words only (no number among the options: Vergelijken en ordenen asks for one) also play on the choice pad.
+            const words = spelContentOf(c, g)!.answerChars === undefined;
+            const pad = words ? SKINS.filter(s => s.meta.input === 'keypad' && s.meta.id !== 'schatkist').map(s => s.meta.id) : [];
+            expect([...skinIds(c, g)].sort(), label).toEqual([...pad, 'ballonnen', 'zeehond', 'pakjesband', 'mollen', 'brandweer', 'slalom', 'grijp'].sort());
         }
     });
 

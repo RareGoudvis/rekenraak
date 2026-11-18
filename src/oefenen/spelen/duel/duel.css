@@ -401,3 +401,30 @@
   .duel-ask { gap: var(--sp-1); }
   .duel-score .duel-name { display: none; }
 }
+
+/* The choice pad in a half (SpelChoicePad on word choices): the keys' place and look, three rows that share the height. */
+.duel-pad {
+  width: min(100%, 560px);
+  grid-template-rows: repeat(var(--pad-rows, 3), minmax(var(--spel-tap), 1fr));
+  gap: var(--sp-1);
+  touch-action: none;
+  --pad-font-max: var(--kiosk-text-xl);
+}
+.duel-pad .spel-pad-key {
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  --kid-sh: 0 3px 0 var(--spel-ink);
+  touch-action: none;
+}
+.duel-pad .spel-pad-key:active:not(:disabled) { transform: translateY(2px); --kid-sh: 0 1px 0 var(--spel-ink); }
+.duel-pad .spel-pad-key.is-picked { background: var(--kid-pick); }
+.duel-pad .spel-pad-key.is-right, .duel-pad .spel-pad-key.is-answer { background: var(--kiosk-ok-soft); border-color: var(--kiosk-ok); }
+.duel-pad .spel-pad-key.is-wrong { background: var(--kid-strike-bg); }
+/* A phone on its side: the band keeps its 150 px, so the six choices go 3 × 2 and the note line goes (the pad's marks
+   say right, wrong or the answer); the pad then fits under the sign with --spel-tap keys. */
+@media (max-height: 520px) {
+  .duel-pad { --pad-cols: 3; grid-template-rows: repeat(var(--pad-rows-3, 2), minmax(var(--spel-tap), 1fr)); }
+  .duel-pad .spel-pad-key:last-child:nth-child(odd) { grid-column: auto; }
+  .duel-app.is-pad .duel-note { display: none; }
+}

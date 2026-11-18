@@ -67,7 +67,7 @@ describe('Voetbal: the registry and the match logic', () => {
     test('keypad, timed, 3 or 5 minutes (default 3), a hidden cap, numbers only', () => {
         const meta = skinById('voetbal')!.meta;
         expect(meta).toMatchObject({ input: 'keypad', timed: true, round: { seconds: 180, cap: VOETBAL.cap } });
-        expect(meta.accepts).toEqual({ kinds: ['number'] });
+        expect(meta.accepts).toEqual({ kinds: ['number'], pad: true });
         expect(skinAccepts(meta.accepts, NUMBER_CONTENT)).toBe(true);
         expect(meta.options![0]).toMatchObject({ id: 'tijd', default: '3' });
         expect(meta.options![1]).toMatchObject({ id: 'niveau', default: 'normaal', wide: true });

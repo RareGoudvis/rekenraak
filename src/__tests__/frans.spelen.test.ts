@@ -12,8 +12,8 @@ import type { FransExercise } from '../talen/frans/questions';
 import { resetKiosk } from './helpers/oefenKiosk';
 import type { ZelfChoice } from '../oefenen/zelf/zelfSessie';
 
-// Frans in the games: words on the tap games and the memory boards, never on a keypad game; the session checks with
-// the kiosk descriptor and Nakijken replays the mistakes in the kiosk.
+// Frans in the games: words on the tap games and the memory boards, and on the keypad games through the choice pad
+// (spelen.choicePad.test); the session checks with the kiosk descriptor and Nakijken replays the mistakes in the kiosk.
 
 const sp = () => useSpelStore.getState();
 const choiceOf = (topic: string, label: string): ZelfChoice => FRANS_ZELF.choices(5, topic).find(c => c.label === label)!;
@@ -22,7 +22,7 @@ const start = (choice: ZelfChoice, id: string): SpelStart => ({ choice, grade: 5
 beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null }); sp().otherGame(); });
 
 describe('Frans in the games', () => {
-    test('every Frans choice plays; only tap and memory games take it', () => {
+    test('every Frans choice plays; the tap, memory and keypad games take it, the digit games never', () => {
         for (const t of FRANS_ZELF.topics) for (const c of FRANS_ZELF.choices(5, t.id)) {
             expect(choiceCanPlay(c, 5)).toBe(true);
             expect(spelContentOf(c, 5)).toMatchObject({ kind: 'choice', boards: ['pairs'] });
@@ -30,7 +30,9 @@ describe('Frans in the games', () => {
         const ids = (topic: string, mode: string) => skinsFor(SKINS, spelContentOf(choiceOf(topic, mode), 5)!).map(s => s.meta.id);
         const er = ids('frans:er', 'Alles samen');
         expect(er).toEqual(expect.arrayContaining(['ballonnen', 'zeehond', 'mollen', 'hartjes', 'voetbalkaartjes', 'spookhuis']));
-        for (const keypad of ['pinguintoren', 'zombies', 'bom', 'kasteel', 'race', 'schatkist', 'eieren', 'honingraat']) expect(er).not.toContain(keypad);
+        // The keypad games show the choice pad; Schatkist's lock, the eggs and the honeycomb's sums need numbers.
+        expect(er).toEqual(expect.arrayContaining(['pinguintoren', 'zombies', 'bom', 'kasteel', 'race']));
+        for (const digits of ['schatkist', 'eieren', 'honingraat']) expect(er).not.toContain(digits);
         // "travaillent" is too long for a window, a present, a prize tag or a gate plate on a phone; "sommes" is not.
         for (const small of ['brandweer', 'pakjesband', 'grijp', 'slalom']) expect(er).not.toContain(small);
         expect(ids('frans:avoir-etre', 'Eén werkwoord vervoegen')).toEqual(expect.arrayContaining(['brandweer', 'pakjesband', 'grijp', 'slalom']));

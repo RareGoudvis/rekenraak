@@ -29,6 +29,8 @@ export interface SkinAccepts {
     board?: SpelPackBoard;
     // The longest WORD its targets keep readable on a phone on its side (--spel-word-min); absent = any (the label grows).
     maxWordChars?: number;
+    // A keypad skin that swaps its keypad for the choice pad (SpelChoicePad) on word-choice content (Frans): accepts.ts padPlays.
+    pad?: boolean;
 }
 
 export interface SkinMeta {

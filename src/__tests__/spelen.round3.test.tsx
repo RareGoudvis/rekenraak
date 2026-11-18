@@ -94,13 +94,20 @@ describe('accepts', () => {
         expect(skinAccepts(lock, { kind: 'number' })).toBe(false);
     });
 
-    test('a choice question kind: the picker shows only the tap skins, the rest are hidden (no binnenkort)', () => {
+    test('a choice question kind: the picker shows the tap skins and the keypad skins with the choice pad, the rest are hidden (no binnenkort)', () => {
         render(<GameRow games={gamesFor({ kind: 'choice' }, OFF_SEASON)} onPlay={vi.fn()} />);
         const shown = labels(screen.getByRole('group', { name: 'Kies een spel' }));
-        expect(shown).toEqual(calmFirst(SKINS.filter(s => s.meta.accepts.kinds.includes('choice'))));
+        expect(shown).toEqual(calmFirst(SKINS.filter(s => s.meta.accepts.kinds.includes('choice') || s.meta.accepts.pad)));
         expect(shown).toContain('Ballonnen');
-        expect(shown).not.toContain('Pinguïntoren');
-        expect(shown).not.toContain('Zombies');
+        expect(shown).toContain('Pinguïntoren');
+        expect(shown).not.toContain('Schatkist');
+        cleanup();
+        // Pictures (the klok) never reach a keypad game: the pad shows words only.
+        render(<GameRow games={gamesFor({ kind: 'choice', pictures: true }, OFF_SEASON)} onPlay={vi.fn()} />);
+        const pictures = labels(screen.getByRole('group', { name: 'Kies een spel' }));
+        expect(pictures).toContain('Ballonnen');
+        expect(pictures).not.toContain('Pinguïntoren');
+        expect(pictures).not.toContain('Zombies');
         expect(screen.queryByText('binnenkort')).toBeNull();
         cleanup();
         render(<GameRow games={gamesFor(NUMBER_CONTENT, OFF_SEASON)} onPlay={vi.fn()} />);
