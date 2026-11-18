@@ -35,10 +35,13 @@ export function wipeSlalom(): void {
     try { window.localStorage.removeItem(SLALOM_RECORDS_KEY); } catch { /* nothing to wipe */ }
 }
 
-/** The end screen's lines: the distance, and the record before this run. */
-export function slalomResult(metres: number, before: number | null): SkinResult {
+// The end screen's title when all his gear is gone (Moeilijk / Onmogelijk).
+export const BANK_TITLE = 'Plof, in de sneeuw!';
+
+/** The end screen's lines: the distance, and the record before this run; inBank = all gear gone (the friendly end). */
+export function slalomResult(metres: number, before: number | null, inBank = false): SkinResult {
     const detail = before === null ? 'Nieuw record!'
         : Math.floor(metres) > before ? `Nieuw record! ${formatMetres(metres - before)} verder dan je vorige record.`
         : `Je record is ${formatMetres(before)}.`;
-    return { title: 'Wat een afdaling!', lead: `Je skiede ${formatMetres(metres)}`, detail, wipe: wipeSlalom };
+    return { title: inBank ? BANK_TITLE : 'Wat een afdaling!', lead: `Je skiede ${formatMetres(metres)}`, detail, wipe: wipeSlalom };
 }

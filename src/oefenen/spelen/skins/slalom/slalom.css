@@ -275,8 +275,6 @@
 }
 .sl-gates { z-index: 3000; }
 .sl-world { z-index: 1; }
-.sl-skier.is-lean-l { rotate: -13deg; }
-.sl-skier.is-lean-r { rotate: 13deg; }
 .sl-skier-body {
   position: absolute;
   bottom: 0;
@@ -318,7 +316,8 @@
 
 /* The tumble: he rolls head over heels (skis and poles fly off on their own), sits, hops back up. */
 .sl-skier-art.is-roll .sl-skis,
-.sl-skier-art.is-roll .sl-pole { display: none; }
+.sl-skier-art.is-roll .sl-pole,
+.sl-skier-art.is-roll .sl-basket { display: none; }
 .sl-skier-art.is-roll { transform-origin: 50% 60%; animation: sl-roll 600ms cubic-bezier(.3, .6, .5, 1) both; }
 @keyframes sl-roll {
   0% { rotate: 0deg; translate: 0 0; scale: 1; }
@@ -501,3 +500,118 @@
 .sl-ending-skier svg,
 .sl-ending-snowman svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 @keyframes sl-hop-end { from { translate: -50% 0; } to { translate: -50% -8%; } }
+
+/* ── The racer (art.tsx Skier, owner 2026-11-18): 3/4 from behind, turns both ways, tucks, wobbles, loses gear ── */
+.sl-root, .sl-ending {
+  --sl-boot: var(--accent-getallenkennis);
+  --sl-skin: color-mix(in srgb, var(--accent-vraagstukken) 22%, var(--kiosk-paper));
+  --sl-hair: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--spel-ink));
+  --sl-lens: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--mab-e));
+  --sl-jacket-dark: color-mix(in srgb, var(--sl-jacket) 75%, var(--spel-ink));
+}
+.sl-boot { fill: var(--sl-boot); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-buckle { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; }
+.sl-knee { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; opacity: .55; }
+.sl-seat { fill: var(--sl-pants); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-jacket-side { fill: var(--sl-jacket-dark); }
+.sl-jacket-band { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.sl-bib-tie { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; }
+.sl-cuff { fill: none; stroke: var(--kiosk-paper); stroke-width: 4; stroke-linecap: round; }
+.sl-collar { fill: var(--sl-jacket-dark); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-basket { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.sl-vent { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linecap: round; }
+.sl-glint { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 75%, transparent); stroke-width: 3; stroke-linecap: round; }
+.sl-skin { fill: var(--sl-skin); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-hair { fill: var(--sl-hair); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-lens { fill: var(--sl-lens); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.sl-lens-glint { fill: none; stroke: var(--kiosk-paper); stroke-width: 2; stroke-linecap: round; }
+.sl-spray-puff { fill: var(--sl-spray); stroke: var(--spel-ink); stroke-width: 1.5; }
+.sl-zip { fill: none; stroke: var(--sl-jacket-dark); stroke-width: 2.5; }
+.sl-face-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sl-mouth { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2.4; stroke-linejoin: round; }
+.sl-cheek { fill: color-mix(in srgb, var(--accent-getallenkennis) 35%, var(--kiosk-paper)); }
+.sl-bank { fill: var(--sl-snow); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.sl-bank-shade { fill: none; stroke: var(--sl-spray); stroke-width: 3; stroke-linecap: round; }
+
+/* The turn, both ways: a little counter-lean (the anticipation), deep into the carve with the skis on their edges and
+   snow spraying off on the outside, then a follow-through past straight. SYNC: Slalom.tsx TURN_MS. */
+.sl-skier-turn, .sl-skier-wob { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.sl-skier-turn.is-l { animation: sl-turn-l 560ms cubic-bezier(.3, .6, .35, 1) both; }
+.sl-skier-turn.is-r { animation: sl-turn-r 560ms cubic-bezier(.3, .6, .35, 1) both; }
+@keyframes sl-turn-l { 0%, 100% { rotate: 0deg; translate: 0 0; } 14% { rotate: 5deg; } 42% { rotate: -22deg; translate: -5% 2%; } 70% { rotate: -13deg; translate: -2% 1%; } 88% { rotate: 4deg; translate: 0 0; } }
+@keyframes sl-turn-r { 0%, 100% { rotate: 0deg; translate: 0 0; } 14% { rotate: -5deg; } 42% { rotate: 22deg; translate: 5% 2%; } 70% { rotate: 13deg; translate: 2% 1%; } 88% { rotate: -4deg; translate: 0 0; } }
+.sl-skis { transform-origin: 0 4px; }
+.sl-skier-turn.is-l .sl-skis { animation: sl-yaw-l 560ms ease-in-out both; }
+.sl-skier-turn.is-r .sl-skis { animation: sl-yaw-r 560ms ease-in-out both; }
+@keyframes sl-yaw-l { 0%, 100% { rotate: 0deg; } 14% { rotate: 6deg; } 45% { rotate: -26deg; } 72% { rotate: -14deg; } }
+@keyframes sl-yaw-r { 0%, 100% { rotate: 0deg; } 14% { rotate: -6deg; } 45% { rotate: 26deg; } 72% { rotate: 14deg; } }
+.sl-carve-spray { opacity: 0; transform-origin: 0 0; }
+.sl-skier-turn.is-l .sl-carve-spray { animation: sl-spray-fan 560ms ease-out both; }
+.sl-skier-turn.is-r .sl-carve-spray { animation: sl-spray-fan-r 560ms ease-out both; }
+@keyframes sl-spray-fan { 0%, 25% { opacity: 0; scale: .3; } 45% { opacity: 1; scale: 1; } 80% { opacity: .8; scale: 1.2 1.1; translate: 6px -8px; } 100% { opacity: 0; scale: 1.3; translate: 10px -12px; } }
+@keyframes sl-spray-fan-r { 0%, 25% { opacity: 0; scale: -.3 .3; } 45% { opacity: 1; scale: -1 1; } 80% { opacity: .8; scale: -1.2 1.1; translate: -6px -8px; } 100% { opacity: 0; scale: -1.3 1.3; translate: -10px -12px; } }
+
+/* Fast (speed step 4 and up): a racer's tuck, the poles under his arms pointing back. */
+.sl-pole-g.is-l { transform-origin: -36px -80px; transition: rotate 300ms ease-out; }
+.sl-pole-g.is-r { transform-origin: 39px -80px; transition: rotate 300ms ease-out; }
+.sl-arm-g.is-l { transform-origin: -24px -108px; transition: rotate 300ms ease-out; }
+.sl-arm-g.is-r { transform-origin: 27px -108px; transition: rotate 300ms ease-out; }
+.sl-skier-art.is-tuck .sl-pole-g.is-l { rotate: 58deg; }
+.sl-skier-art.is-tuck .sl-pole-g.is-r { rotate: -58deg; }
+.sl-skier-art.is-tuck .sl-arm-g.is-l { rotate: -14deg; }
+.sl-skier-art.is-tuck .sl-arm-g.is-r { rotate: 14deg; }
+.sl-skier-art.is-tuck .sl-head { translate: 0 6px; }
+
+/* A near miss (a gate slips past, or a piece of gear flies off): he wobbles, arms windmilling, and catches himself. */
+.sl-skier-wob.is-on { animation: sl-wobble 900ms ease-in-out both; }
+@keyframes sl-wobble { 0%, 100% { rotate: 0deg; } 15% { rotate: -11deg; } 35% { rotate: 9deg; } 55% { rotate: -7deg; } 75% { rotate: 4deg; } }
+.sl-skier-wob.is-on .sl-arm-g.is-l { animation: sl-flail-l 300ms ease-in-out 3 alternate; }
+.sl-skier-wob.is-on .sl-arm-g.is-r { animation: sl-flail-r 300ms ease-in-out 3 alternate; }
+@keyframes sl-flail-l { from { rotate: 0deg; } to { rotate: 70deg; } }
+@keyframes sl-flail-r { from { rotate: 0deg; } to { rotate: -70deg; } }
+
+/* On one ski: the left leg up, arms out, wobbling all the time. */
+.sl-leg.is-l { transform-origin: -14px -62px; transition: rotate 300ms ease-out, translate 300ms ease-out; }
+.sl-skier-art.is-one-ski .sl-leg.is-l { rotate: 22deg; translate: 2px -16px; }
+.sl-skier-art.is-one-ski { transform-origin: 50% 100%; animation: sl-one-ski 1.2s ease-in-out infinite; }
+@keyframes sl-one-ski { 0%, 100% { rotate: -5deg; } 50% { rotate: 6deg; } }
+.sl-skier-art.is-one-ski .sl-arm-g.is-l { rotate: 34deg; }
+.sl-skier-art.is-one-ski .sl-arm-g.is-r { rotate: -28deg; }
+
+/* The last ski gone: he slides on his bottom across to the edge and into the snowbank, kicking and laughing. */
+.sl-skier.is-bank { transition: transform 900ms cubic-bezier(.2, .6, .4, 1); }
+.sl-skier.is-bank .sl-skier-body { animation: none; scale: 1.3; }
+.sl-ending-skier.is-bank { height: 64%; animation: none; }
+/* In the snowbank the flags step aside: nothing stands in front of him any more. */
+.sl-root.is-bank .sl-gates { opacity: 0; transition: opacity 400ms ease-out; pointer-events: none; }
+.sl-skier-art.is-bank { animation: sl-plonk-bank 500ms var(--ease-spring) 700ms both; transform-origin: 50% 100%; }
+@keyframes sl-plonk-bank { 0% { scale: .9 1.1; translate: 0 -12%; } 60% { scale: 1.12 .86; translate: 0 2%; } 100% { scale: 1; translate: 0 0; } }
+.sl-bank-laugh { animation: sl-laugh 380ms ease-in-out infinite alternate; }
+@keyframes sl-laugh { from { translate: 0 0; rotate: -2deg; } to { translate: 0 -3px; rotate: 2deg; } }
+.sl-bank-kick.is-l { transform-origin: -16px -34px; animation: sl-kick-l 300ms ease-in-out infinite alternate; }
+.sl-bank-kick.is-r { transform-origin: 16px -34px; animation: sl-kick-r 300ms ease-in-out infinite alternate; animation-delay: -150ms; }
+@keyframes sl-kick-l { from { rotate: 0deg; } to { rotate: 14deg; } }
+@keyframes sl-kick-r { from { rotate: 0deg; } to { rotate: -14deg; } }
+.sl-bubble.is-laugh { animation: sl-laugh 380ms ease-in-out infinite alternate; }
+
+/* His gear on the HUD (Moeilijk / Onmogelijk): a lost piece greys out with a cross. */
+.sl-gear { display: flex; gap: 4px; margin-top: 4px; }
+.sl-gear-item { width: calc(var(--sl-u) * .2); min-width: 24px; max-width: 38px; aspect-ratio: 1; display: grid; place-items: center; border: 2px solid var(--spel-ink); border-radius: var(--radius-sm); background: var(--kiosk-paper); }
+.sl-gear-item svg { width: 82%; height: 82%; overflow: visible; }
+.sl-gear-item.is-lost { background: color-mix(in srgb, var(--spel-ink) 12%, var(--kiosk-paper)); }
+.sl-gear-item.is-lost svg { opacity: .35; }
+.sl-gear-item.is-lost::after { content: ''; position: absolute; }
+.sl-gear-item { position: relative; }
+.sl-gear-item.is-lost::before { content: ''; position: absolute; inset: 18%; background: linear-gradient(45deg, transparent 44%, var(--accent-getallenkennis) 44%, var(--accent-getallenkennis) 56%, transparent 56%); }
+.sl-gear-item.is-new { animation: sl-gear-pop 600ms var(--ease-spring) both; }
+@keyframes sl-gear-pop { 0% { scale: 1.5; rotate: -12deg; } 60% { scale: .9; rotate: 6deg; } 100% { scale: 1; rotate: 0deg; } }
+.sl-gear-item.is-next { animation: sl-gear-warn 900ms ease-in-out infinite; }
+@keyframes sl-gear-warn { 0%, 100% { rotate: 0deg; } 25% { rotate: -8deg; } 75% { rotate: 8deg; } }
+
+/* The helmet flying off: up and away, spinning, out of sight. */
+.sl-fly.is-helmet { width: calc(var(--sl-u) * .34); height: calc(var(--sl-u) * .28); bottom: calc(var(--sl-skier-h) * .82); animation-name: sl-fly-helmet; animation-duration: 900ms; }
+@keyframes sl-fly-helmet {
+  0% { translate: -50% 0; rotate: 0deg; }
+  40% { translate: calc(-50% + var(--sl-u) * .6) calc(var(--sl-u) * -1.2); rotate: 240deg; }
+  100% { translate: calc(-50% + var(--sl-u) * 1.4) calc(var(--sl-u) * .9); rotate: 520deg; }
+}

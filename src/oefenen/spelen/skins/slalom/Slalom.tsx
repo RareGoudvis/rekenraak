@@ -6,10 +6,10 @@ import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, signClass, viewFor } from '../../spelChoice';
 import { formatSpelNumber } from '../../spelFormat';
 import { Burst, Clouds, Snow } from '../../scene';
-import { SLALOM, STEPS, answerRun, isJump, laneX, openGate, paceOf, poseOf, project, spawnGate, startRun, tickRun, unitOf, VIEW, type Box, type GateEnd, type SkierPose, type SlRun } from './run';
+import { BANK_MS, GEAR_ORDER, SLALOM, STEPS, answerRun, gearCounts, gearOf, isJump, isWipedOut, laneX, openGate, paceOf, pieceLost, poseOf, project, spawnGate, startRun, tickRun, unitOf, VIEW, type Box, type GateEnd, type GearPiece, type SkierPose, type SlRun } from './run';
 import { levelOf } from '../../levels/levels';
 import { formatMetres, loadBestM, saveIfLonger, slalomResult } from './records';
-import { Crowd, FinishScene, FlyingBit, GateArt, Mountains, Pine, RecordFlag, Ripple, Skier, Snowman } from './art';
+import { Crowd, FinishScene, FlyingBit, GateArt, GearIcon, Mountains, Pine, RecordFlag, Ripple, Skier, SkierInBank, Snowman } from './art';
 import { playSlalom } from './sounds';
 import './slalom.css';
 
@@ -23,6 +23,20 @@ import './slalom.css';
 const KEYS = ['1', '2', '3'];
 // The skier's carve from lane to lane (ms); SYNC: slalom.css .sl-skier transition.
 const CARVE_MS = 320;
+// The turn's lean, edge and spray, both ways (ms); SYNC: slalom.css .sl-skier-turn.
+const TURN_MS = 560;
+// A piece of gear in the air (ms); SYNC: slalom.css .sl-fly.is-helmet.
+const FLY_MS = 900;
+// From this speed step on he tucks, poles under his arms.
+const TUCK_STEP = 4;
+// The snowbank he slides into, this far beside the piste's middle (m): an outer lane and a bit, always on screen.
+const BANK_X = 2.4;
+// The roll before he slides into the snowbank (ms; SLALOM.rollMs is the roll of a normal tumble).
+const BANK_ROLL_MS = 600;
+// The flying bits per piece of gear lost.
+const FLY_OF: Record<GearPiece, readonly ('helmet' | 'pole-l' | 'pole-r' | 'ski-l' | 'ski-r')[]> = {
+    helm: ['helmet'], stokken: ['pole-l', 'pole-r'], ski: ['ski-l'], laatsteSki: ['ski-r'],
+};
 // Back from between the flags (a miss) to a lane.
 const MISS_BACK_MS = 650;
 // How long a jump hangs in the air, and a callout stays.
@@ -89,7 +103,7 @@ function recycle(p: Prop): Prop {
 type Moment = { kind: 'hop' | 'miss' | 'fast' | 'record'; n: number } | null;
 type Spray = { n: number; x: number; kind: 'carve' | 'land' | 'tumble' };
 
-export default function Slalom({ question, choices, views, phase, feedback, onAnswer, onReport, progress, events, runKey: cardKey, options: picked }: SkinProps) {
+export default function Slalom({ question, choices, views, phase, feedback, onAnswer, onReport, onFail, onHold, progress, events, runKey: cardKey, options: picked }: SkinProps) {
     const options = choices ?? [];
     const level = levelOf(picked);
     // A best per card and level (the levels ski at different paces).
@@ -110,7 +124,17 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
     const [step, setStep] = useState(1);
     // The skier's place across the piste (m) and which way he leans while carving there.
     const [skierX, setSkierX] = useState(laneX(1));
-    const [lean, setLean] = useState<'l' | 'r' | null>(null);
+    // The latest turn (its way and a count that restarts the animation), the latest wobble.
+    const [turn, setTurn] = useState<{ dir: 'l' | 'r'; n: number } | null>(null);
+    const turnN = useRef(0);
+    const [wobble, setWobble] = useState(0);
+    // Moeilijk / Onmogelijk: the falls so far cost gear (run.ts); the pieces in the air; all gone = in the snowbank.
+    const gearOn = gearCounts(level);
+    const [falls, setFalls] = useState(0);
+    const fallsRef = useRef(0);
+    const [flying, setFlying] = useState<{ n: number; kinds: readonly ('helmet' | 'pole-l' | 'pole-r' | 'ski-l' | 'ski-r')[] } | null>(null);
+    const [bank, setBank] = useState<'off' | 'roll' | 'in' | 'done'>('off');
+    const bankRef = useRef(false);
     const [jump, setJump] = useState(0);
     const [moment, setMoment] = useState<Moment>(null);
     const [spray, setSpray] = useState<Spray | null>(null);
@@ -129,8 +153,16 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
     };
     useEffect(() => { const all = timers.current; return () => all.forEach(t => window.clearTimeout(t)); }, []);
 
-    const live = useRef({ phase, options, views, qKey: question?.key ?? '', onReport, runKey, skierX, pace });
-    useLayoutEffect(() => { live.current = { ...live.current, phase, options, views, qKey: question?.key ?? '', onReport, runKey, skierX, pace }; });
+    const live = useRef({ phase, options, views, qKey: question?.key ?? '', onReport, onHold, runKey, skierX, pace, gearOn });
+    useLayoutEffect(() => { live.current = { ...live.current, phase, options, views, qKey: question?.key ?? '', onReport, onHold, runKey, skierX, pace, gearOn }; });
+
+    // In the snowbank: the end screen once he has laughed a while (never under help).
+    const failed = useRef(false);
+    useEffect(() => {
+        if (bank !== 'done' || failed.current || phase === 'help') return;
+        failed.current = true;
+        onFail();
+    }, [bank, phase, onFail]);
 
     // The scene's size: the loop places everything in px from it.
     useLayoutEffect(() => {
@@ -149,12 +181,46 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
     const carveTo = (x: number) => {
         const from = live.current.skierX;
         if (Math.abs(x - from) < 0.1) return;
-        setLean(x < from ? 'l' : 'r');
+        const n = ++turnN.current;
+        setTurn({ dir: x < from ? 'l' : 'r', n });
         setSkierX(x);
         live.current.skierX = x;
         setSpray(s => ({ n: (s?.n ?? 0) + 1, x: (from + x) / 2, kind: 'carve' }));
         playSlalom('carve');
-        after(CARVE_MS + 80, () => setLean(null));
+        // Over: no class left to replay the turn when he gets up from a tumble.
+        after(Math.max(CARVE_MS, TURN_MS) + 40, () => setTurn(t => (t && t.n === n ? null : t)));
+    };
+
+    // A fall on Moeilijk / Onmogelijk: the next piece flies off; the last one = he slides into the snowbank.
+    const loseGear = (tumble: boolean) => {
+        if (!live.current.gearOn || bankRef.current) return;
+        const n = fallsRef.current + 1;
+        fallsRef.current = n;
+        setFalls(n);
+        const piece = pieceLost(n);
+        if (piece) {
+            setFlying(f => ({ n: (f?.n ?? 0) + 1, kinds: FLY_OF[piece] }));
+            after(FLY_MS, () => setFlying(f => (f && f.kinds === FLY_OF[piece] ? null : f)));
+            playSlalom('whoops');
+        }
+        if (!tumble) setWobble(w => w + 1);
+        if (!isWipedOut(n)) return;
+        bankRef.current = true;
+        const st = live.current;
+        st.onHold?.(true);
+        const m = run.current.metres;
+        if (st.runKey) saveIfLonger(st.runKey, m);
+        st.onReport?.(slalomResult(m, bestBefore, true));
+        setBank('roll');
+        after(tumble ? BANK_ROLL_MS : 0, () => {
+            setBank('in');
+            // On his bottom across to the side he is on, into the snowbank there (still on screen).
+            const edge = (live.current.skierX < 0 ? -1 : 1) * BANK_X;
+            setSkierX(edge);
+            live.current.skierX = edge;
+            after(700, () => { playSlalom('plof'); setSpray(s => ({ n: (s?.n ?? 0) + 1, x: edge, kind: 'tumble' })); });
+            after(BANK_MS, () => setBank('done'));
+        });
     };
 
     const flash = (kind: NonNullable<Moment>['kind']) => {
@@ -211,7 +277,8 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
             const dt = last === null ? 0 : Math.min(100, Math.max(0, t - last));
             last = t;
             const st = live.current;
-            if (st.phase === 'help') return;
+            // Help, or he is in the snowbank: the slope stands still.
+            if (st.phase === 'help' || bankRef.current) return;
 
             let r = run.current.pace === st.pace ? run.current : { ...run.current, pace: st.pace };
             if (st.phase === 'play' && st.qKey && st.options.length && !openGate(r)) {
@@ -235,6 +302,9 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
                 carveTo(lanes === 2 ? 0 : side * VIEW.laneM / 2);
                 flash('miss');
                 playSlalom('miss');
+                // He squeezes through, wobbling; on Moeilijk / Onmogelijk it costs a piece of gear.
+                if (live.current.gearOn) loseGear(false);
+                else setWobble(w => w + 1);
                 after(MISS_BACK_MS, () => carveTo(lanes === 2 ? laneX(side < 0 ? 0 : 1, 2) : laneX(1)));
             }
             if (news.passed) {
@@ -246,6 +316,7 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
                     snowman.current = { d: SNOWMAN_D, x: live.current.skierX > 0.5 ? -SNOWMAN_X : SNOWMAN_X };
                     setSnowmanOn(true);
                     after(SLALOM.rollMs, () => playSlalom('laugh'));
+                    loseGear(true);
                 }
             }
             if (news.gotUp) playSlalom('up');
@@ -313,8 +384,8 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
     const open = gateViews.find(v => v.end === null) ?? null;
     const tap = (gateId: number, lane: number) => {
         const g = openGate(run.current);
-        // Still in the snow after a tumble: the flags wait until he is up.
-        if (phase !== 'play' || !question || !g || g.id !== gateId || run.current.down > 0) return;
+        // Still in the snow after a tumble (or in the snowbank for good): the flags wait.
+        if (phase !== 'play' || !question || !g || g.id !== gateId || run.current.down > 0 || bankRef.current) return;
         const v = gateViews.find(x => x.id === gateId);
         const value = v?.values[lane];
         if (value === undefined) return;
@@ -341,12 +412,14 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
     const flashing = phase === 'right' || phase === 'wrong';
     const u = unitOf(box);
     const skier = project(box, 0, skierX);
-    const down = pose === 'roll' || pose === 'sit';
+    const shownPose: SkierPose = bank === 'roll' ? 'roll' : bank === 'in' || bank === 'done' ? 'bank' : pose;
+    const down = shownPose === 'roll' || shownPose === 'sit';
+    const gear = gearOn ? gearOf(falls) : undefined;
     const callout = moment?.kind === 'hop' ? 'Hop!' : moment?.kind === 'miss' ? 'Te laat!' : moment?.kind === 'fast' ? 'Topsnelheid!' : moment?.kind === 'record' ? 'Nieuw record!' : null;
 
     return (
         <div ref={root}
-            className={`sl-root${phase === 'help' ? ' is-paused' : ''}${views ? ' has-pictures' : ''}`}
+            className={`sl-root${phase === 'help' ? ' is-paused' : ''}${views ? ' has-pictures' : ''}${bank !== 'off' ? ' is-bank' : ''}`}
             style={{ '--sl-crouch': (step - 1) / (STEPS - 1), '--sl-unit': `${u.toFixed(2)}px` } as CSSProperties}>
             <div className="sl-sky" aria-hidden>
                 <Clouds layer="far" outline={false} count={3} band={[4, 20]} speed={90} />
@@ -401,13 +474,20 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
                 })}
             </div>
 
-            <div className={`sl-skier is-${pose}${lean ? ` is-lean-${lean}` : ''}`} key={`j${jump}`}
+            <div className={`sl-skier is-${shownPose}`} key={`j${jump}`}
                 style={{ transform: `translate3d(${skier.x.toFixed(1)}px, ${skier.y.toFixed(1)}px, 0)` }} aria-hidden>
                 <div className={`sl-skier-body${jump ? ' is-jump' : ''}`}>
                     <span className="sl-spray-trail" />
-                    <Skier pose={pose} />
+                    <div key={`t${turn?.n ?? 'rest'}`} className={`sl-skier-turn${turn && shownPose === 'ski' ? ` is-${turn.dir}` : ''}`}>
+                        <div key={`w${wobble}`} className={`sl-skier-wob${wobble && shownPose === 'ski' ? ' is-on' : ''}`}>
+                            <Skier pose={shownPose} gear={gear} tuck={step >= TUCK_STEP && shownPose === 'ski'} />
+                        </div>
+                    </div>
                 </div>
-                {down && <><FlyingBit kind="ski-l" /><FlyingBit kind="ski-r" /><FlyingBit kind="pole-l" /><FlyingBit kind="pole-r" /></>}
+                {/* A tumble: skis and poles fly off and come back; with gear at stake only the piece he loses goes. */}
+                {down && !gearOn && <><FlyingBit kind="ski-l" /><FlyingBit kind="ski-r" /><FlyingBit kind="pole-l" /><FlyingBit kind="pole-r" /></>}
+                {flying && <span key={`f${flying.n}`}>{flying.kinds.map(k => <FlyingBit key={k} kind={k} />)}</span>}
+                {(bank === 'in' || bank === 'done') && <span className="sl-bubble is-laugh">Hahaha!</span>}
             </div>
             {spray && (
                 <Burst key={`s${spray.n}`} kind="smoke" className="sl-spray" color="var(--sl-spray)"
@@ -426,6 +506,16 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
                     {Array.from({ length: STEPS }, (_, i) => <i key={i} className={i < step ? 'is-on' : ''} style={{ '--i': i } as CSSProperties} />)}
                 </span>
                 {bestBefore !== null && <small className="sl-best">Record {formatMetres(bestBefore)}</small>}
+                {gear && (
+                    // His gear: a lost piece greys out with a cross; the last ski wobbles when it is the only thing left.
+                    <span className="sl-gear" role="img" aria-label={`Nog ${GEAR_ORDER.length - Math.min(falls, GEAR_ORDER.length)} van ${GEAR_ORDER.length} stukken`}>
+                        {GEAR_ORDER.map((piece, i) => (
+                            <span key={piece} className={`sl-gear-item${i < falls ? ' is-lost' : ''}${i === falls - 1 ? ' is-new' : ''}${i === falls && falls === GEAR_ORDER.length - 1 ? ' is-next' : ''}`}>
+                                <GearIcon piece={piece} />
+                            </span>
+                        ))}
+                    </span>
+                )}
             </div>
             {callout && <p key={`c${moment!.n}`} className={`sl-call is-${moment!.kind}`} aria-live="polite">{callout}</p>}
             {progress.streak >= SLALOM.jumpEvery && !flashing && <span className="sl-streak" aria-hidden>{progress.streak}×</span>}
@@ -457,12 +547,14 @@ function Ground({ box }: { box: Box }) {
     );
 }
 
-/** The end screen's picture: the finish arch on the snow, the skier through it and the snowman cheering. */
-export function SlalomEnding(_: SkinEndingProps) {
+/** The end screen's picture: the finish arch on the snow, the skier through it (or in the snowbank) and the snowman cheering. */
+export function SlalomEnding({ outcome }: SkinEndingProps) {
+    // All gear gone: no finish, he laughs in the snowbank beside the cheering snowman.
+    const inBank = outcome === 'failed';
     return (
         <div className="spel-ending sl-ending">
             <FinishScene />
-            <div className="sl-ending-skier"><Skier pose="ski" /></div>
+            <div className={`sl-ending-skier${inBank ? ' is-bank' : ''}`}>{inBank ? <SkierInBank /> : <Skier pose="ski" />}</div>
             <div className="sl-ending-snowman"><Snowman laughing /></div>
             <Snow density={18} full size={[3, 7]} />
         </div>

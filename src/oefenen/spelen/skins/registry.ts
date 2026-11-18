@@ -409,11 +409,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // Two minutes down a slope: each sum on a gate with three flags (choiceCount). Right = a speed step, 3 in a row a
         // jump; wrong = a tumble back to step 1; a gate reached unanswered slips past (slalom/run.ts). The score is the
         // metres with a best per card and level on this device (onReport, "Wis mijn scores"). The scene voices its moments.
-        // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed.
+        // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed. On
+        // Moeilijk / Onmogelijk each fall costs a piece of gear (run.ts GEAR_ORDER); the last ski = the friendly end in a snowbank.
         meta: {
             id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: TAP_CHOICE,
-            options: [levelOption({ clock: true })],
-            sounds: { correct: null, wrong: null },
+            options: [levelOption({ clock: true })], canFail: true, failTitle: 'Plof, in de sneeuw! Nog eens?',
+            sounds: { correct: null, wrong: null, fail: null },
         },
         icon: PersonSimpleSki,
         Component: lazy(() => import('./slalom/Slalom')),
