@@ -210,6 +210,9 @@ describe('Welke tafels?', () => {
         await openTopic(3, 'Hoofdrekenen', 'Maaltafels');
         const chips = within(screen.getByRole('group', { name: 'Welke tafels?' })).getAllByRole('button');
         expect(chips).toHaveLength(18);
+        // 1 to 10 on the first row, the bigger tafels on the second (owner 2026-11-17).
+        const rows = [...document.querySelectorAll('.zelf-tafels-row')].map(r => [...r.querySelectorAll('button')].map(b => Number(b.textContent)));
+        expect(rows).toEqual([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [11, 12, 13, 14, 15, 25, 50, 100]]);
         expect(chips.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent)).toEqual(TAFELS_DEFAULT.map(String));
         expect(screen.getByRole('button', { name: 'Maal ×' }).getAttribute('aria-pressed')).toBe('true');
         expect(screen.queryByRole('button', { name: 'Tafel van 1 tot 5' })).toBeNull();

@@ -9,9 +9,9 @@ import { MAX_TYPES, fnv1a } from '../../services/oefenen/session';
 import { OEFEN_VERSION, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { TUTOR_SESSIE_PREFIX, isTutorSessie } from '../../services/oefenen/tutorOefenLink';
 
-export type ZelfMode = { kind: 'count'; n: 3 | 5 | 10 } | { kind: 'timer'; min: 1 | 3 | 5 };
+export type ZelfMode = { kind: 'count'; n: 3 | 5 | 10 | 20 } | { kind: 'timer'; min: 1 | 3 | 5 };
 
-export const ZELF_COUNTS = [3, 5, 10] as const;
+export const ZELF_COUNTS = [3, 5, 10, 20] as const;
 export const ZELF_MINUTES = [1, 3, 5] as const;
 
 // Teacher ids are 8 chars, so this prefix can never collide with one; it also marks a session as self-made.

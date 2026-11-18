@@ -45,8 +45,8 @@ const SECTION_OF_TOPIC: Record<string, string> = Object.fromEntries(EENVOUDIG_NA
 
 // The two ways on the Keuze screen: their tile text, icon and tint (oefenen blue, spelen orange).
 const WAYS: { way: ZelfWay; title: string; why: string; Icon: typeof Notebook }[] = [
-    { way: 'oefenen', title: 'Oefenen', why: 'Rustig oefenen, met hulp na een foutje', Icon: Notebook },
-    { way: 'spelen', title: 'Spelen', why: 'Kies een spel', Icon: GameController },
+    { way: 'oefenen', title: 'Oefenen', why: 'Gewone oefeningen maken.', Icon: Notebook },
+    { way: 'spelen', title: 'Spelen', why: 'Kies een spelletje!', Icon: GameController },
 ];
 
 // The page opened without a link: a pupil picks leerjaar (the top bar, remembered) and onderwerp (a picture card),
@@ -217,18 +217,24 @@ export default function ZelfPicker() {
         );
     }
 
-    const options: { mode: ZelfMode; text: string }[] = [
-        ...ZELF_COUNTS.map(n => ({ mode: { kind: 'count', n } as ZelfMode, text: `${n} oefeningen` })),
-        ...ZELF_MINUTES.map(min => ({ mode: { kind: 'timer', min } as ZelfMode, text: `${min} ${min === 1 ? 'minuut' : 'minuten'}` })),
+    // Hoe lang: a count row and a minutes row as segments, like a game's options; the mode lives in exactly one of them.
+    const options: { mode: ZelfMode; text: string; name: string }[] = [
+        ...ZELF_COUNTS.map(n => ({ mode: { kind: 'count', n } as ZelfMode, text: String(n), name: `${n} oefeningen` })),
+        ...ZELF_MINUTES.map(min => ({ mode: { kind: 'timer', min } as ZelfMode, text: String(min), name: `${min} ${min === 1 ? 'minuut' : 'minuten'}` })),
     ];
-    const group = (kind: ZelfMode['kind'], label: string) => (
-        <div role="group" aria-label={label} className="zelf-amount-row">
-            {options.filter(o => o.mode.kind === kind).map(o => (
-                <button key={modeKey(o.mode)} type="button" aria-pressed={modeKey(o.mode) === modeKey(mode)} className="zelf-choice"
-                    onClick={() => setMode(o.mode)}>{o.text}</button>
-            ))}
+    const seg = (id: string, label: string, buttons: React.ReactNode, unit?: string) => (
+        <div className="kid-option">
+            <p className="kid-option-label" id={id}>{label}</p>
+            <div className="zelf-seg-unit">
+                <div role="group" aria-labelledby={id} className="kid-seg">{buttons}</div>
+                {unit && <span className="zelf-seg-word" aria-hidden>{unit}</span>}
+            </div>
         </div>
     );
+    const group = (kind: ZelfMode['kind'], id: string, label: string, unit?: string) => seg(id, label, options.filter(o => o.mode.kind === kind).map(o => (
+        <button key={modeKey(o.mode)} type="button" aria-pressed={modeKey(o.mode) === modeKey(mode)} aria-label={o.name} className="kid-seg-btn"
+            onClick={() => setMode(o.mode)}>{o.text}</button>
+    )), unit);
 
     // Games for this oefening = the two tiles; a tafels topic keeps them while no tafel is picked (the hint says why).
     const everyTafel = isTafel && !active ? tafelChoice(grade, topicId, offer, op) : null;
@@ -242,23 +248,17 @@ export default function ZelfPicker() {
                     <span className="zelf-way-icon" aria-hidden><Notebook weight="duotone" /></span>
                     <div className="zelf-panel-text">
                         <h2 id="zelf-oefen-title" className="zelf-panel-title">Oefenen</h2>
-                        <p className="zelf-panel-why">Rustig oefenen, met hulp na een foutje</p>
+                        <p className="zelf-panel-why">Gewone oefeningen maken.</p>
                     </div>
                 </div>
             )}
-            <div className="zelf-amount-row is-stack">
-                {group('count', 'Aantal oefeningen')}
-                <div className="zelf-amount-time">
-                    <span className="zelf-amount-or">of op tijd</span>
-                    {group('timer', 'Aantal minuten')}
-                </div>
-            </div>
+            <h3 className="zelf-howlong">Hoe lang wil je oefenen?</h3>
             <div className="zelf-amounts">
-                {mabPossible ? (
-                    <button type="button" className="kiosk-btn zelf-mab" aria-pressed={mab} onClick={() => setMab(m => !m)}>
-                        {mab ? 'Hulp met MAB-blokjes: aan' : 'Hulp met MAB-blokjes: uit'}
-                    </button>
-                ) : <span />}
+                {group('count', 'zelf-opt-count', 'Aantal oefeningen')}
+                {group('timer', 'zelf-opt-time', 'Tijd', 'minuten')}
+                {mabPossible && seg('zelf-opt-mab', 'Hulp met MAB-blokjes', [true, false].map(on => (
+                    <button key={String(on)} type="button" aria-pressed={mab === on} className="kid-seg-btn" onClick={() => setMab(on)}>{on ? 'Aan' : 'Uit'}</button>
+                )))}
                 <button type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big zelf-go" disabled={!active}
                     onClick={() => { if (!active) return; tryFullscreen(); openZelf(buildZelfSessie(active, mode, Date.now(), grade, mabPossible && !mab)); }}>
                     <Play weight="fill" aria-hidden /> Begin met oefenen
@@ -291,14 +291,19 @@ export default function ZelfPicker() {
                         <>
                             <section className="zelf-step" aria-labelledby="zelf-tafels-title">
                                 {stepTitle('Welke tafels?', 'zelf-tafels-title')}
+                                {/* 1 to 10 on the first row, the bigger tafels (11–15, 25, 50, 100) on the second. */}
                                 <div className="zelf-tafels" role="group" aria-label="Welke tafels?">
-                                    {offer.map(t => {
-                                        const on = tables.includes(t);
-                                        return (
-                                            <button key={t} type="button" className="zelf-tafel" aria-pressed={on} aria-label={`Tafel van ${t}`}
-                                                onClick={() => setTables(on ? tables.filter(x => x !== t) : [...tables, t].sort((a, b) => a - b))}>{t}</button>
-                                        );
-                                    })}
+                                    {[offer.filter(t => t <= 10), offer.filter(t => t > 10)].filter(row => row.length > 0).map(row => (
+                                        <div key={row[0]} className="zelf-tafels-row">
+                                            {row.map(t => {
+                                                const on = tables.includes(t);
+                                                return (
+                                                    <button key={t} type="button" className="zelf-tafel" aria-pressed={on} aria-label={`Tafel van ${t}`}
+                                                        onClick={() => setTables(on ? tables.filter(x => x !== t) : [...tables, t].sort((a, b) => a - b))}>{t}</button>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
                                 </div>
                                 <div className="zelf-tafels-quick">
                                     <button type="button" className="kiosk-btn" onClick={() => setTables([...offer])}>Alle</button>

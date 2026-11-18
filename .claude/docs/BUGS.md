@@ -50,6 +50,8 @@ UpdateState). Left over, found while fixing:
   preview). Suspect: the row dies in the pre-flight / `nextExercise` returns null at the builder defaults.
   Reproduce via a single-row session; see the kiosk-gallery `gen-fail` flag. 2026-10-10
 
+- Kiosk top bar at 1024 px in fullscreen (Zelf run): Terug naar begin + progress + Volledig scherm uit + stars + Resultaten are wider than the screen, Resultaten is cut off at the right edge (already with 5 dots; seen 2026-11-18, restyle round). Repro: kind.html, L3 Optellen, Oefenen, Begin met oefenen at 1024×768 in fullscreen. Fix direction: the fullscreen button icon-only under ~1200 px, or Resultaten icon-only.
+
 ## Oefenmodus beta audit 2026-10-09
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
