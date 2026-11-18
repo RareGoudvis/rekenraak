@@ -43,6 +43,7 @@ const GAMES = [
     ['grijp', 'Grijpmachine', 2],
     ['aquarium', 'Aquarium', 9],
     ['drakenrace', 'Drakenrace', 0],
+    ['wildwaterrace', 'Wildwaterrace', 0],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena, Spookhuis' place, Grijpmachine's arcade, Aquarium's seed.
 const QUERY = { tovenaarsduel: '?arena=school', spookhuis: '?spook=klassiek', grijp: '?grijp=pier', aquarium: '?aquarium=12345' };
@@ -76,6 +77,11 @@ const DUEL_PLAY = {
     drakenrace: async page => {
         for (let i = 0; i < 4; i++) { await duelAnswer(page, 'right'); await duelAnswer(page, 'left'); await page.waitForTimeout(800); }
         await duelAnswer(page, 'left'); await page.waitForTimeout(250);
+    },
+    // A few strokes down the river, both rafts on their way to the waterfall.
+    wildwaterrace: async page => {
+        for (let i = 0; i < 5; i++) { await duelAnswer(page, 'left'); await duelAnswer(page, 'right'); await page.waitForTimeout(800); }
+        await duelAnswer(page, 'left'); await page.waitForTimeout(100);
     },
 };
 
@@ -119,6 +125,7 @@ const SKIN_CSS = {
     grijp: '.gm-counter { visibility: hidden !important; }',
     // The streak chips under the (hidden) score corners.
     drakenrace: '.dk-charge { display: none !important; }',
+    wildwaterrace: '.ww-charge, .ww-call { display: none !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
 const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur', 'aquarium']);

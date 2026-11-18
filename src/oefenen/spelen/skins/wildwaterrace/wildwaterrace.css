@@ -1,0 +1,184 @@
+/* Wildwaterrace: two rafts down a wild river to the waterfall (art.tsx). Flat fills under the --spel-ink outline,
+   theme tokens mixed into river colours. The water flows by CSS (foam dashes on a loop, the curtain's streaks), the
+   rafts move by CSS transitions from the points; every loop and burst is transforms and opacity only. */
+.ww-app {
+  --ww-water: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 65%, var(--accent-metendrekenen)) 62%, var(--kiosk-paper));
+  --ww-water-deep: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 75%, var(--accent-metendrekenen)) 80%, var(--text-main));
+  --ww-lake: color-mix(in srgb, var(--accent-bewerkingen) 38%, var(--ww-water));
+  --ww-grass: var(--kid-hill);
+  --ww-grass-near: color-mix(in srgb, var(--kid-hill) 80%, var(--accent-metendrekenen));
+  --ww-mud: color-mix(in srgb, var(--accent-vraagstukken) 28%, var(--text-muted));
+  --ww-sand: color-mix(in srgb, var(--mab-e) 38%, var(--kiosk-paper));
+  --ww-rock: color-mix(in srgb, var(--text-muted) 50%, var(--kiosk-paper));
+  --ww-cliff: color-mix(in srgb, var(--ww-mud) 75%, var(--text-main));
+  --ww-leaf: color-mix(in srgb, var(--kid-hill) 55%, var(--accent-metendrekenen));
+  --ww-pine: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--text-main));
+  --ww-wood: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--text-main));
+  --ww-vest: var(--mab-e);
+  --ww-skin: var(--kid-tint-4);
+  --spel-sky: var(--ww-grass);
+  --duel-scene-h: 52%;
+}
+.ww-app .duel-half { background: color-mix(in srgb, var(--duel-team) 20%, var(--bg-surface)); }
+.ww-app .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 40%, var(--bg-surface)); }
+
+.ww-scene { position: absolute; inset: 0; overflow: hidden; background: var(--ww-grass); }
+.ww-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ww-svg * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── The river and its banks ──────────────────────────────────────────────── */
+.ww-grass { fill: var(--ww-grass); }
+.ww-grass.is-near { fill: var(--ww-grass-near); }
+.ww-mud { fill: var(--ww-mud); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-sand { fill: var(--ww-sand); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-water { fill: var(--ww-water); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-lake { fill: var(--ww-lake); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-flow path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; opacity: .6; }
+.ww-flow { animation: ww-flow 6s linear infinite; }
+.ww-flow.is-slow { translate: 25px 17px; animation-duration: 10s; opacity: .55; }
+@keyframes ww-flow { to { transform: translateX(600px); } }
+.ww-scene.is-between .ww-flow { animation-duration: 9s; }
+
+.ww-rock { fill: var(--ww-rock); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-foam-ring { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .8; animation: ww-foam 1.6s ease-in-out calc(var(--i) * -.37s) infinite alternate; }
+@keyframes ww-foam { from { scale: .9; opacity: .9; } to { scale: 1.18; opacity: .45; } }
+
+/* The waterfall: the lip foams, the curtain rushes, the mist puffs; the lake ripples. */
+.ww-cliff { fill: var(--ww-cliff); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-curtain { fill: color-mix(in srgb, var(--ww-water) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-curtain-streaks path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; stroke-dasharray: 10 14; animation: ww-rush 420ms linear calc(var(--i) * -60ms) infinite; }
+@keyframes ww-rush { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+.ww-lip { fill: none; stroke: var(--kiosk-paper); stroke-width: 9px; animation: ww-lip 700ms ease-in-out infinite alternate; }
+@keyframes ww-lip { from { translate: -1px 0; } to { translate: 2px 0; } }
+.ww-mist circle { fill: var(--kiosk-paper); opacity: .7; animation: ww-mist 1.8s ease-in-out calc(var(--i) * -.4s) infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes ww-mist { from { scale: .8; opacity: .5; } to { scale: 1.2; opacity: .85; } }
+.ww-lake-ripples ellipse { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; opacity: 0; transform-box: fill-box; transform-origin: center; animation: ww-ripple 3.2s ease-out calc(var(--i) * 1.05s) infinite; }
+@keyframes ww-ripple { 0% { opacity: .8; scale: .4; } 100% { opacity: 0; scale: 1.5; } }
+.ww-lily path { fill: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-lily-flower { fill: var(--kid-tint-6); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* Life on the banks. */
+.ww-trunk { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-leaf { fill: var(--ww-leaf); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-pine { fill: var(--ww-pine); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-tree { animation: ww-sway 3.2s ease-in-out infinite alternate; }
+.ww-trees > g:nth-child(2n) .ww-tree { animation-delay: -1.3s; }
+.ww-trees > g:nth-child(3n) .ww-tree { animation-duration: 4.1s; }
+@keyframes ww-sway { from { rotate: -2.5deg; } to { rotate: 2.5deg; } }
+.ww-reeds path { fill: none; stroke: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--text-main)); stroke-width: 4px; }
+.ww-reeds { animation: ww-sway 2.6s ease-in-out infinite alternate; }
+.ww-cattail { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-bird { fill: none; stroke: var(--spel-ink); stroke-width: 3px; animation: ww-flap 420ms ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+.ww-bird.is-2 { animation-delay: -200ms; }
+@keyframes ww-flap { from { scale: 1 1; } to { scale: 1 -.6; } }
+.ww-birds { animation: ww-birds 26s linear infinite; }
+@keyframes ww-birds { from { transform: translate(-80px, 26px); } to { transform: translate(2200px, 8px); } }
+.ww-fish path { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-fish-eye { fill: var(--spel-ink); }
+.ww-fish { opacity: 0; animation: ww-fish 7s ease-in-out 2s infinite; }
+@keyframes ww-fish {
+  0%, 70% { opacity: 0; translate: 0 0; rotate: -40deg; }
+  72% { opacity: 1; translate: 0 0; rotate: -40deg; }
+  80% { opacity: 1; translate: 22px -34px; rotate: 0deg; }
+  88% { opacity: 1; translate: 44px 0; rotate: 40deg; }
+  90%, 100% { opacity: 0; translate: 44px 4px; rotate: 40deg; }
+}
+
+/* ── The rafts ────────────────────────────────────────────────────────────── */
+.ww-raft-at.is-left { --ww-team: var(--duel-left); }
+.ww-raft-at.is-right { --ww-team: var(--duel-right); }
+.ww-raft-at { transition: transform 800ms cubic-bezier(.3, 1.2, .5, 1); }
+.ww-raft-at.is-drift { transition: transform 1.3s ease-in-out; }
+.ww-scene.is-ready .ww-raft-at { transition: none; }
+.ww-raft-shadow { fill: var(--ww-water-deep); opacity: .35; }
+.ww-tube, .ww-tube-front { fill: var(--ww-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.ww-floor { fill: color-mix(in srgb, var(--ww-team) 65%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-tube-shine { fill: none; stroke: color-mix(in srgb, var(--ww-team) 40%, var(--kiosk-paper)); stroke-width: 5px; }
+.ww-rope { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.ww-vest { fill: var(--ww-vest); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-vest-strap { fill: none; stroke: color-mix(in srgb, var(--ww-vest) 60%, var(--text-main)); stroke-width: 2.5px; }
+.ww-face { fill: var(--ww-skin); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-eye { fill: var(--spel-ink); }
+.ww-smile { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-smile[d$="Z"] { fill: var(--kid-tint-ring-6); }
+.ww-eye-swirl { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; }
+.ww-mouth { fill: var(--spel-ink); }
+.ww-helmet { fill: color-mix(in srgb, var(--ww-team) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-helmet-rim { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-helmet-stripe { fill: none; stroke: var(--ww-team); stroke-width: 3px; }
+.ww-shaft { fill: none; stroke: var(--ww-wood); stroke-width: 5px; }
+.ww-blade { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-hand { fill: var(--ww-skin); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* Always on the move: the raft bobs, the paddles stroke (the two out of step). */
+.ww-bob { animation: ww-bob 1.5s ease-in-out infinite alternate; }
+.ww-raft-at.is-right .ww-bob { animation-delay: -.7s; }
+@keyframes ww-bob { from { translate: 0 -2px; rotate: -1.5deg; } to { translate: 0 2px; rotate: 1.5deg; } }
+.ww-paddle { transform-origin: 1px -14px; animation: ww-paddle 1.5s ease-in-out infinite alternate; }
+.ww-paddler + .ww-paddler .ww-paddle { animation-delay: -.75s; }
+@keyframes ww-paddle { from { rotate: -20deg; } to { rotate: 24deg; } }
+.ww-paddle.is-up { animation: ww-cheer 420ms ease-in-out infinite alternate; }
+@keyframes ww-cheer { from { rotate: -70deg; translate: 0 -6px; } to { rotate: -82deg; translate: 0 -10px; } }
+
+/* A stroke: quick paddles and a surge forward, a wake behind. */
+.ww-move.is-stroke { animation: ww-surge 600ms ease-out; }
+.ww-move.is-stroke .ww-paddle { animation-duration: 260ms; }
+@keyframes ww-surge { 0% { translate: 0 0; } 30% { translate: 14px 0; rotate: -3deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-wake path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: 0; animation: ww-wake 800ms ease-out; }
+.ww-wake path:nth-child(2) { animation-delay: 60ms; }
+.ww-wake path:nth-child(3) { animation-delay: 120ms; }
+@keyframes ww-wake { 0% { opacity: .95; translate: 0 0; } 100% { opacity: 0; translate: -36px 0; } }
+
+/* A wave (3 in a row): the raft rides up the crest, nose high, and down again. */
+.ww-move.is-wave { animation: ww-ride 900ms ease-in-out; }
+@keyframes ww-ride { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 10px -20px; rotate: -10deg; } 70% { translate: 6px -8px; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-surf-body { fill: color-mix(in srgb, var(--ww-water) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-surf-foam { fill: none; stroke: var(--kiosk-paper); stroke-width: 6px; }
+.ww-surf-foam.is-thin { stroke-width: 4px; }
+.ww-surf { opacity: 0; animation: ww-surf 900ms ease-out; }
+@keyframes ww-surf { 0% { opacity: 0; scale: .4 .2; } 25% { opacity: 1; scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; scale: 1.1 .8; translate: 20px 0; } }
+
+/* An eddy (a mistake): the current turns the raft round once, the paddlers go dizzy. */
+.ww-move.is-eddy { animation: ww-spin 900ms ease-in-out; }
+@keyframes ww-spin { from { rotate: 0deg; } to { rotate: -360deg; } }
+.ww-eddy path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; opacity: .9; }
+.ww-eddy { opacity: 0; animation: ww-eddy 1100ms ease-out; }
+.ww-eddy-spin { animation: ww-spin 700ms linear infinite; }
+@keyframes ww-eddy { 0% { opacity: 0; scale: .5; } 20% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1.15; } }
+
+/* Over the falls: up onto the lip, tipping down the curtain, a bounce in the lake below. */
+.ww-over.is-over { animation: ww-over 1100ms ease-in forwards; }
+@keyframes ww-over {
+  0% { translate: 0 0; rotate: 0deg; scale: 1; }
+  30% { translate: 44px -8px; rotate: -8deg; scale: 1; }
+  55% { translate: calc(var(--ww-over-dx) * .6) 30px; rotate: 32deg; scale: .82; }
+  72% { translate: var(--ww-over-dx) 10px; rotate: 6deg; scale: 1.04; }
+  86% { translate: var(--ww-over-dx) -4px; rotate: -3deg; scale: 1; }
+  100% { translate: var(--ww-over-dx) 0; rotate: 0deg; scale: 1; }
+}
+
+.ww-call {
+  font: 900 32px var(--kid-font); text-anchor: middle; fill: var(--kiosk-paper);
+  stroke: var(--spel-ink); stroke-width: 6px; paint-order: stroke; animation: ww-call 1100ms ease-out forwards;
+}
+.ww-call.is-wave { fill: var(--mab-e); }
+@keyframes ww-call { 0% { opacity: 0; scale: .5; } 15% { opacity: 1; scale: 1.15; } 30% { scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; translate: 0 -22px; } }
+
+/* The streak toward a wave, under each score corner: three little waves, the third surfs. */
+.ww-charge {
+  position: absolute; top: calc(var(--sp-2) + clamp(42px, 5.2vmin, 54px)); z-index: 3;
+  display: inline-flex; gap: 1px; padding: 2px 6px;
+  border: 3px solid var(--spel-ink); border-radius: 999px; background: color-mix(in srgb, var(--kiosk-paper) 80%, transparent);
+}
+.ww-charge.is-left { left: var(--sp-2); }
+.ww-charge.is-right { right: var(--sp-2); }
+.ww-charge svg { width: clamp(18px, 2.8vmin, 28px); height: clamp(15px, 2.3vmin, 23px); overflow: visible; }
+.ww-pip { fill: none; stroke: var(--spel-ink); stroke-width: 3px; opacity: .3; }
+.ww-pip.is-on { stroke: var(--ww-water-deep); stroke-width: 4.5px; opacity: 1; animation: ww-pip-on 380ms var(--ease-spring, ease-out); }
+@keyframes ww-pip-on { from { scale: 1.8; } to { scale: 1; } }
+
+/* ── The card ─────────────────────────────────────────────────────────────── */
+.ww-card-art { width: min(220px, 50vw); height: auto; overflow: visible; }
+.ww-card-art.is-left { --ww-team: var(--duel-left); }
+.ww-card-art.is-right { --ww-team: var(--duel-right); }
+.ww-card-water { fill: var(--ww-water); stroke: var(--spel-ink); stroke-width: 3px; }

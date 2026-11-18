@@ -15,6 +15,7 @@ import { TOUW, TOUW_RULE } from '../oefenen/spelen/skins/touwtrekken/rule';
 import { KIKKER, kikkerRule } from '../oefenen/spelen/skins/kikkers/rule';
 import { TOVER, TOVER_RULE } from '../oefenen/spelen/skins/tovenaarsduel/rule';
 import { DRAAK, DRAAK_RULE } from '../oefenen/spelen/skins/drakenrace/rule';
+import { WILD, WILD_RULE } from '../oefenen/spelen/skins/wildwaterrace/rule';
 import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelSim';
 
 // The computer opponent (duel/bot.ts) against simulated pupils, through the real store and every duel game's own
@@ -63,6 +64,7 @@ const GAMES: Game[] = [
     { id: 'kikkers', rule: kikkerRule('tijd', bug), extra: { roundSeconds: KIKKER.seconds } },
     { id: 'tovenaarsduel', rule: TOVER_RULE, lives: TOVER.lives.default },
     { id: 'drakenrace', rule: DRAAK_RULE, lives: DRAAK.course.default, raceClock: true },
+    { id: 'wildwaterrace', rule: WILD_RULE, lives: WILD.course.default, raceClock: true },
 ];
 const ROUNDS = 200;
 
