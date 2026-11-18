@@ -13,13 +13,13 @@ import { NUMBER_CONTENT, skinAccepts } from '../oefenen/spelen/accepts';
 import Voetbal, { VoetbalEnding } from '../oefenen/spelen/skins/voetbal/Voetbal';
 import {
     HOLDER, KICKOFF, PRESSER, RESTART, TURNOVER, VOETBAL, VOETBAL_BEST_KEY, beatsOf, endTitle, figPoint, halfTimeDue, isShot, loadBest, newMatch,
-    otherSide, passArc, playOf, saveBest, sceneOf, scoreLine, type Beat, type Match, type Scene, type Side,
+    otherSide, passArc, playOf, saveBest, sceneOf, scoreLine, sumClockMs, type Beat, type Match, type Scene, type Side,
 } from '../oefenen/spelen/skins/voetbal/match';
 import { DEPTH, GEO as PITCH, GOAL_V, STAND, VIEW, depthFor, geoOf, goalArt, pitchLines, project, viewHeight } from '../oefenen/spelen/skins/voetbal/pitch';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Voetbal: possession (our passes on right answers, the black bears' on wrong ones, turnovers where the ball is),
-// our shot on its own clock after four passes and theirs at their shooting point, a match clock in two halves with a
+// our shot after four passes and theirs at their shooting point, the shared clock per sum on every level but Makkelijk, a match clock in two halves with a
 // held "Rust!", the end lines the skin reports, and the scene: a 1-1-2-1 pitch where every bear has its own spot.
 
 let choice: ZelfChoice;
@@ -39,7 +39,8 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
-const start = (picked: SkinChoices = {}) => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(skinById('voetbal')!.meta, picked) }));
+// Makkelijk unless a test picks a level: no clock on the sums, so a test can wait without time-outs.
+const start = (picked: SkinChoices = {}) => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(skinById('voetbal')!.meta, { niveau: 'makkelijk', ...picked }) }));
 const typeAnswer = (v: string) => { for (const d of v) fireEvent.keyDown(window, { key: d }); fireEvent.keyDown(window, { key: 'Enter' }); };
 const rightKey = () => typeAnswer(sp().question!.answer);
 const wrongKey = () => typeAnswer(String(Number(sp().question!.answer) + 1));
@@ -69,6 +70,8 @@ describe('Voetbal: the registry and the match logic', () => {
         expect(meta.accepts).toEqual({ kinds: ['number'] });
         expect(skinAccepts(meta.accepts, NUMBER_CONTENT)).toBe(true);
         expect(meta.options![0]).toMatchObject({ id: 'tijd', default: '3' });
+        expect(meta.options![1]).toMatchObject({ id: 'niveau', default: 'normaal', wide: true });
+        expect(meta.options![1].choices.map(c => c.icon?.clock)).toEqual(['off', 'on', 'on', 'on']);
         expect(resolveMeta(meta, { tijd: '5' }).round.seconds).toBe(300);
         expect(resolveMeta(meta).round.seconds).toBe(180);
         expect(skinById('voetbal')!.Component).toBeDefined();
@@ -102,6 +105,14 @@ describe('Voetbal: the registry and the match logic', () => {
         expect(playOf(z, true)).toMatchObject({ side: 'ijs', passes: TURNOVER[VOETBAL.passes], against: 0, last: 'win' });
         expect(scoreLine(3, 1)).toBe('IJsberen 3, zwarte beren 1');
         expect([endTitle(3, 1), endTitle(2, 2), endTitle(0, 1)]).toEqual(['Gewonnen!', 'Gelijkspel!', 'Wat een wedstrijd!']);
+    });
+
+    test('the clock per sum follows the match clock\'s play time; Makkelijk has none', () => {
+        expect(sumClockMs('makkelijk', 100_000, 180_000)).toBeNull();
+        expect(sumClockMs('normaal', 180_000, 180_000)).toBe(12_000);
+        expect(sumClockMs('normaal', 120_000, 180_000)).toBe(11_000);
+        expect(sumClockMs('onmogelijk', 30_000, 300_000)).toBe(4_000);
+        expect(sumClockMs('moeilijk', null, null)).toBe(12_000);
     });
 
     test('half time is due once, after half the match clock', () => {
@@ -352,8 +363,8 @@ describe('Voetbal on the session (fake clock)', () => {
     const wait = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
     const dots = (c: HTMLElement) => c.querySelectorAll('.vb-dot.is-on').length;
 
-    test('passes on right answers; a wrong one hands the black bears the ball, a right one wins it back; the shot shows its ring', () => {
-        start();
+    test('passes on right answers; a wrong one hands the black bears the ball, a right one wins it back; every sum has its ring, the shot too', () => {
+        start({ niveau: 'normaal' });
         const { container } = render(<Wired />);
         expect(sp().result).toMatchObject({ title: 'Gelijkspel!', lead: 'IJsberen 0, zwarte beren 0' });
         rightKey(); wait(800);
@@ -372,9 +383,13 @@ describe('Voetbal on the session (fake clock)', () => {
         expect(container.querySelector('.vb-dots.is-zwart')).toBeNull();
         wait(800);
         expect(dots(container)).toBe(TURNOVER[TURNOVER[2]]);
-        for (let i = TURNOVER[TURNOVER[2]]; i < VOETBAL.passes; i++) { expect(container.querySelector('.vb-ring')).toBeNull(); rightKey(); wait(800); }
+        for (let i = TURNOVER[TURNOVER[2]]; i < VOETBAL.passes; i++) {
+            expect(container.querySelector('.vb-ring')).not.toBeNull();
+            expect(container.querySelector('.vb-ring.is-shot')).toBeNull();
+            rightKey(); wait(800);
+        }
         expect(dots(container)).toBe(4);
-        expect(container.querySelector('.vb-ring')).not.toBeNull();
+        expect(container.querySelector('.vb-ring.is-shot')).not.toBeNull();
         expect(container.querySelector('.vb-tag.is-on')!.textContent).toBe('Schiet op doel!');
     });
 
@@ -431,11 +446,11 @@ describe('Voetbal on the session (fake clock)', () => {
         expect(container.querySelector('.vb-svg [class*="key"]')).toBeNull();
     });
 
-    test('the shot uses the skin deadline: 10 s and the keeper catches it (a miss); a wrong shot is a save too', () => {
-        start();
+    test('the clock (Normaal): 12 s a sum; too late on the shot = the keeper catches it; a wrong shot is a save too', () => {
+        start({ niveau: 'normaal' });
         const { container } = render(<Wired />);
         for (let i = 0; i < 4; i++) { rightKey(); wait(800); }
-        wait(9_500);
+        wait(11_500);
         expect(sp().misses).toBe(0);
         wait(750);
         expect(sp().misses).toBe(1);
@@ -453,8 +468,28 @@ describe('Voetbal on the session (fake clock)', () => {
         expect(container.querySelector('.vb-score')!.getAttribute('aria-label')).toBe('IJsberen 0, zwarte beren 0');
     });
 
-    test('help pauses the shot clock and the match clock', () => {
+    test('too late on a pass gives the black bears the ball, like a wrong answer', () => {
+        start({ niveau: 'moeilijk' });
+        const { container } = render(<Wired />);
+        expect(container.querySelector('.vb-ring')!.getAttribute('aria-label')).toBe('Nog 12 seconden');
+        wait(12_250);
+        expect(sp().misses).toBe(1);
+        expect(container.querySelector('.vb-bubble')!.textContent).toBe('Oeps!');
+        expect(container.querySelector('.vb-dots.is-zwart')).not.toBeNull();
+    });
+
+    test('Makkelijk: no ring at all, not even on the shot; waiting costs nothing', () => {
         start();
+        const { container } = render(<Wired />);
+        for (let i = 0; i < 4; i++) { expect(container.querySelector('.vb-ring')).toBeNull(); rightKey(); wait(800); }
+        expect(container.querySelector('.vb-tag.is-on')!.textContent).toBe('Schiet op doel!');
+        expect(container.querySelector('.vb-ring')).toBeNull();
+        wait(40_000);
+        expect(sp().misses).toBe(0);
+    });
+
+    test('help pauses the sum clock and the match clock', () => {
+        start({ niveau: 'normaal' });
         render(<Wired />);
         for (let i = 0; i < 4; i++) { rightKey(); wait(800); }
         wait(4_000);
@@ -464,7 +499,7 @@ describe('Voetbal on the session (fake clock)', () => {
         expect(sp().misses).toBe(0);
         expect(progressOf(sp()).msLeft).toBe(left);
         act(() => sp().closeHelp());
-        wait(5_500);
+        wait(7_500);
         expect(sp().misses).toBe(0);
         wait(1_000);
         expect(sp().misses).toBe(1);
