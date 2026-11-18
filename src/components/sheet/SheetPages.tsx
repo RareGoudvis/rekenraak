@@ -157,7 +157,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                   more={tutorPages[pi].more}
                   caption={docSettings.tutorQrCaption !== false}
                   captionText={docSettings.tutorQrCaptionText}
-                  legend
+                  legend={docSettings.stepsGlyph !== 'verborgen'}
                 />
               </div>
           ) : <SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
@@ -213,7 +213,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                 dropNoop={dropZone !== null && dnd.isNoop(item.block.id, dropZone)}
                 showSolutions={showSolutions}
                 docSettings={docSettings}
-                stepsMarks={tutorPages?.[pi].marks.get(item.block.id) ?? ''}
+                stepsMarks={docSettings.stepsGlyph === 'verborgen' ? '' : tutorPages?.[pi].marks.get(item.block.id) ?? ''}
                 blockProps={dnd.blockProps}
                 onFitWidth={fitBlockToWidth}
                 onWiden={widenBlock}

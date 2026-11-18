@@ -81,6 +81,8 @@ export interface DocSettings {
     // The stappenhulp's "Nog meer van deze oefening" button: the QR also carries each block's Oefenmodus
     // settings when they fit. Absent = on (a sheet saved before it gets the button); false = steps only.
     tutorMoreOefenen?: boolean;
+    // Where the footsteps mark by a block title sits (owner 2026-11-17); absent = 'rechts'. 'verborgen' drops every mark and the footer legend, the QR stays.
+    stepsGlyph?: 'links' | 'rechts' | 'verborgen';
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
     // Vertical rule in the gutter between blocks that share a row. showDividers is the
