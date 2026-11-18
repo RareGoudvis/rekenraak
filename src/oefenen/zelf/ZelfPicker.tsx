@@ -22,7 +22,7 @@ import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { readRange, readTafels, readWay, saveRange, saveTafels, saveWay, type ZelfWay } from './zelfPicks';
 import { gameBlurb } from './gameBlurbs';
 import { zelfTopicLabel } from './zelfLabels';
-import { ZELF_SUBJECTS, subjectTopicLabel, zelfSubjectOf } from './zelfSubjects';
+import { ZELF_SUBJECTS, subjectTopicLabel, zelfFacetOf, zelfSubjectOf } from './zelfSubjects';
 import { subjectBadge, subjectPicture } from './subjectArt';
 import {
     TAFELS_DEFAULT, ZELF_COUNTS, ZELF_MINUTES, ZELF_RANGES, buildZelfSessie, choiceMayHaveMab, choicesFor, isTafelTopic, modeKey, tafelChoice,
@@ -115,10 +115,14 @@ export default function ZelfPicker() {
     const shown = useMemo(() => (grade !== null ? (data ? new Set(zelfUsable(data, grade).keys()) : null) : anyGrade), [data, grade, anyGrade]);
     // The picture and stickers per topic card (topicGames.ts).
     const cards = useMemo(() => new Map(data && shown ? [...shown, ...ZELF_SUBJECTS.flatMap(sub => sub.topics.map(t => t.id))].map(id => [id, topicCardOf(data, grade, id)] as const) : []), [data, shown, grade]);
-    const choices = data && grade !== null && topicId !== null && !isTafel ? choicesFor(data, grade, topicId, range) : [];
+    // A subject topic's own row under the oefeningen (Frans: Richting): the pupil's pick, else the choice's, else the first.
+    const [facetPick, setFacetPick] = useState<string | null>(null);
+    const facet = topicId !== null ? zelfFacetOf(topicId) : null;
+    const facetKey = facet ? facetPick ?? choice?.facet ?? facet.options[0].key : undefined;
+    const choices = data && grade !== null && topicId !== null && !isTafel ? choicesFor(data, grade, topicId, range, facetKey) : [];
     const back = () => {
         if (setup) { toWays.current = 'instant'; setSetup(null); }
-        else { setTopicId(null); setChoice(null); setTafelOp(null); setTafelPick(null); }
+        else { setTopicId(null); setChoice(null); setTafelOp(null); setTafelPick(null); setFacetPick(null); }
     };
     const bar = grade !== null && (
         <div className="zelf-bar">
@@ -138,6 +142,7 @@ export default function ZelfPicker() {
         const pickTopic = (id: string) => {
             if (grade === null || !data) return;
             setTopicId(id);
+            setFacetPick(null);
             // A topic with one oefening needs no pick: the screen opens on its next step.
             const only = isTafelTopic(id) ? [] : choicesFor(data, grade, id, range);
             setChoice(only.length === 1 ? only[0] : null);
@@ -214,8 +219,14 @@ export default function ZelfPicker() {
         setRangePick(p => ({ ...p, [grade]: r }));
         saveRange(grade, r);
         // The same oefening in the new range when it has one; a topic with one oefening keeps it picked.
-        const next = choicesFor(data, grade, topicId, r);
+        const next = choicesFor(data, grade, topicId, r, facetKey);
         setChoice(c => next.find(n => n.label === c?.label) ?? (next.length === 1 ? next[0] : null));
+    };
+    // The same oefening in the other option of the row, so the pupil can flip the Richting after picking one.
+    const pickFacet = (key: string) => {
+        setFacetPick(key);
+        const next = choicesFor(data, grade, topicId, range, key);
+        setChoice(c => next.find(n => n.label === c?.label) ?? null);
     };
     const setTables = (list: number[]) => { setTafelPick(list); saveTafels(grade, list); };
     const offer = tafelsOffer(grade);
@@ -351,6 +362,9 @@ export default function ZelfPicker() {
                             </div>
                         </section>
                     )}
+                    {facet && seg('zelf-opt-facet', facet.label, facet.options.map(o => (
+                        <button key={o.key} type="button" aria-pressed={o.key === facetKey} aria-label={o.label} className="kid-seg-btn" onClick={() => pickFacet(o.key)}>{o.short ?? o.label}</button>
+                    )))}
                     {(active || isTafel) && (
                         <div ref={nextRef} className="zelf-steps">
                             {split ? (

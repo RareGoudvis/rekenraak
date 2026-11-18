@@ -23,7 +23,7 @@ beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null }); sp().o
 
 describe('Frans in the games', () => {
     test('every Frans choice plays; only tap and memory games take it', () => {
-        for (const t of FRANS_ZELF.topics) for (const c of FRANS_ZELF.choices(5, t.id)) {
+        for (const t of FRANS_ZELF.topics.filter(x => FRANS_CARDS.map(fransTopicOf).includes(x.id))) for (const c of FRANS_ZELF.choices(5, t.id)) {
             expect(choiceCanPlay(c, 5)).toBe(true);
             expect(spelContentOf(c, 5)).toMatchObject({ kind: 'choice', boards: ['pairs'] });
         }

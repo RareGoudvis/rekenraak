@@ -14,7 +14,7 @@ beforeEach(() => { resetKiosk(); vi.spyOn(console, 'error').mockImplementation((
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe('Frans on the Zelf home', () => {
-    test('leerjaar 4 has no Frans; leerjaar 5 has its section with eight cards', async () => {
+    test('leerjaar 4 has no Frans; leerjaar 5 has its section with eleven cards', async () => {
         localStorage.setItem(GRADE_KEY, '4');
         const { unmount } = render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
@@ -25,9 +25,9 @@ describe('Frans on the Zelf home', () => {
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         const frans = screen.getByRole('region', { name: 'Frans' });
         const cards = within(frans).getAllByRole('button');
-        expect(cards.map(b => b.querySelector('.zelf-topic-title')?.textContent)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar', 'Dagen', 'Maanden', 'Dagen en maanden']);
+        expect(cards.map(b => b.querySelector('.zelf-topic-title')?.textContent)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar', 'Dagen', 'Maanden', 'Dagen en maanden', 'Getallen tot 20', 'Tientallen tot 100', 'Getallen tot 100']);
         // A drawing, never a maths screenshot.
-        expect(frans.querySelectorAll('svg.fr-art')).toHaveLength(8);
+        expect(frans.querySelectorAll('svg.fr-art')).toHaveLength(11);
         expect(frans.querySelector('img')).toBeNull();
     });
 

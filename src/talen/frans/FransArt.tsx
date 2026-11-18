@@ -186,6 +186,58 @@ const DAGEN_MAANDEN = (
     </>
 );
 
+// A die face with its pips (value 1 to 6) at (x, y), size s.
+const PIPS: Readonly<Record<number, readonly (readonly [number, number])[]>> = {
+    5: [[0.25, 0.25], [0.75, 0.25], [0.5, 0.5], [0.25, 0.75], [0.75, 0.75]],
+    6: [[0.27, 0.22], [0.73, 0.22], [0.27, 0.5], [0.73, 0.5], [0.27, 0.78], [0.73, 0.78]],
+};
+const Die = ({ x, y, s, value, tilt }: { x: number; y: number; s: number; value: 5 | 6; tilt: number }) => (
+    <g transform={`rotate(${tilt} ${x + s / 2} ${y + s / 2})`}>
+        <rect className="fr-die" x={x} y={y} width={s} height={s} rx={s * 0.18} />
+        {PIPS[value].map(([px, py], i) => <circle key={i} className="fr-pip" cx={x + px * s} cy={y + py * s} r={s * 0.08} />)}
+    </g>
+);
+
+// Getallen tot 20: two dice, five and six: onze!
+const DICE = (
+    <>
+        <Sky />
+        <ellipse className="fr-shadow" cx="220" cy="256" rx="130" ry="10" />
+        <Die x={110} y={130} s={110} value={5} tilt={-10} />
+        <Die x={236} y={140} s={104} value={6} tilt={8} />
+        <Bubble x={300} y={42} text="onze !" />
+    </>
+);
+
+// Tientallen: a rekenrek, five rods of ten beads (five red, five white): cinquante.
+const REKENREK = (
+    <>
+        <Sky />
+        <rect className="fr-wood" x="96" y="56" width="22" height="200" rx="6" />
+        <rect className="fr-wood" x="340" y="56" width="22" height="200" rx="6" />
+        {[0, 1, 2, 3, 4].map(r => (
+            <g key={r}>
+                <path className="fr-rod" d={`M118 ${88 + r * 36} H340`} />
+                {Array.from({ length: 10 }, (_, b) => <circle key={b} className={b < 5 ? 'fr-bead-red' : 'fr-bead-white'} cx={136 + b * 20} cy={88 + r * 36} r={11} />)}
+            </g>
+        ))}
+        <Bubble x={292} y={10} text="cinquante !" />
+    </>
+);
+
+// Getallen tot 100: a school board with 72 in both forms, France and Belgium.
+const BOARD = (
+    <>
+        <Sky />
+        <rect className="fr-wood" x="66" y="34" width="348" height="216" rx="14" />
+        <rect className="fr-chalkboard" x="80" y="48" width="320" height="188" rx="8" />
+        <text className="fr-chalk is-big" x="240" y="118">72</text>
+        <text className="fr-chalk" x="240" y="166">soixante-douze</text>
+        <text className="fr-chalk is-small" x="240" y="204">septante-deux</text>
+        <rect className="fr-chalk-stick" x="300" y="222" width="34" height="9" rx="3" />
+    </>
+);
+
 export type FransPictureId = FransCardId | WoordCardId;
 
 const SCENES: Readonly<Record<FransPictureId, ReactNode>> = {
@@ -197,6 +249,9 @@ const SCENES: Readonly<Record<FransPictureId, ReactNode>> = {
     dagen: DAGEN,
     maanden: MAANDEN,
     'dagen-maanden': DAGEN_MAANDEN,
+    'getallen-20': DICE,
+    tientallen: REKENREK,
+    'getallen-100': BOARD,
 };
 
 /** A Frans card's picture, as wide as a game thumbnail (480 × 300). */

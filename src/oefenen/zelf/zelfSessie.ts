@@ -30,7 +30,8 @@ export const modeKey = (m: ZelfMode): string => (m.kind === 'count' ? `n${m.n}` 
 
 // One plain choice on the pupil's screen: a few card variants that belong together.
 // `source` = the Op.stap heading / card name the label was made from (absent for labels built in code).
-export interface ZelfChoice { key: string; label: string; vars: CardVariant[]; source?: string }
+// `facet` = the subject row option it belongs to (Frans: its Richting); absent for the maths.
+export interface ZelfChoice { key: string; label: string; vars: CardVariant[]; source?: string; facet?: string }
 
 const toType = (v: CardVariant): OefenType => {
     // A subject's variant (Frans) is its own session type; the rest are maths cards.
@@ -358,10 +359,11 @@ function generalChoices(cards: UsableCard[], topicId: string): ZelfChoice[] {
 /**
  * The few plain choices a pupil gets for a topic in a leerjaar (at most six), each a set of usable card variants.
  * range = the pupil's "Tot hoeveel?" (usableVariants); a range other than Eenvoudig's default marks the key, so its runs stay apart.
+ * facet = a subject topic's row option (Frans: Richting); absent = its first.
  */
-export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string, range?: number): ZelfChoice[] {
+export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string, range?: number, facet?: string): ZelfChoice[] {
     const subject = zelfSubjectOf(topicId);
-    if (subject) return subject.choices(grade, topicId);
+    if (subject) return subject.choices(grade, topicId, facet);
     const cards = zelfUsable(data, grade, range).get(topicId) ?? [];
     if (!cards.length) return [];
     const max = range === undefined ? null : zelfMaxOf(data, topicId, grade, range);

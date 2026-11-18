@@ -11,6 +11,7 @@
   --kid-fr-cheese: #FFD95A;
   --kid-fr-cheese-dark: #E9B820;
   --kid-fr-plate: #F4F1EA;
+  --kid-fr-board: #2F5D4A;
 }
 
 .fr-art { display: block; width: 100%; height: 100%; }
@@ -54,5 +55,16 @@
 .fr-cycle-head { fill: var(--kid-ink); stroke-width: 2; }
 .fr-tag rect { fill: var(--kid-card); stroke-width: 3.5; }
 .fr-tag text { font-family: var(--kid-font); font-size: 26px; font-weight: 900; fill: var(--kid-ink); text-anchor: middle; }
+.fr-die { fill: var(--kid-card); }
+.fr-pip { fill: var(--kid-ink); stroke: none !important; }
+.fr-wood { fill: var(--kid-fr-crust); }
+.fr-rod { fill: none; stroke-width: 4; }
+.fr-bead-red { fill: var(--kid-fr-red); stroke-width: 3; }
+.fr-bead-white { fill: var(--kid-card); stroke-width: 3; }
+.fr-chalkboard { fill: var(--kid-fr-board); }
+.fr-chalk { font-family: var(--kid-font); font-weight: 900; font-size: 34px; fill: var(--kid-card); text-anchor: middle; }
+.fr-chalk.is-big { font-size: 64px; }
+.fr-chalk.is-small { font-size: 26px; fill: var(--kid-fr-tint); }
+.fr-chalk-stick { fill: var(--kid-card); stroke-width: 2.5; }
 .fr-badge { width: 86%; height: 86%; }
 .zelf-topic-thumb.is-drawn { background: var(--kid-sky); }

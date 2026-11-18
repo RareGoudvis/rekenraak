@@ -27,11 +27,12 @@ afterEach(() => { vi.useRealTimers(); });
 describe('Frans through the kiosk', () => {
     test('Frans topics: leerjaar 5 and 6 only, three oefeningen per card, through the Zelf choicesFor', async () => {
         const data = await loadEenvoudigData();
-        expect(FRANS_ZELF.topics.map(t => t.label)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar', 'Dagen', 'Maanden', 'Dagen en maanden']);
+        expect(FRANS_ZELF.topics.map(t => t.label)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar', 'Dagen', 'Maanden', 'Dagen en maanden', 'Getallen tot 20', 'Tientallen tot 100', 'Getallen tot 100']);
         for (const t of FRANS_ZELF.topics) {
             expect(zelfSubjectOf(t.id)).toBe(FRANS_ZELF);
             expect(choicesFor(data, 4, t.id)).toEqual([]);
-            const labels = VERB_TOPICS.includes(t.id) ? ['Eén werkwoord vervoegen', 'Welk werkwoord?', 'Alles samen'] : ['Frans → Nederlands', 'Nederlands → Frans', 'Door elkaar'];
+            const labels = VERB_TOPICS.includes(t.id) ? ['Eén werkwoord vervoegen', 'Welk werkwoord?', 'Alles samen']
+                : /getallen|tientallen/.test(t.id) ? ['Cijfer → Frans', 'Frans → cijfer', 'Door elkaar'] : ['Frans → Nederlands', 'Nederlands → Frans', 'Door elkaar'];
             // The direction labels hold a no-break space before the arrow.
             for (const g of [5, 6] as const) expect(choicesFor(data, g, t.id).map(c => c.label.replace(/\s/g, ' '))).toEqual(labels);
         }
