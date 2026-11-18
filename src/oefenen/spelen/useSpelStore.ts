@@ -213,6 +213,8 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             const boardRound = get().meta?.round.board;
             if (boardRound) {
                 const board = nextBoardOf(s, boardRound, get().board, history, get().meta?.choiceCount);
+                // A finale keeps the full last board on screen, in play, until the skin ends the round itself.
+                if (!board && boardRound.finale && get().board) { set({ phase: 'play', feedback: null, help: null, shownAt: now }); return; }
                 if (!board) { end(); return; }
                 set({ board, question: null, phase: 'play', feedback: null, helpedNow: false, help: null, shownAt: now });
                 return;

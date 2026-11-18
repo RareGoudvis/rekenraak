@@ -20,7 +20,7 @@ import { PersonSimpleSki } from '@phosphor-icons/react';
 import { Flashlight as FlashlightIcon } from '@phosphor-icons/react';
 import { Joystick } from '@phosphor-icons/react';
 import { GRIJP } from './grijp/claw';
-import { HIVE_BOARDS } from '../board/honingraat/hiveLevels';
+import { HIVE_BOARDS, hasBoss } from '../board/honingraat/hiveLevels';
 import { LEVELS, levelOption } from '../levels/levels';
 import { FishSimple } from '@phosphor-icons/react';
 import { TANK_GOAL } from './aquarium/tank';
@@ -259,12 +259,13 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // Gelijkwaardige breuken: "zoek alle breuken die gelijk zijn aan 1/2" (content/breuken/breukComb.ts).
         // The levels (board/honingraat/hive.ts): Makkelijk three boards, no wasp; Normaal three boards and after every
         // meadow a wasp battle (1 of 3 right); Moeilijk five boards, 2 of 3; Onmogelijk five, all right and the wasps grow
-        // per battle (1, 2 …). A wasp can claim the nest (canFail).
+        // per battle (1, 2 …). A wasp can claim the nest (canFail). Moeilijk and Onmogelijk end with the Wespenkoningin
+        // (board/honingraat/boss.ts): the round's finale, she can fly off with the honey (canFail).
         meta: {
             music: 'weide',
             id: 'honingraat', label: 'Honingraat', input: 'board', timed: false, season: 'lente', canFail: true,
             round: { board: { kind: 'target', boards: 3, size: 13, strikes: 1 } }, accepts: { kinds: ['number', 'choice'], ops: ['+', '-'], pictures: true, board: 'target' },
-            options: [levelOption({ clock: false, rounds: Object.fromEntries(LEVELS.map(l => [l, { board: { kind: 'target', boards: HIVE_BOARDS[l], size: 13, strikes: 1 } }])) })],
+            options: [levelOption({ clock: false, rounds: Object.fromEntries(LEVELS.map(l => [l, { board: { kind: 'target', boards: HIVE_BOARDS[l], size: 13, strikes: 1, ...(hasBoss(l) && { finale: true }) } }])) })],
             winTitle: 'Alle honing is binnen!', failTitle: 'Oei! De wesp heeft het nest. Nog eens?',
             sounds: { correct: 'drup', wrong: 'bzz', barricade: 'krak', launch: 'zwoesj', hit: 'pop', lost: 'boing', win: 'cheer', fail: 'wahwah' },
         },

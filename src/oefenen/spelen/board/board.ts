@@ -22,6 +22,9 @@ export interface BoardRound {
     size: number;
     // Counted wrong picks on one sum before it is logged as a mistake (once).
     strikes: number;
+    // The skin's own last fight after the last board (Honingraat's queen): the round stays open on the full board
+    // until the skin calls onFinish or onFail.
+    finale?: boolean;
 }
 
 // What the pupil is looking for on a target board: answer = n, or answer > n (the fallback when a card's

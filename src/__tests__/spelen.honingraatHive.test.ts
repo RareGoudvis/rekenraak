@@ -27,7 +27,8 @@ describe('Honingraat: comb, meadow, comb …', () => {
         expect(meta.canFail).toBe(true);
         expect(meta.options![0].choices.map(c => [c.value, c.icon])).toEqual([['makkelijk', {}], ['normaal', { flames: 1 }], ['moeilijk', { flames: 2 }], ['onmogelijk', { flames: 3 }]]);
         expect(LEVELS.map(l => resolveMeta(meta, { niveau: l }).round.board!.boards)).toEqual([3, 3, 5, 5]);
-        expect(resolveMeta(meta, { niveau: 'moeilijk' }).round.board).toEqual({ kind: 'target', boards: HIVE_BOARDS.moeilijk, size: 13, strikes: 1 });
+        // Moeilijk ends with the Wespenkoningin: the session waits for her (finale, spelen.honingraatBoss.test.tsx).
+        expect(resolveMeta(meta, { niveau: 'moeilijk' }).round.board).toEqual({ kind: 'target', boards: HIVE_BOARDS.moeilijk, size: 13, strikes: 1, finale: true });
         expect(resolveMeta(meta).chosen).toEqual({ niveau: 'normaal' });
         // A remembered old Moeilijk stays Moeilijk; an unknown pick is Normaal.
         expect(resolveMeta(meta, { niveau: 'moeilijk' }).chosen).toEqual({ niveau: 'moeilijk' });

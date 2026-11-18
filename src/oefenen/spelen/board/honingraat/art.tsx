@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
-// Honingraat's drawings: the bees, the wasp, a flower head, the branch, the skep and the hills. Flat fills
+// Honingraat's drawings: the bees, the wasp, the Wespenkoningin and her honey pots, a flower head, the branch, the
+// skep and the hills. Flat fills
 // under the --spel-ink outline (honingraat.css colours them); decoration only, never a number.
 
 export type BeeMood = 'busy' | 'happy' | 'worried';
@@ -161,4 +162,90 @@ export function FrontFlowers() {
         </g>
     );
     return <svg className="hx-front" viewBox={`0 0 ${400 * FRONT_COPIES} 60`} aria-hidden>{Array.from({ length: FRONT_COPIES }, (_, i) => copy(i * 400))}</svg>;
+}
+
+export type QueenMood = 'cheeky' | 'ouch' | 'grin' | 'sore';
+
+/** The Wespenkoningin facing right (170 × 130): a round, silly queen wasp with lashes, a blush and a little crown. */
+export function Queen({ mood = 'cheeky' }: { mood?: QueenMood }) {
+    return (
+        <svg className="hx-q-art" viewBox="0 0 170 130" aria-hidden>
+            <g transform="rotate(-28 84 40)"><ellipse className="hx-wasp-wing" cx="84" cy="40" rx="14" ry="30" /></g>
+            <g transform="rotate(12 102 40)"><ellipse className="hx-wasp-wing" cx="102" cy="40" rx="12" ry="27" /></g>
+            {/* The abdomen: a big round egg narrowing to a small sting. */}
+            <path className="hx-wasp-body" d="M12 80 C14 56 42 48 64 54 C80 58 88 68 88 80 C88 92 80 102 64 106 C42 112 14 104 12 80 Z" />
+            <path className="hx-wasp-stripe" d="M32 56 Q25 80 32 106 M50 52 Q43 80 50 109 M68 57 Q62 80 68 103" />
+            <path className="hx-wasp-sting" d="M13 76 L2 80 L13 84 Z" />
+            {mood === 'sore' && (
+                <>
+                    {/* A sore bottom: a rosy glow and a sticking plaster. */}
+                    <ellipse className="hx-q-sore" cx="26" cy="88" rx="14" ry="11" />
+                    <g transform="rotate(-30 26 88)">
+                        <rect className="hx-q-plaster" x="12" y="82" width="28" height="12" rx="6" />
+                        <path className="hx-wasp-line" d="M22 85 L22 91 M30 85 L30 91" />
+                    </g>
+                </>
+            )}
+            <path className="hx-wasp-line" d="M96 88 L88 108 M106 90 L106 112 M114 88 L122 106" />
+            <ellipse className="hx-wasp-body" cx="102" cy="76" rx="16" ry="15" />
+            {/* A frilly royal collar between body and head. */}
+            <path className="hx-q-collar" d="M112 62 L118 70 L114 76 L121 82 L116 88 L124 92 L128 84 L132 92 L136 82 L128 62 Z" />
+            <circle className="hx-wasp-body" cx="134" cy="66" r="24" />
+            <circle className="hx-q-blush" cx="128" cy="76" r="5.5" />
+            {mood === 'ouch' ? (
+                <path className="hx-wasp-line" d="M131 56 L139 60 L131 64 M157 56 L149 60 L157 64" />
+            ) : mood === 'grin' ? (
+                <path className="hx-wasp-line" d="M132 62 Q137 55 142 62 M147 62 Q152 55 157 62" />
+            ) : mood === 'sore' ? (
+                <path className="hx-wasp-line" d="M132 56 L140 64 M140 56 L132 64 M147 56 L155 64 M155 56 L147 64" />
+            ) : (
+                <>
+                    <circle className="hx-wasp-eye" cx="138" cy="61" r="4.6" />
+                    <circle className="hx-wasp-eye" cx="151" cy="61" r="4.2" />
+                    {/* Long lashes and one raised brow: cheeky, never cross. */}
+                    <path className="hx-q-lash" d="M134 56 L131 52 M138 55 L138 50 M148 55 L146 51 M152 55 L153 50" />
+                    <path className="hx-wasp-line" d="M131 48 L141 50 M146 47 L156 43" />
+                </>
+            )}
+            {mood === 'ouch' ? <ellipse className="hx-wasp-eye" cx="146" cy="78" rx="5" ry="6.5" />
+                : mood === 'grin' ? <path className="hx-q-mouth" d="M132 73 Q145 90 158 71 Z" />
+                    : mood === 'sore' ? <path className="hx-wasp-line" d="M134 80 Q138 76 142 80 Q146 84 150 80 Q154 76 157 79" />
+                        : <path className="hx-wasp-line" d="M134 76 Q146 84 157 72" />}
+            <path className="hx-wasp-line" d="M128 44 Q122 28 128 20 M146 44 Q152 30 162 28" />
+            <circle className="hx-wasp-eye" cx="128" cy="20" r="3" />
+            <circle className="hx-wasp-eye" cx="162" cy="28" r="3" />
+            <g className="hx-q-crown"><CrownShape /></g>
+        </svg>
+    );
+}
+
+function CrownShape() {
+    return (
+        <>
+            <path className="hx-q-gold" d="M118 47 L119 26 L127 36 L134 21 L141 36 L149 26 L150 47 Z" />
+            <circle className="hx-q-gem" cx="134" cy="40" r="3.6" />
+            <circle className="hx-q-gold" cx="119" cy="25" r="2.8" />
+            <circle className="hx-q-gold" cx="134" cy="20" r="2.8" />
+            <circle className="hx-q-gold" cx="149" cy="25" r="2.8" />
+        </>
+    );
+}
+
+/** The queen's crown on its own (the end screen: she lost it as she fled). */
+export function Crown() {
+    return <svg className="hx-crown-art" viewBox="114 16 40 34" aria-hidden><CrownShape /></svg>;
+}
+
+/** A honey pot with a cloth lid (60 × 60), on the queen's shelf or in her legs. */
+export function HoneyPot() {
+    return (
+        <svg className="hx-pot-art" viewBox="0 0 60 60" aria-hidden>
+            <path className="hx-pot-jar" d="M14 20 C5 28 5 48 13 56 L47 56 C55 48 55 28 46 20 Z" />
+            <path className="hx-pot-shine" d="M16 32 C14 38 14 44 17 49" />
+            <polygon className="hx-pot-label" transform="translate(21 30) scale(.18)" points="50,2 98,29.7 98,85.8 50,113.5 2,85.8 2,29.7" />
+            <path className="hx-pot-lid" d="M10 12 C20 7 40 7 50 12 L48 22 C38 18 22 18 12 22 Z" />
+            <path className="hx-pot-string" d="M12 20 C24 17 36 17 48 20" />
+            <path className="hx-pot-drip" d="M40 21 C41 27 44 29 44 32 C44 35 40 35 40 32 Z" />
+        </svg>
+    );
 }

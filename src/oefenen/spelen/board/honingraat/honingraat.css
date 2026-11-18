@@ -569,6 +569,198 @@
 @keyframes hx-wasp-claim { to { transform: translate(calc(var(--hx-w) * 1.2), calc(var(--hx-w) * -.6)) scale(1.25); } }
 @keyframes hx-flee { to { transform: translate(40vw, -40vh) rotate(-18deg); opacity: 0; } }
 
+/* ── The Wespenkoningin (Moeilijk, Onmogelijk: after the last board) ───────── */
+/* Left her bar, herself and the honey pot shelf; the card with the sum in the middle; the guard bees on the right. */
+.hx-boss {
+  gap: clamp(8px, 2.4vw, 36px);
+  /* A thicker veil than a wasp's: the full comb behind her stays quiet. */
+  background: color-mix(in srgb, var(--kiosk-paper) 64%, transparent);
+  backdrop-filter: blur(3px);
+}
+.hx-q-zone {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(4px, 1vh, 10px);
+  width: clamp(150px, calc(var(--hx-w) * 2.4), 360px);
+}
+.hx-q-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--kiosk-paper);
+  box-shadow: 0 3px 0 var(--spel-ink);
+  animation: spel-pop .35s cubic-bezier(.3, 1.6, .5, 1) 500ms both;
+}
+.hx-q-bar-name { font-weight: 900; white-space: nowrap; }
+.hx-q-bar-crown { flex: 0 0 auto; width: clamp(22px, calc(var(--hx-w) * .22), 34px); margin-top: -4px; }
+.hx-q-segs { display: flex; gap: 3px; }
+.hx-q-seg {
+  width: clamp(10px, calc(var(--hx-w) * .13), 20px);
+  height: clamp(14px, calc(var(--hx-w) * .17), 24px);
+  border: 2.5px solid var(--spel-ink);
+  border-radius: 5px;
+  background: var(--accent-meetkunde);
+  transition: background-color 300ms linear;
+}
+.hx-q-seg.is-gone { background: var(--hx-missed); animation: hx-q-seg-out 450ms var(--ease-out) both; }
+@keyframes hx-q-seg-out { 0% { scale: 1.5; background: var(--kiosk-paper); } 100% { scale: 1; } }
+/* Room above her head for what she says (the fly sits in the lower 13/15). */
+.hx-q-sky { position: relative; width: 100%; aspect-ratio: 17 / 15; }
+.hx-q-fly { position: absolute; inset: 13% 0 0; }
+.hx-boss.is-intro .hx-q-fly { animation: hx-q-in 1.6s var(--ease-out) both; }
+/* Her entrance: a big swoop in from the top left, a bow at the end. */
+@keyframes hx-q-in {
+  0% { transform: translate(-70vw, -40vh) rotate(-20deg) scale(.6); }
+  60% { transform: translate(8%, -6%) rotate(8deg) scale(1.05); }
+  80% { transform: translate(0, 4%) rotate(-4deg); }
+  100% { transform: none; }
+}
+.hx-q-hover { position: absolute; inset: 0; animation: hx-q-hover 1.4s ease-in-out infinite alternate; }
+@keyframes hx-q-hover { from { transform: translateY(-5%) rotate(-2deg); } to { transform: translateY(4%) rotate(2deg); } }
+.hx-q-hurt { position: absolute; inset: 0; display: block; }
+.hx-q-art { display: block; width: 100%; height: 100%; overflow: visible; }
+.hx-q-collar { fill: color-mix(in srgb, var(--accent-meetkunde) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.hx-q-gold { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.hx-q-gem { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2; }
+.hx-q-crown { transform-box: fill-box; transform-origin: 50% 100%; transition: transform 500ms var(--ease-spring); }
+.hx-q-blush { fill: var(--hx-petal-0); opacity: .8; }
+.hx-q-lash { fill: none; stroke: var(--spel-ink); stroke-width: 2.2; stroke-linecap: round; }
+.hx-q-mouth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.hx-q-sore { fill: var(--hx-petal-0); opacity: .9; }
+.hx-q-plaster { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+/* What she says: a speech bubble above her head. */
+.hx-q-bubble {
+  position: absolute;
+  z-index: 3;
+  right: -8%;
+  top: -17%;
+  padding: 0 12px;
+  border: 3px solid var(--spel-ink);
+  border-radius: 999px;
+  background: var(--kiosk-paper);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 900;
+  white-space: nowrap;
+  animation: spel-pop .35s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+.hx-boss.is-intro .hx-q-bubble { animation-delay: 1.4s; }
+/* A hit: the swarm darts in from the guards, she flashes and wobbles, her crown jumps. */
+.hx-q-swarm { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.hx-q-dart {
+  position: absolute;
+  left: 52%;
+  top: calc(18% + var(--k) * 12%);
+  width: 22%;
+  scale: -1 1;
+  animation: hx-q-dart 760ms ease-in both;
+  animation-delay: calc(var(--k) * 60ms);
+}
+@keyframes hx-q-dart {
+  0% { translate: calc(var(--hx-w) * 3.4) calc(var(--hx-w) * -.4); opacity: 0; }
+  15% { opacity: 1; }
+  55% { translate: 0 0; }
+  70% { translate: calc(var(--hx-w) * .2) calc(var(--hx-w) * -.15); }
+  100% { translate: calc(var(--hx-w) * 2.8) calc(var(--hx-w) * -1.1); opacity: 0; }
+}
+.hx-boss.is-hit .hx-q-hurt { animation: hx-q-wobble 640ms ease-out 380ms both; }
+@keyframes hx-q-wobble {
+  0% { rotate: 0deg; filter: brightness(1); }
+  10% { rotate: -12deg; translate: -6% 0; filter: brightness(1.9) saturate(.4); }
+  30% { rotate: 9deg; filter: brightness(1.2); }
+  50% { rotate: -6deg; filter: brightness(1.7) saturate(.5); }
+  70% { rotate: 3deg; filter: brightness(1); }
+  100% { rotate: 0deg; translate: 0 0; filter: brightness(1); }
+}
+.hx-boss.is-hit .hx-q-crown { transform: translateY(-14px) rotate(-14deg); transition-delay: 380ms; }
+.hx-boss.is-hit .hx-q-bubble { animation-delay: 420ms; }
+/* A grab: she swoops down to the shelf and comes back up with a pot. */
+.hx-boss.is-grab .hx-q-fly { animation: hx-q-dip 1.2s ease-in-out both; }
+@keyframes hx-q-dip {
+  0%, 100% { transform: none; }
+  45%, 55% { transform: translate(-4%, 36%) rotate(10deg); }
+}
+.hx-q-carried { position: absolute; left: 40%; top: 74%; display: flex; gap: 2px; width: 40%; }
+.hx-q-carried-pot { flex: 0 0 auto; width: calc(100% / 3); }
+.hx-boss.is-grab .hx-q-carried-pot:last-child { animation: hx-q-take 1.2s ease-out both; }
+@keyframes hx-q-take { 0%, 45% { scale: 0; } 60% { scale: 1.3; } 100% { scale: 1; } }
+.hx-q-shelf {
+  display: flex;
+  justify-content: center;
+  gap: clamp(4px, 1vw, 12px);
+  width: 100%;
+  padding: 0 6% 4px;
+  border-bottom: 9px solid var(--hx-bark);
+  box-shadow: 0 3px 0 var(--spel-ink);
+}
+.hx-q-pot { width: clamp(30px, calc(var(--hx-w) * .42), 64px); }
+.hx-q-pot.is-taken { opacity: .28; filter: grayscale(1); }
+.hx-q-pot.is-taken .hx-pot-art { animation: hx-q-gone 600ms ease-in both; }
+@keyframes hx-q-gone { from { translate: 0 -40%; scale: 1.2; opacity: 1; } }
+.hx-pot-art { display: block; width: 100%; overflow: visible; }
+.hx-pot-jar { fill: var(--hx-honey); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.hx-pot-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3.5; stroke-linecap: round; opacity: .75; }
+.hx-pot-label { fill: var(--hx-wax); stroke: var(--spel-ink); stroke-width: 14; }
+.hx-pot-lid { fill: var(--hx-petal-0); stroke: var(--spel-ink); stroke-width: 3; stroke-linejoin: round; }
+.hx-pot-string { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; }
+.hx-pot-drip { fill: var(--hx-honey); stroke: var(--spel-ink); stroke-width: 2.5; }
+/* The card: the intro's banner pops bigger. */
+.hx-q-card { min-width: min(100%, 320px); }
+.hx-q-banner { font-size: var(--kiosk-text-xl); line-height: 1.15; max-width: 14ch; }
+.hx-boss.is-intro .hx-q-banner { animation: hx-q-banner 1.1s var(--ease-spring) 300ms both; }
+@keyframes hx-q-banner { 0% { scale: .3; rotate: -8deg; } 60% { scale: 1.12; rotate: 3deg; } 100% { scale: 1; rotate: 0deg; } }
+.hx-boss.is-intro .hx-guard { animation: spel-wiggle .5s ease-in-out infinite; }
+/* She flees: crown askew, a sore bottom, spinning off; the bees dance, honey drips, confetti. */
+.hx-boss.is-fled .hx-q-fly { animation: hx-q-flee 2.4s ease-in 500ms both; }
+@keyframes hx-q-flee {
+  0% { transform: none; }
+  20% { transform: translate(6%, -4%) rotate(14deg); }
+  40% { transform: translate(-4%, 2%) rotate(-10deg); }
+  100% { transform: translate(-80vw, -70vh) rotate(-540deg) scale(.4); }
+}
+.hx-boss.is-fled .hx-q-crown { transform: translate(6px, 8px) rotate(-32deg); }
+.hx-boss.is-fled .hx-q-carried { animation: hx-q-let-go 500ms ease-in both; }
+@keyframes hx-q-let-go { to { translate: 0 calc(var(--hx-w) * .8); opacity: 0; } }
+.hx-boss.is-fled .hx-q-pot { animation: spel-pop .4s cubic-bezier(.3, 1.6, .5, 1) 350ms both; }
+.hx-boss.is-fled .hx-guard .hx-bee-art { animation: spel-bounce .55s ease-out infinite; }
+.hx-boss.is-fled .hx-guard { animation: hx-q-dance 1.1s ease-in-out infinite alternate; animation-delay: calc(var(--g) * -.35s); }
+@keyframes hx-q-dance { from { transform: translateX(-12px) rotate(-10deg); } to { transform: translateX(12px) rotate(10deg); } }
+.hx-boss.is-fled .hx-q-bar, .hx-boss.is-robbed .hx-q-bar { animation: hx-q-fade 600ms linear 1.2s both; }
+@keyframes hx-q-fade { to { opacity: 0; } }
+.hx-q-drips { position: absolute; inset: 0 0 auto; height: 0; pointer-events: none; }
+.hx-q-drip {
+  position: absolute;
+  top: 0;
+  left: calc(6% + var(--k) * 14%);
+  width: clamp(14px, 2.2vmin, 24px);
+  aspect-ratio: 4 / 5;
+  border: 3px solid var(--spel-ink);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--hx-honey);
+  animation: hx-q-drip 1.6s cubic-bezier(.5, 0, .9, .4) infinite both;
+  animation-delay: calc(var(--k) * 230ms);
+}
+@keyframes hx-q-drip {
+  0% { transform: translateY(-30px) scale(.4); opacity: 0; }
+  15% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { transform: translateY(70vh) scale(1); opacity: 0; }
+}
+/* She wins: off she goes with every pot, waving; the bees look on. */
+.hx-boss.is-robbed .hx-q-fly { animation: hx-q-off 2.2s ease-in 400ms both; }
+@keyframes hx-q-off {
+  0% { transform: none; }
+  25% { transform: translate(-6%, 6%) rotate(-6deg); }
+  100% { transform: translate(70vw, -70vh) rotate(16deg) scale(.7); }
+}
+.hx-boss.is-robbed .hx-q-carried-pot { animation: spel-wiggle .5s ease-in-out infinite; }
+.hx-boss.is-robbed .hx-guard { animation: spel-shake .6s ease-in-out 2 both; }
+
 /* ── The end screen's picture ─────────────────────────────────────────────── */
 .hx-ending { background: linear-gradient(var(--spel-sky) 0 62%, var(--spel-grass) 62% 100%); }
 .hx-ending .hx-ending-branch { position: absolute; left: 0; right: 0; top: 4%; height: 22%; }
@@ -581,6 +773,8 @@
 .hx-ending-bee.is-peek { top: 54%; left: calc(6% + var(--e) * 76%); animation: none; }
 .hx-ending-wasp { position: absolute; left: 50%; top: 24%; width: 30%; translate: -50% 0; }
 .hx-ending-wasp .hx-wasp-art { animation: spel-wiggle .9s ease-in-out infinite; }
+.hx-ending-crown { position: absolute; left: 20%; bottom: 7%; width: 11%; rotate: -24deg; animation: spel-wiggle 1.6s ease-in-out infinite; }
+.hx-crown-art { display: block; width: 100%; overflow: visible; }
 
 /* "Hoe los ik dit op?": everything waits. */
 .hx-root.is-paused *,
@@ -595,6 +789,7 @@
   .hx-guards { flex-direction: row; width: auto; }
   .hx-guard { width: clamp(44px, 12vw, 70px); }
   .hx-guard:nth-child(2) { margin: 0; }
+  .hx-q-zone { width: clamp(150px, 46vw, 300px); }
   .hx-skep-wrap { left: calc(var(--hx-w) * -.4); bottom: calc(var(--hx-w) * -1.1); width: calc(var(--hx-w) * .8); }
   /* Rows of 3 and 2 (Meadow.tsx): bigger flowers than the comb's cells. */
   .hx-meadow { --hx-w: clamp(56px, min(23vw, 10.5vh), 130px); }
@@ -605,4 +800,10 @@
   .hx-root { --hx-w: clamp(48px, 18vh, 90px); }
   .hx-view { gap: var(--sp-1); padding-top: var(--sp-2); }
   .hx-sun { display: none; }
+  /* A phone on its side: the queen a little smaller, so her bar, her pots and the card fit the height. */
+  .hx-q-zone { width: clamp(130px, calc(var(--hx-w) * 2.1), 220px); gap: 2px; }
+  .hx-q-bar { padding: 2px 8px; gap: 5px; }
+  /* Her crown says whose bar it is: the name would push it past the card. */
+  .hx-q-bar-name { display: none; }
+  .hx-q-banner { font-size: var(--kiosk-text-lg); }
 }

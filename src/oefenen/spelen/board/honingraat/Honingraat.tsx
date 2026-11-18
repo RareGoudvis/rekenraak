@@ -3,18 +3,23 @@ import type { SkinEndingProps, SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
 import { Clouds } from '../../scene';
 import type { BoardCell, SpelBoard } from '../board';
-import { Bee, Branch, FrontFlowers, Hills, Wasp } from './art';
+import { Bee, Branch, Crown, FrontFlowers, Hills, Wasp } from './art';
 import Comb from './HoneyComb';
 import Meadow from './Meadow';
 import WaspChallenge from './WaspChallenge';
+import QueenFight from './QueenFight';
 import { viewAt, waspRule, waspSchedule, waspSums, type WaspRule, type WaspVerdict } from './hive';
+import { bossDue, bossRule, bossSums, type BossRule, type BossVerdict } from './boss';
+import type { SpelQuestion } from '../../spelQuestion';
 import { levelOf } from '../../levels/levels';
 import './honingraat.css';
 
 // Honingraat (Lente): find every sum that makes the target, on a honeycomb, then in a flower meadow, then a
 // comb again (hive.ts viewAt). A full board: the bee flies happily on while the scene scrolls to the next one.
 // Normaal and up (options.niveau): after every meadow a wasp comes for the nest (WaspChallenge, hive.ts waspRule); it
-// can claim the nest (onFail). Makkelijk has no wasp. The session checks every cell.
+// can claim the nest (onFail). Makkelijk has no wasp. Moeilijk and Onmogelijk end with the Wespenkoningin (QueenFight,
+// boss.ts): the session keeps the full last board open (BoardRound.finale) until she flees (onFinish) or flies off
+// with the honey (onFail). The session checks every cell.
 
 // The scroll from one board to the next (honingraat.css hx-scroll lasts as long).
 export const SCROLL_MS = 1500;
@@ -23,9 +28,10 @@ function BoardView(props: Parameters<typeof Comb>[0]) {
     return viewAt(props.board.index) === 'comb' ? <Comb {...props} /> : <Meadow {...props} />;
 }
 
-export default function Honingraat({ board, phase, onBoardPick, sound, options, progress, onFail }: SkinProps) {
+export default function Honingraat({ board, phase, onBoardPick, sound, options, progress, onFail, onFinish, onReport }: SkinProps) {
     const level = levelOf(options);
-    const [schedule] = useState(() => waspSchedule(progress.board?.total ?? 3));
+    const total = progress.board?.total ?? 3;
+    const [schedule] = useState(() => waspSchedule(total));
     const [last, setLast] = useState(board ?? null);
     // The board the scene scrolls away from, while the next one comes in.
     const [leaving, setLeaving] = useState<SpelBoard | null>(null);
@@ -48,14 +54,31 @@ export default function Honingraat({ board, phase, onBoardPick, sound, options, 
         const id = window.setTimeout(() => setLeaving(null), SCROLL_MS);
         return () => window.clearTimeout(id);
     }, [leaving]);
+    // The queen: once the last board is full and the session waits (phase back to play after its pause).
+    // Her sums are drawn once, when she comes: from every board played, the full last one included.
+    const [boss, setBoss] = useState<{ seed: number; rule: BossRule; sums: SpelQuestion[]; pool: SpelQuestion[] } | null>(null);
+    const queen = bossRule(level);
+    if (!boss && queen && !wasp && !leaving && phase === 'play' && bossDue(board, total)) {
+        const seed = seedOf(`${board.key}|koningin`);
+        const cells = [...played, ...board.cells];
+        setBoss({ seed, rule: queen, sums: bossSums(cells, mulberry32(seed), queen), pool: cells.map(c => c.question) });
+    }
     const fail = useRef(onFail);
-    useEffect(() => { fail.current = onFail; });
+    const live = useRef({ onFinish, onReport });
+    useEffect(() => { fail.current = onFail; live.current = { onFinish, onReport }; });
     const sums = useMemo(() => (wasp ? waspSums(played, mulberry32(wasp.seed), wasp.rule.sums) : []), [wasp, played]);
     const waspOn = !!wasp && !leaving && sums.length > 0;
     const waspDone = (v: WaspVerdict) => { if (v === 'claimed') fail.current(); else setWasp(null); };
+    const bossDone = (v: BossVerdict) => {
+        if (v === 'fled') { live.current.onFinish?.({ title: 'De koningin is gevlucht!' }); return; }
+        // The end screen names her, not the wasp of the battles (the round's failTitle).
+        live.current.onReport?.({ title: 'Oei! De koningin heeft de honing. Nog eens?' });
+        fail.current();
+    };
+    const bossOn = !!boss && boss.sums.length > 0;
 
     const paused = phase === 'help';
-    const active = !leaving && !wasp;
+    const active = !leaving && !wasp && !boss;
     return (
         <div className={`hx-root${paused ? ' is-paused' : ''}${leaving ? ' is-scrolling' : ''}`}>
             <span className="hx-sun" aria-hidden />
@@ -72,20 +95,23 @@ export default function Honingraat({ board, phase, onBoardPick, sound, options, 
                     </div>
                 )}
                 {board?.target && (
-                    <div key={board.key} className={`hx-view${leaving ? ' is-entering' : ''}${waspOn ? ' is-under-attack' : ''}`} inert={!active}>
+                    <div key={board.key} className={`hx-view${leaving ? ' is-entering' : ''}${waspOn || bossOn ? ' is-under-attack' : ''}`} inert={!active}>
                         <BoardView board={board} phase={phase} onBoardPick={onBoardPick} sound={sound} active={active} />
                     </div>
                 )}
             </div>
             {leaving && <span className="hx-traveller" aria-hidden><span className="hx-traveller-loop"><Bee mood="happy" /></span></span>}
+            {bossOn && <QueenFight sums={boss.sums} rule={boss.rule} pool={boss.pool} seed={boss.seed} paused={paused} onDone={bossDone} />}
             {waspOn && <WaspChallenge sums={sums} rule={{ ...wasp.rule, sums: sums.length, need: Math.min(wasp.rule.need, sums.length) }} pool={played.map(c => c.question)} seed={wasp.seed} sound={sound} paused={paused} onDone={waspDone} />}
         </div>
     );
 }
 
-/** The end screen's picture: a full comb with dancing bees, or the wasp sitting on the nest, bees peeking. */
-export function HoningraatEnding({ outcome }: SkinEndingProps) {
+/** The end screen's picture: a full comb with dancing bees (and the queen's lost crown), or the wasp on the nest, bees peeking. */
+export function HoningraatEnding({ outcome, options }: SkinEndingProps) {
     const claimed = outcome === 'failed';
+    // A won round on a queen's level means she fled: her crown lies in the grass.
+    const crown = !claimed && bossRule(levelOf(options)) !== null;
     return (
         <div className={`spel-ending hx-ending${claimed ? ' is-claimed' : ' is-party'}`} aria-hidden>
             <span className="hx-ending-branch"><Branch /></span>
@@ -104,6 +130,7 @@ export function HoningraatEnding({ outcome }: SkinEndingProps) {
             ) : (
                 [0, 1, 2].map(i => <span key={i} className="hx-ending-bee" style={{ '--e': i } as CSSProperties}><span className="hx-bee-turn"><Bee mood="happy" pollen={i === 1} /></span></span>)
             )}
+            {crown && <span className="hx-ending-crown"><Crown /></span>}
         </div>
     );
 }
