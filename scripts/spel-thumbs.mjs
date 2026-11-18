@@ -39,9 +39,10 @@ const GAMES = [
     ['voetbalkaartjes', 'Voetbalkaartjes', -1],
     ['brandweer', 'Brandweer', 1],
     ['slalom', 'Skislalom', 0],
+    ['aquarium', 'Aquarium', 9],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena.
-const QUERY = { tovenaarsduel: '?arena=school' };
+const QUERY = { tovenaarsduel: '?arena=school', aquarium: '?aquarium=12345' };
 // Duel games with 2 spelers (no keyboard): the moment of the picture, staged through window.__duel (dev builds).
 const duelAnswer = (page, side) => page.evaluate(s => { const d = window.__duel.getState(); const q = d.sides[s].question; if (q && !d.sides[s].feedback) d.answer(s, q.answer); }, side);
 const DUEL_PLAY = {
@@ -98,7 +99,7 @@ const SKIN_CSS = {
     slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
-const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur']);
+const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur', 'aquarium']);
 // Skins without a -world box: the street, 16:10 (zombies).
 const CLIPS = { zombies: { x: 0, y: 74, width: 640, height: 400 } };
 // A narrower window pulls the zombies' track into that 640px: the camp and the zombies in one picture.

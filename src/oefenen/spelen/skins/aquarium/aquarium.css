@@ -1,0 +1,478 @@
+/* Aquarium: a sunny living room, a tank on a cabinet, a grey tabby beside it. Flat fills under the dark outline
+   (spelen.css tokens). Transforms and opacity only; everything holds still under "Hoe los ik dit op?". */
+.aq-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  overflow: hidden;
+  overflow: clip;
+}
+.aq-root,
+.aq-ending {
+  --aq-wall: color-mix(in srgb, var(--spel-star) 24%, var(--kiosk-paper));
+  --aq-wall-stripe: color-mix(in srgb, var(--aq-wall) 90%, var(--accent-vraagstukken));
+  --aq-wall-wave: color-mix(in srgb, var(--aq-wall) 80%, var(--accent-metendrekenen));
+  --aq-wood: color-mix(in srgb, var(--accent-vraagstukken) 52%, var(--spel-ink));
+  --aq-wood-light: color-mix(in srgb, var(--aq-wood) 72%, var(--kiosk-paper));
+  --aq-floor: color-mix(in srgb, var(--accent-vraagstukken) 46%, color-mix(in srgb, var(--spel-ink) 34%, var(--kiosk-paper)));
+  --aq-rug: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper));
+  --aq-day: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper));
+  --aq-water-top: color-mix(in srgb, var(--accent-bewerkingen) 36%, color-mix(in srgb, var(--accent-metendrekenen) 16%, var(--kiosk-paper)));
+  --aq-water-deep: color-mix(in srgb, var(--accent-bewerkingen) 64%, color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--spel-ink)));
+  --aq-sand: color-mix(in srgb, var(--spel-star) 42%, var(--kiosk-paper));
+  --aq-sand-dark: color-mix(in srgb, var(--aq-sand) 78%, var(--accent-vraagstukken));
+  --aq-plant: color-mix(in srgb, var(--accent-metendrekenen) 82%, var(--spel-ink));
+  --aq-plant-dark: color-mix(in srgb, var(--accent-metendrekenen) 60%, var(--spel-ink));
+  --aq-plant-light: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--kiosk-paper));
+  --aq-red: color-mix(in srgb, var(--accent-getallenkennis) 78%, var(--accent-vraagstukken));
+  --aq-orange: color-mix(in srgb, var(--accent-vraagstukken) 88%, var(--accent-getallenkennis));
+  --aq-gold: color-mix(in srgb, var(--accent-vraagstukken) 70%, var(--spel-star));
+  --aq-stone: color-mix(in srgb, var(--spel-ink) 22%, var(--kiosk-paper));
+  --aq-stone-dark: color-mix(in srgb, var(--spel-ink) 40%, var(--kiosk-paper));
+  --aq-pink: color-mix(in srgb, var(--accent-getallenkennis) 38%, var(--kiosk-paper));
+  --aq-cat: color-mix(in srgb, var(--spel-ink) 36%, var(--kiosk-paper));
+  --aq-cat-stripe: color-mix(in srgb, var(--spel-ink) 62%, var(--kiosk-paper));
+  --aq-cat-eye: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--spel-star));
+  background: var(--aq-wall);
+}
+
+/* The world does not clip: the wall and floor run on under the keypad (the root clips). */
+.aq-world { position: relative; min-width: 0; min-height: 0; }
+.aq-scene { position: absolute; inset: 0; container-type: size; }
+/* The 4:3 stage holds the viewBox exactly, bottom-centred, so the HTML bursts line up with the water. */
+.aq-stage { position: absolute; bottom: 0; left: 50%; translate: -50% 0; height: min(100cqh, 75cqw); aspect-ratio: 4 / 3; }
+.aq-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.aq-ending { width: min(100%, 620px); height: clamp(150px, 30vh, 280px); border-radius: var(--radius-lg); }
+.aq-ending .aq-svg { overflow: hidden; }
+
+/* ── The room ── */
+.aq-wall { fill: var(--aq-wall); }
+.aq-wall-stripe { fill: var(--aq-wall-stripe); }
+.aq-wall-wave { fill: none; stroke: var(--aq-wall-wave); stroke-width: 1.4px; stroke-linecap: round; }
+.aq-day-0 { stop-color: var(--aq-day); }
+.aq-day-1 { stop-color: color-mix(in srgb, var(--aq-day) 50%, var(--kiosk-paper)); }
+.aq-sun { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-hedge { fill: var(--spel-grass); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.aq-frame { fill: none; stroke: var(--spel-ink); stroke-width: 4px; }
+.aq-frame-bar { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.aq-sill, .aq-top { fill: var(--aq-wood-light); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.aq-curtain { fill: color-mix(in srgb, var(--accent-getallenkennis) 32%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.aq-pot { fill: var(--aq-orange); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.aq-pot-leaf { fill: var(--aq-plant); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-picture-frame { fill: var(--aq-wood); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.aq-picture-paper { fill: var(--kiosk-paper); }
+.aq-doodle { fill: var(--aq-orange); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-doodle-eye { fill: var(--spel-ink); }
+.aq-doodle-bub { fill: none; stroke: var(--accent-bewerkingen); stroke-width: 1.2px; }
+.aq-cord { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-lampshade { fill: color-mix(in srgb, var(--accent-metendrekenen) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.aq-bulb { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.6px; }
+.aq-floor { fill: var(--aq-floor); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.aq-plank { fill: none; stroke: color-mix(in srgb, var(--aq-floor) 70%, var(--spel-ink)); stroke-width: 1.6px; }
+.aq-skirting { fill: var(--aq-wood-light); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-rug { fill: var(--aq-rug); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.aq-rug-edge { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.6px; stroke-dasharray: 4 4; }
+.aq-bowl-body { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.aq-bowl-rim { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; }
+.aq-bowl-fish { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1px; }
+
+.aq-wood, .aq-leg { fill: var(--aq-wood); stroke: var(--spel-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+.aq-door-panel { fill: none; stroke: color-mix(in srgb, var(--aq-wood) 60%, var(--spel-ink)); stroke-width: 2px; }
+.aq-knob { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.6px; }
+.aq-tin-body { fill: var(--accent-bewerkingen); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-tin-lid { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-tin-fish { fill: var(--aq-orange); stroke: var(--spel-ink); stroke-width: 1px; }
+
+/* ── The water ── */
+.aq-air { fill: color-mix(in srgb, var(--aq-water-top) 30%, var(--kiosk-paper)); opacity: .55; }
+.aq-water-0 { stop-color: var(--aq-water-top); }
+.aq-water-1 { stop-color: var(--aq-water-deep); }
+.aq-depth { fill: var(--aq-water-deep); opacity: .18; }
+.aq-ray { fill: var(--kiosk-paper); opacity: .12; transform-box: fill-box; transform-origin: 50% 0; animation: aq-ray 7s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.9s); }
+@keyframes aq-ray { from { skew: -7deg 0; opacity: .07; } to { skew: 7deg 0; opacity: .2; } }
+.aq-caustic-line { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.6px; stroke-linecap: round; opacity: .32; }
+.aq-caustic.is-0 { animation: aq-drift-0 13s ease-in-out infinite alternate; }
+.aq-caustic.is-1 { animation: aq-drift-1 9s ease-in-out infinite alternate; }
+@keyframes aq-drift-0 { from { translate: -16px 3px; opacity: .9; } to { translate: 16px -3px; opacity: .45; } }
+@keyframes aq-drift-1 { from { translate: 14px -2px; opacity: .4; } to { translate: -14px 4px; opacity: 1; } }
+.aq-surface { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.4px; stroke-linecap: round; animation: aq-wave 3s linear infinite; }
+.aq-surface.is-back { stroke: color-mix(in srgb, var(--accent-bewerkingen) 50%, var(--kiosk-paper)); stroke-width: 1.6px; animation: aq-wave-back 4.6s linear infinite; }
+@keyframes aq-wave { from { translate: 0 0; } to { translate: -20px 0; } }
+@keyframes aq-wave-back { from { translate: -24px 0; } to { translate: 0 0; } }
+.aq-glass-shine { fill: var(--kiosk-paper); opacity: .16; }
+.aq-glass-edge { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.aq-rim { fill: color-mix(in srgb, var(--spel-ink) 75%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-base { fill: color-mix(in srgb, var(--spel-ink) 80%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-sand { fill: var(--aq-sand); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.aq-pebble { stroke: var(--spel-ink); stroke-width: 1.2px; }
+.aq-pebble.is-0 { fill: var(--aq-stone); }
+.aq-pebble.is-1 { fill: var(--aq-pink); }
+.aq-pebble.is-2 { fill: var(--aq-sand-dark); }
+.aq-pebble.is-3 { fill: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--kiosk-paper)); }
+.aq-filter-box { fill: color-mix(in srgb, var(--spel-ink) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.aq-filter-slot { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linecap: round; }
+.aq-outflow { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); stroke-width: 3px; stroke-linecap: round; stroke-dasharray: 3 3; animation: aq-flow .5s linear infinite; }
+@keyframes aq-flow { to { stroke-dashoffset: -6; } }
+.aq-churn circle { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: .8px; transform-box: fill-box; transform-origin: center; animation: aq-churn .9s ease-in-out infinite alternate; }
+.aq-churn circle:nth-child(2) { animation-delay: -.3s; }
+.aq-churn circle:nth-child(3) { animation-delay: -.6s; }
+@keyframes aq-churn { from { scale: .6; translate: 0 1px; } to { scale: 1.1; translate: 1px -1px; } }
+.aq-airline { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 55%, var(--spel-ink)); stroke-width: 1.6px; opacity: .7; }
+.aq-stone-air { fill: var(--aq-stone-dark); stroke: var(--spel-ink); stroke-width: 1.2px; }
+
+/* Bubbles: each rises on its own delay; a group may set its height (--rise). */
+.aq-bubbles { --rise: -40px; }
+.aq-bubble { fill: color-mix(in srgb, var(--kiosk-paper) 65%, transparent); stroke: color-mix(in srgb, var(--kiosk-paper) 90%, var(--accent-bewerkingen)); stroke-width: .8px; animation: aq-rise 3s linear infinite; animation-delay: calc(var(--i) / var(--n) * -3s); opacity: 0; }
+@keyframes aq-rise {
+  0% { translate: 0 0; opacity: 0; }
+  8% { opacity: .95; }
+  35% { translate: 2px calc(var(--rise) * .35); }
+  65% { translate: -2px calc(var(--rise) * .65); }
+  92% { opacity: .9; }
+  100% { translate: 1px var(--rise); opacity: 0; }
+}
+.aq-column .aq-bubble { animation-duration: 2.4s; animation-delay: calc(var(--i) / var(--n) * -2.4s); }
+.aq-castle-bubbles .aq-bubble, .aq-diver-bubbles .aq-bubble { animation-duration: 4s; animation-delay: calc(var(--i) / var(--n) * -4s); }
+
+/* ── Plants: every leaf sways from its base on its own beat. ── */
+.aq-leaf { fill: var(--aq-plant); stroke: var(--spel-ink); stroke-width: 1.4px; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 100%; animation: aq-sway 4.6s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -.9s); }
+.aq-leaf.is-dark { fill: var(--aq-plant-dark); }
+.aq-plant-bush .aq-leaf { fill: var(--aq-plant-light); animation-duration: 5.4s; }
+.aq-plant-bush .aq-leaf.is-dark { fill: var(--aq-plant); }
+.aq-front-bush .aq-leaf { fill: color-mix(in srgb, var(--accent-metendrekenen) 75%, var(--spel-star)); }
+@keyframes aq-sway { from { rotate: -4deg; } to { rotate: 4deg; } }
+.aq-plant-tall .aq-leaf { animation-name: aq-sway-tall; animation-duration: 5.2s; }
+@keyframes aq-sway-tall { from { rotate: -3deg; skew: 4deg 0; } to { rotate: 3deg; skew: -4deg 0; } }
+.aq-vein { fill: none; stroke: var(--spel-ink); stroke-width: .8px; opacity: .4; }
+.aq-rock { fill: var(--aq-stone-dark); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-stem { fill: none; stroke: var(--spel-ink); stroke-width: 2px; stroke-linecap: round; }
+.aq-red-leaf { fill: var(--aq-red); stroke: var(--spel-ink); stroke-width: 1.1px; stroke-linejoin: round; }
+.aq-stem-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: aq-sway 4s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.3s); }
+
+/* ── Decor ── */
+.aq-shell-body { fill: var(--aq-pink); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-shell-ridge { fill: none; stroke: color-mix(in srgb, var(--aq-pink) 50%, var(--spel-ink)); stroke-width: 1px; }
+.aq-shell-hinge { fill: color-mix(in srgb, var(--aq-pink) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 1.2px; }
+.aq-glint { fill: var(--kiosk-paper); transform-box: fill-box; transform-origin: center; animation: aq-twinkle 3.2s ease-in-out infinite; }
+@keyframes aq-twinkle { 0%, 70%, 100% { scale: .2; opacity: 0; } 80% { scale: 1.2; opacity: 1; } 90% { scale: .8; opacity: .8; } }
+.aq-stone { fill: var(--aq-stone); stroke: var(--spel-ink); stroke-width: 1.8px; stroke-linejoin: round; }
+.aq-stone.is-tower { fill: color-mix(in srgb, var(--aq-stone) 88%, var(--accent-meetkunde)); }
+.aq-door { fill: color-mix(in srgb, var(--aq-water-deep) 70%, var(--spel-ink)); stroke: var(--spel-ink); stroke-width: 1.6px; }
+.aq-window { fill: color-mix(in srgb, var(--spel-star) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.2px; animation: aq-lit 5s ease-in-out infinite alternate; }
+@keyframes aq-lit { from { opacity: .55; } to { opacity: 1; } }
+.aq-brick { fill: none; stroke: var(--aq-stone-dark); stroke-width: 1px; }
+.aq-moss { fill: var(--aq-plant); stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linejoin: round; }
+
+.aq-wood { fill: var(--aq-wood); }
+.aq-band-gold { fill: none; stroke: var(--spel-star); stroke-width: 2.4px; }
+.aq-lock { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.2px; }
+.aq-chest-dark { fill: var(--spel-ink); }
+.aq-coins ellipse { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1px; }
+.aq-chest-glow { fill: color-mix(in srgb, var(--spel-star) 55%, var(--kiosk-paper)); opacity: 0; animation: aq-chest-glow 7s ease-in-out infinite; }
+.aq-chest-lid { transform-box: fill-box; transform-origin: 0% 100%; animation: aq-lid 7s ease-in-out infinite; }
+@keyframes aq-lid { 0%, 60%, 92%, 100% { rotate: 0deg; } 66% { rotate: -38deg; } 70% { rotate: -32deg; } 84% { rotate: -34deg; } }
+@keyframes aq-chest-glow { 0%, 61%, 90%, 100% { opacity: 0; } 67%, 84% { opacity: .5; } }
+.aq-chest-bubbles .aq-bubble { --rise: -70px; animation: aq-chest-bub 7s ease-out infinite; animation-delay: calc(var(--i) * .12s); }
+@keyframes aq-chest-bub { 0%, 63% { translate: 0 0; opacity: 0; } 65% { opacity: 1; } 80% { translate: 3px -50px; opacity: .9; } 88%, 100% { translate: -2px -78px; opacity: 0; } }
+
+.aq-hose { fill: none; stroke: var(--spel-ink); stroke-width: 2.4px; stroke-linecap: round; opacity: .75; }
+.aq-diver-rock { transform-box: fill-box; transform-origin: 50% 100%; animation: aq-rock 3.6s ease-in-out infinite alternate; }
+@keyframes aq-rock { from { rotate: -3deg; } to { rotate: 3deg; } }
+.aq-boot, .aq-weight { fill: var(--spel-ink); }
+.aq-suit { fill: color-mix(in srgb, var(--accent-bewerkingen) 30%, var(--aq-stone)); stroke: var(--spel-ink); stroke-width: 1.4px; stroke-linejoin: round; }
+.aq-collar, .aq-helmet { fill: var(--aq-gold); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-porthole { fill: color-mix(in srgb, var(--aq-water-top) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1.6px; }
+.aq-porthole-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.2px; stroke-linecap: round; }
+.aq-bolt { fill: var(--spel-ink); }
+.aq-rock-line { fill: none; stroke: var(--spel-ink); stroke-width: 1px; opacity: .45; }
+.aq-star-body { fill: var(--aq-orange); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-star { transform-box: fill-box; transform-origin: center; animation: aq-star 6s ease-in-out infinite; }
+@keyframes aq-star { 0%, 80%, 100% { rotate: 0deg; } 85% { rotate: 6deg; } 90% { rotate: -4deg; } 95% { rotate: 2deg; } }
+.aq-star-dots circle { fill: color-mix(in srgb, var(--kiosk-paper) 70%, var(--aq-orange)); }
+.aq-star-smile { fill: none; stroke: var(--spel-ink); stroke-width: .9px; stroke-linecap: round; }
+
+/* A new plant or decoration drops in from above, slows in the water and lands in a puff of sand. */
+.aq-stand.is-new .aq-drop { animation: aq-drop 1150ms both; }
+@keyframes aq-drop {
+  0% { translate: 0 calc(var(--drop) * -1); rotate: -8deg; animation-timing-function: cubic-bezier(.5, 0, 1, .7); }
+  22% { translate: 0 calc(var(--drop) * -.7); rotate: -4deg; animation-timing-function: cubic-bezier(.2, .5, .4, 1); }
+  80% { translate: 0 0; rotate: 2deg; }
+  90% { translate: 0 -3px; rotate: -1deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+.aq-sand-puff { fill: var(--aq-sand); stroke: var(--spel-ink); stroke-width: 1px; opacity: 0; transform-box: fill-box; transform-origin: center; animation: aq-puff-sand 700ms ease-out 880ms both; }
+@keyframes aq-puff-sand { from { scale: .3; opacity: .9; } to { scale: 1.8 1.2; opacity: 0; } }
+
+/* ── Fish ── */
+.aq-body, .aq-fin { stroke: var(--spel-ink); stroke-width: 1.4px; stroke-linejoin: round; }
+.aq-eye-white { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1px; }
+.aq-eye-dot { fill: var(--spel-ink); }
+.aq-eye-glint { fill: var(--kiosk-paper); }
+.aq-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 1px; stroke-linecap: round; }
+.aq-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 1.4px; stroke-linecap: round; opacity: .8; }
+.aq-scale { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 35%, transparent); stroke-width: .8px; }
+.aq-tail { transform-origin: var(--jx) 0; animation: aq-wag .55s ease-in-out infinite alternate; animation-delay: var(--d, 0s); }
+.aq-tail-fast { animation-duration: .3s; }
+.aq-tail-slow { animation-duration: 1.1s; }
+@keyframes aq-wag { from { rotate: -14deg; } to { rotate: 14deg; } }
+.aq-pec { transform-box: fill-box; transform-origin: 0 0; animation: aq-wag .8s ease-in-out infinite alternate; }
+
+.aq-gf-body { fill: var(--aq-orange); }
+.aq-gf-fin { fill: color-mix(in srgb, var(--aq-orange) 65%, var(--kiosk-paper)); }
+.aq-goldfish.is-white .aq-gf-body { fill: var(--kiosk-paper); }
+.aq-goldfish.is-white .aq-gf-fin { fill: color-mix(in srgb, var(--spel-star) 30%, var(--kiosk-paper)); }
+.aq-white-glow { fill: color-mix(in srgb, var(--spel-star) 45%, transparent); animation: aq-glow 2.4s ease-in-out infinite alternate; }
+@keyframes aq-glow { from { opacity: .25; scale: .9; } to { opacity: .7; scale: 1.15; } }
+.aq-sparkle { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: .6px; transform-box: fill-box; transform-origin: center; animation: aq-twinkle 1.8s ease-in-out infinite; animation-delay: calc(var(--i) * -.45s); }
+
+.aq-neon-body { fill: color-mix(in srgb, var(--kiosk-paper) 80%, var(--accent-bewerkingen)); stroke-width: 1px; }
+.aq-neon-fin { fill: color-mix(in srgb, var(--kiosk-paper) 70%, var(--accent-bewerkingen)); stroke-width: .8px; }
+.aq-neon-red { fill: var(--accent-getallenkennis); }
+.aq-neon-blue { fill: none; stroke: color-mix(in srgb, var(--accent-bewerkingen) 80%, var(--accent-metendrekenen)); stroke-width: 1.6px; stroke-linecap: round; }
+.aq-guppy-body { fill: color-mix(in srgb, var(--accent-metendrekenen) 30%, var(--aq-stone)); }
+.aq-guppy-tail { fill: color-mix(in srgb, var(--accent-meetkunde) 75%, var(--kiosk-paper)); }
+.aq-guppy-dots circle { fill: var(--aq-orange); }
+.aq-clown-body, .aq-clown-fin { fill: color-mix(in srgb, var(--accent-vraagstukken) 80%, var(--accent-getallenkennis)); }
+.aq-band { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1px; stroke-linejoin: round; }
+.aq-angel-body { fill: color-mix(in srgb, var(--aq-stone) 55%, var(--kiosk-paper)); }
+.aq-angel-fin { fill: color-mix(in srgb, var(--aq-stone) 80%, var(--kiosk-paper)); }
+.aq-angel-stripe { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; opacity: .65; }
+.aq-feeler { fill: none; stroke: var(--spel-ink); stroke-width: 1px; stroke-linecap: round; }
+.aq-tang-body { fill: var(--accent-bewerkingen); }
+.aq-tang-tail, .aq-tang-fin { fill: var(--spel-star); }
+.aq-tang-mark { fill: color-mix(in srgb, var(--spel-ink) 85%, var(--accent-bewerkingen)); }
+.aq-tang-streak { fill: none; stroke: var(--spel-star); stroke-width: 1.4px; stroke-linecap: round; }
+.aq-catfish-body, .aq-cf-fin { fill: color-mix(in srgb, var(--aq-sand-dark) 60%, var(--aq-stone)); }
+.aq-catfish-dots circle { fill: var(--aq-stone-dark); }
+.aq-whisker { fill: none; stroke: var(--spel-ink); stroke-width: .8px; stroke-linecap: round; }
+.aq-sh-body, .aq-sh-fin { fill: var(--aq-gold); }
+.aq-sh-tail { fill: none; stroke: var(--spel-ink); stroke-width: 3.4px; stroke-linecap: round; }
+.aq-sh-tail.is-fill { stroke: var(--aq-gold); stroke-width: 1.6px; }
+.aq-sh-ridge, .aq-sh-crown { fill: none; stroke: var(--spel-ink); stroke-width: .9px; stroke-linecap: round; stroke-linejoin: round; }
+.aq-sh-fin { transform-box: fill-box; transform-origin: 100% 50%; animation: aq-wag .25s ease-in-out infinite alternate; }
+.aq-crab-shell { fill: var(--aq-red); }
+.aq-crab-leg, .aq-crab-arm { fill: none; stroke: var(--spel-ink); stroke-width: 1.4px; stroke-linecap: round; stroke-linejoin: round; }
+.aq-claw { transform-box: fill-box; animation: aq-snap 2.2s ease-in-out infinite; }
+.aq-claw-l { transform-origin: 100% 100%; }
+.aq-claw-r { transform-origin: 0% 100%; animation-delay: -1.1s; }
+@keyframes aq-snap { 0%, 70%, 100% { rotate: 0deg; } 78% { rotate: -12deg; } 86% { rotate: 6deg; } }
+.aq-crab .aq-crab-leg { animation: aq-scuttle .3s steps(2) infinite; }
+@keyframes aq-scuttle { from { translate: 0 0; } to { translate: 0 -.8px; } }
+.aq-snail-body { fill: color-mix(in srgb, var(--aq-sand) 60%, var(--aq-stone)); }
+.aq-snail-shell { fill: var(--aq-gold); }
+.aq-snail-swirl { fill: none; stroke: var(--spel-ink); stroke-width: 1.1px; stroke-linecap: round; }
+.aq-snail-stalk { fill: none; stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linecap: round; }
+.aq-snail-foot { transform-box: fill-box; transform-origin: 0% 100%; animation: aq-creep 2.6s ease-in-out infinite alternate; }
+@keyframes aq-creep { from { scale: 1 1; } to { scale: 1.1 .94; } }
+
+.aq-puff-body { fill: color-mix(in srgb, var(--spel-star) 60%, var(--aq-sand)); }
+.aq-puff-fin { fill: color-mix(in srgb, var(--spel-star) 40%, var(--kiosk-paper)); }
+.aq-puff-belly { fill: var(--kiosk-paper); }
+.aq-puff-spot circle { fill: color-mix(in srgb, var(--aq-wood) 60%, var(--spel-star)); }
+.aq-puff-spikes { fill: color-mix(in srgb, var(--spel-star) 50%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1px; stroke-linejoin: round; }
+.aq-puff-o { fill: var(--spel-ink); }
+/* Now and then the puffer puffs up into a spiky ball, then lets the water out again. */
+.aq-puff-flat { animation: aq-puff-flat 11s infinite; animation-delay: var(--d, 0s); }
+.aq-puff-ball { transform-box: fill-box; transform-origin: center; animation: aq-puff-ball 11s infinite; animation-delay: var(--d, 0s); }
+@keyframes aq-puff-flat { 0%, 70% { opacity: 1; } 71%, 91% { opacity: 0; } 92%, 100% { opacity: 1; } }
+@keyframes aq-puff-ball {
+  0%, 70% { opacity: 0; scale: .55; }
+  71% { opacity: 1; scale: .7; }
+  74% { scale: 1.15; }
+  77%, 88% { scale: 1; }
+  91% { opacity: 1; scale: .7; }
+  92%, 100% { opacity: 0; scale: .55; }
+}
+
+/* ── The cat ── */
+.aq-cat-fur, .aq-cat-ear { fill: var(--aq-cat); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
+.aq-cat-white.is-far { fill: color-mix(in srgb, var(--kiosk-paper) 82%, var(--aq-cat)); }
+.aq-cat-ear.is-back { fill: color-mix(in srgb, var(--aq-cat) 85%, var(--spel-ink)); }
+.aq-cat-ear-in { fill: var(--aq-pink); }
+.aq-cat-white { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.aq-cat-stripe { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 2px; stroke-linecap: round; }
+.aq-cat-tail-line { fill: none; stroke: var(--spel-ink); stroke-width: 9px; stroke-linecap: round; }
+.aq-cat-tail { fill: none; stroke: var(--aq-cat); stroke-width: 5px; stroke-linecap: round; }
+.aq-cat-tail-tip { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 5px; stroke-linecap: round; stroke-dasharray: 3 4; }
+.aq-cat-eye { fill: var(--aq-cat-eye); stroke: var(--spel-ink); stroke-width: 1.3px; }
+.aq-cat-pupil { fill: var(--spel-ink); }
+.aq-cat-glint { fill: var(--kiosk-paper); }
+.aq-cat-lid { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linecap: round; opacity: 0; }
+.aq-cat-lid.is-shut { opacity: 1; }
+.aq-cat-nose { fill: var(--aq-pink); stroke: var(--spel-ink); stroke-width: 1px; stroke-linejoin: round; }
+.aq-cat-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linecap: round; }
+.aq-cat-tongue { fill: var(--aq-pink); stroke: var(--spel-ink); stroke-width: .9px; opacity: 0; }
+.aq-whisker.is-cat { stroke-width: 1px; opacity: .7; }
+.aq-cat-arm-line { fill: none; stroke: var(--spel-ink); stroke-width: 10px; stroke-linecap: round; }
+.aq-cat-arm-fur { fill: none; stroke: var(--aq-cat); stroke-width: 6.4px; stroke-linecap: round; }
+.aq-cat-toes { fill: none; stroke: var(--spel-ink); stroke-width: .9px; stroke-linecap: round; }
+.aq-cat-bang { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linejoin: round; opacity: 0; }
+
+/* Idle: the tail hangs over the edge and flicks, an ear twitches, the eyes blink. */
+.aq-cat-tail-wrap { transform-origin: 14px -4px; animation: aq-tail 6s ease-in-out infinite; }
+@keyframes aq-tail {
+  0%, 100% { rotate: 0deg; }
+  20% { rotate: 5deg; }
+  40% { rotate: -3deg; }
+  58% { rotate: 2deg; }
+  62% { rotate: 12deg; }
+  66% { rotate: -6deg; }
+  72% { rotate: 3deg; }
+}
+.aq-cat:is(.is-reach, .is-catch) .aq-cat-tail-wrap { animation-duration: 1.4s; }
+.aq-cat-ear:not(.is-back) { transform-box: fill-box; transform-origin: 70% 100%; animation: aq-ear 5.2s ease-in-out infinite; }
+@keyframes aq-ear { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: -14deg; } 92% { rotate: 6deg; } }
+.aq-cat-eyes { transform-box: fill-box; transform-origin: center; animation: aq-blink 4.4s infinite; }
+@keyframes aq-blink { 0%, 93%, 100% { scale: 1 1; } 96% { scale: 1 .1; } }
+.aq-cat-body { transform-origin: 0 0; }
+
+/* A right answer: a fish taps the glass at the cat's nose and the cat jumps back with a "!" (TAP_MS.tap = 1000 ms). */
+.aq-cat.is-startle .aq-cat-body { animation: aq-startle 1300ms var(--ease-out) 1000ms both; }
+@keyframes aq-startle {
+  0% { translate: 0 0; rotate: 0deg; }
+  16% { translate: 12px -16px; rotate: 8deg; }
+  34% { translate: 18px 0; rotate: 2deg; }
+  46% { translate: 16px -3px; rotate: 0deg; }
+  58% { translate: 16px 0; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+.aq-cat.is-startle .aq-cat-eye { transform-box: fill-box; transform-origin: center; animation: aq-wide 1300ms ease-out 1000ms both; }
+@keyframes aq-wide { 0%, 100% { scale: 1; } 12%, 60% { scale: 1.3; } }
+.aq-cat.is-startle .aq-cat-ear:not(.is-back) { animation: aq-flat 1300ms ease-out 1000ms both; }
+@keyframes aq-flat { 0%, 100% { rotate: 0deg; } 14%, 55% { rotate: -38deg; } }
+.aq-cat.is-startle .aq-cat-bang { transform-box: fill-box; transform-origin: 50% 100%; animation: aq-bang 1100ms var(--ease-spring) 1000ms both; }
+@keyframes aq-bang { 0% { opacity: 0; scale: 0; translate: 10px 0; } 18% { opacity: 1; scale: 1.2; translate: 14px -6px; } 30%, 70% { opacity: 1; scale: 1; translate: 14px -6px; } 100% { opacity: 0; scale: 1; translate: 14px -10px; } }
+
+/* A mistake: the cat stretches up and dips its paw into the water, then shakes it dry. */
+.aq-cat-arm { transform-origin: -12px -30px; }
+.aq-cat.is-reach .aq-cat-body { animation: aq-lean 1500ms ease-in-out both; }
+.aq-cat.is-reach .aq-cat-arm { animation: aq-reach 1500ms ease-in-out both; }
+@keyframes aq-lean { 0%, 100% { translate: 0 0; rotate: 0deg; } 16%, 60% { translate: -2px -6px; rotate: -4deg; } }
+@keyframes aq-reach {
+  0% { rotate: -150deg; scale: .45; }
+  18% { rotate: 2deg; scale: 1; }
+  28% { rotate: -4deg; }
+  38% { rotate: 2deg; }
+  52% { rotate: 0deg; scale: 1; }
+  74% { rotate: -90deg; scale: .6; }
+  80% { rotate: -84deg; }
+  86% { rotate: -96deg; }
+  100% { rotate: -150deg; scale: .45; }
+}
+
+/* Two in a row: the paw scoops a fish, the cat carries it off the cabinet, a happy "Nom nom!" off-stage, and back it
+   comes licking its lips (CATCH_MS: up 650, away 1500, nom 2100, back 3900, done 5200). */
+.aq-cat.is-catch .aq-cat-body { animation: aq-carry 5200ms ease-in-out both; }
+@keyframes aq-carry {
+  0% { translate: 0 0; rotate: 0deg; opacity: 1; }
+  8%, 22% { translate: -2px -6px; rotate: -4deg; }
+  27% { translate: 0 0; rotate: 0deg; }
+  32% { translate: 18px -18px; rotate: 10deg; }
+  37% { translate: 60px 20px; rotate: 18deg; opacity: 1; }
+  40% { translate: 90px 50px; rotate: 20deg; opacity: 0; }
+  74% { translate: 60px 0; rotate: 0deg; opacity: 0; }
+  78% { translate: 46px 0; opacity: 1; }
+  86% { translate: 0 0; rotate: 0deg; }
+  100% { translate: 0 0; opacity: 1; }
+}
+.aq-cat.is-catch .aq-cat-arm { animation: aq-scoop 5200ms ease-in-out both; }
+@keyframes aq-scoop {
+  0% { rotate: -150deg; scale: .45; opacity: 1; }
+  9%, 12% { rotate: 2deg; scale: 1; }
+  14% { rotate: -6deg; }
+  24% { rotate: -70deg; scale: .7; opacity: 1; }
+  25%, 100% { rotate: -150deg; scale: .45; opacity: 0; }
+}
+.aq-cat-paw-fish, .aq-cat-mouth-fish { opacity: 0; }
+.aq-cat.is-catch .aq-cat-paw-fish { animation: aq-in-paw 5200ms both; }
+.aq-cat.is-catch .aq-cat-mouth-fish { animation: aq-in-mouth 5200ms both; }
+@keyframes aq-in-paw { 0%, 13% { opacity: 0; } 13.5%, 24.5% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes aq-in-mouth { 0%, 24.5% { opacity: 0; } 25%, 40% { opacity: 1; } 41%, 100% { opacity: 0; } }
+.aq-cat.is-catch .aq-cat-tongue { animation: aq-lick 5200ms both; }
+@keyframes aq-lick { 0%, 84% { opacity: 0; translate: 0 0; } 86%, 96% { opacity: 1; } 88% { translate: 1px -1px; } 92% { translate: -1px 0; } 98%, 100% { opacity: 0; } }
+.aq-cat.is-catch .aq-cat-eyes { animation: aq-happy 5200ms both; }
+@keyframes aq-happy { 0%, 24% { scale: 1 1; } 26%, 38% { scale: 1 .35; } 40%, 84% { scale: 1 1; } 86%, 96% { scale: 1 .3; } 100% { scale: 1 1; } }
+.aq-catch-bubbles .aq-bubble { --rise: -30px; animation: aq-rise 1600ms ease-out both; animation-delay: calc(700ms + var(--i) * 90ms); }
+.aq-nom {
+  position: absolute;
+  translate: -50% -50%;
+  padding: var(--sp-1) var(--sp-3);
+  border: 3px solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-weight: 800;
+  font-size: clamp(16px, 2.6vmin, 26px);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  animation: aq-nom 5200ms both;
+}
+@keyframes aq-nom {
+  0%, 40% { opacity: 0; scale: .4; rotate: 0deg; }
+  44% { opacity: 1; scale: 1.15; rotate: -4deg; }
+  48% { scale: 1; rotate: 3deg; }
+  54% { rotate: -3deg; }
+  60% { rotate: 2deg; }
+  68% { opacity: 1; scale: 1; }
+  74%, 100% { opacity: 0; scale: .9; }
+}
+.aq-scoop-splash { animation-delay: 650ms; }
+.aq-scoop-splash .spel-particle { animation-delay: 650ms !important; }
+.aq-dip-splash .spel-particle { animation-delay: 280ms !important; }
+
+/* The end screen: the cat gave up and naps on the cabinet. */
+.aq-nap-breathe { transform-box: fill-box; transform-origin: 50% 100%; animation: aq-breathe 3.4s ease-in-out infinite; }
+@keyframes aq-breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.02 1.07; } }
+.aq-zz { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linecap: round; stroke-linejoin: round; animation: aq-zz 3.4s ease-in-out infinite; }
+@keyframes aq-zz { 0%, 100% { opacity: .25; translate: 0 2px; } 50% { opacity: 1; translate: -2px -4px; } }
+
+/* ── The sum and the keypad ── */
+.aq-panel {
+  position: relative;
+  z-index: 1;
+  width: min(46vw, 440px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2);
+}
+.aq-sign {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-size: clamp(28px, 6vmin, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.aq-sign-answer {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-ok-soft);
+  color: var(--kiosk-ok);
+  animation: aq-grow var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes aq-grow { from { scale: .6; } to { scale: 1; } }
+.aq-panel .spel-keypad { padding: var(--sp-2); border: var(--spel-line) solid var(--spel-ink); border-radius: var(--radius-lg); background: var(--bg-surface); }
+
+@media (orientation: portrait) {
+  .aq-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .aq-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); }
+  .aq-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 60px)); }
+}
+@media (orientation: landscape) and (max-height: 640px) {
+  .aq-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
+  .aq-panel { gap: var(--sp-2); }
+}
+
+/* Help holds the whole tank still (the rAF loop stops its clock too). */
+.aq-root.is-paused :is(.aq-svg *, .aq-nom, .spel-particle) { animation-play-state: paused; }
