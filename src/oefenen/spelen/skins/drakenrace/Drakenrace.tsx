@@ -1,68 +1,46 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { SkinScreenProps } from '../types';
 import { Burst, Clouds } from '../../scene';
 import DuelScreen from '../../duel/DuelScreen';
 import { useDuelStore } from '../../duel/duelStore';
 import { useDuelEvent, useDuelMatch } from '../../duel/useDuel';
+import { teamsOf } from '../../duel/teams';
 import { SIDES, otherSide, type Side } from '../../duel/types';
-import { Backdrop, Bolt, CardDragon, Dragon, Fireworks, Gong, Pip, StormCloud, type DragonMood } from './art';
-import { DRAAK, DRAAK_RULE, progressOf } from './rule';
-import { playDraak } from './sounds';
+import { COURSE, courseKind, progressOf } from '../../course/course';
+import { useCourse, type ContactInfo } from '../../course/useCourse';
+import { useBandWidth } from '../../course/useBandWidth';
+import CourseBar from '../../course/CourseBar';
+import { Backdrop, CardDragon, Dragon, Fireworks, Gong, Pip, type DragonMood } from './art';
+import { DraakObstacle } from './obstacles';
+import { DRAAK, DRAAK_KINDS, DRAAK_OBSTACLES, DRAAK_RULE, isStorm, type DraakKind } from './rule';
+import { playDraak, soundOfContact } from './sounds';
 import './drakenrace.css';
 
-// Drakenrace on the duel engine (rule.ts). This file turns the engine's effects into the sky's moments: the
-// wingbeat forward, the storm cloud charging and striking the rival, the stall's spin, the gong at the finish.
-// The dragons' places come straight from the points (a CSS transition flies them there).
+// Drakenrace on the shared obstacle course (course/): each sum is the next obstacle flying at the dragon. This file
+// turns the course's moments into the sky's: over the tower, under the birds, through the cloud with a puff of fire,
+// the crashes (zapped, bonked, a bird on its head, an apple on its nose, bounced off the balloon), the storm a dragon
+// sends into the other lane on 3 in a row, the tailwind of a catch-up, and the gong at the finish.
 
-// The scene is H units high; its width follows the band's shape, so the course always fills the band.
+// The scene is H units high; its width follows the band's shape.
 const H = 300;
-const LANE: Record<Side, number> = { left: 116, right: 222 };
-const DRAGON_SCALE = 0.95;
-// The gong hangs this low (clear of the score corners); its disc's centre is at GONG_Y.
-const GONG_DY = 30;
-const GONG_Y = 128 + GONG_DY;
-// The storm cloud's place over the middle of the course, and its size.
-const CLOUD_Y = 58;
-const CLOUD_SCALE = 1;
-// How long a move, the daze after a lightning strike, a call and a burst last.
-const MOVE_MS = 700;
-const DAZE_MS = 1500;
-const CALL_MS = 1100;
-const BOLT_MS = 420;
-// The winner reaches the gong this long after the round's end (its bonk), then the fireworks pop.
-const RING_AT = 420;
-const POPS = [800, 1400, 2000, 2600];
+// Two lanes of their own, a line of clouds between them (DIVIDE): a dragon is about 120 units high, 0.58 = 70.
+const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 96, scale: 0.58 }, right: { y: 234, scale: 0.58 } };
+const DIVIDE = 165;
+// The dragon's snout is this far in front of its body's middle (art.tsx draws it round the middle).
+const NOSE = 96;
+// The lane's wisps of cloud repeat every TILE units.
+const TILE = 320;
+const CALL_MS = 1150;
+// The fireworks after the gong rings.
+const POPS = [300, 900, 1500, 2100];
 
-interface Course { w: number; start: number; end: number; gong: number; cloud: number }
-const courseOf = (aspect: number): Course => {
-    const w = Math.round(H * Math.max(2.2, Math.min(6.5, aspect)));
-    const gong = w - 110;
-    const start = Math.round(w * 0.085), end = gong - 150;
-    return { w, start, end, gong, cloud: Math.round((start + end) / 2) };
-};
-
-type Move = { kind: DragonMood; n: number };
-interface BoltView { id: number; to: Side; x: number; y: number }
-interface Call { id: number; text: string; x: number; y: number }
-interface BurstView { id: number; x: number; y: number }
-interface Fx {
-    move: Record<Side, Move>;
-    dazed: Record<Side, boolean>;
-    bolts: BoltView[];
-    calls: Call[];
-    bursts: BurstView[];
-    confetti: BurstView[];
-    strike: number;
-    flash: number;
-    ring: number;
-}
-const freshFx = (): Fx => ({
-    move: { left: { kind: 'idle', n: 0 }, right: { kind: 'idle', n: 0 } }, dazed: { left: false, right: false },
-    bolts: [], calls: [], bursts: [], confetti: [], strike: 0, flash: 0, ring: 0,
-});
+type Call = { text: string; n: number; tone: 'clear' | 'crash' | 'storm' | 'win' } | null;
+interface Fx { tail: Record<Side, number>; calls: Record<Side, Call>; ring: number; flash: number; bursts: { id: number; side: Side; x: number; kind: 'sparkle' | 'pieces' }[] }
+const freshFx = (): Fx => ({ tail: { left: 0, right: 0 }, calls: { left: null, right: null }, ring: 0, flash: 0, bursts: [] });
 
 export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
     const st = useDuelMatch(meta, from, DRAAK_RULE);
+    const [svg, w] = useBandWidth(H);
     const [fx, setFx] = useState(freshFx);
     const ids = useRef(1);
     const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
@@ -74,41 +52,47 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
         const all = timers.current;
         return () => all.forEach(clearTimeout);
     }, []);
-
-    // The course's width follows the svg box's shape (measured), so both lanes run edge to edge at every size.
-    const svg = useRef<SVGSVGElement>(null);
-    const [course, setCourse] = useState<Course>(() => courseOf(3.4));
-    useLayoutEffect(() => {
-        const el = svg.current;
-        if (!el || typeof ResizeObserver === 'undefined') return;
-        const measure = () => { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) setCourse(c => { const n = courseOf(r.width / r.height); return n.w === c.w ? c : n; }); };
-        measure();
-        const ro = new ResizeObserver(measure);
-        ro.observe(el);
-        return () => ro.disconnect();
-    }, []);
-    const xOf = (points: number) => course.start + progressOf({ points }, st.config.lives) * (course.end - course.start);
-
-    // The latest move per side wins: an older move's timer must not end a newer one.
-    const moveKey = useRef<Record<Side, number>>({ left: 0, right: 0 });
-    const move = (side: Side, kind: DragonMood) => {
+    const call = (side: Side, text: string, tone: NonNullable<Call>['tone']) => {
         const n = ids.current++;
-        moveKey.current[side] = n;
-        setFx(v => ({ ...v, move: { ...v.move, [side]: { kind, n } } }));
-        later(MOVE_MS, () => { if (moveKey.current[side] === n) setFx(v => ({ ...v, move: { ...v.move, [side]: { kind: 'idle', n: v.move[side].n } } })); });
+        setFx(v => ({ ...v, calls: { ...v.calls, [side]: { text, n, tone } } }));
+        later(CALL_MS, () => setFx(v => (v.calls[side]?.n === n ? { ...v, calls: { ...v.calls, [side]: null } } : v)));
     };
-    const dazeKey = useRef<Record<Side, number>>({ left: 0, right: 0 });
-    const daze = (side: Side) => {
-        const n = ids.current++;
-        dazeKey.current[side] = n;
-        setFx(v => ({ ...v, dazed: { ...v.dazed, [side]: true } }));
-        later(DAZE_MS, () => { if (dazeKey.current[side] === n) setFx(v => ({ ...v, dazed: { ...v.dazed, [side]: false } })); });
-    };
-    const add = <K extends 'bolts' | 'calls' | 'bursts' | 'confetti'>(key: K, item: Omit<Fx[K][number], 'id'>, ms: number) => {
+    const burst = (side: Side, kind: 'sparkle' | 'pieces') => {
         const id = ids.current++;
-        setFx(v => ({ ...v, [key]: [...v[key], { ...item, id }] }));
-        later(ms, () => setFx(v => ({ ...v, [key]: (v[key] as { id: number }[]).filter(x => x.id !== id) })));
+        const x = courseRef.current?.noseNow(side) ?? 0;
+        setFx(v => ({ ...v, bursts: [...v.bursts, { id, side, x, kind }] }));
+        later(1300, () => setFx(v => ({ ...v, bursts: v.bursts.filter(b => b.id !== id) })));
     };
+
+    // The obstacle at index in a side's lane: the course's, or the storm the other dragon sent.
+    const kindOf = (side: Side, index: number): DraakKind => (isStorm(st.sides[side], index) ? 'storm' : courseKind(DRAAK_KINDS, st.round, index));
+    const kindNow = (side: Side, index: number): DraakKind => {
+        const s = useDuelStore.getState();
+        return isStorm(s.sides[side], index) ? 'storm' : courseKind(DRAAK_KINDS, s.round, index);
+    };
+
+    const onContact = ({ side, outcome, index }: ContactInfo) => {
+        const kind = kindNow(side, index);
+        call(side, DRAAK_OBSTACLES[kind][outcome].call, outcome);
+        playDraak(outcome === 'clear' ? 'beat' : 'stall');
+        const extra = soundOfContact(kind, outcome);
+        if (extra) later(80, () => playDraak(extra));
+        if (outcome === 'crash' && (kind === 'storm' || kind === 'gate' || kind === 'cloud')) { setFx(v => ({ ...v, flash: v.flash + 1 })); burst(side, 'sparkle'); }
+        if (outcome === 'clear' && (kind === 'cloud' || kind === 'storm')) burst(side, 'sparkle');
+    };
+    const course = useCourse({
+        w: Math.round(w), onContact,
+        onFinish: side => {
+            setFx(v => ({ ...v, ring: v.ring + 1 }));
+            call(side, 'Gong!', 'win');
+            playDraak('gong');
+            burst(side, 'pieces');
+            POPS.forEach(ms => later(ms, () => playDraak('firework')));
+        },
+    });
+
+    const courseRef = useRef(course);
+    useEffect(() => { courseRef.current = course; });
 
     useDuelEvent('roundStart', () => {
         timers.current.forEach(clearTimeout);
@@ -116,96 +100,122 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
         setFx(freshFx());
     });
     useDuelEvent('play', () => playDraak('rawr'));
-
-    useDuelEvent('effect', ({ by, cause, effect }) => {
-        if (cause === 'land' || cause === 'game') return;
-        if (effect.tag === 'stall') { move(by, 'stall'); playDraak('stall'); return; }
-        move(by, 'beat');
-        playDraak('beat');
-        const { sides } = useDuelStore.getState();
-        if (effect.tag !== 'lightning') {
-            // Two in a row: the cloud wakes and crackles toward the rival.
-            if (sides[by].streak % DRAAK.streak === DRAAK.streak - 1) playDraak('charge');
-            return;
-        }
-        // The strike hits the rival where it was before the knock (it then tumbles back).
-        const target = otherSide(by);
-        const knocked = -(effect.points?.[target] ?? 0);
-        const x = xOf(sides[target].points + knocked) + 18;
-        const y = LANE[target] - 28;
-        add('bolts', { to: target, x, y }, BOLT_MS);
-        add('bursts', { x, y }, 1200);
-        // The call pops up just ahead of the dragon it hit.
-        add('calls', { text: 'ZAP!', x: x + 130, y: y + 2 }, CALL_MS);
-        setFx(v => ({ ...v, strike: v.strike + 1, flash: v.flash + 1 }));
-        move(target, 'zap');
-        daze(target);
-        playDraak('lightning');
-        later(160, () => playDraak('zapped'));
+    useDuelEvent('effect', ({ by, effect }) => {
+        // 3 in a row: the storm blows into the other lane.
+        if (effect.tag === 'storm') { call(otherSide(by), 'Storm!', 'storm'); playDraak('charge'); later(200, () => playDraak('lightning')); }
     });
-
-    // The finish: the winner bonks the gong, it rings, the fireworks go off.
-    useDuelEvent('roundEnd', ({ winner }) => {
-        if (winner === 'draw') return;
-        later(RING_AT, () => {
-            setFx(v => ({ ...v, ring: v.ring + 1 }));
-            add('confetti', { x: course.gong, y: GONG_Y }, 2400);
-            playDraak('gong');
-        });
-        POPS.forEach(ms => later(ms, () => playDraak('firework')));
+    // A catch-up: a tailwind carries the dragon behind.
+    useDuelEvent('points', ({ side, tag }) => {
+        if (tag !== 'turbo') return;
+        setFx(v => ({ ...v, tail: { ...v.tail, [side]: v.tail[side] + 1 } }));
+        later(420, () => { call(side, 'Rugwind!', 'clear'); playDraak('wind'); });
     });
 
     const between = st.phase === 'roundEnd' || st.phase === 'matchEnd';
     const winner = between && st.roundWinner !== 'draw' ? st.roundWinner : null;
-    const course1 = st.config.lives;
-    const lead = Math.max(progressOf(st.sides.left, course1), progressOf(st.sides.right, course1));
-    // The cloud charges toward the side whose next right answer calls the lightning.
-    const charging = !between ? SIDES.find(s => st.sides[s].streak % DRAAK.streak === DRAAK.streak - 1) ?? null : null;
-    const fire = winner ? [[course.gong - 60, 40], [course.cloud + 80, 80], [course.gong - 230, 34], [course.cloud - 140, 56], [course.gong - 150, 110], [course.start + 120, 40]] as const : [];
+    const reached = !!course.finish?.reached;
+    const length = st.config.lives;
+    const lead = Math.max(progressOf(st.sides.left.points, length), progressOf(st.sides.right.points, length));
+    const teams = teamsOf(st.config);
+    const stormStreak = (side: Side) => (between ? 0 : st.sides[side].streak % DRAAK.streak);
 
     const dragon = (side: Side) => {
-        const me = st.sides[side];
-        const m = fx.move[side];
-        const won = winner === side;
-        const mood: DragonMood = won ? 'won' : m.kind;
-        const ring = won ? ' is-ringing' : '';
-        const dy = (GONG_Y - LANE[side]) * 0.6;
+        const vh = course.vehicles[side];
+        const kind = vh.outcome ? kindOf(side, vh.index) : null;
+        const o = kind && vh.outcome ? DRAAK_OBSTACLES[kind][vh.outcome] : null;
+        const won = winner === side && reached;
+        const crash = vh.outcome === 'crash';
+        const mood: DragonMood = won ? 'won' : crash ? 'stall' : vh.outcome === 'clear' ? 'beat' : 'idle';
+        const move = o ? `${vh.outcome}-${o.move}` : 'none';
+        const fire = vh.outcome === 'clear' && (o?.move === 'through' || o?.move === 'roll') ? vh.n : 0;
         return (
-            <g key={side} className={`dk-dragon-at is-${side}`} style={{ transform: `translate(${xOf(me.points)}px, ${LANE[side]}px)`, '--dk-ring-dy': `${dy}px` } as CSSProperties}>
-                {/* CSS moves the outer groups; the scale stays on its own group (a CSS transform would replace the attribute). */}
-                <g className={`dk-dragon${ring}`}>
-                    <g key={m.n} className={`dk-move is-${mood}`}>
-                        <g className="dk-bob"><g transform={`scale(${DRAGON_SCALE})`}><Dragon mood={mood} dazed={fx.dazed[side] && !won} /></g></g>
+            <g className={`dk-dragon-at is-${side}${vh.waiting && st.phase === 'play' ? ' is-waiting' : ''}${won ? ' is-won' : ''}${winner && winner !== side ? ' is-lost' : ''}`}>
+                {/* The wind behind it while it flies (its opacity follows the speed). */}
+                <g ref={course.motionRef(side, 'wind', 200)} className="dk-wind"><path d="M-200 -24 L-150 -26" /><path d="M-210 6 L-140 6" /><path d="M-196 30 L-150 34" /></g>
+                {fx.tail[side] > 0 && <g key={`t${fx.tail[side]}`} className="dk-tailwind">{[0, 1, 2, 3].map(k => <path key={k} style={{ '--k': k } as CSSProperties} d={`M${-260 - k * 20} ${-40 + k * 26} q40 -16 80 0 q30 12 60 0`} />)}</g>}
+                <g key={`m${vh.n}`} className={`dk-move is-${move}`}>
+                    <g key={`g${vh.go}`} className={vh.go ? 'dk-goagain' : undefined}>
+                        <g className="dk-bob">
+                            <g transform={`translate(${-NOSE} 0)`}>
+                                <Dragon mood={mood} dazed={crash && (o?.move === 'zap' || o?.move === 'bonk')} fire={fire} sooty={crash && o?.move === 'zap'}
+                                    extra={crash && o?.move === 'feathers' ? 'bird' : crash && o?.move === 'tangle' ? 'apple' : null} />
+                            </g>
+                        </g>
                     </g>
                 </g>
-                {m.kind === 'beat' && !won && <g key={`w${m.n}`} className="dk-wind"><path d="M-84 -24 L -140 -28" /><path d="M-78 4 L -150 4" /><path d="M-84 28 L -132 32" /></g>}
             </g>
         );
     };
 
+    const lane = (side: Side) => {
+        const { y, scale } = LANE[side];
+        return (
+            // Each lane in its own clip: a swoop or a crash never reaches into the other lane.
+            <g clipPath={`url(#dk-lane-${side})`}><g transform={`translate(0 ${y})`}>
+                {/* Wisps of cloud at the lane's height scroll with it: the dragon's speed. */}
+                <g ref={course.groundRef(side, TILE)} className="dk-wisps">
+                    {Array.from({ length: Math.ceil(w / TILE) + 2 }, (_, i) => (
+                        <g key={i} transform={`translate(${i * TILE} 0)`}>
+                            <path d={`M20 ${44 * scale + 18} q30 -10 60 0 q20 6 40 0`} />
+                            <path d={`M170 ${-60 * scale - 10} q24 -8 48 0`} />
+                        </g>
+                    ))}
+                </g>
+                {course.obstacles[side].map(o => {
+                    const kind = kindOf(side, o.index);
+                    return (
+                        <g key={o.key} ref={course.obstacleRef(side, o.key)} visibility="hidden" data-kind={kind}>
+                            <g transform={`scale(${scale})`}><g key={kind} className={kind === 'storm' ? 'dk-ob-arrive' : 'crs-arrive'}><DraakObstacle kind={kind} state={o.outcome ?? 'ahead'} /></g></g>
+                        </g>
+                    );
+                })}
+                {course.finish?.side === side && (
+                    <g ref={course.finishRef()} visibility="hidden">
+                        {/* The gong's disc where the winner rolls to a stop (COURSE.goalOver past the finish). */}
+                        <g transform={`scale(${scale})`}><g transform={`translate(${Math.round(COURSE.goalOver / scale)} -128)`}><Gong ring={fx.ring} h={300} /></g></g>
+                    </g>
+                )}
+                <g ref={course.vehicleRef(side)}>
+                    <g transform={`scale(${scale})`}>{dragon(side)}</g>
+                    {/* The comic word beside the dragon, in its own lane (scene units). */}
+                    {fx.calls[side] && <text key={`c${fx.calls[side]!.n}`} className={`dk-call is-${fx.calls[side]!.tone}`} x={20} y={10}>{fx.calls[side]!.text}</text>}
+                </g>
+            </g></g>
+        );
+    };
+
+    const fire = winner && reached ? [[w * 0.2, 50], [w * 0.45, 30], [w * 0.7, 60], [w * 0.88, 34], [w * 0.33, 90], [w * 0.6, 100]] as const : [];
     return (
         <DuelScreen meta={meta} onExit={onExit} className="dk-app" hearts={false} points rightNote="Zoef!"
             cardArt={winner ? <CardDragon side={winner} /> : undefined}
             scene={(
-                <div className={`dk-scene${st.phase === 'ready' ? ' is-ready' : ''}${between ? ' is-between' : ''}`} style={{ '--dk-lead': lead } as CSSProperties} data-lead={lead.toFixed(2)}>
+                <div className={`dk-scene${st.phase === 'ready' ? ' is-ready' : ''}${between ? ' is-between' : ''}`} style={{ '--dk-lead': lead } as CSSProperties} data-points={SIDES.map(s => st.sides[s].points).join(',')}>
                     <Backdrop />
                     <Clouds layer="far" outline={false} count={4} band={[6, 44]} size={[90, 160]} direction="left" speed={50} tint="var(--dk-cloud)" />
-                    <Clouds layer="near" count={2} band={[40, 62]} size={[110, 160]} direction="left" speed={30} seed={11} tint="var(--dk-cloud-near)" />
-                    <svg ref={svg} className="dk-svg" viewBox={`0 0 ${course.w} ${H}`} preserveAspectRatio="xMidYMax meet" role="img" aria-label="Twee draken racen door de lucht naar de gong">
-                        <g transform={`translate(${course.gong} ${GONG_DY})`}><Gong ring={fx.ring} h={H - GONG_DY} /></g>
-                        <g transform={`translate(${course.cloud} ${CLOUD_Y}) scale(${CLOUD_SCALE})`}><StormCloud charge={charging} strike={fx.strike} /></g>
-                        {/* A fixed order: moving a dragon in the DOM would restart its animations. */}
-                        {SIDES.map(dragon)}
-                        {fx.bolts.map(b => <Bolt key={b.id} from={{ x: course.cloud, y: CLOUD_Y + 32 * CLOUD_SCALE }} to={{ x: b.x, y: b.y }} seed={b.id} />)}
-                        {winner && <Fireworks at={fire} />}
-                        {fx.calls.map(c => <text key={c.id} className="dk-call" x={c.x} y={c.y}>{c.text}</text>)}
+                    <svg ref={svg} className="dk-svg" viewBox={`0 0 ${w} ${H}`} preserveAspectRatio="xMidYMax meet" role="img" aria-label="Twee draken racen door de lucht over de hindernissen naar de gong">
+                        <defs>
+                            <clipPath id="dk-lane-left"><rect x={-40} y={-200} width={w + 80} height={DIVIDE + 200} /></clipPath>
+                            <clipPath id="dk-lane-right"><rect x={-40} y={DIVIDE} width={w + 80} height={H} /></clipPath>
+                        </defs>
+                        {lane('left')}
+                        {lane('right')}
+                        {/* The line of clouds between the lanes: each dragon keeps to its own sky. */}
+                        <g ref={course.layerRef('divide', 240, 1)} className="dk-divide">
+                            {Array.from({ length: Math.ceil(w / 240) + 2 }, (_, i) => (
+                                <g key={i} transform={`translate(${i * 240} ${DIVIDE})`}>
+                                    {[[0, 0, 16], [26, -6, 20], [56, -2, 15], [84, 2, 12], [110, -4, 17], [140, 0, 14], [168, -5, 19], [200, 0, 15], [226, -3, 13]].map(([x, y2, r]) => <circle key={x} cx={x} cy={y2} r={r} />)}
+                                </g>
+                            ))}
+                        </g>
+                        {fire.length > 0 && <Fireworks at={fire} />}
                     </svg>
-                    {fx.bursts.map(b => <Burst key={b.id} kind="sparkle" x={`${(b.x / course.w) * 100}%`} y={`${(b.y / H) * 100}%`} spread={80} count={14} seed={b.id} />)}
-                    {fx.confetti.map(b => <Burst key={b.id} kind="pieces" x={`${(b.x / course.w) * 100}%`} y={`${(b.y / H) * 100}%`} spread={220} count={36} seed={b.id} />)}
-                    {/* The streak toward the lightning, under each score: the third pip calls it. */}
+                    <Clouds layer="near" count={2} band={[70, 92]} size={[110, 160]} direction="left" speed={22} seed={11} tint="var(--dk-cloud-near)" />
+                    {fx.bursts.map(b => <Burst key={b.id} kind={b.kind} x={`${((b.x + 30) / w) * 100}%`} y={`${(LANE[b.side].y / H) * 100}%`} spread={b.kind === 'pieces' ? 200 : 70} count={b.kind === 'pieces' ? 36 : 12} seed={b.id} />)}
+                    <CourseBar points={{ left: st.sides.left.points, right: st.sides.right.points }} length={length} names={{ left: teams.left.name, right: teams.right.name }} />
+                    {/* The streak toward the storm, under each score: the third sends it. */}
                     {SIDES.map(side => (
-                        <span key={side} className={`dk-charge is-${side}`} role="img" aria-label={`${st.sides[side].streak % DRAAK.streak} van ${DRAAK.streak} op rij`}>
-                            {[0, 1, 2].map(i => <svg key={i} viewBox="-10 -10 20 20" aria-hidden><Pip on={!between && i < st.sides[side].streak % DRAAK.streak} /></svg>)}
+                        <span key={side} className={`dk-charge is-${side}`} role="img" aria-label={`${stormStreak(side)} van ${DRAAK.streak} op rij`}>
+                            {[0, 1, 2].map(i => <svg key={i} viewBox="-10 -10 20 20" aria-hidden><Pip on={i < stormStreak(side)} /></svg>)}
                         </span>
                     ))}
                     {fx.flash > 0 && <div key={`f${fx.flash}`} className="dk-flash" aria-hidden />}
@@ -213,3 +223,4 @@ export default function Drakenrace({ meta, from, onExit }: SkinScreenProps) {
             )} />
     );
 }
+

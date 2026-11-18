@@ -1,34 +1,39 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, screen, act } from '@testing-library/react';
+import { render, cleanup, screen, act, within } from '@testing-library/react';
 import { loadEenvoudigData } from '../config/eenvoudig/cards';
 import { choicesFor } from '../oefenen/zelf/zelfSessie';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
-import { useSpelStore, type SpelFrom } from '../oefenen/spelen/useSpelStore';
+import type { SpelFrom } from '../oefenen/spelen/useSpelStore';
 import { skinById } from '../oefenen/spelen/skins/registry';
 import type { SkinMeta } from '../oefenen/spelen/skins/types';
 import { resolveMeta } from '../oefenen/spelen/skins/options';
-import { SOUND_KEY, resetSoundForTests, setSoundOn } from '../oefenen/spelen/sound';
+import { COURSE } from '../oefenen/spelen/course/course';
 import Drakenrace from '../oefenen/spelen/skins/drakenrace/Drakenrace';
-import { DRAAK, DRAAK_RULE, callsLightning, knockOf, progressOf, raceOver } from '../oefenen/spelen/skins/drakenrace/rule';
-import { DRAAK_SOUNDS, playDraak } from '../oefenen/spelen/skins/drakenrace/sounds';
+import { DRAAK, DRAAK_KINDS, DRAAK_OBSTACLES, DRAAK_RULE, callsStorm, isStorm, knockOf, stormFlagOf } from '../oefenen/spelen/skins/drakenrace/rule';
+import { DRAAK_SOUNDS, playDraak, soundOfContact } from '../oefenen/spelen/skins/drakenrace/sounds';
 import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
 import { DUEL_TIMING, freshSideView } from '../oefenen/spelen/duel/rules';
-import type { DuelConfig, DuelCtx, Side } from '../oefenen/spelen/duel/types';
+import type { DuelConfig, DuelCtx, DuelFlags, Side } from '../oefenen/spelen/duel/types';
+import { expectRecipesPlay } from './helpers/recipeSounds';
 
-// Drakenrace on the duel engine: the race rule (a wingbeat +1, every 3rd in a row the lightning knocks the other
-// dragon back 1 and never below the start, a stall on a wrong answer, the first at the course's end wins), a
-// match on the engine, the screen for 1 and 2 spelers, and the sounds.
+// Drakenrace on the shared obstacle course (course/): a clear +1, a crash nothing; on 3 in a row the storm blows into
+// the other lane when that dragon is level or ahead (crashing into it knocks it back 1, never below the start); the
+// catch-up tailwind; the six obstacles; a match on the engine; the screen for 1 and 2 spelers; the sounds.
 
 let from: SpelFrom;
 const skin = () => skinById('drakenrace')!;
 const meta = (picks: Record<string, string> = {}): SkinMeta => resolveMeta(skin().meta, picks);
 const du = () => useDuelStore.getState();
+const q = (side: Side) => du().sides[side].question!;
 const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
-const view = (points: number, streak = 0) => ({ ...freshSideView(20), points, streak });
-const ctx = (streak: number, them = 5): DuelCtx => ({
-    side: 'left', other: 'right', me: view(4, streak), them: view(them), streak, level: 'normaal', round: 1, config: { lives: 20 } as DuelConfig,
+const view = (points: number, streak = 0, right = 0, wrong = 0, storm = 0) => ({ ...freshSideView(20), points, streak, right, wrong, flags: (storm ? { storm } : {}) as DuelFlags });
+const ctx = (me: ReturnType<typeof view>, them: ReturnType<typeof view>): DuelCtx => ({
+    side: 'left', other: 'right', me, them, streak: me.streak, level: 'normaal', round: 1, config: { lives: 20 } as DuelConfig,
 });
+const cfg = (over: Partial<DuelConfig> = {}): DuelConfig => ({ players: 2, level: 'makkelijk', lives: 20, bestOf: 3, stream: 'own', readyMs: 0, ...over });
+const right = (side: Side) => { act(() => du().answer(side, q(side).answer)); tick(DUEL_TIMING.flashRight); };
+const wrong = (side: Side) => { act(() => du().answer(side, String(Number(q(side).answer) + 1))); tick(DUEL_TIMING.flashWrong); };
 
 beforeAll(async () => {
     const data = await loadEenvoudigData();
@@ -36,10 +41,12 @@ beforeAll(async () => {
     from = { choice, grade: 2, topicId: 'Hoofdrekenen · Optellen' };
 });
 beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'requestAnimationFrame', 'cancelAnimationFrame'] });
+    vi.setSystemTime(1_000_000);
     vi.spyOn(console, 'error').mockImplementation(() => { });
     localStorage.clear();
 });
-afterEach(() => { cleanup(); du().stop(); useSpelStore.getState().otherGame(); vi.useRealTimers(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); du().stop(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('Drakenrace: the tile', () => {
     test('a 1-2 player duel race: the levens row is the course, kasteel music, a blurb', () => {
@@ -49,176 +56,123 @@ describe('Drakenrace: the tile', () => {
         const course = s.meta.options!.find(o => o.id === 'levens')!;
         expect(course.label).toBe('Hoe ver vliegen?');
         expect(course.default).toBe(String(DRAAK.course.default));
-        expect(course.choices.map(c => c.value)).toEqual(DRAAK.course.choices.map(String));
-        expect(GAME_BLURB.drakenrace).toBeTruthy();
+        expect(course.choices.map(c => c.value)).toEqual(['10', '15', '20', '25', '30']);
+        expect(GAME_BLURB.drakenrace).toMatch(/hindernis/);
     });
 });
 
 describe('Drakenrace: the pure rule', () => {
-    test('every 3rd right answer in a row calls the lightning', () => {
-        expect([0, 1, 2, 3, 4, 5, 6, 9].map(callsLightning)).toEqual([false, false, false, true, false, false, true, true]);
+    test('a clear is +1; the 3rd in a row sends the storm to a rival that is level or ahead, marking its obstacle now', () => {
+        expect(DRAAK_RULE.right!(ctx(view(4, 1, 1), view(5)))).toEqual({ points: { left: 1 }, tag: 'clear' });
+        expect([1, 2, 3, 4, 6].map(callsStorm)).toEqual([false, false, true, false, true]);
+        // The rival has answered 7 sums: its obstacle now (or next) is index 7, the flag says 8.
+        expect(DRAAK_RULE.right!(ctx(view(5, 3, 3), view(5, 0, 5, 2)))).toEqual({ flags: { right: { storm: 8 } }, points: { left: 1 }, tag: 'storm' });
+        expect(stormFlagOf({ right: 5, wrong: 2 })).toBe(8);
+        // A rival behind is spared; a dragon behind gets the tailwind instead (+1 more).
+        expect(DRAAK_RULE.right!(ctx(view(6, 3, 3), view(5)))).toEqual({ points: { left: 1 }, tag: 'clear' });
+        expect(DRAAK_RULE.right!(ctx(view(3, 3, 3), view(5)))).toMatchObject({ points: { left: 2 }, flags: { right: { storm: 1 } } });
     });
 
-    test('the knock is 1, never below the start', () => {
-        expect([0, 1, 2, 7].map(knockOf)).toEqual([0, 1, 1, 1]);
+    test('a crash is nothing, unless it is the storm: then it knocks the dragon back 1, never below the start', () => {
+        // The crash hook sees the answer counted: 4 right + 4 wrong = the obstacle at index 7 was just hit.
+        expect(DRAAK_RULE.wrong!(ctx(view(4, 0, 4, 4), view(5)))).toEqual({ tag: 'crash' });
+        expect(DRAAK_RULE.wrong!(ctx(view(4, 0, 4, 4, 8), view(5)))).toEqual({ points: { left: -1 }, tag: 'stormhit' });
+        expect(DRAAK_RULE.timeout!(ctx(view(0, 0, 0, 1, 1), view(5)))).toEqual({ tag: 'stormhit' });
+        expect(isStorm(view(0, 0, 0, 0, 3), 2)).toBe(true);
+        expect(isStorm(view(0, 0, 0, 0, 3), 3)).toBe(false);
+        expect([0, 1, 5].map(knockOf)).toEqual([0, 1, 1]);
     });
 
-    test('a right answer is a wingbeat; the 3rd in a row also knocks the other dragon back; a wrong one only stalls', () => {
-        expect(DRAAK_RULE.right!(ctx(1))).toEqual({ points: { left: 1 }, tag: 'beat' });
-        expect(DRAAK_RULE.right!(ctx(3))).toEqual({ points: { left: 1, right: -1 }, tag: 'lightning' });
-        // The other dragon level at the start: the lightning still strikes, nobody goes below 0.
-        expect(DRAAK_RULE.right!({ ...ctx(6, 0), me: view(0, 6) })).toEqual({ points: { left: 1 }, tag: 'lightning' });
-        // The other dragon already behind: a catch-up storm, it is spared (a plain wingbeat).
-        expect(DRAAK_RULE.right!(ctx(3, 2))).toEqual({ points: { left: 1 }, tag: 'beat' });
-        expect(DRAAK_RULE.wrong!(ctx(0))).toEqual({ tag: 'stall' });
-        expect(DRAAK_RULE.timeout).toBeUndefined();
-    });
-
-    test('the first dragon at the course (the levens) wins; the place on the course is 0..1', () => {
-        const config = { lives: 10 } as DuelConfig;
-        expect(raceOver({ sides: { left: view(9), right: view(9) }, config })).toBeNull();
-        expect(raceOver({ sides: { left: view(10), right: view(9) }, config })).toBe('left');
-        expect(raceOver({ sides: { left: view(3), right: view(10) }, config })).toBe('right');
-        expect(progressOf({ points: 5 }, 10)).toBe(0.5);
-        expect(progressOf({ points: 12 }, 10)).toBe(1);
-        expect(progressOf({ points: 0 }, 0)).toBe(0);
+    test('six obstacles and the storm, each with its own words for a clear and a crash', () => {
+        expect(DRAAK_KINDS).toHaveLength(6);
+        for (const k of [...DRAAK_KINDS, 'storm' as const]) for (const o of ['clear', 'crash'] as const) expect(DRAAK_OBSTACLES[k][o].call.length, `${k} ${o}`).toBeGreaterThan(2);
+        expect(soundOfContact('storm', 'crash')).toBe('lightning');
     });
 });
 
 describe('Drakenrace: a match on the engine', () => {
-    const begin = (lives = 6) => {
-        vi.useFakeTimers();
-        du().begin({ meta: meta({ spelers: '2' }), from, rule: DRAAK_RULE, config: { players: 2, level: 'normaal', lives, bestOf: 3, stream: 'own', readyMs: 0 } });
-    };
-    const answer = (side: Side, right: boolean) => {
-        const q = du().sides[side].question!.answer;
-        du().answer(side, right ? q : `${q}9`);
-        vi.advanceTimersByTime(right ? DUEL_TIMING.flashRight : DUEL_TIMING.flashWrong);
-    };
+    const begin = (over: Partial<DuelConfig> = {}) => du().begin({ meta: skin().meta, from, rule: DRAAK_RULE, config: cfg(over) });
 
-    test('wingbeats move forward; the 3rd in a row knocks the other back; a stall costs nothing but the streak', () => {
-        begin();
-        answer('right', true);
-        answer('right', true);
-        expect(du().sides.right.points).toBe(2);
-        answer('left', true);
-        answer('left', true);
-        answer('left', false);
-        expect(du().sides.left).toMatchObject({ points: 2, streak: 0 });
-        // The other dragon pulls ahead (a stall first, so its own streak never calls the storm); level at the 3rd, it is struck.
-        answer('right', false);
-        answer('right', true);
-        answer('right', true);
-        expect(du().sides.right.points).toBe(4);
-        answer('left', true);
-        answer('left', true);
-        answer('left', true);
-        expect(du().sides.left.points).toBe(5);
-        expect(du().sides.right.points).toBe(3);
-    });
-
-    test('the lightning never knocks a dragon below the start', () => {
-        begin();
-        for (let i = 0; i < 3; i++) answer('left', true);
-        expect(du().sides.right.points).toBe(0);
+    test('clears move on, crashes do not; the storm lands in the rival\'s lane and a crash into it knocks back', () => {
+        begin({ lives: 20 });
+        right('right'); right('right');
+        right('left'); right('left');
+        // Left's 3rd in a row: right is level (2 = 2), so its obstacle now (index 2) becomes the storm.
+        right('left');
+        expect(du().sides.right.flags.storm).toBe(3);
         expect(du().sides.left.points).toBe(3);
+        wrong('right');
+        expect(du().sides.right.points).toBe(1);
+        // The next obstacle is a plain one again: a crash there costs nothing.
+        wrong('right');
+        expect(du().sides.right.points).toBe(1);
     });
 
-    test('the first at the course wins the round; the card waits for the gong', () => {
-        begin(4);
-        const wins: string[] = [];
-        const off = du().events.on('roundEnd', ({ winner }) => wins.push(String(winner)));
-        for (let i = 0; i < 3; i++) answer('left', true);
-        expect(du().phase).toBe('play');
-        du().answer('left', du().sides.left.question!.answer);
-        expect(du().phase).toBe('roundEnd');
-        expect(wins).toEqual(['left']);
-        vi.advanceTimersByTime(DRAAK.cardMs - 1);
-        expect(du().card).toBe(false);
-        vi.advanceTimersByTime(1);
-        expect(du().card).toBe(true);
-        off();
+    test('the first through the course wins the round', () => {
+        begin({ lives: 3 });
+        right('left'); right('left'); right('left');
+        expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'left' });
     });
 });
 
 describe('Drakenrace: the screen', () => {
-    test('2 spelers: two keypads and dragons, the lightning with ZAP!, the stall, the gong and the card', () => {
-        vi.useFakeTimers();
-        render(<Drakenrace meta={meta({ spelers: '2', levens: '10' })} from={from} onExit={() => { }} />);
-        tick(DUEL_TIMING.readyMs);
-        expect(screen.getByRole('group', { name: 'Cijfers Blauw' })).toBeTruthy();
-        expect(screen.getByRole('group', { name: 'Cijfers Oranje' })).toBeTruthy();
-        expect(document.querySelectorAll('.dk-dragon-at')).toHaveLength(2);
-        expect(document.querySelector('.duel-hearts')).toBeNull();
-        const right = (side: Side) => { act(() => du().answer(side, du().sides[side].question!.answer)); tick(DUEL_TIMING.flashRight); };
-        // Orange two ahead, so blue's storm finds it level (a dragon already behind is spared).
-        right('right');
-        right('right');
-        right('left');
-        right('left');
-        expect(screen.getAllByRole('img', { name: '2 van 3 op rij' }).length).toBeGreaterThan(0);
-        expect(document.querySelector('.dk-storm.is-charge.is-left')).not.toBeNull();
-        act(() => du().answer('left', du().sides.left.question!.answer));
-        expect(document.querySelector('.dk-bolt')).not.toBeNull();
-        expect(screen.getByText('ZAP!')).toBeTruthy();
-        expect(document.querySelector('.dk-dragon-at.is-right .dk-move.is-zap')).not.toBeNull();
-        expect(du().sides.right.points).toBe(1);
+    const ready = () => { tick(DUEL_TIMING.readyMs + 20); tick(40); };
+
+    test('2 spelers: the obstacles fly in, a clear with fire, a crash, the storm in the other lane, the gong and the card', () => {
+        const { container } = render(<Drakenrace meta={meta({ spelers: '2', levens: '10' })} from={from} onExit={() => { }} />);
+        // A short course: the levens row starts at 10.
+        act(() => useDuelStore.setState(s => ({ config: { ...s.config, lives: 5 } })));
+        ready();
+        expect(container.querySelectorAll('.dk-dragon-at')).toHaveLength(2);
+        expect(container.querySelectorAll('[data-kind]').length).toBe(2);
+        expect(container.querySelector('.crs-bar')).toBeTruthy();
+        act(() => du().answer('left', q('left').answer));
+        tick(COURSE.rushMs + 50);
+        expect(container.querySelector('.dk-dragon-at.is-left .dk-move[class*="is-clear-"]')).toBeTruthy();
         tick(DUEL_TIMING.flashRight);
-        act(() => du().answer('left', '99999'));
-        expect(document.querySelector('.dk-dragon-at.is-left .dk-move.is-stall')).not.toBeNull();
+        act(() => du().answer('right', String(Number(q('right').answer) + 1)));
+        tick(COURSE.rushMs + 50);
+        expect(container.querySelector('.dk-dragon-at.is-right .dk-move[class*="is-crash-"]')).toBeTruthy();
         tick(DUEL_TIMING.flashWrong);
-        while (du().phase === 'play') right('left');
-        expect(du().roundWinner).toBe('left');
-        tick(600);
-        expect(document.querySelector('.dk-dragon.is-ringing')).not.toBeNull();
-        expect(document.querySelector('.dk-gong.is-ring')).not.toBeNull();
+        // Two more in a row for left: right is behind (0 against 2), so it is spared the storm.
+        right('left'); right('left');
+        expect(container.querySelector('[data-kind="storm"]')).toBeNull();
+        // Left on to the finish: the gong comes, the dragon rings it, the card.
+        right('left');
+        act(() => du().answer('left', q('left').answer));
+        expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'left' });
+        tick(2400);
+        expect(container.querySelector('.dk-gong.is-ring')).toBeTruthy();
+        expect(container.querySelector('.dk-dragon-at.is-left.is-won')).toBeTruthy();
         tick(DRAAK.cardMs);
-        expect(screen.getByRole('button', { name: /Volgende ronde/ })).toBeTruthy();
-        expect(document.querySelector('.dk-card-art')).not.toBeNull();
+        const card = screen.getByRole('dialog');
+        expect(within(card).getByRole('heading', { name: 'Blauw wint ronde 1!' })).toBeTruthy();
+        expect(card.querySelector('.dk-card-art')).toBeTruthy();
+    });
+
+    test('the storm a dragon sends shows up in the other lane', () => {
+        const { container } = render(<Drakenrace meta={meta({ spelers: '2' })} from={from} onExit={() => { }} />);
+        ready();
+        right('right'); right('right');
+        right('left'); right('left');
+        act(() => du().answer('left', q('left').answer));
+        tick(60);
+        expect(du().sides.right.flags.storm).toBe(3);
+        expect(container.querySelector('[data-kind="storm"]')).toBeTruthy();
+        expect(screen.getByText('Storm!')).toBeTruthy();
     });
 
     test('1 speler: the computer flies the orange dragon', () => {
-        vi.useFakeTimers();
         render(<Drakenrace meta={meta({ spelers: '1' })} from={from} onExit={() => { }} />);
-        act(() => useDuelStore.setState(s => ({ config: { ...s.config, rng: () => 0.5 } })));
-        tick(DUEL_TIMING.readyMs);
-        expect(screen.getByRole('group', { name: 'Cijfers Jij' })).toBeTruthy();
-        expect(screen.queryByRole('group', { name: 'Cijfers Computer' })).toBeNull();
-        tick(15_000);
-        expect(du().sides.right.right + du().sides.right.wrong).toBeGreaterThan(0);
+        ready();
+        expect(du().config).toMatchObject({ players: 1, lives: 20, level: 'normaal' });
+        expect(screen.getAllByText('Computer').length).toBeGreaterThan(0);
     });
 });
 
 describe('Drakenrace: its sounds', () => {
     test('every sound is a recipe that plays under the shared on / off', () => {
-        class Param { setValueAtTime() { } exponentialRampToValueAtTime() { } value = 0; }
-        class Node { connect<T>(n: T) { return n; } }
-        let made = 0;
-        class Ctx {
-            state = 'running'; currentTime = 0; sampleRate = 8000; destination = new Node();
-            resume() { return Promise.resolve(); }
-            createGain() { return Object.assign(new Node(), { gain: new Param() }); }
-            createBiquadFilter() { return Object.assign(new Node(), { type: '', frequency: new Param(), Q: new Param() }); }
-            createOscillator() { made++; return Object.assign(new Node(), { type: '', frequency: new Param(), start() { }, stop() { } }); }
-            createBuffer(_c: number, len: number, rate: number) { const d = new Float32Array(len); return { sampleRate: rate, getChannelData: () => d }; }
-            createBufferSource() { made++; return Object.assign(new Node(), { buffer: null, start() { }, stop() { } }); }
-        }
-        const g = globalThis as unknown as { AudioContext?: unknown };
-        g.AudioContext = Ctx;
-        localStorage.setItem(SOUND_KEY, '0');
-        resetSoundForTests();
-        setSoundOn(true);
-        expect(DRAAK_SOUNDS).toEqual(expect.arrayContaining(['beat', 'charge', 'lightning', 'zapped', 'stall', 'gong', 'firework']));
-        for (const s of DRAAK_SOUNDS) {
-            const before = made;
-            playDraak(s);
-            expect(made, s).toBeGreaterThan(before);
-        }
-        setSoundOn(false);
-        const before = made;
-        playDraak('gong');
-        expect(made).toBe(before);
-        delete g.AudioContext;
-        resetSoundForTests();
+        expect(DRAAK_SOUNDS).toEqual(expect.arrayContaining(['beat', 'stall', 'gong', 'firework', 'wind', 'poof', 'bonk', 'tweet', 'boing']));
+        expectRecipesPlay(DRAAK_SOUNDS, playDraak);
     });
 });

@@ -1,4 +1,5 @@
 import { noise, playRecipe, tone, type Recipe } from '../../sound';
+import type { DraakKind } from './rule';
 
 // Drakenrace's own sounds (Web Audio, under the shared on / off and soft master): soft wingbeats, a cartoon
 // crackle and zap (never a harsh thunderclap), a gong with a long shimmer, fireworks. The noise buffer is 0.5 s.
@@ -15,6 +16,30 @@ const RECIPES = {
         noise(ac, d, t, { dur: 0.22, vol: 0.32, filter: 'lowpass', f0: 900, f1: 180 });
         noise(ac, d, t, { at: 0.06, dur: 0.3, vol: 0.12, filter: 'bandpass', f0: 500, f1: 1600, q: 0.8 });
         tone(ac, d, t, { type: 'triangle', f0: 150, f1: 90, dur: 0.18, vol: 0.18 });
+    },
+    // A tailwind (a catch-up): a long soft whoosh.
+    wind: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.5, vol: 0.22, filter: 'bandpass', f0: 300, f1: 1800, q: 0.7 });
+        noise(ac, d, t, { at: 0.35, dur: 0.5, vol: 0.16, filter: 'bandpass', f0: 1800, f1: 500, q: 0.7 });
+    },
+    // A cloud blown apart: a soft round poof.
+    poof: (ac, d, t) => {
+        noise(ac, d, t, { dur: 0.3, vol: 0.3, filter: 'lowpass', f0: 1400, f1: 200 });
+        tone(ac, d, t, { f0: 420, f1: 820, dur: 0.18, vol: 0.06 });
+    },
+    // Into a wall or an island: a hollow bonk.
+    bonk: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 240, f1: 120, dur: 0.22, vol: 0.3 });
+        noise(ac, d, t, { dur: 0.08, vol: 0.2, filter: 'lowpass', f0: 1200 });
+        tone(ac, d, t, { at: 0.18, f0: 900, f1: 600, dur: 0.3, vol: 0.05, wobble: [10, 30] });
+    },
+    // The birds: a few chirps.
+    tweet: (ac, d, t) => {
+        [0, 0.1, 0.24, 0.34].forEach((at, i) => tone(ac, d, t, { at, f0: 2200 + (i % 2) * 400, f1: 3000, dur: 0.07, vol: 0.05 }));
+    },
+    // Off the balloon: a rubbery boing.
+    boing: (ac, d, t) => {
+        tone(ac, d, t, { f0: 180, f1: 460, dur: 0.5, vol: 0.18, wobble: [14, 40] });
     },
     // The cloud charges (2 in a row): a little crackle.
     charge: (ac, d, t) => {
@@ -59,3 +84,17 @@ export type DraakSound = keyof typeof RECIPES;
 export const DRAAK_SOUNDS = Object.keys(RECIPES) as DraakSound[];
 
 export const playDraak = (name: DraakSound) => playRecipe(RECIPES[name]);
+
+// Each obstacle's own sound on top of the wingbeat (a clear) or the "wee-oo" (a crash).
+const CONTACT: Record<DraakKind, { clear: DraakSound | null; crash: DraakSound | null }> = {
+    cloud: { clear: 'poof', crash: 'zapped' },
+    storm: { clear: 'poof', crash: 'lightning' },
+    tower: { clear: null, crash: 'bonk' },
+    birds: { clear: 'tweet', crash: 'tweet' },
+    island: { clear: null, crash: 'bonk' },
+    gate: { clear: 'charge', crash: 'zapped' },
+    balloon: { clear: null, crash: 'boing' },
+};
+
+/** The obstacle's own sound at a contact (null = only the wingbeat or the "wee-oo"). */
+export const soundOfContact = (kind: DraakKind, outcome: 'clear' | 'crash') => CONTACT[kind][outcome];

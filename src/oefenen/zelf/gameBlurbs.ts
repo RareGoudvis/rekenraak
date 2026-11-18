@@ -17,7 +17,7 @@ export const GAME_BLURB: Record<string, string> = {
     robotduel: 'Twee robots in de ring. Elk juist antwoord is een stoot. Drie op rij: supermove!',
     tovenaarsduel: 'Elk juist antwoord is een toverspreuk. Meer op rij: ijs, vuur, bliksem, schild!',
     taartgevecht: 'Wie eerst juist antwoordt, gooit een taart. Splat! Alleen of met z\'n tweeën.',
-    monstertrucks: 'Geef gas met juiste antwoorden. Drie op rij: spring over de auto\'s!',
+    monstertrucks: 'Elke som is een hindernis: juist en je truck springt erover. Wie is er eerst?',
     steekspel: 'Galoppeer naar de andere ridder. Drie juist op rij: lans omlaag!',
     hartjes: 'Draai de hartjes om en zoek een som met haar antwoord.',
     honingraat: 'Zoek alle sommen die het getal maken. Pas op voor de wesp!',
@@ -34,8 +34,8 @@ export const GAME_BLURB: Record<string, string> = {
     slalom: 'Ski door de poort met het juiste antwoord. Hoe sneller, hoe verder!',
     grijp: 'Grijp de knuffel met het juiste antwoord. Hoeveel prijzen win jij?',
     aquarium: 'Vul het aquarium met vissen en planten. Pas op voor de kat!',
-    wildwaterrace: 'Peddel je vlot de wilde rivier af. Drie juist op rij: surf op een golf!',
-    drakenrace: 'Vlieg met je draak naar de gong. Drie juist op rij: bliksem voor de ander!',
+    wildwaterrace: 'Peddel langs rotsen en een krokodil: elke som is een hindernis op de rivier.',
+    drakenrace: 'Vlieg langs torens en vogels: elke som is een hindernis. Drie op rij: storm!',
 };
 
 /** The game's line; an unknown id falls back to its name. */

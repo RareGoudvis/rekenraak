@@ -134,10 +134,23 @@ wrong: ({ side }) => ({ damage: { [side]: 1 } }),
 roundOver: (v, timeUp) => /* 25 points wins, else defaultRoundOver(v, timeUp) */,
 ```
 
-**A race** (Drakenrace, Wildwaterrace, Monstertrucks, Steekspel) has no lives: reuse the levens row as the course with
+**A race** (Steekspel) has no lives: reuse the levens row as the course with
 `duelOptions({ lives: { label: 'Hoe ver …?', choices, default } })`, move with `points`, and end the round in `roundOver`
 when a side's points reach `config.lives`. Streak effects read `streak` from the ctx (every 3rd in a row); keep a
-knock-back mild (Drakenrace only strikes a side that is level or ahead) or a faster bot runs away with Normaal.
+knock-back mild or a faster bot runs away with Normaal.
+
+**An obstacle course** (Monstertrucks, Drakenrace, Wildwaterrace) builds on `../course/`: `courseRule(spec)` (a clear
+= +1 tag `clear`, a wrong answer or a time-out = a crash tag `crash`, the first through `config.lives` obstacles wins;
+`spec.catchUp` = +1 more on every 3rd in a row of a side behind, tag `turbo`; `spec.right` / `spec.crash` add a game's
+own, as Drakenrace's storm), `courseKind(kinds, round, index)` (the varied course both lanes race) and
+`useCourse({ w, holdOf, onContact, onFinish })`: a frame loop that steps each lane from the store (`stepLane`, pure:
+the obstacle appears past the band's edge with each new sum and reaches the vehicle as the sum's clock runs out;
+Makkelijk rolls up and waits in front of it; an answer rushes the vehicle in, `COURSE.rushMs` at most, and the contact
+is the clear or the crash; a crash stands still `COURSE.stopMs`; the round's winner drives on to its finish). It moves
+the groups you bind (`vehicleRef`, `obstacleRef`, `finishRef`, `groundRef`, `layerRef`, `wheelRef`, `motionRef`) and
+hands React only the moments (`obstacles`, `vehicles[side].outcome / n / go / waiting`, `finish`). `CourseBar` is the
+race map at the top of the band, `useBandWidth(h)` the scene's width from the band's shape. Screen tests fake
+`requestAnimationFrame` with the timers (`spelen.monstertrucks.test.tsx`).
 
 A rule may read your component's refs (Kikkers: which bug is nearest) because hooks run synchronously inside
 `answer()`. For things that happen without an answer (a bug flies off, a hazard), call

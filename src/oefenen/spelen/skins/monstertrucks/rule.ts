@@ -1,46 +1,40 @@
-import type { DuelConfig, DuelRoundView, DuelRule, Side } from '../../duel/types';
+import { COURSE, courseRule } from '../../course/course';
 
-// Monstertrucks on the duel engine: a race in two lanes. A right answer = gas (+1 towards the finish); every 3rd
-// right in a row is a ramp jump over a row of cars the truck flattens (+2 on top). A wrong answer or a time-out is a
-// wheelie: no points, the streak breaks (the engine resets it). The first truck at the finish wins the round.
-// The race does not use lives: the levens row is the race's length ("Hoe ver rijden?"), so config.lives = the finish.
+// Monstertrucks on the shared obstacle course (course/course.ts): two trucks race through the arena, every sum is
+// the next obstacle rolling at them. A right answer clears it (a jump, a loop, a drift: +1), a wrong answer or the
+// obstacle arriving first is a funny crash (no point). The first truck through the course wins the round; the
+// levens row is the course's length ("Hoe ver rijden?"). Every 3rd right in a row: turbo flames (only a look).
 
 export const TRUCK = {
-    // The finish in steps (the levens row): owner brief 20, about a minute at Normaal against the computer.
-    finish: { label: 'Hoe ver rijden?', choices: [10, 15, 20, 25, 30] as readonly number[], default: 20 },
-    // Every this many right in a row: a ramp jump (the ramp shows one answer before, so the pupil sees it coming).
-    jumpEvery: 3,
-    // The jump's bonus on top of the gas: the flattened cars are worth 2 steps.
-    jumpBonus: 2,
-    // The winner's donut and the confetti before the scoreboard card.
-    cardMs: 3400,
+    // The course in obstacles (the levens row).
+    finish: { label: 'Hoe ver rijden?', choices: COURSE.lengths.choices, default: COURSE.lengths.default },
+    // Every this many right in a row the exhausts flame (a show, no points).
+    turboEvery: 3,
+    // The winner's burst through the finish banner, the donut and the confetti before the scoreboard card.
+    cardMs: 3600,
 } as const;
 
-/** The race's finish: the levens pick (the Hoe ver rijden? row). */
-export const finishOf = (config: Pick<DuelConfig, 'lives'>) => config.lives;
+// The arena's obstacles; every kind shows up once in every six (course.ts courseKind).
+export const TRUCK_KINDS = ['cars', 'mud', 'tyres', 'crusher', 'loop', 'oil'] as const;
+export type TruckKind = typeof TRUCK_KINDS[number];
 
-/** This right answer (streak counted) is a ramp jump. */
-export const jumpsNow = (streak: number) => streak > 0 && streak % TRUCK.jumpEvery === 0;
-
-/** The ramp waits in front of the truck: the next right answer jumps. */
-export const rampAhead = (streak: number) => streak % TRUCK.jumpEvery === TRUCK.jumpEvery - 1;
-
-/** How far along a truck is, 0..1. */
-export const progressOf = (points: number, finish: number) => Math.max(0, Math.min(1, points / Math.max(1, finish)));
-
-/** The first truck at the finish wins; nothing else ends a race (it has no round clock). */
-export function raceRoundOver(view: DuelRoundView): Side | 'draw' | null {
-    const finish = finishOf(view.config);
-    const { left, right } = view.sides;
-    const l = left.points >= finish, r = right.points >= finish;
-    if (l && r) return left.points === right.points ? 'draw' : left.points > right.points ? 'left' : 'right';
-    return l ? 'left' : r ? 'right' : null;
-}
-
-export const TRUCK_RULE: DuelRule = {
-    right: ({ side, streak }) => (jumpsNow(streak)
-        ? { points: { [side]: 1 + TRUCK.jumpBonus }, tag: 'jump' }
-        : { points: { [side]: 1 }, tag: 'gas' }),
-    roundOver: view => raceRoundOver(view),
-    cardMs: TRUCK.cardMs,
+// What the truck does at each obstacle (its CSS move) and the comic word that pops up, for a clear and a crash.
+export const TRUCK_OBSTACLES: Record<TruckKind, { clear: { move: string; call: string }; crash: { move: string; call: string } }> = {
+    cars: { clear: { move: 'jump', call: 'Sprong!' }, crash: { move: 'flip', call: 'Boem!' } },
+    mud: { clear: { move: 'skim', call: 'Erdoor!' }, crash: { move: 'stuck', call: 'Vast!' } },
+    tyres: { clear: { move: 'hop', call: 'Hop!' }, crash: { move: 'bounce', call: 'Boing!' } },
+    crusher: { clear: { move: 'dash', call: 'Net op tijd!' }, crash: { move: 'squash', call: 'Plof!' } },
+    loop: { clear: { move: 'loop', call: 'Looping!' }, crash: { move: 'slide', call: 'Oei oei!' } },
+    oil: { clear: { move: 'drift', call: 'Gedrift!' }, crash: { move: 'spin', call: 'Slip!' } },
 };
+
+// Kinds that draw a part over the truck (the crusher's press, the mud's splash).
+export const TRUCK_FRONT: readonly TruckKind[] = ['crusher', 'mud'];
+
+/** The race's finish: the levens pick (the Hoe ver rijden? row). */
+export const finishOf = (config: { lives: number }) => config.lives;
+
+/** This right answer (streak counted) lights the turbo. */
+export const turboNow = (streak: number) => streak > 0 && streak % TRUCK.turboEvery === 0;
+
+export const TRUCK_RULE = courseRule({ catchUp: { every: TRUCK.turboEvery, bonus: 1 }, cardMs: TRUCK.cardMs });

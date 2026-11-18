@@ -215,8 +215,8 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Screen: lazy(() => import('./tovenaarsduel/Tovenaarsduel')),
     },
     {
-        // A race duel (DUEL.md): gas = +1, 3 in a row = a ramp jump over junk cars (+3 in all), a mistake = a wheelie
-        // (monstertrucks/rule.ts). No lives: the levens row is the race's length. The scene voices its moments.
+        // An obstacle-course duel (DUEL.md, course/): every sum is the next obstacle, a clear = +1, a crash nothing, a catch-up
+        // turbo (monstertrucks/rule.ts). No lives: the levens row is the course's length. The scene voices its moments.
         meta: {
             music: 'race', id: 'monstertrucks', label: 'Monstertrucks', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
             options: duelOptions({ lives: TRUCK.finish }),
@@ -450,9 +450,9 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./aquarium/Aquarium').then(m => ({ default: m.AquariumEnding }))),
     },
     {
-        // A duel race (DUEL.md): own sums each; a right answer is a wingbeat (+1), every 3rd in a row the storm cloud strikes
-        // the other dragon (back 1, never below 0), a wrong answer a stall; levens = the course (drakenrace/rule.ts). The
-        // first at the gong wins the round. The scene voices its moments (drakenrace/sounds.ts).
+        // An obstacle-course duel (DUEL.md, course/): every sum is the next obstacle, a clear = +1, a crash nothing; 3 in a row
+        // send the storm into the other lane (a crash into it: back 1), a catch-up tailwind; levens = the course
+        // (drakenrace/rule.ts). The first at the gong wins the round. The scene voices its moments (drakenrace/sounds.ts).
         meta: {
             id: 'drakenrace', music: 'kasteel', label: 'Drakenrace', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
             options: duelOptions({ lives: { label: 'Hoe ver vliegen?', choices: DRAAK.course.choices, default: DRAAK.course.default } }),
@@ -462,9 +462,9 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Screen: lazy(() => import('./drakenrace/Drakenrace')),
     },
     {
-        // A duel race (DUEL.md) on the zomer shelf: own sums each; a right answer is a paddle stroke (+1), every 3rd in a
-        // row a surfed wave (+2), a mistake lets the current push the raft back (-1, never below 0) and spin it; levens =
-        // the course (wildwaterrace/rule.ts). The first raft over the waterfall wins. The scene voices its moments.
+        // An obstacle-course duel (DUEL.md, course/) on the zomer shelf: every sum is the next obstacle on the river, a clear
+        // = +1, a crash nothing, a catch-up wave; levens = the course (wildwaterrace/rule.ts). The first raft over the
+        // waterfall wins. The scene voices its moments.
         meta: {
             id: 'wildwaterrace', music: 'rivier', label: 'Wildwaterrace', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER, season: 'zomer',
             options: duelOptions({ lives: { label: 'Hoe ver varen?', choices: WILD.course.choices, default: WILD.course.default } }),
