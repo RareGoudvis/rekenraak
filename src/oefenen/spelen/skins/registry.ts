@@ -18,6 +18,8 @@ import { Storefront } from '@phosphor-icons/react';
 import { FireTruck } from '@phosphor-icons/react';
 import { PersonSimpleSki } from '@phosphor-icons/react';
 import { Flashlight as FlashlightIcon } from '@phosphor-icons/react';
+import { Joystick } from '@phosphor-icons/react';
+import { GRIJP } from './grijp/claw';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -364,6 +366,19 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: PersonSimpleSki,
         Component: lazy(() => import('./slalom/Slalom')),
         Ending: lazy(() => import('./slalom/Slalom').then(m => ({ default: m.SlalomEnding }))),
+    },
+    {
+        // A claw machine in one of five arcades (grijp/machines.ts, never the same twice in a row): 15 coins, the four
+        // options on the tags of four prizes. The claw grabs the tapped one before the answer counts (grijp/claw.ts):
+        // right = onto the Gewonnen shelf, wrong = it slips back onto the heap. Untimed. Five characters fit a tag
+        // (measured 2026-11-17: "89 991" at 1024 × 768); tags hold clock faces and breuk pictures. The scene voices itself.
+        meta: {
+            id: 'grijp', music: 'gek', label: 'Grijpmachine', input: 'choice', timed: false, round: { questions: GRIJP.questions }, accepts: TAP_PICTURES,
+            sounds: { correct: null, wrong: null },
+        },
+        icon: Joystick,
+        Component: lazy(() => import('./grijp/Grijpmachine')),
+        Ending: lazy(() => import('./grijp/Grijpmachine').then(m => ({ default: m.GrijpEnding }))),
     },
 ];
 
