@@ -28,6 +28,10 @@ import { Truck } from '@phosphor-icons/react';
 import { TRUCK } from './monstertrucks/rule';
 import { Horse } from '@phosphor-icons/react';
 import { JOUST } from './steekspel/rule';
+import { CloudLightning } from '@phosphor-icons/react';
+import { DRAAK } from './drakenrace/rule';
+import { Waves } from '@phosphor-icons/react';
+import { WILD } from './wildwaterrace/rule';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -441,6 +445,30 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         icon: FishSimple,
         Component: lazy(() => import('./aquarium/Aquarium')),
         Ending: lazy(() => import('./aquarium/Aquarium').then(m => ({ default: m.AquariumEnding }))),
+    },
+    {
+        // A duel race (DUEL.md): own sums each; a right answer is a wingbeat (+1), every 3rd in a row the storm cloud strikes
+        // the other dragon (back 1, never below 0), a wrong answer a stall; levens = the course (drakenrace/rule.ts). The
+        // first at the gong wins the round. The scene voices its moments (drakenrace/sounds.ts).
+        meta: {
+            id: 'drakenrace', music: 'kasteel', label: 'Drakenrace', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions({ lives: { label: 'Hoe ver vliegen?', choices: DRAAK.course.choices, default: DRAAK.course.default } }),
+            sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: CloudLightning,
+        Screen: lazy(() => import('./drakenrace/Drakenrace')),
+    },
+    {
+        // A duel race (DUEL.md) on the zomer shelf: own sums each; a right answer is a paddle stroke (+1), every 3rd in a
+        // row a surfed wave (+2), a mistake lets the current push the raft back (-1, never below 0) and spin it; levens =
+        // the course (wildwaterrace/rule.ts). The first raft over the waterfall wins. The scene voices its moments.
+        meta: {
+            id: 'wildwaterrace', music: 'rivier', label: 'Wildwaterrace', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER, season: 'zomer',
+            options: duelOptions({ lives: { label: 'Hoe ver varen?', choices: WILD.course.choices, default: WILD.course.default } }),
+            sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: Waves,
+        Screen: lazy(() => import('./wildwaterrace/Wildwaterrace')),
     },
 ];
 

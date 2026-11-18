@@ -1,0 +1,235 @@
+/* Drakenrace: two dragons over a sunset sky (art.tsx). Flat fills under the --spel-ink outline, theme tokens mixed
+   into sunset colours. The backdrop strips drift on their own and slide on with the leader (--dk-lead, 0..1); every
+   loop and burst is CSS, transforms and opacity only. The screen around it is the shared duel screen (duel.css). */
+.dk-app {
+  --dk-sky-top: color-mix(in srgb, var(--accent-meetkunde) 62%, var(--text-main));
+  --dk-sky-mid: color-mix(in srgb, var(--kid-tint-ring-6) 70%, var(--accent-meetkunde));
+  --dk-sky-low: color-mix(in srgb, var(--accent-vraagstukken) 85%, var(--kid-tint-ring-6));
+  --dk-sky-glow: color-mix(in srgb, var(--mab-e) 70%, var(--kiosk-paper));
+  --dk-sun: color-mix(in srgb, var(--mab-e) 75%, var(--kiosk-paper));
+  --dk-mount: color-mix(in srgb, var(--accent-meetkunde) 50%, var(--kid-tint-ring-6));
+  --dk-mount-snow: color-mix(in srgb, var(--kid-tint-6) 60%, var(--kiosk-paper));
+  --dk-cloud: color-mix(in srgb, var(--kid-tint-6) 70%, var(--kiosk-paper));
+  --dk-cloud-near: color-mix(in srgb, var(--kid-tint-6) 35%, var(--kiosk-paper));
+  --dk-cloudbank: color-mix(in srgb, var(--kid-tint-6) 55%, var(--kiosk-paper));
+  --dk-grass: color-mix(in srgb, var(--kid-hill) 80%, var(--accent-vraagstukken));
+  --dk-rock: color-mix(in srgb, var(--accent-vraagstukken) 30%, var(--text-muted));
+  --dk-rock-dark: color-mix(in srgb, var(--dk-rock) 70%, var(--text-main));
+  --dk-wood: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--text-main));
+  --dk-roof: color-mix(in srgb, var(--accent-getallenkennis) 85%, var(--text-main));
+  --dk-gold: color-mix(in srgb, var(--mab-e) 78%, var(--accent-vraagstukken));
+  --dk-gold-dark: color-mix(in srgb, var(--dk-gold) 70%, var(--text-main));
+  --dk-storm: color-mix(in srgb, color-mix(in srgb, var(--accent-meetkunde) 35%, var(--accent-bewerkingen)) 42%, var(--text-main));
+  --dk-storm-dark: color-mix(in srgb, var(--dk-storm) 70%, var(--text-main));
+  --dk-zap: var(--mab-e);
+  --dk-belly: color-mix(in srgb, var(--mab-e) 45%, var(--kiosk-paper));
+  --dk-horn: color-mix(in srgb, var(--mab-e) 25%, var(--kiosk-paper));
+  --spel-sky: var(--dk-sky-top);
+  --duel-scene-h: 52%;
+}
+.dk-app .duel-half { background: color-mix(in srgb, var(--duel-team) 20%, var(--bg-surface)); }
+.dk-app .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 40%, var(--bg-surface)); }
+
+.dk-scene { position: absolute; inset: 0; overflow: hidden; }
+.dk-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.dk-svg * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── The sunset backdrop ──────────────────────────────────────────────────── */
+.dk-back { position: absolute; inset: 0; }
+.dk-sky {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, var(--dk-sky-top) 0%, var(--dk-sky-mid) 45%, var(--dk-sky-low) 78%, var(--dk-sky-glow) 100%);
+}
+.dk-sun { position: absolute; left: 50%; bottom: 2%; height: 66%; aspect-ratio: 1; translate: -50% 0; }
+.dk-sun-disc {
+  position: absolute; inset: 22%; border-radius: 50%;
+  background: var(--dk-sun); box-shadow: 0 0 0 10px color-mix(in srgb, var(--dk-sun) 40%, transparent);
+  animation: dk-sun-pulse 4s ease-in-out infinite alternate;
+}
+.dk-sun-rays {
+  position: absolute; inset: -30%; border-radius: 50%; opacity: .35;
+  background: repeating-conic-gradient(from 0deg, var(--dk-sun) 0deg 8deg, transparent 8deg 22deg);
+  mask: radial-gradient(circle, black 30%, transparent 70%);
+  animation: dk-spin 60s linear infinite;
+}
+@keyframes dk-sun-pulse { from { scale: 1; } to { scale: 1.05; } }
+@keyframes dk-spin { to { rotate: 360deg; } }
+
+/* A strip: 4 identical tiles. It drifts by one tile on its own and slides on with the leader (translate). */
+.dk-strip { position: absolute; left: 0; bottom: 0; display: block; width: auto; transition: translate 1.1s cubic-bezier(.3, .8, .4, 1); }
+.dk-strip.is-far { height: 64%; translate: calc(var(--dk-lead) * -5%) 0; animation: dk-drift 220s linear infinite; }
+.dk-strip.is-mid { height: 92%; bottom: -6%; translate: calc(var(--dk-lead) * -14%) 0; animation: dk-drift 90s linear infinite; }
+.dk-strip.is-near { height: 24%; bottom: -3%; translate: calc(var(--dk-lead) * -26%) 0; animation: dk-drift 30s linear infinite; }
+@keyframes dk-drift { to { transform: translateX(-25%); } }
+.dk-scene.is-ready .dk-strip { transition: none; }
+
+.dk-mount { fill: var(--dk-mount); }
+.dk-mount-snow { fill: var(--dk-mount-snow); }
+.dk-cloudbank { fill: var(--dk-cloudbank); }
+.dk-rock { fill: var(--dk-rock); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-rock-line { fill: none; stroke: var(--dk-rock-dark); stroke-width: 3px; }
+.dk-grass { fill: var(--dk-grass); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-trunk { fill: var(--dk-wood); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-leaf { fill: color-mix(in srgb, var(--kid-hill) 70%, var(--accent-metendrekenen)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-flower { fill: var(--kid-tint-6); stroke: var(--spel-ink); stroke-width: 2px; }
+.dk-fall { fill: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--kiosk-paper)); opacity: .85; }
+.dk-strip.is-mid { opacity: .92; }
+
+/* ── The dragons ──────────────────────────────────────────────────────────── */
+.dk-dragon-at.is-left { --dk-team: var(--duel-left); }
+.dk-dragon-at.is-right { --dk-team: var(--duel-right); }
+.dk-dragon-at { transition: transform 750ms cubic-bezier(.34, 1.25, .5, 1); }
+.dk-scene.is-ready .dk-dragon-at { transition: none; }
+.dk-body, .dk-skin, .dk-tail-body, .dk-leg { fill: var(--dk-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.dk-leg { fill: color-mix(in srgb, var(--dk-team) 80%, var(--text-main)); }
+.dk-belly { fill: var(--dk-belly); }
+.dk-belly-band { fill: var(--dk-belly); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-spike, .dk-tail-tip { fill: var(--dk-belly); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-horn { fill: var(--dk-horn); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-nostril { fill: var(--spel-ink); }
+.dk-blush { fill: var(--kid-tint-6); opacity: .9; }
+.dk-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-pupil { fill: var(--spel-ink); }
+.dk-glint { fill: var(--kiosk-paper); }
+.dk-brow, .dk-smile, .dk-eye-shut, .dk-eye-spiral { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-smile[d$="Z"] { fill: var(--kid-tint-ring-6); }
+.dk-mouth-o { fill: var(--spel-ink); }
+.dk-tooth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.dk-wing-skin { fill: color-mix(in srgb, var(--dk-team) 50%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.dk-wing-skin.is-far { fill: color-mix(in srgb, var(--dk-team) 75%, var(--text-main)); }
+.dk-wing-bone { fill: none; stroke: color-mix(in srgb, var(--dk-team) 80%, var(--text-main)); stroke-width: 2.5px; }
+
+/* Always flying: the wings beat, the body bobs, the tail sways. */
+.dk-wing { animation: dk-flap 640ms ease-in-out infinite; }
+.dk-wing.is-far { animation-delay: -70ms; }
+@keyframes dk-flap { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(-.45) rotate(-10deg); } }
+.dk-bob { animation: dk-bob 1.3s ease-in-out infinite alternate; }
+.dk-dragon-at.is-right .dk-bob { animation-delay: -.6s; }
+@keyframes dk-bob { from { translate: 0 -5px; } to { translate: 0 5px; } }
+.dk-tail { animation: dk-tail 1.6s ease-in-out infinite alternate; }
+@keyframes dk-tail { from { rotate: -6deg; } to { rotate: 8deg; } }
+
+/* A wingbeat: a lunge forward on fast wings, with wind lines behind. */
+.dk-move.is-beat { animation: dk-lunge 600ms ease-out; }
+.dk-move.is-beat .dk-wing { animation-duration: 200ms; }
+@keyframes dk-lunge { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 16px -8px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.dk-wind path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: 0; animation: dk-wind 600ms ease-out; }
+.dk-wind path:nth-child(2) { animation-delay: 60ms; }
+.dk-wind path:nth-child(3) { animation-delay: 120ms; }
+@keyframes dk-wind { 0% { opacity: .9; translate: 0 0; } 100% { opacity: 0; translate: -40px 0; } }
+
+/* A stall: the dragon tumbles round once and dips. */
+.dk-move.is-stall { animation: dk-stall 700ms ease-in-out; }
+.dk-move.is-stall .dk-wing { animation-play-state: paused; }
+@keyframes dk-stall { 0% { rotate: 0deg; translate: 0 0; } 50% { rotate: 200deg; translate: -6px 16px; } 100% { rotate: 360deg; translate: 0 0; } }
+
+/* Struck by the lightning: a fizzy shake and a flicker. */
+.dk-move.is-zap { animation: dk-zap 700ms ease-out; }
+.dk-move.is-zap .dk-dragon-art { animation: dk-flicker 420ms steps(1); }
+@keyframes dk-zap { 0% { translate: 0 0; rotate: 0deg; } 15% { translate: -10px 4px; rotate: -14deg; } 30% { translate: 8px -3px; rotate: 10deg; } 45% { translate: -6px 2px; rotate: -8deg; } 70% { translate: 3px 0; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dk-flicker { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: .45; } }
+.dk-daze-spin { animation: dk-spin 900ms linear infinite; }
+.dk-daze-star { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 2px; }
+
+/* The finish: the winner bonks the gong, then keeps a happy bounce. */
+.dk-dragon.is-ringing { animation: dk-ring 900ms ease-in-out both; }
+@keyframes dk-ring {
+  0% { translate: 0 0; }
+  42% { translate: 64px var(--dk-ring-dy); rotate: 8deg; }
+  58% { translate: 34px calc(var(--dk-ring-dy) * .6); rotate: -6deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+.dk-dragon.is-ringing .dk-bob { animation: dk-happy 520ms ease-in-out 900ms infinite alternate; }
+@keyframes dk-happy { from { translate: 0 0; } to { translate: 0 -14px; } }
+
+/* The streak pips under each dragon: the third one calls the lightning. */
+.dk-pip { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; opacity: .4; }
+.dk-pip.is-on { opacity: 1; }
+.dk-pip.is-on { fill: var(--dk-zap); animation: dk-pip-on 380ms var(--ease-spring, ease-out); }
+@keyframes dk-pip-on { from { scale: 1.8; } to { scale: 1; } }
+
+/* ── The storm cloud ──────────────────────────────────────────────────────── */
+.dk-storm-rim > * { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 7px; }
+.dk-storm-body > * { fill: var(--dk-storm); }
+.dk-storm-body { filter: none; }
+.dk-storm-shade ellipse { fill: var(--dk-storm-dark); opacity: .6; }
+.dk-storm { animation: dk-storm-float 5s ease-in-out infinite alternate; }
+@keyframes dk-storm-float { from { translate: -10px 0; } to { translate: 10px 3px; } }
+.dk-storm-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-storm-glint { fill: var(--spel-ink); }
+.dk-storm-lid, .dk-storm-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-storm-z { font: 900 22px var(--kid-font); fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; paint-order: stroke; animation: dk-z 2.4s ease-in-out infinite; }
+@keyframes dk-z { 0% { opacity: 0; translate: 0 6px; } 30%, 70% { opacity: 1; } 100% { opacity: 0; translate: 10px -14px; } }
+.dk-crackle path { fill: none; stroke: var(--dk-zap); stroke-width: 4px; opacity: 0; animation: dk-crackle 3.2s steps(1) infinite; }
+.dk-crackle path:nth-child(2) { animation-delay: -1.1s; }
+.dk-crackle path:nth-child(3) { animation-delay: -2.3s; }
+@keyframes dk-crackle { 0%, 86%, 100% { opacity: 0; } 88%, 94% { opacity: 1; } 91% { opacity: .2; } }
+/* Charging (a dragon at 2 in a row): the cloud glows in that dragon's colour, rumbles and crackles fast. */
+.dk-storm.is-left { --dk-glow: var(--duel-left); }
+.dk-storm.is-right { --dk-glow: var(--duel-right); }
+.dk-storm-halo > * { fill: none; stroke: var(--dk-glow, transparent); stroke-width: 22px; opacity: 0; }
+.dk-storm.is-charge .dk-storm-halo > * { animation: dk-halo 700ms ease-in-out infinite alternate; }
+@keyframes dk-halo { from { opacity: .35; } to { opacity: .9; } }
+.dk-storm.is-charge .dk-storm-puff, .dk-storm.is-charge > g { animation: dk-rumble 180ms linear infinite; }
+.dk-storm.is-charge .dk-crackle path { animation-duration: 700ms; }
+@keyframes dk-rumble { 0%, 100% { translate: 0 0; } 25% { translate: -1.5px .5px; } 75% { translate: 1.5px -.5px; } }
+.dk-storm-puff { animation: dk-storm-puff 500ms var(--ease-spring, ease-out); }
+@keyframes dk-storm-puff { 0% { scale: 1; } 30% { scale: 1.18; } 100% { scale: 1; } }
+
+/* The bolt: drawn at once, it flickers and fades. */
+.dk-bolt-ink { fill: none; stroke: var(--spel-ink); stroke-width: 15px; }
+.dk-bolt-core { fill: none; stroke: var(--dk-zap); stroke-width: 8px; }
+.dk-bolt-hit { fill: color-mix(in srgb, var(--dk-zap) 50%, var(--kiosk-paper)); opacity: 0; animation: dk-bolt-hit 420ms ease-out; }
+.dk-bolt { animation: dk-bolt 420ms steps(1) forwards; }
+@keyframes dk-bolt { 0%, 50%, 70% { opacity: 1; } 40%, 60% { opacity: .5; } 90%, 100% { opacity: 0; } }
+@keyframes dk-bolt-hit { 0% { opacity: .9; scale: .4; } 100% { opacity: 0; scale: 1.6; } }
+.dk-flash { position: absolute; inset: 0; pointer-events: none; background: var(--kiosk-paper); opacity: 0; animation: dk-flash 300ms ease-out; }
+@keyframes dk-flash { 0% { opacity: .55; } 100% { opacity: 0; } }
+
+.dk-call {
+  font: 900 34px var(--kid-font); text-anchor: middle; fill: var(--dk-zap);
+  stroke: var(--spel-ink); stroke-width: 6px; paint-order: stroke; animation: dk-call 1100ms ease-out forwards;
+}
+@keyframes dk-call { 0% { opacity: 0; scale: .5; } 15% { opacity: 1; scale: 1.15; } 30% { scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; translate: 0 -24px; } }
+
+/* ── The gong ─────────────────────────────────────────────────────────────── */
+.dk-island-bob { animation: dk-island 3.6s ease-in-out infinite alternate; }
+@keyframes dk-island { from { translate: 0 -4px; } to { translate: 0 4px; } }
+.dk-post, .dk-beam { fill: var(--dk-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-roof { fill: var(--dk-roof); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-rope { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-gong-disc { fill: var(--dk-gold); stroke: var(--spel-ink); stroke-width: 4px; }
+.dk-gong-ring { fill: none; stroke: var(--dk-gold-dark); stroke-width: 3px; }
+.dk-gong-boss { fill: var(--dk-gold-dark); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-gong-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: .8; }
+.dk-gong-swing[data-ring]:not([data-ring="0"]) { transform-origin: 1px 56px; animation: dk-gong-swing 2.2s ease-out; }
+@keyframes dk-gong-swing { 0% { rotate: 0deg; } 10% { rotate: 12deg; } 28% { rotate: -9deg; } 46% { rotate: 6deg; } 64% { rotate: -3deg; } 82% { rotate: 1.5deg; } 100% { rotate: 0deg; } }
+.dk-gong.is-ring .dk-gong-disc { animation: dk-gong-glow 1.6s ease-out; }
+@keyframes dk-gong-glow { 0% { fill: var(--kiosk-paper); } 100% { fill: var(--dk-gold); } }
+.dk-gong-wave { fill: none; stroke: var(--dk-gold); stroke-width: 6px; opacity: 0; transform-origin: 1px 128px; animation: dk-gong-wave 1.4s ease-out calc(var(--i) * 280ms) 2; }
+@keyframes dk-gong-wave { 0% { opacity: .9; scale: .9; } 100% { opacity: 0; scale: 2.6; } }
+
+/* ── Fireworks ────────────────────────────────────────────────────────────── */
+.dk-firework { opacity: 0; scale: 0; animation: dk-firework 1.3s ease-out calc(400ms + var(--k) * 320ms) infinite; }
+@keyframes dk-firework { 0% { opacity: 1; scale: .1; } 55% { opacity: 1; } 100% { opacity: 0; scale: 1.25; translate: 0 10px; } }
+.dk-ray { fill: none; stroke-width: 9px; }
+.dk-ray.is-0 { stroke: var(--mab-e); }
+.dk-ray.is-1 { stroke: var(--kid-tint-6); }
+.dk-ray.is-2 { stroke: var(--kiosk-paper); }
+.dk-ray-core { fill: var(--kiosk-paper); }
+
+/* ── The card ─────────────────────────────────────────────────────────────── */
+.dk-card-art { width: min(240px, 50vw); height: auto; overflow: visible; }
+.dk-card-art.is-left { --dk-team: var(--duel-left); }
+.dk-card-art.is-right { --dk-team: var(--duel-right); }
+.dk-card-art .dk-bob { animation: dk-happy 520ms ease-in-out infinite alternate; }
+
+/* The streak toward the lightning, under each score corner: three bolts, the third calls it. */
+.dk-charge {
+  position: absolute; top: calc(var(--sp-2) + clamp(42px, 5.2vmin, 54px)); z-index: 3;
+  display: inline-flex; gap: 1px; padding: 2px 6px;
+  border: 3px solid var(--spel-ink); border-radius: 999px; background: color-mix(in srgb, var(--kiosk-paper) 80%, transparent);
+}
+.dk-charge.is-left { left: var(--sp-2); }
+.dk-charge.is-right { right: var(--sp-2); }
+.dk-charge svg { width: clamp(16px, 2.6vmin, 26px); height: clamp(16px, 2.6vmin, 26px); overflow: visible; }

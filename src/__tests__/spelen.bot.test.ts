@@ -16,6 +16,8 @@ import { KIKKER, kikkerRule } from '../oefenen/spelen/skins/kikkers/rule';
 import { TOVER, TOVER_RULE } from '../oefenen/spelen/skins/tovenaarsduel/rule';
 import { TRUCK, TRUCK_RULE } from '../oefenen/spelen/skins/monstertrucks/rule';
 import { JOUST, JOUST_RULE } from '../oefenen/spelen/skins/steekspel/rule';
+import { DRAAK, DRAAK_RULE } from '../oefenen/spelen/skins/drakenrace/rule';
+import { WILD, WILD_RULE } from '../oefenen/spelen/skins/wildwaterrace/rule';
 import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelSim';
 
 // The computer opponent (duel/bot.ts) against simulated pupils, through the real store and every duel game's own
@@ -65,9 +67,11 @@ const GAMES: Game[] = [
     { id: 'touwtrekken', rule: TOUW_RULE, extra: { roundSeconds: TOUW.seconds } },
     { id: 'kikkers', rule: kikkerRule('tijd', bug), extra: { roundSeconds: KIKKER.seconds } },
     { id: 'tovenaarsduel', rule: TOVER_RULE, lives: TOVER.lives.default },
-    // The races: lives = the finish (Monstertrucks) / the list's length (Steekspel), their 20 default.
+    // The races: lives = the finish (Monstertrucks) / the list's length (Steekspel), their 20 default; Drakenrace / Wildwaterrace: the course.
     { id: 'monstertrucks', rule: TRUCK_RULE, lives: TRUCK.finish.default },
     { id: 'steekspel', rule: JOUST_RULE, lives: JOUST.baan.default },
+    { id: 'drakenrace', rule: DRAAK_RULE, lives: DRAAK.course.default },
+    { id: 'wildwaterrace', rule: WILD_RULE, lives: WILD.course.default },
 ];
 const ROUNDS = 200;
 

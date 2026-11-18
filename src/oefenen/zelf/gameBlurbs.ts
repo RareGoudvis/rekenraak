@@ -34,6 +34,8 @@ export const GAME_BLURB: Record<string, string> = {
     slalom: 'Ski door de poort met het juiste antwoord. Hoe sneller, hoe verder!',
     grijp: 'Grijp de knuffel met het juiste antwoord. Hoeveel prijzen win jij?',
     aquarium: 'Vul het aquarium met vissen en planten. Pas op voor de kat!',
+    wildwaterrace: 'Peddel je vlot de wilde rivier af. Drie juist op rij: surf op een golf!',
+    drakenrace: 'Vlieg met je draak naar de gong. Drie juist op rij: bliksem voor de ander!',
 };
 
 /** The game's line; an unknown id falls back to its name. */
