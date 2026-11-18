@@ -36,18 +36,22 @@ const WEAR: Record<Season, ReactNode> = {
         <path className="zf-night zf-ns zf-blink" d="M13.4 20.6 L16.6 17 L18 21.4 Z M26.6 20.6 L23.4 17 L22 21.4 Z" />
         <path className="zf-night zf-ns zf-glow" d="M13 26 L16 28.6 L18.4 26.4 L20.6 29 L23 26.4 L25 28.6 L27.4 26 Q20 33 13 26 Z" />
     </>,
+    // Only one Sint and one Kerstman (owner): they ride by in the scenes, so the tiles wear what goes with them instead.
+    // Sinterklaas: the shoe set out with a carrot for the horse (schoen zetten).
     sinterklaas: <>
-        <path className="zf-red" d="M19 38 L18 18 Q19 8 30 2 Q41 8 42 18 L41 38 Z" />
-        <path className="zf-gold" d="M18.5 30.5 H41.5 L41 38 H19 Z" />
-        <path className="zf-gold zf-thin" d="M28.4 9 h3.2 v5.2 h5 v3.2 h-5 v8 h-3.2 v-8 h-5 v-3.2 h5 Z" />
-        <path className="zf-white zf-ns zf-glint" d="M33 6 L34 10 L38 11 L34 12 L33 16 L32 12 L28 11 L32 10 Z" />
+        <g className="zf-flop">
+            <path className="zf-green" d="M31 14 Q27 6 22 5 Q26 10 28.6 15 Z M33 14 Q34 5 39 3 Q37 9 35 15 Z" />
+            <path className="zf-orange" d="M27.6 13.6 Q32 11.6 36.4 13.8 L33.4 31 Q32 33 30.6 31 Z" />
+            <path className="zf-seam" d="M29.4 19 L32 19.6 M30.2 24 L33 24.6" />
+        </g>
+        <path className="zf-wood" d="M10 38 L10 27 Q10 22.5 15 22.5 L26 22.5 Q28.5 22.5 30 25 L33 30 Q35 32 40 32.5 L48 33.4 Q52 34 52 38 Z" />
+        <path className="zf-gold zf-ns" d="M10.6 36 H51.4 V38 H10.6 Z" />
     </>,
-    // The tip hangs to the left, away from the chosen tile's check.
-    kerst: <g transform="matrix(-1 0 0 1 60 0)">
-        <path className="zf-red" d="M14 32 C16 16 28 6 42 8 C50 9 54 16 52.5 24 L47.5 23.5 C46.5 18 42 15.5 37.5 16.5 C43 21 46 27 46 32 Z" />
-        <rect className="zf-white" x="11" y="28.5" width="38" height="9.5" rx="4.75" />
-        <circle className="zf-white zf-pom" cx="50" cy="25.5" r="5.2" />
-    </g>,
+    // Kerst: reindeer antlers.
+    kerst: <>
+        <path className="zf-wood" d="M21 38 L22 30 Q17 26 14 18 L17 17 Q19 22 22 25 Q21 18 17 11 L20 9.6 Q24 17 24.6 25 Q26 20 27 15 L29.6 16 Q28 23 25.6 31 L25 38 Z" />
+        <path className="zf-wood" d="M39 38 L38 30 Q43 26 46 18 L43 17 Q41 22 38 25 Q39 18 43 11 L40 9.6 Q36 17 35.4 25 Q34 20 33 15 L30.4 16 Q32 23 34.4 31 L35 38 Z" />
+    </>,
     winter: <>
         <path className="zf-blue" d="M14 33 Q14 12 30 11 Q46 12 46 33 Z" />
         <path className="zf-white zf-ns" d="M14.8 24 Q30 18.5 45.2 24 L45.7 28.4 Q30 23 14.3 28.4 Z" />
