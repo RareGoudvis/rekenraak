@@ -86,7 +86,12 @@ export interface SkinOptionChoice {
     label: string;
     // Merged into meta.round when picked.
     round?: Partial<SkinMeta['round']>;
+    // A small picture beside the label (the levels: a clock, crossed out or not, and flames).
+    icon?: SkinOptionIcon;
 }
+
+// clock: 'on' = a clock, 'off' = a crossed-out clock, absent = none; flames: how many small flames after it.
+export interface SkinOptionIcon { clock?: 'on' | 'off'; flames?: number }
 
 export interface SkinOption {
     id: string;
@@ -94,8 +99,10 @@ export interface SkinOption {
     label: string;
     choices: SkinOptionChoice[];
     default: string;
-    // Shown only while another option has this value (Kasteel: Normaal / Moeilijk only for 1 speler).
+    // Shown only while another option has this value (Touwtrekken: manier only for 2 spelers).
     when?: SkinOptionIs;
+    // Takes a whole line on the options screen (the four levels with their icons never fit half of it).
+    wide?: boolean;
 }
 
 export interface SkinOptionIs { id: string; value: string }
