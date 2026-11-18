@@ -10,8 +10,9 @@ export type DragonMood = 'idle' | 'beat' | 'stall' | 'zap' | 'won';
 const WING = 'M0 0 C -6 -34 -30 -66 -62 -82 C -60 -70 -64 -62 -72 -56 C -64 -52 -64 -44 -70 -36 C -60 -34 -58 -26 -62 -18 C -40 -16 -18 -8 0 0 Z';
 const WING_BONES = 'M0 0 L -62 -82 M -4 -6 L -72 -56 M -6 -8 L -70 -36 M -8 -6 L -62 -18';
 
-/** One dragon (about 190 × 150 units), facing right. */
-export function Dragon({ mood, dazed }: { mood: DragonMood; dazed: boolean }) {
+/** One dragon (about 190 × 150 units), facing right; fire = a puff of fire from its mouth (a counter), sooty after a zap,
+ *  a bird sitting on its head or an apple bouncing off it after a crash. */
+export function Dragon({ mood, dazed, fire = 0, sooty = false, extra = null }: { mood: DragonMood; dazed: boolean; fire?: number; sooty?: boolean; extra?: 'bird' | 'apple' | null }) {
     const happy = mood === 'won';
     const oops = mood === 'stall';
     return (
@@ -60,8 +61,30 @@ export function Dragon({ mood, dazed }: { mood: DragonMood; dazed: boolean }) {
                     : <path className="dk-smile" d={happy ? 'M12 12 Q 24 24 38 12 Q 24 18 12 12 Z' : 'M14 13 Q 25 20 37 12'} />}
                 {!oops && !dazed && <path className="dk-tooth" d="M30 13.5 L 31.5 18 L 33.5 13 Z" />}
             </g>
+            {sooty && <path className="dk-soot" d="M-30 -6 q8 -6 14 0 q8 -6 14 0 M14 6 q6 -4 12 0 M60 -40 q6 -4 12 0" />}
             {/* The near wing, over the body. */}
             <g transform="translate(2 -16)"><g className="dk-wing is-near"><path className="dk-wing-skin" d={WING} /><path className="dk-wing-bone" d={WING_BONES} /></g></g>
+            {fire > 0 && (
+                <g key={`f${fire}`} transform="translate(98 -18)">
+                    <g className="dk-fire">
+                        <path className="dk-fire-out" d="M0 0 C 20 -22 50 -26 74 -10 C 60 -8 66 4 80 8 C 58 14 30 20 0 0 Z" />
+                        <path className="dk-fire-in" d="M4 0 C 18 -12 38 -14 54 -6 C 44 -2 48 6 56 8 C 40 12 20 12 4 0 Z" />
+                    </g>
+                </g>
+            )}
+            {extra === 'bird' && (
+                <g transform="translate(54 -72)">
+                    <g className="dk-hat-bird">
+                        <ellipse className="dk-bird-body" cx={0} cy={0} rx={11} ry={7} />
+                        <circle className="dk-bird-body" cx={9} cy={-5} r={6} />
+                        <path className="dk-bird-beak" d="M14 -6 L21 -4 L14 -2 Z" />
+                        <circle className="dk-bird-eye" cx={10} cy={-6} r={1.5} />
+                        <path className="dk-bird-wing" d="M-2 -2 Q-6 -14 -14 -10 Q-8 -4 2 2 Z" />
+                        <path className="dk-bird-tail" d="M-10 -1 L-19 -5 L-17 4 Z" />
+                    </g>
+                </g>
+            )}
+            {extra === 'apple' && <g transform="translate(56 -66)"><g className="dk-apple-bonk"><circle className="dk-apple" r={7} /><path className="dk-apple-leaf" d="M0 -7 q4 -6 8 -4" /></g></g>}
             {dazed && (
                 // Little stars circling the head.
                 <g className="dk-daze" transform="translate(52 -66)">
@@ -77,71 +100,6 @@ export function Dragon({ mood, dazed }: { mood: DragonMood; dazed: boolean }) {
 /** A small lightning pip (the streak's charge above a dragon). */
 export function Pip({ on }: { on: boolean }) {
     return <path className={`dk-pip${on ? ' is-on' : ''}`} d="M2 -9 L -5 1 L 0 1 L -2 9 L 5 -2 L 0 -2 Z" />;
-}
-
-const STORM_PUFFS = [[-58, 6, 26], [-30, -10, 32], [6, -16, 36], [40, -6, 30], [64, 8, 22], [-4, 10, 40]] as const;
-
-/** The storm cloud halfway: sleepy until a dragon has 2 in a row, then it charges toward that side's rival. */
-export function StormCloud({ charge, strike }: { charge: Side | null; strike: number }) {
-    const look = charge === 'left' ? 4 : charge === 'right' ? -4 : 0;
-    return (
-        <g className={`dk-storm${charge ? ` is-charge is-${charge}` : ''}`}>
-            <g key={strike} className={strike ? 'dk-storm-puff' : undefined}>
-                {/* A halo in the charging dragon's colour, the ink rim (stroked twice as thick), the fill over its inner half. */}
-                {(['dk-storm-halo', 'dk-storm-rim', 'dk-storm-body'] as const).map(cls => (
-                    <g key={cls} className={cls}>
-                        {STORM_PUFFS.map(([x, y, r]) => <circle key={`${x}`} cx={x} cy={y} r={r} />)}
-                        <rect x="-80" y="6" width="166" height="26" rx="13" />
-                    </g>
-                ))}
-                <g className="dk-storm-shade">
-                    <ellipse cx="0" cy="24" rx="74" ry="9" />
-                </g>
-                {/* Its face: asleep, or awake and looking where the lightning will go. */}
-                {charge || strike ? (
-                    <>
-                        <ellipse className="dk-storm-eye" cx={-16 + look} cy="0" rx="6" ry="7.5" />
-                        <ellipse className="dk-storm-eye" cx={16 + look} cy="0" rx="6" ry="7.5" />
-                        <circle className="dk-storm-glint" cx={-14 + look} cy="-3" r="2" />
-                        <circle className="dk-storm-glint" cx={18 + look} cy="-3" r="2" />
-                        <path className="dk-storm-mouth" d="M-8 14 Q 0 20 8 14" />
-                    </>
-                ) : (
-                    <>
-                        <path className="dk-storm-lid" d="M-23 2 Q -16 7 -9 2" />
-                        <path className="dk-storm-lid" d="M9 2 Q 16 7 23 2" />
-                        <path className="dk-storm-mouth" d="M-5 15 Q 0 17 5 15" />
-                        <text className="dk-storm-z" x="46" y="-34">z</text>
-                    </>
-                )}
-                {/* The crackle along its belly: little zigzags that flicker. */}
-                <g className="dk-crackle">
-                    <path d="M-50 30 L -44 40 L -38 32 L -32 42" />
-                    <path d="M26 32 L 32 42 L 38 34 L 44 44" />
-                    <path d="M-10 34 L -4 44 L 2 36" />
-                </g>
-            </g>
-        </g>
-    );
-}
-
-/** A lightning bolt from the cloud's belly to a point, a jagged line drawn ink-first. */
-export function Bolt({ from, to, seed }: { from: { x: number; y: number }; to: { x: number; y: number }; seed: number }) {
-    const pts: string[] = [];
-    const n = 7;
-    for (let i = 0; i <= n; i++) {
-        const t = i / n;
-        const jag = i === 0 || i === n ? 0 : ((i + seed) % 2 ? 1 : -1) * (14 + ((seed * 7 + i * 13) % 9));
-        pts.push(`${(from.x + (to.x - from.x) * t + jag).toFixed(1)},${(from.y + (to.y - from.y) * t).toFixed(1)}`);
-    }
-    const d = `M${pts.join(' L')}`;
-    return (
-        <g className="dk-bolt">
-            <path className="dk-bolt-ink" d={d} />
-            <path className="dk-bolt-core" d={d} />
-            <circle className="dk-bolt-hit" cx={to.x} cy={to.y} r="26" />
-        </g>
-    );
 }
 
 /** The finish: a gong in a wooden frame on a floating island; it swings and rings (ring = a new strike). */
@@ -204,27 +162,6 @@ function Strip({ className, w, h, tiles = 4, children }: { className: string; w:
     );
 }
 
-/** One floating island (top at y): grass, a rocky underside, a tree or a little waterfall. */
-function Island({ x, y, s, tree, fall }: { x: number; y: number; s: number; tree?: boolean; fall?: boolean }) {
-    return (
-        <g transform={`translate(${x} ${y}) scale(${s})`}>
-            {fall && <path className="dk-fall" d="M30 6 L 30 120 L 42 120 L 40 6 Z" />}
-            <path className="dk-rock" d="M-70 0 C -60 40 -20 70 4 96 C 24 60 56 36 70 0 Z" />
-            <path className="dk-rock-line" d="M-34 14 L -20 40 M 26 12 L 12 46" />
-            <ellipse className="dk-grass" cx="0" cy="0" rx="74" ry="12" />
-            {tree && (
-                <g transform="translate(-26 -4)">
-                    <rect className="dk-trunk" x="-4" y="-34" width="8" height="34" rx="3" />
-                    <circle className="dk-leaf" cx="0" cy="-44" r="20" />
-                    <circle className="dk-leaf" cx="-14" cy="-32" r="13" />
-                    <circle className="dk-leaf" cx="14" cy="-32" r="13" />
-                </g>
-            )}
-            {!tree && <path className="dk-flower" d="M18 -6 m -4 0 a 4 4 0 1 0 8 0 a 4 4 0 1 0 -8 0 M 34 -8 m -3 0 a 3 3 0 1 0 6 0 a 3 3 0 1 0 -6 0" />}
-        </g>
-    );
-}
-
 /** The sunset backdrop: the sky, the sun, far mountains, floating islands and a sea of clouds, layer by layer. */
 export function Backdrop() {
     return (
@@ -235,11 +172,13 @@ export function Backdrop() {
                 <path className="dk-mount" d="M0 300 L 0 210 L 160 120 L 300 200 L 460 90 L 640 190 L 780 140 L 980 220 L 1160 110 L 1340 200 L 1500 150 L 1700 230 L 1900 100 L 2080 190 L 2260 130 L 2460 210 L 2640 120 L 2840 200 L 3000 150 L 3200 220 L 3400 140 L 3600 210 L 3600 300 Z" />
                 <path className="dk-mount-snow" d="M460 90 L 430 118 L 452 112 L 470 124 L 490 104 Z M1160 110 L 1132 136 L 1156 130 L 1172 140 L 1188 122 Z M1900 100 L 1870 128 L 1894 122 L 1910 134 L 1928 114 Z M2640 120 L 2612 146 L 2636 140 L 2652 150 L 2668 132 Z" />
             </Strip>
+            {/* Far-off castles on the hills: the land the race flies over (the floating islands are obstacles now). */}
             <Strip className="is-mid" w={2400} h={300}>
-                <Island x={260} y={150} s={0.8} tree />
-                <Island x={900} y={90} s={0.55} fall />
-                <Island x={1500} y={170} s={0.9} tree fall />
-                <Island x={2050} y={70} s={0.5} />
+                {[[300, 236, 0.8], [1150, 250, 0.6], [1900, 228, 0.9]].map(([x, y, s]) => (
+                    <g key={x} transform={`translate(${x} ${y}) scale(${s})`} className="dk-far-castle">
+                        <path d="M-60 60 L-60 -10 L-44 -10 L-44 -24 L-30 -24 L-30 -10 L-10 -10 L-10 -50 L-20 -50 L0 -84 L20 -50 L10 -50 L10 -10 L30 -10 L30 -24 L44 -24 L44 -10 L60 -10 L60 60 Z" />
+                    </g>
+                ))}
             </Strip>
             <Strip className="is-near" w={2000} h={100}>
                 {[[0, 70, 90], [150, 60, 70], [300, 74, 100], [480, 58, 80], [640, 72, 110], [820, 62, 70], [980, 76, 100], [1160, 60, 90], [1330, 70, 80], [1500, 60, 110], [1690, 72, 90], [1860, 62, 80], [2000, 70, 90]].map(([x, y, r]) => (

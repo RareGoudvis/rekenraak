@@ -21,6 +21,11 @@
   --dk-gold-dark: color-mix(in srgb, var(--dk-gold) 70%, var(--text-main));
   --dk-storm: color-mix(in srgb, color-mix(in srgb, var(--accent-meetkunde) 35%, var(--accent-bewerkingen)) 42%, var(--text-main));
   --dk-storm-dark: color-mix(in srgb, var(--dk-storm) 70%, var(--text-main));
+  --dk-storm-lite: color-mix(in srgb, var(--dk-storm) 40%, var(--kiosk-paper));
+  --dk-rain: color-mix(in srgb, var(--accent-bewerkingen) 45%, var(--kiosk-paper));
+  --dk-stone: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper));
+  --dk-stone-dark: color-mix(in srgb, var(--text-muted) 70%, var(--text-main));
+  --dk-crystal: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper));
   --dk-zap: var(--mab-e);
   --dk-belly: color-mix(in srgb, var(--mab-e) 45%, var(--kiosk-paper));
   --dk-horn: color-mix(in srgb, var(--mab-e) 25%, var(--kiosk-paper));
@@ -74,12 +79,11 @@
 .dk-flower { fill: var(--kid-tint-6); stroke: var(--spel-ink); stroke-width: 2px; }
 .dk-fall { fill: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--kiosk-paper)); opacity: .85; }
 .dk-strip.is-mid { opacity: .92; }
+.dk-far-castle path { fill: color-mix(in srgb, var(--dk-mount) 70%, var(--text-main)); opacity: .7; }
 
 /* ── The dragons ──────────────────────────────────────────────────────────── */
 .dk-dragon-at.is-left { --dk-team: var(--duel-left); }
 .dk-dragon-at.is-right { --dk-team: var(--duel-right); }
-.dk-dragon-at { transition: transform 750ms cubic-bezier(.34, 1.25, .5, 1); }
-.dk-scene.is-ready .dk-dragon-at { transition: none; }
 .dk-body, .dk-skin, .dk-tail-body, .dk-leg { fill: var(--dk-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
 .dk-leg { fill: color-mix(in srgb, var(--dk-team) 80%, var(--text-main)); }
 .dk-belly { fill: var(--dk-belly); }
@@ -108,89 +112,15 @@
 @keyframes dk-bob { from { translate: 0 -5px; } to { translate: 0 5px; } }
 .dk-tail { animation: dk-tail 1.6s ease-in-out infinite alternate; }
 @keyframes dk-tail { from { rotate: -6deg; } to { rotate: 8deg; } }
-
-/* A wingbeat: a lunge forward on fast wings, with wind lines behind. */
-.dk-move.is-beat { animation: dk-lunge 600ms ease-out; }
-.dk-move.is-beat .dk-wing { animation-duration: 200ms; }
-@keyframes dk-lunge { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 16px -8px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
-.dk-wind path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: 0; animation: dk-wind 600ms ease-out; }
-.dk-wind path:nth-child(2) { animation-delay: 60ms; }
-.dk-wind path:nth-child(3) { animation-delay: 120ms; }
-@keyframes dk-wind { 0% { opacity: .9; translate: 0 0; } 100% { opacity: 0; translate: -40px 0; } }
-
-/* A stall: the dragon tumbles round once and dips. */
-.dk-move.is-stall { animation: dk-stall 700ms ease-in-out; }
-.dk-move.is-stall .dk-wing { animation-play-state: paused; }
-@keyframes dk-stall { 0% { rotate: 0deg; translate: 0 0; } 50% { rotate: 200deg; translate: -6px 16px; } 100% { rotate: 360deg; translate: 0 0; } }
-
-/* Struck by the lightning: a fizzy shake and a flicker. */
-.dk-move.is-zap { animation: dk-zap 700ms ease-out; }
-.dk-move.is-zap .dk-dragon-art { animation: dk-flicker 420ms steps(1); }
-@keyframes dk-zap { 0% { translate: 0 0; rotate: 0deg; } 15% { translate: -10px 4px; rotate: -14deg; } 30% { translate: 8px -3px; rotate: 10deg; } 45% { translate: -6px 2px; rotate: -8deg; } 70% { translate: 3px 0; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
-@keyframes dk-flicker { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: .45; } }
-.dk-daze-spin { animation: dk-spin 900ms linear infinite; }
-.dk-daze-star { fill: var(--mab-e); stroke: var(--spel-ink); stroke-width: 2px; }
-
-/* The finish: the winner bonks the gong, then keeps a happy bounce. */
-.dk-dragon.is-ringing { animation: dk-ring 900ms ease-in-out both; }
-@keyframes dk-ring {
-  0% { translate: 0 0; }
-  42% { translate: 64px var(--dk-ring-dy); rotate: 8deg; }
-  58% { translate: 34px calc(var(--dk-ring-dy) * .6); rotate: -6deg; }
-  100% { translate: 0 0; rotate: 0deg; }
-}
-.dk-dragon.is-ringing .dk-bob { animation: dk-happy 520ms ease-in-out 900ms infinite alternate; }
-@keyframes dk-happy { from { translate: 0 0; } to { translate: 0 -14px; } }
-
-/* The streak pips under each dragon: the third one calls the lightning. */
+/* The streak pips under each score: the third one sends the storm. */
 .dk-pip { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; opacity: .4; }
 .dk-pip.is-on { opacity: 1; }
 .dk-pip.is-on { fill: var(--dk-zap); animation: dk-pip-on 380ms var(--ease-spring, ease-out); }
 @keyframes dk-pip-on { from { scale: 1.8; } to { scale: 1; } }
 
-/* ── The storm cloud ──────────────────────────────────────────────────────── */
-.dk-storm-rim > * { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 7px; }
-.dk-storm-body > * { fill: var(--dk-storm); }
-.dk-storm-body { filter: none; }
-.dk-storm-shade ellipse { fill: var(--dk-storm-dark); opacity: .6; }
-.dk-storm { animation: dk-storm-float 5s ease-in-out infinite alternate; }
-@keyframes dk-storm-float { from { translate: -10px 0; } to { translate: 10px 3px; } }
-.dk-storm-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
-.dk-storm-glint { fill: var(--spel-ink); }
-.dk-storm-lid, .dk-storm-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
-.dk-storm-z { font: 900 22px var(--kid-font); fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; paint-order: stroke; animation: dk-z 2.4s ease-in-out infinite; }
-@keyframes dk-z { 0% { opacity: 0; translate: 0 6px; } 30%, 70% { opacity: 1; } 100% { opacity: 0; translate: 10px -14px; } }
-.dk-crackle path { fill: none; stroke: var(--dk-zap); stroke-width: 4px; opacity: 0; animation: dk-crackle 3.2s steps(1) infinite; }
-.dk-crackle path:nth-child(2) { animation-delay: -1.1s; }
-.dk-crackle path:nth-child(3) { animation-delay: -2.3s; }
-@keyframes dk-crackle { 0%, 86%, 100% { opacity: 0; } 88%, 94% { opacity: 1; } 91% { opacity: .2; } }
-/* Charging (a dragon at 2 in a row): the cloud glows in that dragon's colour, rumbles and crackles fast. */
-.dk-storm.is-left { --dk-glow: var(--duel-left); }
-.dk-storm.is-right { --dk-glow: var(--duel-right); }
-.dk-storm-halo > * { fill: none; stroke: var(--dk-glow, transparent); stroke-width: 22px; opacity: 0; }
-.dk-storm.is-charge .dk-storm-halo > * { animation: dk-halo 700ms ease-in-out infinite alternate; }
-@keyframes dk-halo { from { opacity: .35; } to { opacity: .9; } }
-.dk-storm.is-charge .dk-storm-puff, .dk-storm.is-charge > g { animation: dk-rumble 180ms linear infinite; }
-.dk-storm.is-charge .dk-crackle path { animation-duration: 700ms; }
-@keyframes dk-rumble { 0%, 100% { translate: 0 0; } 25% { translate: -1.5px .5px; } 75% { translate: 1.5px -.5px; } }
-.dk-storm-puff { animation: dk-storm-puff 500ms var(--ease-spring, ease-out); }
-@keyframes dk-storm-puff { 0% { scale: 1; } 30% { scale: 1.18; } 100% { scale: 1; } }
-
-/* The bolt: drawn at once, it flickers and fades. */
-.dk-bolt-ink { fill: none; stroke: var(--spel-ink); stroke-width: 15px; }
-.dk-bolt-core { fill: none; stroke: var(--dk-zap); stroke-width: 8px; }
-.dk-bolt-hit { fill: color-mix(in srgb, var(--dk-zap) 50%, var(--kiosk-paper)); opacity: 0; animation: dk-bolt-hit 420ms ease-out; }
-.dk-bolt { animation: dk-bolt 420ms steps(1) forwards; }
-@keyframes dk-bolt { 0%, 50%, 70% { opacity: 1; } 40%, 60% { opacity: .5; } 90%, 100% { opacity: 0; } }
-@keyframes dk-bolt-hit { 0% { opacity: .9; scale: .4; } 100% { opacity: 0; scale: 1.6; } }
 .dk-flash { position: absolute; inset: 0; pointer-events: none; background: var(--kiosk-paper); opacity: 0; animation: dk-flash 300ms ease-out; }
 @keyframes dk-flash { 0% { opacity: .55; } 100% { opacity: 0; } }
 
-.dk-call {
-  font: 900 34px var(--kid-font); text-anchor: middle; fill: var(--dk-zap);
-  stroke: var(--spel-ink); stroke-width: 6px; paint-order: stroke; animation: dk-call 1100ms ease-out forwards;
-}
-@keyframes dk-call { 0% { opacity: 0; scale: .5; } 15% { opacity: 1; scale: 1.15; } 30% { scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; translate: 0 -24px; } }
 
 /* ── The gong ─────────────────────────────────────────────────────────────── */
 .dk-island-bob { animation: dk-island 3.6s ease-in-out infinite alternate; }
@@ -224,7 +154,7 @@
 .dk-card-art.is-right { --dk-team: var(--duel-right); }
 .dk-card-art .dk-bob { animation: dk-happy 520ms ease-in-out infinite alternate; }
 
-/* The streak toward the lightning, under each score corner: three bolts, the third calls it. */
+/* The streak toward the storm, under each score corner: three bolts, the third sends it. */
 .dk-charge {
   position: absolute; top: calc(var(--sp-2) + clamp(42px, 5.2vmin, 54px)); z-index: 3;
   display: inline-flex; gap: 1px; padding: 2px 6px;
@@ -233,3 +163,172 @@
 .dk-charge.is-left { left: var(--sp-2); }
 .dk-charge.is-right { right: var(--sp-2); }
 .dk-charge svg { width: clamp(16px, 2.6vmin, 26px); height: clamp(16px, 2.6vmin, 26px); overflow: visible; }
+
+/* The comic word over a dragon at an obstacle. */
+.dk-call {
+  font: 900 46px var(--kid-font); text-anchor: middle; fill: var(--kiosk-paper);
+  stroke: var(--spel-ink); stroke-width: 9px; paint-order: stroke; animation: dk-call 1150ms ease-out forwards;
+}
+.dk-call.is-clear { fill: var(--dk-zap); }
+.dk-call.is-storm { fill: var(--dk-storm-lite); }
+.dk-call.is-win { fill: var(--kid-go); }
+@keyframes dk-call { 0% { opacity: 0; scale: .5; } 15% { opacity: 1; scale: 1.15; } 30% { scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; translate: 0 -24px; } }
+
+/* ── The dragons on the course ────────────────────────────────────────────── */
+.dk-wind path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: .8; animation: dk-wind-run 420ms linear infinite; }
+.dk-wind path:nth-child(2) { animation-delay: -140ms; }
+.dk-wind path:nth-child(3) { animation-delay: -280ms; }
+@keyframes dk-wind-run { 0% { translate: 40px 0; opacity: 0; } 30% { opacity: .9; } 100% { translate: -40px 0; opacity: 0; } }
+.dk-wisps path { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); stroke-width: 5px; }
+.dk-tailwind path { fill: none; stroke: var(--kiosk-paper); stroke-width: 7px; opacity: 0; animation: dk-tailwind 1200ms ease-out calc(var(--k) * 80ms) both; }
+@keyframes dk-tailwind { 0% { opacity: 0; translate: -40px 0; } 30% { opacity: .95; } 100% { opacity: 0; translate: 200px 0; } }
+.dk-dragon-at.is-waiting .dk-wing { animation-duration: 900ms; }
+.dk-dragon-at.is-waiting .dk-bob { animation-duration: 2s; }
+.dk-dragon-at.is-lost .dk-wing { animation-duration: 1100ms; }
+.dk-dragon-at.is-won .dk-bob { animation: dk-happy 520ms ease-in-out infinite alternate; }
+@keyframes dk-happy { from { translate: 0 0; } to { translate: 0 -14px; } }
+.dk-dragon-at.is-won .dk-move { animation: dk-ring 900ms ease-in-out both; }
+@keyframes dk-ring { 0% { translate: 0 0; } 35% { translate: 40px 0; rotate: 8deg; } 55% { translate: 10px 0; rotate: -6deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.dk-soot { fill: none; stroke: var(--spel-ink); stroke-width: 4px; opacity: .55; }
+
+/* Fire on a clear: a puff from the mouth that flares and fades. */
+.dk-fire { transform-box: fill-box; transform-origin: 0 50%; animation: dk-fire 600ms ease-out both; }
+@keyframes dk-fire { 0% { scale: .1 .4; opacity: 1; } 30% { scale: 1.1 1.1; opacity: 1; } 100% { scale: 1.4 1.3; opacity: 0; } }
+.dk-fire-out { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-fire-in { fill: var(--dk-zap); }
+
+/* The moves (origin: the dragon's snout). Clears carry on, crashes end where they began. */
+.dk-move { transform-origin: 0 0; }
+.dk-move.is-clear-through { animation: dk-through 700ms ease-out; }
+@keyframes dk-through { 0% { translate: 0 0; } 25% { translate: 24px 0; scale: 1.08 .92; } 60% { translate: 10px 0; scale: 1 1; } 100% { translate: 0 0; } }
+.dk-move.is-clear-through .dk-wing, .dk-move.is-clear-over .dk-wing, .dk-move.is-clear-under .dk-wing, .dk-move.is-clear-roll .dk-wing { animation-duration: 200ms; }
+.dk-move.is-clear-over { animation: dk-over 820ms cubic-bezier(.3, .6, .4, 1); }
+@keyframes dk-over { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 -150px; rotate: -18deg; } 60% { translate: 0 -120px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.dk-move.is-clear-under { animation: dk-under 820ms cubic-bezier(.3, .6, .4, 1); }
+@keyframes dk-under { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 110px; rotate: 16deg; } 60% { translate: 0 90px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.dk-move.is-clear-roll { transform-origin: -96px 0; animation: dk-roll 900ms ease-in-out; }
+@keyframes dk-roll { 0% { translate: 0 0; rotate: 0deg; } 40% { translate: 0 -150px; rotate: -200deg; } 80% { translate: 0 -30px; rotate: -360deg; } 100% { translate: 0 0; rotate: -360deg; } }
+
+.dk-move.is-crash-zap { animation: dk-zap 900ms ease-out; }
+.dk-move.is-crash-zap .dk-dragon-art { animation: dk-flicker 500ms steps(1); }
+@keyframes dk-zap { 0% { translate: 0 0; rotate: 0deg; } 10% { translate: -12px 4px; rotate: -14deg; } 22% { translate: 8px -3px; rotate: 10deg; } 34% { translate: -10px 2px; rotate: -8deg; } 50% { translate: -30px 30px; rotate: 20deg; } 80% { translate: -10px 10px; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dk-flicker { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: .45; } }
+.dk-move.is-crash-bonk { animation: dk-bonk 1000ms cubic-bezier(.3, .7, .4, 1); }
+@keyframes dk-bonk { 0% { translate: 0 0; scale: 1 1; } 10% { translate: 10px 0; scale: .7 1.15; } 22% { translate: -20px 6px; scale: 1.05 .95; rotate: -10deg; } 55% { translate: -40px 60px; rotate: 30deg; scale: 1 1; } 80% { translate: -20px 20px; rotate: 6deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.dk-move.is-crash-feathers { transform-origin: -96px 0; animation: dk-tumble 1000ms ease-in-out; }
+@keyframes dk-tumble { 0% { rotate: 0deg; translate: 0 0; } 45% { rotate: 300deg; translate: -40px 40px; } 75% { rotate: 360deg; translate: -20px 16px; } 100% { rotate: 360deg; translate: 0 0; } }
+.dk-move.is-crash-tangle { animation: dk-tangle 1000ms ease-in-out; }
+@keyframes dk-tangle { 0% { translate: 0 0; } 10% { translate: 10px -4px; rotate: 6deg; } 20% { translate: 2px 2px; rotate: -6deg; } 30% { translate: 8px -2px; rotate: 6deg; } 40% { translate: 0 0; rotate: -4deg; } 70% { translate: -30px 30px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.dk-move.is-crash-boing { transform-origin: -96px 0; animation: dk-boing 1000ms cubic-bezier(.3, .7, .4, 1); }
+@keyframes dk-boing { 0% { translate: 0 0; scale: 1 1; } 12% { translate: 8px 0; scale: .75 1.12; } 40% { translate: -110px -40px; rotate: -200deg; scale: 1 1; } 70% { translate: -60px 0; rotate: -360deg; } 100% { translate: 0 0; rotate: -360deg; } }
+.dk-move.is-crash-zap .dk-wing, .dk-move.is-crash-bonk .dk-wing, .dk-move.is-crash-feathers .dk-wing { animation-play-state: paused; }
+.dk-goagain { animation: dk-goagain 500ms ease-out; }
+@keyframes dk-goagain { 0% { scale: 1 1; } 30% { scale: 1.08 .9; } 60% { scale: .96 1.05; } 100% { scale: 1 1; } }
+.dk-hat-bird { animation: dk-hat-bird 1300ms ease-out both; }
+@keyframes dk-hat-bird { 0% { translate: 30px -60px; opacity: 0; } 20% { translate: 0 0; opacity: 1; } 75% { translate: 0 0; rotate: 0deg; } 85% { rotate: -10deg; } 100% { translate: 40px -80px; opacity: 0; } }
+.dk-apple-bonk { animation: dk-apple 900ms ease-in both; }
+@keyframes dk-apple { 0% { translate: 0 -80px; } 40% { translate: 0 0; } 60% { translate: 16px -30px; } 100% { translate: 40px 80px; opacity: 0; } }
+.dk-apple { fill: color-mix(in srgb, var(--accent-getallenkennis) 85%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.dk-apple-leaf { fill: none; stroke: color-mix(in srgb, var(--kid-hill) 70%, var(--accent-metendrekenen)); stroke-width: 3px; }
+
+/* ── The obstacles ────────────────────────────────────────────────────────── */
+.dk-ob-arrive { animation: dk-arrive 600ms cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes dk-arrive { from { scale: .2; opacity: 0; translate: 0 -80px; } to { scale: 1; opacity: 1; translate: 0 0; } }
+/* Clouds: grey and grumpy (the storm darker and crackling); a clear blows it apart. */
+.dk-cloud-float { animation: dk-float 2.4s ease-in-out infinite alternate; }
+@keyframes dk-float { from { translate: 0 -5px; } to { translate: 0 5px; } }
+.dk-cloud-rim > * { fill: var(--spel-ink); stroke: var(--spel-ink); stroke-width: 7px; }
+.dk-cloud-body > * { fill: var(--dk-storm-lite); }
+.dk-ob-cloud.is-storm .dk-cloud-body > * { fill: var(--dk-storm); }
+.dk-cloud-halo > * { fill: none; stroke: var(--dk-zap); stroke-width: 14px; opacity: .5; animation: dk-halo 600ms ease-in-out infinite alternate; }
+@keyframes dk-halo { from { opacity: .25; } to { opacity: .8; } }
+.dk-cloud-shade { fill: var(--dk-storm-dark); opacity: .45; }
+.dk-cloud-eye { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-cloud-brow, .dk-cloud-mouth, .dk-cloud-lid { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-rain path { stroke: var(--dk-rain); stroke-width: 3px; animation: dk-rain 600ms linear calc(var(--k) * -120ms) infinite; }
+@keyframes dk-rain { from { translate: 0 -6px; opacity: 1; } to { translate: -6px 22px; opacity: 0; } }
+.dk-crackle path { fill: none; stroke: var(--dk-zap); stroke-width: 4px; opacity: 0; animation: dk-crackle 2.6s steps(1) infinite; }
+.dk-crackle path:nth-child(2) { animation-delay: -1.1s; }
+.dk-ob-cloud.is-storm .dk-crackle path { animation-duration: 700ms; }
+@keyframes dk-crackle { 0%, 86%, 100% { opacity: 0; } 88%, 94% { opacity: 1; } 91% { opacity: .2; } }
+.dk-ob-cloud.is-clear .dk-cloud-rim, .dk-ob-cloud.is-clear .dk-cloud-shade, .dk-ob-cloud.is-clear .dk-cloud-face, .dk-ob-cloud.is-clear .dk-rain,
+.dk-ob-cloud.is-clear .dk-cloud-halo, .dk-ob-cloud.is-clear .dk-crackle, .dk-ob-cloud.is-clear .dk-cloud-body rect { animation: dk-gone 200ms ease-out both; }
+.dk-ob-cloud.is-clear .dk-cloud-puff { animation: dk-puff-away 800ms ease-out both; }
+@keyframes dk-puff-away { 0% { translate: 0 0; scale: 1; opacity: 1; fill: var(--kiosk-paper); } 100% { translate: var(--dx) var(--dy); scale: .4; opacity: 0; fill: var(--kiosk-paper); } }
+@keyframes dk-gone { to { opacity: 0; } }
+.dk-zapbolt { fill: none; stroke: var(--dk-zap); stroke-width: 7px; animation: dk-bolt 500ms steps(1) both; }
+@keyframes dk-bolt { 0%, 50%, 70% { opacity: 1; } 40%, 60% { opacity: .3; } 90%, 100% { opacity: 0; } }
+
+/* The tower: stone, a conical roof, a pennant that flaps, a face in the window that blinks. */
+.dk-stone { fill: var(--dk-stone); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.dk-mortar { fill: none; stroke: var(--dk-stone-dark); stroke-width: 2px; }
+.dk-tower-roof { fill: var(--dk-roof); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.dk-pennant { fill: var(--dk-zap); stroke: var(--spel-ink); stroke-width: 2px; transform-origin: 0 8px; animation: dk-pennant .5s ease-in-out infinite alternate; }
+@keyframes dk-pennant { from { scale: 1 1; } to { scale: .75 1.15; } }
+.dk-window { fill: var(--spel-ink); }
+.dk-window-face circle { fill: var(--kiosk-paper); animation: dk-blink 3.4s steps(1) infinite; }
+@keyframes dk-blink { 0%, 92% { opacity: 1; } 94%, 100% { opacity: 0; } }
+.dk-ob-tower.is-crash { animation: dk-tower-wobble 600ms ease-out; transform-origin: 57px 300px; }
+@keyframes dk-tower-wobble { 20% { rotate: 1.5deg; } 50% { rotate: -1deg; } 100% { rotate: 0deg; } }
+.dk-bonk-dust circle { fill: var(--kiosk-paper); animation: dk-dust 700ms ease-out calc(var(--k) * 40ms) both; }
+@keyframes dk-dust { 0% { scale: .3; opacity: .9; } 100% { scale: 2; translate: -20px 0; opacity: 0; } }
+
+/* The birds: they flap and bob, chirping; on a clear or a crash they scatter (one sits on the dragon's head). */
+.dk-bird-bob { animation: dk-bird-bob 700ms ease-in-out calc(var(--k) * -150ms) infinite alternate; }
+@keyframes dk-bird-bob { from { translate: 0 -3px; } to { translate: 0 3px; } }
+.dk-bird-body { fill: color-mix(in srgb, var(--accent-bewerkingen) 55%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2px; }
+.dk-bird-beak { fill: var(--dk-zap); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.dk-bird-eye { fill: var(--spel-ink); }
+.dk-bird-wing { fill: color-mix(in srgb, var(--accent-bewerkingen) 70%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2px; transform-box: fill-box; transform-origin: 100% 100%; animation: dk-bird-flap 220ms ease-in-out infinite alternate; }
+.dk-bird-wing.is-far { fill: color-mix(in srgb, var(--accent-bewerkingen) 80%, var(--text-main)); }
+@keyframes dk-bird-flap { from { scale: 1 1; } to { scale: 1 -.6; } }
+.dk-bird-tail { fill: color-mix(in srgb, var(--accent-bewerkingen) 70%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.dk-ob-birds:not(.is-ahead) .dk-bird { animation: dk-scatter 900ms ease-out both; }
+@keyframes dk-scatter { to { translate: var(--fx) var(--fy); rotate: 20deg; opacity: 0; } }
+.dk-note { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; animation: dk-note 1.8s ease-out calc(var(--k) * -.9s) infinite; }
+@keyframes dk-note { 0% { opacity: 0; translate: 0 6px; } 30%, 70% { opacity: 1; } 100% { opacity: 0; translate: 8px -14px; } }
+.dk-feathers { transform: translate(10px, 0); }
+.dk-feather { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; transform: rotate(var(--a)); animation: dk-feather 1100ms ease-out both; }
+@keyframes dk-feather { 0% { translate: 0 0; opacity: 1; } 100% { translate: 0 50px; opacity: 0; } }
+
+/* The floating island: it bobs, the tree sways; a crash shakes leaves loose. */
+.dk-island-float { animation: dk-float 3.2s ease-in-out infinite alternate; }
+.dk-tree { transform-origin: 0 0; animation: dk-tree 2.6s ease-in-out infinite alternate; }
+@keyframes dk-tree { from { rotate: -2deg; } to { rotate: 2deg; } }
+.dk-ob-island.is-crash .dk-tree { animation: dk-tree-shake 500ms ease-out; }
+@keyframes dk-tree-shake { 20% { rotate: 8deg; } 45% { rotate: -6deg; } 70% { rotate: 3deg; } 100% { rotate: 0deg; } }
+.dk-leaf-bit { fill: color-mix(in srgb, var(--kid-hill) 70%, var(--accent-metendrekenen)); stroke: var(--spel-ink); stroke-width: 1.5px; transform: translate(-6px, -80px) rotate(var(--a)); animation: dk-leaf-fall 1200ms ease-in calc(var(--k) * 50ms) both; }
+@keyframes dk-leaf-fall { 0% { translate: 0 0; opacity: 1; } 100% { translate: -30px 120px; opacity: 0; } }
+
+/* The lightning gate: the crystals bob, the arc crackles; a clear switches it off while the dragon passes. */
+.dk-pylon-bob { animation: dk-float 1.8s ease-in-out infinite alternate; }
+.dk-crystal { fill: var(--dk-crystal); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-crystal-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; }
+.dk-orb { fill: var(--dk-zap); stroke: var(--spel-ink); stroke-width: 2.5px; transform-box: fill-box; transform-origin: 50% 50%; animation: dk-orb 400ms ease-in-out infinite alternate; }
+@keyframes dk-orb { from { scale: .85; } to { scale: 1.1; } }
+.dk-arc-ink { fill: none; stroke: var(--spel-ink); stroke-width: 11px; }
+.dk-arc-core { fill: none; stroke: var(--dk-zap); stroke-width: 5px; animation: dk-arc 180ms steps(1) infinite; }
+.dk-arc-core.is-2 { animation-delay: -90ms; }
+@keyframes dk-arc { 0% { opacity: 1; } 50% { opacity: 0; } }
+.dk-ob-gate.is-clear .dk-gate-arc { animation: dk-arc-off 700ms ease-out both; }
+@keyframes dk-arc-off { 0% { opacity: 1; } 10%, 70% { opacity: 0; } 100% { opacity: 1; } }
+.dk-sparks path { stroke: var(--dk-zap); stroke-width: 4px; transform: rotate(var(--a)) translateY(-10px); animation: dk-spark 600ms ease-out both; }
+@keyframes dk-spark { from { opacity: 1; } to { opacity: 0; translate: 0 -20px; } }
+
+/* The hot-air balloon: it sways, the sheep in the basket waves; a crash: the envelope bounces the dragon off. */
+.dk-balloon-float { transform-origin: 0 80px; animation: dk-balloon 3s ease-in-out infinite alternate; }
+@keyframes dk-balloon { from { rotate: -3deg; translate: 0 -4px; } to { rotate: 3deg; translate: 0 4px; } }
+.dk-env { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.dk-env-stripe { fill: var(--dk-zap); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-env-line { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; }
+.dk-rope-s { stroke: var(--spel-ink); stroke-width: 2px; }
+.dk-basket { fill: var(--dk-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.dk-basket-weave { stroke: var(--spel-ink); stroke-width: 1.2px; opacity: .5; }
+.dk-wool { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.dk-sheep-face { fill: color-mix(in srgb, var(--text-muted) 50%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2px; }
+.dk-sheep-eye { fill: var(--kiosk-paper); }
+.dk-sheep-arm { stroke: var(--spel-ink); stroke-width: 3px; transform-origin: -18px 4px; animation: dk-wave-arm 400ms ease-in-out infinite alternate; }
+@keyframes dk-wave-arm { from { rotate: -20deg; } to { rotate: 20deg; } }
+.dk-ob-balloon.is-crash .dk-env { transform-box: fill-box; transform-origin: 50% 50%; animation: dk-env-boing 600ms ease-out; }
+@keyframes dk-env-boing { 15% { scale: .85 1.08; } 40% { scale: 1.08 .94; } 70% { scale: .97 1.02; } 100% { scale: 1 1; } }
+.dk-boing-lines path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; animation: dk-gone 600ms ease-out calc(var(--k) * 60ms) both; }
