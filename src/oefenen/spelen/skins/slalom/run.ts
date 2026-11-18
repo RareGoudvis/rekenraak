@@ -202,7 +202,8 @@ export function tickRun(r: SlRun, ms: number): { run: SlRun; news: TickNews } {
     return { run: { ...r, metres: r.metres + advance, step, speed, gates, down, up }, news };
 }
 
-export type SkierPose = 'ski' | 'roll' | 'sit' | 'up';
+// bank = all gear gone: in the snowbank, laughing (the friendly end).
+export type SkierPose = 'ski' | 'roll' | 'sit' | 'up' | 'bank';
 
 /** How the skier stands: on his skis, rolling through the tumble, sitting in the snow, hopping back up. */
 export function poseOf(r: SlRun): SkierPose {
@@ -245,3 +246,31 @@ export function project(b: Box, d: number, x: number): { x: number; y: number; s
 
 /** Lane i's middle beside the piste's middle (m): 0, 1, 2 of three, round the middle. */
 export const laneX = (i: number, lanes = 3) => (i - (lanes - 1) / 2) * VIEW.laneM;
+
+// ── His gear (owner 2026-11-18: Moeilijk and Onmogelijk only) ──────────────────────────────────────────────
+// Each fall (a wrong answer's tumble, or a gate that slips past unanswered) costs one piece, flying off: first the
+// helmet, then the poles, then one ski (he goes on wobbly on the other), then the last ski = the friendly end (he slides
+// on his bottom into a snowbank, laughing). Makkelijk and Normaal never lose any gear.
+export const GEAR_ORDER = ['helm', 'stokken', 'ski', 'laatsteSki'] as const;
+export type GearPiece = typeof GEAR_ORDER[number];
+// The pieces he can lose; losing the last one ends the run.
+export const GEAR_PIECES = GEAR_ORDER.length;
+// After the last piece: he slides into the snowbank and laughs this long before the end screen (ms).
+export const BANK_MS = 2600;
+
+export interface Gear { helmet: boolean; poles: boolean; skis: 0 | 1 | 2 }
+
+/** The levels on which a fall costs gear. */
+export const gearCounts = (level: Level) => level === 'moeilijk' || level === 'onmogelijk';
+
+/** What he still wears after this many falls (gear counting). */
+export function gearOf(falls: number): Gear {
+    const f = Math.max(0, falls);
+    return { helmet: f < 1, poles: f < 2, skis: f < 3 ? 2 : f < 4 ? 1 : 0 };
+}
+
+/** The piece the n-th fall (1-based) costs; null past the last. */
+export const pieceLost = (fall: number): GearPiece | null => GEAR_ORDER[fall - 1] ?? null;
+
+/** No gear left: the run is over. */
+export const isWipedOut = (falls: number) => falls >= GEAR_PIECES;

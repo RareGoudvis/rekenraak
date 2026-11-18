@@ -238,6 +238,57 @@ export function Sparks({ x, y, n }: { x: number; y: number; n: number }) {
 // ── The ladder truck ────────────────────────────────────────────────────────
 const WHEELS = [120, 300, 470];
 
+// ── The heat meter (owner 2026-11-18: the coming collapse must read at a glance) ─────────────────────────────────
+// A big street thermometer on a post left of the truck: the red climbs with the fire level, the striped top zone is
+// where the block can come down (a little house with a crack at the very top). SYNC: fire.ts DANGER.
+const METER = { x: 100, top: 196, bottom: 560, board: [40, 100, 120, 552] as const } as const;
+
+export function HeatMeter({ share, zoneFrom, safe }: { share: number; zoneFrom: number; safe: boolean }) {
+    const { x, top, bottom } = METER;
+    const [bx, by, bw, bh] = METER.board;
+    const span = bottom - top;
+    const zoneY = bottom - span * (zoneFrom / FIRE.max);
+    return (
+        <g className={`bw-meter${safe ? ' is-safe' : ''}`}>
+            <rect className="bw-meter-post" x={x - 9} y={by + bh - 10} width="18" height={GROUND - by - bh + 14} rx="4" />
+            <rect className="bw-meter-board" x={bx} y={by} width={bw} height={bh} rx="26" />
+            <rect className="bw-meter-alarm" x={bx} y={by} width={bw} height={bh} rx="26" />
+            <rect className="bw-meter-tube" x={x - 20} y={top - 14} width="40" height={span + 40} rx="20" />
+            {/* The danger zone: hazard stripes inside the tube's top part (Makkelijk: never reached, so it stays plain). */}
+            {!safe && (
+                <g className="bw-meter-zone">
+                    <clipPath id="bw-meter-zone-clip"><rect x={x - 16} y={top - 10} width="32" height={zoneY - top + 10} rx="16" /></clipPath>
+                    <g clipPath="url(#bw-meter-zone-clip)">
+                        <rect className="bw-meter-zone-bg" x={x - 16} y={top - 10} width="32" height={zoneY - top + 10} />
+                        {Array.from({ length: 8 }, (_, k) => <path key={k} className="bw-meter-stripe" d={`M${x - 30} ${top - 10 + k * 22 + 30} L${x + 30} ${top - 10 + k * 22 - 10}`} />)}
+                    </g>
+                </g>
+            )}
+            {/* The red: a column whose height follows --bw-meter (0–1), with a wobbly top that bubbles. */}
+            <g className="bw-meter-fill" style={v({ '--bw-meter': share })}>
+                <rect className="bw-meter-red" x={x - 11} y={top} width="22" height={span + 10} rx="11" />
+            </g>
+            <circle className="bw-meter-bulb" cx={x} cy={bottom + 34} r="32" />
+            <circle className="bw-meter-bulb-glint" cx={x - 10} cy={bottom + 24} r="7" />
+            <path className="bw-meter-flame" d={`M${x} ${bottom + 54} c-14 0 -18 -14 -10 -24 c0 8 6 9 7 4 c0 -8 4 -12 5 -18 c8 8 12 18 10 26 c-2 8 -6 12 -12 12 Z`} />
+            {/* Ten ticks, the danger mark longer. */}
+            {Array.from({ length: FIRE.max + 1 }, (_, k) => {
+                const ty = bottom - span * (k / FIRE.max);
+                return <path key={k} className={`bw-meter-tick${k === zoneFrom && !safe ? ' is-mark' : ''}`} d={`M${x + 22} ${ty} h${k % 5 === 0 || (k === zoneFrom && !safe) ? 16 : 9}`} />;
+            })}
+            {/* The little house at the top: what falls when the red gets there. */}
+            <g className="bw-meter-house" transform={`translate(${x} ${top - 46}) scale(1.45)`}>
+                <g className="bw-meter-house-sway">
+                    <path className="bw-meter-house-body" d="M-22 14 V-6 L0 -24 L22 -6 V14 Z" />
+                    <rect className="bw-meter-house-win" x="-14" y="-4" width="10" height="9" rx="1.5" />
+                    <rect className="bw-meter-house-win" x="4" y="-4" width="10" height="9" rx="1.5" />
+                    {!safe && <path className="bw-meter-house-crack" d="M-2 -20 L3 -12 L-3 -5 L4 4 L0 13" />}
+                </g>
+            </g>
+        </g>
+    );
+}
+
 /** The truck's heat gauge: a flame and ten segments filling green, yellow, orange, red. */
 export function HeatGauge({ level, x = 60, y = 828 }: { level: number; x?: number; y?: number }) {
     return (

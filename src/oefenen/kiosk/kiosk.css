@@ -231,6 +231,8 @@ html:has(.oefen-body),
   border: 2.5px solid var(--kid-ink);
   font-weight: 800;
 }
+/* A long type name wraps: a rounded rectangle, the text clear of its corners (pillWrap.ts). */
+.kiosk-start-types li[data-wrapped] { border-radius: var(--radius-md); padding-inline: var(--sp-4); }
 
 .kiosk-start-note {
   margin: 0;
@@ -479,6 +481,7 @@ html:has(.oefen-body),
   color: var(--kid-ink);
   font-weight: 800;
 }
+.kiosk-storage-banner[data-wrapped] { border-radius: var(--radius-md); }
 .kiosk-stats .kiosk-storage-banner {
   margin: 0 0 var(--sp-3);
 }

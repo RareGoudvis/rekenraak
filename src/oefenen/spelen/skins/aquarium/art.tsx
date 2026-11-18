@@ -591,62 +591,131 @@ export function FrontBush() {
 }
 
 // ── The cat ───────────────────────────────────────────────────────────────
-// A grey tabby with white socks, sitting on the cabinet to the right of the tank, facing left (local origin: its seat).
+// A grey tabby with a white bib and socks, sitting side-on on the cabinet right of the tank, facing left (local origin:
+// its seat on the cabinet top, y up negative). Limbs and tail are an ink stroke under a fur stroke; the ink and the fur
+// each sit in the same rotating groups (one class, one animation), so the bending leg and the swishing tail stay seamless.
 
 export type CatAct = 'idle' | 'reach' | 'startle' | 'catch';
 
-/** The sitting cat; its pupils and head are moved by the scene's loop (refs), its acts by CSS (aquarium.css). */
+// The near front leg: shoulder → elbow, elbow → paw (the paw lick bends it there).
+const LEG_UP = 'M-17 -30 L-17.5 -15';
+const LEG_LOW = 'M-17.5 -15 L-17.5 -2.5';
+// The tail: its base lies along the cabinet's front edge round the paws; the tip curls up and swishes from the joint.
+const TAIL_BASE = 'M17 -9 C29 -6 28 3.5 14 3.5 L-5 3.5';
+const TAIL_TIP = 'M-5 3.5 C-14 3.5 -21 2.5 -24.5 -1.5 C-26.5 -5 -25.5 -9 -21.5 -9';
+// The reaching arm (a mistake, the catch): from the shoulder up over the rim into the water.
+const ARM = 'M-16 -32 C-16 -64 -24 -96 -43 -85';
+
+/** The near front leg in one layer (ink or fur). */
+function NearLeg({ fur }: { fur: boolean }) {
+    const cls = fur ? 'aq-cat-limb' : 'aq-cat-limb-ink';
+    return (
+        <g className="aq-cat-leg-up">
+            <path className={cls} d={LEG_UP} />
+            <g className="aq-cat-leg-low">
+                <path className={cls} d={LEG_LOW} />
+                {fur && (
+                    <>
+                        <path className="aq-cat-sock" d="M-17.5 -9.5 L-17.5 -2.5" />
+                        <ellipse className="aq-cat-white" cx="-18.6" cy="-1.8" rx="5" ry="2.8" />
+                        <path className="aq-cat-toes" d="M-21 -3.4 v2.6 M-18 -3.6 v2.6" />
+                    </>
+                )}
+            </g>
+        </g>
+    );
+}
+
+/** The tail in one layer: base and swishing tip; the fur layer has the tabby rings and the dark tip. */
+function Tail({ fur }: { fur: boolean }) {
+    const cls = fur ? 'aq-cat-tail' : 'aq-cat-tail-ink';
+    return (
+        <g className="aq-cat-tail-all">
+            <path className={cls} d={TAIL_BASE} />
+            {fur && <path className="aq-cat-tail-rings" d={TAIL_BASE} />}
+            <g className="aq-cat-tail-tip">
+                <path className={cls} d={TAIL_TIP} />
+                {fur && <path className="aq-cat-tail-rings" d={TAIL_TIP} />}
+                {fur && <path className="aq-cat-tail-end" d="M-25.6 -5 C-25.8 -7.6 -24.4 -9.1 -21.5 -9" />}
+            </g>
+        </g>
+    );
+}
+
+/** The sitting cat; its pupils and head are moved by the scene's loop (refs), its acts and idle life by CSS (aquarium.css). */
 export function CatArt({ act, fish, pupils, head }: { act: CatAct; fish: ItemKind | null; pupils: (el: SVGGElement | null) => void; head: (el: SVGGElement | null) => void }) {
+    const reaching = act === 'reach' || act === 'catch';
     return (
         <g className="aq-cat-body">
-            <g className="aq-cat-tail-wrap">
-                <path className="aq-cat-tail-line" d="M14 -4 C28 -2 26 12 25 26 C24 36 27 44 32 46" />
-                <path className="aq-cat-tail" d="M14 -4 C28 -2 26 12 25 26 C24 36 27 44 32 46" />
-                <path className="aq-cat-tail-tip" d="M25.4 30 C24.6 36 27 44 32 46" />
+            {/* The far front leg, a shade darker, behind the chest. */}
+            <path className="aq-cat-limb-ink" d="M-10 -28 L-9.6 -2.5" />
+            <path className="aq-cat-limb is-far" d="M-10 -28 L-9.6 -2.5" />
+            <ellipse className="aq-cat-white is-far" cx="-10.6" cy="-1.8" rx="4.4" ry="2.5" />
+            <g className="aq-cat-trunk">
+                {/* Back, haunch and chest in one silhouette; the thigh's line and the tabby stripes on top. */}
+                <path className="aq-cat-fur" d="M-15 -1 C-22 -16 -22 -34 -16 -45 C-10 -51 1 -49 7 -40 C15 -30 25 -22 24.5 -9 C24 -2 20 0 14 0 L-12 0 Z" />
+                <path className="aq-cat-stripe" d="M-3 -47 Q0 -43 -1 -38 M5 -42 Q9 -38 7 -33 M12 -35 Q16 -31 15 -26 M17 -26 Q21 -23 21 -18" />
+                <path className="aq-cat-line" d="M1 -1 C-3 -13 5 -24 17 -21" />
+                <path className="aq-cat-stripe" d="M9 -19 Q12 -16 12 -11 M15 -15 Q18 -11 17 -6" />
+                <path className="aq-cat-white" d="M-16.5 -3 C-21 -17 -20.5 -31 -15 -41 C-11 -33 -11 -18 -12 -3 Z" />
+                {/* The hind paw, flat on the cabinet in front of the haunch. */}
+                <ellipse className="aq-cat-fur" cx="2" cy="-2.2" rx="8" ry="3" />
+                <path className="aq-cat-toes" d="M-3.4 -3.6 v2.4 M-0.4 -4 v2.6" />
             </g>
-            <path className="aq-cat-white is-far" d="M-15 -20 L-16 -1 L-9 -1 L-8 -18 Z" />
-            <path className="aq-cat-fur" d="M-20 0 C-23 -16 -21 -32 -13 -44 C-5 -50 8 -40 14 -26 C20 -14 20 -4 16 0 Z" />
-            <ellipse className="aq-cat-fur" cx="6" cy="-10" rx="12" ry="10" />
-            <path className="aq-cat-stripe" d="M-2 -40 Q2 -36 1 -31 M5 -33 Q9 -30 8 -25 M10 -22 Q14 -20 14 -15" />
-            <path className="aq-cat-white" d="M-20 -2 C-21 -14 -19 -28 -13 -38 C-9 -30 -9 -14 -11 -2 Z" />
-            <ellipse className="aq-cat-white" cx="10" cy="-1" rx="7" ry="2.6" />
-            {act !== 'reach' && act !== 'catch' && (
-                <g className="aq-cat-leg">
-                    <path className="aq-cat-white" d="M-19 -24 C-19 -14 -20 -6 -20 0 L-11.5 0 C-11.5 -6 -11 -14 -10 -22 Z" />
-                    <path className="aq-cat-toes" d="M-17 -2.6 L-17 0 M-14.4 -2.6 L-14.4 0" />
-                </g>
-            )}
-            {(act === 'reach' || act === 'catch') && (
+            {/* The near leg stays while the cat crouches; the CSS swaps it for the arm during the swipe and the scoop. */}
+            <g className="aq-cat-leg">
+                <NearLeg fur={false} />
+                <NearLeg fur />
+            </g>
+            {reaching && (
                 <g className="aq-cat-arm">
-                    <path className="aq-cat-arm-line" d="M-12 -30 C-12 -70 -22 -100 -43 -84" />
-                    <path className="aq-cat-arm-fur" d="M-12 -30 C-12 -70 -22 -100 -43 -84" />
-                    <circle className="aq-cat-white aq-cat-paw" cx="-43" cy="-84" r="4.6" />
-                    <path className="aq-cat-toes" d="M-46 -81 L-45 -79 M-43 -80 L-43 -78 M-40 -81 L-41 -79" />
+                    <path className="aq-cat-limb-ink is-arm" d={ARM} />
+                    <path className="aq-cat-limb is-arm" d={ARM} />
+                    <ellipse className="aq-cat-white aq-cat-paw" cx="-43" cy="-85" rx="5.4" ry="4.6" />
+                    <path className="aq-cat-toes" d="M-47 -82 L-46 -80 M-43.5 -81 L-43.5 -79 M-40 -82 L-41 -80" />
                     {act === 'catch' && fish && <g className="aq-cat-paw-fish" transform="translate(-44 -77) rotate(80) scale(1.1)"><SwimmerArt kind={fish} /></g>}
                 </g>
             )}
+            {/* The tail round the front paws, in front of them. */}
+            <g className="aq-cat-tail-wrap">
+                <Tail fur={false} />
+                <Tail fur />
+            </g>
             <g ref={head} className="aq-cat-head-wrap">
                 <g className="aq-cat-head">
-                    <path className="aq-cat-ear is-back" d="M-12 -71 L-4 -84 L-1 -63 Z" />
-                    <path className="aq-cat-ear" d="M-31 -64 L-28 -84 L-16 -71 Z" />
-                    <path className="aq-cat-ear-in" d="M-28.6 -67 L-27 -79 L-20 -71 Z" />
-                    <ellipse className="aq-cat-fur" cx="-17" cy="-59" rx="17" ry="14.5" />
-                    <path className="aq-cat-stripe" d="M-20 -73 L-19 -67 M-14 -73 L-14.6 -67 M-8 -71 L-9.6 -66" />
-                    <ellipse className="aq-cat-white" cx="-25" cy="-51" rx="8" ry="5.4" />
-                    <g className="aq-cat-eyes">
-                        <ellipse className="aq-cat-eye" cx="-27" cy="-61" rx="3.6" ry="4.2" />
-                        <ellipse className="aq-cat-eye" cx="-15" cy="-61.6" rx="3.8" ry="4.4" />
-                        <g ref={pupils}>
-                            <ellipse className="aq-cat-pupil" cx="-27" cy="-61" rx="1.5" ry="3.1" />
-                            <ellipse className="aq-cat-pupil" cx="-15" cy="-61.6" rx="1.6" ry="3.2" />
-                            <circle className="aq-cat-glint" cx="-26" cy="-62.8" r="0.8" /><circle className="aq-cat-glint" cx="-14" cy="-63.4" r="0.8" />
-                        </g>
-                        <path className="aq-cat-lid" d="M-31 -63 Q-27 -66 -23 -63 M-19 -63.6 Q-15 -66.6 -11 -63.6" />
+                    <g className="aq-cat-ear-wrap is-back"><path className="aq-cat-ear is-back" d="M-11 -70 L-3.5 -84 Q-2 -85 -1.5 -83 L0 -62 Z" /></g>
+                    <g className="aq-cat-ear-wrap">
+                        <path className="aq-cat-ear" d="M-33 -63 L-29.5 -84 Q-28.6 -86 -27 -84.6 L-15 -72 Z" />
+                        <path className="aq-cat-ear-in" d="M-30.4 -66 L-28.6 -79.5 L-20 -71.5 Z" />
                     </g>
-                    <path className="aq-cat-nose" d="M-31 -55.4 L-27.6 -55.4 L-29.3 -53.2 Z" />
-                    <path className="aq-cat-mouth" d="M-29.3 -53.2 Q-29.6 -50.4 -27 -50.6 M-29.3 -53.2 Q-31 -50.6 -33 -51.6" />
-                    <path className="aq-cat-tongue" d="M-30.6 -50.8 Q-31.4 -47.4 -28.6 -48.2 Q-28 -49.4 -28.4 -50.6 Z" />
-                    <path className="aq-whisker is-cat" d="M-26 -52 L-42 -55 M-26 -51 L-42 -50 M-24 -50 L-38 -46" />
+                    {/* The head with fluffy cheeks (a zigzag at the jaw). */}
+                    <path className="aq-cat-fur" d="M-35 -58 C-35 -70 -27 -76 -18 -76 C-7 -76 0 -69 0 -60 C0 -56 -1 -53 -3 -51 L0 -49.5 L-4.5 -48.5 L-3 -46 L-8 -46.5 L-11 -44.5 L-14 -46 L-19 -45 L-24 -46.5 L-30 -47.5 C-33.5 -50 -35 -54 -35 -58 Z" />
+                    <path className="aq-cat-stripe" d="M-23 -75 L-21.5 -69.5 M-17.5 -76 L-17.5 -69.5 M-12 -75 L-13.5 -69.5 M-2.5 -62 L-7 -62.5 M-2 -57 L-6.5 -58" />
+                    <g className="aq-cat-eyes">
+                        <g className="aq-cat-eyes-lick">
+                            <ellipse className="aq-cat-eye" cx="-27.6" cy="-62" rx="3.4" ry="4.2" />
+                            <ellipse className="aq-cat-eye" cx="-15" cy="-62.6" rx="4" ry="4.6" />
+                            <g ref={pupils}>
+                                <g className="aq-cat-pupils">
+                                    <ellipse className="aq-cat-pupil" cx="-27.6" cy="-62" rx="1.4" ry="3.2" />
+                                    <ellipse className="aq-cat-pupil" cx="-15" cy="-62.6" rx="1.6" ry="3.4" />
+                                </g>
+                                <circle className="aq-cat-glint" cx="-26.6" cy="-63.8" r="0.9" /><circle className="aq-cat-glint" cx="-13.8" cy="-64.4" r="0.9" />
+                            </g>
+                        </g>
+                        <path className="aq-cat-lid" d="M-31.4 -63 Q-27.6 -59.6 -24 -63 M-19.4 -63.6 Q-15 -60 -10.8 -63.6" />
+                    </g>
+                    {/* The white muzzle, the pink nose, the "w" mouth and the whiskers both sides. */}
+                    <circle className="aq-cat-white is-muzzle" cx="-30" cy="-52" r="4.3" />
+                    <circle className="aq-cat-white is-muzzle" cx="-24.6" cy="-52.2" r="4.3" />
+                    <path className="aq-cat-white-fill" d="M-30 -55.4 L-24.6 -55.6 L-24.6 -50 L-30 -50 Z" />
+                    <path className="aq-cat-nose" d="M-29.8 -56.4 L-25.4 -56.6 L-27.6 -53.8 Z" />
+                    <path className="aq-cat-mouth" d="M-27.6 -53.8 V-52.4 M-30.6 -51.4 Q-29 -50 -27.6 -52.4 Q-26.2 -50 -24.6 -51.6" />
+                    <path className="aq-cat-tongue" d="M-29 -51.2 Q-29.6 -47 -27.4 -47.4 Q-25.8 -48 -26.4 -51.2 Z" />
+                    <g className="aq-whisker-set">
+                        <path className="aq-whisker is-cat" d="M-31 -53 L-47 -56 M-31 -51.6 L-47 -50.6 M-30 -50.4 L-44 -46" />
+                        <path className="aq-whisker is-cat is-back" d="M-22 -53 L-10 -55.6 M-22 -51.8 L-10.6 -51" />
+                    </g>
                     {act === 'catch' && fish && <g className="aq-cat-mouth-fish" transform="translate(-34 -48) rotate(-12) scale(1)"><SwimmerArt kind={fish} /></g>}
                 </g>
             </g>
@@ -654,27 +723,31 @@ export function CatArt({ act, fish, pupils, head }: { act: CatAct; fish: ItemKin
     );
 }
 
-/** The cat that gave up: asleep in a loaf on the cabinet, tail round its paws (the end screen). */
+/** The cat that gave up: asleep in a loaf on the cabinet, its tail round its paws (the end screen). */
 export function NappingCat() {
     return (
         <g className="aq-cat-nap">
-            <path className="aq-cat-tail-line" d="M22 -4 C30 2 20 8 -8 6" />
-            <path className="aq-cat-tail" d="M22 -4 C30 2 20 8 -8 6" />
             <g className="aq-nap-breathe">
-                <path className="aq-cat-fur" d="M-20 0 C-22 -14 -8 -22 6 -22 C20 -22 26 -12 24 0 Z" />
-                <path className="aq-cat-stripe" d="M2 -21 Q4 -16 2 -12 M10 -20 Q12 -15 10 -11 M17 -17 Q19 -12 17 -8" />
+                <path className="aq-cat-fur" d="M-20 0 C-22 -14 -8 -23 6 -23 C21 -23 27 -12 25 0 Z" />
+                <path className="aq-cat-stripe" d="M1 -22 Q4 -17 2 -12 M9 -22 Q12 -16 10 -11 M16 -19 Q19 -14 17 -9 M21 -13 Q23 -9 22 -5" />
+                <path className="aq-cat-line" d="M8 -1 C6 -10 12 -16 20 -14" />
             </g>
-            <ellipse className="aq-cat-white" cx="-14" cy="-1" rx="7" ry="2.6" />
-            <ellipse className="aq-cat-white" cx="-4" cy="-0.6" rx="6" ry="2.4" />
+            <ellipse className="aq-cat-white" cx="-14" cy="-1.2" rx="7" ry="2.6" />
+            <ellipse className="aq-cat-white" cx="-5" cy="-0.8" rx="6" ry="2.4" />
+            <path className="aq-cat-tail-ink" d="M24 -4 C32 2 22 4.5 0 4 C-12 4 -20 3 -24 1" />
+            <path className="aq-cat-tail" d="M24 -4 C32 2 22 4.5 0 4 C-12 4 -20 3 -24 1" />
+            <path className="aq-cat-tail-rings" d="M24 -4 C32 2 22 4.5 0 4 C-12 4 -20 3 -24 1" />
             <g className="aq-nap-head">
-                <path className="aq-cat-ear is-back" d="M-14 -20 L-8 -33 L-3 -18 Z" />
-                <path className="aq-cat-ear" d="M-32 -15 L-30 -32 L-19 -21 Z" />
-                <path className="aq-cat-ear-in" d="M-29.6 -18 L-28.6 -28 L-22 -21 Z" />
-                <ellipse className="aq-cat-fur" cx="-20" cy="-11" rx="15" ry="12" />
-                <ellipse className="aq-cat-white" cx="-27" cy="-5" rx="7" ry="4.6" />
+                <path className="aq-cat-ear is-back" d="M-13 -20 L-7 -33 L-2 -18 Z" />
+                <path className="aq-cat-ear" d="M-33 -15 L-30 -32 L-19 -21 Z" />
+                <path className="aq-cat-ear-in" d="M-30.6 -18 L-29 -28 L-22 -21 Z" />
+                <path className="aq-cat-fur" d="M-35 -11 C-35 -20 -28 -24 -20 -24 C-11 -24 -5 -18 -5 -11 C-5 -6 -7 -3 -10 -2 L-14 -0.5 L-19 -1.6 L-25 -0.6 L-30 -2.4 C-33 -4 -35 -7 -35 -11 Z" />
+                <path className="aq-cat-stripe" d="M-23 -23.5 L-22 -19 M-18.5 -24 L-18.5 -19.5 M-14 -23.5 L-15 -19" />
+                <circle className="aq-cat-white is-muzzle" cx="-29" cy="-6" r="3.6" />
+                <circle className="aq-cat-white is-muzzle" cx="-24.4" cy="-6.2" r="3.6" />
                 <path className="aq-cat-lid is-shut" d="M-31 -12 Q-28 -9.6 -25 -12 M-20 -12.6 Q-17 -10.2 -14 -12.6" />
-                <path className="aq-cat-nose" d="M-32 -8 L-29 -8 L-30.5 -6.2 Z" />
-                <path className="aq-cat-mouth" d="M-30.5 -6.2 Q-30.4 -4 -28 -4.4" />
+                <path className="aq-cat-nose" d="M-28.6 -9.6 L-25 -9.8 L-26.8 -7.6 Z" />
+                <path className="aq-whisker is-cat" d="M-30 -7 L-42 -9 M-30 -5.6 L-41 -4" />
             </g>
             <path className="aq-zz" d="M-36 -40 L-29 -40 L-36 -34 L-29 -34 M-46 -52 L-41 -52 L-46 -48 L-41 -48" />
         </g>

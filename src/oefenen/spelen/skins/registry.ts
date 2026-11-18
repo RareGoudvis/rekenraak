@@ -24,6 +24,7 @@ import { HIVE_BOARDS, hasBoss } from '../board/honingraat/hiveLevels';
 import { LEVELS, levelOption } from '../levels/levels';
 import { FishSimple } from '@phosphor-icons/react';
 import { TANK_GOAL } from './aquarium/tank';
+import { ROUND_SECONDS as FRITUUR_SECONDS } from './frituur/rule';
 import { Truck } from '@phosphor-icons/react';
 import { TRUCK } from './monstertrucks/rule';
 import { Horse } from '@phosphor-icons/react';
@@ -374,15 +375,15 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('./mollen/Mollen')),
     },
     {
-        // 3 or 5 minutes at the counter (frituur/rule.ts): the first customer's bubble holds the sum. A right answer serves
+        // 5 minutes at the counter (frituur/rule.ts): the first customer's bubble holds the sum. A right answer serves
         // them, a wrong order walks them off, an empty patience bar too (onMiss). The bar is the shared clock (levels/clock.ts);
-        // Makkelijk has none. Score = customers helped, the best per card, length and level on this device. The scene voices
-        // its own moments (frituur/sounds.ts).
+        // Makkelijk has none. Too many walk-offs (WALK_OFFS: 6 / 5 / 4) close the frituur: the friendly fail; Makkelijk never.
+        // Score = customers helped, the best per card and level on this device. The scene voices its own moments (frituur/sounds.ts).
         meta: {
             music: 'gek',
-            id: 'frituur', label: 'Frituur', input: 'keypad', timed: true, round: { seconds: 180 }, accepts: KEYPAD_NUMBER,
-            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }, levelOption({ clock: true })],
-            sounds: { correct: null, wrong: null, miss: null },
+            id: 'frituur', label: 'Frituur', input: 'keypad', timed: true, round: { seconds: FRITUUR_SECONDS }, accepts: KEYPAD_NUMBER, canFail: true,
+            failTitle: 'De frituur gaat dicht! Nog eens?', options: [levelOption({ clock: true })],
+            sounds: { correct: null, wrong: null, miss: null, fail: 'wahwah' },
         },
         icon: Storefront,
         Component: lazy(() => import('./frituur/Frituur')),
@@ -408,11 +409,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // Two minutes down a slope: each sum on a gate with three flags (choiceCount). Right = a speed step, 3 in a row a
         // jump; wrong = a tumble back to step 1; a gate reached unanswered slips past (slalom/run.ts). The score is the
         // metres with a best per card and level on this device (onReport, "Wis mijn scores"). The scene voices its moments.
-        // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed.
+        // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed. On
+        // Moeilijk / Onmogelijk each fall costs a piece of gear (run.ts GEAR_ORDER); the last ski = the friendly end in a snowbank.
         meta: {
             id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: TAP_CHOICE,
-            options: [levelOption({ clock: true })],
-            sounds: { correct: null, wrong: null },
+            options: [levelOption({ clock: true })], canFail: true, failTitle: 'Plof, in de sneeuw! Nog eens?',
+            sounds: { correct: null, wrong: null, fail: null },
         },
         icon: PersonSimpleSki,
         Component: lazy(() => import('./slalom/Slalom')),

@@ -49,6 +49,14 @@ const RECIPES = {
             noise(ac, d, t, { at, dur: 0.08, vol: 0.1, filter: 'bandpass', f0: 900, q: 1.2 });
         });
     },
+    // Closing time: the roller shutter rattles down, lands with a clunk, and a little "pling" of the sign.
+    rolluik: (ac, d, t) => {
+        [0, 0.4, 0.8].forEach((at, i) => noise(ac, d, t, { at, dur: 0.45, vol: 0.1 + i * 0.02, filter: 'bandpass', f0: 1400 - i * 250, f1: 900 - i * 200, q: 3 }));
+        [0, 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72, 0.81, 0.9, 0.99].forEach(at => tone(ac, d, t, { f0: 700, f1: 520, at, dur: 0.03, vol: 0.05 }));
+        tone(ac, d, t, { f0: 140, f1: 70, at: 1.05, dur: 0.18, vol: 0.22 });
+        noise(ac, d, t, { at: 1.05, dur: 0.15, vol: 0.12, filter: 'lowpass', f0: 900 });
+        tone(ac, d, t, { f0: 1320, at: 1.3, dur: 0.4, vol: 0.06 });
+    },
 } satisfies Record<string, Recipe>;
 
 export type FrituurSound = keyof typeof RECIPES;

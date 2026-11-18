@@ -3,22 +3,25 @@ import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import { Burst, Clouds } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { FRITUUR, headTopOf, isEndless, isKid, isLow, isVisitor, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut, walkOff, wrongOrder, wrongOrderOf, type Counter, type Customer, type CustomerKind } from './rule';
+import { FRITUUR, WALK_OFFS, headTopOf, isClosed, isEndless, isKid, isLow, isVisitor, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut, walkOff, walkOffsLeft, wrongOrder, wrongOrderOf, type Counter, type Customer, type CustomerKind } from './rule';
 import { levelOf } from '../../levels/levels';
 import { frituurResult, loadBest, saveIfBest } from './records';
 import { playFrituur } from './sounds';
-import { CyclistG, DogG, KioskG, OrderG, PersonG, PigeonG, StreetG, type CookPose, type Pose } from './art';
+import { AngryToken, CyclistG, DogG, KioskG, OrderG, PersonG, PigeonG, StreetG, type CookPose, type Pose } from './art';
 import { UfoG, VisitorG } from './visitors';
 import './frituur.css';
 
 // Frituur: a Flemish frituur seen from the pavement, a queue of up to three customers at its counter. The first one's
 // speech bubble holds the sum; a right answer sends the order over the counter and the customer off eating, a wrong
 // one brings out the wrong snack: a short, silly strop and off they stomp (an empty patience bar walks them off
-// grumbling, onMiss). Now and then a fantastic visitor queues up (visitors.tsx). Score = customers helped; the best per card and length stays on this device (records.ts).
+// grumbling, onMiss). Now and then a fantastic visitor queues up (visitors.tsx). Score = customers helped; the best per card and level stays on this device (records.ts).
+// Five minutes at most; too many walk-offs (rule.ts WALK_OFFS, the angry faces on the panel) and the shutter rolls down: the friendly fail.
 // The queue lives in a ref driven by game time (only while the sum waits); React renders only when it changes.
 
 // The queue's spots, % of the scene's width (the counter ends at 45 %). SYNC: .fr-patience and .fr-bubble in frituur.css.
 const SLOTS = [56, 72, 88] as const;
+// The shutter rolls down, then the end screen (ms); SYNC: frituur.css .fr-shutter.
+const CLOSE_MS = 2200;
 
 function commitTo(ref: MutableRefObject<Counter>, set: Dispatch<SetStateAction<Counter>>, next: Counter) {
     const was = ref.current;
@@ -51,7 +54,7 @@ function CustomerArt({ c, pose, item }: { c: Customer; pose: Pose; item?: Custom
     );
 }
 
-export default function Frituur({ question, phase, feedback, onAnswer, onMiss, onReport, progress, events, options, runKey }: SkinProps) {
+export default function Frituur({ question, phase, feedback, onAnswer, onMiss, onFail, onReport, onHold, progress, events, options, runKey }: SkinProps) {
     const clipId = `fr${useId().replace(/:/g, '')}`;
     const level = levelOf(options);
     // The round's game time so far (the session clock: help and the rotate prompt stop it); a new customer's bar follows it.
@@ -63,15 +66,15 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
     const [low, setLow] = useState(false);
     const lowRef = useRef(false);
     const fillRef = useRef<HTMLSpanElement | null>(null);
-    // A best per level too; Normaal keeps the key from before the levels.
-    const bestKey = `${runKey ?? 'frituur'}|${options.tijd ?? '3'}${level === 'normaal' ? '' : `|${level}`}`;
+    // A best per level too; Normaal keeps the key from before the levels (the round is always the old 5 minutes now).
+    const bestKey = `${runKey ?? 'frituur'}|5${level === 'normaal' ? '' : `|${level}`}`;
     const [bestBefore] = useState(() => loadBest(bestKey));
     const timers = useRef<number[]>([]);
     useEffect(() => () => { timers.current.forEach(t => window.clearTimeout(t)); }, []);
 
     // The latest props for the loop and the event handlers (they are set up once).
-    const live = useRef({ phase, patienceMs, onMiss, onReport, bestKey, bestBefore, asking: !!question });
-    useLayoutEffect(() => { live.current = { phase, patienceMs, onMiss, onReport, bestKey, bestBefore, asking: !!question }; });
+    const live = useRef({ phase, patienceMs, onMiss, onReport, onHold, bestKey, bestBefore, asking: !!question, level });
+    useLayoutEffect(() => { live.current = { phase, patienceMs, onMiss, onReport, onHold, bestKey, bestBefore, asking: !!question, level }; });
 
     // The end lines from the start ("Je hielp 0 klanten"), then after every customer.
     useEffect(() => { live.current.onReport?.(frituurResult(0, live.current.bestBefore)); }, []);
@@ -105,6 +108,25 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
         return () => offs.forEach(off => off());
     }, [events]);
 
+    // Too many walked off: the shutter rolls down (the round's clock held), then the friendly fail once help is closed.
+    const closed = isClosed(view, level);
+    const [shut, setShut] = useState(false);
+    useEffect(() => {
+        if (!closed) return;
+        const st = live.current;
+        st.onHold?.(true);
+        st.onReport?.(frituurResult(counter.current.servedCount, st.bestBefore, true));
+        playFrituur('rolluik');
+        const id = window.setTimeout(() => setShut(true), CLOSE_MS);
+        return () => window.clearTimeout(id);
+    }, [closed]);
+    const failed = useRef(false);
+    useEffect(() => {
+        if (!shut || failed.current || phase === 'help') return;
+        failed.current = true;
+        onFail();
+    }, [shut, phase, onFail]);
+
     // A new sum: a served customer leaves eating, the next one steps up.
     const key = question?.key;
     useLayoutEffect(() => {
@@ -121,7 +143,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
             const dt = last === null ? 0 : Math.min(100, Math.max(0, t - last));
             last = t;
             const st = live.current;
-            if (st.phase === 'play' && st.asking) {
+            if (st.phase === 'play' && st.asking && !isClosed(counter.current, st.level)) {
                 counter.current = tick(counter.current, dt);
                 if (timedOut(counter.current)) {
                     commitTo(counter, setView, walkOff(counter.current, 'grumpy', st.patienceMs));
@@ -145,7 +167,9 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
     const frowning = wrongShown && view.wrongs > 0;
     const pose: Pose = view.served ? 'served' : frowning ? 'frown' : low ? 'low' : 'wait';
     const cook: CookPose = view.served ? 'serve' : wrongShown ? 'shrug' : 'idle';
-    const cls = ['fr-root', phase === 'help' && 'is-paused', view.served && 'is-served', wrongShown && 'is-wrong'].filter(Boolean).join(' ');
+    const cls = ['fr-root', phase === 'help' && 'is-paused', view.served && 'is-served', wrongShown && 'is-wrong', closed && 'is-closed'].filter(Boolean).join(' ');
+    const maxOff = WALK_OFFS[level];
+    const offLeft = walkOffsLeft(view, level);
     return (
         <div className={cls}>
             <div className="fr-world">
@@ -158,7 +182,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                         <CyclistG />
                         <g transform="translate(600 486)"><PigeonG /></g>
                     </svg>
-                    <svg className="fr-kiosk-art" viewBox="0 0 300 360" aria-hidden><KioskG cook={cook} clipId={clipId} beat={view.servedCount} /></svg>
+                    <svg className="fr-kiosk-art" viewBox="0 0 300 360" aria-hidden><KioskG cook={closed ? 'closed' : cook} clipId={clipId} beat={view.servedCount} closing={closed} /></svg>
                     {frowning && (
                         // The wrong snack on the counter for a customer who stays (wrongCut < 1); the cook takes it back.
                         <svg key={`w${progress.mistakes}`} className="fr-wrong-order" viewBox="-20 -22 40 44" aria-hidden>
@@ -209,7 +233,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                             )}
                         </div>
                     ))}
-                    {!view.served && !isEndless(view.patience) && (
+                    {!view.served && !closed && !isEndless(view.patience) && (
                         <div key={front.id} className={`fr-patience${low ? ' is-low' : ''}`} style={{ '--top': headTopOf(front.kind), '--left': patienceShare(view.patience) } as CSSProperties}
                             role="img" aria-label={low ? 'De klant wordt ongeduldig' : 'Het geduld van de klant'}>
                             <span ref={fillRef} className="fr-patience-fill" />
@@ -228,12 +252,27 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                 </div>
             </div>
             <div className="fr-panel">
+                <div className="fr-stats">
                 <div className="fr-tally" role="status" aria-label={`${view.servedCount} ${view.servedCount === 1 ? 'klant' : 'klanten'} geholpen`}>
                     <svg className="fr-tally-cone" viewBox="-20 -22 40 44" aria-hidden><OrderG kind="friet" /></svg>
                     <span className="fr-tally-num" key={view.servedCount}>{view.servedCount}</span>
                     <span className="fr-tally-label">geholpen{bestBefore > 0 && <small> · record {bestBefore}</small>}</span>
                 </div>
-                <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play'} />
+                {maxOff !== null && offLeft !== null && (
+                    // The walk-offs: a calm face per customer that may still storm off, an angry red one per customer that did.
+                    <div className="fr-angry" role="status" aria-label={offLeft === 0 ? 'De frituur gaat dicht' : `Nog ${offLeft} ${offLeft === 1 ? 'klant mag' : 'klanten mogen'} boos weglopen`}>
+                        {Array.from({ length: maxOff }, (_, i) => {
+                            const angry = i < view.walked;
+                            return (
+                                <svg key={i} className={`fr-angry-face${angry ? ' is-angry' : ''}${angry && i === view.walked - 1 ? ' is-new' : ''}${!angry && offLeft === 1 ? ' is-last' : ''}`} viewBox="-14 -14 28 28" aria-hidden>
+                                    <AngryToken angry={angry} />
+                                </svg>
+                            );
+                        })}
+                    </div>
+                )}
+                </div>
+                <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play' || closed} />
             </div>
         </div>
     );
@@ -246,14 +285,18 @@ const END_CUSTOMERS: readonly (Customer & { x: number })[] = [
     { id: 2, kind: 'hond', look: 2, order: 'mayo', x: 530 },
 ];
 
-export function FrituurEnding(_: SkinEndingProps) {
+export function FrituurEnding({ outcome }: SkinEndingProps) {
     const clipId = `fre${useId().replace(/:/g, '')}`;
+    // Closed early: the shutter down, the "Gesloten" sign, the cook waving from the side; the street stays sunny.
+    const shut = outcome === 'failed';
     return (
-        <div className="spel-ending fr-ending">
+        <div className={`spel-ending fr-ending${shut ? ' is-shut' : ''}`}>
             <svg viewBox="20 110 640 390" preserveAspectRatio="xMidYMax meet" aria-hidden>
                 <StreetG />
-                <g transform="translate(40 120)"><KioskG cook="serve" clipId={clipId} /></g>
-                {END_CUSTOMERS.map((c, i) => (
+                <g transform="translate(40 120)"><KioskG cook={shut ? 'closed' : 'serve'} clipId={clipId} closing={shut} /></g>
+                {/* Closed: only the dog stays, sitting at the shutter and hoping for a frietje anyway. */}
+                {shut && <g transform="translate(336 410) scale(1.15)"><DogG pose="wait" /></g>}
+                {!shut && END_CUSTOMERS.map((c, i) => (
                     <g key={c.id} transform={`translate(${c.x} 262) scale(1.15)`}>
                         <g className="fr-party" style={{ '--k': i } as CSSProperties}>
                             {isVisitor(c.kind) ? <VisitorG kind={c.kind} pose="happy" item={c.order} /> : <PersonG kind={c.kind} look={c.look} pose="happy" item={c.order} />}

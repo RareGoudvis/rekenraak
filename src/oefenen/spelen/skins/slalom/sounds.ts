@@ -45,6 +45,18 @@ const RECIPES = {
     record: (ac, d, t) => {
         [660, 880, 1100, 1320].forEach((f0, i) => tone(ac, d, t, { f0, at: i * 0.08, dur: 0.22, vol: 0.07 }));
     },
+    // A piece of gear flies off: a cartoon "whoops" up and down with a little whoosh.
+    whoops: (ac, d, t) => {
+        tone(ac, d, t, { type: 'triangle', f0: 380, f1: 760, dur: 0.14, vol: 0.12 });
+        tone(ac, d, t, { type: 'triangle', at: 0.14, f0: 760, f1: 300, dur: 0.24, vol: 0.12, wobble: [14, 20] });
+        noise(ac, d, t, { at: 0.04, dur: 0.3, vol: 0.08, filter: 'bandpass', f0: 2400, f1: 900, q: 1 });
+    },
+    // Into the snowbank: a soft fat "plof", then a giggle going up and down.
+    plof: (ac, d, t) => {
+        tone(ac, d, t, { f0: 160, f1: 60, dur: 0.22, vol: 0.3 });
+        noise(ac, d, t, { dur: 0.3, vol: 0.2, filter: 'lowpass', f0: 900, f1: 200 });
+        [0.35, 0.47, 0.59, 0.71, 0.83, 0.95].forEach((at, i) => tone(ac, d, t, { type: 'triangle', at, f0: 520 + (i % 2) * 120, f1: 460 + (i % 2) * 120, dur: 0.09, vol: 0.09 }));
+    },
 } satisfies Record<string, Recipe>;
 
 export type SlalomSound = keyof typeof RECIPES;

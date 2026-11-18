@@ -4,6 +4,7 @@ import { useOefenStore } from '../useOefenStore';
 import { viablePlannedTotal, viableTypes } from '../../services/oefenen/stats';
 import { unsupportedSlots } from '../../services/oefenen/scheduler';
 import { tryFullscreen } from './fullscreen';
+import { usePillWrap } from './pillWrap';
 
 // The confirm screen after scanning: what this session is, then Start.
 export default function StartScreen() {
@@ -31,7 +32,7 @@ export default function StartScreen() {
             <h1 className="oefen-title">{sessie.title || 'Oefenen'}</h1>
             <p className="oefen-lead">{facts.join(' · ')}</p>
             <ul className="kiosk-start-types">
-                {types.map((t, i) => <li key={i}>{t.label}</li>)}
+                {types.map((t, i) => <TypePill key={i} label={t.label} />)}
             </ul>
             {skipped > 0 && (
                 <p className="kiosk-start-note">
@@ -45,4 +46,10 @@ export default function StartScreen() {
             </button>
         </main>
     );
+}
+
+// One type on the start screen: a pill, a rounded rectangle once its name wraps (pillWrap.ts).
+function TypePill({ label }: { label: string }) {
+    const pill = usePillWrap<HTMLLIElement>();
+    return <li ref={pill}>{label}</li>;
 }

@@ -433,6 +433,66 @@ path.bw-ledge { fill: none; }
 @keyframes bw-callout { 0% { scale: .3; opacity: 0; } 20% { scale: 1.1; opacity: 1; } 30% { scale: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes bw-callout-stay { 0% { scale: .3; opacity: 0; } 60% { scale: 1.1; opacity: 1; } 100% { scale: 1; opacity: 1; } }
 
+/* ── The danger (fire.ts DANGER, owner 2026-11-18): the heat meter, the cracks, the sway and "Pas op!" ── */
+.bw-meter-post { fill: var(--bw-metal-dark); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-meter-board { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 5; }
+.bw-meter-tube { fill: color-mix(in srgb, var(--bw-metal) 50%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-meter-zone-bg { fill: var(--bw-yellow); }
+.bw-meter-stripe { fill: none; stroke: var(--bw-red-soft); stroke-width: 9; }
+/* The red climbs (a springy step per level) and its top bubbles. */
+.bw-meter-fill { transform-box: fill-box; transform-origin: 50% 100%; scale: 1 var(--bw-meter, 0); transition: scale 650ms var(--ease-spring); }
+.bw-meter-red, .bw-meter-bulb { fill: var(--bw-fire-1); stroke: var(--spel-ink); stroke-width: 4; }
+.bw-meter-bulb-glint { fill: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); }
+.bw-meter-flame { fill: var(--bw-fire-3); stroke: var(--spel-ink); stroke-width: 3; transform-box: fill-box; transform-origin: 50% 100%; animation: bw-flicker 420ms ease-in-out infinite alternate; }
+.bw-meter-tick { fill: none; stroke: var(--spel-ink); stroke-width: 4; stroke-linecap: round; }
+.bw-meter-tick.is-mark { stroke: var(--bw-red); stroke-width: 6; }
+.bw-meter-house-body { fill: var(--bw-wall); stroke: var(--spel-ink); stroke-width: 3.5; stroke-linejoin: round; }
+.bw-meter-house-win { fill: var(--bw-glass-fire); stroke: var(--spel-ink); stroke-width: 2.5; }
+.bw-meter-house-crack { fill: none; stroke: var(--spel-ink); stroke-width: 2.5; stroke-linejoin: round; opacity: 0; }
+.bw-meter-house-sway { transform-box: fill-box; transform-origin: 50% 100%; }
+/* Hot: the bulb pulses; one step under too hot the meter's house cracks and rocks with the block. */
+.bw-root.is-hot .bw-meter-bulb { animation: bw-meter-pulse 600ms ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes bw-meter-pulse { from { scale: 1; } to { scale: 1.12; } }
+.bw-meter.is-safe .bw-meter-house-win { fill: var(--bw-glass); }
+.bw-root.is-warn .bw-meter-house-crack, .bw-root.is-toohot .bw-meter-house-crack { opacity: 1; }
+.bw-root.is-warn .bw-meter-house-sway { animation: bw-sway 1200ms ease-in-out infinite; }
+.bw-meter-alarm { fill: var(--bw-red-soft); stroke: var(--spel-ink); stroke-width: 5; opacity: 0; }
+.bw-root.is-warn .bw-meter-alarm { animation: bw-meter-alarm 700ms steps(1) infinite; }
+@keyframes bw-meter-alarm { 0% { opacity: 0; } 50% { opacity: 1; } }
+
+/* One step under too hot: the block sways on its foot with a jolt now and then (a creak), the windows' buttons with it. */
+.bw-sway { transform-box: view-box; transform-origin: 930px 880px; }
+.bw-sway.is-on { animation: bw-sway 2400ms ease-in-out infinite; }
+.bw-windows.is-sway { transform-origin: 58.125% 88%; animation: bw-sway 2400ms ease-in-out infinite; }
+@keyframes bw-sway {
+  0%, 100% { rotate: 0deg; }
+  14% { rotate: -1.4deg; }
+  20% { rotate: -1.1deg; }
+  34% { rotate: 1.2deg; }
+  50% { rotate: -0.6deg; }
+  62% { rotate: 1.5deg; }
+  68% { rotate: 1.1deg; }
+  84% { rotate: -0.8deg; }
+}
+.bw-callout.is-warn {
+  left: 58%;
+  top: 4%;
+  display: inline-flex;
+  align-items: center;
+  gap: .3em;
+  background: var(--bw-yellow);
+  color: var(--kiosk-ink);
+  font-size: 4.2cqw;
+  animation: bw-callout-stay 500ms var(--ease-spring) both, bw-warn-pulse 900ms ease-in-out 500ms infinite;
+}
+@keyframes bw-warn-pulse { 0%, 100% { scale: 1; rotate: 0deg; } 25% { scale: 1.08; rotate: -3deg; } 75% { scale: 1.08; rotate: 3deg; } }
+.bw-warn-sign { width: 1em; height: .92em; overflow: visible; }
+.bw-warn-sign path:first-child { fill: var(--bw-fire-2); stroke: var(--spel-ink); stroke-width: 2.2; stroke-linejoin: round; }
+.bw-warn-mark { fill: none; stroke: var(--spel-ink); stroke-width: 2.6; stroke-linecap: round; }
+/* The cracks on the block: thicker than the scene kit's, so they read at the block's size. */
+.bw-root .bw-sway .spel-crack-ink { stroke-width: 4.5px; }
+.bw-root .bw-sway .spel-crack-light { stroke-width: 3px; }
+
 /* Too hot: the glow fills the sky; the crew and residents react in their own art. */
 .bw-root.is-toohot .bw-sky { position: absolute; inset: 0; pointer-events: none; }
 .bw-glow { opacity: 1; }

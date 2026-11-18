@@ -48,6 +48,9 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); window.history.replaceState(null, '', '/'); });
 
+// The skin is lazy: its first render waits for the chunk, which takes over findBy's 1 s default under a loaded gate.
+const LAZY = { timeout: 5000 };
+
 describe('Spookhuis: the light and the visitor, pure', () => {
     test('the light: about a card wide, clamped; on a finger it shines above it, on a mouse right there', () => {
         expect(beamRadius(200)).toBeGreaterThan(110);
@@ -129,7 +132,7 @@ describe('Spookhuis: the game', () => {
     test('closed cards in the dark, the light, the room\'s furniture; a turned card shines by itself', async () => {
         act(() => start());
         const { container } = render(<SpelScreen />);
-        const group = await screen.findByRole('group', { name: 'Kaarten in het spookhuis' });
+        const group = await screen.findByRole('group', { name: 'Kaarten in het spookhuis' }, LAZY);
         const all = within(group).getAllByRole('button');
         expect(all).toHaveLength(12);
         expect(all.every(b => b.getAttribute('aria-label') === 'Kaart, dicht')).toBe(true);
@@ -145,7 +148,7 @@ describe('Spookhuis: the game', () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         act(() => start());
         const { container } = render(<SpelScreen />);
-        const group = await screen.findByRole('group', { name: 'Kaarten in het spookhuis' });
+        const group = await screen.findByRole('group', { name: 'Kaarten in het spookhuis' }, LAZY);
         fireEvent.click(card(group, 1, 'sum'));
         fireEvent.click(card(group, 1, 'answer'));
         expect(cells()[1].state).toBe('solved');
@@ -205,7 +208,7 @@ describe('Spookhuis: the game', () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         act(() => start());
         const { container } = render(<SpelScreen />);
-        await screen.findByRole('group', { name: 'Kaarten in het spookhuis' });
+        await screen.findByRole('group', { name: 'Kaarten in het spookhuis' }, LAZY);
         act(() => { vi.advanceTimersByTime(FLIPPER_EVERY_MS + 500); });
         expect(container.querySelector('.sph-flipper')).toBeNull();
         act(() => { vi.advanceTimersByTime(FLIPPER_PASS_MS); });
@@ -216,7 +219,7 @@ describe('Spookhuis: the game', () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         act(() => start());
         const { container } = render(<SpelScreen />);
-        await screen.findByRole('group', { name: 'Kaarten in het spookhuis' });
+        await screen.findByRole('group', { name: 'Kaarten in het spookhuis' }, LAZY);
         act(() => { for (let i = 0; i < cells().length; i++) sp().boardPick(i, cells()[i].question.answer); });
         expect(container.querySelector('.sph-root.is-lit')).toBeTruthy();
         expect(screen.getByText('Het licht is aan!')).toBeTruthy();

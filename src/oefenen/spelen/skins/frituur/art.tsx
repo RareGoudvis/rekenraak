@@ -326,10 +326,11 @@ const STEAM = [[64, 234, 0], [94, 230, 1], [122, 236, 2]] as const;
 const OIL_BUBBLES = [[52, 0], [70, 1], [88, 2], [104, 3], [122, 4], [62, 5], [114, 6]] as const;
 
 // shrug = the wrong snack went out: an apologetic shrug, palm up.
-export type CookPose = 'idle' | 'serve' | 'shrug';
+// closed = the shutter is down (the cook is behind it).
+export type CookPose = 'idle' | 'serve' | 'shrug' | 'closed';
 
 /** The frituur (300 × 360, ground at 360): the sign, the awning, the window with its fryer and cook, the counter. */
-export function KioskG({ cook, clipId, beat = 0 }: { cook: CookPose; clipId: string; beat?: number }): ReactNode {
+export function KioskG({ cook, clipId, beat = 0, closing = false }: { cook: CookPose; clipId: string; beat?: number; closing?: boolean }): ReactNode {
     const arm = cook === 'serve' ? 'M232 244 Q262 238 290 246' : cook === 'shrug' ? 'M232 244 Q256 246 262 226' : 'M232 244 Q246 258 252 270';
     const hand: Pt = cook === 'serve' ? [290, 246] : cook === 'shrug' ? [262, 224] : [252, 270];
     return (
@@ -393,6 +394,23 @@ export function KioskG({ cook, clipId, beat = 0 }: { cook: CookPose; clipId: str
                     <path className="fr-handle" d="M124 240 L136 226 L146 226" />
                 </g>
             </g>
+            {closing && (
+                // Too many walked off: the roller shutter comes down over the window, a "Gesloten" sign swinging on it.
+                <g clipPath={`url(#${clipId}-shut)`}>
+                    <clipPath id={`${clipId}-shut`}><rect x={26} y={166} width={248} height={108} /></clipPath>
+                    <g className="fr-shutter">
+                        <rect className="fr-shutter-body" x={26} y={182} width={248} height={92} />
+                        <path className="fr-shutter-slat" d={Array.from({ length: 9 }, (_, i) => `M26 ${190 + i * 9.6} H274`).join(' ')} />
+                        <rect className="fr-shutter-bar" x={26} y={268} width={248} height={6} />
+                        <rect className="fr-shutter-handle" x={140} y={262} width={20} height={5} rx={2} />
+                        <g className="fr-closed-sign">
+                            <path className="fr-closed-string" d="M128 196 L150 186 L172 196" />
+                            <rect className="fr-closed-board" x={112} y={196} width={76} height={26} rx={5} />
+                            <text className="fr-closed-text" x={150} y={214} textAnchor="middle">GESLOTEN</text>
+                        </g>
+                    </g>
+                </g>
+            )}
             <rect className="fr-window-frame" x={26} y={182} width={248} height={92} rx={6} />
             {/* The awning, scalloped, over the window. */}
             <g className="fr-awning">
@@ -508,6 +526,30 @@ export function PigeonG(): ReactNode {
                 <path className="fr-pigeon-wing" d="M10 12 Q18 8 26 14 Q18 18 10 12 Z" />
             </g>
             <path className="fr-pigeon-leg" d="M12 21 v5 M17 21 v5" />
+        </g>
+    );
+}
+
+/** A walk-off token on the panel: a calm face (may still storm off) or an angry red one with steam (did). */
+export function AngryToken({ angry }: { angry: boolean }): ReactNode {
+    return (
+        <g className={`fr-token${angry ? ' is-angry' : ''}`}>
+            {angry && <path className="fr-token-steam" d="M-13 -9 q-3 -4 0 -7 M13 -9 q3 -4 0 -7" />}
+            <circle className="fr-token-face" r={11} />
+            {angry ? (
+                <>
+                    <path className="fr-token-line" d="M-7 -5 L-2 -2.5 M7 -5 L2 -2.5" />
+                    <circle className="fr-token-eye" cx={-4} cy={0.5} r={1.6} />
+                    <circle className="fr-token-eye" cx={4} cy={0.5} r={1.6} />
+                    <path className="fr-token-line" d="M-5 7 Q0 2.5 5 7" />
+                </>
+            ) : (
+                <>
+                    <circle className="fr-token-eye" cx={-4} cy={-1.5} r={1.6} />
+                    <circle className="fr-token-eye" cx={4} cy={-1.5} r={1.6} />
+                    <path className="fr-token-line" d="M-4.5 4.5 Q0 7.5 4.5 4.5" />
+                </>
+            )}
         </g>
     );
 }

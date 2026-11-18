@@ -20,6 +20,8 @@ import { SLALOM_RECORDS_KEY, formatMetres, loadBestM, saveIfLonger, slalomResult
 import { formatMathNumber } from '../services/math/formatters';
 import { resetKiosk } from './helpers/oefenKiosk';
 import { resolveMeta } from '../oefenen/spelen/skins/options';
+import { BANK_MS, GEAR_ORDER, gearCounts, gearOf, isWipedOut, pieceLost } from '../oefenen/spelen/skins/slalom/run';
+import { BANK_TITLE } from '../oefenen/spelen/skins/slalom/records';
 
 // Skislalom: the run down the slope (gates, speed steps, the tumble, a gate missed), the record per card, and the
 // skin on the real session: tap a flag, the wrong flash with the laughing snowman, help freezing it, the 2-minute end.
@@ -36,6 +38,21 @@ function ski(r: SlRun, ms: number): { run: SlRun; news: TickNews[] } {
     return { run: r, news };
 }
 const passed = (news: TickNews[]) => news.map(n => n.passed).filter(Boolean);
+
+describe('Skislalom gear (owner 2026-11-18: Moeilijk and Onmogelijk only)', () => {
+    test('each fall costs a piece: helmet, poles, one ski, the last ski = the end; only on Moeilijk and Onmogelijk', () => {
+        expect(GEAR_ORDER).toEqual(['helm', 'stokken', 'ski', 'laatsteSki']);
+        expect(gearOf(0)).toEqual({ helmet: true, poles: true, skis: 2 });
+        expect(gearOf(1)).toEqual({ helmet: false, poles: true, skis: 2 });
+        expect(gearOf(2)).toEqual({ helmet: false, poles: false, skis: 2 });
+        expect(gearOf(3)).toEqual({ helmet: false, poles: false, skis: 1 });
+        expect(gearOf(4)).toEqual({ helmet: false, poles: false, skis: 0 });
+        expect([1, 2, 3, 4, 5].map(pieceLost)).toEqual(['helm', 'stokken', 'ski', 'laatsteSki', null]);
+        expect(isWipedOut(3)).toBe(false);
+        expect(isWipedOut(4)).toBe(true);
+        expect(['makkelijk', 'normaal', 'moeilijk', 'onmogelijk'].map(l => gearCounts(l as 'normaal'))).toEqual([false, false, true, true]);
+    });
+});
 
 describe('Skislalom run', () => {
     test('five speed steps, each gate slower to reach at step 1 than at step 5, but never rushed', () => {
@@ -193,7 +210,9 @@ describe('Skislalom in the picker', () => {
         expect(meta.options!.map(o => o.id)).toEqual(['niveau']);
         expect(meta.options![0].choices.map(c => c.icon)).toEqual([{ clock: 'off' }, { clock: 'on' }, { clock: 'on', flames: 1 }, { clock: 'on', flames: 2 }]);
         expect(meta.season).toBe('winter');
-        expect(meta.canFail).toBeFalsy();
+        // Moeilijk / Onmogelijk: all gear gone = the friendly end (owner 2026-11-18).
+        expect(meta.canFail).toBe(true);
+        expect(meta.failTitle).toBe('Plof, in de sneeuw! Nog eens?');
         expect(gameGroupOf(meta)).toBe('tijd');
         expect(skinAccepts(meta.accepts, { kind: 'choice' })).toBe(true);
         expect(skinAccepts(meta.accepts, { kind: 'number', answerChars: 5 })).toBe(true);
@@ -235,7 +254,7 @@ describe('Skislalom on the session', () => {
         return (
             <Slalom question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
                 phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-                onFail={() => st.fail()} onReport={st.report} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events} runKey="slalom:test" />
+                onFail={() => st.fail()} onReport={st.report} onHold={on => st.hold(on)} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events} runKey="slalom:test" />
         );
     }
     const openFlags = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).queryAllByRole('button')
@@ -283,6 +302,52 @@ describe('Skislalom on the session', () => {
         act(() => sp().closeHelp());
         wait(1000);
         expect(metres()).not.toBe(before);
+    });
+
+    test('Normaal: no gear on the line, a tumble only costs speed', () => {
+        const { container } = render(<Wired />);
+        wait(100);
+        expect(container.querySelector('.sl-gear')).toBeNull();
+        expect(container.querySelector('.sl-helmet-g')).not.toBeNull();
+    });
+
+    test('Moeilijk: every fall costs a piece (HUD and skier); the last ski = into the snowbank, laughing, then the friendly end', () => {
+        act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(skinById('slalom')!.meta, { niveau: 'moeilijk' }) }));
+        const { container } = render(<Wired />);
+        const lost = () => container.querySelectorAll('.sl-gear-item.is-lost').length;
+        const fall = () => {
+            wait(100);
+            tapValue(sp().question!.choices.find(c => c !== sp().question!.answer)!);
+            wait(SLALOM.passMs + 200);
+        };
+        wait(100);
+        expect(container.querySelectorAll('.sl-gear-item')).toHaveLength(4);
+        expect(lost()).toBe(0);
+        fall();
+        expect(lost()).toBe(1);
+        expect(container.querySelector('.sl-fly.is-helmet')).not.toBeNull();
+        wait(3000);
+        expect(container.querySelector('.sl-skier.is-ski')).not.toBeNull();
+        expect(container.querySelector('.sl-helmet-g')).toBeNull();
+        expect(container.querySelector('.sl-hair-g')).not.toBeNull();
+        fall();
+        wait(3000);
+        expect(lost()).toBe(2);
+        expect(container.querySelector('.sl-pole-g')).toBeNull();
+        fall();
+        wait(3000);
+        expect(container.querySelector('.sl-skier-art.is-one-ski')).not.toBeNull();
+        expect(container.querySelector('.sl-gear-item.is-next')).not.toBeNull();
+        fall();
+        expect(lost()).toBe(4);
+        wait(1000);
+        expect(container.querySelector('.sl-skier.is-bank .sl-bank-laugh')).not.toBeNull();
+        expect(container.querySelector('.sl-root.is-bank')).not.toBeNull();
+        expect(sp().phase).not.toBe('end');
+        wait(BANK_MS + 200);
+        expect(sp().phase).toBe('end');
+        expect(sp().outcome).toBe('failed');
+        expect(sp().result?.title).toBe(BANK_TITLE);
     });
 
     test('the round ends after two minutes with the metres and the record as its end lines', () => {

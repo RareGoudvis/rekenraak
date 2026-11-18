@@ -72,6 +72,12 @@ const RECIPES = {
     klonk: (ac, d, t) => {
         [0, 0.32, 0.52].forEach((at, i) => tone(ac, d, t, { type: 'triangle', f0: 620, f1: 480, at, dur: 0.12, vol: 0.14 - i * 0.04 }));
     },
+    // The swaying block: a long wooden creak that bends down, and a little groan of the beams under it.
+    kraak: (ac, d, t) => {
+        tone(ac, d, t, { type: 'sawtooth', f0: 210, f1: 150, dur: 0.7, vol: 0.06, wobble: [24, 18] });
+        noise(ac, d, t, { dur: 0.6, vol: 0.06, filter: 'bandpass', f0: 520, f1: 380, q: 6 });
+        tone(ac, d, t, { type: 'triangle', at: 0.55, f0: 120, f1: 90, dur: 0.4, vol: 0.08 });
+    },
 } satisfies Record<string, Recipe>;
 
 export type BrandweerSound = keyof typeof RECIPES;

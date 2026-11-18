@@ -6,6 +6,7 @@ import { skinById } from './skins/registry';
 import GameThumb from './GameThumb';
 import LevelIcon from './levels/LevelIcon';
 import { tintOf } from './thumbs';
+import { usePillWrap } from '../kiosk/pillWrap';
 
 interface Props {
     meta: SkinMeta;
@@ -24,6 +25,7 @@ export default function SpelOptions({ meta, blurb, note, onStart, onBack }: Prop
     const [chosen, setChosen] = useState(() => loadChoices(meta));
     const start = () => { saveChoices(meta.id, chosen); onStart(resolveMeta(meta, chosen)); };
     const skin = skinById(meta.id);
+    const noteRef = usePillWrap<HTMLParagraphElement>();
     const shown = meta.options?.filter(o => !o.when || chosen[o.when.id] === o.when.value) ?? [];
     // The half-line options pair up; an odd last one gets the whole line, so its longer labels never wrap.
     const halves = shown.filter(o => !o.wide);
@@ -35,7 +37,7 @@ export default function SpelOptions({ meta, blurb, note, onStart, onBack }: Prop
                 <div className="spel-options-text">
                     <h2 id="spel-options-title" className="spel-options-title">{meta.label}</h2>
                     {blurb && <p className="spel-options-blurb">{blurb}</p>}
-                    {note && <p className="spel-options-note">{note}</p>}
+                    {note && <p ref={noteRef} className="spel-options-note">{note}</p>}
                 </div>
             </div>
             {shown.length > 0 && (
