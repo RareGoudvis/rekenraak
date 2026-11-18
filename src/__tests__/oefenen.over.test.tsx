@@ -3,7 +3,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import OefenApp from '../oefenen/OefenApp';
 import OverButton from '../oefenen/zelf/OverPage';
-import { FEEDBACK_URL, SHEETS_URL, STORED_ITEMS } from '../oefenen/zelf/overContent';
+import { FEEDBACK_URL, FRANS_TEXT, SHEETS_URL, STORED_ITEMS } from '../oefenen/zelf/overContent';
 import { PUPIL_KEYS } from '../oefenen/zelf/pupilStorage';
 import { oefenStorageKey } from '../services/oefenen/stats';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -36,8 +36,8 @@ describe('Over page (Zelf home)', () => {
             expect(a.getAttribute('target')).toBe('_blank');
             expect(a.getAttribute('rel')).toMatch(/noopener/);
         }
-        // The Frans paragraph waits for later.
-        expect(d.textContent).not.toMatch(/Frans/);
+        // Frans is in the kids app: the paragraph says why it sits in a maths app.
+        expect(d.textContent).toContain(FRANS_TEXT);
     });
 
     test('focus starts on Sluiten, stays inside, and goes back to Over on close', async () => {

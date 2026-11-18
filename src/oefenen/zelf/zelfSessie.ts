@@ -8,6 +8,8 @@ import { childLabel } from './zelfLabels';
 import { MAX_TYPES, fnv1a } from '../../services/oefenen/session';
 import { OEFEN_VERSION, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { TUTOR_SESSIE_PREFIX, isTutorSessie } from '../../services/oefenen/tutorOefenLink';
+import { subjectTypeOf } from '../../services/oefenen/subjects';
+import { zelfSubjectOf } from './zelfSubjects';
 
 export type ZelfMode = { kind: 'count'; n: 3 | 5 | 10 | 20 } | { kind: 'timer'; min: 1 | 3 | 5 };
 
@@ -31,6 +33,9 @@ export const modeKey = (m: ZelfMode): string => (m.kind === 'count' ? `n${m.n}` 
 export interface ZelfChoice { key: string; label: string; vars: CardVariant[]; source?: string }
 
 const toType = (v: CardVariant): OefenType => {
+    // A subject's variant (Frans) is its own session type; the rest are maths cards.
+    const subject = subjectTypeOf(v);
+    if (subject) return subject;
     const card = resolveCard(v);
     return {
         typeId: card.typeId,
@@ -355,6 +360,8 @@ function generalChoices(cards: UsableCard[], topicId: string): ZelfChoice[] {
  * range = the pupil's "Tot hoeveel?" (usableVariants); a range other than Eenvoudig's default marks the key, so its runs stay apart.
  */
 export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string, range?: number): ZelfChoice[] {
+    const subject = zelfSubjectOf(topicId);
+    if (subject) return subject.choices(grade, topicId);
     const cards = zelfUsable(data, grade, range).get(topicId) ?? [];
     if (!cards.length) return [];
     const max = range === undefined ? null : zelfMaxOf(data, topicId, grade, range);

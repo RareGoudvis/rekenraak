@@ -27,12 +27,14 @@ interface Props {
     // The kiosk after a fout: the pupil's wrong answer (struck through, grey) and Nog eens proberen.
     given?: string | null;
     onRetry?(): void;
+    // One explanation, not steps to think along (a subject such as Frans): open at once, every line, no step buttons.
+    plain?: boolean;
 }
 
 // After a final fout: the pupil may open the worked steps, one Basis line per tap so they can
 // think ahead; Alle stappen shows the whole solution at once, optional lines included. Volgende moves on either way. SYNC: tutor StepsView.
-export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening', doneText = 'Klaar! Kijk nog eens naar je antwoord.', given, onRetry }: Props) {
-    const [open, setOpen] = useState(startOpen);
+export default function StepsPanel({ lines, handig = [], onNext, hint, onSolution, visual, onVisual, startOpen = false, nextLabel = 'Volgende oefening', doneText = 'Klaar! Kijk nog eens naar je antwoord.', given, onRetry, plain = false }: Props) {
+    const [open, setOpen] = useState(startOpen || plain);
     const [revealed, setRevealed] = useState(1);
     const [alle, setAlle] = useState(false);
     const [showHandig, setShowHandig] = useState(false);
@@ -75,7 +77,11 @@ export default function StepsPanel({ lines, handig = [], onNext, hint, onSolutio
                             {givenLine}
                         </div>
                     )}
-                    {asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
+                    {plain ? (
+                        <ol className="kiosk-steps-lines is-plain" aria-live="polite">
+                            {lines.map((l, i) => <li key={i} className={`kiosk-math${i === 0 ? ' is-new' : ''}`}><StepLineView line={l} fmt={formatMathNumber} /></li>)}
+                        </ol>
+                    ) : asking ? <QuestionSteps lines={lines} onReveal={onSolution} visual={visual} /> : (
                     <>
                         {!inCard && visual?.(stage)}
                         {!pictureOnly && (

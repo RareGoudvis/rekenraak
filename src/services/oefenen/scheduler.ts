@@ -4,6 +4,7 @@ import { REGISTRY } from '../../config/exerciseRegistry';
 import { DEFAULT_BASE, seedConstraints } from '../../config/baseSettings';
 import { exerciseKeyOf, generateForBlock } from '../generateDispatch';
 import { kioskSupports } from './kiosk';
+import { subjectFor } from './subjects';
 
 // Which type comes next, which exercise, and when a run is over. Pure: the RNG is injected
 // so the tests (and a resumed run) are deterministic.
@@ -154,9 +155,25 @@ export function nextExercise(s: OefenSessie, type: OefenType, seenKeys: Readonly
     return got;
 }
 
+// A subject beside the maths (subjects.ts) draws from its own question maker, with the same re-draws against repeats.
+function generateSubject(type: OefenType, seenKeys: ReadonlySet<string>, rng: Rng): OefenExercise | null {
+    const subject = subjectFor(type.typeId);
+    if (!subject) return null;
+    let last: OefenExercise | null = null;
+    for (let attempt = 0; attempt <= MAX_REDRAWS; attempt++) {
+        let exercise: unknown;
+        try { exercise = subject.generate(type.constraints, rng); } catch { exercise = null; }
+        if (exercise === null || exercise === undefined) continue;
+        const key = subject.keyOf(exercise);
+        last = { exercise, key, constraints: type.constraints, repeat: seenKeys.has(key) };
+        if (!last.repeat) return last;
+    }
+    return last;
+}
+
 function generateOne(type: OefenType, seenKeys: ReadonlySet<string>, rng: Rng | undefined, made: number): OefenExercise | null {
     const def = REGISTRY[type.typeId];
-    if (!def) return null;
+    if (!def) return generateSubject(type, seenKeys, rng ?? Math.random);
     const block = blockFor(type);
     const constraints = block.constraints as Record<string, unknown>;
     const realRandom = Math.random;

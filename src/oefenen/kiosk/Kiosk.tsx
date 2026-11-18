@@ -18,6 +18,7 @@ import KidBackdrop from './KidBackdrop';
 import type { CurrentInput } from '../useOefenStore';
 import type { OefenStats } from '../../services/oefenen/types';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
+import { stepsArePlain } from '../../services/oefenen/kioskSteps';
 import { setThousandsSeparator } from '../../services/math/formatters';
 
 // Only the pupil page loads this module (the teacher's workspace loads ExerciseCard alone), so the sheet
@@ -219,11 +220,11 @@ export default function Kiosk() {
                         {shown?.wrongFirst !== undefined && <p className="kiosk-attempt">Kans 2 van 2</p>}
                         <AnswerInput />
                         {phase === 'feedback' && lastCorrect !== null && (
-                            <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} hint={lastCorrect ? null : feedbackHint} />
+                            <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} hint={feedbackHint} />
                         )}
                         {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} hint={feedbackHint} />}
                         {phase === 'steps' && stepsOffer && <StepsPanel key={`${shown?.exerciseKey}-${shown?.shownAt}`} lines={stepsOffer} handig={handigOffer} onNext={next} hint={feedbackHint} onSolution={showSolution}
-                            visual={stepsVisual} onVisual={setCardRevealed} given={given} onRetry={tryAgain} />}
+                            visual={stepsVisual} onVisual={setCardRevealed} given={given} onRetry={tryAgain} plain={!!type && stepsArePlain(type.typeId)} />}
                     </section>
                 </main>
             )}

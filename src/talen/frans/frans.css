@@ -1,0 +1,42 @@
+/* Frans in the kids app: the section's colour and the card drawings' paints (FransArt.tsx). */
+.oefen-body {
+  --kid-fr-tint: #C7D2FE;
+  --kid-fr-blue: #2B4FB8;
+  --kid-fr-red: #E23B3B;
+  --kid-fr-navy: #22305A;
+  --kid-fr-gold: #F3B54A;
+  --kid-fr-crust: #C77A2E;
+  --kid-fr-steel: #8E7F6E;
+  --kid-fr-steel-dark: #5E5245;
+  --kid-fr-cheese: #FFD95A;
+  --kid-fr-cheese-dark: #E9B820;
+  --kid-fr-plate: #F4F1EA;
+}
+
+.fr-art { display: block; width: 100%; height: 100%; }
+.fr-art :is(path, rect, ellipse, circle) { stroke: var(--kid-ink); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.fr-sky { fill: var(--kid-sky); stroke: none !important; }
+.fr-cloud { fill: var(--kid-card); stroke-width: 3; }
+.fr-ground { fill: var(--kid-hill); }
+.fr-shadow { fill: var(--kid-ink); opacity: 0.12; stroke: none !important; }
+.fr-steel { fill: var(--kid-fr-steel); }
+.fr-steel-dark { fill: none; stroke: var(--kid-fr-steel-dark) !important; stroke-width: 5; }
+.fr-pole { fill: none; stroke-width: 5; }
+.fr-flag-blue { fill: var(--kid-fr-blue); }
+.fr-flag-white { fill: var(--kid-card); }
+.fr-flag-red { fill: var(--kid-fr-red); }
+.fr-beret { fill: var(--kid-fr-navy); }
+.fr-beret-band { fill: var(--kid-fr-red); }
+.fr-beret-stalk { fill: none; stroke-width: 6; }
+.fr-plate { fill: var(--kid-fr-plate); }
+.fr-plate-in { fill: var(--kid-card); stroke-width: 2.5; }
+.fr-crust { fill: var(--kid-fr-gold); }
+.fr-crust-line { fill: none; stroke: var(--kid-fr-crust) !important; stroke-width: 5; }
+.fr-cheese { fill: var(--kid-fr-cheese); }
+.fr-cheese-top { fill: var(--kid-fr-cheese-dark); }
+.fr-hole { fill: var(--kid-fr-cheese-dark); stroke-width: 2.5; }
+.fr-bubble :is(path, rect) { fill: var(--kid-card); stroke-width: 3.5; }
+.fr-bubble .fr-bubble-join { stroke: none; }
+.fr-bubble text { font-family: var(--kid-font); font-size: 26px; font-weight: 900; fill: var(--kid-ink); text-anchor: middle; }
+.fr-badge { width: 86%; height: 86%; }
+.zelf-topic-thumb.is-drawn { background: var(--kid-sky); }

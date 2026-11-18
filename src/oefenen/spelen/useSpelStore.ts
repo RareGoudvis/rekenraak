@@ -6,7 +6,8 @@ import { checkAnswer } from '../../services/oefenen/check';
 import { kioskFor } from '../../services/oefenen/kiosk';
 import type { OefenHistoryEntry, OefenSessie } from '../../services/oefenen/types';
 import type { HandigStrategy, StepLine } from '../../services/math/workedSteps';
-import { handigFor, stepsFor } from '../../services/stepsAvailability';
+import { handigFor } from '../../services/stepsAvailability';
+import { kioskHelpFor } from '../../services/oefenen/kioskSteps';
 import { buildZelfSessie, type ZelfChoice } from '../zelf/zelfSessie';
 import { useOefenStore } from '../useOefenStore';
 import { createSpelEvents, type SpelEvents, type SpelOutcome } from './events';
@@ -269,7 +270,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             set({
                 phase: 'help', helpedNow: true, helped: onBoard ? helped + (onBoard.counts ? 1 : 0) : helpedNow ? helped : helped + 1,
                 ...(onBoard && { board: onBoard.board }),
-                help: { lines: stepsFor(typeId, q.exercise, q.constraints), handig: handigFor(typeId, q.exercise, q.constraints, s.grade) },
+                help: { lines: kioskHelpFor(typeId, q.exercise, q.constraints), handig: handigFor(typeId, q.exercise, q.constraints, s.grade) },
                 // The clock stops with the round (already stopped under a skin's hold).
                 pausedLeft: pausedLeft ?? (endsAt !== null ? Math.max(0, endsAt - now) : null),
             });

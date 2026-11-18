@@ -186,6 +186,9 @@ export interface KioskDescriptor<E = unknown> {
     choices?: string[];
     // Per-exercise buttons (the numbers of a "grootste" row); absent = `choices`.
     choicesOf?(ex: E, c: Record<string, unknown>): string[];
+    // Word buttons stay a grid of keypad-height buttons however long the words, their size fitted to the longest
+    // (a language subject's verb forms: "choisissons"); absent = long words get tall two-column buttons.
+    wordGrid?: boolean;
     // multi-number: one placeholder per field, e.g. ['1ste', '2de']; absent = numbered.
     // fraction: ['geheel', 'noemer', 'teller'] adds the gemengd getal's whole field; absent = noemer, teller.
     labels?(ex: E, c: Record<string, unknown>): string[];

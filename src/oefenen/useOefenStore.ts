@@ -8,7 +8,8 @@ import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kio
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 import { KWART, TIME_WORDS } from '../services/clock/timeWords';
 import type { HandigStrategy, StepLine } from '../services/math/workedSteps';
-import { handigFor, stepsOrMabFor } from '../services/stepsAvailability';
+import { handigFor } from '../services/stepsAvailability';
+import { kioskAfterLine, kioskStepsFor } from '../services/oefenen/kioskSteps';
 import { isZelfSessie } from './zelf/zelfSessie';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
@@ -153,6 +154,8 @@ export interface CurrentInput {
     extraKeys: KioskExtraKey[];
     // multi-number: Controleer works with some fields empty (descriptor blankFields).
     blankFieldsOk: boolean;
+    // choice: word buttons in a grid, their text fitted (descriptor wordGrid).
+    wordGrid?: boolean;
 }
 
 // time-words [uur, minuten, woord]: voor / over carry minutes (a number or kwart), uur / half none.
@@ -214,6 +217,7 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
         kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints),
         extraKeys: d.extraKeys?.(cur.exercise, cur.constraints) ?? [],
         blankFieldsOk: kind === 'multi-number' && !!d.blankFields?.(cur.exercise, cur.constraints),
+        ...(kind === 'choice' && d.wordGrid && { wordGrid: true }),
         ...(ia && { interact: ia.kind }),
         ...(ia?.groups && { groups: true }),
         ...(ia?.kind === 'build' && { pieces: ia.pieces?.(cur.exercise, cur.constraints) ?? [] }),
@@ -583,13 +587,16 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
             // A wrong answer the descriptor reviews: a hint and the wrong cells marked (never in testmodus: no feedback there).
             const review = !correct && !s.testMode && interactive ? ia?.review?.(interactive.given, cur.exercise, cur.constraints) : undefined;
-            const feedbackHint = review?.hint ?? null;
+            // A subject's full answer ("Jos a") under the flash, only once no try is left (it would give a retry away) and never in testmodus.
+            const lastTry = correct || attemptsOf(s) === 1 || cur.wrongFirst !== undefined;
+            const after = lastTry && !s.testMode ? kioskAfterLine(type.typeId, cur.exercise, cur.constraints, correct) : null;
+            const feedbackHint = review?.hint ?? after;
             if (review?.marks) set({ interaction: { ...get().interaction, marks: { ...get().interaction.marks, ...review.marks } } });
             set({ nudge: null, feedbackHint });
             const hintMs = feedbackHint ? HINT_MS : 0;
             // Nog eens proberen: only the flash, and the steps again after a fout; the run already counted this exercise.
             if (cur.practice) {
-                const stepsOffer = correct ? null : stepsOrMabFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
+                const stepsOffer = correct ? null : kioskStepsFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
                 set({ lastCorrect: correct, stepsOffer, handigOffer: stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints, s.grade) : [], phase: 'feedback' });
                 scheduleFlash(correct ? FLASH_MS.juist : FLASH_MS.fout + hintMs);
                 return;
@@ -608,7 +615,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             persist(updated);
             // Only after the final try: steps during a retry would give the answer away. Testmodus never shows them.
             // A fact without steps (3 + 4) still gets the MAB picture alone where MAB applies ([] lines).
-            const stepsOffer = correct || s.testMode || s.noSteps ? null : stepsOrMabFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
+            const stepsOffer = correct || s.testMode || s.noSteps ? null : kioskStepsFor(type.typeId, cur.exercise, cur.constraints, { grade: s.grade, noMab: s.noMab });
             const handigOffer = stepsOffer ? handigFor(type.typeId, cur.exercise, cur.constraints, s.grade) : [];
             const missed = correct ? get().missed : [...get().missed, { slot: cur.slot, exercise: cur.exercise, exerciseKey: cur.exerciseKey, constraints: cur.constraints }];
             set({ run: updated, lastCorrect: correct, stepsOffer, handigOffer, missed });

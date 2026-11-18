@@ -4,6 +4,7 @@ import TwoTapButton from '../kiosk/TwoTapButton';
 import RotatePrompt from '../kiosk/RotatePrompt';
 import { UPRIGHT_PHONE, useMedia } from '../kiosk/useMedia';
 import StepsPanel from '../kiosk/StepsPanel';
+import { stepsArePlain } from '../../services/oefenen/kioskSteps';
 import { stepsVisualFor } from '../../components/steps/stepsVisuals';
 import { mabOnlyFor } from '../../services/stepsAvailability';
 import { progressOf, useSpelStore } from './useSpelStore';
@@ -76,7 +77,7 @@ function HelpPanel() {
                 <section className="spel-help-steps">
                     {lines ? (
                         <StepsPanel lines={lines} handig={help.handig} onNext={() => closeHelp()} startOpen nextLabel="Verder spelen" doneText="Klaar! Nu weet je hoe het moet."
-                            visual={visual} onVisual={onVisual} />
+                            visual={visual} onVisual={onVisual} plain={stepsArePlain(typeId)} />
                     ) : (
                         <div className="kiosk-steps">
                             {/* A pack's tip already stands beside its picture. */}

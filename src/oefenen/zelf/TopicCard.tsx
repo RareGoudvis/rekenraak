@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { GameController, PencilSimple } from '@phosphor-icons/react';
 import type { SKINS } from '../spelen/skins/registry';
 import GameThumb from '../spelen/GameThumb';
@@ -27,18 +27,21 @@ interface Props {
     game: (typeof SKINS)[number] | null;
     // A game plays one of its choices at this leerjaar: the controller sticker.
     hasGame: boolean;
+    // A drawn picture of its own (a subject beside the maths, such as Frans); wins over the game and Oefenmodus pictures.
+    picture?: ReactNode;
     disabled: boolean;
     onPick(): void;
 }
 
 // A topic on the topics screen: a picture on top (a game that plays it, or its exercise screen), the name below,
 // small stickers for "games" and "oefenen" in the picture's corner. The name stays the button's whole name.
-export default function TopicCard({ id, label, game, hasGame, disabled, onPick }: Props) {
+export default function TopicCard({ id, label, game, hasGame, picture, disabled, onPick }: Props) {
     const uid = useId();
     return (
         <button type="button" className="zelf-topic" data-topic={id} disabled={disabled} onClick={onPick} aria-describedby={`${uid}-d`}>
             <span className="zelf-topic-pic" aria-hidden>
-                {game ? <GameThumb skin={game} className="zelf-topic-thumb" /> : <OefenThumb id={id} label={label} />}
+                {picture ? <span className="zelf-topic-thumb is-drawn">{picture}</span>
+                    : game ? <GameThumb skin={game} className="zelf-topic-thumb" /> : <OefenThumb id={id} label={label} />}
                 <span className="zelf-topic-marks">
                     {hasGame && <span className="zelf-topic-mark is-game" title={HAS_GAME}><GameController weight="fill" /></span>}
                     <span className="zelf-topic-mark is-oefen" title={HAS_OEFEN}><PencilSimple weight="fill" /></span>
