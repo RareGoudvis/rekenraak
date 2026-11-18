@@ -74,8 +74,9 @@ export default function TopBar({ now }: Props) {
                     </span>
                 )}
                 {!statsHidden && phase !== 'stats' && (
-                    <button type="button" className="kiosk-btn kiosk-btn-quiet kiosk-stats-btn" aria-label="Resultaten" onClick={openStats}>
-                        <ChartBar aria-hidden /> <span className="kiosk-stats-text">Resultaten</span>
+                    // Icon only (owner 2026-11-18): with Terug naar begin and Volledig scherm uit the word ran off a 1024 px bar.
+                    <button type="button" className="kiosk-btn kiosk-btn-quiet kiosk-stats-btn" aria-label="Resultaten" title="Resultaten" onClick={openStats}>
+                        <ChartBar aria-hidden />
                     </button>
                 )}
             </span>

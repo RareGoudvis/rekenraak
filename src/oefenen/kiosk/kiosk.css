@@ -1274,12 +1274,9 @@ html:has(.oefen-body),
   .kiosk-topbar-title { display: none; }
   .kiosk-topbar { gap: var(--sp-2); }
   .kiosk-pill { padding: 4px 10px; }
-  /* Zelf oefenen: Terug naar begin says just Terug and Resultaten keeps its icon, so the bar fits at 360 px. */
+  /* Zelf oefenen: Terug naar begin says just Terug, so the bar fits at 360 px (Resultaten is an icon everywhere). */
   .kiosk-back-long { display: none; }
   .kiosk-fs-text { display: none; }
-  .kiosk-topbar:has(.kiosk-back-long) .kiosk-stats-text { display: none; }
-  /* Fullscreen adds the exit button: Resultaten shows its icon only, so the bar still fits a 390 px phone. */
-  .kiosk-topbar:has(.kiosk-fs-btn) .kiosk-stats-text { display: none; }
   .kiosk-table { font-size: var(--text-lg); }
   /* With 2 kansen the per-type table has seven columns: smaller headers keep it within a phone. */
   .kiosk-table thead th { font-size: var(--text-sm); }
