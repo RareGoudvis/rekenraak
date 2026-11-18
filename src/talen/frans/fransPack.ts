@@ -25,7 +25,9 @@ export function fransWordChars(v: CardVariant): number {
     const card = ((v.ov.verbs as string[] | undefined) ?? []).map(inf => VERB_BY_INF.get(inf)).filter((x): x is Verb => !!x);
     const longest = (words: string[]) => Math.max(1, ...words.map(w => w.length));
     const werkwoord = v.ov.mode === 'werkwoord';
-    const pool = werkwoord && card.length < CHOICE_COUNT ? VERBS.filter(x => card.includes(x) || card.some(c => c.group === x.group)) : card;
+    // Welk werkwoord? with fewer than six verbs borrows their groups' infinitives, and every verb when that is still too few.
+    const grouped = VERBS.filter(x => card.includes(x) || card.some(c => c.group === x.group));
+    const pool = !werkwoord || card.length >= CHOICE_COUNT ? card : grouped.length >= CHOICE_COUNT ? grouped : VERBS;
     const fr = werkwoord ? longest(pool.map(x => x.inf)) : longest(card.flatMap(x => [...presentForms(x), x.inf]));
     const dir = v.ov.dir ?? 'nl-fr';
     const nl = nlChoiceChars(pool, (v.ov.tense as Tense | undefined) ?? 'present', werkwoord);
@@ -34,7 +36,7 @@ export function fransWordChars(v: CardVariant): number {
 
 // "Jos ? (heeft)": the sign puts the answer where the ? is; "welk werkwoord" asks after the sentence; Frans →
 // Nederlands "nous avons = ?".
-const signOf = (ex: FransExercise) => (ex.dir === 'fr-nl' ? `${promptOf(ex)} = ?` : ex.mode === 'werkwoord' ? `${promptOf(ex)}: ?` : `${ex.subject.nl} ? (${ex.nl})`);
+const signOf = (ex: FransExercise) => (ex.dir === 'fr-nl' ? `${promptOf(ex)} = ?` : ex.mode === 'werkwoord' ? `${promptOf(ex)}: ?` : `${ex.subject.fr} ? (${ex.nl})`);
 
 // One verb in one person never shows twice on a memory board, whichever way it is asked ("wij (hebben)" and "nous
 // avons"); in werkwoord mode one verb once; two persons with the same form (je parle, il parle) once.

@@ -2,7 +2,6 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { frenchNumber, GETALLEN_100, GETALLEN_20, TIENTALLEN } from '../talen/frans/getallen';
 import { flashLine, makeWordExercise, otherFormLine, pairLine, tableOf, wordChoiceChars, type WordExercise, type WordPair } from '../talen/frans/woorden';
-import { FRANS_ZELF } from '../talen/frans/fransZelf';
 import { buildZelfSessie, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore, currentInput } from '../oefenen/useOefenStore';
 import { stepLineText } from '../services/math/workedSteps';
@@ -12,6 +11,7 @@ import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { useSpelStore, type SpelStart } from '../oefenen/spelen/useSpelStore';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
 import { resetKiosk } from './helpers/oefenKiosk';
+import { pickOf } from './helpers/fransChoices';
 import { mulberry32 } from '../oefenen/spelen/distractors';
 
 // French numbers 0 to 100: the hand-written table (traditional spelling, both forms of 70 and 90), the questions
@@ -137,16 +137,15 @@ describe('the number questions', () => {
 
 const st = () => useOefenStore.getState();
 const cur = () => st().shown!.exercise as WordExercise;
-const choiceOf = (topic: string, label: string): ZelfChoice => FRANS_ZELF.choices(5, topic).find(c => c.label.replace(/\s/g, ' ') === label)!;
+const choiceOf = (topic: string, label: string): ZelfChoice => pickOf(topic, label);
 
 describe('numbers through the kiosk', () => {
     beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null, missed: [] }); });
     afterEach(() => { vi.useRealTimers(); });
 
     test('the cards and their ways', () => {
-        for (const t of ['frans:getallen-20', 'frans:tientallen', 'frans:getallen-100']) {
-            expect(FRANS_ZELF.choices(5, t).map(c => c.label.replace(/\s/g, ' '))).toEqual(['Cijfer → Frans', 'Frans → cijfer', 'Door elkaar']);
-        }
+        expect(pickOf('frans:getallen-20', 'Cijfer → Frans').vars[0]).toMatchObject({ leafId: 'frans-getallen', ov: { lists: ['getallen20'], dir: 'nl-fr' }, label: 'Getallen tot 20 · Cijfer → Frans' });
+        expect(pickOf('frans:tientallen', 'Frans → cijfer').vars[0].label).toBe('Tientallen tot 100 · Frans → cijfer');
     });
 
     test('a fout shows the pair and the other form', () => {
@@ -176,7 +175,7 @@ describe('numbers in the games', () => {
 
     test('Frans → cijfer is a number: the keypad games take it as typed; Cijfer → Frans plays the word games', () => {
         const ids = (topic: string, label: string) => skinsFor(SKINS, spelContentOf(choiceOf(topic, label), 5)!).map(s => s.meta.id);
-        for (const t of ['frans:getallen-20', 'frans:tientallen', 'frans:getallen-100']) for (const c of FRANS_ZELF.choices(5, t)) expect(choiceCanPlay(c, 5)).toBe(true);
+        for (const t of ['frans:getallen-20', 'frans:tientallen', 'frans:getallen-100']) for (const l of ['Cijfer → Frans', 'Frans → cijfer', 'Door elkaar']) expect(choiceCanPlay(pickOf(t, l), 5)).toBe(true);
         expect(spelContentOf(choiceOf('frans:getallen-100', 'Frans → cijfer'), 5)).toMatchObject({ kind: 'number', digitsOnly: true, answerChars: 3 });
         const typed = ids('frans:getallen-100', 'Frans → cijfer');
         expect(typed).toEqual(expect.arrayContaining(['pinguintoren', 'ballonnen', 'hartjes']));

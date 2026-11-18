@@ -1,7 +1,7 @@
 import type { KioskDescriptor, OefenType } from '../../services/oefenen/types';
 import type { KioskSubject } from '../../services/oefenen/subjects';
 import type { StepLine } from '../../services/math/workedSteps';
-import { FRANS_TYPE_ID, fransCardOfLeaf, fransLabelOf } from './fransCards';
+import { FRANS_TYPE_ID, FRANS_VERB_LEAF, fransLabelOf } from './fransCards';
 import {
     FRANS_MODES, formOfExercise, frNlPairOf, fullAnswerOf, grammarOf, makeFransExercise, promptOf, pronounOfExercise, tableNlOf, tableOf,
     type FransExercise, type FransMode, type FransSettings,
@@ -65,7 +65,8 @@ export const FRANS_SUBJECT: KioskSubject = {
     prompt: ex => {
         const e = asEx(ex);
         if (frNl(e)) return { lead: promptOf(e), ask: 'Nederlands:' };
-        return e.mode === 'werkwoord' ? { lead: e.subject.nl, hint: `(${e.nl})`, ask: 'Infinitief:' } : { lead: e.subject.nl, hint: `(${e.nl})` };
+        // The French subject (the pupil writes French: "tu", "Jos et Lien"), the Dutch verb as the hint.
+        return e.mode === 'werkwoord' ? { lead: e.subject.fr, hint: `(${e.nl})`, ask: 'Infinitief:' } : { lead: e.subject.fr, hint: `(${e.nl})` };
     },
     steps: ex => [word(answerLine(asEx(ex)), 'antwoord'), word(grammarOf(asEx(ex)), 'uitleg')],
     // Hoe los ik dit op? in a game: which French pronoun, and the verb's table to look the form up in; "welk werkwoord"
@@ -77,14 +78,15 @@ export const FRANS_SUBJECT: KioskSubject = {
             return [word(`${e.subject.fr} = ${e.subject.nl}`, 'tip'), ...tableNlOf(e.verb).map(l => word(l, 'tabel'))];
         }
         if (e.mode === 'werkwoord') return [word(`${e.nl} komt van het werkwoord ${verbNl(e)}.`, 'tip')];
-        return [word(`${e.subject.nl} = ${pronounOfExercise(e)}`, 'tip'), ...tableOf(e.verb).map(l => word(l, 'tabel'))];
+        // A name: which pronoun it stands for (Jos = il); a pronoun: its Dutch (tu = jij).
+        const tip = pronounOfExercise(e) === e.subject.fr ? `${e.subject.fr} = ${e.subject.nl}` : `${e.subject.fr} = ${pronounOfExercise(e)}`;
+        return [word(tip, 'tip'), ...tableOf(e.verb).map(l => word(l, 'tabel'))];
     },
-    afterLine: (ex, _c, correct) => (asEx(ex).mode === 'werkwoord' || !correct ? answerLine(asEx(ex)) : null),
+    // After a fout the answer with its grammar ("tu as – avoir, 2de persoon enkelvoud"); welk werkwoord? also after a right one.
+    afterLine: (ex, _c, correct) => (!correct ? `${answerLine(asEx(ex))} – ${grammarOf(asEx(ex))}` : asEx(ex).mode === 'werkwoord' ? answerLine(asEx(ex)) : null),
     typeOf: (v): OefenType | null => {
-        const card = fransCardOfLeaf(v.leafId);
-        if (!card) return null;
-        const mode = v.ov.mode as FransMode;
-        const dir = (v.ov.dir ?? 'nl-fr') as WordDirChoice;
-        return { typeId: FRANS_TYPE_ID, leafId: v.leafId, label: fransLabelOf(card, mode, dir), constraints: { ...v.ov }, weight: 100 };
+        const s = v.leafId === FRANS_VERB_LEAF ? settingsOf(v.ov) : null;
+        if (!s) return null;
+        return { typeId: FRANS_TYPE_ID, leafId: v.leafId, label: fransLabelOf({ verbs: s.verbs, mode: s.mode, dir: s.dir ?? 'nl-fr' }), constraints: { ...v.ov }, weight: 100 };
     },
 };

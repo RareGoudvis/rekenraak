@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DAGEN, MAANDEN, WORD_CHOICE_COUNT, WORD_LISTS, makeWordExercise, orderLine, pairLine, wordChoiceChars, type WordExercise, type WordSettings } from '../talen/frans/woorden';
-import { WOORD_CARDS, FRANS_WOORD_TYPE_ID } from '../talen/frans/woordCards';
-import { FRANS_ZELF } from '../talen/frans/fransZelf';
+import { FRANS_WOORD_TYPE_ID } from '../talen/frans/woordCards';
+import { WORD_LISTS_PICKS, pickOf, wordsOf } from './helpers/fransChoices';
+import { wordListsOf } from '../talen/frans/fransPicks';
 import { buildZelfSessie, reviewSessieOf, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore, currentInput } from '../oefenen/useOefenStore';
 import { kioskSupports } from '../services/oefenen/kiosk';
@@ -57,7 +58,7 @@ describe('the questions', () => {
     const settingsOf = (lists: readonly string[], dir: WordSettings['dir']): WordSettings => ({ lists, dir });
 
     test('every card and direction: six distinct words in the answer\'s language, the answer among them', () => {
-        for (const card of WOORD_CARDS.filter(c => c.lists.every(l => l === 'dagen' || l === 'maanden'))) for (const dir of ['fr-nl', 'nl-fr', 'mix'] as const) {
+        for (const card of WORD_LISTS_PICKS.map(l => ({ lists: wordListsOf({ ...l, dir: 'mix' }) }))) for (const dir of ['fr-nl', 'nl-fr', 'mix'] as const) {
             const seen = new Set<string>();
             for (let seed = 1; seed < 300; seed++) {
                 const ex = makeWordExercise(settingsOf(card.lists, dir), seeded(seed))!;
@@ -98,7 +99,7 @@ describe('the questions', () => {
 
 const st = () => useOefenStore.getState();
 const cur = () => st().shown!.exercise as WordExercise;
-const choiceOf = (topic: string, label: string, grade: 5 | 6 = 5): ZelfChoice => FRANS_ZELF.choices(grade, topic).find(c => c.label.replace(/\s/g, ' ') === label)!;
+const choiceOf = (topic: string, label: string, grade: 5 | 6 = 5): ZelfChoice => pickOf(topic, label, grade);
 
 describe('through the kiosk', () => {
     beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null, missed: [] }); });
@@ -156,7 +157,7 @@ describe('in the games', () => {
     beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null }); sp().otherGame(); });
 
     test('every word choice plays; the narrow games only where the words fit, the keypad games through the choice pad', () => {
-        for (const card of WOORD_CARDS.filter(c => c.lists.every(l => l === 'dagen' || l === 'maanden'))) for (const c of FRANS_ZELF.choices(5, `frans:${card.id}`)) {
+        for (const l of WORD_LISTS_PICKS) for (const c of (['fr-nl', 'nl-fr', 'mix'] as const).map(d => wordsOf(l, d))) {
             expect(choiceCanPlay(c, 5)).toBe(true);
             expect(spelContentOf(c, 5)).toMatchObject({ kind: 'choice', boards: ['pairs'] });
         }

@@ -1,5 +1,5 @@
 import { ENDINGS, PERSONS, VERB_BY_INF, VERBS, formOf, nlFormOf, presentForms, type Person, type Tense, type Verb } from './verbs';
-import { drawOnderwerp, pronounOf, type Onderwerp } from './onderwerpen';
+import { PRONOUNS, drawOnderwerp, pronounOf, type Onderwerp } from './onderwerpen';
 import type { WordDir, WordDirChoice } from './woorden';
 
 // The question maker: "Jos (heeft)" and six choices. Pure and seeded: the kiosk's scheduler hands in its RNG.
@@ -105,14 +105,9 @@ function mixedChoices(verb: Verb, person: Person, card: readonly Verb[], rng: ()
 
 // The Dutch pronoun of each person for a choice that is not the answer's (the answer keeps its own: zij for elle).
 const NL_PRONOUNS: Readonly<Record<Person, string>> = { 0: 'ik', 1: 'jij', 2: 'hij', 3: 'wij', 4: 'jullie', 5: 'zij' };
-// The French subjects of the Frans → Nederlands questions (pronouns only: a name would make the Dutch choices odd)
-// with the Dutch pronoun the answer starts with; on is men in Dutch.
-const FR_NL_SUBJECTS: readonly Onderwerp[] = [
-    { fr: 'je', nl: 'ik', person: 0 }, { fr: 'tu', nl: 'jij', person: 1 },
-    { fr: 'il', nl: 'hij', person: 2 }, { fr: 'elle', nl: 'zij', person: 2 }, { fr: 'on', nl: 'men', person: 2 },
-    { fr: 'nous', nl: 'wij', person: 3 }, { fr: 'vous', nl: 'jullie', person: 4 },
-    { fr: 'ils', nl: 'zij', person: 5 }, { fr: 'elles', nl: 'zij', person: 5 },
-];
+// The Frans → Nederlands questions take pronouns only (a name would make the Dutch choices odd); the Dutch pronoun
+// starts the answer: on is men in Dutch.
+const FR_NL_SUBJECTS: readonly Onderwerp[] = PRONOUNS;
 
 const nlPhrase = (verb: Verb, tense: Tense, person: Person, pronoun = NL_PRONOUNS[person]) => `${pronoun} ${nlFormOf(verb, tense, person)}`;
 
@@ -154,8 +149,8 @@ const ELIDES = /^[aeéèêiïoôuh]/i;
 /** "je" + form with its elision: j'ai, je suis. Only the shown full answer elides, never a choice. */
 export const withSubject = (subject: string, form: string): string => (subject === 'je' && ELIDES.test(form) ? `j'${form}` : `${subject} ${form}`);
 
-/** The question as one line: "Jos (heeft)", or Frans → Nederlands the French: "nous avons". */
-export const promptOf = (ex: FransExercise): string => (ex.dir === 'fr-nl' ? fullAnswerOf(ex) : `${ex.subject.nl} (${ex.nl})`);
+/** The question as one line: "tu (hebt)", "Jos (heeft)", or Frans → Nederlands the French: "nous avons". */
+export const promptOf = (ex: FransExercise): string => (ex.dir === 'fr-nl' ? fullAnswerOf(ex) : `${ex.subject.fr} (${ex.nl})`);
 
 /** The Dutch of the question with its pronoun: "wij hebben" (Frans → Nederlands). */
 export const nlPhraseOf = (ex: FransExercise): string => `${ex.subject.nl} ${ex.nl}`;

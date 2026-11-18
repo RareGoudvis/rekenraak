@@ -15,7 +15,7 @@ import SpelChoicePad from '../oefenen/spelen/SpelChoicePad';
 import SpelKeypad from '../oefenen/spelen/SpelKeypad';
 import SpelScreen from '../oefenen/spelen/SpelScreen';
 import Touwtrekken from '../oefenen/spelen/skins/touwtrekken/Touwtrekken';
-import { FRANS_ZELF } from '../talen/frans/fransZelf';
+import { allFransChoices, pickOf } from './helpers/fransChoices';
 import { fransWordChars } from '../talen/frans/fransPack';
 import type { FransExercise } from '../talen/frans/questions';
 import { useOefenStore } from '../oefenen/useOefenStore';
@@ -37,11 +37,11 @@ afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); useDuelSt
 
 const sp = () => useSpelStore.getState();
 const du = () => useDuelStore.getState();
-const frans = (topic: string, label: string): ZelfChoice => FRANS_ZELF.choices(5, topic).find(c => c.label === label)!;
+const frans = (topic: string, label: string): ZelfChoice => pickOf(topic, label);
 // Every Frans card whose words fit a pad button: Frans → cijfer types its number on the digits instead, and the
 // long number words (quatre-vingt-dix-sept) stay in the tap games (frans.getallen.test.ts).
 const fitsPad = (c: ZelfChoice, g: Leerjaar) => { const x = spelContentOf(c, g); return x?.kind === 'choice' && (x.wordChars ?? 0) <= PAD_MAX_WORD_CHARS; };
-const allFrans = () => ([5, 6] as Leerjaar[]).flatMap(g => FRANS_ZELF.topics.flatMap(t => FRANS_ZELF.choices(g, t.id).filter(c => fitsPad(c, g)).map(c => ({ grade: g, topic: t.id, choice: c }))));
+const allFrans = () => ([5, 6] as Leerjaar[]).flatMap(g => allFransChoices(g).filter(x => fitsPad(x.choice, g)).map(x => ({ grade: g, ...x })));
 const KEYPAD = SKINS.filter(s => s.meta.input === 'keypad').map(s => s.meta.id);
 // Every keypad game takes the pad but the digit lock: Schatkist builds its code from the answers' digits.
 const PAD_GAMES = KEYPAD.filter(id => id !== 'schatkist');
@@ -102,9 +102,11 @@ describe('which games take word choices', () => {
 
     test('every Frans word fits a pad button (PAD_MAX_WORD_CHARS)', () => {
         for (const { choice } of allFrans()) expect(fransWordChars(choice.vars[0]), choice.key).toBeLessThanOrEqual(PAD_MAX_WORD_CHARS);
-        // The pad-sized cards: every verb card (Nederlands → Frans) and every day / month card, each way.
+        // The pad-sized picks: every verb pick in Nederlands → Frans and every day / month pick, each way.
         const keys = new Set(allFrans().map(x => x.choice.key));
-        for (const t of FRANS_ZELF.topics.filter(x => !/getallen|tientallen/.test(x.id))) for (const c of FRANS_ZELF.choices(5, t.id)) expect(keys.has(c.key), c.key).toBe(true);
+        for (const { topic, choice } of allFransChoices(5)) {
+            if (topic === 'frans:woorden' || choice.vars[0].ov.dir === 'nl-fr' && topic === 'frans:werkwoorden') expect(keys.has(choice.key), choice.key).toBe(true);
+        }
     });
 
     test('the pad takes words only: no pictures, no numbers to tap, no word past the button', () => {

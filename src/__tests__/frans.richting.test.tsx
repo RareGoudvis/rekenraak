@@ -1,14 +1,11 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, screen, fireEvent, within } from '@testing-library/react';
-import OefenApp from '../oefenen/OefenApp';
-import { GRADE_KEY } from '../oefenen/zelf/zelfGrade';
-import { FRANS_CARDS } from '../talen/frans/fransCards';
-import { FRANS_ZELF } from '../talen/frans/fransZelf';
+import { FRANS_DIRS, FRANS_MODES_ORDER, fransLabelOf } from '../talen/frans/fransCards';
+import { VERB_SETS, verbsOf } from './helpers/fransChoices';
 import { fransWordChars } from '../talen/frans/fransPack';
 import { FRANS_MODES, frNlPairOf, fullAnswerOf, grammarOf, makeFransExercise, promptOf, type FransExercise } from '../talen/frans/questions';
 import { VERB_BY_INF, PERSONS } from '../talen/frans/verbs';
-import { buildZelfSessie, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
+import { buildZelfSessie } from '../oefenen/zelf/zelfSessie';
 import { useOefenStore, currentInput } from '../oefenen/useOefenStore';
 import { stepLineText } from '../services/math/workedSteps';
 import { useSpelStore } from '../oefenen/spelen/useSpelStore';
@@ -17,16 +14,16 @@ import { nextBoardOf } from '../oefenen/spelen/board/session';
 import { resetKiosk } from './helpers/oefenKiosk';
 import { mulberry32 } from '../oefenen/spelen/distractors';
 
-// The verb cards' Richting: Nederlands → Frans as before, Frans → Nederlands ("nous avons" → "wij hebben"), door
-// elkaar; a row under the oefeningen on the Keuze screen.
+// The verb card's Richting: Nederlands → Frans as before, Frans → Nederlands ("nous avons" → "wij hebben"), door
+// elkaar (the options screen itself: frans.zelf.test.tsx).
 
 const seeded = (seed: number) => mulberry32(seed * 7919 + 13);
 const NL_PRONOUN: Record<string, string> = { je: 'ik', tu: 'jij', il: 'hij', elle: 'zij', on: 'men', nous: 'wij', vous: 'jullie', ils: 'zij', elles: 'zij' };
 
 describe('Frans → Nederlands questions', () => {
     test('every card and mode: six distinct Dutch choices with the answer, the French shown', () => {
-        for (const card of FRANS_CARDS) for (const mode of FRANS_MODES) for (let seed = 1; seed < 150; seed++) {
-            const ex = makeFransExercise({ tense: 'present', mode, verbs: card.verbs, dir: 'fr-nl' }, seeded(seed))!;
+        for (const verbs of Object.values(VERB_SETS)) for (const mode of FRANS_MODES) for (let seed = 1; seed < 150; seed++) {
+            const ex = makeFransExercise({ tense: 'present', mode, verbs, dir: 'fr-nl' }, seeded(seed))!;
             expect(ex.dir).toBe('fr-nl');
             expect(ex.choices).toHaveLength(6);
             expect(new Set(ex.choices).size).toBe(6);
@@ -66,8 +63,9 @@ describe('Frans → Nederlands questions', () => {
         expect(makeFransExercise(s, seeded(5))!.dir).toBeUndefined();
     });
 
-    test('word lengths: the Dutch of a Frans → Nederlands card bounds its choices', () => {
-        for (const t of FRANS_CARDS) for (const dir of ['fr-nl', 'mix'] as const) for (const c of FRANS_ZELF.choices(5, `frans:${t.id}`, dir)) {
+    test('word lengths: the Dutch of a Frans → Nederlands pick bounds its choices', () => {
+        for (const verbs of Object.values(VERB_SETS)) for (const mode of FRANS_MODES_ORDER) for (const dir of ['fr-nl', 'mix'] as const) {
+            const c = verbsOf(verbs, mode, dir);
             const v = c.vars[0];
             const max = fransWordChars(v);
             for (let seed = 1; seed < 120; seed++) {
@@ -80,35 +78,38 @@ describe('Frans → Nederlands questions', () => {
 
 const st = () => useOefenStore.getState();
 const cur = () => st().shown!.exercise as FransExercise;
-const choiceOf = (dir: string, label: string, topic = 'frans:avoir-etre'): ZelfChoice => FRANS_ZELF.choices(5, topic, dir).find(c => c.label === label)!;
 
 describe('Richting through the kiosk and the games', () => {
     beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null, missed: [] }); useSpelStore.getState().otherGame(); });
     afterEach(() => { vi.useRealTimers(); });
 
-    test('the choices per direction: own keys (Nederlands → Frans keeps the old ones), the facet on each', () => {
-        expect(FRANS_ZELF.facet!('frans:er')!.options.map(o => o.label.replace(/\s/g, ' '))).toEqual(['Nederlands → Frans', 'Frans → Nederlands', 'Door elkaar']);
-        expect(FRANS_ZELF.facet!('frans:dagen')).toBeNull();
-        expect(FRANS_ZELF.choices(5, 'frans:er').map(c => c.key)).toEqual(['5|frans:er|vervoegen', '5|frans:er|werkwoord', '5|frans:er|samen']);
-        expect(FRANS_ZELF.choices(5, 'frans:er', 'fr-nl').map(c => c.key)).toEqual(['5|frans:er|vervoegen|fr-nl', '5|frans:er|werkwoord|fr-nl', '5|frans:er|samen|fr-nl']);
-        expect(FRANS_ZELF.choices(5, 'frans:er', 'mix').every(c => c.facet === 'mix')).toBe(true);
+    test('every pick its own key and run name', () => {
+        const keys = new Set<string>();
+        for (const mode of FRANS_MODES_ORDER) for (const dir of FRANS_DIRS) keys.add(verbsOf(['avoir', 'être'], mode, dir).key);
+        expect(keys.size).toBe(9);
+        expect(verbsOf(['avoir'], 'samen', 'nl-fr').key).not.toBe(verbsOf(['avoir', 'être'], 'samen', 'nl-fr').key);
+        expect(fransLabelOf({ verbs: ['être', 'avoir'], mode: 'samen', dir: 'fr-nl' })).toBe('être en avoir · Alles samen · FR → NL');
+        expect(fransLabelOf({ verbs: VERB_SETS.er, mode: 'vervoegen', dir: 'nl-fr' })).toBe('-er · Eén werkwoord vervoegen · NL → FR');
+        expect(fransLabelOf({ verbs: VERB_SETS['ir-re'], mode: 'werkwoord', dir: 'mix' })).toBe('-ir en -re · Welk werkwoord? · Door elkaar');
+        expect(fransLabelOf({ verbs: VERB_SETS.alles, mode: 'samen', dir: 'mix' })).toBe('alle werkwoorden · Alles samen · Door elkaar');
+        expect(fransLabelOf({ verbs: ['parler', 'aimer', 'jouer', 'finir'], mode: 'samen', dir: 'mix' })).toBe('4 werkwoorden · Alles samen · Door elkaar');
     });
 
     test('a Frans → Nederlands run: Dutch on the buttons, the pair and the grammar after a fout', () => {
         vi.useFakeTimers();
-        st().openZelf(buildZelfSessie(choiceOf('fr-nl', 'Alles samen'), { kind: 'count', n: 3 }, 0, 5));
+        st().openZelf(buildZelfSessie(verbsOf(['avoir', 'être'], 'samen', 'fr-nl'), { kind: 'count', n: 3 }, 0, 5));
         const ex = cur();
         expect(ex.dir).toBe('fr-nl');
         const choices = currentInput(st().sessie, st().shown)!.choices;
         expect(choices).toContain(ex.answer);
         st().choose(choices.find(c => c !== ex.answer)!);
         st().answer();
-        expect(st().feedbackHint).toBe(frNlPairOf(ex));
+        expect(st().feedbackHint).toBe(`${frNlPairOf(ex)} – ${grammarOf(ex)}`);
         expect(st().stepsOffer!.map(l => stepLineText(l, String))).toEqual([frNlPairOf(ex), grammarOf(ex)]);
     });
 
     test('memory boards: one verb in one person once, whichever way it is asked', () => {
-        useSpelStore.getState().start({ choice: choiceOf('mix', 'Eén werkwoord vervoegen', 'frans:er'), grade: 5, topicId: 'frans:er', meta: skinById('hartjes')!.meta, now: 1_000_000 });
+        useSpelStore.getState().start({ choice: verbsOf(VERB_SETS.er, 'vervoegen', 'mix'), grade: 5, topicId: 'frans:werkwoorden', meta: skinById('hartjes')!.meta, now: 1_000_000 });
         const s = useSpelStore.getState().sessie!;
         const round = skinById('hartjes')!.meta.round.board!;
         for (let i = 0; i < 10; i++) {
@@ -116,37 +117,5 @@ describe('Richting through the kiosk and the games', () => {
             const same = board.cells.map(c => c.question.same);
             expect(new Set(same).size).toBe(same.length);
         }
-    });
-});
-
-describe('the Richting row on the Keuze screen', () => {
-    beforeEach(() => { resetKiosk(); useSpelStore.getState().otherGame(); useSpelStore.getState().takePickerAt(); vi.spyOn(console, 'error').mockImplementation(() => { }); });
-    afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-
-    test('a verb card shows it under the oefeningen, a word card does not; flipping it keeps the oefening', async () => {
-        localStorage.setItem(GRADE_KEY, '5');
-        render(<OefenApp />);
-        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' }, { timeout: 5000 });
-        fireEvent.click(within(screen.getByRole('region', { name: 'Frans' })).getAllByRole('button')[0]);
-        const row = screen.getByRole('group', { name: 'Richting' });
-        const btn = (name: string) => within(row).getByRole('button', { name: new RegExp(`^${name.replace(' → ', '.→ ')}$`) });
-        expect(btn('Nederlands → Frans').getAttribute('aria-pressed')).toBe('true');
-        fireEvent.click(screen.getByRole('button', { name: 'Alles samen' }));
-        fireEvent.click(btn('Frans → Nederlands'));
-        expect(btn('Frans → Nederlands').getAttribute('aria-pressed')).toBe('true');
-        expect(screen.getByRole('button', { name: 'Alles samen' }).getAttribute('aria-pressed')).toBe('true');
-        const oefenen = screen.queryByRole('button', { name: 'Oefenen' });
-        if (oefenen) fireEvent.click(oefenen);
-        fireEvent.click(screen.getByRole('button', { name: '3 oefeningen' }));
-        fireEvent.click(screen.getByRole('button', { name: /Begin met oefenen/ }));
-        expect((useOefenStore.getState().shown!.exercise as FransExercise).dir).toBe('fr-nl');
-    });
-
-    test('a word card has no Richting row', async () => {
-        localStorage.setItem(GRADE_KEY, '6');
-        render(<OefenApp />);
-        await screen.findByRole('heading', { name: 'Wat wil je oefenen?' }, { timeout: 5000 });
-        fireEvent.click(within(screen.getByRole('region', { name: 'Frans' })).getAllByRole('button')[5]);
-        expect(screen.queryByRole('group', { name: 'Richting' })).toBeNull();
     });
 });

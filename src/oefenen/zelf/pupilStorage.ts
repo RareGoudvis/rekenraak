@@ -9,6 +9,8 @@ export const PUPIL_KEYS: readonly string[] = [
     'rekenraak_zelf_tot_v1',
     'rekenraak_zelf_tafels_v1',
     'rekenraak_zelf_weg_v1',
+    // talen/frans/fransPicks.ts: the last pick on the Frans cards (verbs, Hoe?, Richting, which numbers)
+    'rekenraak_zelf_frans_v1',
     // spelen/sound.ts, spelen/music.ts, spelen/skins/options.ts: sound, music and each game's options
     'rekenraak_spelen_geluid_v1',
     'rekenraak_spelen_muziek_v1',

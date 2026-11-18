@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
 import { FransBadge, FransPicture } from '../../talen/frans/FransArt';
-import { FRANS_CARDS } from '../../talen/frans/fransCards';
-import { WOORD_CARDS } from '../../talen/frans/woordCards';
-import { fransTopicOf } from '../../talen/frans/fransZelf';
+import { FRANS_TOPICS, fransTopicOf } from '../../talen/frans/fransZelf';
 
 // The pictures of the subjects beside the maths (zelfSubjects.ts): a drawing per topic card and a badge for the
-// Keuze screen. Kept apart from the data so the session code never loads a drawing.
+// Keuze screen (their options screens: SubjectOptions.tsx). Kept apart from the data so the session code never loads a drawing.
 
-const PICTURES: ReadonlyMap<string, ReactNode> = new Map([...FRANS_CARDS, ...WOORD_CARDS].map(c => [fransTopicOf(c), <FransPicture key={c.id} card={c.id} />]));
+const PICTURES: ReadonlyMap<string, ReactNode> = new Map(FRANS_TOPICS.map(t => [fransTopicOf(t.topic), <FransPicture key={t.topic} card={t.topic} />]));
 const BADGES: Readonly<Record<string, ReactNode>> = { Frans: <FransBadge /> };
 
 /** A subject topic's card picture; undefined for a maths topic (its game or Oefenmodus picture). */

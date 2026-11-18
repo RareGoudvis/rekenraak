@@ -1,44 +1,39 @@
-import type { ZelfFacet, ZelfSubject } from '../../oefenen/zelf/zelfSubjects';
+import type { ZelfSubject } from '../../oefenen/zelf/zelfSubjects';
 import type { ZelfChoice } from '../../oefenen/zelf/zelfSessie';
-import { FRANS_CARDS, FRANS_DIRS, FRANS_DIR_LABELS, FRANS_GRADES, FRANS_MODE_LABELS, fransVariants, type FransCard } from './fransCards';
-import { WOORD_CARDS, dirLabelOf, woordVariants, type WoordCard } from './woordCards';
-import type { FransMode } from './questions';
-import type { WordDirChoice } from './woorden';
+import type { Leerjaar } from '../../config/gradePresets';
+import { FRANS_GRADES } from './fransCards';
+import { numberChoice, readPicks, verbChoice, wordChoice, type FransPicks } from './fransPicks';
 
-// Frans on the Zelf home: one topic per card. A verb card's "Welke oefening?" buttons are its three oefeningen with a
-// Richting row under them (owner 2026-11-18: three times three buttons would crowd the screen); a word card's buttons
-// are its three directions.
+// Frans on the Zelf home (owner 2026-11-18): three cards, each with its own options screen (FransOptions.tsx); the
+// pupil's last pick on this device is the topic's one choice, so the Keuze screen opens on it and the games and the
+// topic card's stickers play it.
+
+export type FransTopic = 'werkwoorden' | 'woorden' | 'getallen';
+export const FRANS_TOPICS: readonly { topic: FransTopic; label: string }[] = [
+    { topic: 'werkwoorden', label: 'Werkwoorden' },
+    { topic: 'woorden', label: 'Dagen en maanden' },
+    { topic: 'getallen', label: 'Getallen' },
+];
 
 const TOPIC_PREFIX = 'frans:';
-export const fransTopicOf = (card: FransCard | WoordCard): string => `${TOPIC_PREFIX}${card.id}`;
-const cardOfTopic = (topicId: string) => FRANS_CARDS.find(c => fransTopicOf(c) === topicId) ?? null;
-const woordCardOfTopic = (topicId: string) => WOORD_CARDS.find(c => fransTopicOf(c) === topicId) ?? null;
+export const fransTopicOf = (topic: FransTopic): string => `${TOPIC_PREFIX}${topic}`;
+export const fransTopicOfId = (topicId: string): FransTopic | null => FRANS_TOPICS.find(t => fransTopicOf(t.topic) === topicId)?.topic ?? null;
 
-// "Nederlands → Frans" does not fit three segments on a phone: the buttons say NL → FR, their names say it in full.
-const RICHTING_SHORT: Readonly<Record<WordDirChoice, string>> = { 'nl-fr': 'NL → FR', 'fr-nl': 'FR → NL', mix: 'Door elkaar' };
-const RICHTING: ZelfFacet = { label: 'Richting', options: FRANS_DIRS.map(d => ({ key: d, label: FRANS_DIR_LABELS[d].replace(' ', ' '), short: RICHTING_SHORT[d] })) };
+/** The Zelf choice a pick makes on one of the three cards. */
+export function fransChoiceOf(topic: FransTopic, picks: FransPicks, grade: Leerjaar): ZelfChoice {
+    const id = fransTopicOf(topic);
+    if (topic === 'werkwoorden') return verbChoice(picks.werkwoorden, grade, id);
+    if (topic === 'woorden') return wordChoice(picks.woorden, grade, id);
+    return numberChoice(picks.getallen, grade, id);
+}
 
 export const FRANS_ZELF: ZelfSubject = {
     section: 'Frans',
     tint: 'var(--kid-fr-tint)',
     grades: FRANS_GRADES,
-    topics: [...FRANS_CARDS, ...WOORD_CARDS].map(c => ({ id: fransTopicOf(c), label: c.label })),
-    facet: topicId => (cardOfTopic(topicId) ? RICHTING : null),
-    choices: (grade, topicId, facet) => {
-        if (!FRANS_GRADES.includes(grade)) return [];
-        const card = cardOfTopic(topicId);
-        if (card) {
-            const dir = (FRANS_DIRS.find(d => d === facet) ?? 'nl-fr') as WordDirChoice;
-            return fransVariants(card, grade, dir).map((v): ZelfChoice => {
-                const mode = v.ov.mode as FransMode;
-                // Nederlands → Frans keeps the key it had before the Richting row, so earlier runs still count.
-                return { key: `${grade}|${topicId}|${mode}${dir === 'nl-fr' ? '' : `|${dir}`}`, label: FRANS_MODE_LABELS[mode], vars: [v], facet: dir };
-            });
-        }
-        const woord = woordCardOfTopic(topicId);
-        return woord ? woordVariants(woord, grade).map((v): ZelfChoice => {
-            const dir = v.ov.dir as WordDirChoice;
-            return { key: `${grade}|${topicId}|${dir}`, label: dirLabelOf(woord, dir), vars: [v] };
-        }) : [];
+    topics: FRANS_TOPICS.map(t => ({ id: fransTopicOf(t.topic), label: t.label })),
+    choices: (grade, topicId) => {
+        const topic = fransTopicOfId(topicId);
+        return topic && FRANS_GRADES.includes(grade) ? [fransChoiceOf(topic, readPicks(), grade)] : [];
     },
 };

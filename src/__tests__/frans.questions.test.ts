@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { FRANS_CARDS } from '../talen/frans/fransCards';
+import { VERB_SETS } from './helpers/fransChoices';
 import { FRANS_MODES, fullAnswerOf, grammarOf, makeFransExercise, promptOf, withSubject, type FransExercise } from '../talen/frans/questions';
 import { PERSONS, VERB_BY_INF, presentForms } from '../talen/frans/verbs';
 import { drawOnderwerp, pronounOf } from '../talen/frans/onderwerpen';
@@ -16,8 +16,11 @@ function rngOf(seed: number) {
 
 const SEEDS = Array.from({ length: 150 }, (_, i) => i + 1);
 
-function every(fn: (ex: FransExercise, card: (typeof FRANS_CARDS)[number]) => void) {
-    for (const card of FRANS_CARDS) for (const mode of FRANS_MODES) for (const seed of SEEDS) {
+// Every verb selection the options screen can make that is worth a look, from one verb to all of them.
+const CARDS = Object.entries(VERB_SETS).map(([id, verbs]) => ({ id, verbs }));
+
+function every(fn: (ex: FransExercise, card: (typeof CARDS)[number]) => void) {
+    for (const card of CARDS) for (const mode of FRANS_MODES) for (const seed of SEEDS) {
         const ex = makeFransExercise({ tense: 'present', mode, verbs: card.verbs }, rngOf(seed * 31 + mode.length));
         expect(ex).not.toBeNull();
         fn(ex!, card);
@@ -25,7 +28,7 @@ function every(fn: (ex: FransExercise, card: (typeof FRANS_CARDS)[number]) => vo
 }
 
 describe('Frans questions', () => {
-    test('every card × mode: six different choices, the answer among them once', () => {
+    test('every selection × mode, one verb too: six different choices, the answer among them once', () => {
         every(ex => {
             expect(ex.choices).toHaveLength(6);
             expect(new Set(ex.choices).size).toBe(6);
@@ -53,7 +56,7 @@ describe('Frans questions', () => {
         });
     });
 
-    test('werkwoord: six infinitives, the card\'s verbs first', () => {
+    test('werkwoord: six infinitives, the chosen verbs first, others borrowed when fewer than six are on', () => {
         every((ex, card) => {
             if (ex.mode !== 'werkwoord') return;
             for (const c of ex.choices) expect(VERB_BY_INF.has(c)).toBe(true);
@@ -62,9 +65,14 @@ describe('Frans questions', () => {
         });
     });
 
-    test('samen: forms of several verbs, the same person of other verbs among them', () => {
+    test('samen: forms of several verbs, the same person of other verbs among them (one verb: its own forms)', () => {
         every((ex, card) => {
             if (ex.mode !== 'samen') return;
+            if (card.verbs.length === 1) {
+                const verb = VERB_BY_INF.get(card.verbs[0])!;
+                for (const c of ex.choices) expect([...presentForms(verb), verb.inf]).toContain(c);
+                return;
+            }
             const verbsShown = new Set(ex.choices.map(c => card.verbs.find(inf => presentForms(VERB_BY_INF.get(inf)!).includes(c))));
             expect(verbsShown.size).toBeGreaterThan(1);
             const samePerson = card.verbs.filter(inf => inf !== ex.verb).map(inf => presentForms(VERB_BY_INF.get(inf)!)[ex.person]);
@@ -83,19 +91,20 @@ describe('Frans questions', () => {
         every(ex => { for (const c of ex.choices) expect(c).not.toMatch(/'/); });
     });
 
-    test('names: one boy il, one girl elle, two names ils (elles for two girls), "men (on)" is on', () => {
+    test('names: one boy il, one girl elle, two names ils (elles for two girls); pronouns in French', () => {
         const seen = new Set<string>();
         for (let seed = 1; seed < 400; seed++) {
             for (const p of PERSONS) {
                 const o = drawOnderwerp(p, rngOf(seed));
-                seen.add(o.nl);
+                seen.add(o.fr);
                 const pron = pronounOf(o);
                 if (p === 2) expect(['il', 'elle', 'on']).toContain(pron);
                 if (p === 5) expect(['ils', 'elles', 'ils/elles']).toContain(pron);
                 if (/ en /.test(o.nl)) expect(o.fr).toMatch(/ et /);
             }
         }
-        expect(seen.has('men (on)')).toBe(true);
+        for (const fr of ['je', 'tu', 'il', 'elle', 'on', 'nous', 'vous', 'ils', 'elles']) expect(seen.has(fr), fr).toBe(true);
+        expect(seen.has('men (on)')).toBe(false);
         expect(pronounOf({ nl: 'Jos', fr: 'Jos', person: 2 })).toBe('il');
         expect(pronounOf({ nl: 'Lien', fr: 'Lien', person: 2 })).toBe('elle');
         expect(pronounOf({ nl: 'Lien en Fien', fr: 'Lien et Fien', person: 5 })).toBe('elles');
@@ -111,19 +120,21 @@ describe('Frans questions', () => {
         expect(fullAnswerOf(jos)).toBe('Jos a');
         expect(grammarOf(jos)).toBe('avoir, 3de persoon enkelvoud');
         const nous = ex('regarder', 3, 'wij', 'nous');
-        expect(promptOf(nous)).toBe('wij (kijken)');
+        expect(promptOf(nous)).toBe('nous (kijken)');
         expect(fullAnswerOf(nous)).toBe('nous regardons');
         expect(grammarOf(nous)).toBe('regarder, 1ste persoon meervoud, uitgang -ons');
         expect(grammarOf(ex('manger', 3, 'wij', 'nous'))).toBe('manger, 1ste persoon meervoud, uitgang -ons (met e: mangeons)');
         expect(grammarOf(ex('vendre', 2, 'hij', 'il'))).toBe('vendre, 3de persoon enkelvoud, stam zonder uitgang');
         expect(grammarOf(ex('finir', 4, 'jullie', 'vous'))).toBe('finir, 2de persoon meervoud, uitgang -issez');
         expect(fullAnswerOf(ex('avoir', 0, 'ik', 'je'))).toBe("j'ai");
-        expect(fullAnswerOf(ex('être', 5, 'zij', 'ils/elles'))).toBe('ils/elles sont');
-        expect(promptOf(ex('parler', 2, 'men (on)', 'on'))).toBe('men (on) (spreekt)');
+        expect(fullAnswerOf(ex('être', 5, 'zij', 'elles'))).toBe('elles sont');
+        expect(promptOf(ex('parler', 2, 'men', 'on'))).toBe('on (spreekt)');
+        expect(promptOf(ex('avoir', 1, 'jij', 'tu'))).toBe('tu (hebt)');
+        expect(promptOf(ex('avoir', 5, 'Jos en Lien', 'Jos et Lien'))).toBe('Jos et Lien (hebben)');
     });
 
     test('seeded: the same RNG makes the same question', () => {
-        const s = { tense: 'present' as const, mode: 'samen' as const, verbs: FRANS_CARDS[4].verbs };
+        const s = { tense: 'present' as const, mode: 'samen' as const, verbs: VERB_SETS.alles };
         expect(makeFransExercise(s, rngOf(7))).toEqual(makeFransExercise(s, rngOf(7)));
     });
 

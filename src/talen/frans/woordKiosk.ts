@@ -1,7 +1,7 @@
 import type { KioskDescriptor, OefenType } from '../../services/oefenen/types';
 import type { KioskSubject } from '../../services/oefenen/subjects';
 import type { StepLine } from '../../services/math/workedSteps';
-import { FRANS_WOORD_TYPE_ID, dirLabelOf, woordCardOfLeaf } from './woordCards';
+import { FRANS_WOORD_TYPE_ID, woordLabelOf, woordLeaves } from './woordCards';
 import { WORD_DIRS, flashLine, listsOf, makeWordExercise, orderLine, otherFormLine, pairLine, tableOf, textsOf, type WordDirChoice, type WordExercise, type WordSettings } from './woorden';
 
 // The Frans word lists as a kiosk subject: "mercredi" / "Nederlands: ___" with six words on the kiosk's buttons, the
@@ -47,9 +47,8 @@ export const WOORD_SUBJECT: KioskSubject = {
     help: ex => [word(`Zoek ${asEx(ex).shown} in de lijst.`, 'tip'), ...tableOf(asEx(ex)).map(l => word(l, 'tabel'))],
     afterLine: (ex, _c, correct) => (correct ? null : flashLine(asEx(ex))),
     typeOf: (v): OefenType | null => {
-        const card = woordCardOfLeaf(v.leafId);
-        if (!card) return null;
-        const dir = v.ov.dir as WordDirChoice;
-        return { typeId: FRANS_WOORD_TYPE_ID, leafId: v.leafId, label: `${card.label} · ${dirLabelOf(card, dir)}`, constraints: { ...v.ov }, weight: 100 };
+        const s = woordLeaves.includes(v.leafId) ? settingsOf(v.ov) : null;
+        if (!s) return null;
+        return { typeId: FRANS_WOORD_TYPE_ID, leafId: v.leafId, label: woordLabelOf(v.leafId, s), constraints: { ...v.ov }, weight: 100 };
     },
 };

@@ -9,7 +9,7 @@ export const FRANS_TEXT = 'Frans in een rekenapp? Dezelfde oefenschermen en spel
 
 // SYNC: PUPIL_KEYS in pupilStorage.ts (one line per group of keys).
 export const STORED_ITEMS: readonly string[] = [
-    'het leerjaar en de laatste keuzes (tot hoeveel, welke tafels, oefenen of spelen)',
+    'het leerjaar en de laatste keuzes (tot hoeveel, welke tafels, oefenen of spelen, de keuzes bij Frans)',
     'de keuzes bij de spelletjes, en of geluid en muziek aan staan',
     'welke prent, grijpmachine of plek een spel het laatst toonde, zodat het afwisselt',
     'de beste scores, bijvoorbeeld bij Race, Skislalom, Frituur en Voetbal',

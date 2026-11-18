@@ -16,6 +16,7 @@ import { SLALOM_RECORDS_KEY } from '../oefenen/spelen/skins/slalom/records';
 import { VOETBAL_BEST_KEY } from '../oefenen/spelen/skins/voetbal/match';
 import { oefenStorageKey, saveRun } from '../services/oefenen/stats';
 import type { OefenRun } from '../services/oefenen/types';
+import { FRANS_OPTIONS_KEY, cleanPicks, savePicks } from '../talen/frans/fransPicks';
 
 // The teacher app's keys on the same origin (worksheets, autosave, presets, Bordmodus, onboarding).
 // Pinned: a new key anywhere in src must be put here or in PUPIL_KEYS before the gate passes.
@@ -60,7 +61,7 @@ describe('pupil storage keys (Over › Wis mijn gegevens)', () => {
 
     test('the list matches the modules that write them', () => {
         expect([...PUPIL_KEYS].sort()).toEqual([
-            GRADE_KEY, RANGE_KEY, TAFELS_KEY, WAY_KEY, SOUND_KEY, MUSIC_KEY, OPTIONS_KEY, PRENT_KEY, GRIJP_KEY,
+            GRADE_KEY, RANGE_KEY, TAFELS_KEY, WAY_KEY, FRANS_OPTIONS_KEY, SOUND_KEY, MUSIC_KEY, OPTIONS_KEY, PRENT_KEY, GRIJP_KEY,
             FRITUUR_BEST_KEY, RACE_RECORDS_KEY, RACE_KM_KEY, SLALOM_RECORDS_KEY, VOETBAL_BEST_KEY,
             'rekenraak_spookhuis_plek_v1', 'rekenraak_tovenaar_arena_v1', 'rekenraak_tutor_last_v1',
         ].sort());
@@ -85,6 +86,7 @@ describe('pupil storage keys (Over › Wis mijn gegevens)', () => {
         saveRange(3, 1000);
         saveTafels(3, [2, 5]);
         saveWay('spelen');
+        savePicks(cleanPicks({}));
         rememberPrent('kasteel');
         expect(saveRun('zelf-abc123', run())).toBe(true);
         expect(saveRun('ab12cd34', run())).toBe(true);
