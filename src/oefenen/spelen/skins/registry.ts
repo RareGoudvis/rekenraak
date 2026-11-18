@@ -42,6 +42,9 @@ const KEYPAD_NUMBER: SkinAccepts = { kinds: ['number'] };
 const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 5 };
 // Tap skins that also draw content pictures (SpelSign, SpelChoiceFace): the klok's faces, times and phrases.
 const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
+// maxWordChars (Frans, measured 2026-11-18 at 844×390): Ballonnen, Zeehondjes and Mollen widen a word's label past the
+// target and take any; a window (Brandweer, 7), a present on the belt (8), a prize tag (Grijpmachine, 6) and a gate
+// plate (Skislalom, 6) sit too close to their neighbours for that, so they take the short words only.
 
 // The four levels about time (levels/clock.ts): Zombies, Bever, Zeehondjes, Mollen and Pinguïntoren read options.niveau.
 const TIME_LEVELS: SkinOption = levelOption({ clock: true });
@@ -336,7 +339,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // the machine's pressure gauge, right answers cool it (pakjesband/pressure.ts); too hot = it sputters (canFail).
         meta: {
             music: 'fabriek',
-            id: 'pakjesband', label: 'Speelgoedfabriek', input: 'choice', timed: false, round: { questions: 20 }, accepts: TAP_PICTURES,
+            id: 'pakjesband', label: 'Speelgoedfabriek', input: 'choice', timed: false, round: { questions: 20 }, accepts: { ...TAP_PICTURES, maxWordChars: 8 },
             canFail: true, winTitle: 'Alle pakjes zijn klaar!', failTitle: 'Oei! De machine sputtert. Nog eens?',
             sounds: { correct: 'ting', wrong: 'boing', miss: 'plop', win: 'cheer', fail: 'puf' },
         },
@@ -398,7 +401,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         meta: {
             id: 'brandweer', music: 'tikken', label: 'Brandweer', input: 'choice', choiceCount: 4, timed: true, round: { seconds: 180 }, canFail: true,
             options: [levelOption({ clock: true })],
-            winTitle: 'Alles geblust!', failTitle: 'Oei! Het brandt te hard. Nog eens?', accepts: TAP_CHOICE,
+            winTitle: 'Alles geblust!', failTitle: 'Oei! Het brandt te hard. Nog eens?', accepts: { ...TAP_CHOICE, maxWordChars: 7 },
             sounds: { correct: null, wrong: null, win: 'cheer', fail: 'wahwah' },
         },
         icon: FireTruck,
@@ -412,7 +415,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed. On
         // Moeilijk / Onmogelijk each fall costs a piece of gear (run.ts GEAR_ORDER); the last ski = the friendly end in a snowbank.
         meta: {
-            id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: TAP_CHOICE,
+            id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: { ...TAP_CHOICE, maxWordChars: 6 },
             options: [levelOption({ clock: true })], canFail: true, failTitle: 'Plof, in de sneeuw! Nog eens?',
             sounds: { correct: null, wrong: null, fail: null },
         },
@@ -428,7 +431,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // The levels: a clock ring per sum (the shared clock); time up = a mistake (onMiss) and the claw drops by itself on
         // a prize that is not the answer, which slips away. Makkelijk has no clock.
         meta: {
-            id: 'grijp', music: 'gek', label: 'Grijpmachine', input: 'choice', timed: false, round: { questions: GRIJP.questions }, accepts: TAP_PICTURES,
+            id: 'grijp', music: 'gek', label: 'Grijpmachine', input: 'choice', timed: false, round: { questions: GRIJP.questions }, accepts: { ...TAP_PICTURES, maxWordChars: 6 },
             options: [levelOption({ clock: true })],
             sounds: { correct: null, wrong: null },
         },

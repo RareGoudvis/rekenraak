@@ -344,7 +344,7 @@ describe('Grijpmachine: registry', () => {
         expect(entry.Ending).toBeDefined();
         expect(entry.meta).toMatchObject({ label: 'Grijpmachine', input: 'choice', timed: false, music: 'gek', round: { questions: 15 } });
         expect(entry.meta.canFail).toBeUndefined();
-        expect(entry.meta.accepts).toEqual({ kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true });
+        expect(entry.meta.accepts).toEqual({ kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, maxWordChars: 6 });
         expect(skinAccepts(entry.meta.accepts, NUMBER_CONTENT)).toBe(true);
         expect(skinAccepts(entry.meta.accepts, PICTURE_CONTENT)).toBe(true);
         expect(skinAccepts(entry.meta.accepts, { kind: 'choice', answerChars: 6 })).toBe(false);

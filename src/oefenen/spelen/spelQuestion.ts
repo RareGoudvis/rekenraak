@@ -97,6 +97,8 @@ function mergeContent(parts: readonly SpelContent[]): SpelContent {
     const boards = named.length ? named.reduce<readonly SpelPackBoard[]>((acc, p) => acc.filter(b => p.boards!.includes(b)), named[0].boards!) : undefined;
     const ops = parts.every(p => p.ops) ? [...new Set(parts.flatMap(p => p.ops!))] : undefined;
     const keys = keysOfAll(parts);
+    // The longest word of any part (a part without words adds none).
+    const words = parts.filter(p => p.wordChars !== undefined).map(p => p.wordChars!);
     return {
         kind,
         ...(kind === 'number' && keys.length > 0 && { keys }),
@@ -104,6 +106,7 @@ function mergeContent(parts: readonly SpelContent[]): SpelContent {
         ...(kind === 'number' && parts.every(p => p.digitsOnly) && { digitsOnly: true }),
         ...(ops && { ops }),
         ...(boards && { boards }),
+        ...(words.length > 0 && { wordChars: Math.max(...words) }),
     };
 }
 

@@ -356,3 +356,7 @@
 
 /* The zombie is drawn facing left (arms out, the Zombies game's way): it turns the other way round in flight. */
 .sph-root.is-zombie .sph-flipper-turn { scale: calc(var(--fdir, 1) * -1) 1; }
+
+/* Word cards (Frans): the pupil font, centred lines, and the answers fitted to the longest one (--sph-answer-chars). */
+.sph-text.is-words { font-family: var(--kid-font); font-weight: 800; text-align: center; }
+.sph-card.is-answer .sph-text.is-words { font-size: min(calc(var(--sph-w) * .27), calc(var(--sph-w) * .8 / (var(--sph-answer-chars, 1) * .56))); }

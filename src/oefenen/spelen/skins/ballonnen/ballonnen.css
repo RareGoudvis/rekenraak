@@ -378,12 +378,13 @@
 }
 .bal-num.is-short { font-size: calc(var(--bal-w) * .19); }
 .bal-num.is-words {
-  width: calc(var(--bal-w) * .9);
+  /* Never below --spel-word-min: a long word (Frans "choisissez") widens the label past the balloon instead. */
+  width: max(calc(var(--bal-w) * .9), calc(var(--face-chars, 1) * .6em + 8px));
   min-width: 0;
   padding: 2px 4px;
   border-radius: var(--radius-md);
   /* A long word or measure (--face-chars, spelChoice faceChars) shrinks until its longest part fits. */
-  font-size: min(calc(var(--bal-w) * .14), calc((var(--bal-w) * .9 - 8px) / (var(--face-chars, 1) * .6)));
+  font-size: max(var(--spel-word-min), min(calc(var(--bal-w) * .14), calc((var(--bal-w) * .9 - 8px) / (var(--face-chars, 1) * .6))));
   line-height: 1.1;
   text-align: center;
   white-space: normal;

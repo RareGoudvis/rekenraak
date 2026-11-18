@@ -399,3 +399,7 @@
   animation: spel-bounce 1s ease-in-out infinite;
   animation-delay: calc(var(--e) * -.3s);
 }
+
+/* Word cards (Frans): the pupil font, centred lines, and the answers fitted to the longest one (--hj-answer-chars). */
+.hj-text.is-words { font-family: var(--kid-font); font-weight: 800; text-align: center; }
+.hj-card.is-answer .hj-text.is-words { font-size: min(calc(var(--hj-w) * .22), calc(var(--hj-w) * .76 / (var(--hj-answer-chars, 1) * .56))); }

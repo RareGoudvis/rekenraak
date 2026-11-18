@@ -232,14 +232,15 @@
 .zh-board.is-picture > svg { width: 100%; height: 100%; }
 .zh-board.is-short { font-size: calc(var(--zh-w) * .19); }
 .zh-board.is-words {
-  width: calc(var(--zh-w) * .96);
+  /* Never below --spel-word-min: a long word (Frans "choisissez") widens the board instead. */
+  width: max(calc(var(--zh-w) * .96), calc(var(--face-chars, 1) * .6em + 12px));
   min-width: 0;
   height: auto;
   min-height: calc(var(--zh-w) * .46);
   padding: 4px 6px;
   font-family: var(--kid-font);
   /* A long word or measure (--face-chars, spelChoice faceChars) shrinks until its longest part fits. */
-  font-size: min(calc(var(--zh-w) * .16), calc((var(--zh-w) * .96 - 12px) / (var(--face-chars, 1) * .6)));
+  font-size: max(var(--spel-word-min), min(calc(var(--zh-w) * .16), calc((var(--zh-w) * .96 - 12px) / (var(--face-chars, 1) * .6))));
   font-weight: 800;
   text-align: center;
   white-space: normal;
