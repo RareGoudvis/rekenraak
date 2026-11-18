@@ -1,54 +1,61 @@
-/* Monstertrucks: a dirt arena seen from the side (art.tsx). Flat fills under the --spel-ink outline, theme tokens
-   mixed into arena colours. Every motion is CSS (transforms and opacity), keyed by the screen so a new moment
-   restarts it. The screen around it is the shared duel screen (duel.css). */
+/* Monstertrucks: a dirt arena seen from the side (art.tsx), an obstacle course in two lanes. Flat fills under the
+   --spel-ink outline, theme tokens mixed into arena colours. Every motion is CSS (transforms and opacity), keyed by
+   the screen so a new moment restarts it; the frame loop only moves the groups along the lanes. The screen around
+   it is the shared duel screen (duel.css). */
 .mtk-app {
   --mtk-sky-top: color-mix(in srgb, var(--accent-bewerkingen) 42%, var(--text-main));
   --mtk-sky-low: color-mix(in srgb, var(--accent-vraagstukken) 38%, var(--kiosk-paper));
   --mtk-dirt: color-mix(in srgb, var(--accent-vraagstukken) 48%, var(--text-main));
   --mtk-dirt-lite: color-mix(in srgb, var(--mtk-dirt) 78%, var(--kiosk-paper));
   --mtk-dirt-deep: color-mix(in srgb, var(--mtk-dirt) 72%, var(--text-main));
-  --mtk-mud: color-mix(in srgb, var(--mtk-dirt) 80%, var(--text-main));
+  --mtk-mud: color-mix(in srgb, var(--mtk-dirt) 70%, var(--text-main));
   --mtk-dust: color-mix(in srgb, var(--mtk-dirt) 40%, var(--kiosk-paper));
   --mtk-stand: color-mix(in srgb, var(--text-muted) 62%, var(--text-main));
   --mtk-tier: color-mix(in srgb, var(--text-muted) 40%, var(--text-main));
   --mtk-chrome: color-mix(in srgb, var(--text-muted) 30%, var(--kiosk-paper));
   --mtk-steel: color-mix(in srgb, var(--text-muted) 75%, var(--text-main));
   --mtk-tyre: color-mix(in srgb, var(--text-main) 90%, var(--text-muted));
+  --mtk-tyre-lite: color-mix(in srgb, var(--text-main) 70%, var(--text-muted));
   --mtk-glass: color-mix(in srgb, var(--accent-bewerkingen) 26%, var(--kiosk-paper));
   --mtk-lamp: color-mix(in srgb, var(--spel-star) 55%, var(--kiosk-paper));
   --mtk-wood: color-mix(in srgb, var(--accent-vraagstukken) 55%, var(--text-muted));
+  --mtk-hazard: var(--spel-star);
+  --mtk-oil: color-mix(in srgb, var(--text-main) 88%, var(--accent-meetkunde));
   --mtk-fire-1: var(--spel-star);
   --mtk-fire-2: var(--accent-vraagstukken);
-  --mtk-fire-3: var(--accent-getallenkennis);
   --spel-grass: var(--mtk-dirt-deep);
   --spel-sky: var(--mtk-sky-top);
-  --duel-scene-h: 50%;
+  --duel-scene-h: 52%;
 }
 .mtk-app .duel-half { background: color-mix(in srgb, var(--duel-team) 20%, var(--bg-surface)); }
 .mtk-app .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 40%, var(--bg-surface)); }
 
-.mtk-scene { position: absolute; inset: 0; background: var(--mtk-sky-top); }
+.mtk-scene { position: absolute; inset: 0; background: var(--mtk-dirt-lite); }
 .mtk-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .mtk-svg * { stroke-linejoin: round; stroke-linecap: round; }
 
-/* ── Sky, lights, crowd ──────────────────────────────────────────────────── */
+/* ── Sky, lights, crowd, wall ────────────────────────────────────────────── */
 .mtk-sky-top { stop-color: var(--mtk-sky-top); }
 .mtk-sky-low { stop-color: var(--mtk-sky-low); }
+.mtk-twinkle { fill: var(--kiosk-paper); animation: mtk-twinkle 2.4s ease-in-out var(--d, 0s) infinite alternate; }
+@keyframes mtk-twinkle { from { opacity: .2; } to { opacity: .9; } }
 .mtk-mast { fill: var(--mtk-steel); stroke: var(--spel-ink); stroke-width: 2px; }
 .mtk-lamps { fill: var(--mtk-steel); stroke: var(--spel-ink); stroke-width: 3px; }
-.mtk-lamp { fill: var(--mtk-lamp); }
-.mtk-beam { fill: var(--mtk-lamp); opacity: .14; transform-origin: 0 18px; animation: mtk-sweep 6s ease-in-out var(--d, 0s) infinite alternate; }
-@keyframes mtk-sweep { from { rotate: -7deg; } to { rotate: 7deg; } }
+.mtk-lamp { fill: var(--mtk-lamp); animation: mtk-lamp 3s ease-in-out var(--d, 0s) infinite alternate; }
+@keyframes mtk-lamp { from { opacity: .75; } to { opacity: 1; } }
+.mtk-beam { fill: var(--mtk-lamp); opacity: .13; transform-origin: 0 16px; animation: mtk-sweep 6s ease-in-out var(--d, 0s) infinite alternate; }
+@keyframes mtk-sweep { from { rotate: -9deg; } to { rotate: 9deg; } }
 
 .mtk-stand { fill: var(--mtk-stand); }
 .mtk-tier { fill: var(--mtk-tier); }
 .mtk-fan { animation: mtk-bob 1.5s ease-in-out var(--d, 0s) infinite alternate; }
+.mtk-fan.is-arms { animation-duration: .5s; }
 @keyframes mtk-bob { from { translate: 0 0; } to { translate: 0 -2.5px; } }
-.mtk-crowd.is-cheer-0 .mtk-fan { animation: mtk-cheer-0 .42s ease-out var(--d, 0s) 3 alternate; }
-.mtk-crowd.is-cheer-1 .mtk-fan { animation: mtk-cheer-1 .42s ease-out var(--d, 0s) 3 alternate; }
-.mtk-crowd[class*='is-cheer'] .mtk-fan { animation-delay: calc(var(--d, 0s) * .15); }
-@keyframes mtk-cheer-0 { from { translate: 0 0; } to { translate: 0 -11px; } }
-@keyframes mtk-cheer-1 { from { translate: 0 0; } to { translate: 0 -11px; } }
+.mtk-crowd.is-cheer-0 .mtk-fan { animation: mtk-cheer-0 .4s ease-out calc(var(--d, 0s) * .15) 4 alternate; }
+.mtk-crowd.is-cheer-1 .mtk-fan { animation: mtk-cheer-1 .4s ease-out calc(var(--d, 0s) * .15) 4 alternate; }
+@keyframes mtk-cheer-0 { from { translate: 0 0; } to { translate: 0 -10px; } }
+@keyframes mtk-cheer-1 { from { translate: 0 0; } to { translate: 0 -10px; } }
+.mtk-arm { fill: none; stroke: var(--spel-ink); stroke-width: 2.5px; }
 .mtk-head { stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-head.is-0 { fill: var(--kid-tint-4); }
 .mtk-head.is-1 { fill: color-mix(in srgb, var(--kid-tint-4) 70%, var(--accent-vraagstukken)); }
@@ -67,6 +74,11 @@
 .mtk-pennant.is-left { fill: var(--duel-left); }
 .mtk-pennant.is-right { fill: var(--duel-right); animation-delay: -.25s; }
 @keyframes mtk-wave { from { scale: 1 1; } to { scale: .8 1.15; } }
+.mtk-banner { animation: mtk-banner 1.2s ease-in-out infinite alternate; }
+@keyframes mtk-banner { from { translate: 0 0; rotate: -2deg; } to { translate: 0 -3px; rotate: 2deg; } }
+.mtk-banner-cloth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-banner-star { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1px; }
+.mtk-banner-zig { fill: none; stroke: var(--duel-right); stroke-width: 2.5px; }
 .mtk-rope { fill: none; stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-bunt { stroke: var(--spel-ink); stroke-width: 1.2px; transform-box: fill-box; transform-origin: 50% 0; animation: mtk-swing 1.8s ease-in-out infinite alternate; }
 .mtk-bunt.is-0 { fill: var(--duel-left); }
@@ -75,81 +87,188 @@
 .mtk-bunt.is-3 { fill: var(--kiosk-paper); animation-delay: -1.2s; }
 @keyframes mtk-swing { from { rotate: -7deg; } to { rotate: 7deg; } }
 
-/* ── The arena floor, the start and the finish ───────────────────────────── */
-.mtk-wall { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
-.mtk-wall-band.is-0 { fill: color-mix(in srgb, var(--duel-left) 75%, var(--kiosk-paper)); }
-.mtk-wall-band.is-1 { fill: color-mix(in srgb, var(--duel-right) 75%, var(--kiosk-paper)); }
+.mtk-board { stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-board.is-0 { fill: color-mix(in srgb, var(--duel-left) 80%, var(--kiosk-paper)); }
+.mtk-board.is-1 { fill: var(--kiosk-paper); }
+.mtk-board.is-2 { fill: color-mix(in srgb, var(--duel-right) 80%, var(--kiosk-paper)); }
+.mtk-board-mark { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-board-post { fill: var(--mtk-steel); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-wall-cap { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2.5px; }
+
+/* ── The dirt ────────────────────────────────────────────────────────────── */
 .mtk-dirt { fill: var(--mtk-dirt-lite); }
-.mtk-clod { fill: var(--mtk-dirt); opacity: .7; }
-.mtk-rut { stroke: var(--mtk-dirt); stroke-width: 7px; opacity: .55; fill: none; stroke-dasharray: 40 22; }
+.mtk-clod { fill: var(--mtk-dirt); opacity: .65; }
+.mtk-stone { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mtk-track { fill: none; stroke: var(--mtk-dirt); stroke-width: 6px; opacity: .45; stroke-dasharray: 14 8; }
 .mtk-tyre-stack { fill: var(--mtk-tyre); stroke: var(--spel-ink); stroke-width: 2px; }
 .mtk-tyre-hole { fill: var(--mtk-dirt-deep); }
-.mtk-start { stroke: var(--kiosk-paper); stroke-width: 6px; opacity: .85; }
-.mtk-check.is-0 { fill: var(--kiosk-paper); }
-.mtk-check.is-1 { fill: var(--spel-ink); }
-.mtk-flagpole { stroke: var(--spel-ink); stroke-width: 5px; }
-.mtk-flag-edge { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
-.mtk-checkflag { transform-box: fill-box; transform-origin: 100% 50%; animation: mtk-flag 1.1s ease-in-out infinite alternate; }
-@keyframes mtk-flag { from { transform: skewY(-4deg); } to { transform: skewY(5deg) scale(.92, 1.04); } }
+.mtk-cone path:first-child { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-cone-band { stroke: var(--kiosk-paper); stroke-width: 3px; }
 
 /* ── The trucks ──────────────────────────────────────────────────────────── */
-.mtk-truck { transition: transform 450ms cubic-bezier(.3, .9, .35, 1); }
 .mtk-truck.is-left { --mtk-paint: var(--duel-left); }
 .mtk-truck.is-right { --mtk-paint: var(--duel-right); }
-.mtk-shadow { fill: var(--spel-ink); opacity: .22; }
+.mtk-shadow { fill: var(--spel-ink); opacity: .22; transform-box: fill-box; transform-origin: 50% 50%; }
 .mtk-paint { fill: var(--mtk-paint); stroke: var(--spel-ink); stroke-width: 3.5px; }
-.mtk-stripe { fill: var(--kiosk-paper); opacity: .9; }
+.mtk-paint-shade { fill: color-mix(in srgb, var(--mtk-paint) 70%, var(--text-main)); }
+.mtk-fender { fill: none; stroke: color-mix(in srgb, var(--mtk-paint) 60%, var(--text-main)); stroke-width: 9px; }
+.mtk-stripe { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-window { fill: var(--mtk-glass); stroke: var(--spel-ink); stroke-width: 3px; }
-.mtk-helmet { fill: color-mix(in srgb, var(--mtk-paint) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-glare { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .8; }
+.mtk-helmet { fill: color-mix(in srgb, var(--mtk-paint) 40%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-helmet-stripe { fill: none; stroke: var(--mtk-paint); stroke-width: 3px; }
 .mtk-visor { fill: var(--spel-ink); }
-.mtk-star { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-grin { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-mouth-o { fill: var(--spel-ink); }
+.mtk-badge { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-star { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-headlight { fill: var(--mtk-lamp); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-grille { stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-bumper, .mtk-rollbar { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2.5px; }
-.mtk-rooflight { fill: var(--mtk-lamp); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mtk-rooflight { fill: var(--mtk-lamp); stroke: var(--spel-ink); stroke-width: 1.5px; animation: mtk-lamp .6s ease-in-out var(--d, 0s) infinite alternate; }
 .mtk-chrome { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2.5px; }
 .mtk-chassis { fill: var(--mtk-steel); stroke: var(--spel-ink); stroke-width: 3px; }
-.mtk-spring { fill: none; stroke: var(--mtk-fire-1); stroke-width: 3px; }
-.mtk-axle { stroke: var(--spel-ink); stroke-width: 6px; }
+.mtk-spring { fill: none; stroke: var(--mtk-fire-1); stroke-width: 3.5px; }
+.mtk-shock { stroke: var(--mtk-chrome); stroke-width: 7px; }
 .mtk-tyre { fill: var(--mtk-tyre); stroke: var(--spel-ink); stroke-width: 3px; }
-.mtk-tread { fill: var(--mtk-tyre); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-tyre-wall { fill: none; stroke: var(--mtk-tyre-lite); stroke-width: 3px; }
+.mtk-lug { fill: var(--mtk-tyre); stroke: var(--spel-ink); stroke-width: 2px; }
 .mtk-rim { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2.5px; }
 .mtk-nut { fill: var(--mtk-steel); }
 .mtk-hub { fill: var(--mtk-paint); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mtk-flap { fill: color-mix(in srgb, var(--mtk-paint) 55%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2px; transform-origin: 1px 0; animation: mtk-flap .32s ease-in-out infinite alternate; }
+@keyframes mtk-flap { from { rotate: 4deg; } to { rotate: 16deg; } }
+.mtk-truck.is-waiting .mtk-flap { animation-duration: 1.4s; }
 
-/* The engine idles: a little shudder. */
-.mtk-idle { animation: mtk-idle .2s ease-in-out infinite alternate; }
-@keyframes mtk-idle { from { translate: 0 0; } to { translate: 0 -1.4px; } }
-.mtk-truck.is-tired .mtk-idle { animation: none; }
-/* The wheels roll on a step (a new key restarts it). */
-.mtk-spin.is-rolling { animation: mtk-roll 600ms cubic-bezier(.3, .8, .4, 1); }
-@keyframes mtk-roll { from { rotate: 0deg; } to { rotate: 360deg; } }
+/* The big suspension: the body rides the springs over the bumps; on a stop it settles with a sag. */
+.mtk-bounce { animation: mtk-bounce .36s ease-in-out infinite alternate; }
+@keyframes mtk-bounce { from { translate: 0 0; } to { translate: 0 -3.5px; } }
+.mtk-wheel-bounce { animation: mtk-wheel .23s ease-in-out infinite alternate; }
+@keyframes mtk-wheel { from { translate: 0 0; } to { translate: 0 -1.2px; } }
+.mtk-truck.is-waiting .mtk-bounce { animation: mtk-idle .12s ease-in-out infinite alternate; }
+.mtk-truck.is-waiting .mtk-turn { animation: mtk-brake 600ms cubic-bezier(.3, .7, .4, 1); transform-origin: -34px 0; }
+@keyframes mtk-idle { from { translate: 0 0; } to { translate: 0 -1.2px; } }
+@keyframes mtk-brake { 0% { rotate: 0deg; } 30% { rotate: 5deg; } 60% { rotate: -1.5deg; } 100% { rotate: 0deg; } }
+.mtk-truck.is-tired .mtk-bounce, .mtk-truck.is-tired .mtk-wheel-bounce { animation: none; }
+.mtk-truck.is-tired .mtk-turn { translate: 0 3px; }
 
-/* The ramp jump: up, a nose-up flight over the cars, down onto them with a bounce. */
-.mtk-hop { transform-origin: -66px -40px; animation: mtk-hop 820ms cubic-bezier(.3, .6, .4, 1); }
-@keyframes mtk-hop {
+/* Driving: dirt from the back tyre, exhaust puffs from the stacks (their opacity follows the speed). */
+.mtk-clump { fill: var(--mtk-mud); stroke: var(--spel-ink); stroke-width: 1.5px; animation: mtk-clump .5s ease-out calc(var(--k) * -.083s) infinite; }
+@keyframes mtk-clump { 0% { transform: translate(0, 0) scale(.5); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(1.1); opacity: 0; } }
+.mtk-dustpuff { fill: var(--mtk-dust); opacity: .7; transform-box: fill-box; transform-origin: 100% 100%; animation: mtk-dustpuff .6s ease-out infinite; }
+@keyframes mtk-dustpuff { from { scale: .5; opacity: .7; } to { scale: 1.5; opacity: 0; } }
+.mtk-puff { fill: var(--mtk-dust); stroke: var(--spel-ink); stroke-width: 1.5px; animation: mtk-puff .9s ease-out calc(var(--k) * -.3s) infinite; }
+@keyframes mtk-puff { 0% { transform: translate(0, 0) scale(.3); opacity: .9; } 100% { transform: translate(-26px, -26px) scale(1.4); opacity: 0; } }
+.mtk-flames { animation: mtk-flames 800ms ease-out both; }
+.mtk-flames.is-big { animation-duration: 1400ms; }
+.mtk-flames.is-big .mtk-flame { scale: 1.7; }
+@keyframes mtk-flames { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+.mtk-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: mtk-flicker .09s ease-in-out infinite alternate; }
+.mtk-flame.is-out { fill: var(--mtk-fire-2); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-flame.is-in { fill: var(--mtk-fire-1); }
+@keyframes mtk-flicker { from { transform: scale(1, .8); } to { transform: scale(1.1, 1.25); } }
+.mtk-stars { animation: mtk-spin 900ms linear infinite; }
+@keyframes mtk-spin { to { rotate: 360deg; } }
+.mtk-star-s { fill: var(--spel-star); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mtk-windscreen-mud { fill: var(--mtk-mud); stroke: var(--spel-ink); stroke-width: 2px; animation: mtk-splat 1400ms ease-out both; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes mtk-splat { 0% { scale: 0; } 12% { scale: 1.2; } 20%, 80% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; } }
+/* Back on the way after a crash: a little shake-off and a lurch forward. */
+.mtk-goagain { animation: mtk-goagain 480ms cubic-bezier(.3, .8, .4, 1); transform-origin: -34px 0; }
+@keyframes mtk-goagain { 0% { rotate: 0deg; } 25% { rotate: -5deg; } 55% { rotate: 2deg; } 100% { rotate: 0deg; } }
+
+/* ── The moves at an obstacle (origin: the truck's middle on the ground) ─── */
+.mtk-move { transform-origin: -78px -40px; }
+/* Over the ramp and the junk cars: up, a nose-up flight, a heavy landing that squashes the springs. */
+.mtk-move.is-clear-jump { animation: mtk-jump 820ms cubic-bezier(.3, .6, .4, 1); }
+@keyframes mtk-jump {
   0% { translate: 0 0; rotate: 0deg; }
-  18% { translate: 0 -34px; rotate: -12deg; }
-  45% { translate: 0 -92px; rotate: -4deg; }
-  70% { translate: 0 -30px; rotate: 7deg; }
-  80% { translate: 0 -6px; rotate: 2deg; }
-  90% { translate: 0 -10px; rotate: 0deg; }
+  16% { translate: 0 -30px; rotate: -14deg; }
+  45% { translate: 0 -104px; rotate: -4deg; }
+  72% { translate: 0 -28px; rotate: 8deg; }
+  82% { translate: 0 0; rotate: 1deg; scale: 1.06 .9; }
+  91% { translate: 0 -8px; rotate: 0deg; scale: 1 1; }
+  100% { translate: 0 0; }
+}
+.mtk-shadow.is-clear-jump, .mtk-shadow.is-clear-hop { animation: mtk-shadow 820ms ease-in-out; }
+@keyframes mtk-shadow { 0%, 100% { scale: 1; opacity: .22; } 45% { scale: .5; opacity: .1; } }
+/* Over the tyre wall: a quick high hop. */
+.mtk-move.is-clear-hop { animation: mtk-hop 620ms cubic-bezier(.3, .6, .4, 1); }
+@keyframes mtk-hop { 0% { translate: 0 0; rotate: 0deg; } 20% { translate: 0 -26px; rotate: -10deg; } 50% { translate: 0 -78px; rotate: 0deg; } 80% { translate: 0 -6px; rotate: 6deg; } 90% { translate: 0 0; scale: 1.05 .92; } 100% { translate: 0 0; scale: 1 1; } }
+/* Through the mud at full speed: it skims and bounces, nose up. */
+.mtk-move.is-clear-skim { animation: mtk-skim 700ms ease-out; }
+@keyframes mtk-skim { 0% { translate: 0 0; rotate: 0deg; } 25% { translate: 0 -10px; rotate: -6deg; } 50% { translate: 0 -2px; rotate: -3deg; } 70% { translate: 0 -8px; rotate: -4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+/* Under the crusher: ducked low and fast (the springs pressed), speed lines. */
+.mtk-move.is-clear-dash { animation: mtk-dash 640ms cubic-bezier(.3, .8, .4, 1); }
+@keyframes mtk-dash { 0% { scale: 1 1; rotate: 0deg; } 20% { scale: 1.08 .82; rotate: 3deg; } 70% { scale: 1.06 .86; rotate: 2deg; } 100% { scale: 1 1; rotate: 0deg; } }
+/* The loop, driven in place while the world waits (the hold): round about a point the loop's radius above. */
+.mtk-move.is-clear-loop { transform-origin: -78px -92px; animation: mtk-loop 760ms cubic-bezier(.45, .1, .45, .95); }
+@keyframes mtk-loop { from { rotate: 0deg; } to { rotate: -360deg; } }
+/* Through the oil in a drift: it slides sideways a little, tyre smoke. */
+.mtk-move.is-clear-drift { animation: mtk-drift 760ms ease-in-out; }
+@keyframes mtk-drift { 0% { rotate: 0deg; translate: 0 0; } 30% { rotate: 7deg; translate: -10px 0; scale: .9 1; } 60% { rotate: -4deg; translate: 6px 0; scale: .92 1; } 100% { rotate: 0deg; translate: 0 0; scale: 1 1; } }
+
+/* Crashes (all end where they began: the stop is the cost). */
+/* A backflip off the ramp: up, over backwards, a bouncy landing. */
+.mtk-move.is-crash-flip { animation: mtk-flip 1000ms cubic-bezier(.35, .5, .4, 1); }
+@keyframes mtk-flip {
+  0% { translate: 0 0; rotate: 0deg; }
+  12% { translate: 6px -10px; rotate: -24deg; }
+  50% { translate: -30px -120px; rotate: -200deg; }
+  80% { translate: -26px -6px; rotate: -350deg; }
+  88% { translate: -24px 0; rotate: -360deg; scale: 1.08 .86; }
+  100% { translate: 0 0; rotate: -360deg; scale: 1 1; }
+}
+/* Stuck in the mud: it sinks, shakes with the wheels spinning, and pops out when it goes on. */
+.mtk-move.is-crash-stuck { animation: mtk-stuck 1250ms ease-in-out both; }
+@keyframes mtk-stuck {
+  0% { translate: 0 0; rotate: 0deg; }
+  12% { translate: 0 14px; rotate: 4deg; }
+  20% { translate: -2px 12px; rotate: 2deg; }
+  28% { translate: 2px 13px; rotate: 4deg; }
+  36% { translate: -2px 12px; rotate: 2deg; }
+  44% { translate: 2px 13px; rotate: 4deg; }
+  52% { translate: -2px 12px; rotate: 2deg; }
+  60% { translate: 2px 13px; rotate: 4deg; }
+  85% { translate: 0 12px; rotate: 3deg; }
   100% { translate: 0 0; rotate: 0deg; }
 }
-
-/* A wheelie: the nose goes up on the back wheels, wobbles and drops back with a bounce. */
-.mtk-wheelie { transform-origin: -104px 0; animation: mtk-wheelie 950ms cubic-bezier(.3, .7, .4, 1); }
-@keyframes mtk-wheelie {
-  0% { rotate: 0deg; }
-  22% { rotate: -27deg; }
-  40% { rotate: -21deg; }
-  56% { rotate: -25deg; }
-  80% { rotate: 0deg; }
-  88% { rotate: 3deg; }
-  100% { rotate: 0deg; }
+/* Into the tyre wall: a squash, bounced back, a wobble. */
+.mtk-move.is-crash-bounce { animation: mtk-bounce-back 900ms cubic-bezier(.3, .7, .4, 1); }
+@keyframes mtk-bounce-back {
+  0% { translate: 0 0; scale: 1 1; }
+  12% { translate: 10px 0; scale: .86 1.08; }
+  35% { translate: -60px -34px; scale: 1 1; rotate: 10deg; }
+  60% { translate: -40px 0; rotate: -4deg; scale: 1.05 .92; }
+  75% { translate: -36px -10px; rotate: 2deg; scale: 1 1; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+/* The crusher comes down on the roof: the big springs squash flat, then boing back up. */
+.mtk-move.is-crash-squash { transform-origin: -78px 0; animation: mtk-squash 1000ms cubic-bezier(.3, .7, .4, 1); }
+@keyframes mtk-squash {
+  0% { scale: 1 1; translate: 0 0; }
+  14% { scale: 1.22 .52; translate: 0 0; }
+  55% { scale: 1.2 .55; translate: 0 0; }
+  68% { scale: .9 1.2; translate: 0 -40px; }
+  80% { scale: 1.05 .92; translate: 0 0; }
+  90% { scale: 1 1.04; translate: 0 -6px; }
+  100% { scale: 1 1; translate: 0 0; }
+}
+/* Half way up the loop and sliding back down, a dizzy wobble at the bottom. */
+.mtk-move.is-crash-slide { transform-origin: -78px -92px; animation: mtk-slide 1050ms ease-in-out; }
+@keyframes mtk-slide { 0% { rotate: 0deg; } 35% { rotate: -110deg; } 45% { rotate: -112deg; } 75% { rotate: 14deg; } 86% { rotate: -6deg; } 100% { rotate: 0deg; } }
+/* A spin-out on the oil: round and round (seen from the side: it turns, faces back, turns again). */
+.mtk-move.is-crash-spin { animation: mtk-spinout 1000ms ease-out; }
+@keyframes mtk-spinout {
+  0% { scale: 1 1; translate: 0 0; }
+  20% { scale: -1 1; translate: -14px -6px; }
+  40% { scale: 1 1; translate: -24px 0; }
+  60% { scale: -1 1; translate: -30px -6px; }
+  80% { scale: 1 1; translate: -20px 0; }
+  100% { scale: 1 1; translate: 0 0; }
 }
 
-/* The winner's donut: round and round in the dirt (seen from the side: the truck turns and swings). */
-.mtk-truck.is-donut .mtk-turn { transform-origin: -66px -40px; animation: mtk-donut 1.05s linear infinite; }
+/* The winner's donut: round and round in the dirt behind the finish. */
+.mtk-truck.is-donut .mtk-turn { transform-origin: -78px -40px; animation: mtk-donut 1.05s linear infinite; }
 @keyframes mtk-donut {
   0% { scale: 1 1; translate: 0 0; }
   25% { scale: .18 1; translate: -26px -8px; }
@@ -163,71 +282,144 @@
   to { transform: rotate(calc(var(--a) + 60deg)) translate(100px, 0) scale(1.5); opacity: 0; }
 }
 .mtk-donut-ring { transform: scale(1, .32); }
+.mtk-dust { fill: var(--mtk-dust); }
 
-/* Mud flung back on gas. */
-.mtk-mud-blob { fill: var(--mtk-mud); stroke: var(--spel-ink); stroke-width: 1.5px; animation: mtk-mud 700ms cubic-bezier(.2, .7, .4, 1) calc(var(--k) * 25ms) both; }
-@keyframes mtk-mud {
-  0% { transform: translate(0, 0) scale(.4); opacity: 1; }
-  60% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
-  100% { transform: translate(calc(var(--dx) * 1.3), calc(var(--dy) * .3 + 24px)) scale(.8); opacity: 0; }
-}
-/* Exhaust puffs on gas, flames from the stacks on a jump. */
-.mtk-puff { fill: var(--mtk-dust); stroke: var(--spel-ink); stroke-width: 1.5px; opacity: 0; animation: mtk-puff 800ms ease-out calc(var(--k) * 70ms) both; }
-@keyframes mtk-puff { 0% { transform: translate(0, 0) scale(.3); opacity: .9; } 100% { transform: translate(-26px, -30px) scale(1.5); opacity: 0; } }
-.mtk-flames { animation: mtk-flames 1000ms ease-out both; }
-@keyframes mtk-flames { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
-.mtk-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: mtk-flicker .09s ease-in-out infinite alternate; }
-.mtk-flame.is-out { fill: var(--mtk-fire-2); stroke: var(--spel-ink); stroke-width: 2px; }
-.mtk-flame.is-in { fill: var(--mtk-fire-1); }
-@keyframes mtk-flicker { from { scale: 1 .8; } to { scale: 1.1 1.25; } }
-
-/* ── The ramp, the junk cars, the crunch ─────────────────────────────────── */
+/* ── The obstacles ───────────────────────────────────────────────────────── */
+/* Junk cars on a ramp: crumpled flat under a jump; after a crash the ramp breaks and the cars sag flat. */
 .mtk-ramp-board { fill: var(--mtk-wood); stroke: var(--spel-ink); stroke-width: 3px; }
 .mtk-ramp-plank { stroke: var(--spel-ink); stroke-width: 1.5px; opacity: .6; }
-.mtk-car { transform-box: fill-box; transform-origin: 50% 100%; transition: scale 150ms cubic-bezier(.5, 0, .8, .4); }
+.mtk-ramp-arrow { fill: var(--mtk-hazard); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mtk-ramp { transform-box: fill-box; transform-origin: 100% 100%; }
+.mtk-ob-cars.is-crash .mtk-ramp { animation: mtk-ramp-break 600ms ease-in both; }
+@keyframes mtk-ramp-break { 0% { rotate: 0deg; } 30% { rotate: 14deg; translate: 0 -6px; } 100% { rotate: 60deg; scale: 1 .2; opacity: .6; } }
+.mtk-car { transform-box: fill-box; transform-origin: 50% 100%; animation: mtk-car-idle 2.2s ease-in-out calc(var(--k) * -.7s) infinite alternate; }
+@keyframes mtk-car-idle { from { rotate: -1deg; } to { rotate: 1deg; } }
 .mtk-car.is-0 { --mtk-car: color-mix(in srgb, var(--accent-metendrekenen) 50%, var(--text-muted)); }
 .mtk-car.is-1 { --mtk-car: color-mix(in srgb, var(--accent-meetkunde) 45%, var(--kiosk-paper)); }
-.mtk-car.is-2 { --mtk-car: color-mix(in srgb, var(--spel-star) 55%, var(--text-muted)); }
-.mtk-car.is-3 { --mtk-car: color-mix(in srgb, var(--accent-bewerkingen) 35%, var(--text-muted)); }
 .mtk-car-body { fill: var(--mtk-car); stroke: var(--spel-ink); stroke-width: 2.5px; }
 .mtk-car-glass { fill: var(--mtk-glass); stroke: var(--spel-ink); stroke-width: 1.5px; }
 .mtk-car-wheel { fill: var(--mtk-tyre); stroke: var(--spel-ink); stroke-width: 1.5px; }
-.mtk-car-pillar { stroke: var(--spel-ink); stroke-width: 2px; }
-.mtk-car-crack { fill: none; stroke: var(--spel-ink); stroke-width: 1.5px; opacity: 0; }
-.mtk-ramp { transform-box: fill-box; transform-origin: 0 100%; }
-.mtk-row.is-waiting .mtk-ramp { animation: mtk-ramp-in 400ms cubic-bezier(.3, 1.5, .5, 1) both; }
-.mtk-row.is-waiting .mtk-car { animation: mtk-drop 480ms cubic-bezier(.3, 1.4, .5, 1) calc(150ms + var(--k) * 90ms) both; }
-@keyframes mtk-ramp-in { from { scale: 0 0; } to { scale: 1 1; } }
-@keyframes mtk-drop { from { translate: 0 -70px; opacity: 0; } 30% { opacity: 1; } to { translate: 0 0; opacity: 1; } }
-.mtk-row.is-flat .mtk-car { scale: 1.12 .3; }
-.mtk-row.is-flat .mtk-car-pillar { stroke: var(--spel-ink); stroke-width: 2px; }
-.mtk-car-crack { opacity: 1; }
-.mtk-row.is-leaving { animation: mtk-leave 420ms ease-in both; }
-@keyframes mtk-leave { to { opacity: 0; } }
-.mtk-bit { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 1px; animation: mtk-bit 700ms ease-out both; }
+.mtk-car-hub { fill: var(--mtk-chrome); }
+.mtk-car-pillar, .mtk-car-dent { fill: none; stroke: var(--spel-ink); stroke-width: 1.5px; }
+.mtk-ob-cars.is-clear .mtk-car { animation: mtk-crumple 380ms cubic-bezier(.5, 0, .8, .4) calc(180ms + var(--k) * 110ms) both; }
+.mtk-ob-cars.is-crash .mtk-car { animation: mtk-sag 900ms ease-in calc(500ms + var(--k) * 120ms) both; }
+@keyframes mtk-crumple { 0% { scale: 1 1; } 60% { scale: 1.15 .35; } 80% { scale: 1.1 .45; } 100% { scale: 1.12 .38; } }
+@keyframes mtk-sag { 0% { scale: 1 1; } 40% { scale: 1.04 .9; } 100% { scale: 1.1 .36; } }
+.mtk-bit { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 1px; animation: mtk-bit 700ms ease-out 260ms both; }
 .mtk-bit.is-1 { fill: var(--mtk-glass); }
 .mtk-bit.is-2 { fill: var(--spel-star); }
 @keyframes mtk-bit {
   from { transform: rotate(var(--a)) translate(0, 0) rotate(0deg); opacity: 1; }
-  to { transform: rotate(var(--a)) translate(60px, 0) rotate(240deg); opacity: 0; }
+  to { transform: rotate(var(--a)) translate(70px, 0) rotate(240deg); opacity: 0; }
 }
-.mtk-dust { fill: var(--mtk-dust); transform-box: fill-box; transform-origin: 50% 50%; }
-.mtk-dust.is-crunch { animation: mtk-dust 900ms ease-out calc(var(--k) * 60ms) both; }
-@keyframes mtk-dust { from { scale: .3; opacity: .9; } to { scale: 2; opacity: 0; } }
 
-/* ── Calls, confetti, the card ───────────────────────────────────────────── */
+/* The mud pit: bubbles pop; mud flies up on a clear and a crash. */
+.mtk-mud-rim { fill: var(--mtk-dirt); stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-mud-pit { fill: var(--mtk-mud); }
+.mtk-mud-shine { fill: none; stroke: var(--mtk-dirt-lite); stroke-width: 2.5px; opacity: .6; }
+.mtk-bubble { fill: var(--mtk-mud); stroke: var(--spel-ink); stroke-width: 1.5px; transform-box: fill-box; transform-origin: 50% 100%; animation: mtk-bubble 1.8s ease-in calc(var(--k) * -.6s) infinite; }
+@keyframes mtk-bubble { 0% { scale: 0; } 80% { scale: 1.2; opacity: 1; } 90% { scale: 1.6; opacity: 0; } 100% { scale: 0; opacity: 0; } }
+.mtk-post { stroke: var(--spel-ink); stroke-width: 4px; }
+.mtk-sign-board { fill: var(--mtk-hazard); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-sign-mark { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-mud-blob { fill: var(--mtk-mud); stroke: var(--spel-ink); stroke-width: 1.5px; animation: mtk-mud 900ms cubic-bezier(.2, .7, .4, 1) calc(var(--k) * 30ms) both; }
+.mtk-mud-splash.is-crash .mtk-mud-blob { animation-iteration-count: 2; }
+@keyframes mtk-mud {
+  0% { transform: translate(0, 0) scale(.4); opacity: 1; }
+  55% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
+  100% { transform: translate(calc(var(--dx) * 1.3), 0) scale(.8); opacity: 0; }
+}
+
+/* The tyre wall: the top tyre wobbles under a hop; a crash scatters the tyres bouncing away. */
+.mtk-wall-tyre { animation: mtk-tyre-idle 2s ease-in-out calc(var(--k) * -.3s) infinite alternate; }
+@keyframes mtk-tyre-idle { from { rotate: -3deg; } to { rotate: 3deg; } }
+.mtk-ob-tyres.is-clear .mtk-wall-tyre { animation: mtk-tyre-wobble 700ms ease-out calc(120ms + var(--k) * 30ms); }
+@keyframes mtk-tyre-wobble { 0% { translate: 0 0; } 25% { translate: 0 -8px; rotate: 12deg; } 60% { translate: 0 0; rotate: -6deg; } 100% { rotate: 0deg; } }
+.mtk-ob-tyres.is-crash .mtk-wall-tyre { animation: mtk-tyre-fly 1100ms cubic-bezier(.25, .6, .5, 1) calc(var(--k) * 40ms) both; }
+@keyframes mtk-tyre-fly {
+  0% { translate: 0 0; rotate: 0deg; }
+  40% { translate: var(--fx) -70px; rotate: calc(var(--fr) * .5); }
+  70% { translate: calc(var(--fx) * 1.5) 0; rotate: calc(var(--fr) * .8); }
+  85% { translate: calc(var(--fx) * 1.7) -14px; }
+  100% { translate: calc(var(--fx) * 2) 30px; rotate: var(--fr); opacity: 0; }
+}
+.mtk-tyre-tread { stroke: var(--mtk-tyre-lite); stroke-width: 2px; }
+.mtk-tape { fill: none; stroke: var(--mtk-hazard); stroke-width: 4px; stroke-dasharray: 10 8; opacity: .9; }
+.mtk-ob-tyres.is-crash .mtk-tape { animation: mtk-gone 300ms ease-in both; }
+@keyframes mtk-gone { to { opacity: 0; } }
+
+/* The crusher: its press bobs up and down; a clear ducks under before it slams behind; a crash: it comes down on the roof. */
+.mtk-tower, .mtk-arm-beam { fill: var(--mtk-steel); stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-lattice { fill: none; stroke: var(--spel-ink); stroke-width: 1.5px; opacity: .55; }
+.mtk-warn { fill: var(--mtk-fire-2); stroke: var(--spel-ink); stroke-width: 2px; animation: mtk-warn .5s steps(1) infinite; }
+@keyframes mtk-warn { 50% { fill: var(--mtk-hazard); } }
+.mtk-piston { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-press-head { fill: var(--mtk-hazard); stroke: var(--spel-ink); stroke-width: 3.5px; }
+.mtk-press-stripes { fill: none; stroke: var(--spel-ink); stroke-width: 5px; }
+.mtk-press-teeth { fill: var(--mtk-chrome); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-press { animation: mtk-press-idle 1.6s ease-in-out infinite alternate; }
+@keyframes mtk-press-idle { from { translate: 0 -10px; } to { translate: 0 4px; } }
+.mtk-ob-crusher.is-clear .mtk-press { animation: mtk-press-slam 900ms cubic-bezier(.6, 0, .9, .4) both; }
+@keyframes mtk-press-slam { 0% { translate: 0 -10px; } 30% { translate: 0 -24px; } 46% { translate: 0 212px; } 54% { translate: 0 200px; } 75% { translate: 0 212px; } 100% { translate: 0 0; } }
+.mtk-ob-crusher.is-crash .mtk-press { animation: mtk-press-squash 1000ms cubic-bezier(.5, 0, .5, 1) both; }
+@keyframes mtk-press-squash { 0% { translate: 0 -10px; } 14% { translate: 0 122px; } 55% { translate: 0 122px; } 72% { translate: 0 -30px; } 100% { translate: 0 -20px; } }
+.mtk-clang-line { stroke: var(--kiosk-paper); stroke-width: 4px; transform: rotate(var(--a)); opacity: 0; animation: mtk-clang 500ms ease-out both; }
+.mtk-ob-crusher.is-clear .mtk-clang-line { animation-delay: 420ms; }
+@keyframes mtk-clang { 0% { opacity: 1; scale: .6; } 100% { opacity: 0; scale: 1.5; } }
+
+/* The loop: its track and a dashed middle line that runs; sparks fly when a truck goes round. */
+.mtk-loop-back { fill: none; stroke: var(--spel-ink); stroke-width: 22px; }
+.mtk-loop-track { fill: none; stroke: var(--mtk-steel); stroke-width: 15px; }
+.mtk-loop-dash { fill: none; stroke: var(--mtk-hazard); stroke-width: 3px; stroke-dasharray: 12 12; animation: mtk-dash-run 1.2s linear infinite; }
+@keyframes mtk-dash-run { to { stroke-dashoffset: -48; } }
+.mtk-loop-leg { stroke: var(--spel-ink); stroke-width: 7px; }
+.mtk-loop-flag { fill: var(--mtk-hazard); stroke: var(--spel-ink); stroke-width: 2.5px; transform-origin: 0 -16px; animation: mtk-swing 1s ease-in-out infinite alternate; }
+.mtk-loop-sparks { animation: mtk-loop 760ms cubic-bezier(.45, .1, .45, .95) both; }
+.mtk-spark { fill: var(--mtk-hazard); animation: mtk-spark 760ms ease-out calc(var(--k) * 60ms) both; }
+@keyframes mtk-spark { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; transform: translate(-30px, 14px); } }
+
+/* The oil slick: a slow rainbow shimmer; skid marks after a truck went through. */
+.mtk-oil { fill: var(--mtk-oil); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-oil-sheen { fill: none; stroke: color-mix(in srgb, var(--accent-meetkunde) 60%, var(--kiosk-paper)); stroke-width: 3px; animation: mtk-sheen 2.6s ease-in-out infinite alternate; }
+@keyframes mtk-sheen { from { opacity: .3; translate: -6px 0; } to { opacity: .9; translate: 6px 0; } }
+.mtk-barrel-body { fill: color-mix(in srgb, var(--accent-meetkunde) 60%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.mtk-barrel-ring { stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-oil-drip { fill: var(--mtk-oil); }
+.mtk-skid path { fill: none; stroke: var(--spel-ink); stroke-width: 3px; opacity: .45; stroke-dasharray: 160; animation: mtk-skid 600ms ease-out both; }
+@keyframes mtk-skid { from { stroke-dashoffset: 160; } to { stroke-dashoffset: 0; } }
+
+/* ── Calls, the finish, confetti, the card ───────────────────────────────── */
 .mtk-call { transform-box: fill-box; transform-origin: 50% 50%; animation: mtk-call 1200ms var(--ease-out) both; }
 @keyframes mtk-call { 0% { transform: scale(.2) rotate(-10deg); opacity: 0; } 18% { transform: scale(1.18) rotate(4deg); opacity: 1; } 70% { transform: scale(1) translateY(-10px); opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
 .mtk-call-bg { stroke: var(--spel-ink); stroke-width: 3.5px; }
-.mtk-call.is-jump .mtk-call-bg { fill: var(--spel-star); }
-.mtk-call.is-oops .mtk-call-bg { fill: var(--kiosk-paper); }
+.mtk-call.is-clear .mtk-call-bg { fill: var(--spel-star); }
+.mtk-call.is-turbo .mtk-call-bg { fill: var(--mtk-fire-2); }
+.mtk-call.is-crash .mtk-call-bg { fill: var(--kiosk-paper); }
 .mtk-call.is-win .mtk-call-bg { fill: var(--kid-go); }
-.mtk-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 24px; font-weight: 900; }
+.mtk-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 40px; font-weight: 900; }
+.mtk-call-bg { stroke-width: 5px; }
+
+.mtk-finish-post { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-check.is-0 { fill: var(--kiosk-paper); }
+.mtk-check.is-1 { fill: var(--spel-ink); }
+.mtk-flag-edge { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-flagpole { stroke: var(--spel-ink); stroke-width: 3px; }
+.mtk-tape-cloth { fill: var(--kid-go); stroke: var(--spel-ink); stroke-width: 2px; }
+.mtk-finish-tape { transform-box: fill-box; }
+.mtk-finish-tape.is-l { transform-origin: 0 50%; }
+.mtk-finish-tape.is-r { transform-origin: 100% 50%; }
+.mtk-finish.is-torn .mtk-finish-tape.is-l { animation: mtk-tear-l 700ms cubic-bezier(.3, .8, .4, 1) both; }
+.mtk-finish.is-torn .mtk-finish-tape.is-r { animation: mtk-tear-r 700ms cubic-bezier(.3, .8, .4, 1) both; }
+@keyframes mtk-tear-l { to { rotate: 80deg; } }
+@keyframes mtk-tear-r { to { rotate: -80deg; } }
+.mtk-finish-top { animation: mtk-finish-wave 1.2s ease-in-out infinite alternate; }
+@keyframes mtk-finish-wave { from { translate: 0 0; } to { translate: 0 -2px; } }
+
 .mtk-confetto { transform-box: fill-box; transform-origin: 50% 50%; stroke: var(--spel-ink); stroke-width: 1px; animation: mtk-fall var(--t) linear var(--d) infinite both; }
 .mtk-confetto.is-0 { fill: var(--spel-fill-0); }
 .mtk-confetto.is-1 { fill: var(--spel-fill-1); }
 .mtk-confetto.is-2 { fill: var(--spel-fill-2); }
 .mtk-confetto.is-3 { fill: var(--spel-fill-3); }
 .mtk-confetto.is-4 { fill: var(--spel-fill-4); }
-@keyframes mtk-fall { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(var(--sway), 380px) rotate(var(--r)); } }
+@keyframes mtk-fall { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(var(--sway), 340px) rotate(var(--r)); } }
 .mtk-card-art { display: block; width: clamp(96px, 16vmin, 150px); height: auto; margin: -6px auto -4px; overflow: visible; }

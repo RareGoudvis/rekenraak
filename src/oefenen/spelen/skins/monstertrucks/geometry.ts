@@ -1,30 +1,15 @@
 import type { Side } from '../../duel/types';
-import { progressOf, TRUCK } from './rule';
 
-// Monstertrucks' scene geometry, pure: a 1200 × 340 world seen from the side, the crowd on top, two lanes in the
-// dirt (left = the back lane, right = the front lane), both trucks driving left to right. A truck's x is its front
-// bumper; its body reaches TRUCK_LEN back from there.
+// Monstertrucks' scene geometry: an arena H units high seen from the side (its width follows the band), the crowd
+// on top, two lanes in the dirt (left = the back lane, right = the front lane), both trucks driving to the right.
+// A truck is drawn with its front bumper at x 0 and its tyres on y 0; an obstacle with its near edge at x 0.
 
-export const VIEW = { w: 1200, h: 340 } as const;
-// Each lane's ground line and how big its truck is drawn (the back lane a little smaller: depth).
-export const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 240, scale: 0.96 }, right: { y: 324, scale: 1.1 } };
-// The front bumper at 0 points and at the finish.
-export const START_X = 176;
-export const FINISH_X = 1112;
-export const TRUCK_LEN = 132;
-// The ramp and the row of cars in front of the truck (lane units from its bumper): the ramp's length and a car's.
-export const RAMP = { len: 34, h: 32 } as const;
-export const CAR = { len: 44, h: 30, gap: 2, max: 4 } as const;
-
-/** A truck's front bumper at points of finish (it stops at the line). */
-export const truckX = (points: number, finish: number) => START_X + (FINISH_X - START_X) * progressOf(points, finish);
-
-/** How far one jump carries a truck (its gas and the bonus), in scene units: the cars must fit under it. */
-export const jumpLen = (finish: number) => truckX(1 + TRUCK.jumpBonus, finish) - START_X;
-
-/** The ramp and the cars in front of the bumper (scene units from it): as many cars as the jump clears (2 on the default 20). */
-export function rowOf(finish: number): { ramp: number; cars: number[] } {
-    const room = jumpLen(finish) - RAMP.len - 6;
-    const n = Math.max(1, Math.min(CAR.max, Math.floor(room / (CAR.len + CAR.gap))));
-    return { ramp: 4, cars: Array.from({ length: n }, (_, i) => 4 + RAMP.len + 2 + i * (CAR.len + CAR.gap)) };
-}
+export const H = 300;
+// Each lane's ground line and how big its truck and obstacles are drawn (the back lane smaller: depth).
+export const LANE: Record<Side, { y: number; scale: number }> = { left: { y: 210, scale: 0.56 }, right: { y: 290, scale: 0.72 } };
+// The tiles the backdrop and the dirt repeat in (they scroll by whole tiles without a seam).
+export const TILE = { stand: 640, wall: 200, dirt: 260, tyres: 64 } as const;
+// The truck: its wheels (x of the hubs) and their radius; its length behind the bumper.
+export const WHEELS = [-122, -36] as const;
+export const WHEEL_R = 36;
+export const TRUCK_LEN = 156;
