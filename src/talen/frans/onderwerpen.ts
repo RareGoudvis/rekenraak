@@ -1,11 +1,12 @@
 import type { Person } from './verbs';
 
-// Who does it: a Dutch pronoun or one or two first names; the French subject and the person follow from it.
+// Who does it: a French pronoun or one or two first names (owner 2026-11-18: the pupil writes French, so the question
+// shows the French subject: "tu (hebt)", "Jos et Lien (hebben)"); its Dutch is the pronoun of a Dutch answer.
 
 export interface Onderwerp {
-    // As the question shows it: "jij", "Jos", "Jos en Lien", "men (on)".
+    // In Dutch: "jij", "men", "Jos", "Jos en Lien".
     nl: string;
-    // As the full answer starts: "tu", "Jos", "Jos et Lien", "on" ("ils/elles" for the Dutch plural zij).
+    // As the question shows it and the full answer starts: "tu", "on", "Jos", "Jos et Lien".
     fr: string;
     person: Person;
 }
@@ -20,11 +21,11 @@ export const PRONOUNS: readonly Onderwerp[] = [
     { nl: 'hij', fr: 'il', person: 2 },
     { nl: 'zij', fr: 'elle', person: 2 },
     // Op.stap lists on; Dutch says men.
-    { nl: 'men (on)', fr: 'on', person: 2 },
+    { nl: 'men', fr: 'on', person: 2 },
     { nl: 'wij', fr: 'nous', person: 3 },
     { nl: 'jullie', fr: 'vous', person: 4 },
-    // Dutch zij (meervoud) does not say boys or girls: both French pronouns are right.
-    { nl: 'zij', fr: 'ils/elles', person: 5 },
+    { nl: 'zij', fr: 'ils', person: 5 },
+    { nl: 'zij', fr: 'elles', person: 5 },
 ];
 
 const pick = <T>(list: readonly T[], rng: () => number): T => list[Math.min(list.length - 1, Math.floor(rng() * list.length))];

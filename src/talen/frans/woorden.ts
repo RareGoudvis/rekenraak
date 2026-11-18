@@ -1,10 +1,21 @@
+import { GETALLEN_20, GETALLEN_100, TIENTALLEN } from './getallen';
+
 // French word lists for the kids app (Op.stap Frans: woordenschat). A list is data only: its {fr, nl} pairs in their
-// natural order; the question maker below asks any list in either direction. A new list (the numbers to 20) = one
-// entry in WORD_LISTS and a card in woordCards.ts.
+// natural order; the question maker below asks any list in either direction. A new list = one entry in WORD_LISTS and
+// a card in woordCards.ts.
 
 export interface WordPair {
     fr: string;
+    // The Dutch word, or for a number its digits ("72").
     nl: string;
+    // A second French form used in Belgium (septante-deux beside soixante-douze); one question shows one of the two.
+    alt?: string;
+}
+
+// The kiosk's line above the card and the label before the blank, per direction.
+export interface WordTexts {
+    instruction: string;
+    ask: string;
 }
 
 export interface WordList {
@@ -12,6 +23,15 @@ export interface WordList {
     pairs: readonly WordPair[];
     // What one item is, for the explanation "woensdag is de 3de dag van de week"; absent = the order means nothing.
     ordinal?: string;
+    // The distractors in tiers of pair indices, closest first (the numbers: 17 beside 70, the neighbours); absent = any
+    // other pair of the list, at random.
+    near?: (index: number) => readonly (readonly number[])[];
+    // The pairs the game help lists for a question (a number's own tens); absent = the whole list.
+    helpRows?: (index: number) => readonly number[];
+    // Absent = the words' texts (Nederlands / Frans).
+    texts?: Readonly<Record<WordDir, WordTexts>>;
+    // The help lines read Dutch side first ("72 = soixante-douze"); absent = French first ("lundi = maandag").
+    nlFirst?: boolean;
 }
 
 const pairs = (fr: readonly string[], nl: readonly string[]): WordPair[] => {
@@ -38,13 +58,18 @@ export const MAANDEN: WordList = {
     ),
 };
 
-export const WORD_LISTS: readonly WordList[] = [DAGEN, MAANDEN];
+export const WORD_LISTS: readonly WordList[] = [DAGEN, MAANDEN, GETALLEN_20, TIENTALLEN, GETALLEN_100];
 export const WORD_LIST_BY_ID: ReadonlyMap<string, WordList> = new Map(WORD_LISTS.map(l => [l.id, l]));
 
 // fr-nl = see "mercredi", pick "woensdag"; nl-fr = see "augustus", pick "août"; mix = either, per question.
 export type WordDir = 'fr-nl' | 'nl-fr';
 export type WordDirChoice = WordDir | 'mix';
 export const WORD_DIRS: readonly WordDirChoice[] = ['fr-nl', 'nl-fr', 'mix'];
+
+const WORD_TEXTS: Readonly<Record<WordDir, WordTexts>> = {
+    'fr-nl': { instruction: 'Wat betekent dit Franse woord?', ask: 'Nederlands:' },
+    'nl-fr': { instruction: 'Hoe zeg je dit in het Frans?', ask: 'Frans:' },
+};
 
 export interface WordSettings {
     // The WORD_LISTS ids the card asks.
@@ -54,7 +79,7 @@ export interface WordSettings {
 
 export interface WordExercise {
     list: string;
-    // The pair's place in its list (0 = lundi / janvier).
+    // The pair's place in its list (0 = lundi / janvier / zéro).
     index: number;
     dir: WordDir;
     // The word on the card ("mercredi") and the right choice ("woensdag").
@@ -62,12 +87,16 @@ export interface WordExercise {
     answer: string;
     // Six different words in the answer's language, the answer among them, shuffled.
     choices: string[];
+    // The question uses the Belgian forms (septante, nonante), for every French word on it.
+    be?: boolean;
 }
 
 export const WORD_CHOICE_COUNT = 6;
 // With two lists (dagen en maanden) at most this many distractors come from the answer's own list, so the other list
 // always shows too; one list alone fills every place from itself.
 const OWN_LIST_MAX = 3;
+// Of a list with near tiers, at most this many distractors from its closest tier (the traps), so the neighbours show too.
+const TRAP_MAX = 3;
 
 function shuffle<T>(list: readonly T[], rng: () => number): T[] {
     const out = [...list];
@@ -80,10 +109,21 @@ function shuffle<T>(list: readonly T[], rng: () => number): T[] {
 
 const pick = <T>(list: readonly T[], rng: () => number): T => list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
 
-const side = (p: WordPair, dir: WordDir) => (dir === 'fr-nl' ? { shown: p.fr, answer: p.nl } : { shown: p.nl, answer: p.fr });
+/** The French word of a pair in the question's form: the Belgian one where the pair has it. */
+export const frOf = (p: WordPair, be: boolean): string => (be && p.alt ? p.alt : p.fr);
+
+const side = (p: WordPair, dir: WordDir, be = false) => (dir === 'fr-nl' ? { shown: frOf(p, be), answer: p.nl } : { shown: p.nl, answer: frOf(p, be) });
 
 /** The lists a setting asks, in its order; unknown ids are left out. */
 export const listsOf = (ids: readonly string[]): WordList[] => ids.map(id => WORD_LIST_BY_ID.get(id)).filter((l): l is WordList => !!l);
+
+// The distractor order of a list with near tiers: a few traps, then the rest of the tiers in turn, each tier shuffled.
+function nearOrder(list: WordList, index: number, rng: () => number): number[] {
+    const tiers = list.near!(index).map(t => shuffle(t.filter(i => i !== index && i >= 0 && i < list.pairs.length), rng));
+    const [traps = [], ...rest] = tiers;
+    const all = list.pairs.map((_, i) => i).filter(i => i !== index);
+    return [...traps.slice(0, TRAP_MAX), ...rest.flat(), ...traps.slice(TRAP_MAX), ...shuffle(all, rng)];
+}
 
 /** One question from the card's lists, or null when they cannot make six choices. */
 export function makeWordExercise(s: WordSettings, rng: () => number): WordExercise | null {
@@ -92,24 +132,49 @@ export function makeWordExercise(s: WordSettings, rng: () => number): WordExerci
     if (all.length < WORD_CHOICE_COUNT) return null;
     const { list, p, index } = pick(all, rng);
     const dir: WordDir = s.dir === 'mix' ? (rng() < 0.5 ? 'fr-nl' : 'nl-fr') : s.dir;
-    const { shown, answer } = side(p, dir);
-    const words = (from: readonly WordPair[]) => shuffle(from.map(x => side(x, dir).answer), rng);
-    const own = words(list.pairs.filter(x => x !== p));
-    const other = words(lists.filter(l => l !== list).flatMap(l => l.pairs));
-    const ownCount = other.length ? OWN_LIST_MAX : WORD_CHOICE_COUNT - 1;
+    // One form for the whole question, so its choices never hold both forms of one number; only a list with
+    // Belgian forms draws it (the days and months keep their seeded questions).
+    const be = list.pairs.some(x => x.alt) && rng() < 0.5;
+    const { shown, answer } = side(p, dir, be);
+    const words = (from: readonly WordPair[]) => shuffle(from.map(x => side(x, dir, be).answer), rng);
+    const candidates = list.near
+        ? nearOrder(list, index, rng).map(i => side(list.pairs[i], dir, be).answer)
+        : (() => {
+            const own = words(list.pairs.filter(x => x !== p));
+            const other = words(lists.filter(l => l !== list).flatMap(l => l.pairs));
+            const ownCount = other.length ? OWN_LIST_MAX : WORD_CHOICE_COUNT - 1;
+            return [...own.slice(0, ownCount), ...other, ...own];
+        })();
     const out: string[] = [answer];
-    for (const w of [...own.slice(0, ownCount), ...other, ...own]) {
+    for (const w of candidates) {
         if (out.length >= WORD_CHOICE_COUNT) break;
         if (!out.includes(w)) out.push(w);
     }
     if (out.length < WORD_CHOICE_COUNT) return null;
-    return { list: list.id, index, dir, shown, answer, choices: shuffle(out, rng) };
+    return { list: list.id, index, dir, shown, answer, choices: shuffle(out, rng), ...(be && { be }) };
 }
 
 const pairOf = (ex: WordExercise): WordPair => WORD_LIST_BY_ID.get(ex.list)!.pairs[ex.index];
 
-/** The right pair, the question's word first: "mercredi = woensdag", "augustus = août". */
+/** The kiosk texts of a question's list and direction. */
+export const textsOf = (ex: WordExercise): WordTexts => (WORD_LIST_BY_ID.get(ex.list)?.texts ?? WORD_TEXTS)[ex.dir];
+
+/** The right pair, the question's word first: "mercredi = woensdag", "72 = soixante-douze". */
 export const pairLine = (ex: WordExercise): string => `${ex.shown} = ${ex.answer}`;
+
+/** The other form of a number with two ("In België ook: septante-deux."), or null. */
+export function otherFormLine(ex: WordExercise): string | null {
+    const p = pairOf(ex);
+    if (!p.alt) return null;
+    return ex.be ? `In Frankrijk: ${p.fr}.` : `In België ook: ${p.alt}.`;
+}
+
+/** The line the flash shows after a fout: the pair, with a number's other form in brackets. */
+export function flashLine(ex: WordExercise): string {
+    const p = pairOf(ex);
+    if (!p.alt) return pairLine(ex);
+    return `${pairLine(ex)} (${ex.be ? `in Frankrijk: ${p.fr}` : `in België ook: ${p.alt}`})`;
+}
 
 // Dutch ordinals: 1ste, 8ste and from 20 on take -ste, the rest -de.
 const ordinalNl = (n: number): string => `${n}${n === 1 || n === 8 || n >= 20 ? 'ste' : 'de'}`;
@@ -120,12 +185,21 @@ export function orderLine(ex: WordExercise): string | null {
     return list?.ordinal ? `${pairOf(ex).nl} is de ${ordinalNl(ex.index + 1)} ${list.ordinal}.` : null;
 }
 
-/** The list a question comes from as the help shows it: "lundi = maandag" … */
-export const tableOfList = (id: string): string[] => (WORD_LIST_BY_ID.get(id)?.pairs ?? []).map(p => `${p.fr} = ${p.nl}`);
+/** The pairs the game help shows for a question, French = Dutch in the question's form: "lundi = maandag" … */
+export function tableOf(ex: WordExercise): string[] {
+    const list = WORD_LIST_BY_ID.get(ex.list);
+    if (!list) return [];
+    const rows = list.helpRows?.(ex.index) ?? list.pairs.map((_, i) => i);
+    return rows.map(i => list.pairs[i]).map(p => (list.nlFirst ? `${p.nl} = ${frOf(p, !!ex.be)}` : `${frOf(p, !!ex.be)} = ${p.nl}`));
+}
 
-/** The longest word a setting can put on a choice: the answer side's words of its lists. */
+/** The longest word a setting can put on a choice: the answer side's words of its lists (both forms of a number). */
 export function wordChoiceChars(s: WordSettings): number {
     const lists = listsOf(s.lists);
     const sides: WordDir[] = s.dir === 'mix' ? ['fr-nl', 'nl-fr'] : [s.dir];
-    return Math.max(1, ...lists.flatMap(l => l.pairs.flatMap(p => sides.map(d => side(p, d).answer.length))));
+    return Math.max(1, ...lists.flatMap(l => l.pairs.flatMap(p => sides.flatMap(d => [false, true].map(be => side(p, d, be).answer.length)))));
 }
+
+/** Every answer of this setting is a number (Frans → cijfer): the games can type it. */
+export const answersAreNumbers = (s: WordSettings): boolean =>
+    s.dir === 'fr-nl' && listsOf(s.lists).every(l => l.pairs.every(p => /^\d+$/.test(p.nl)));

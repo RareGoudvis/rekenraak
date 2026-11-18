@@ -21,10 +21,12 @@
 }
 .kiosk-subject-blank.is-filled { border-bottom-style: solid; border-bottom-color: var(--kid-ink); }
 .kiosk-subject-blank.is-right { color: var(--kid-ok-ink); }
-.kiosk-subject-rest { display: inline-flex; align-items: baseline; gap: 0.4em; white-space: nowrap; }
+/* The blank and the bracket stay together while they fit; a long bracket ("(houden van)") wraps under the blank. */
+.kiosk-subject-rest { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0.2em 0.4em; max-width: 100%; }
 .kiosk-subject-hint {
   font-weight: 800;
   color: var(--kid-muted);
+  white-space: nowrap;
 }
 .kiosk-subject { display: flex; flex-direction: column; align-items: center; gap: 0.6em; }
 .kiosk-subject-prompt.is-ask { font-size: clamp(22px, 4.6vmin, 48px); }

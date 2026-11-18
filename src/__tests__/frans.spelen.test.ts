@@ -6,8 +6,7 @@ import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { useSpelStore, type SpelStart } from '../oefenen/spelen/useSpelStore';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
-import { FRANS_ZELF, fransTopicOf } from '../talen/frans/fransZelf';
-import { FRANS_CARDS } from '../talen/frans/fransCards';
+import { allFransChoices, pickOf } from './helpers/fransChoices';
 import type { FransExercise } from '../talen/frans/questions';
 import { resetKiosk } from './helpers/oefenKiosk';
 import type { ZelfChoice } from '../oefenen/zelf/zelfSessie';
@@ -16,14 +15,16 @@ import type { ZelfChoice } from '../oefenen/zelf/zelfSessie';
 // (spelen.choicePad.test); the session checks with the kiosk descriptor and Nakijken replays the mistakes in the kiosk.
 
 const sp = () => useSpelStore.getState();
-const choiceOf = (topic: string, label: string): ZelfChoice => FRANS_ZELF.choices(5, topic).find(c => c.label === label)!;
+const choiceOf = (topic: string, label: string): ZelfChoice => pickOf(topic, label);
+// The verb picks in Nederlands → Frans (the other ways: frans.richting.test.tsx).
+const VERB_PICKS = allFransChoices().filter(x => x.topic === 'frans:werkwoorden' && x.choice.vars[0].ov.dir === 'nl-fr').map(x => x.choice);
 const start = (choice: ZelfChoice, id: string): SpelStart => ({ choice, grade: 5, topicId: 'frans:avoir-etre', meta: skinById(id)!.meta, now: 1_000_000 });
 
 beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null }); sp().otherGame(); });
 
 describe('Frans in the games', () => {
     test('every Frans choice plays; the tap, memory and keypad games take it, the digit games never', () => {
-        for (const t of FRANS_ZELF.topics) for (const c of FRANS_ZELF.choices(5, t.id)) {
+        for (const c of VERB_PICKS) {
             expect(choiceCanPlay(c, 5)).toBe(true);
             expect(spelContentOf(c, 5)).toMatchObject({ kind: 'choice', boards: ['pairs'] });
         }
@@ -42,7 +43,7 @@ describe('Frans in the games', () => {
         sp().start(start(choiceOf('frans:avoir-etre', 'Eén werkwoord vervoegen'), 'ballonnen'));
         const q = sp().question!;
         const ex = q.exercise as FransExercise;
-        expect(q.text).toBe(`${ex.subject.nl} ? (${ex.nl})`);
+        expect(q.text).toBe(`${ex.subject.fr} ? (${ex.nl})`);
         expect(q.choices).toHaveLength(4);
         expect(q.choices).toContain(ex.answer);
         for (const c of q.choices) expect(ex.choices).toContain(c);
@@ -86,7 +87,7 @@ describe('Frans in the games', () => {
             expect(new Set(answers).size).toBe(answers.length);
             for (const c of board.cells) {
                 const ex = c.question.exercise as FransExercise;
-                expect(c.question.pair!.sum.text).toBe(`${ex.subject.nl} (${ex.nl})`);
+                expect(c.question.pair!.sum.text).toBe(`${ex.subject.fr} (${ex.nl})`);
                 expect(c.question.pair!.answer.text).toBe(ex.answer);
             }
         }
@@ -97,7 +98,7 @@ describe('Frans word lengths for the games', () => {
     test('a variant\'s wordChars bounds every choice it can make', async () => {
         const { fransWordChars } = await import('../talen/frans/fransPack');
         const { makeFransExercise } = await import('../talen/frans/questions');
-        for (const t of FRANS_ZELF.topics.filter(x => FRANS_CARDS.map(fransTopicOf).includes(x.id))) for (const c of FRANS_ZELF.choices(5, t.id)) {
+        for (const c of VERB_PICKS) {
             const v = c.vars[0];
             const max = fransWordChars(v);
             for (let seed = 1; seed < 200; seed++) {

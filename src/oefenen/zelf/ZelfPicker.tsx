@@ -25,6 +25,7 @@ import { zelfTopicLabel } from './zelfLabels';
 import { zelfRangeless } from './zelfRegroup';
 import { ZELF_SUBJECTS, subjectTopicLabel, zelfSubjectOf } from './zelfSubjects';
 import { subjectBadge, subjectPicture } from './subjectArt';
+import SubjectOptions from './SubjectOptions';
 import {
     TAFELS_DEFAULT, ZELF_COUNTS, ZELF_MINUTES, ZELF_RANGES, buildZelfSessie, choiceMayHaveMab, choicesFor, isTafelTopic, modeKey, tafelChoice,
     tafelPickOf, tafelsOffer, zelfMaxOf, zelfUsable, zelfRangeButtons, type TafelOp, type ZelfChoice, type ZelfMode,
@@ -352,6 +353,8 @@ export default function ZelfPicker() {
                             </div>
                         </section>
                     )}
+                    {/* A subject card with its own options screen (Frans): the options make the one choice. */}
+                    <SubjectOptions grade={grade} topicId={topicId} onChoice={setChoice} />
                     {(active || isTafel) && (
                         <div ref={nextRef} className="zelf-steps">
                             {split ? (

@@ -1,16 +1,14 @@
-/* Frans in the kids app: the section's colour and the card drawings' paints (FransArt.tsx). */
+/* Frans in the kids app: the section's colour, the card drawings' paints (FransArt.tsx) and the options screens (FransOptions.tsx). */
 .oefen-body {
   --kid-fr-tint: #C7D2FE;
   --kid-fr-blue: #2B4FB8;
   --kid-fr-red: #E23B3B;
   --kid-fr-navy: #22305A;
-  --kid-fr-gold: #F3B54A;
-  --kid-fr-crust: #C77A2E;
+  --kid-fr-wood: #C77A2E;
   --kid-fr-steel: #8E7F6E;
   --kid-fr-steel-dark: #5E5245;
-  --kid-fr-cheese: #FFD95A;
-  --kid-fr-cheese-dark: #E9B820;
-  --kid-fr-plate: #F4F1EA;
+  --kid-fr-paper: #F4F1EA;
+  --kid-fr-board: #2F5D4A;
 }
 
 .fr-art { display: block; width: 100%; height: 100%; }
@@ -26,33 +24,77 @@
 .fr-flag-white { fill: var(--kid-card); }
 .fr-flag-red { fill: var(--kid-fr-red); }
 .fr-beret { fill: var(--kid-fr-navy); }
-.fr-beret-band { fill: var(--kid-fr-red); }
 .fr-beret-stalk { fill: none; stroke-width: 6; }
-.fr-plate { fill: var(--kid-fr-plate); }
-.fr-plate-in { fill: var(--kid-card); stroke-width: 2.5; }
-.fr-crust { fill: var(--kid-fr-gold); }
-.fr-crust-line { fill: none; stroke: var(--kid-fr-crust) !important; stroke-width: 5; }
-.fr-cheese { fill: var(--kid-fr-cheese); }
-.fr-cheese-top { fill: var(--kid-fr-cheese-dark); }
-.fr-hole { fill: var(--kid-fr-cheese-dark); stroke-width: 2.5; }
 .fr-bubble :is(path, rect) { fill: var(--kid-card); stroke-width: 3.5; }
 .fr-bubble .fr-bubble-join { stroke: none; }
 .fr-bubble text { font-family: var(--kid-font); font-size: 26px; font-weight: 900; fill: var(--kid-ink); text-anchor: middle; }
 .fr-cal-page { fill: var(--kid-card); }
-.fr-cal-back { fill: var(--kid-fr-plate); }
+.fr-cal-back { fill: var(--kid-fr-paper); }
 .fr-cal-head { fill: var(--kid-fr-red); }
 .fr-cal-ring { fill: var(--kid-fr-navy); stroke-width: 3; }
 .fr-cal text { font-family: var(--kid-font); font-weight: 900; text-anchor: middle; }
 .fr-cal-head-text { font-size: 32px; fill: var(--kid-card); }
 .fr-cal-day { font-size: 92px; fill: var(--kid-ink); }
 .fr-cal-foot { font-size: 26px; fill: var(--kid-fr-blue); }
-.fr-sun { fill: var(--kid-fr-gold); }
-.fr-sun-ray { fill: none; stroke-width: 6; }
-.fr-snow-disc { fill: var(--kid-card); }
-.fr-snow { fill: none; stroke: var(--kid-fr-blue) !important; stroke-width: 6; }
-.fr-cycle { fill: none; stroke-width: 5; stroke-dasharray: 2 12; }
-.fr-cycle-head { fill: var(--kid-ink); stroke-width: 2; }
-.fr-tag rect { fill: var(--kid-card); stroke-width: 3.5; }
-.fr-tag text { font-family: var(--kid-font); font-size: 26px; font-weight: 900; fill: var(--kid-ink); text-anchor: middle; }
+.fr-wood { fill: var(--kid-fr-wood); }
+.fr-chalkboard { fill: var(--kid-fr-board); }
+.fr-chalk { font-family: var(--kid-font); font-weight: 900; font-size: 34px; fill: var(--kid-card); text-anchor: middle; }
+.fr-chalk.is-big { font-size: 64px; }
+.fr-chalk.is-small { font-size: 26px; fill: var(--kid-fr-tint); }
+.fr-chalk-stick { fill: var(--kid-card); stroke-width: 2.5; }
 .fr-badge { width: 86%; height: 86%; }
 .zelf-topic-thumb.is-drawn { background: var(--kid-sky); }
+
+/* ── The options screens: one card of rows, label over segments or toggle pills ── */
+.fr-options {
+  display: grid;
+  gap: 14px;
+  padding: 12px 16px 16px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--kid-radius);
+  background: var(--kid-card);
+  text-align: left;
+}
+.fr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fr-chip {
+  min-height: var(--opt-row, 48px);
+  padding: 0 18px;
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: var(--radius-pill);
+  background: var(--kid-key);
+  color: var(--kid-ink);
+  font: inherit;
+  font-size: var(--kiosk-text);
+  font-weight: 800;
+  cursor: pointer;
+}
+.fr-chip[aria-pressed="true"] { background: var(--kid-sel); color: var(--kid-sel-ink); font-weight: 900; }
+.fr-chip.is-small { min-height: 40px; padding: 0 14px; font-size: calc(var(--kiosk-text) * 0.9); }
+@media (hover: hover) { .fr-chip:hover:not([aria-pressed="true"]) { background: var(--kid-card); } }
+/* A chosen group's verbs, folded: its line says how many are on. */
+.fr-group { margin-top: 6px; }
+.fr-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--kid-ink);
+  font: inherit;
+  font-size: var(--kiosk-text);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.fr-fold-caret { transition: transform 0.2s ease; }
+.fr-fold[aria-expanded="true"] .fr-fold-caret { transform: rotate(180deg); }
+.fr-verbs { display: grid; gap: 8px; padding: 6px 0 4px; }
+.fr-verbs-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Long segment labels (Eén werkwoord vervoegen) one per line on a phone. */
+@media (max-width: 599px) {
+  .kid-seg.fr-seg-stack { flex-direction: column; border-radius: var(--kid-radius); }
+  .kid-seg.fr-seg-stack > .kid-seg-btn + .kid-seg-btn { border-left: 0; border-top: 2px solid color-mix(in srgb, var(--kid-ink) 22%, transparent); }
+}

@@ -6,8 +6,10 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { currentInput } from '../oefenen/useOefenStore';
 import { kioskFor, kioskSupports } from '../services/oefenen/kiosk';
 import { summary } from '../services/oefenen/stats';
-import { FRANS_ZELF, fransTopicOf } from '../talen/frans/fransZelf';
-import { FRANS_CARDS, FRANS_TYPE_ID } from '../talen/frans/fransCards';
+import { FRANS_ZELF } from '../talen/frans/fransZelf';
+import { FRANS_TYPE_ID } from '../talen/frans/fransCards';
+import { DEFAULT_PICKS, savePicks } from '../talen/frans/fransPicks';
+import { pickOf } from './helpers/fransChoices';
 import { fullAnswerOf, grammarOf, type FransExercise } from '../talen/frans/questions';
 import { stepLineText } from '../services/math/workedSteps';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -16,25 +18,30 @@ import { zelfSubjectOf } from '../oefenen/zelf/zelfSubjects';
 // The subject seam: a Frans Zelf choice runs through the kiosk store unchanged (six buttons, the check, the results,
 // the explanation after a fout, Nakijken), and a maths topic never meets it.
 
-const VERB_TOPICS = FRANS_CARDS.map(fransTopicOf);
 const st = () => useOefenStore.getState();
 const cur = () => st().shown!.exercise as FransExercise;
-const choiceOf = (grade: 5 | 6, topic: string, label: string): ZelfChoice => FRANS_ZELF.choices(grade, topic).find(c => c.label === label)!;
+const choiceOf = (grade: 5 | 6, topic: string, label: string): ZelfChoice => pickOf(topic, label, grade);
 
 beforeEach(() => { resetKiosk(); useOefenStore.setState({ fixed: null, missed: [] }); });
 afterEach(() => { vi.useRealTimers(); });
 
 describe('Frans through the kiosk', () => {
-    test('Frans topics: leerjaar 5 and 6 only, three oefeningen per card, through the Zelf choicesFor', async () => {
+    test('Frans topics: leerjaar 5 and 6 only, three cards, each one choice made from the device\'s last pick', async () => {
         const data = await loadEenvoudigData();
-        expect(FRANS_ZELF.topics.map(t => t.label)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar', 'Dagen', 'Maanden', 'Dagen en maanden']);
+        localStorage.clear();
+        expect(FRANS_ZELF.topics.map(t => t.label)).toEqual(['Werkwoorden', 'Dagen en maanden', 'Getallen']);
         for (const t of FRANS_ZELF.topics) {
             expect(zelfSubjectOf(t.id)).toBe(FRANS_ZELF);
             expect(choicesFor(data, 4, t.id)).toEqual([]);
-            const labels = VERB_TOPICS.includes(t.id) ? ['Eén werkwoord vervoegen', 'Welk werkwoord?', 'Alles samen'] : ['Frans → Nederlands', 'Nederlands → Frans', 'Door elkaar'];
-            // The direction labels hold a no-break space before the arrow.
-            for (const g of [5, 6] as const) expect(choicesFor(data, g, t.id).map(c => c.label.replace(/\s/g, ' '))).toEqual(labels);
+            for (const g of [5, 6] as const) expect(choicesFor(data, g, t.id)).toHaveLength(1);
         }
+        // The defaults: avoir and être, vervoegen, Nederlands → Frans.
+        const verbs = choicesFor(data, 5, 'frans:werkwoorden')[0];
+        expect(verbs.vars[0].ov).toMatchObject({ verbs: ['être', 'avoir'], mode: 'vervoegen', dir: 'nl-fr' });
+        // Another pick on this device: the card plays that one.
+        savePicks({ ...DEFAULT_PICKS, getallen: { set: 'tientallen', dir: 'fr-nl' } });
+        expect(choicesFor(data, 6, 'frans:getallen')[0].vars[0].ov).toEqual({ lists: ['tientallen'], dir: 'fr-nl' });
+        localStorage.clear();
         // A maths topic is no subject's.
         expect(zelfSubjectOf('Hoofdrekenen · Optellen')).toBeNull();
     });
@@ -62,7 +69,7 @@ describe('Frans through the kiosk', () => {
         st().choose(currentInput(st().sessie, st().shown)!.choices.find(c => c !== ex.answer)!);
         st().answer();
         expect(st().lastCorrect).toBe(false);
-        expect(st().feedbackHint).toBe(fullAnswerOf(ex));
+        expect(st().feedbackHint).toBe(`${fullAnswerOf(ex)} – ${grammarOf(ex)}`);
         expect(st().stepsOffer!.map(l => stepLineText(l, String))).toEqual([fullAnswerOf(ex), grammarOf(ex)]);
         st().skipFlash();
         expect(st().phase).toBe('steps');
@@ -78,7 +85,7 @@ describe('Frans through the kiosk', () => {
         expect(made).toBe(3);
         expect(rows.reduce((a, r) => a + r.correct, 0)).toBe(2);
         const err = rows.flatMap(r => r.errors)[0];
-        expect(err.exercise).toBe(`${ex.subject.nl} (${ex.nl})`);
+        expect(err.exercise).toBe(`${ex.subject.fr} (${ex.nl})`);
         expect(err.expected).toBe(ex.answer);
 
         // Nakijken replays exactly the missed question.
