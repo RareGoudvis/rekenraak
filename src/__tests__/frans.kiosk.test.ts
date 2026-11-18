@@ -6,8 +6,8 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { currentInput } from '../oefenen/useOefenStore';
 import { kioskFor, kioskSupports } from '../services/oefenen/kiosk';
 import { summary } from '../services/oefenen/stats';
-import { FRANS_ZELF } from '../talen/frans/fransZelf';
-import { FRANS_TYPE_ID } from '../talen/frans/fransCards';
+import { FRANS_ZELF, fransTopicOf } from '../talen/frans/fransZelf';
+import { FRANS_CARDS, FRANS_TYPE_ID } from '../talen/frans/fransCards';
 import { fullAnswerOf, grammarOf, type FransExercise } from '../talen/frans/questions';
 import { stepLineText } from '../services/math/workedSteps';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -16,6 +16,7 @@ import { zelfSubjectOf } from '../oefenen/zelf/zelfSubjects';
 // The subject seam: a Frans Zelf choice runs through the kiosk store unchanged (six buttons, the check, the results,
 // the explanation after a fout, Nakijken), and a maths topic never meets it.
 
+const VERB_TOPICS = FRANS_CARDS.map(fransTopicOf);
 const st = () => useOefenStore.getState();
 const cur = () => st().shown!.exercise as FransExercise;
 const choiceOf = (grade: 5 | 6, topic: string, label: string): ZelfChoice => FRANS_ZELF.choices(grade, topic).find(c => c.label === label)!;
@@ -26,11 +27,13 @@ afterEach(() => { vi.useRealTimers(); });
 describe('Frans through the kiosk', () => {
     test('Frans topics: leerjaar 5 and 6 only, three oefeningen per card, through the Zelf choicesFor', async () => {
         const data = await loadEenvoudigData();
-        expect(FRANS_ZELF.topics.map(t => t.label)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar']);
+        expect(FRANS_ZELF.topics.map(t => t.label)).toEqual(['avoir & être', 'Onregelmatig', 'Werkwoorden op -er', 'Op -ir en -re', 'Alles door elkaar', 'Dagen', 'Maanden', 'Dagen en maanden']);
         for (const t of FRANS_ZELF.topics) {
             expect(zelfSubjectOf(t.id)).toBe(FRANS_ZELF);
             expect(choicesFor(data, 4, t.id)).toEqual([]);
-            for (const g of [5, 6] as const) expect(choicesFor(data, g, t.id).map(c => c.label)).toEqual(['Eén werkwoord vervoegen', 'Welk werkwoord?', 'Alles samen']);
+            const labels = VERB_TOPICS.includes(t.id) ? ['Eén werkwoord vervoegen', 'Welk werkwoord?', 'Alles samen'] : ['Frans → Nederlands', 'Nederlands → Frans', 'Door elkaar'];
+            // The direction labels hold a no-break space before the arrow.
+            for (const g of [5, 6] as const) expect(choicesFor(data, g, t.id).map(c => c.label.replace(/\s/g, ' '))).toEqual(labels);
         }
         // A maths topic is no subject's.
         expect(zelfSubjectOf('Hoofdrekenen · Optellen')).toBeNull();

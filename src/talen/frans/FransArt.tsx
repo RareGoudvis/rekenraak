@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { FransCardId } from './fransCards';
+import type { WoordCardId } from './woordCards';
 import './frans.css';
 
 // The Frans cards' pictures (owner 2026-11-18: a drawn French touch, never a maths screenshot): flat fills with the
@@ -108,16 +109,98 @@ const FLAG = (
     </>
 );
 
-const SCENES: Readonly<Record<FransCardId, ReactNode>> = {
+// A tear-off calendar page: two rings, a red head with the French word, a big date, an optional foot line.
+const CalendarPage = ({ x, y, head, day, foot }: { x: number; y: number; head: string; day: string; foot?: string }) => (
+    <g className="fr-cal">
+        <rect className="fr-cal-back" x={x + 10} y={y + 10} width="180" height="210" rx="14" transform={`rotate(4 ${x + 100} ${y + 115})`} />
+        <rect className="fr-cal-page" x={x} y={y} width="180" height="210" rx="14" />
+        <path className="fr-cal-head" d={`M${x} ${y + 62} v-48 q0 -14 14 -14 h152 q14 0 14 14 v48 z`} />
+        <rect className="fr-cal-ring" x={x + 40} y={y - 14} width="12" height="28" rx="6" />
+        <rect className="fr-cal-ring" x={x + 128} y={y - 14} width="12" height="28" rx="6" />
+        <text className="fr-cal-head-text" x={x + 90} y={y + 44}>{head}</text>
+        <text className="fr-cal-day" x={x + 90} y={y + (foot ? 152 : 168)}>{day}</text>
+        {foot && <text className="fr-cal-foot" x={x + 90} y={y + 192}>{foot}</text>}
+    </g>
+);
+
+const Sun = ({ cx, cy, r }: { cx: number; cy: number; r: number }) => (
+    <g>
+        <path className="fr-sun-ray" d={[0, 45, 90, 135, 180, 225, 270, 315].map(a => {
+            const c = Math.cos((a * Math.PI) / 180), s = Math.sin((a * Math.PI) / 180);
+            return `M${cx + c * (r + 8)} ${cy + s * (r + 8)} L${cx + c * (r + 22)} ${cy + s * (r + 22)}`;
+        }).join(' ')} />
+        <circle className="fr-sun" cx={cx} cy={cy} r={r} />
+    </g>
+);
+
+const Snowflake = ({ cx, cy, r }: { cx: number; cy: number; r: number }) => (
+    <g>
+        <circle className="fr-snow-disc" cx={cx} cy={cy} r={r + 14} />
+        <path className="fr-snow" d={[0, 60, 120].map(a => {
+            const c = Math.cos((a * Math.PI) / 180), s = Math.sin((a * Math.PI) / 180);
+            return `M${cx - c * r} ${cy - s * r} L${cx + c * r} ${cy + s * r}`;
+        }).join(' ')} />
+        <path className="fr-snow" d={[0, 60, 120, 180, 240, 300].map(a => {
+            const c = Math.cos((a * Math.PI) / 180), s = Math.sin((a * Math.PI) / 180);
+            const tx = cx + c * r * 0.6, ty = cy + s * r * 0.6;
+            const l = (d: number) => { const k = ((a + d) * Math.PI) / 180; return `${tx + Math.cos(k) * r * 0.32} ${ty + Math.sin(k) * r * 0.32}`; };
+            return `M${l(150)} L${tx} ${ty} L${l(-150)}`;
+        }).join(' ')} />
+    </g>
+);
+
+// Dagen: a French calendar page, lundi the 3rd.
+const DAGEN = (
+    <>
+        <Sky />
+        <ellipse className="fr-shadow" cx="240" cy="262" rx="120" ry="10" />
+        <CalendarPage x={150} y={40} head="lundi" day="3" />
+        <Sun cx={402} cy={70} r={24} />
+    </>
+);
+
+// Maanden: the year as a cycle, the summer sun of juillet and the snow of janvier, an arrow each way.
+const MAANDEN = (
+    <>
+        <Sky />
+        <path className="fr-cycle" d="M170 78 Q240 18 310 78 M310 190 Q240 250 170 190" />
+        {/* Arrow heads along each arc's end tangent. */}
+        <path className="fr-cycle-head" d="M316 84 L296.4 79.1 L308.2 65.5 z M164 184 L183.6 188.9 L171.8 202.5 z" />
+        <Sun cx={130} cy={118} r={36} />
+        <Snowflake cx={350} cy={118} r={30} />
+        <g className="fr-tag"><rect x="80" y="178" width="100" height="40" rx="14" /><text x="130" y="206">juillet</text></g>
+        <g className="fr-tag"><rect x="296" y="178" width="108" height="40" rx="14" /><text x="350" y="206">janvier</text></g>
+    </>
+);
+
+// Dagen en maanden: a full date page, dimanche 14 juillet (le quatorze juillet), with the flag beside it.
+const DAGEN_MAANDEN = (
+    <>
+        <Sky />
+        <ellipse className="fr-shadow" cx="200" cy="262" rx="120" ry="10" />
+        <CalendarPage x={110} y={40} head="juillet" day="14" foot="dimanche" />
+        <path className="fr-pole" d="M336 250 v-170" />
+        <path className="fr-flag-blue" d="M336 86 q17 -6 34 0 v54 q-17 -6 -34 0 z" />
+        <path className="fr-flag-white" d="M370 86 q17 6 34 0 v54 q-17 6 -34 0 z" />
+        <path className="fr-flag-red" d="M404 86 q17 -6 34 0 v54 q-17 -6 -34 0 z" />
+    </>
+);
+
+export type FransPictureId = FransCardId | WoordCardId;
+
+const SCENES: Readonly<Record<FransPictureId, ReactNode>> = {
     'avoir-etre': EIFFEL,
     onregelmatig: BERET,
     er: CROISSANT,
     'ir-re': BAGUETTE,
     alles: FLAG,
+    dagen: DAGEN,
+    maanden: MAANDEN,
+    'dagen-maanden': DAGEN_MAANDEN,
 };
 
 /** A Frans card's picture, as wide as a game thumbnail (480 × 300). */
-export function FransPicture({ card }: { card: FransCardId }) {
+export function FransPicture({ card }: { card: FransPictureId }) {
     return <svg className="fr-art" viewBox="0 0 480 300" preserveAspectRatio="xMidYMid slice" aria-hidden>{SCENES[card]}</svg>;
 }
 

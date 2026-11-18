@@ -6,7 +6,8 @@ import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { useSpelStore, type SpelStart } from '../oefenen/spelen/useSpelStore';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
-import { FRANS_ZELF } from '../talen/frans/fransZelf';
+import { FRANS_ZELF, fransTopicOf } from '../talen/frans/fransZelf';
+import { FRANS_CARDS } from '../talen/frans/fransCards';
 import type { FransExercise } from '../talen/frans/questions';
 import { resetKiosk } from './helpers/oefenKiosk';
 import type { ZelfChoice } from '../oefenen/zelf/zelfSessie';
@@ -94,7 +95,7 @@ describe('Frans word lengths for the games', () => {
     test('a variant\'s wordChars bounds every choice it can make', async () => {
         const { fransWordChars } = await import('../talen/frans/fransPack');
         const { makeFransExercise } = await import('../talen/frans/questions');
-        for (const t of FRANS_ZELF.topics) for (const c of FRANS_ZELF.choices(5, t.id)) {
+        for (const t of FRANS_ZELF.topics.filter(x => FRANS_CARDS.map(fransTopicOf).includes(x.id))) for (const c of FRANS_ZELF.choices(5, t.id)) {
             const v = c.vars[0];
             const max = fransWordChars(v);
             for (let seed = 1; seed < 200; seed++) {

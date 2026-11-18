@@ -2,6 +2,7 @@ import type { KioskDescriptor, OefenType } from './types';
 import type { StepLine } from '../math/workedSteps';
 import type { CardVariant } from '../../config/eenvoudig/cards';
 import { FRANS_SUBJECT } from '../../talen/frans/fransKiosk';
+import { WOORD_SUBJECT } from '../../talen/frans/woordKiosk';
 
 // The seam for a subject beside the maths (maths = subject 1, the REGISTRY). A subject brings its own exercises, their
 // kiosk descriptor and their explanation; the kiosk store, the scheduler, the stats, Nakijken and the games take them
@@ -37,7 +38,7 @@ export interface KioskSubject {
     typeOf(v: CardVariant): OefenType | null;
 }
 
-export const SUBJECTS: readonly KioskSubject[] = [FRANS_SUBJECT];
+export const SUBJECTS: readonly KioskSubject[] = [FRANS_SUBJECT, WOORD_SUBJECT];
 
 /** The subject that owns this typeId, or null for a maths type. */
 export const subjectFor = (typeId: string): KioskSubject | null => SUBJECTS.find(s => s.typeId === typeId) ?? null;
