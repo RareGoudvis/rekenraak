@@ -15,6 +15,7 @@ import { TOUW, TOUW_RULE } from '../oefenen/spelen/skins/touwtrekken/rule';
 import { KIKKER, kikkerRule } from '../oefenen/spelen/skins/kikkers/rule';
 import { TOVER, TOVER_RULE } from '../oefenen/spelen/skins/tovenaarsduel/rule';
 import { TRUCK, TRUCK_RULE } from '../oefenen/spelen/skins/monstertrucks/rule';
+import { JOUST, JOUST_RULE } from '../oefenen/spelen/skins/steekspel/rule';
 import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelSim';
 
 // The computer opponent (duel/bot.ts) against simulated pupils, through the real store and every duel game's own
@@ -32,6 +33,7 @@ import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelS
 //   kikkers              88 / 60 / 35 / 10      75 / 49        60
 //   tovenaarsduel        99 / 64 / 25 /  1      99 / 47        72
 //   monstertrucks        99 / 67 / 40 /  5      96 / 52        72   (lives = the finish, 20)
+//   steekspel            97 / 67 / 39 /  5      96 / 49        62   (lives = the list's length, 20)
 //   mean                 94 / 65 / 34 /  7
 // (At 10 lives, the game default, a check run gave about the same means: the rubber band keeps the levels apart.)
 
@@ -63,8 +65,9 @@ const GAMES: Game[] = [
     { id: 'touwtrekken', rule: TOUW_RULE, extra: { roundSeconds: TOUW.seconds } },
     { id: 'kikkers', rule: kikkerRule('tijd', bug), extra: { roundSeconds: KIKKER.seconds } },
     { id: 'tovenaarsduel', rule: TOVER_RULE, lives: TOVER.lives.default },
-    // The races: lives = the finish, its 20 default.
+    // The races: lives = the finish (Monstertrucks) / the list's length (Steekspel), their 20 default.
     { id: 'monstertrucks', rule: TRUCK_RULE, lives: TRUCK.finish.default },
+    { id: 'steekspel', rule: JOUST_RULE, lives: JOUST.baan.default },
 ];
 const ROUNDS = 200;
 
