@@ -45,7 +45,7 @@ export function tekstContentOf(v: CardVariant): SpelContent {
     // boards: [] = no board round: their cards show a sum and its answer, not a sentence.
     if (play === 'number') return { kind: 'number', digitsOnly: true, answerChars: chars, boards: [] };
     if (play === 'typed') return { kind: 'number', keys: keysOf(v.leafId, c), answerChars: chars, boards: [] };
-    return { kind: 'choice', ...(chars !== undefined && { answerChars: chars }), boards: [] };
+    return { kind: 'choice', ...(chars !== undefined && { answerChars: chars }), ...(leaf?.picked?.(c) && { padNumbers: true }), boards: [] };
 }
 
 // The options: count of them, the answer kept, the rest nearest to it in the list's own order (places, units, times).

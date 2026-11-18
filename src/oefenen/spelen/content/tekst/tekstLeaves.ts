@@ -69,6 +69,8 @@ export interface TekstLeaf {
     chars?(c: C): number | undefined;
     // A 'typed' variant's extra keypad keys; absent = the comma.
     keys?(c: C): readonly SpelKey[];
+    // A 'tap' variant whose numbers are the question's own to pick from (het grootste getal): the choice pad shows them.
+    picked?(c: C): boolean;
     ask(ex: unknown, c: C, rng: Rng, d: KioskDescriptor): TekstAsk | null;
 }
 
@@ -414,6 +416,7 @@ const COMPARE_LABELS: Record<string, string> = { '<': 'kleiner dan', '=': 'gelij
 const VERGELIJKEN: TekstLeaf = {
     playsAs: c => (c.subType === 'kiezen' ? 'tap' : (c.subType ?? 'getallen') === 'getallen' || c.subType === 'representaties' ? 'tap' : null),
     chars: c => (c.subType === 'kiezen' ? len(num(c.maxGetal, 100)) + Number(c.decimalPlaces ?? 0) : undefined),
+    picked: c => c.subType === 'kiezen',
     ask: (raw, c, _rng, d) => {
         const ex = raw as VergelijkenExercise;
         if (c.subType === 'kiezen') {

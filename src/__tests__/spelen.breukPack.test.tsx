@@ -109,16 +109,18 @@ describe('Spelen at leerjaar 4: only the breuken', () => {
         expect(choiceCanPlay(sums.find(c => c.label === 'Breuken')!, 4)).toBe(false);
     });
 
-    test('the picker: picture games for herkennen, plus the pairs games; Gelijkwaardige breuken also Honingraat; no keypad game', () => {
+    test('the picker: picture games for herkennen, the pairs games, the keypad games through the choice pad; Gelijkwaardige breuken also Honingraat', () => {
         const ids = (c: ZelfChoice, g: number) => skinsFor(SKINS, spelContentOf(c, g)!).map(s => s.meta.id);
-        expect(ids(byLabel(3, 'Breuk in een figuur'), 3)).toEqual(['ballonnen', 'zeehond', 'hartjes', 'voetbalkaartjes', 'spookhuis', 'pakjesband', 'mollen', 'grijp']);
-        expect(ids(byLabel(4, 'Breuken vergelijken'), 4)).toEqual(['ballonnen', 'zeehond', 'hartjes', 'honingraat', 'voetbalkaartjes', 'spookhuis', 'pakjesband', 'mollen', 'grijp']);
+        const pad = SKINS.filter(s => s.meta.input === 'keypad' && s.meta.accepts.pad).map(s => s.meta.id);
+        const sorted = (l: string[]) => [...l].sort();
+        expect(sorted(ids(byLabel(3, 'Breuk in een figuur'), 3))).toEqual(sorted([...pad, 'ballonnen', 'zeehond', 'hartjes', 'voetbalkaartjes', 'spookhuis', 'pakjesband', 'mollen', 'grijp']));
+        expect(sorted(ids(byLabel(4, 'Breuken vergelijken'), 4))).toEqual(sorted([...pad, 'ballonnen', 'zeehond', 'hartjes', 'honingraat', 'voetbalkaartjes', 'spookhuis', 'pakjesband', 'mollen', 'grijp']));
         expect(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4)).toEqual({ ...PICTURE_CONTENT, boards: ['pairs', 'target'] });
         // The klok fills no board: the board games stay out.
-        expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'grijp']);
+        expect(skinsFor(SKINS, PICTURE_CONTENT).some(s => s.meta.input === 'board')).toBe(false);
         render(<GameRow games={gamesFor(spelContentOf(byLabel(4, 'Breuken vergelijken'), 4), new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Grijpmachine', 'Mollen meppen, op tijd', 'Hartjes koppelen', 'Honingraat', 'Voetbalkaartjes', 'Spookhuis']);
+        expect(shown).toEqual(expect.arrayContaining(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Grijpmachine', 'Mollen meppen, op tijd', 'Hartjes koppelen', 'Honingraat', 'Voetbalkaartjes', 'Spookhuis', 'Kasteel, 1 of 2 spelers']));
     });
 
     test('a board round plays only the cards that fill it', () => {

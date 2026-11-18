@@ -25,6 +25,8 @@ export interface SpelContent {
     boards?: readonly SpelPackBoard[];
     // The longest word on a target (Frans: "choisissez" = 10); absent = unknown, taken as fitting.
     wordChars?: number;
+    // Its number answers are the question's own numbers to pick from (het grootste getal), never typed: the choice pad shows them.
+    padNumbers?: boolean;
 }
 
 // Whole-number + − × : sums (SPEL_LEAVES).
@@ -35,21 +37,28 @@ export const PICTURE_CONTENT: SpelContent = { kind: 'choice', pictures: true };
 
 // The choice pad (SpelChoicePad): a keypad game shows the exercise's own choices as big word buttons, 2 × 3.
 export const PAD_CHOICES = 6;
+// Picture content (the klok, the breuken) gets four: a clock face on a key must still read at 844×390 in a duel half (one row of four there).
+export const PAD_PICTURE_CHOICES = 4;
 // The longest word a pad button keeps on one line at 844×390 in a duel half (measured 2026-11-18: Frans "réussissent" = 11).
 export const PAD_MAX_WORD_CHARS = 13;
 
-/** Whether a pad skin plays this content through the pad: words only (no pictures, no numbers to type), short enough. */
+// A number on a pad button with its thousands spaces ("1 000 000 000" = 13) is as long as a word.
+const spacedChars = (digits: number) => digits + Math.floor((digits - 1) / 3);
+
+/** Whether a pad skin plays this content through the pad: words, pictures (klok, breuken) or numbers to pick from (never to type), short enough. */
 export const padPlays = (accepts: SkinAccepts, content: SpelContent): boolean =>
-    !!accepts.pad && content.kind === 'choice' && !content.pictures && content.answerChars === undefined && (content.wordChars ?? 0) <= PAD_MAX_WORD_CHARS;
+    !!accepts.pad && content.kind === 'choice' && (content.wordChars ?? 0) <= PAD_MAX_WORD_CHARS
+    && (content.answerChars === undefined || (!!content.padNumbers && spacedChars(content.answerChars) <= PAD_MAX_WORD_CHARS));
 
 /** Whether a skin can play this content: its answer kind, short enough answers, digits where the skin needs them. */
 export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean {
-    if (!accepts.kinds.includes(content.kind) && !padPlays(accepts, content)) return false;
+    const pad = padPlays(accepts, content);
+    if (!accepts.kinds.includes(content.kind) && !pad) return false;
     if (accepts.maxAnswerChars !== undefined && content.answerChars !== undefined && content.answerChars > accepts.maxAnswerChars) return false;
     if (accepts.digits && !content.digitsOnly) return false;
     if (accepts.maxWordChars !== undefined && content.wordChars !== undefined && content.wordChars > accepts.maxWordChars) return false;
     if (accepts.ops && content.ops && !content.ops.every(op => accepts.ops!.includes(op))) return false;
-    if (content.pictures && !accepts.pictures) return false;
+    if (content.pictures && !accepts.pictures && !pad) return false;
     // A board skin plays picture content only when its cards fill that board (the klok fills none).
     if (content.pictures && accepts.board && !content.boards?.includes(accepts.board)) return false;
     // Other content that names its boards (the tekst pack: none) fills only those.

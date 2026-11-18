@@ -4,7 +4,7 @@ import type { OefenExercise } from '../../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
 import type { ZelfChoice } from '../zelf/zelfSessie';
 import { choicesOf, mulberry32, numberChoicesOf, seedOf, type SumFacts } from './distractors';
-import { keysOfAll, NUMBER_CONTENT, PAD_CHOICES, padPlays, PICTURE_CONTENT, skinsFor, type SpelContent, type SpelKey } from './accepts';
+import { keysOfAll, NUMBER_CONTENT, PAD_CHOICES, PAD_PICTURE_CHOICES, padPlays, PICTURE_CONTENT, skinsFor, type SpelContent, type SpelKey } from './accepts';
 import { normaliseNumber } from '../../services/oefenen/check';
 import { SKINS } from './skins/registry';
 import type { AnswerKind, SkinMeta } from './skins/types';
@@ -107,6 +107,8 @@ function mergeContent(parts: readonly SpelContent[]): SpelContent {
         ...(ops && { ops }),
         ...(boards && { boards }),
         ...(words.length > 0 && { wordChars: Math.max(...words) }),
+        // Numbers to pick from stay on the pad only beside words and other such numbers (never beside a sum to type).
+        ...(kind === 'choice' && parts.some(p => p.padNumbers) && parts.every(p => p.kind === 'choice' && (p.padNumbers || p.answerChars === undefined)) && { padNumbers: true }),
     };
 }
 
@@ -133,8 +135,11 @@ export function padRoundOf(meta: Pick<SkinMeta, 'input' | 'accepts'>, from: { ch
     return !!content && padPlays(meta.accepts, content);
 }
 
-/** How many choices the session hands a round: the pad's six, a tap skin's own count (default 4). */
-export const choiceCountOf = (meta: Pick<SkinMeta, 'choiceCount'> | null | undefined, pad: boolean): number | undefined => (pad ? PAD_CHOICES : meta?.choiceCount);
+/** How many choices the session hands a round: the pad's six (four for pictures), a tap skin's own count (default 4). */
+export function choiceCountOf(meta: Pick<SkinMeta, 'choiceCount'> | null | undefined, pad: boolean, from?: { choice: ZelfChoice; grade: number } | null): number | undefined {
+    if (!pad) return meta?.choiceCount;
+    return from && spelContentOf(from.choice, from.grade)?.pictures ? PAD_PICTURE_CHOICES : PAD_CHOICES;
+}
 
 function contentOfVars(vars: ZelfChoice['vars']): SpelContent {
     if (vars.every(playableNumber)) return numberContentOf(vars);

@@ -3,6 +3,7 @@ import type { SpelChoiceView } from './content/pack';
 import { SpelChoiceFace } from './SpelVisual';
 import { choiceLabel, faceChars } from './spelChoice';
 import { formatSpelNumber } from './spelFormat';
+import { PAD_MAX_WORD_CHARS } from './accepts';
 
 interface Props {
     // The question's own choices (the session hands six) and how each looks.
@@ -19,11 +20,22 @@ interface Props {
     label?: string;
 }
 
-// The longest unbreakable piece on any button, in characters: the CSS fits one font to it so the six read alike.
+// A phrase this short ("kwart voor 10") keeps to one line on a key, as a word does; a longer one wraps between its words.
+const ONE_LINE = PAD_MAX_WORD_CHARS;
+// The longest line on any button, in characters: the CSS fits one font to it so the six read alike.
 const padChars = (choices: readonly string[], views: Props['views']) =>
-    Math.max(3, ...choices.map((c, i) => (views?.[i]?.text !== undefined ? faceChars(views[i]) : formatSpelNumber(c).length)));
+    Math.max(3, ...choices.map((c, i) => {
+        const text = views?.[i]?.text;
+        if (text === undefined) return formatSpelNumber(c).length;
+        return text.length <= ONE_LINE ? text.length : faceChars(views![i]);
+    }));
 
-// A keypad game on word choices (Frans): the choices as big buttons in the keypad's place, a tap is the answer.
+// Every choice one symbol (< = >): one row of big symbols, read left to right.
+const SYMBOL = /^[<=>≤≥≠]$/;
+const padKind = (choices: readonly string[], views: Props['views']) =>
+    (views?.some(v => v?.visual) ? ' is-pictures' : choices.every(c => SYMBOL.test(views?.[choices.indexOf(c)]?.text ?? c)) ? ' is-symbols' : '');
+
+// A keypad game on word, picture or symbol choices (Frans, the klok, < = >): the choices as big buttons in the keypad's place, a tap is the answer.
 // Taps act on pointerdown (two children in a duel tap at once; a multi-touch screen drops the second click);
 // a keyboard click (detail 0) still answers for a focused button.
 export default function SpelChoicePad({ choices, views, questionKey, disabled, onAnswer, feedback = null, className = '', label = 'Kies het antwoord' }: Props) {
@@ -52,12 +64,12 @@ export default function SpelChoicePad({ choices, views, questionKey, disabled, o
         return disabled && picked === value ? ' is-picked' : '';
     };
     return (
-        <div className={`spel-pad${disabled ? ' is-off' : ''}${className ? ` ${className}` : ''}`} role="group" aria-label={label}
+        <div className={`spel-pad${padKind(choices, views)}${disabled ? ' is-off' : ''}${className ? ` ${className}` : ''}`} role="group" aria-label={label}
             style={{ '--pad-chars': padChars(choices, views), '--pad-rows': Math.ceil(choices.length / 2), '--pad-rows-3': Math.ceil(choices.length / 3) } as CSSProperties}
             onPointerDown={onDown} onClick={onClick}>
             {choices.map((c, i) => (
-                <button key={c} type="button" className={`spel-pad-key${markOf(c)}`} data-choice={c} disabled={disabled} aria-label={choiceLabel(c, views?.[i])}>
-                    <SpelChoiceFace value={c} view={views?.[i] ?? undefined} />
+                <button key={c} type="button" className={`spel-pad-key${views?.[i]?.visual ? ` is-picture is-${views[i].visual!.kind}` : ''}${markOf(c)}`} data-choice={c} disabled={disabled} aria-label={choiceLabel(c, views?.[i])}>
+                    {views?.[i]?.visual ? <span className="spel-pad-pic"><SpelChoiceFace value={c} view={views[i]} /></span> : <SpelChoiceFace value={c} view={views?.[i] ?? undefined} />}
                 </button>
             ))}
         </div>

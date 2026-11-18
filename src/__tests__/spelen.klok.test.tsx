@@ -65,11 +65,15 @@ describe('klok in the picker', () => {
         expect(other.every(c => !choiceCanPlay(c, 3))).toBe(true);
     });
 
-    test('klok content hides the keypad games and the number-only eggs: only the tap skins that draw pictures', () => {
-        expect(skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id)).toEqual(['ballonnen', 'zeehond', 'pakjesband', 'mollen', 'grijp']);
+    test('klok content: the tap skins that draw pictures and every keypad game through the choice pad; not the eggs, the lock or the boards', () => {
+        const pad = SKINS.filter(s => s.meta.input === 'keypad' && s.meta.accepts.pad).map(s => s.meta.id);
+        expect(pad).not.toContain('schatkist');
+        const ids = skinsFor(SKINS, PICTURE_CONTENT).map(s => s.meta.id);
+        expect([...ids].sort()).toEqual([...pad, 'ballonnen', 'zeehond', 'pakjesband', 'mollen', 'grijp'].sort());
         render(<GameRow games={gamesFor(PICTURE_CONTENT, new Date(2026, 6, 1))} onPlay={vi.fn()} />);
         const shown = within(screen.getByRole('group', { name: 'Kies een spel' })).getAllByRole('button').map(b => b.getAttribute('aria-label'));
-        expect(shown).toEqual(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Grijpmachine', 'Mollen meppen, op tijd']);
+        expect(shown).toEqual(expect.arrayContaining(['Ballonnen', 'Zeehondjes voeren', 'Speelgoedfabriek', 'Grijpmachine', 'Mollen meppen, op tijd', 'Pinguïntoren']));
+        expect(shown.some(s => /Eieren|Schatkist|Hartjes/.test(s ?? ''))).toBe(false);
         expect(screen.queryByText('binnenkort')).toBeNull();
     });
 });
