@@ -14,13 +14,14 @@ import { useDuelStore } from '../oefenen/spelen/duel/duelStore';
 import { DUEL_TIMING, freshSideView } from '../oefenen/spelen/duel/rules';
 import type { DuelConfig, DuelCtx, DuelRoundView, Side } from '../oefenen/spelen/duel/types';
 import Steekspel from '../oefenen/spelen/skins/steekspel/Steekspel';
-import { JOUST, JOUST_RULE, baanOf, lanceDown, shareOf, tiltOf, tiltReason } from '../oefenen/spelen/skins/steekspel/rule';
+import { GEAR, JOUST, JOUST_RULE, gearGained, gearOf, tiltOf } from '../oefenen/spelen/skins/steekspel/rule';
 import { LANCE_DEG, MEET_GAP, START, knightX } from '../oefenen/spelen/skins/steekspel/geometry';
 import { JOUST_SOUNDS, playJoust } from '../oefenen/spelen/skins/steekspel/sounds';
 
-// Steekspel on the duel engine: the rule (a gallop step per right answer, the lance down after 3 in a row until the
-// next mistake, the tilt when the knights meet: more steps, then the lance, else a draw), the list's geometry, its
-// sounds, the charge on the engine, the screen with the tilt, the fall into the hay and the draw.
+// Steekspel on the duel engine (owner 2026-11-18): a joust is one minute of sums; each right answer is a point that
+// shows on the knight (a stamp, the score board, every few a piece of gear); when the minute is up they charge and
+// tilt: more right answers wins, the same = both lances break (a draw). The rule, the geometry, the sounds, the
+// minute on the engine, the screen with the gear, the last seconds, the charge, the fall into the hay and the draw.
 
 let from: SpelFrom;
 const du = () => useDuelStore.getState();
@@ -28,19 +29,16 @@ const skin = () => skinById('steekspel')!;
 const meta = (picks: Record<string, string> = {}): SkinMeta => resolveMeta(skin().meta, picks);
 const q = (side: Side) => du().sides[side].question!;
 const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
-const cfg = (over: Partial<DuelConfig> = {}): DuelConfig => ({ players: 2, level: 'makkelijk', lives: 20, bestOf: 3, stream: 'own', readyMs: 0, ...over });
-const ctx = (streak: number, lance = false): DuelCtx => ({
-    side: 'left', other: 'right', me: { ...freshSideView(20), streak, flags: lance ? { lance: 1 } : {} }, them: freshSideView(20), streak, level: 'normaal', round: 1, config: cfg(),
-});
-const view = (l: number, r: number, lances: [boolean, boolean] = [false, false], baan = 20): DuelRoundView => ({
-    sides: {
-        left: { ...freshSideView(baan), points: l, flags: lances[0] ? { lance: 1 } : {} },
-        right: { ...freshSideView(baan), points: r, flags: lances[1] ? { lance: 1 } : {} },
-    },
-    config: cfg({ lives: baan }),
+const cfg = (over: Partial<DuelConfig> = {}): DuelConfig => ({ players: 2, level: 'makkelijk', lives: 10, bestOf: 3, stream: 'own', readyMs: 0, roundSeconds: JOUST.seconds, ...over });
+const ctx = (): DuelCtx => ({ side: 'left', other: 'right', me: freshSideView(10), them: freshSideView(10), streak: 1, level: 'normaal', round: 1, config: cfg() });
+const view = (l: number, r: number): DuelRoundView => ({
+    sides: { left: { ...freshSideView(10), points: l }, right: { ...freshSideView(10), points: r } },
+    config: cfg(),
 });
 const right = (side: Side) => { act(() => du().answer(side, q(side).answer)); tick(DUEL_TIMING.flashRight); };
 const wrong = (side: Side) => { act(() => du().answer(side, String(Number(q(side).answer) + 1))); tick(DUEL_TIMING.flashWrong); };
+// Both at once, so the minute passes for both alike.
+const both = (n: number) => { for (let i = 0; i < n; i++) { act(() => { du().answer('left', q('left').answer); du().answer('right', q('right').answer); }); tick(DUEL_TIMING.flashRight); } };
 
 beforeAll(async () => {
     const data = await loadEenvoudigData();
@@ -56,13 +54,12 @@ beforeEach(() => {
 afterEach(() => { cleanup(); du().stop(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('Steekspel: the registry entry', () => {
-    test('a duel for 1 or 2 spelers; the levens row is the list length (Hoe lang is de baan?, 20); music kasteel; a blurb', () => {
+    test('a duel for 1 or 2 spelers without a levens row (a joust is a minute); music kasteel; a blurb', () => {
         const m = skin().meta;
         expect(m).toMatchObject({ id: 'steekspel', label: 'Steekspel', input: 'keypad', timed: false, players: '1-2', music: 'kasteel' });
         expect(MUSIC_IDS).toContain(m.music);
-        expect(m.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes']);
-        expect(m.options!.find(o => o.id === 'levens')!.label).toBe('Hoe lang is de baan?');
-        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '20', rondes: '3' });
+        expect(m.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'rondes']);
+        expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', rondes: '3' });
         expect(m.sounds!.correct).toBeNull();
         expect(skin().Screen && !skin().Component).toBeTruthy();
         expect(GAME_BLURB.steekspel).toBeTruthy();
@@ -70,41 +67,32 @@ describe('Steekspel: the registry entry', () => {
 });
 
 describe('Steekspel: the rule (pure)', () => {
-    test('a right answer is a gallop step; the 3rd in a row lowers the lance, once', () => {
-        expect(JOUST_RULE.right!(ctx(1))).toEqual({ points: { left: 1 } });
-        expect(JOUST_RULE.right!(ctx(2))).toEqual({ points: { left: 1 } });
-        expect(JOUST_RULE.right!(ctx(JOUST.lanceAt))).toEqual({ points: { left: 1 }, flags: { left: { lance: 1 } }, tag: 'lance' });
-        expect(JOUST_RULE.right!(ctx(4, true))).toEqual({ points: { left: 1 } });
-    });
-
-    test('a mistake lifts a lowered lance (no step back, never below 0); without one it costs only the step', () => {
-        expect(JOUST_RULE.wrong!(ctx(0, true))).toEqual({ flags: { left: { lance: 0 } }, tag: 'lanceUp' });
-        expect(JOUST_RULE.wrong!(ctx(0))).toEqual({});
+    test('a right answer is a point; a mistake costs only the flash', () => {
+        expect(JOUST_RULE.right!(ctx())).toEqual({ points: { left: 1 } });
+        expect(JOUST_RULE.wrong).toBeUndefined();
         expect(JOUST_RULE.timeout).toBeUndefined();
-        expect(shareOf(-2, 20)).toBe(0);
+        expect(JOUST.seconds).toBe(60);
     });
 
-    test('the tilt when the steps add up to the list: more steps wins, a lowered lance wins a tie, else a draw', () => {
-        expect(baanOf(cfg({ lives: 15 }))).toBe(15);
-        expect(tiltOf(view(10, 9))).toBeNull();
-        expect(tiltOf(view(12, 8))).toBe('left');
-        expect(tiltOf(view(7, 13, [true, false]))).toBe('right');
-        expect(tiltOf(view(10, 10, [false, true]))).toBe('right');
-        expect(tiltOf(view(10, 10, [true, false]))).toBe('left');
-        expect(tiltOf(view(10, 10, [true, true]))).toBe('draw');
-        expect(tiltOf(view(10, 10))).toBe('draw');
-        expect(tiltOf(view(5, 5, [false, false], 10))).toBe('draw');
-        expect([tiltReason(view(12, 8)), tiltReason(view(10, 10, [true, false])), tiltReason(view(10, 10)), tiltReason(view(3, 3))]).toEqual(['steps', 'lance', 'draw', null]);
-        expect(JOUST_RULE.roundOver!(view(9, 9), true)).toBeNull();
-        expect(lanceDown({ flags: { lance: 1 } })).toBe(true);
+    test('the gear comes with the right answers, one piece at a time, in order', () => {
+        expect([0, 1, 2, 3, 4, 6, 9, 12, 30].map(gearOf)).toEqual([0, 0, 1, 1, 2, 3, 4, 5, 5]);
+        expect(JOUST.gearAt.map(gearGained)).toEqual([...GEAR]);
+        expect(gearGained(3)).toBeNull();
+        expect(gearGained(13)).toBeNull();
     });
 
-    test('the list: each knight starts at its end; at the tilt the gap between them is the lances\' reach', () => {
-        expect(knightX('left', 0, 20)).toBe(START.left);
-        expect(knightX('right', 0, 20)).toBe(START.right);
-        for (const [l, r] of [[10, 10], [14, 6], [3, 17]]) expect(knightX('right', r, 20) - knightX('left', l, 20)).toBeCloseTo(MEET_GAP);
-        expect(knightX('left', 6, 20)).toBeGreaterThan(knightX('left', 5, 20));
-        expect(knightX('right', 6, 20)).toBeLessThan(knightX('right', 5, 20));
+    test('the tilt only when the minute is up: more right answers wins, the same is a draw', () => {
+        expect(tiltOf(view(12, 3), false)).toBeNull();
+        expect(tiltOf(view(12, 8), true)).toBe('left');
+        expect(tiltOf(view(7, 13), true)).toBe('right');
+        expect(tiltOf(view(9, 9), true)).toBe('draw');
+        expect(tiltOf(view(0, 0), true)).toBe('draw');
+    });
+
+    test('the list: each knight waits at its end; at the charge the gap between them is the lances\' reach', () => {
+        expect(knightX('left', false)).toBe(START.left);
+        expect(knightX('right', false)).toBe(START.right);
+        expect(knightX('right', true) - knightX('left', true)).toBeCloseTo(MEET_GAP);
     });
 });
 
@@ -127,7 +115,7 @@ describe('Steekspel: its sounds', () => {
         localStorage.setItem(SOUND_KEY, '0');
         resetSoundForTests();
         setSoundOn(true);
-        expect(JOUST_SOUNDS).toEqual(['gallop', 'shing', 'sneeze', 'bonk', 'hay', 'tweet', 'fanfare']);
+        expect(JOUST_SOUNDS).toEqual(['stamp', 'charge', 'shing', 'sneeze', 'bonk', 'hay', 'tweet', 'fanfare']);
         for (const s of JOUST_SOUNDS) {
             const before = made;
             playJoust(s);
@@ -145,69 +133,80 @@ describe('Steekspel: its sounds', () => {
 describe('Steekspel: on the engine', () => {
     const begin = (over: Partial<DuelConfig> = {}) => du().begin({ meta: skin().meta, from, rule: JOUST_RULE, config: cfg(over) });
 
-    test('the lance goes down on the 3rd in a row and up on a mistake; the tilt ends the round', () => {
-        begin({ lives: 10 });
-        right('left'); right('left');
-        expect(lanceDown(du().sides.left)).toBe(false);
-        right('left');
-        expect(lanceDown(du().sides.left)).toBe(true);
-        right('left');
-        expect(lanceDown(du().sides.left)).toBe(true);
-        wrong('left');
-        expect(du().sides.left).toMatchObject({ points: 4, streak: 0 });
-        expect(lanceDown(du().sides.left)).toBe(false);
-        right('right'); right('right'); right('right');
-        expect(lanceDown(du().sides.right)).toBe(true);
+    test('the round runs the whole minute, however far one side is ahead; then the most right answers wins', () => {
+        begin();
+        for (let i = 0; i < 14; i++) right('left');
+        right('right'); wrong('right');
         expect(du().phase).toBe('play');
-        // 4 + 3 = 7 of 10: three more steps for the left knight and they meet, 7 to 3.
-        right('left'); right('left'); right('left');
+        expect(du().sides.left.points).toBe(14);
+        tick(JOUST.seconds * 1000);
         expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'left' });
     });
 });
 
 describe('Steekspel: the screen', () => {
     const ready = () => tick(DUEL_TIMING.readyMs);
+    const knight = (c: HTMLElement, side: Side) => c.querySelector(`.stk-knight.is-${side}`) as SVGGElement;
+    const board = (c: HTMLElement, side: Side) => c.querySelector(`.stk-board.is-${side} .stk-board-num`)!.textContent;
 
-    test('2 spelers: gallop, the lance down, a sneeze, the tilt: the loser into the hay, the winner rears, the card', () => {
-        const { container } = render(<Steekspel meta={meta({ spelers: '2', levens: '10' })} from={from} onExit={() => { }} />);
+    test('2 spelers: a right answer stamps and counts, gear comes, a sneeze; the last seconds; the charge and the tilt', () => {
+        const { container } = render(<Steekspel meta={meta({ spelers: '2', niveau: 'makkelijk' })} from={from} onExit={() => { }} />);
         ready();
+        expect(du().config.roundSeconds).toBe(JOUST.seconds);
         expect(container.querySelectorAll('.stk-knight')).toHaveLength(2);
         expect(container.querySelector('.stk-barrier')).toBeTruthy();
-        const knight = (side: Side) => container.querySelector(`.stk-knight.is-${side}`) as SVGGElement;
-        const start = knight('left').style.transform;
+        const start = knight(container, 'left').style.transform;
         act(() => du().answer('left', q('left').answer));
-        expect(knight('left').style.transform).not.toBe(start);
-        expect(knight('left').querySelector('.stk-gallop')).toBeTruthy();
+        // The knight stays at its end: the horse stamps, the board counts, a +1.
+        expect(knight(container, 'left').style.transform).toBe(start);
+        expect(knight(container, 'left').querySelector('.stk-stamp')).toBeTruthy();
+        expect(board(container, 'left')).toBe('1');
+        expect(screen.getByText('+1')).toBeTruthy();
         tick(DUEL_TIMING.flashRight);
         right('left');
-        expect(knight('left').querySelector('.stk-lance.is-down')).toBeNull();
-        right('left');
-        expect(knight('left').querySelector('.stk-lance.is-down')).toBeTruthy();
-        expect(knight('left').querySelector('.stk-gleam')).toBeTruthy();
-        expect(screen.getByText('Lans omlaag!')).toBeTruthy();
-        expect(container.querySelector('.stk-scene')!.getAttribute('data-lances')).toBe('1,0');
-        // Right: a mistake, the horse sneezes.
+        expect(knight(container, 'left').getAttribute('data-gear')).toBe('1');
+        expect(knight(container, 'left').querySelector('.stk-plume-big')).toBeTruthy();
+        expect(knight(container, 'left').querySelector('.stk-sparkle')).toBeTruthy();
+        expect(screen.getByText('Een pluim!')).toBeTruthy();
+        right('left'); right('left');
+        expect(knight(container, 'left').querySelector('.stk-lance.is-shiny')).toBeTruthy();
+        right('left'); right('left');
+        expect(knight(container, 'left').querySelector('.stk-chanfron')).toBeTruthy();
+        // Lances up through the minute.
+        expect((knight(container, 'left').querySelector('.stk-lance-arm') as SVGGElement).style.rotate).toBe(`${LANCE_DEG.left.up}deg`);
+        // Right: a mistake, the horse sneezes; then two right.
         act(() => du().answer('right', String(Number(q('right').answer) + 1)));
-        expect(knight('right').querySelector('.stk-sneeze')).toBeTruthy();
+        expect(knight(container, 'right').querySelector('.stk-sneeze')).toBeTruthy();
         expect(screen.getByText('Hatsjoe!')).toBeTruthy();
         tick(DUEL_TIMING.flashWrong);
         right('right'); right('right');
-        // 3 + 2 = 5 of 10: left rides on to 8 and they meet.
-        for (let i = 0; i < 4; i++) right('left');
-        act(() => du().answer('left', q('left').answer));
+        expect(board(container, 'right')).toBe('2');
+        expect(container.querySelector('.stk-glass.is-run')).toBeTruthy();
+        // The last seconds: lances down, the horses paw.
+        const spent = 6 * DUEL_TIMING.flashRight + DUEL_TIMING.flashWrong + 2 * DUEL_TIMING.flashRight;
+        tick(JOUST.seconds * 1000 - spent - (JOUST.readySeconds * 1000) / 2);
+        expect(du().phase).toBe('play');
+        expect(container.querySelectorAll('.stk-knight.is-ready')).toHaveLength(2);
+        expect((knight(container, 'right').querySelector('.stk-lance-arm') as SVGGElement).style.rotate).toBe(`${LANCE_DEG.right.down}deg`);
+        expect(container.querySelector('.stk-glass.is-low')).toBeTruthy();
+        tick((JOUST.readySeconds * 1000) / 2 + 50);
         expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'left' });
-        // Both lances down for the crash, then the crash itself.
-        expect((knight('right').querySelector('.stk-lance-arm') as SVGGElement).style.rotate).toBe(`${LANCE_DEG.right.down}deg`);
+        // The charge: both gallop to the middle, nobody fell yet.
+        expect(container.querySelectorAll('.stk-knight.is-charging')).toHaveLength(2);
+        expect(knight(container, 'left').style.transform).not.toBe(start);
+        expect(screen.getByText('Daar gaan ze!')).toBeTruthy();
         expect(container.querySelector('.stk-knight.is-fell')).toBeNull();
-        tick(700);
-        expect(knight('right').classList.contains('is-fell')).toBe(true);
-        expect(knight('left').classList.contains('is-won')).toBe(true);
-        expect(knight('right').querySelector('.stk-bale')).toBeTruthy();
-        expect(knight('right').querySelector('.stk-stars')).toBeTruthy();
-        expect(knight('left').querySelector('.stk-lance.is-broken')).toBeTruthy();
+        tick(1500);
+        expect(knight(container, 'right').classList.contains('is-fell')).toBe(true);
+        expect(knight(container, 'left').classList.contains('is-won')).toBe(true);
+        expect(knight(container, 'right').querySelector('.stk-bale')).toBeTruthy();
+        expect(knight(container, 'right').querySelector('.stk-stars')).toBeTruthy();
+        expect(knight(container, 'left').querySelector('.stk-lance.is-broken')).toBeTruthy();
         expect(container.querySelector('.stk-clash')).toBeTruthy();
         expect(screen.getByText('BONK!')).toBeTruthy();
         expect(container.querySelector('.stk-petals')).toBeTruthy();
+        tick(600);
+        expect(screen.getByText('6 tegen 2!')).toBeTruthy();
         expect(screen.queryByRole('dialog')).toBeNull();
         tick(JOUST.cardMs);
         const card = screen.getByRole('dialog');
@@ -215,34 +214,34 @@ describe('Steekspel: the screen', () => {
         expect(card.querySelector('.stk-card-art')).toBeTruthy();
         fireEvent.click(within(card).getByRole('button', { name: /Volgende ronde/ }));
         ready();
-        // A new charge: both back at their ends, lances up, nobody in the hay.
-        expect(knight('left').style.transform).toBe(start);
+        // A new joust: both back at their ends, no gear, boards at 0, nobody in the hay.
+        expect(knight(container, 'left').style.transform).toBe(start);
+        expect(knight(container, 'left').getAttribute('data-gear')).toBe('0');
+        expect(board(container, 'left')).toBe('0');
         expect(container.querySelector('.stk-bale')).toBeNull();
-        expect(container.querySelector('.stk-lance.is-down')).toBeNull();
+        expect(container.querySelector('.stk-knight.is-ready')).toBeNull();
     });
 
-    test('a tie with both lances down: both lances break, nobody falls, Gelijk!', () => {
-        const { container } = render(<Steekspel meta={meta({ spelers: '2', levens: '10' })} from={from} onExit={() => { }} />);
+    test('the same number right: both lances break, nobody falls, Gelijk!', () => {
+        const { container } = render(<Steekspel meta={meta({ spelers: '2', niveau: 'makkelijk' })} from={from} onExit={() => { }} />);
         ready();
-        for (let i = 0; i < 2; i++) { act(() => { du().answer('left', q('left').answer); du().answer('right', q('right').answer); }); tick(DUEL_TIMING.flashRight); }
-        act(() => { du().answer('left', String(Number(q('left').answer) + 1)); du().answer('right', String(Number(q('right').answer) + 1)); });
-        tick(DUEL_TIMING.flashWrong);
-        for (let i = 0; i < 2; i++) { act(() => { du().answer('left', q('left').answer); du().answer('right', q('right').answer); }); tick(DUEL_TIMING.flashRight); }
-        expect(du().phase).toBe('play');
-        act(() => { du().answer('left', q('left').answer); du().answer('right', q('right').answer); });
+        both(4);
+        tick(JOUST.seconds * 1000 - 4 * DUEL_TIMING.flashRight);
         expect(du()).toMatchObject({ phase: 'roundEnd', roundWinner: 'draw' });
-        expect(container.querySelector('.stk-scene')!.getAttribute('data-lances')).toBe('1,1');
-        tick(1300);
+        tick(2200);
         expect(container.querySelectorAll('.stk-knight.is-draw')).toHaveLength(2);
         expect(container.querySelector('.stk-knight.is-fell')).toBeNull();
         expect(container.querySelectorAll('.stk-lance.is-broken')).toHaveLength(2);
         expect(screen.getByText('Gelijk!')).toBeTruthy();
     });
 
-    test('1 speler: Jij against the computer', () => {
-        render(<Steekspel meta={meta({ spelers: '1' })} from={from} onExit={() => { }} />);
+    test('1 speler: Jij against the computer, which answers through the minute', () => {
+        const { container } = render(<Steekspel meta={meta({ spelers: '1' })} from={from} onExit={() => { }} />);
+        useDuelStore.setState(s => ({ config: { ...s.config, rng: () => 0.5 } }));
         ready();
-        expect(du().config).toMatchObject({ players: 1, lives: 20 });
+        expect(du().config).toMatchObject({ players: 1, roundSeconds: JOUST.seconds });
         expect(screen.getAllByText('Computer').length).toBeGreaterThan(0);
+        tick(20_000);
+        expect(Number(board(container, 'right'))).toBeGreaterThan(0);
     });
 });

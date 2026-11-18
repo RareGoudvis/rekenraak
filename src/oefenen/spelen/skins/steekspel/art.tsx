@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react';
 import type { Side } from '../../duel/types';
-import { BARRIER, LANCE, LANCE_DEG, ROW, VIEW } from './geometry';
+import { BARRIER, BOARD, HOURGLASS, LANCE, LANCE_DEG, ROW, VIEW } from './geometry';
 
 // Steekspel's pictures (SVG in scene units, geometry.ts): the tournament ground (castle, tents, the royal stand with
-// its crowd, the barrier), the two knights on their horses (horse middle at x 0, hooves on y 0, facing right), the
-// lance, the tilt's splinters, the hay bale, the calls and the petals. Every motion is CSS (steekspel.css).
+// its crowd, the king's hourglass, the barrier, a score board per knight), the two knights on their horses (horse
+// middle at x 0, hooves on y 0, facing right) with the gear they earn (plume, shining lance, horse armour, banner,
+// crown), the tilt's splinters, the hay bale, the calls and the petals. Every motion is CSS (steekspel.css).
 
 const v = (o: Record<string, string | number>) => o as CSSProperties;
 
@@ -86,8 +87,6 @@ function Stand({ cheer }: { cheer: number }) {
                 <path key={i} className="stk-awning-stripe" d={`M${600 - 230 + i * 80} 120 L600 84 L${600 - 230 + i * 80 + 38} 120 Z`} />
             ))}
             <path className="stk-awning-edge" d="M370 120 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0 q11.5 12 23 0" />
-            <path className="stk-pole" d="M600 84 L600 60" />
-            <path className="stk-pennon is-gold is-big" d="M600 60 L626 66 L600 72 Z" />
             {/* The herald's trumpets on both sides of the box, their banners. */}
             {[392, 808].map((x, i) => (
                 <g key={x} transform={`translate(${x} 150) scale(${i ? -1 : 1} 1)`}>
@@ -128,7 +127,7 @@ function Barrier() {
 
 const LEGS = [{ x: -42, k: 0 }, { x: -28, k: 1 }, { x: 30, k: 2 }, { x: 44, k: 3 }] as const;
 
-function Horse({ side }: { side: Side }) {
+function Horse({ side, armour }: { side: Side; armour: boolean }) {
     return (
         <g className="stk-horse">
             <g className="stk-tail"><path className="stk-horse-hair" d="M-56 -76 Q-84 -70 -80 -34 Q-70 -50 -64 -40 Q-66 -60 -52 -66 Z" /></g>
@@ -150,7 +149,20 @@ function Horse({ side }: { side: Side }) {
                 <circle className="stk-eye" cx={76} cy={-110} r={3} />
                 <circle className="stk-nostril" cx={93} cy={-90} r={1.6} />
                 <path className="stk-bridle" d="M64 -116 Q72 -100 90 -90" />
+                {armour && (
+                    <g className="stk-chanfron">
+                        {/* The horse's face plate with a gold rosette and a little blunt spike, like a unicorn's. */}
+                        <path className="stk-armour" d="M60 -117 Q70 -126 82 -116 L96 -97 Q94 -92 89 -93 Q78 -104 63 -108 Z" />
+                        <circle className="stk-rosette" cx={74} cy={-114} r={4} />
+                        <path className="stk-armour" d="M66 -121 L64 -133 L71 -123 Z" />
+                    </g>
+                )}
             </g>
+            {armour && (
+                <g className="stk-crinet">
+                    {[0, 1, 2].map(i => <path key={i} className="stk-armour" d={`M${38 + i * 8} ${-82 - i * 12} L${48 + i * 8} ${-94 - i * 12} L${58 + i * 6} ${-88 - i * 12} L${50 + i * 6} ${-76 - i * 12} Z`} />)}
+                </g>
+            )}
             {/* The caparison: a long cloth in the team's colour over the body, scalloped at the hem. */}
             <path className="stk-cloth" d="M-62 -82 Q-62 -90 -50 -90 L40 -90 Q60 -88 62 -70 L66 -40 q-8 8 -16 0 q-8 8 -16 0 q-8 8 -16 0 q-8 8 -16 0 q-8 8 -16 0 q-8 8 -16 0 q-8 8 -16 0 q-8 8 -16 0 L-66 -40 Z" />
             <path className="stk-cloth-trim" d="M-64 -50 L64 -50" />
@@ -163,13 +175,18 @@ function Horse({ side }: { side: Side }) {
 export interface KnightView {
     side: Side;
     x: number;
-    lance: boolean;
-    // The tilt is coming (the round is won): both lances go down for the crash.
-    couch: boolean;
-    // Counters that restart a moment: a gallop step, a sneeze (a mistake), the lance going down.
-    step: number;
+    // Gear earned this joust (rule.ts gearOf): 1 plume, 2 shining lance, 3 horse armour, 4 banner, 5 crown.
+    gear: number;
+    // Right answers this joust (the score board).
+    rights: number;
+    // The last seconds of the minute: lance couched, the horse pawing the ground.
+    ready: boolean;
+    // The minute is up: galloping at the other knight.
+    charging: boolean;
+    // Counters that restart a moment: a right answer (the horse stamps), a sneeze (a mistake), a piece of gear won.
+    stamp: number;
     oops: number;
-    lanceKey: number;
+    gained: number;
     // The tilt at the round's end: this knight won it, fell off, or both lances broke (a draw).
     tilt: 'won' | 'fell' | 'draw' | null;
     moveMs: number;
@@ -177,7 +194,7 @@ export interface KnightView {
 
 /** The rider: armour, shield, the lance on its pivot, the helmet with its plume (it flies off in a fall). */
 function Rider({ k }: { k: KnightView }) {
-    const deg = k.lance || k.couch || k.tilt ? LANCE_DEG[k.side].down : LANCE_DEG[k.side].up;
+    const deg = k.ready || k.charging || k.tilt ? LANCE_DEG[k.side].down : LANCE_DEG[k.side].up;
     return (
         <g className="stk-rider">
             <path className="stk-metal" d="M-8 -82 L8 -80 L14 -60 L22 -58 L22 -52 L8 -52 Z" />
@@ -196,7 +213,7 @@ function Rider({ k }: { k: KnightView }) {
                 </g>
             </g>
             <path className="stk-metal" d="M-4 -118 Q4 -104 4 -100 L0 -98 Q-6 -104 -10 -116 Z" />
-            <g className="stk-shield">
+            <g className={`stk-shield${k.gear >= 5 ? ' is-gold' : ''}`}>
                 <path className="stk-shield-body" d="M2 -122 L28 -122 L28 -104 Q28 -88 15 -82 Q2 -88 2 -104 Z" />
                 <path className="stk-shield-band" d="M2 -110 L28 -110 L28 -102 L2 -102 Z" />
             </g>
@@ -204,7 +221,20 @@ function Rider({ k }: { k: KnightView }) {
                 <path className="stk-metal" d="M-17 -130 L-17 -150 Q-16 -160 -3 -160 Q10 -160 11 -150 L12 -130 Q-3 -126 -17 -130 Z" />
                 <path className="stk-visor" d="M-2 -146 L11 -146" />
                 <path className="stk-visor" d="M2 -140 L11 -140" />
-                <path className="stk-plume" d="M-6 -160 Q-12 -178 -30 -176 Q-22 -170 -24 -162 Q-14 -166 -10 -158 Z" />
+                {k.gear >= 1 ? (
+                    // The plume he earned: three big feathers, the team colour and gold.
+                    <g className="stk-plume-big">
+                        <path className="stk-plume" d="M-9 -158 Q-30 -170 -50 -154 Q-34 -154 -30 -144 Q-20 -154 -12 -154 Z" />
+                        <path className="stk-plume is-gold" d="M-8 -160 Q-24 -186 -52 -178 Q-36 -172 -36 -160 Q-22 -166 -12 -157 Z" />
+                        <path className="stk-plume" d="M-6 -160 Q-10 -196 -44 -200 Q-30 -186 -34 -170 Q-18 -176 -10 -158 Z" />
+                    </g>
+                ) : <path className="stk-plume" d="M-6 -160 Q-12 -178 -30 -176 Q-22 -170 -24 -162 Q-14 -166 -10 -158 Z" />}
+                {k.gear >= 5 && (
+                    <g className="stk-crown">
+                        <path className="stk-crown-gold" d="M-18 -152 L-18 -166 L-11 -159 L-4 -170 L3 -159 L10 -166 L11 -152 Q-3 -148 -18 -152 Z" />
+                        <circle className="stk-gem" cx={-4} cy={-155} r={2.6} />
+                    </g>
+                )}
             </g>
         </g>
     );
@@ -213,17 +243,26 @@ function Rider({ k }: { k: KnightView }) {
 function Lance({ k }: { k: KnightView }) {
     const broken = k.tilt === 'won' || k.tilt === 'draw';
     const len = LANCE.len;
+    const f0 = len * 0.6;
     return (
-        <g className={`stk-lance${k.lance ? ' is-down' : ''}${broken ? ' is-broken' : ''}`}>
+        <g className={`stk-lance${k.gear >= 2 ? ' is-shiny' : ''}${broken ? ' is-broken' : ''}`}>
             <path className="stk-lance-shaft" d={`M${-LANCE.butt} -2.5 L${len * 0.55} -3.5 L${len * 0.55} 3.5 L${-LANCE.butt} 2.5 Z`} />
             <g className="stk-lance-tip">
                 <path className="stk-lance-shaft" d={`M${len * 0.55} -3.5 L${len} -1 L${len} 1 L${len * 0.55} 3.5 Z`} />
                 {[0.62, 0.74, 0.86].map(f => <path key={f} className="stk-lance-band" d={`M${len * f} -3 L${len * f + 7} -2.5 L${len * f + 7} 2.5 L${len * f} 3 Z`} />)}
-                <path className="stk-lance-flag" d={`M${len * 0.68} -3 L${len * 0.68 + 26} -12 L${len * 0.68 + 18} -3 Z`} />
+                {k.gear >= 4
+                    // The banner he earned: a long swallow-tailed pennon in the team colour.
+                    ? (
+                        <g className="stk-vaandel">
+                            <path className="stk-lance-flag is-big" d={`M${f0} -3 L${f0 + 52} -6 L${f0 + 40} -15 L${f0 + 58} -26 L${f0 + 4} -26 Z`} />
+                            <path className="stk-vaandel-mark" d={`M${f0 + 18} -21 l3 -4 l3 4 l-3 4 Z`} />
+                        </g>
+                    )
+                    : <path className="stk-lance-flag" d={`M${len * 0.68} -3 L${len * 0.68 + 26} -12 L${len * 0.68 + 18} -3 Z`} />}
             </g>
             {[0.12, 0.28, 0.44].map(f => <path key={f} className="stk-lance-band" d={`M${len * f} -3.2 L${len * f + 8} -3.2 L${len * f + 8} 3.2 L${len * f} 3.2 Z`} />)}
             <path className="stk-vamplate" d="M6 -12 Q14 0 6 12 L12 12 Q18 0 12 -12 Z" />
-            {k.lanceKey > 0 && k.lance && <g key={k.lanceKey} transform={`translate(${len} 0)`}><g className="stk-gleam"><path d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" /></g></g>}
+            {k.gear >= 2 && !broken && <g transform={`translate(${len} 0)`}><g className="stk-gleam is-loop"><path d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" /></g></g>}
             {broken && (
                 <g className="stk-splinters" transform={`translate(${len * 0.55} 0)`}>
                     {Array.from({ length: 7 }, (_, i) => <path key={i} className="stk-splinter" style={v({ '--a': `${-70 + i * 22}deg`, '--k': i })} d="M0 -2 L16 -1 L16 1 L0 2 Z" />)}
@@ -255,26 +294,70 @@ function Stars() {
     );
 }
 
-/** One knight on its row: it glides on a step, the horse gallops, sneezes on a mistake; at the tilt it wins or falls. */
+/** One knight on its row: it waits at its end and gears up; at the tilt it gallops in, then wins or falls. */
 export function Knight({ k }: { k: KnightView }) {
     const row = ROW[k.side];
     const flip = k.side === 'right' ? -1 : 1;
-    const cls = `stk-knight is-${k.side}${k.tilt ? ` is-${k.tilt}` : ''}`;
+    const cls = `stk-knight is-${k.side}${k.tilt ? ` is-${k.tilt}` : ''}${k.charging ? ' is-charging' : ''}${k.ready && !k.charging ? ' is-ready' : ''}`;
     return (
-        <g className={cls} data-side={k.side} style={v({ transform: `translate(${k.x}px, ${row.y}px) scale(${flip * row.scale}, ${row.scale})`, transitionDuration: `${k.moveMs}ms` })}>
+        <g className={cls} data-side={k.side} data-gear={k.gear} style={v({ transform: `translate(${k.x}px, ${row.y}px) scale(${flip * row.scale}, ${row.scale})`, transitionDuration: `${k.moveMs}ms` })}>
             <ellipse className="stk-shadow" cx={0} cy={2} rx={66} ry={7} />
             {k.tilt === 'fell' && <g transform="translate(-130 0)"><g className="stk-bale-in"><Bale /></g></g>}
-            <g key={`s${k.step}`} className={k.step ? 'stk-gallop' : undefined}>
+            {k.charging && !k.tilt && <g className="stk-trail">{[0, 1, 2, 3].map(i => <circle key={i} className="stk-dust is-trail" style={v({ '--k': i })} cx={-62} cy={-8} r={10 + i * 2} />)}</g>}
+            <g key={`s${k.stamp}`} className={k.charging ? 'stk-run' : k.stamp ? 'stk-stamp' : undefined}>
                 <g key={`o${k.oops}`} className={k.oops ? 'stk-sneeze' : undefined}>
                     <g className="stk-rear">
-                        <Horse side={k.side} />
+                        <Horse side={k.side} armour={k.gear >= 3} />
                         {k.oops > 0 && <g key={k.oops} className="stk-achoo" transform="translate(100 -92)">{[0, 1, 2].map(i => <circle key={i} className="stk-puff" style={v({ '--k': i })} r={5 + i * 2} />)}</g>}
                         <g className="stk-fall"><Rider k={k} /></g>
                     </g>
                 </g>
             </g>
+            {k.stamp > 0 && !k.charging && <g key={`d${k.stamp}`} className="stk-stampdust" transform="translate(40 0)">{[-12, 4, 18].map((x, i) => <circle key={x} className="stk-dust" style={v({ '--k': i })} cx={x} r={8} />)}</g>}
+            {k.gained > 0 && (
+                <g key={`g${k.gained}`} className="stk-sparkle" transform="translate(0 -130)">
+                    {Array.from({ length: 8 }, (_, i) => <path key={i} className="stk-spark" style={v({ '--a': `${i * 45}deg`, '--k': i })} d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" />)}
+                </g>
+            )}
             {k.tilt === 'fell' && <Stars />}
             {k.tilt === 'fell' && <g className="stk-dustcloud" transform="translate(-130 -16)">{[-30, -10, 10, 30].map((x, i) => <circle key={x} className="stk-dust" style={v({ '--k': i })} cx={x} r={16} />)}</g>}
+        </g>
+    );
+}
+
+/** A knight's score board on its pole: the shield with this joust's right answers; it swings on each new one. */
+export function Board({ side, count }: { side: Side; count: number }) {
+    const { x, y } = BOARD[side];
+    // The pole stands on the stand's side, clear of the tents.
+    const pole = side === 'left' ? 40 : -40;
+    return (
+        <g transform={`translate(${x} ${y})`} className={`stk-board is-${side}`}>
+            <path className="stk-board-pole" d={`M${pole} -10 L${pole} ${214 - y}`} />
+            <path className="stk-board-beam" d={`M${pole * 1.2} -6 L${-pole * 0.7} -6`} />
+            <g key={count} className={count ? 'stk-board-swing' : undefined}>
+                <path className="stk-board-rope" d="M-15 -6 L-12 8 M15 -6 L12 8" />
+                <path className="stk-board-shield" d="M-28 8 L28 8 L28 34 Q28 58 0 68 Q-28 58 -28 34 Z" />
+                <path className="stk-board-plate" d="M-20 14 L20 14 L20 34 Q20 50 0 58 Q-20 50 -20 34 Z" />
+                <text className="stk-board-num" x={0} y={46} textAnchor="middle">{count}</text>
+            </g>
+        </g>
+    );
+}
+
+/** The king's hourglass on the awning: it turns over when a joust begins and runs out with the minute. */
+export function Hourglass({ n, run, low }: { n: number; run: boolean; low: boolean }) {
+    return (
+        <g transform={`translate(${HOURGLASS.x} ${HOURGLASS.y})`}>
+            <g key={n} className="stk-glass-turn"><g className={`stk-glass${run ? ' is-run' : ''}${low ? ' is-low' : ''}`}>
+                <path className="stk-glass-body" d="M-15 -62 Q-15 -42 -3 -35 Q-15 -28 -15 -8 L15 -8 Q15 -28 3 -35 Q15 -42 15 -62 Z" />
+                <path className="stk-glass-sand is-top" d="M-12.4 -54 Q-12 -42 0 -36.4 Q12 -42 12.4 -54 Z" />
+                <path className="stk-glass-sand is-bottom" d="M-13.6 -9 Q-13 -20 0 -25 Q13 -20 13.6 -9 Z" />
+                <path className="stk-glass-stream" d="M0 -36 L0 -10" />
+                <path className="stk-glass-shine" d="M-10 -58 Q-10 -48 -5 -43" />
+                <rect className="stk-glass-frame" x={-21} y={-70} width={42} height={8} rx={3} />
+                <rect className="stk-glass-frame" x={-21} y={-8} width={42} height={8} rx={3} />
+                <path className="stk-glass-post" d="M-18 -62 L-18 -8 M18 -62 L18 -8" />
+            </g></g>
         </g>
     );
 }
@@ -291,10 +374,10 @@ export function Clash({ x, y, draw }: { x: number; y: number; draw: boolean }) {
     );
 }
 
-export interface CallView { id: number; text: string; x: number; y: number; tone: 'lance' | 'oops' | 'bonk' | 'win' }
+export interface CallView { id: number; text: string; x: number; y: number; tone: 'lance' | 'oops' | 'bonk' | 'win' | 'plus' }
 
 export function Call({ c }: { c: CallView }) {
-    const w = Math.max(100, c.text.length * 15 + 34);
+    const w = Math.max(c.tone === 'plus' ? 58 : 100, c.text.length * 15 + 34);
     const x = Math.max(w / 2 + 10, Math.min(VIEW.w - w / 2 - 10, c.x));
     return (
         <g transform={`translate(${x} ${c.y})`}>
@@ -335,13 +418,15 @@ export function ShieldCard({ side }: { side: Side }) {
 
 export interface SceneProps {
     knights: Record<Side, KnightView>;
+    // The hourglass: the round (it turns over), the minute running, the last seconds.
+    glass: { n: number; run: boolean; low: boolean };
     clash: { x: number; y: number; draw: boolean; n: number } | null;
     calls: CallView[];
     cheer: number;
     winnerX: number | null;
 }
 
-export function Scene({ knights, clash, calls, cheer, winnerX }: SceneProps) {
+export function Scene({ knights, glass, clash, calls, cheer, winnerX }: SceneProps) {
     return (
         <svg className="stk-svg" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="xMidYMax meet" aria-hidden>
             <Castle />
@@ -350,7 +435,10 @@ export function Scene({ knights, clash, calls, cheer, winnerX }: SceneProps) {
             <Tent x={950} side="right" />
             <Tent x={1090} side="right" />
             <Stand cheer={cheer} />
+            <Hourglass n={glass.n} run={glass.run} low={glass.low} />
             <Ground />
+            <Board side="left" count={knights.left.rights} />
+            <Board side="right" count={knights.right.rights} />
             <Knight k={knights.left} />
             <Barrier />
             <Knight k={knights.right} />

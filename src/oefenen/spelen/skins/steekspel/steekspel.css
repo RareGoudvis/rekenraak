@@ -123,7 +123,7 @@
 .stk-shield-body { fill: var(--stk-team); stroke: var(--spel-ink); stroke-width: 3px; }
 .stk-shield-band { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
 
-/* The lance: up while riding, down (couched) after 3 in a row and at the tilt; the turn glides. */
+/* The lance: up while waiting, down (couched) in the last seconds and at the tilt; the turn glides. */
 .stk-lance-arm { transition: rotate 380ms cubic-bezier(.3, 1.4, .5, 1); }
 .stk-lance-shaft { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
 .stk-lance-band { fill: var(--stk-team); }
@@ -132,10 +132,6 @@
 .stk-gleam path { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
 .stk-gleam { transform-box: fill-box; transform-origin: 50% 50%; animation: stk-gleam 900ms ease-out both; }
 @keyframes stk-gleam { 0% { opacity: 0; scale: .2; rotate: 0deg; } 30% { opacity: 1; scale: 1.3; } 100% { opacity: 0; scale: .6; rotate: 120deg; } }
-/* A couched lance gleams now and then while it stays down. */
-.stk-lance.is-down .stk-lance-band { fill: var(--stk-gold); }
-.stk-lance.is-down .stk-lance-tip { animation: stk-glint 1.4s ease-in-out infinite; }
-@keyframes stk-glint { 0%, 70%, 100% { opacity: 1; } 80% { opacity: .55; } }
 /* The tilt breaks the winner's lance: the tip flies off in splinters. */
 .stk-lance.is-broken .stk-lance-tip { animation: stk-tipoff 900ms ease-out both; }
 @keyframes stk-tipoff { to { translate: 40px -60px; rotate: -160deg; opacity: 0; } }
@@ -143,12 +139,9 @@
 .stk-splinter { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.2px; animation: stk-splinter 700ms ease-out calc(var(--k) * 20ms) both; }
 @keyframes stk-splinter { from { transform: rotate(var(--a)) translate(0, 0); opacity: 1; } to { transform: rotate(var(--a)) translate(54px, 0) rotate(180deg); opacity: 0; } }
 
-/* A gallop step: the horse bounds twice, its legs swing. */
-.stk-gallop { animation: stk-bound 520ms ease-in-out; }
-@keyframes stk-bound { 0%, 50%, 100% { translate: 0 0; } 25%, 75% { translate: 0 -9px; } }
+/* The gallop's bound and leg swing (the charge, below). */
+@keyframes stk-bound { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
 .stk-leg { transform-origin: 0 0; }
-.stk-gallop .stk-leg { animation: stk-leg-a 130ms ease-in-out 4 alternate; }
-.stk-gallop .stk-leg.is-1, .stk-gallop .stk-leg.is-2 { animation-name: stk-leg-b; }
 @keyframes stk-leg-a { from { rotate: 28deg; } to { rotate: -30deg; } }
 @keyframes stk-leg-b { from { rotate: -30deg; } to { rotate: 28deg; } }
 .stk-tail { transform-box: fill-box; transform-origin: 90% 10%; animation: stk-swish 1.8s ease-in-out infinite alternate; }
@@ -222,3 +215,86 @@
 .stk-petal.is-3 { fill: var(--accent-getallenkennis); }
 @keyframes stk-fall-petal { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(var(--sway), 300px) rotate(var(--r)); } }
 .stk-card-art { display: block; width: clamp(56px, 10vmin, 92px); height: auto; margin: -6px auto -4px; overflow: visible; }
+
+/* ── The minute (owner 2026-11-18): gear, the score boards, the hourglass, the charge ─────────────────────── */
+/* A right answer: the horse rears a little and stamps its front hooves, dust flies, the knight sits up proud. */
+.stk-knight .stk-stamp .stk-rear { transform-origin: -40px 0; animation: stk-stamp 620ms cubic-bezier(.3, .6, .4, 1); }
+@keyframes stk-stamp { 0%, 100% { rotate: 0deg; translate: 0 0; } 12% { rotate: 2deg; translate: 0 2px; } 40% { rotate: -9deg; translate: 0 -4px; } 62% { rotate: 1deg; translate: 0 1px; } 80% { rotate: -2deg; } }
+.stk-stamp .stk-leg.is-2, .stk-stamp .stk-leg.is-3 { animation: stk-paw 310ms ease-in-out 2 alternate; }
+@keyframes stk-paw { from { rotate: 0deg; } to { rotate: -42deg; } }
+.stk-stampdust .stk-dust { animation-delay: calc(240ms + var(--k) * 40ms); }
+/* The last seconds: lances down, the horses paw the ground, eager. */
+.stk-knight.is-ready .stk-leg.is-3 { animation: stk-paw 420ms ease-in-out infinite alternate; }
+.stk-knight.is-ready .stk-rear { transform-origin: -40px 0; animation: stk-eager 840ms ease-in-out infinite; }
+@keyframes stk-eager { 0%, 100% { rotate: 0deg; } 50% { rotate: -2.5deg; } }
+/* The charge: galloping flat out, the legs a blur, dust behind. SYNC: Steekspel.tsx CHARGE_MS. */
+.stk-knight.is-charging { transition-timing-function: cubic-bezier(.55, 0, .85, .55); }
+.stk-run { animation: stk-bound 260ms ease-in-out infinite; }
+.stk-run .stk-leg { animation: stk-leg-a 130ms ease-in-out infinite alternate; }
+.stk-run .stk-leg.is-1, .stk-run .stk-leg.is-2 { animation-name: stk-leg-b; }
+.stk-knight.is-won .stk-run, .stk-knight.is-fell .stk-run, .stk-knight.is-draw .stk-run { animation: none; }
+.stk-knight.is-won .stk-run .stk-leg, .stk-knight.is-fell .stk-run .stk-leg, .stk-knight.is-draw .stk-run .stk-leg { animation: none; }
+.stk-dust.is-trail { animation: stk-trail 520ms ease-out calc(var(--k) * -130ms) infinite; }
+@keyframes stk-trail { from { scale: .4; opacity: .9; translate: 0 0; } to { scale: 1.8; opacity: 0; translate: -40px -16px; } }
+
+/* The gear. Each piece pops in with a sparkle; then it lives (the plume sways, the lance glints, the banner waves). */
+.stk-plume.is-gold { fill: var(--stk-gold); }
+.stk-plume-big { transform-origin: -8px -158px; animation: stk-plume-in 600ms var(--ease-spring) both, stk-plume-sway 1.6s ease-in-out 600ms infinite alternate; }
+@keyframes stk-plume-in { from { scale: 0; } to { scale: 1; } }
+@keyframes stk-plume-sway { from { rotate: -5deg; } to { rotate: 7deg; } }
+.stk-lance.is-shiny .stk-lance-band { fill: var(--stk-gold); }
+.stk-lance.is-shiny .stk-lance-shaft { fill: color-mix(in srgb, var(--stk-gold) 18%, var(--kiosk-paper)); }
+.stk-gleam.is-loop { animation: stk-gleam-loop 1.8s ease-out infinite; }
+@keyframes stk-gleam-loop { 0%, 55% { opacity: 0; scale: .2; rotate: 0deg; } 70% { opacity: 1; scale: 1.2; } 100% { opacity: 0; scale: .5; rotate: 120deg; } }
+.stk-armour { fill: var(--stk-metal); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-rosette { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-chanfron, .stk-crinet { animation: stk-pop 500ms var(--ease-spring) both; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes stk-pop { from { scale: 0; opacity: 0; } to { scale: 1; opacity: 1; } }
+.stk-lance-flag.is-big { animation: stk-banner 0.6s ease-in-out infinite alternate; }
+@keyframes stk-banner { from { scale: 1 1; } to { scale: .9 1.14; } }
+.stk-vaandel { transform-box: fill-box; transform-origin: 0 100%; animation: stk-pop 500ms var(--ease-spring) both; }
+.stk-vaandel-mark { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1px; }
+.stk-crown-gold { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-gem { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 1px; }
+.stk-crown { transform-box: fill-box; transform-origin: 50% 100%; animation: stk-crown 700ms var(--ease-spring) both; }
+@keyframes stk-crown { from { translate: 0 -40px; opacity: 0; } 60% { translate: 0 2px; opacity: 1; } to { translate: 0 0; opacity: 1; } }
+.stk-shield.is-gold .stk-shield-body { stroke: var(--stk-gold); stroke-width: 4px; }
+.stk-spark { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.2px; animation: stk-spark 800ms ease-out calc(var(--k) * 15ms) both; }
+@keyframes stk-spark { from { transform: rotate(var(--a)) translate(0, 0) scale(.4); opacity: 1; } to { transform: rotate(var(--a)) translate(0, -62px) scale(1.3) rotate(90deg); opacity: 0; } }
+
+/* The score boards: a shield hanging from a beam on a pole; it swings on every right answer. */
+.stk-board-pole { stroke: var(--stk-wood-deep); stroke-width: 7px; }
+.stk-board-beam { stroke: var(--stk-wood-deep); stroke-width: 6px; }
+.stk-board-rope { stroke: var(--spel-ink); stroke-width: 2px; fill: none; }
+.stk-board.is-left { --stk-team: var(--duel-left); }
+.stk-board.is-right { --stk-team: var(--duel-right); }
+.stk-board-shield { fill: var(--stk-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-board-plate { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-board-num { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 30px; font-weight: 900; }
+.stk-board > g { transform-origin: 0 -6px; animation: stk-board-idle 3.2s ease-in-out infinite alternate; }
+.stk-board > g.stk-board-swing { animation: stk-board-swing 900ms ease-out both; }
+@keyframes stk-board-idle { from { rotate: -1.5deg; } to { rotate: 1.5deg; } }
+@keyframes stk-board-swing { 0% { rotate: 0deg; scale: 1; } 15% { rotate: 14deg; scale: 1.12; } 40% { rotate: -9deg; scale: 1; } 65% { rotate: 5deg; } 85% { rotate: -2deg; } 100% { rotate: 0deg; } }
+
+/* The king's hourglass: it turns over at a joust's start, its sand runs for the minute (paused with the duel). */
+.stk-glass-turn { animation: stk-glass-turn 700ms var(--ease-spring) both; transform-origin: 0 -35px; }
+.stk-glass { transform-origin: 0 -35px; }
+@keyframes stk-glass-turn { from { rotate: -180deg; } to { rotate: 0deg; } }
+.stk-glass-body { fill: color-mix(in srgb, var(--stk-sky-top) 45%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-glass-sand { fill: var(--stk-hay-deep); }
+.stk-glass-sand.is-top { transform-origin: 0 -36px; }
+.stk-glass-sand.is-bottom { transform-origin: 0 -9px; scale: 1 0; }
+.stk-glass-stream { stroke: var(--stk-hay-deep); stroke-width: 2px; opacity: 0; }
+.stk-glass-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 2.5px; }
+.stk-glass-frame { fill: var(--stk-wood-deep); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-glass-post { stroke: var(--stk-wood-deep); stroke-width: 3px; }
+/* SYNC: rule.ts JOUST.seconds (60 s). */
+.stk-glass.is-run .stk-glass-sand.is-top { animation: stk-sand-out 60s linear both; }
+.stk-glass.is-run .stk-glass-sand.is-bottom { animation: stk-sand-in 60s linear both; }
+.stk-glass.is-run .stk-glass-stream { opacity: 1; animation: stk-stream 60s steps(1, end) both; }
+@keyframes stk-sand-out { from { scale: 1 1; } to { scale: 1 0; } }
+@keyframes stk-sand-in { from { scale: 1 0; } to { scale: 1 1; } }
+@keyframes stk-stream { from { opacity: 1; } to { opacity: 0; } }
+.stk-glass.is-low { animation: stk-glass-shake 300ms ease-in-out infinite alternate; }
+@keyframes stk-glass-shake { from { rotate: -6deg; } to { rotate: 6deg; } }
+.stk-call.is-plus .stk-call-bg { fill: var(--kid-go); }
