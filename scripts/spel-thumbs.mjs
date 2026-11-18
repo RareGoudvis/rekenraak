@@ -39,9 +39,10 @@ const GAMES = [
     ['voetbalkaartjes', 'Voetbalkaartjes', -1],
     ['brandweer', 'Brandweer', 1],
     ['slalom', 'Skislalom', 0],
+    ['grijp', 'Grijpmachine', 2],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena.
-const QUERY = { tovenaarsduel: '?arena=school' };
+const QUERY = { tovenaarsduel: '?arena=school', grijp: '?grijp=pier' };
 // Duel games with 2 spelers (no keyboard): the moment of the picture, staged through window.__duel (dev builds).
 const duelAnswer = (page, side) => page.evaluate(s => { const d = window.__duel.getState(); const q = d.sides[s].question; if (q && !d.sides[s].feedback) d.answer(s, q.answer); }, side);
 const DUEL_PLAY = {
@@ -96,6 +97,8 @@ const SKIN_CSS = {
     frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
     // The metres, the speed bars and the streak badge.
     slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
+    // The coins left on the panel.
+    grijp: '.gm-counter { visibility: hidden !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
 const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur']);
