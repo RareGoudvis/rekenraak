@@ -11,7 +11,9 @@ import { resolveMeta } from '../oefenen/spelen/skins/options';
 import { skinAccepts } from '../oefenen/spelen/accepts';
 import { buildBoard, pairsBoard } from '../oefenen/spelen/board/board';
 import { nextBoardOf } from '../oefenen/spelen/board/session';
-import { cardLook, gridOf, pairMomentAt, PAIR_HIT_MS, PAIR_MOMENT_MS, PAIRS_SIZE } from '../oefenen/spelen/board/hartjes/hearts';
+import { cardLook, gridOf, guessesLeft, pairMomentAt, PAIR_HIT_MS, PAIR_MOMENT_MS, PAIRS_SIZE, PAIRS_WRONG_MAX } from '../oefenen/spelen/board/hartjes/hearts';
+import { HartjesEnding } from '../oefenen/spelen/board/hartjes/Hartjes';
+import { LEVELS } from '../oefenen/spelen/levels/levels';
 import { OPTIONS_KEY, loadChoices } from '../oefenen/spelen/skins/options';
 import { mulberry32 } from '../oefenen/spelen/distractors';
 import type { SkinChoices, SkinProps } from '../oefenen/spelen/skins/types';
@@ -61,8 +63,11 @@ describe('Hartjes: the rules for the cards, pure', () => {
         expect(gridOf(6).landscape).toEqual({ cols: 3, rows: 2 });
     });
 
-    test('the options: Normaal 6 pairs or Moeilijk 8 (no look pick any more); the default round stays Normaal', () => {
+    test('the options: the four levels (4 / 6 / 8 / 8 pairs, flames only; no look pick any more); the default round stays Normaal', () => {
         expect(HARTJES().options!.map(o => o.id)).toEqual(['niveau']);
+        expect(HARTJES().options![0].choices.map(c => [c.value, c.round?.board?.size, c.icon])).toEqual([
+            ['makkelijk', 4, {}], ['normaal', 6, { flames: 1 }], ['moeilijk', 8, { flames: 2 }], ['onmogelijk', 8, { flames: 3 }],
+        ]);
         expect(HARTJES().round.board).toEqual({ kind: 'pairs', boards: 2, size: 6, strikes: 2 });
         expect(metaWith({}).round.board!.size).toBe(PAIRS_SIZE.normaal);
         expect(metaWith({ niveau: 'moeilijk' }).round.board).toEqual({ kind: 'pairs', boards: 2, size: 8, strikes: 2 });
@@ -215,5 +220,71 @@ describe('Hartjes: a broken heart, a plaster, and a found pair', () => {
         expect(sound).toHaveBeenCalledWith('hit');
         expect(sound).not.toHaveBeenCalledWith('caught');
         expect(HARTJES().sounds).toMatchObject({ wrong: null, hit: 'krak', launch: 'sparkle' });
+    });
+});
+
+describe('Hartjes: the four levels and Onmogelijk wrong guesses', () => {
+    const card = (root: HTMLElement, cell: number, side: 'sum' | 'answer') => root.querySelector<HTMLButtonElement>(`[data-cell="${cell}"].is-${side}`)!;
+
+    test('pairs per level, a remembered old level kept (unknown = Normaal); only Onmogelijk counts the guesses left', () => {
+        expect(LEVELS.map(l => metaWith({ niveau: l }).round.board!.size)).toEqual([4, 6, 8, 8]);
+        expect(metaWith({ niveau: 'moeilijk' }).chosen).toEqual({ niveau: 'moeilijk' });
+        expect(metaWith({ niveau: 'Super' }).round.board!.size).toBe(PAIRS_SIZE.normaal);
+        expect(guessesLeft('makkelijk', 50)).toBeNull();
+        expect(guessesLeft('moeilijk', 50)).toBeNull();
+        expect(guessesLeft('onmogelijk', 0)).toBe(PAIRS_WRONG_MAX);
+        expect(guessesLeft('onmogelijk', 7)).toBe(3);
+        expect(guessesLeft('onmogelijk', 12)).toBe(0);
+        // Spookhuis keeps its own two levels.
+        expect(skinById('spookhuis')!.meta.options![0].choices.map(c => c.value)).toEqual(['normaal', 'moeilijk']);
+    });
+
+    test('Makkelijk deals 8 hearts and shows no guesses pill', async () => {
+        act(() => start({ niveau: 'makkelijk' }));
+        expect(cells()).toHaveLength(4);
+        const Hartjes = (await import('../oefenen/spelen/board/hartjes/Hartjes')).default;
+        const props = { board: sp().board, phase: 'play', onBoardPick: vi.fn(), onBoardFocus: vi.fn(), sound: vi.fn(), onFail: vi.fn(), options: { niveau: 'makkelijk' } } as unknown as SkinProps;
+        const { container } = render(<Hartjes {...props} />);
+        expect(within(screen.getByRole('group', { name: 'Hartjes' })).getAllByRole('button')).toHaveLength(8);
+        expect(container.querySelector('.hj-tries')).toBeNull();
+    });
+
+    test('Onmogelijk: every two cards that are no pair cost a guess; the tenth ends the round friendly (onFail), a found pair costs none', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        act(() => start({ niveau: 'onmogelijk' }));
+        const Hartjes = (await import('../oefenen/spelen/board/hartjes/Hartjes')).default;
+        const onFail = vi.fn();
+        const props = { board: sp().board, phase: 'play', onBoardPick: (c: number, g: string, s?: boolean) => sp().boardPick(c, g, s), onBoardFocus: vi.fn(), sound: vi.fn(), onFail, options: { niveau: 'onmogelijk' } } as unknown as SkinProps;
+        const { rerender } = render(<Hartjes {...props} />);
+        const group = screen.getByRole('group', { name: 'Hartjes' });
+        expect(screen.getByRole('status', { name: 'Nog 10 kansen' })).toBeTruthy();
+        // A pair found: no guess lost.
+        fireEvent.click(card(group, 0, 'sum'));
+        fireEvent.click(card(group, 0, 'answer'));
+        rerender(<Hartjes {...props} board={sp().board} />);
+        act(() => { vi.advanceTimersByTime(1300); });
+        expect(screen.getByRole('status', { name: 'Nog 10 kansen' })).toBeTruthy();
+        for (let k = 1; k <= PAIRS_WRONG_MAX; k++) {
+            // Two sums: never a pair.
+            fireEvent.click(card(group, 1, 'sum'));
+            fireEvent.click(card(group, 2, 'sum'));
+            act(() => { vi.advanceTimersByTime(1300); });
+            if (k < PAIRS_WRONG_MAX) expect(onFail).not.toHaveBeenCalled();
+        }
+        expect(screen.getByRole('status', { name: 'Nog 0 kansen' })).toBeTruthy();
+        expect(onFail).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('Oei, geen kansen meer!')).toBeTruthy();
+        expect(card(group, 3, 'sum').disabled).toBe(true);
+        vi.useRealTimers();
+    });
+
+    test('the fail picture: a dizzy heart among the cards, only after the friendly end; the registry ends it as failed', () => {
+        const { container, rerender } = render(<HartjesEnding outcome="failed" progress={{} as SkinProps['progress']} options={{}} />);
+        expect(container.querySelector('.hj-ending .hj-dizzy')).toBeTruthy();
+        expect(container.querySelector('.hj-ending.is-ball')).toBeNull();
+        rerender(<HartjesEnding outcome="won" progress={{} as SkinProps['progress']} options={{}} />);
+        expect(container.querySelector('.hj-ending')).toBeNull();
+        expect(HARTJES()).toMatchObject({ canFail: true, failTitle: expect.stringContaining('kansen') });
+        expect(skinById('hartjes')!.Ending).toBeTruthy();
     });
 });

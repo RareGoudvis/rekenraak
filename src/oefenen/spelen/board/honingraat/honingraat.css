@@ -561,6 +561,11 @@
 .hx-wasp.is-claimed .hx-wasp-fly { animation: hx-wasp-claim 1.2s var(--ease-out) both; }
 .hx-wasp.is-claimed .hx-wasp-art { animation: spel-wiggle .55s ease-in-out infinite; }
 .hx-wasp.is-claimed .hx-guard { animation: hx-flee 1.4s ease-in 300ms both; --face: 1; }
+/* Onmogelijk's swarm: the wasps side by side, smaller, one up one down; each flies off after its three right. */
+.hx-wasp.is-swarm .hx-wasp-fly { inset: auto; top: 0; left: calc(42% / (var(--wasps) - 1) * var(--w)); width: 58%; animation-delay: calc(var(--w) * 160ms); }
+.hx-wasp.is-swarm .hx-wasp-fly:nth-child(2n) { top: 36%; }
+.hx-wasp.is-swarm .hx-wasp-fly.is-gone { animation: hx-wasp-away 1.5s ease-in both; }
+.hx-wasp.is-swarm .hx-wasp-fly.is-gone .hx-wasp-turn { --face: -1; }
 @keyframes hx-wasp-claim { to { transform: translate(calc(var(--hx-w) * 1.2), calc(var(--hx-w) * -.6)) scale(1.25); } }
 @keyframes hx-flee { to { transform: translate(40vw, -40vh) rotate(-18deg); opacity: 0; } }
 

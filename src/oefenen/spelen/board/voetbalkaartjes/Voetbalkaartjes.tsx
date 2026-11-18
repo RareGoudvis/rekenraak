@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { SkinProps } from '../../skins/types';
-import { PairsGame } from '../hartjes/Hartjes';
+import type { SkinEndingProps, SkinProps } from '../../skins/types';
+import { PairsEnding, PairsGame } from '../hartjes/Hartjes';
 import { PAIR_HIT_MS } from '../hartjes/hearts';
 import { NO_BOARDS, ZIJ_GOALS, followBoards, wijGoals } from './score';
 import './voetbalkaartjes.css';
@@ -37,3 +37,6 @@ export default function Voetbalkaartjes(props: SkinProps) {
     if (now !== seen) setSeen(now);
     return <PairsGame {...props} look="voetballen" top={<Scoreboard wij={wijGoals(now, props.board)} />} />;
 }
+
+/** Onmogelijk's fail picture: a dizzy ball beside the goal it never found. */
+export const VoetbalkaartjesEnding = ({ outcome }: SkinEndingProps) => <PairsEnding outcome={outcome} look="voetballen" />;

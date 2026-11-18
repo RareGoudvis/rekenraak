@@ -7,13 +7,14 @@ import { Bee, Branch, FrontFlowers, Hills, Wasp } from './art';
 import Comb from './HoneyComb';
 import Meadow from './Meadow';
 import WaspChallenge from './WaspChallenge';
-import { viewAt, waspSchedule, waspSums, type WaspVerdict } from './hive';
+import { viewAt, waspRule, waspSchedule, waspSums, type WaspRule, type WaspVerdict } from './hive';
+import { levelOf } from '../../levels/levels';
 import './honingraat.css';
 
 // Honingraat (Lente): find every sum that makes the target, on a honeycomb, then in a flower meadow, then a
 // comb again (hive.ts viewAt). A full board: the bee flies happily on while the scene scrolls to the next one.
-// Moeilijk (options.niveau): now and then a wasp comes for the nest before a comb (WaspChallenge); it can
-// claim the nest (onFail). The session checks every cell.
+// Normaal and up (options.niveau): after every meadow a wasp comes for the nest (WaspChallenge, hive.ts waspRule); it
+// can claim the nest (onFail). Makkelijk has no wasp. The session checks every cell.
 
 // The scroll from one board to the next (honingraat.css hx-scroll lasts as long).
 export const SCROLL_MS = 1500;
@@ -23,20 +24,23 @@ function BoardView(props: Parameters<typeof Comb>[0]) {
 }
 
 export default function Honingraat({ board, phase, onBoardPick, sound, options, progress, onFail }: SkinProps) {
-    const hard = options.niveau === 'moeilijk';
-    const [schedule] = useState(() => waspSchedule(progress.board?.total ?? 3, mulberry32(seedOf(board?.key ?? 'honing'))));
+    const level = levelOf(options);
+    const [schedule] = useState(() => waspSchedule(progress.board?.total ?? 3));
     const [last, setLast] = useState(board ?? null);
     // The board the scene scrolls away from, while the next one comes in.
     const [leaving, setLeaving] = useState<SpelBoard | null>(null);
     // Every cell of the boards already played (the wasp's sums come from them).
     const [played, setPlayed] = useState<readonly BoardCell[]>([]);
-    const [wasp, setWasp] = useState<{ seed: number } | null>(null);
+    const [wasp, setWasp] = useState<{ seed: number; rule: WaspRule } | null>(null);
+    // Battles fought so far (Onmogelijk's wasps grow with them).
+    const [battles, setBattles] = useState(0);
     if ((board ?? null) !== last) {
         setLast(board ?? null);
         if (board && last && board.key !== last.key) {
             setLeaving(last);
             setPlayed(p => [...p, ...last.cells]);
-            if (hard && schedule.includes(board.index)) setWasp({ seed: seedOf(board.key) });
+            const rule = schedule.includes(board.index) ? waspRule(level, battles) : null;
+            if (rule) { setWasp({ seed: seedOf(board.key), rule }); setBattles(battles + 1); }
         }
     }
     useEffect(() => {
@@ -46,7 +50,7 @@ export default function Honingraat({ board, phase, onBoardPick, sound, options, 
     }, [leaving]);
     const fail = useRef(onFail);
     useEffect(() => { fail.current = onFail; });
-    const sums = useMemo(() => (wasp ? waspSums(played, mulberry32(wasp.seed)) : []), [wasp, played]);
+    const sums = useMemo(() => (wasp ? waspSums(played, mulberry32(wasp.seed), wasp.rule.sums) : []), [wasp, played]);
     const waspOn = !!wasp && !leaving && sums.length > 0;
     const waspDone = (v: WaspVerdict) => { if (v === 'claimed') fail.current(); else setWasp(null); };
 
@@ -74,7 +78,7 @@ export default function Honingraat({ board, phase, onBoardPick, sound, options, 
                 )}
             </div>
             {leaving && <span className="hx-traveller" aria-hidden><span className="hx-traveller-loop"><Bee mood="happy" /></span></span>}
-            {waspOn && <WaspChallenge sums={sums} pool={played.map(c => c.question)} seed={wasp.seed} sound={sound} paused={paused} onDone={waspDone} />}
+            {waspOn && <WaspChallenge sums={sums} rule={{ ...wasp.rule, sums: sums.length, need: Math.min(wasp.rule.need, sums.length) }} pool={played.map(c => c.question)} seed={wasp.seed} sound={sound} paused={paused} onDone={waspDone} />}
         </div>
     );
 }

@@ -6,16 +6,20 @@ import { Burst } from '../../scene';
 import { SpelLine, SpelText } from '../../SpelVisual';
 import { Bee, Wasp } from './art';
 import { HEX } from './view';
-import { WASP, WASP_MS, waspChoices, waspVerdict, type WaspVerdict } from './hive';
+import { WASP_MS, waspChoices, waspsGone, waspVerdict, type WaspRule, type WaspVerdict } from './hive';
 
-// Moeilijk: a wasp comes for the nest. Five sums of the boards already played, each with three honey drops;
-// a right drop sends a bee at the wasp, a wrong one lets it come closer. Four right chases it off, a second
-// wrong one and it claims the nest (the friendly early end). The session never sees these sums: they were
-// asked (or shown) on the boards before and are logged there; this is the skin's own little fight.
+// After a meadow a wasp comes for the nest (Normaal and up). Three sums of the boards already played, each with
+// three honey drops; a right drop sends a bee at the wasp, a wrong one lets it come closer. Enough right (1, 2 or
+// all 3: hive.ts waspRule) chases it off, one wrong too many and it claims the nest (the friendly early end).
+// Onmogelijk brings more wasps per battle (3 sums each, every one right; a wasp flies off after its three). The
+// session never sees these sums: they were asked (or shown) on the boards before and are logged there; this is the
+// skin's own little fight.
 
 
 interface Props extends Pick<SkinProps, 'sound'> {
     sums: readonly SpelQuestion[];
+    // How many wasps, sums and right answers this battle has (sums = sums.length).
+    rule: WaspRule;
     // The other sums played, for the drops' other answers.
     pool: readonly SpelQuestion[];
     seed: number;
@@ -23,7 +27,7 @@ interface Props extends Pick<SkinProps, 'sound'> {
     onDone(verdict: WaspVerdict): void;
 }
 
-export default function WaspChallenge({ sums, pool, seed, sound, paused, onDone }: Props) {
+export default function WaspChallenge({ sums, rule, pool, seed, sound, paused, onDone }: Props) {
     const choices = useMemo(() => {
         const rng = mulberry32(seed);
         return sums.map(q => waspChoices(q, pool.filter(o => o.key !== q.key), rng));
@@ -31,7 +35,7 @@ export default function WaspChallenge({ sums, pool, seed, sound, paused, onDone 
     const [at, setAt] = useState(0);
     const [results, setResults] = useState<boolean[]>([]);
     const [picked, setPicked] = useState<string | null>(null);
-    const verdict = waspVerdict(results);
+    const verdict = waspVerdict(results, rule);
     const settled = picked === null && verdict;
     const voice = useRef(sound);
     useEffect(() => { voice.current = sound; });
@@ -45,10 +49,10 @@ export default function WaspChallenge({ sums, pool, seed, sound, paused, onDone 
         const right = results.at(-1);
         const id = window.setTimeout(() => {
             setPicked(null);
-            if (!waspVerdict(results)) setAt(a => a + 1);
+            if (!waspVerdict(results, rule)) setAt(a => a + 1);
         }, right ? WASP_MS.right : WASP_MS.wrong);
         return () => window.clearTimeout(id);
-    }, [picked, results, paused]);
+    }, [picked, results, paused, rule]);
     useEffect(() => {
         if (!settled || paused) return;
         if (settled === 'chased') voice.current('win');
@@ -68,21 +72,28 @@ export default function WaspChallenge({ sums, pool, seed, sound, paused, onDone 
     const wrong = results.filter(r => !r).length;
     const right = results.length - wrong;
     const mood = settled === 'chased' ? 'dizzy' : settled === 'claimed' || picked !== null && picked !== rightValue ? 'grin' : 'cheeky';
+    const gone = waspsGone(results, rule);
+    const many = rule.wasps > 1;
     return (
-        <div className={`hx-wasp${settled ? ` is-${settled}` : ''}`} style={{ '--near': wrong } as CSSProperties}>
+        <div className={`hx-wasp${settled ? ` is-${settled}` : ''}${many ? ' is-swarm' : ''}`} style={{ '--near': wrong, '--wasps': rule.wasps } as CSSProperties}>
             <div className="hx-wasp-zone" aria-hidden>
-                <span className="hx-wasp-fly"><span className="hx-wasp-turn"><Wasp mood={mood} /></span></span>
+                {Array.from({ length: rule.wasps }, (_, w) => (
+                    // A swarm: the wasp whose three were all right flies off dizzy, the others stay.
+                    <span key={w} className={`hx-wasp-fly${w < gone && !settled ? ' is-gone' : ''}`} style={{ '--w': w } as CSSProperties}>
+                        <span className="hx-wasp-turn"><Wasp mood={w < gone ? 'dizzy' : mood} /></span>
+                    </span>
+                ))}
                 {/* Each right drop: a bee darts at the wasp. */}
                 {right > 0 && !settled && <span key={`dart-${right}`} className="hx-dart"><Bee mood="busy" /></span>}
                 {settled === 'chased' && <Burst kind="sparkle" x="50%" y="45%" spread={110} count={10} seed={seed} />}
             </div>
-            <section className="hx-wasp-card" aria-label="Een wesp!">
+            <section className="hx-wasp-card" aria-label={many ? `${rule.wasps} wespen!` : 'Een wesp!'}>
                 {settled ? (
-                    <p className="hx-wasp-title" aria-live="polite">{settled === 'chased' ? 'Weggejaagd!' : 'De wesp pakt het nest!'}</p>
+                    <p className="hx-wasp-title" aria-live="polite">{settled === 'chased' ? 'Weggejaagd!' : many ? 'De wespen pakken het nest!' : 'De wesp pakt het nest!'}</p>
                 ) : (
                     <>
-                        <p className="hx-wasp-title" aria-live="polite">Een wesp! Jaag hem weg.</p>
-                        <p className="hx-wasp-rule">{WASP.need} van de {WASP.sums} juist</p>
+                        <p className="hx-wasp-title" aria-live="polite">{many ? `${rule.wasps} wespen! Jaag ze weg.` : 'Een wesp! Jaag hem weg.'}</p>
+                        <p className="hx-wasp-rule">{rule.need === rule.sums ? `Alle ${rule.sums} juist` : `${rule.need} van de ${rule.sums} juist`}</p>
                         <p className="hx-wasp-sum kiosk-math" key={q.key}><SpelLine text={q.text} /></p>
                         <div className="hx-drops" role="group" aria-label="Kies het antwoord">
                             {choices[at]?.map(c => {
@@ -98,7 +109,7 @@ export default function WaspChallenge({ sums, pool, seed, sound, paused, onDone 
                     </>
                 )}
                 <span className="hx-wasp-pips" role="img" aria-label={`${right} juist, ${wrong} fout`}>
-                    {Array.from({ length: WASP.sums }, (_, i) => (
+                    {Array.from({ length: rule.sums }, (_, i) => (
                         <svg key={i} className={`hx-pip${results[i] === true ? ' is-on' : results[i] === false ? ' is-miss' : ''}`} viewBox="0 0 100 116" aria-hidden><polygon points={HEX} /></svg>
                     ))}
                 </span>

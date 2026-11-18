@@ -8,6 +8,7 @@ import { skinById } from '../oefenen/spelen/skins/registry';
 import { resolveMeta } from '../oefenen/spelen/skins/options';
 import { PAIR_HIT_MS, PAIRS_SIZE } from '../oefenen/spelen/board/hartjes/hearts';
 import { NO_BOARDS, followBoards, wijGoals } from '../oefenen/spelen/board/voetbalkaartjes/score';
+import { VoetbalkaartjesEnding } from '../oefenen/spelen/board/voetbalkaartjes/Voetbalkaartjes';
 import type { SpelBoard } from '../oefenen/spelen/board/board';
 import { gameGroupOf } from '../oefenen/zelf/topicGames';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
@@ -41,7 +42,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe('Voetbalkaartjes: the registry and the score, pure', () => {
-    test('its own tile: year-round, Zoeken en koppelen, sport music, Normaal / Moeilijk, the Hartjes board round', () => {
+    test('its own tile: year-round, Zoeken en koppelen, sport music, the four levels, the Hartjes board round', () => {
         const m = META();
         expect(m).toMatchObject({ label: 'Voetbalkaartjes', input: 'board', timed: false, music: 'sport' });
         expect(m.season).toBeUndefined();
@@ -50,6 +51,9 @@ describe('Voetbalkaartjes: the registry and the score, pure', () => {
         expect(m.round.board).toEqual(skinById('hartjes')!.meta.round.board);
         expect(m.accepts).toEqual(skinById('hartjes')!.meta.accepts);
         expect(resolveMeta(m, { niveau: 'moeilijk' }).round.board!.size).toBe(PAIRS_SIZE.moeilijk);
+        // The four levels and Onmogelijk's friendly end are Hartjes koppelen's.
+        expect(m.options).toEqual(skinById('hartjes')!.meta.options);
+        expect(m).toMatchObject({ canFail: true, failTitle: expect.stringContaining('kansen') });
         expect(m.sounds).toMatchObject({ wrong: null, caught: 'whoosh', launch: 'zwoesj' });
         expect(GAME_BLURB.voetbalkaartjes).toBeTruthy();
     });
@@ -140,4 +144,14 @@ describe('Voetbalkaartjes: the game', () => {
         act(() => { vi.advanceTimersByTime(PAIR_HIT_MS + 20); });
         expect(screen.getByRole('img', { name: `Wij ${first + 1}, Zij 0` })).toBeTruthy();
     }, 15_000);
+});
+
+describe('Voetbalkaartjes: the Onmogelijk fail picture', () => {
+    test('a dizzy ball beside the goal, only after the friendly end', () => {
+        const { container, rerender } = render(<VoetbalkaartjesEnding outcome="failed" progress={{} as SkinProps['progress']} options={{}} />);
+        expect(container.querySelector('.hj-ending.is-ball .hj-dizzy')).toBeTruthy();
+        expect(container.querySelectorAll('.hj-ending-net')).toHaveLength(2);
+        rerender(<VoetbalkaartjesEnding outcome="done" progress={{} as SkinProps['progress']} options={{}} />);
+        expect(container.querySelector('.hj-ending')).toBeNull();
+    });
 });

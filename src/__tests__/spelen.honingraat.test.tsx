@@ -20,8 +20,8 @@ import SpelScreen from '../oefenen/spelen/SpelScreen';
 import { resetKiosk } from './helpers/oefenKiosk';
 
 // Honingraat: a board round (find every sum that makes the target). A wrong cell is a mistake at once,
-// three boards (comb, meadow, comb), and Nakijken replays exactly the wrong cells. Moeilijk: five boards and
-// a wasp now and then (its own little fight, never logged), which can claim the nest (the early end).
+// three boards (comb, meadow, comb), and Nakijken replays exactly the wrong cells. Normaal and up: after every meadow
+// a wasp battle (its own little fight, never logged), which can claim the nest (the early end); Makkelijk has none.
 
 let data: EenvoudigData;
 let choice: ZelfChoice;
@@ -176,12 +176,12 @@ describe('Honingraat round 4: the meadow, the scroll, the wasp', () => {
 
     test('the second board is a flower meadow: the old board scrolls away, a wrong flower wilts, a right one opens', () => {
         vi.useFakeTimers();
-        act(() => startAt('normaal'));
-        const { rerender, container } = render(<Honingraat {...props('normaal')} />);
+        act(() => startAt('makkelijk'));
+        const { rerender, container } = render(<Honingraat {...props('makkelijk')} />);
         expect(screen.getByRole('group', { name: 'Honingraat' })).toBeTruthy();
         act(() => fillBoard());
         act(() => { vi.advanceTimersByTime(SPEL_BOARD_PAUSE_MS); });
-        rerender(<Honingraat {...props('normaal')} />);
+        rerender(<Honingraat {...props('makkelijk')} />);
         // Both boards on screen while the scene scrolls, the bee flying between; the new one takes no taps yet.
         expect(container.querySelector('.hx-view.is-leaving')).toBeTruthy();
         expect(container.querySelector('.hx-traveller')).toBeTruthy();
@@ -189,26 +189,26 @@ describe('Honingraat round 4: the meadow, the scroll, the wasp', () => {
         expect(flowers).toHaveLength(13);
         expect(flowers.every(f => f.disabled)).toBe(true);
         act(() => { vi.advanceTimersByTime(SCROLL_MS); });
-        rerender(<Honingraat {...props('normaal')} />);
+        rerender(<Honingraat {...props('makkelijk')} />);
         expect(container.querySelector('.hx-view.is-leaving')).toBeNull();
         const miss = cells().findIndex(c => !c.match);
         const hit = cells().findIndex(c => c.match);
         const flower = (i: number) => within(screen.getByRole('group', { name: 'Bloemenweide' })).getAllByRole('button')[i];
         fireEvent.click(flower(miss));
-        rerender(<Honingraat {...props('normaal')} />);
+        rerender(<Honingraat {...props('makkelijk')} />);
         fireEvent.click(flower(hit));
-        rerender(<Honingraat {...props('normaal')} />);
+        rerender(<Honingraat {...props('makkelijk')} />);
         expect(flower(miss).classList.contains('is-wilted')).toBe(true);
         expect(flower(miss).getAttribute('aria-label')).toContain(` is ${cells()[miss].question.answer}`);
         expect(flower(hit).classList.contains('is-open')).toBe(true);
         expect(sp().mistakes).toHaveLength(1);
-        // Normaal: no wasp before the third board, a comb again.
-        nextBoard(rerender, 'normaal');
+        // Makkelijk: no wasp before the third board, a comb again.
+        nextBoard(rerender, 'makkelijk');
         expect(screen.getByRole('group', { name: 'Honingraat' })).toBeTruthy();
         expect(screen.queryByLabelText('Een wesp!')).toBeNull();
     });
 
-    test('Moeilijk: five boards; before the third a wasp brings five sums, four right chases it off and nothing is logged', () => {
+    test('Moeilijk: five boards; before the third a wasp brings three sums, two right chase it off and nothing is logged', () => {
         vi.useFakeTimers();
         act(() => startAt('moeilijk'));
         expect(progressOf(sp()).board).toEqual({ index: 0, total: 5 });
@@ -219,9 +219,11 @@ describe('Honingraat round 4: the meadow, the scroll, the wasp', () => {
         expect(sp().board!.index).toBe(2);
         const card = screen.getByLabelText('Een wesp!');
         expect(within(card).getByText('Een wesp! Jaag hem weg.')).toBeTruthy();
+        expect(within(card).getByText('2 van de 3 juist')).toBeTruthy();
+        expect(container.querySelectorAll('.hx-wasp-pips .hx-pip')).toHaveLength(3);
         expect(container.querySelector('.hx-view.is-under-attack')!.hasAttribute('inert')).toBe(true);
         const before = sp().history.length;
-        for (let k = 0; k < 4; k++) {
+        for (let k = 0; k < 2; k++) {
             const sum = container.querySelector('.hx-wasp-sum')!.textContent!;
             const drops = within(card).getAllByRole('button');
             expect(drops).toHaveLength(3);
@@ -256,5 +258,91 @@ describe('Honingraat round 4: the meadow, the scroll, the wasp', () => {
         expect(onFail).toHaveBeenCalledTimes(1);
         expect(sp().phase).toBe('end');
         expect(sp().outcome).toBe('failed');
+    });
+});
+
+describe('Honingraat: the wasp per level', () => {
+    const props = (niveau: string, onFail = vi.fn()): SkinProps => ({
+        question: null, choices: null, board: sp().board, onBoardPick: (cell, given, strike) => sp().boardPick(cell, given, strike),
+        phase: sp().phase === 'end' ? 'play' : sp().phase as SkinProps['phase'], feedback: null, onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(),
+        onFail, sound: vi.fn(), progress: progressOf(sp()), options: { niveau }, events: sp().events,
+    });
+    const startAt = (niveau: string) => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(HONING(), { niveau }) });
+    const fillBoard = () => cells().forEach((c, i) => { if (c.match) sp().boardPick(i, ''); });
+    const solve = (text: string) => {
+        const m = text.replace(/−/g, '-').replace(/\s/g, '').match(/^(\d+)([+-])(\d+)=/)!;
+        return m[2] === '+' ? Number(m[1]) + Number(m[3]) : Number(m[1]) - Number(m[3]);
+    };
+    const dropValue = (d: HTMLElement) => Number(d.getAttribute('aria-label')!.replace(/\s/g, ''));
+    function nextBoard(rerender: (ui: React.ReactElement) => void, niveau: string, onFail = vi.fn()) {
+        act(() => fillBoard());
+        act(() => { vi.advanceTimersByTime(SPEL_BOARD_PAUSE_MS); });
+        rerender(<Honingraat {...props(niveau, onFail)} />);
+        act(() => { vi.advanceTimersByTime(SCROLL_MS); });
+        rerender(<Honingraat {...props(niveau, onFail)} />);
+    }
+    // Answers the battle's sums: right (true) or wrong (false), one by one.
+    function answer(container: HTMLElement, card: HTMLElement, picks: boolean[]) {
+        for (const ok of picks) {
+            const sum = container.querySelector('.hx-wasp-sum')!.textContent!;
+            fireEvent.click(within(card).getAllByRole('button').find(d => (dropValue(d) === solve(sum)) === ok)!);
+            act(() => { vi.advanceTimersByTime(ok ? WASP_MS.right : WASP_MS.wrong); });
+        }
+    }
+
+    test('Normaal: after the meadow a wasp needs 1 of 3 right; two wrong and one right still chases it', () => {
+        vi.useFakeTimers();
+        act(() => startAt('normaal'));
+        const { rerender, container } = render(<Honingraat {...props('normaal')} />);
+        nextBoard(rerender, 'normaal');
+        expect(screen.queryByLabelText('Een wesp!')).toBeNull();
+        nextBoard(rerender, 'normaal');
+        const card = screen.getByLabelText('Een wesp!');
+        expect(within(card).getByText('1 van de 3 juist')).toBeTruthy();
+        answer(container, card, [false, false, true]);
+        expect(within(card).getByText('Weggejaagd!')).toBeTruthy();
+        vi.useRealTimers();
+    });
+
+    test('Normaal: three wrong and the wasp claims the nest', () => {
+        vi.useFakeTimers();
+        act(() => startAt('normaal'));
+        const onFail = vi.fn();
+        const { rerender, container } = render(<Honingraat {...props('normaal', onFail)} />);
+        nextBoard(rerender, 'normaal', onFail);
+        nextBoard(rerender, 'normaal', onFail);
+        answer(container, screen.getByLabelText('Een wesp!'), [false, false, false]);
+        act(() => { vi.advanceTimersByTime(WASP_MS.claimed); });
+        expect(onFail).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
+    });
+
+    test('Onmogelijk: the first wasp needs all 3; the second battle brings two wasps and six sums, one flies off after its three', () => {
+        vi.useFakeTimers();
+        act(() => startAt('onmogelijk'));
+        expect(progressOf(sp()).board).toEqual({ index: 0, total: 5 });
+        const onFail = vi.fn();
+        const { rerender, container } = render(<Honingraat {...props('onmogelijk', onFail)} />);
+        nextBoard(rerender, 'onmogelijk', onFail);
+        nextBoard(rerender, 'onmogelijk', onFail);
+        let card = screen.getByLabelText('Een wesp!');
+        expect(within(card).getByText('Alle 3 juist')).toBeTruthy();
+        answer(container, card, [true, true, true]);
+        expect(within(card).getByText('Weggejaagd!')).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(WASP_MS.chased); });
+        nextBoard(rerender, 'onmogelijk', onFail);
+        nextBoard(rerender, 'onmogelijk', onFail);
+        expect(sp().board!.index).toBe(4);
+        card = screen.getByLabelText('2 wespen!');
+        expect(within(card).getByText('2 wespen! Jaag ze weg.')).toBeTruthy();
+        expect(within(card).getByText('Alle 6 juist')).toBeTruthy();
+        expect(container.querySelectorAll('.hx-wasp.is-swarm .hx-wasp-fly')).toHaveLength(2);
+        answer(container, card, [true, true, true]);
+        expect(container.querySelectorAll('.hx-wasp-fly.is-gone')).toHaveLength(1);
+        answer(container, card, [true, false]);
+        expect(within(card).getByText('De wespen pakken het nest!')).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(WASP_MS.claimed); });
+        expect(onFail).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
     });
 });

@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import type { SkinProps } from '../../skins/types';
+import type { SkinEndingProps, SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
 import { answerFace, cardLines, isLoneBreuk, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
 import { SpelText, SpelVisual } from '../../SpelVisual';
 import { Burst } from '../../scene';
 import { BallArt, CountMark, GoalNet, HEART, HeartArt, KickBall } from './Art';
-import { cardLook, gridOf, pairMomentAt, PAIR_HIT_MS, PAIR_MOMENT_MS, PAIR_TAIL_MS, type CardLook, type HartjesLook, type MomentBox } from './hearts';
+import { cardLook, gridOf, guessesLeft, pairMomentAt, PAIR_HIT_MS, PAIR_MOMENT_MS, PAIR_TAIL_MS, PAIRS_WRONG_MAX, type CardLook, type HartjesLook, type MomentBox } from './hearts';
+import { levelOf, type Level } from '../../levels/levels';
 import './hartjes.css';
 
 // The pairs games: memory. Each sum and its answer lie face down on two hearts (Hartjes koppelen, Valentijn) or two
@@ -13,7 +14,8 @@ import './hartjes.css';
 // gets a short moment: the two cards fly together into one big heart that bursts into little hearts, or into a ball
 // that bounces off into a net. Any other two turn back after a moment. A sum logged as a mistake breaks its heart
 // (a flat ball) for the rest of the board; pairing it later sticks a plaster on. The session checks every pick and
-// keeps the mistakes (board/session.ts); this only turns cards. 3D flips in CSS.
+// keeps the mistakes (board/session.ts); this only turns cards. 3D flips in CSS. Onmogelijk: a board allows
+// PAIRS_WRONG_MAX wrong guesses (two cards turned that are no pair); the last one ends the round, friendly (onFail).
 
 // Long enough to read both cards, short enough to keep the game going.
 const FLIP_BACK_MS = 1200;
@@ -138,7 +140,19 @@ function PairMoment({ cell, board, ball, grid, sound }: { cell: number; board: S
     );
 }
 
-function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, ball, top }: Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound'> & { board: SpelBoard; ball: boolean; top?: ReactNode }) {
+// Onmogelijk's wrong guesses left on this board: a small pill beside the pairs found; it shakes on each one.
+function Tries({ left, ball }: { left: number; ball: boolean }) {
+    return (
+        <span key={left} className={`hj-tries${left <= 3 ? ' is-low' : ''}${left < PAIRS_WRONG_MAX ? ' is-hit' : ''}`} role="status" aria-label={`Nog ${left} ${left === 1 ? 'kans' : 'kansen'}`}>
+            <CountMark ball={ball} on />
+            <span aria-hidden>Nog <b>{left}</b> {left === 1 ? 'kans' : 'kansen'}</span>
+        </span>
+    );
+}
+
+interface BoardProps extends Pick<SkinProps, 'phase' | 'onBoardPick' | 'onBoardFocus' | 'sound' | 'onFail'> { board: SpelBoard; ball: boolean; top?: ReactNode; level: Level }
+
+function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, onFail, ball, top, level }: BoardProps) {
     const order = useMemo(() => shuffled(board.cells.length * 2, board.key), [board.key, board.cells.length]);
     // The cards turned up and not yet paired (at most two).
     const [up, setUp] = useState<number[]>([]);
@@ -146,6 +160,9 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, ball, to
     const [flourish, setFlourish] = useState<number | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
     const [puff, setPuff] = useState<number | null>(null);
+    // Two cards turned that were no pair, on this board (the component is keyed per board).
+    const [wrongs, setWrongs] = useState(0);
+    const left = guessesLeft(level, wrongs);
     const solved = (id: number) => board.cells[cellOf(id)].state === 'solved';
     // The shell hands a new sound function every render; the flip-back timer must not restart on it.
     const soundRef = useRef(sound);
@@ -173,9 +190,18 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, ball, to
     // Two cards up that are no pair turn back after a moment.
     useEffect(() => {
         if (up.length < 2) return;
-        const t = window.setTimeout(() => { setUp([]); soundRef.current('nomatch'); }, FLIP_BACK_MS);
+        const t = window.setTimeout(() => { setUp([]); setWrongs(w => w + 1); soundRef.current('nomatch'); }, FLIP_BACK_MS);
         return () => window.clearTimeout(t);
     }, [up]);
+    // The last wrong guess turned back: the friendly end (the store refuses an end under help, so it waits for that).
+    const failRef = useRef(onFail);
+    useLayoutEffect(() => { failRef.current = onFail; });
+    const failed = useRef(false);
+    useEffect(() => {
+        if (left !== 0 || failed.current || phase === 'help') return;
+        failed.current = true;
+        failRef.current();
+    }, [left, phase]);
 
     useEffect(() => {
         if (flourish === null) return;
@@ -189,7 +215,7 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, ball, to
     }, [puff]);
 
     const tap = (id: number) => {
-        if (phase !== 'play' || up.length >= 2 || up.includes(id) || solved(id)) return;
+        if (phase !== 'play' || up.length >= 2 || up.includes(id) || solved(id) || left === 0) return;
         sound('flip');
         if (isSum(id)) onBoardFocus?.(cellOf(id));
         if (!up.length) { setUp([id]); return; }
@@ -221,15 +247,16 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, ball, to
         <>
             <div className="hj-top">
                 {top}
-                <p className="hj-sign" aria-live="polite">{cleared ? (ball ? 'Alle ballen gevonden!' : 'Alle hartjes gevonden!') : pairs ? 'Zoek wat bij elkaar hoort' : 'Zoek de som en haar antwoord'}</p>
+                <p className="hj-sign" aria-live="polite">{cleared ? (ball ? 'Alle ballen gevonden!' : 'Alle hartjes gevonden!') : left === 0 ? 'Oei, geen kansen meer!' : pairs ? 'Zoek wat bij elkaar hoort' : 'Zoek de som en haar antwoord'}</p>
                 <span className="hj-count" role="img" aria-label={`${found} van ${board.cells.length} paren`}>
                     {board.cells.map((c, i) => <CountMark key={i} ball={ball} on={c.state === 'solved'} />)}
                 </span>
+                {left !== null && <Tries left={left} ball={ball} />}
             </div>
             <div ref={gridRef} className="hj-grid" style={shape} role="group" aria-label={ball ? 'Ballen' : 'Hartjes'}>
                 {order.map((id, k) => (
                     <div key={id} className="hj-slot" style={{ '--k': k } as CSSProperties}>
-                        <Card id={id} board={board} ball={ball} up={up.includes(id)} nope={nope && up.includes(id)} onTap={() => tap(id)} disabled={phase !== 'play'}
+                        <Card id={id} board={board} ball={ball} up={up.includes(id)} nope={nope && up.includes(id)} onTap={() => tap(id)} disabled={phase !== 'play' || left === 0}
                             merging={flourish === cellOf(id)} puff={puff === cellOf(id) && isSum(id) && ball} />
                     </div>
                 ))}
@@ -257,15 +284,52 @@ export interface PairsGameProps extends SkinProps {
 }
 
 /** The pairs game with its cards fixed: hearts (Hartjes koppelen) or footballs (Voetbalkaartjes). */
-export function PairsGame({ board, phase, onBoardPick, onBoardFocus, sound, look, top }: PairsGameProps) {
+export function PairsGame({ board, phase, onBoardPick, onBoardFocus, sound, onFail, options, look, top }: PairsGameProps) {
     const ball = look === 'voetballen';
+    const level = levelOf(options);
     return (
         <div className={`hj-root${ball ? ' is-ball' : ''}${board?.cells.some(c => c.question.pair?.sum.visual) ? ' has-pictures' : ''}${phase === 'help' ? ' is-paused' : ''}`}>
             {ball ? <Pitch /> : <svg className="hj-deco" viewBox="0 0 100 94" aria-hidden><path d={HEART} /></svg>}
-            {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} ball={ball} top={top} />}
+            {board && <HartjesBoard key={board.key} board={board} phase={phase} onBoardPick={onBoardPick} onBoardFocus={onBoardFocus} sound={sound} onFail={onFail} ball={ball} top={top} level={level} />}
         </div>
     );
 }
+
+// A dizzy face for the fail picture: spiral eyes, a wobbly grin (in the card's own 100 × 94 box).
+function DizzyFace() {
+    const spiral = (x: number) => `M${x} 40 a3 3 0 1 1 3 3 a6 6 0 1 1 -6 -6 a9 9 0 1 1 9 9`;
+    return (
+        <g className="hj-dizzy">
+            <path d={spiral(36)} />
+            <path d={spiral(64)} />
+            <path d="M36 62 Q43 56 50 62 T64 62" />
+        </g>
+    );
+}
+
+/** The end screen after Onmogelijk's last wrong guess: a dizzy heart (or ball) among the cards it lost track of. */
+export function PairsEnding({ outcome, look }: Pick<SkinEndingProps, 'outcome'> & { look: HartjesLook }) {
+    if (outcome !== 'failed') return null;
+    const ball = look === 'voetballen';
+    const Art = ball ? BallArt : HeartArt;
+    return (
+        <div className={`spel-ending hj-ending${ball ? ' is-ball' : ''}`} aria-hidden>
+            {ball && <span className="hj-ending-net"><GoalNet part="back" /></span>}
+            {ball && <span className="hj-ending-net"><GoalNet part="front" /></span>}
+            {/* Turned cards lying about (the pitch keeps two: the goal stands on the right). */}
+            {(ball ? [0, 1] : [0, 1, 2, 3]).map(i => <span key={i} className={`hj-ending-card${i % 2 ? ' is-up' : ''}${i > 1 ? ' is-right' : ''}`} style={{ '--e': i } as CSSProperties}><Art side="back" look="whole" /></span>)}
+            <span className="hj-ending-hero">
+                <span className="hj-ending-wobble">
+                    <Art side="front" look="whole" />
+                    <svg className="hj-ending-face" viewBox="0 0 100 94"><DizzyFace /></svg>
+                </span>
+            </span>
+            {[0, 1, 2].map(i => <span key={i} className="hj-ending-what" style={{ '--e': i } as CSSProperties}>?</span>)}
+        </div>
+    );
+}
+
+export const HartjesEnding = ({ outcome }: SkinEndingProps) => <PairsEnding outcome={outcome} look="hartjes" />;
 
 // Hartjes koppelen: hearts only (the footballs are their own game now, Voetbalkaartjes); a remembered look is ignored.
 export default function Hartjes(props: SkinProps) {
