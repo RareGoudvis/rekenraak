@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { SpelSignBox } from '../../SpelVisual';
+import { levelOf } from '../../levels/levels';
+import SumClockRing from '../../levels/SumClockRing';
+import { useSumClock } from '../../levels/useSumClock';
 import SpelKeypad from '../../SpelKeypad';
 import { Burst, Clouds, Snow } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
@@ -10,7 +13,8 @@ import './pinguintoren.css';
 
 // Pinguïntoren: the calm game. Each right answer stacks an ice block and the penguin hops onto it, happier the
 // higher he gets. A mistake cracks the two lowest blocks; the next one breaks them into the sea (climb.ts).
-// No red, no clock. Snow when it opens, drifting clouds, now and then a seal.
+// No red. Makkelijk: no clock; Normaal and up: a clock per sum, time up = the ice cracks like a mistake (onMiss).
+// Snow when it opens, drifting clouds, now and then a seal.
 
 // When a break's pieces fly and when they splash into the sea, ms after the mistake.
 const SHATTER_MS = 300;
@@ -27,7 +31,8 @@ function Floe({ under = false }: { under?: boolean }) {
     return <path className={`pt-floe${under ? ' is-under' : ''}`} d={`M46 ${GROUND + 14} L58 ${GROUND} L182 ${GROUND} L194 ${GROUND + 14} Z`} />;
 }
 
-export default function Pinguintoren({ question, phase, feedback, onAnswer, progress, events, sound }: SkinProps) {
+export default function Pinguintoren({ question, phase, feedback, onAnswer, onMiss, progress, events, sound, options }: SkinProps) {
+    const clock = useSumClock({ level: levelOf(options), questionKey: question?.key ?? null, live: phase === 'play', onTimeUp: onMiss });
     const goal = progress.goal?.target ?? 20;
     const count = progress.goal?.count ?? progress.score;
     // One seed per round: the blocks' tints and sizes, and which one holds the frozen creature.
@@ -45,11 +50,12 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
     useEffect(() => { say.current = sound; });
 
     const qKey = question?.key ?? null;
-    // The wrong flash's sound: a crack, a break (the splash follows), or a soft plop (empty floe, met hulp).
+    // The wrong flash's sound: a crack, a break (the splash follows), or a soft plop (empty floe, met hulp). A time-out
+    // sounds the same (the session's own miss cue is silent).
     const wrongCue: TowerChange | 'other' | null = phase === 'wrong' && qKey ? (tower.at === qKey ? tower.change : 'other') : null;
     useEffect(() => {
         if (!wrongCue) return;
-        say.current(wrongCue === 'crack' || wrongCue === 'break' ? 'barricade' : 'miss');
+        say.current(wrongCue === 'crack' || wrongCue === 'break' ? 'barricade' : 'nomatch');
         if (wrongCue !== 'break') return;
         const t = window.setTimeout(() => say.current('hit'), SPLASH_MS);
         return () => window.clearTimeout(t);
@@ -89,6 +95,7 @@ export default function Pinguintoren({ question, phase, feedback, onAnswer, prog
             <Clouds className="pt-sky" layer="near" count={2} band={[6, 26]} size={[120, 180]} seed={9} paused={phase === 'help'} />
             <div className="pt-sea" />
             <div className="pt-world">
+                <SumClockRing ringRef={clock.ring} limitMs={clock.limitMs} className="pt-ring" />
                 <div className="pt-stage">
                     <svg className="pt-svg" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMax meet" aria-hidden>
                         <defs>

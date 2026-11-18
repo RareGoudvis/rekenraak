@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { SpelSignBox } from '../../SpelVisual';
+import SumClockRing from '../../levels/SumClockRing';
+import { useSumClock } from '../../levels/useSumClock';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
 import { beverScale, damBreaks, damHeight, levelOf, waterLevel } from './water';
@@ -10,7 +12,8 @@ import './bever.css';
 // Bever: a beaver builds a dam across a stream, the pond on the left, his family's lodge on the dry side on
 // the right. A right answer is one more stick; the water rises slowly with the clock and a wave comes with
 // each mistake. Water over the dam = the dam breaks (the friendly early end); held till 0:00 = a party.
-// No rAF: the shell's clock drives the water, CSS loops make the scene live.
+// Normaal and up: a clock per sum (levels/useSumClock); time up = a wave, like a mistake (onMiss).
+// The shell's clock drives the water, CSS loops make the scene live.
 
 // The scene's units: viewBox 400 × 300, the stream bed at GROUND, one stick STICK high, the dam centred on DAM_X
 // (bever.css zooms the camera round that foot: SYNC .bv-cam transform-origin).
@@ -160,8 +163,9 @@ const CLOUDS = [
     { y: 28, w: 13, d: 95, at: -45 },
 ];
 
-export default function Bever({ question, phase, feedback, onAnswer, onFail, progress, options }: SkinProps) {
+export default function Bever({ question, phase, feedback, onAnswer, onMiss, onFail, progress, options }: SkinProps) {
     const level = levelOf(options);
+    const clock = useSumClock({ level, questionKey: question?.key ?? null, live: phase === 'play', onTimeUp: onMiss });
     const elapsed = progress.msTotal !== null && progress.msLeft !== null ? progress.msTotal - progress.msLeft : 0;
     const water = waterLevel(level, elapsed, progress.mistakes);
     const dam = damHeight(progress.right);
@@ -209,6 +213,7 @@ export default function Bever({ question, phase, feedback, onAnswer, onFail, pro
         <div className={cls} style={{ '--bv-day': dayOf(progress.msLeft, progress.msTotal) } as CSSProperties}>
             <div className="bv-world">
                 <span className="bv-sun" aria-hidden />
+                <SumClockRing ringRef={clock.ring} limitMs={clock.limitMs} className="bv-ring" />
                 <div className="bv-clouds" aria-hidden>
                     {CLOUDS.map((c, i) => (
                         <div key={i} className="bv-cloud-lane" style={{ '--y': `${c.y}%`, '--w': `${c.w}%`, '--d': `${c.d}s`, '--at': `${c.at}s`, '--x0': `${(i * 37 + 12) % 90}%` } as CSSProperties}>

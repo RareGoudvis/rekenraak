@@ -1,27 +1,32 @@
+import { levelOf as levelOfOptions, type Level } from '../../levels/levels';
 import type { SkinChoices } from '../types';
 
 // The Bever's water model, in sticks (one right answer = one stick on the dam). Pure, so the tuning is testable:
 // the dam holds while the water stays below its top; the water rises with play time (help pauses the clock)
 // and one wave per counted mistake.
 
-export type BeverLevel = 'normaal' | 'moeilijk';
+export type BeverLevel = Level;
 
-// THE tuning table. Checked with a simulated L2 pupil (one answer every 6–8 s, 80 % right, 3 minutes,
-// bever.test): Normaal holds about 96 % of rounds, Moeilijk about half (tight).
+// THE tuning table. Makkelijk = the old Normaal (a simulated L2 pupil, one answer every 6–8 s, 80 % right, holds
+// about 96 % of 3-minute rounds). Normaal and up: the water rises faster and each sum has the clock per sum
+// (levels/clock.ts; a time-out is a mistake, so a wave); Moeilijk and Onmogelijk differ only in that clock's
+// tempo. The hold rates per level and pupil are in spelen.round2.test.
 export const BEVER = {
     // The dam at the start, and the water already against it.
     dam0: 7,
     water0: 1,
     levels: {
-        // rise = sticks per second of play, wave = sticks per mistake.
-        normaal: { rise: 0.06, wave: 1 },
-        moeilijk: { rise: 0.075, wave: 2 },
+        // rise = sticks per second of play, wave = sticks per mistake (a time-out included).
+        makkelijk: { rise: 0.06, wave: 1 },
+        normaal: { rise: 0.07, wave: 1 },
+        moeilijk: { rise: 0.07, wave: 1 },
+        onmogelijk: { rise: 0.07, wave: 1 },
     },
     // Sticks in view before the camera zooms out (the rest of the scene is sky).
     view: 15,
 } as const;
 
-export const levelOf = (options: SkinChoices): BeverLevel => (options.niveau === 'moeilijk' ? 'moeilijk' : 'normaal');
+export const levelOf = (options: SkinChoices): BeverLevel => levelOfOptions(options);
 
 export const damHeight = (right: number) => BEVER.dam0 + right;
 

@@ -17,6 +17,8 @@ import Bom, { BomEnding } from '../oefenen/spelen/skins/bom/Bom';
 import { clockText, fuseLeft, fusePoint, isHurry } from '../oefenen/spelen/skins/bom/fuse';
 import Bever, { BeverEnding } from '../oefenen/spelen/skins/bever/Bever';
 import { BEVER, damBreaks, damHeight, waterLevel, type BeverLevel } from '../oefenen/spelen/skins/bever/water';
+import { clockMs } from '../oefenen/spelen/levels/clock';
+import { LEVELS } from '../oefenen/spelen/levels/levels';
 import Zombies, { ZombiesEnding } from '../oefenen/spelen/skins/zombies/Zombies';
 import { DEFENCE, defenceAfter, hitOf } from '../oefenen/spelen/skins/zombies/defence';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -59,13 +61,13 @@ afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAll
 
 describe('Pre-start options', () => {
     test('only Bom, Bever, Zombies, Voetbal, the duels (Kasteel, Touwtrekken, Kikkers), Schatkist, Race, Hartjes, Zeehondjes and Honingraat have options; picks patch the round, unknown picks fall back to the default', () => {
-        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'touwtrekken', 'schatkist', 'race', 'hartjes', 'zeehond', 'honingraat', 'meteorietenregen', 'robotduel', 'taartgevecht', 'kikkers', 'tovenaarsduel', 'voetbalkaartjes', 'frituur', 'spookhuis'].includes(s.meta.id))).toEqual([]);
+        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'touwtrekken', 'schatkist', 'race', 'hartjes', 'zeehond', 'honingraat', 'meteorietenregen', 'robotduel', 'taartgevecht', 'kikkers', 'tovenaarsduel', 'voetbalkaartjes', 'frituur', 'spookhuis', 'mollen', 'pinguintoren'].includes(s.meta.id))).toEqual([]);
         const bom = meta('bom');
         expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: 3000 });
         const big = resolveMeta(bom, { tijd: '5', doel: '50' });
         expect(big.round).toEqual({ seconds: 300, goal: 50, goalKeep: true, wrongPenaltyMs: 3000 });
-        expect(big.chosen).toEqual({ tijd: '5', doel: '50' });
-        expect(choicesOf(bom, { tijd: '7', doel: 'x' })).toEqual({ tijd: '3', doel: '10' });
+        expect(big.chosen).toEqual({ tijd: '5', doel: '50', niveau: 'normaal' });
+        expect(choicesOf(bom, { tijd: '7', doel: 'x' })).toEqual({ tijd: '3', doel: '10', niveau: 'normaal' });
         // A skin without options is passed through untouched.
         expect(resolveMeta(meta('ballonnen'))).toBe(meta('ballonnen'));
     });
@@ -96,13 +98,13 @@ describe('Pre-start options', () => {
 
     test('broken or blocked storage: the defaults, never a throw', () => {
         localStorage.setItem(OPTIONS_KEY, '{nope');
-        expect(loadChoices(meta('bom'))).toEqual({ tijd: '3', doel: '10' });
+        expect(loadChoices(meta('bom'))).toEqual({ tijd: '3', doel: '10', niveau: 'normaal' });
         localStorage.setItem(OPTIONS_KEY, JSON.stringify({ bom: 'x' }));
-        expect(loadChoices(meta('bom'))).toEqual({ tijd: '3', doel: '10' });
+        expect(loadChoices(meta('bom'))).toEqual({ tijd: '3', doel: '10', niveau: 'normaal' });
         localStorage.setItem(OPTIONS_KEY, JSON.stringify({ bom: { tijd: '5', doel: '7' } }));
-        expect(loadChoices(meta('bom'))).toEqual({ tijd: '5', doel: '10' });
+        expect(loadChoices(meta('bom'))).toEqual({ tijd: '5', doel: '10', niveau: 'normaal' });
         vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
-        expect(loadChoices(meta('bom'))).toEqual({ tijd: '3', doel: '10' });
+        expect(loadChoices(meta('bom'))).toEqual({ tijd: '3', doel: '10', niveau: 'normaal' });
     });
 });
 
@@ -130,8 +132,8 @@ describe('The friendly early end', () => {
             sp().fail();
             expect(sp().phase).toBe('play');
         }
-        // Owner-approved early ends; the Speelgoedfabriek's machine sputters (2026-11-15); Race only in Benzine (an empty tank); Honingraat's wasp in Moeilijk; Brandweer too hot (2026-11-17).
-        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'pakjesband', 'race', 'honingraat', 'brandweer'].includes(s.meta.id))).toEqual([]);
+        // Owner-approved early ends; the Speelgoedfabriek's machine sputters (2026-11-15); Race only in Benzine (an empty tank); Honingraat's wasp in Moeilijk; Brandweer too hot (2026-11-17); Bom on Onmogelijk, the third mistake (2026-11-17).
+        expect(SKINS.filter(s => s.meta.canFail && !['bever', 'zombies', 'pakjesband', 'race', 'honingraat', 'brandweer', 'bom'].includes(s.meta.id))).toEqual([]);
         sp().start(startWith(CAN_FAIL));
         sp().openHelp();
         sp().fail();
@@ -251,7 +253,7 @@ describe('Bom', () => {
 });
 
 describe('Bever', () => {
-    test('Normaal or Moeilijk before the start, remembered apart from the other skins', () => {
+    test('the level before the start, remembered apart from the other skins', () => {
         expect(resolveMeta(meta('bever'), { niveau: 'moeilijk' })).toMatchObject({ round: { seconds: 180 }, chosen: { niveau: 'moeilijk' } });
         expect(meta('bever').canFail).toBe(true);
         localStorage.setItem(OPTIONS_KEY, JSON.stringify({ bom: { tijd: '5', doel: '20' }, bever: { niveau: 'heel moeilijk' } }));
@@ -261,7 +263,7 @@ describe('Bever', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Moeilijk' }));
         fireEvent.click(screen.getByRole('button', { name: 'Start spel' }));
         expect(loadChoices(meta('bever'))).toEqual({ niveau: 'moeilijk' });
-        expect(loadChoices(meta('bom'))).toEqual({ tijd: '5', doel: '20' });
+        expect(loadChoices(meta('bom'))).toEqual({ tijd: '5', doel: '20', niveau: 'normaal' });
     });
 
     test('held till the clock: De dam houdt!', () => {
@@ -272,18 +274,23 @@ describe('Bever', () => {
         expect(screen.getByRole('heading', { name: 'De dam houdt!' })).toBeTruthy();
     });
 
-    // A simulated L2 pupil: one answer every minS–maxS seconds, pRight right; seeded, so the numbers are stable.
+    // A simulated L2 pupil: one answer every minS–maxS seconds, pRight right; seeded, so the numbers are stable. From
+    // Normaal up a sum that takes longer than its clock (levels/clock.ts) times out at the clock: a mistake, a wave.
     function mulberry32(seed: number) {
         return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
     }
     function holds(level: BeverLevel, rnd: () => number, minS = 6, maxS = 8, pRight = 0.8): boolean {
         let t = 0; let right = 0; let mistakes = 0;
         for (;;) {
-            t += minS + (maxS - minS) * rnd();
+            let dt = minS + (maxS - minS) * rnd();
+            const limit = clockMs(level, t * 1000);
+            const timeout = limit !== null && dt * 1000 >= limit;
+            if (timeout) dt = limit / 1000;
+            t += dt;
             // The water is highest just before an answer lands.
             if (damBreaks(waterLevel(level, Math.min(t, 180) * 1000, mistakes), damHeight(right))) return false;
             if (t > 180) return true;
-            if (rnd() < pRight) right++;
+            if (!timeout && rnd() < pRight) right++;
             else if (damBreaks(waterLevel(level, t * 1000, ++mistakes), damHeight(right))) return false;
         }
     }
@@ -294,15 +301,19 @@ describe('Bever', () => {
         return held / 1000;
     };
 
-    test('the tuning: an average L2 pupil holds the dam on Normaal; Moeilijk is tight', () => {
-        expect(holdRate('normaal')).toBeGreaterThanOrEqual(0.92);
-        const hard = holdRate('moeilijk');
-        expect(hard).toBeGreaterThan(0.3);
-        expect(hard).toBeLessThan(0.75);
-        // A quick, sure pupil holds even Moeilijk; Moeilijk: a mistake raises the water much more and it rises faster.
-        expect(holdRate('moeilijk', 4, 6, 0.9)).toBeGreaterThan(0.85);
-        expect(BEVER.levels.moeilijk.wave).toBeGreaterThanOrEqual(2 * BEVER.levels.normaal.wave);
-        expect(BEVER.levels.moeilijk.rise).toBeGreaterThan(BEVER.levels.normaal.rise);
+    test('the tuning: Makkelijk (the old Normaal) holds for an average L2 pupil; each level up holds less for a slower one', () => {
+        // An average L2 pupil (6–8 s, 80 %): about 97 % on Makkelijk, still about 94 % with the clock and the faster water.
+        expect(holdRate('makkelijk')).toBeGreaterThanOrEqual(0.92);
+        expect(holdRate('normaal')).toBeGreaterThanOrEqual(0.85);
+        // A slower pupil (7–11 s) feels the clock: about 92 / 73 / 61 / 29 %.
+        const slow = LEVELS.map(l => holdRate(l, 7, 11, 0.8));
+        for (let k = 1; k < slow.length; k++) expect(slow[k]).toBeLessThan(slow[k - 1]);
+        expect(slow[0]).toBeGreaterThan(0.85);
+        expect(slow[3]).toBeLessThan(0.45);
+        // A quick, sure pupil holds even Onmogelijk.
+        expect(holdRate('onmogelijk', 4, 6, 0.9)).toBeGreaterThan(0.95);
+        expect(BEVER.levels.normaal.rise).toBeGreaterThan(BEVER.levels.makkelijk.rise);
+        expect(BEVER.levels.onmogelijk).toEqual(BEVER.levels.normaal);
         expect(waterLevel('normaal', 0, 0)).toBeLessThan(damHeight(0));
     });
 
@@ -326,14 +337,14 @@ describe('Bever', () => {
     });
 
     test('the level comes from the options; the endings: a party, or the beaver on its log', () => {
-        expect(waterLevel('moeilijk', 60_000, 2)).toBeGreaterThan(waterLevel('normaal', 60_000, 2));
+        expect(waterLevel('normaal', 60_000, 2)).toBeGreaterThan(waterLevel('makkelijk', 60_000, 2));
         const onFail = vi.fn();
-        // Same time and mistakes: on Moeilijk the water is over, on Normaal it is not.
-        const p = progressWith({ msLeft: 120_000, msTotal: 180_000, right: 2, mistakes: 3 });
-        render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'normaal' } })} />);
+        // Same time and mistakes: on Normaal the faster water is over the dam, on Makkelijk it is not.
+        const p = progressWith({ msLeft: 30_000, msTotal: 180_000, right: 7, mistakes: 3 });
+        render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'makkelijk' } })} />);
         expect(onFail).not.toHaveBeenCalled();
         cleanup();
-        render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'moeilijk' } })} />);
+        render(<Bever {...propsWith({ onFail, progress: p, options: { niveau: 'normaal' } })} />);
         expect(onFail).toHaveBeenCalledTimes(1);
         cleanup();
         const { container, rerender } = render(<BeverEnding outcome="won" progress={p} options={{}} />);
@@ -345,7 +356,7 @@ describe('Bever', () => {
 
 describe('Zombies: survivors behind barricades', () => {
     test('Normaal: three barricades first, then five survivors; Moeilijk: three survivors, no barricades', () => {
-        expect(DEFENCE).toEqual({ makkelijk: { survivors: 5, barricades: 3 }, normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 } });
+        expect(DEFENCE).toEqual({ makkelijk: { survivors: 5, barricades: 3 }, normaal: { survivors: 5, barricades: 3 }, moeilijk: { survivors: 3, barricades: 0 }, onmogelijk: { survivors: 1, barricades: 0 } });
         expect([1, 2, 3, 4, 5, 6, 7, 8].map(h => hitOf('normaal', h))).toEqual(['barricade', 'barricade', 'barricade', 'caught', 'caught', 'caught', 'caught', 'last']);
         expect([1, 2, 3].map(h => hitOf('moeilijk', h))).toEqual(['caught', 'caught', 'last']);
         expect(defenceAfter('normaal', 4)).toEqual({ barricades: 0, survivors: 4, caught: 1 });

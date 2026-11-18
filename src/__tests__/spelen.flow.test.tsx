@@ -107,6 +107,9 @@ describe('Spelen flow', () => {
     test('Pinguïntoren: typed answers build the tower; a mistake takes a block off; 20 blocks end on De toren is af!', async () => {
         await toGames('1', 'Hoofdrekenen', 'Optellen', /Zonder brug/);
         click('Pinguïntoren');
+        // The pre-start screen: Makkelijk, so no clock per sum runs while the test types.
+        click('Makkelijk');
+        click('Start spel');
         await screen.findByRole('group', { name: 'Cijfers' });
         // The lazy skin's effects (the keypad's key listener) run before the first key.
         await act(async () => { });

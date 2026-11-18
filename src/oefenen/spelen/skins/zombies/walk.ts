@@ -1,3 +1,4 @@
+import { clockSteps } from '../../levels/clock';
 import type { ZombieLevel } from './defence';
 
 // How the zombies walk, in % of the street (0 = the door, 100 = the right edge). Pure, so the speeds are testable.
@@ -36,26 +37,35 @@ export function zombieSpeed(streak: number): number {
     return ZOMBIE.speed * (1 + ZOMBIE.perStreak * Math.min(Math.max(streak, 0), ZOMBIE.maxStreak));
 }
 
-// Over the game the zombies slowly speed up (owner 2026-11-15): 100 % at the start, 150 % at 2:00, 200 % at 4:00, then capped.
-export const RAMP = { perMs: 0.5 / 120_000, max: 2 } as const;
+// Over the game the zombies speed up in the clock rule's tempo (levels/clock.ts, owner 2026-11-17): a step faster
+// at each of the clock's −1 s steps (the first minute held). +25 % a step keeps Normaal on the old ramp (150 % at
+// 2:00, 200 % at 4:00 = its floor); Moeilijk steps every 45 s up to 250 %, Onmogelijk every 30 s up to 300 %.
+export const RAMP = { perStep: 0.25 } as const;
 
-/** The speed factor after elapsedMs of play: linear, capped at RAMP.max; Makkelijk stays at a steady 100 %. */
-export const speedAt = (elapsedMs: number, level: ZombieLevel = 'normaal') =>
-    level === 'makkelijk' ? 1 : Math.min(RAMP.max, 1 + Math.max(0, elapsedMs) * RAMP.perMs);
+/** The speed factor after elapsedMs of play; Makkelijk stays at a steady 100 % (the clock never steps there). */
+export const speedAt = (elapsedMs: number, level: ZombieLevel = 'normaal') => 1 + RAMP.perStep * clockSteps(level, elapsedMs);
+
+// How the line keeps together: Onmogelijk's zombies come closer behind each other (a smaller gap, followers barely slower).
+export const CROWD: Record<ZombieLevel, { gap: number; follow: number }> = {
+    makkelijk: { gap: ZOMBIE.gap, follow: ZOMBIE.follow },
+    normaal: { gap: ZOMBIE.gap, follow: ZOMBIE.follow },
+    moeilijk: { gap: ZOMBIE.gap, follow: ZOMBIE.follow },
+    onmogelijk: { gap: 16, follow: 0.88 },
+};
 
 /** The pace a zombie heads for: the front one at the streak speed, the ones behind a bit slower, each at its own pace. */
-export const targetSpeed = (i: number, pace: number, speed: number) => speed * pace * (i === 0 ? 1 : ZOMBIE.follow);
+export const targetSpeed = (i: number, pace: number, speed: number, follow: number = ZOMBIE.follow) => speed * pace * (i === 0 ? 1 : follow);
 
 /**
  * One frame for the line, front first. Every zombie keeps walking at its own (eased) pace; one behind only slows
  * to keep minGap. Past offAt (not on screen yet) it runs in unseen. The front one stops at the door.
  */
-export function walk(line: readonly Walker[], dt: number, speed: number, offAt = 100 + ZOMBIE.gap): { line: Walker[]; atDoor: boolean } {
+export function walk(line: readonly Walker[], dt: number, speed: number, offAt = 100 + ZOMBIE.gap, follow: number = ZOMBIE.follow): { line: Walker[]; atDoor: boolean } {
     const out: Walker[] = [];
     let atDoor = false;
     const k = Math.min(1, dt / ZOMBIE.ease);
     line.forEach((z, i) => {
-        const want = targetSpeed(i, z.pace, speed);
+        const want = targetSpeed(i, z.pace, speed, follow);
         if (z.x > offAt) {
             // Unseen: run in, and arrive at the walking pace (no visible slowdown at the edge).
             const x = Math.max(offAt, z.x - ZOMBIE.enter * dt);
@@ -77,7 +87,7 @@ export function walk(line: readonly Walker[], dt: number, speed: number, offAt =
 export const stepCloser = (x: number) => Math.min(x, Math.max(ZOMBIE.stepMin, x - ZOMBIE.step));
 
 /** Where a newcomer joins: a gap behind the last one and not before offAt (off screen), or at the start when the street is empty. */
-export const joinAt = (last: number | null, offAt = 100 + ZOMBIE.gap) => (last === null ? ZOMBIE.start : Math.max(last + ZOMBIE.gap, offAt));
+export const joinAt = (last: number | null, offAt = 100 + ZOMBIE.gap, gap: number = ZOMBIE.gap) => (last === null ? ZOMBIE.start : Math.max(last + gap, offAt));
 
 /** Where the street stops being visible, in %: a lane at 100 still shows the whole zombie, so add its width. */
 export const offStreetAt = (trackPx: number, zombiePx: number) => (trackPx > 0 ? 100 + (zombiePx / trackPx) * 100 : 100 + ZOMBIE.gap);

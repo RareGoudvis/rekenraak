@@ -4,10 +4,11 @@ import { render, cleanup, act } from '@testing-library/react';
 import type { SkinProgress, SkinProps } from '../oefenen/spelen/skins/types';
 import { createSpelEvents } from '../oefenen/spelen/events';
 import Zombies from '../oefenen/spelen/skins/zombies/Zombies';
-import { DEFENCE, fearOf, shooterOf, zombieLevelOf } from '../oefenen/spelen/skins/zombies/defence';
+import { DEFENCE, fearOf, hitOf, shooterOf, zombieLevelOf, type ZombieLevel } from '../oefenen/spelen/skins/zombies/defence';
+import { LEVELS } from '../oefenen/spelen/levels/levels';
 import { SKINS } from '../oefenen/spelen/skins/registry';
 import {
-    RAMP, SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker,
+    CROWD, RAMP, SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker,
 } from '../oefenen/spelen/skins/zombies/walk';
 
 // Zombies (round 4): every zombie walks on at its own pace (owner: "if they go too far, the others wait?"),
@@ -234,13 +235,15 @@ describe('Zombies skin: the walk on screen', () => {
 });
 
 describe('Zombies follow-up (owner 2026-11-15): no stun on a wrong answer, a speed ramp, fear and the blowdart', () => {
-    test('speedAt: 100 % at the start, 150 % at 2:00, 200 % at 4:00, linear between, capped', () => {
+    test('speedAt follows the clock rule: the first minute held, then +25 % at each of the clock steps (-1 s)', () => {
         expect(speedAt(0)).toBe(1);
-        expect(speedAt(60_000)).toBeCloseTo(1.25);
+        expect(speedAt(59_999)).toBe(1);
+        expect(speedAt(60_000)).toBeCloseTo(1 + RAMP.perStep);
         expect(speedAt(120_000)).toBeCloseTo(1.5);
         expect(speedAt(180_000)).toBeCloseTo(1.75);
         expect(speedAt(240_000)).toBeCloseTo(2);
-        expect(speedAt(600_000)).toBe(RAMP.max);
+        // Normaal's clock floor (8 s): no faster after that.
+        expect(speedAt(600_000)).toBeCloseTo(2);
         expect(speedAt(-5)).toBe(1);
     });
 
@@ -346,32 +349,91 @@ describe('Zombies follow-up (owner 2026-11-15): no stun on a wrong answer, a spe
     });
 });
 
-describe('Zombies Makkelijk (owner 2026-11-15): Normaal\'s defence at a steady speed', () => {
-    test('the option: Makkelijk, Normaal, Moeilijk; Normaal stays the default', () => {
+describe('Zombies levels (owner 2026-11-17): Makkelijk steady, the ramp in the clock tempo, Onmogelijk alone', () => {
+    test('the option: the four levels with their clock icons; Normaal stays the default; old picks carry over', () => {
         const niveau = SKINS.find(s => s.meta.id === 'zombies')!.meta.options!.find(o => o.id === 'niveau')!;
-        expect(niveau.choices.map(c => c.value)).toEqual(['makkelijk', 'normaal', 'moeilijk']);
-        expect(niveau.choices.map(c => c.label)).toEqual(['Makkelijk', 'Normaal', 'Moeilijk']);
+        expect(niveau.choices.map(c => c.value)).toEqual(['makkelijk', 'normaal', 'moeilijk', 'onmogelijk']);
+        expect(niveau.choices.map(c => c.label)).toEqual(['Makkelijk', 'Normaal', 'Moeilijk', 'Onmogelijk']);
+        expect(niveau.choices.map(c => c.icon?.clock)).toEqual(['off', 'on', 'on', 'on']);
         expect(niveau.default).toBe('normaal');
         expect(zombieLevelOf({ niveau: 'makkelijk' })).toBe('makkelijk');
+        expect(zombieLevelOf({ niveau: 'onmogelijk' })).toBe('onmogelijk');
+        expect(zombieLevelOf({ niveau: 'heel moeilijk' })).toBe('normaal');
         expect(zombieLevelOf({})).toBe('normaal');
         expect(DEFENCE.makkelijk).toEqual(DEFENCE.normaal);
+        expect(DEFENCE.onmogelijk).toEqual({ survivors: 1, barricades: 0 });
+        expect(hitOf('onmogelijk', 1)).toBe('last');
     });
 
-    test('speedAt per mode: Makkelijk steady at 100 %, Normaal and Moeilijk ramp to 200 % at 4:00', () => {
+    test('speedAt per level: Makkelijk steady at 100 %; the others step with their clock (60 / 45 / 30 s) up to its floor', () => {
         for (const t of [0, 60_000, 120_000, 240_000, 600_000]) expect(speedAt(t, 'makkelijk')).toBe(1);
-        for (const level of ['normaal', 'moeilijk'] as const) {
+        for (const level of ['normaal', 'moeilijk', 'onmogelijk'] as const) {
             expect(speedAt(0, level)).toBe(1);
-            expect(speedAt(120_000, level)).toBeCloseTo(1.5);
-            expect(speedAt(240_000, level)).toBeCloseTo(2);
-            expect(speedAt(600_000, level)).toBe(RAMP.max);
+            expect(speedAt(59_000, level)).toBe(1);
+            expect(speedAt(60_000, level)).toBeCloseTo(1.25);
         }
+        expect(speedAt(104_000, 'moeilijk')).toBeCloseTo(1.25);
+        expect(speedAt(105_000, 'moeilijk')).toBeCloseTo(1.5);
+        expect(speedAt(90_000, 'onmogelijk')).toBeCloseTo(1.5);
+        expect(speedAt(180_000, 'onmogelijk')).toBeCloseTo(2.25);
+        // The floors: 8 / 6 / 4 s per sum = 200 / 250 / 300 %.
+        expect([speedAt(600_000, 'normaal'), speedAt(600_000, 'moeilijk'), speedAt(600_000, 'onmogelijk')]).toEqual([2, 2.5, 3]);
     });
 
-    test('on screen: Makkelijk has the five survivors and three barricades of Normaal', () => {
+    test('Onmogelijk: the zombies come closer together', () => {
+        expect(CROWD.onmogelijk.gap).toBeLessThan(CROWD.normaal.gap);
+        expect(CROWD.onmogelijk.follow).toBeGreaterThan(CROWD.normaal.follow);
+        expect(joinAt(90, 100, CROWD.onmogelijk.gap)).toBe(106);
+        expect(CROWD.makkelijk).toEqual({ gap: ZOMBIE.gap, follow: ZOMBIE.follow });
+    });
+
+    // A pupil answering every `every` s for 3 minutes on a level: when the zombies reach the door.
+    const doorsAt = (level: ZombieLevel, every: number) => {
+        const DT2 = 1 / 30;
+        const off = offStreetAt(600, 160);
+        const { gap, follow } = CROWD[level];
+        let line = [0, 1, 2].map(i => ({ x: ZOMBIE.start + i * gap, pace: paceOf(i), v: targetSpeed(i, paceOf(i), ZOMBIE.speed, follow) }));
+        let id = 3;
+        let clock = 0;
+        const misses: number[] = [];
+        for (let t = 0; t < 180; t += DT2) {
+            const s = walk(line, DT2, ZOMBIE.speed * speedAt(t * 1000, level), off, follow);
+            line = s.line;
+            clock += DT2;
+            if (s.atDoor || clock >= every) {
+                if (s.atDoor) misses.push(t);
+                clock = 0;
+                const rest = line.slice(1);
+                rest.push({ x: joinAt(Math.max(...rest.map(z => z.x)), off, gap), pace: paceOf(id), v: targetSpeed(2, paceOf(id), ZOMBIE.speed, follow) });
+                id++;
+                line = rest;
+            }
+        }
+        return misses;
+    };
+
+    test('the levels in order: for every pupil each level lets at least as many through as the one before', () => {
+        for (const every of [6, 8, 10, 12, 14]) {
+            const n = LEVELS.map(l => doorsAt(l, every).length);
+            for (let k = 1; k < n.length; k++) expect(n[k]).toBeGreaterThanOrEqual(n[k - 1]);
+        }
+        // A 6 s pupil is safe on Normaal; an 8 s one keeps survivors on Normaal (5 behind 3 barricades) ...
+        expect(doorsAt('normaal', 6)).toEqual([]);
+        expect(doorsAt('normaal', 8).length).toBeLessThan(DEFENCE.normaal.survivors + DEFENCE.normaal.barricades);
+        // ... and Onmogelijk catches its one survivor from a 10 s pupil.
+        expect(doorsAt('onmogelijk', 10).length).toBeGreaterThan(0);
+    });
+
+    test('on screen: Makkelijk has the five survivors and three barricades of Normaal; Onmogelijk one survivor alone', () => {
         const { container } = render(<Zombies {...propsWith({ options: { niveau: 'makkelijk' } })} />);
         expect(container.querySelector('[data-niveau=makkelijk].zb-root.is-normaal')).not.toBeNull();
         expect(container.querySelectorAll('[data-survivor=safe]')).toHaveLength(5);
         expect(container.querySelectorAll('[data-barricade=up]')).toHaveLength(3);
+        cleanup();
+        const o = render(<Zombies {...propsWith({ options: { niveau: 'onmogelijk' } })} />);
+        expect(o.container.querySelector('[data-niveau=onmogelijk].zb-root.is-onmogelijk')).not.toBeNull();
+        expect(o.container.querySelectorAll('[data-survivor=safe]')).toHaveLength(1);
+        expect(o.container.querySelectorAll('[data-barricade]')).toHaveLength(0);
         cleanup();
     });
 

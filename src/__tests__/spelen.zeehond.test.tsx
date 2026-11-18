@@ -14,7 +14,8 @@ import { klokQuestion } from '../oefenen/spelen/content/klok/klokPack';
 import { formatDigitalTime, formatTimeText } from '../services/clock/clockTypes';
 import Zeehond from '../oefenen/spelen/skins/zeehond/Zeehond';
 import { fishLeft, flightOf, ZEEHOND_ROUND } from '../oefenen/spelen/skins/zeehond/feed';
-import { DRIFT_MAX_SPEED, driftOffsets, fedAfter, girthOf, GROW_STEPS, levelOf, pickPod, SEAL_LOOKS, sealShape, type SpotBox } from '../oefenen/spelen/skins/zeehond/pod';
+import { DRIFT_MAX_SPEED, driftOffsets, driftsAt, fedAfter, girthOf, GROW_STEPS, levelOf, pickPod, SEAL_LOOKS, sealShape, type SpotBox } from '../oefenen/spelen/skins/zeehond/pod';
+import { LEVELS } from '../oefenen/spelen/levels/levels';
 import { choicesOf } from '../oefenen/spelen/skins/options';
 import { resetKiosk } from './helpers/oefenKiosk';
 
@@ -168,12 +169,13 @@ describe('Zeehondjes voeren', () => {
         expect(onAnswer).toHaveBeenCalledWith(q.answer);
     });
 
-    test('mode: Normaal by default, Moeilijk as the pre-start choice', () => {
+    test('mode: the four levels, Normaal by default; Makkelijk only bobs, Normaal and up drift', () => {
         const meta = skinById('zeehond')!.meta;
-        expect(meta.options?.map(o => [o.id, o.default, o.choices.map(c => c.value)])).toEqual([['niveau', 'normaal', ['normaal', 'moeilijk']]]);
+        expect(meta.options?.map(o => [o.id, o.default, o.choices.map(c => c.value)])).toEqual([['niveau', 'normaal', ['makkelijk', 'normaal', 'moeilijk', 'onmogelijk']]]);
         expect(levelOf(choicesOf(meta))).toBe('normaal');
         expect(levelOf(choicesOf(meta, { niveau: 'moeilijk' }))).toBe('moeilijk');
         expect(levelOf({ niveau: 'wild' })).toBe('normaal');
+        expect(LEVELS.map(driftsAt)).toEqual([false, true, true, true]);
     });
 
     test('a game takes four different seals, varied in fur and dress, and another game often others', () => {
@@ -292,7 +294,7 @@ describe('Zeehondjes voeren', () => {
         expect(Math.max(...girths())).toBeLessThanOrEqual(GROW_STEPS);
     });
 
-    test('with motion the seal grows when its fish lands; Moeilijk marks the drifting sea', () => {
+    test('with motion the seal grows when its fish lands; Moeilijk marks the drifting sea, Makkelijk does not', () => {
         vi.useFakeTimers();
         try {
             start();
@@ -308,7 +310,7 @@ describe('Zeehondjes voeren', () => {
         } finally { vi.useRealTimers(); }
         cleanup();
         start();
-        const { container } = render(<Wired />);
+        const { container } = render(<Wired niveau="makkelijk" />);
         expect(container.querySelector('.zh-root.is-drifting')).toBeNull();
     });
 });

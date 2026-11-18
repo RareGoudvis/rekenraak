@@ -127,7 +127,9 @@ describe('Spelen sound', () => {
         expect(soundFor(cues('pinguintoren'), 'wrong', wrong)).toBeNull();
         expect(cueSound(cues('pinguintoren'), 'barricade')).toBe('krak');
         expect(cueSound(cues('pinguintoren'), 'hit')).toBe('splash');
-        expect(cueSound(cues('pinguintoren'), 'miss')).toBe('plop');
+        expect(cueSound(cues('pinguintoren'), 'nomatch')).toBe('plop');
+        // A time-out (the clock per sum) is voiced by the skin too: the session's miss cue stays silent.
+        expect(soundFor(cues('pinguintoren'), 'wrong', miss)).toBeNull();
         expect(soundFor(cues('zombies'), 'correct', right)).toBe('poef');
         expect(soundFor(cues('zombies'), 'wrong', wrong)).toBe('plop');
         // A zombie through: the skin voices the barricade or the catch itself (cueSound), the session stays quiet.

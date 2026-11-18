@@ -1,11 +1,16 @@
 import { mulberry32 } from '../../distractors';
+import { levelOf as levelOfOptions, type Level } from '../../levels/levels';
 import type { SkinChoices } from '../types';
 
-// Zeehondjes voeren, pure: the seals of a game (looks, how round each one has eaten itself) and, in Moeilijk,
+// Zeehondjes voeren, pure: the seals of a game (looks, how round each one has eaten itself) and, from Normaal up,
 // where each seal has drifted on its floe at a moment (never overlapping, never off the sea, slow).
 
-export type ZeehondLevel = 'normaal' | 'moeilijk';
-export const levelOf = (o: SkinChoices): ZeehondLevel => (o.niveau === 'moeilijk' ? 'moeilijk' : 'normaal');
+export type ZeehondLevel = Level;
+export const levelOf = (o: SkinChoices): ZeehondLevel => levelOfOptions(o);
+// Makkelijk = the old Normaal (the floes only bob, no clock); Normaal and up: the floes drift and each sum has the clock.
+export const driftsAt = (level: ZeehondLevel) => level !== 'makkelijk';
+// Time up: the seals dive and come back up this long after, with the next sum (owner 2026-11-17).
+export const DIVE_MS = 2000;
 
 export type SealWear = 'none' | 'hat' | 'bow' | 'scarf';
 export interface SealLook {
@@ -72,7 +77,7 @@ export function sealShape(step: number): SealShape {
     return { body, tail, belly: { rx: 17 + 3.6 * s, ry: 11 + 1.4 * s }, hw, flip: (hw - 30) * 0.75 };
 }
 
-// ── Moeilijk: drifting floes ──────────────────────────────────────────────────
+// ── Normaal and up: drifting floes ──────────────────────────────────────────
 
 export interface SpotBox { x: number; y: number; w: number; h: number }
 export interface DriftSpec {

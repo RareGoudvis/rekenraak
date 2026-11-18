@@ -3,10 +3,15 @@
 // The skin never knows the answer, so every option comes round in a shuffled bag: the answer shows up at
 // least once every few pop-ups, and two moles never carry the same number at once.
 
+import { CLOCK, clockMs } from '../../levels/clock';
+import type { Level } from '../../levels/levels';
+
 export const MOLE = {
     holes: 6,
-    // How long a mole stays up at streak 0, and the time between two pop-ups (ms).
+    // How long a mole stays up at streak 0 (Normaal and up at the start), and the time between two pop-ups (ms).
     upMs: 2500,
+    // Makkelijk: a little longer than the old pace, and it never gets shorter.
+    easyUpMs: 3000,
     everyMs: 850,
     // At most this many up at once.
     maxUp: 3,
@@ -32,6 +37,12 @@ export interface MoleField {
     nextId: number;
 }
 
+/** How long a mole stays up (before the streak's pace) after gameMs of play: it shrinks with the level's clock (levels/clock.ts). */
+export function moleUpMs(level: Level, gameMs: number): number {
+    const sum = clockMs(level, gameMs);
+    return sum === null ? MOLE.easyUpMs : MOLE.upMs * (sum / CLOCK.startMs);
+}
+
 /** The pace for a streak: 1 at no streak, a little faster per right answer in a row. */
 export const molePace = (streak: number) => 1 + MOLE.perStreak * Math.min(Math.max(streak, 0), MOLE.maxStreak);
 
@@ -52,7 +63,7 @@ function shuffled<T>(list: readonly T[], rng: Rng): T[] {
 }
 
 /** The field at game time t: moles whose time is up go down, new ones pop up on free holes. */
-export function stepField(f: MoleField, t: number, options: readonly string[], rng: Rng, pace = 1): MoleField {
+export function stepField(f: MoleField, t: number, options: readonly string[], rng: Rng, pace = 1, upMs: number = MOLE.upMs): MoleField {
     if (!options.length) return f;
     let { nextAt, bag, nextId } = f;
     const moles = [...f.moles];
@@ -70,7 +81,7 @@ export function stepField(f: MoleField, t: number, options: readonly string[], r
         const value = bag[k];
         bag = bag.filter((_, i) => i !== k);
         const hole = free[Math.floor(rng() * free.length)];
-        moles[hole] = { id: nextId++, hole, value, upAt: at, downAt: at + MOLE.upMs / pace };
+        moles[hole] = { id: nextId++, hole, value, upAt: at, downAt: at + upMs / pace };
     }
     return { moles, nextAt, bag, nextId };
 }

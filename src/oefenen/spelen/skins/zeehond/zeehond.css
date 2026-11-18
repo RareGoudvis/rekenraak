@@ -89,8 +89,12 @@
   z-index: 2;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: var(--sp-3);
   padding-top: var(--sp-3);
 }
+/* The clock per sum (Normaal and up), beside the sign. */
+.zh-ring { width: clamp(48px, 9vmin, 80px); }
 .zh-sign {
   margin: 0;
   padding: var(--sp-2) var(--sp-6);
@@ -172,6 +176,13 @@
 }
 @keyframes zh-in { from { opacity: 0; transform: translateY(14%) scale(.9); } }
 .zh-seal:disabled { cursor: default; }
+/* Time up (the clock per sum): every seal dives off its floe; when the class goes, zh-in brings them back up. */
+.zh-root.is-diving .zh-seal { animation: zh-dive 520ms ease-in both; animation-delay: calc(var(--i) * 60ms); }
+@keyframes zh-dive {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  30% { transform: translateY(-12%) rotate(-8deg); opacity: 1; }
+  100% { transform: translateY(70%) rotate(14deg) scale(.8); opacity: 0; }
+}
 .zh-seal:focus-visible { outline: none; }
 .zh-seal:focus-visible .zh-board { box-shadow: 0 0 0 4px var(--kiosk-paper), 0 0 0 8px var(--accent); }
 

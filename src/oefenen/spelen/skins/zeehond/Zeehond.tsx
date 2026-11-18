@@ -4,16 +4,19 @@ import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, signClass } from '../../spelChoice';
 import { Burst, Clouds } from '../../scene';
 import { mulberry32 } from '../../distractors';
+import SumClockRing from '../../levels/SumClockRing';
+import { useSumClock } from '../../levels/useSumClock';
 import { fishLeft, flightOf, type Flight } from './feed';
-import { driftOffsets, fedAfter, girthOf, levelOf, pickPod, type SealLook, type SpotBox } from './pod';
+import { DIVE_MS, driftOffsets, driftsAt, fedAfter, girthOf, levelOf, pickPod, type SealLook, type SpotBox } from './pod';
 import SealArt from './SealArt';
 import './zeehond.css';
 
 // Zeehondjes voeren: an icy sea with four seals on ice floes, each holding a sign with an answer. Tap (or 1–4) the
 // seal with the answer: a fish flies from the bucket in a soft arc into its mouth, it claps and grows a little
 // rounder. A wrong seal shuts its eyes, folds its flippers and looks away (no red); the right one waves its sign.
-// The same seals stay all game, a new question flips their signs. Normaal: they bob on their floes; Moeilijk:
-// the floes drift (pod.ts). Reduced motion: nothing moves, Moeilijk puts the seals on new spots per question.
+// The same seals stay all game, a new question flips their signs. Makkelijk: they bob on their floes; Normaal and
+// up: the floes drift (pod.ts) and a clock runs per sum; time up = they all dive and come back up DIVE_MS later
+// with the next sum (a mistake, onMiss).
 
 const KEYS = ['1', '2', '3', '4'];
 // The fish's flight (zeehond.css .zh-fly): it lands, the seal eats and grows.
@@ -93,8 +96,20 @@ function beatsOf(seed: number, n: number) {
     return Array.from({ length: n }, () => ({ bob: 4.2 + rng() * 1.8, beg: 6 + rng() * 4, bobAt: -rng() * 6, begAt: -rng() * 10 }));
 }
 
-export default function Zeehond({ question, choices, views, phase, feedback, onAnswer, progress, options: picked, events }: SkinProps) {
-    const drifting = levelOf(picked) === 'moeilijk';
+export default function Zeehond({ question, choices, views, phase, feedback, onAnswer, onMiss, progress, options: picked, events }: SkinProps) {
+    const level = levelOf(picked);
+    const drifting = driftsAt(level);
+    // Time up: the seals are under water (keyed per dive, for the splash) until DIVE_MS later.
+    const [dive, setDive] = useState({ n: 0, under: false });
+    const clock = useSumClock({
+        level, questionKey: question?.key ?? null, live: phase === 'play' && !dive.under,
+        onTimeUp: () => { setDive(d => ({ n: d.n + 1, under: true })); onMiss(); },
+    });
+    useEffect(() => {
+        if (!dive.under) return;
+        const t = window.setTimeout(() => setDive(d => ({ ...d, under: false })), DIVE_MS);
+        return () => window.clearTimeout(t);
+    }, [dive]);
     // A fresh set of seals per game (this component lives for one round).
     const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff));
     const pod = useMemo(() => pickPod(seed), [seed]);
@@ -118,7 +133,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
     const tapped = useRef<{ key: string; index: number } | null>(null);
 
     const choose = (i: number) => {
-        if (phase !== 'play' || !question || options[i] === undefined) return;
+        if (phase !== 'play' || dive.under || !question || options[i] === undefined) return;
         const box = root.current?.getBoundingClientRect();
         const from = bucketOut.current?.getBoundingClientRect();
         const to = mouths.current[i]?.getBoundingClientRect();
@@ -206,7 +221,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
     const flight = phase === 'right' ? pickedNow?.flight : null;
 
     return (
-        <div ref={root} className={`zh-root${views ? ' has-pictures' : ''}${paused ? ' is-paused' : ''}${drifting ? ' is-drifting' : ''}`}>
+        <div ref={root} className={`zh-root${views ? ' has-pictures' : ''}${paused ? ' is-paused' : ''}${drifting ? ' is-drifting' : ''}${dive.under ? ' is-diving' : ''}`} data-niveau={level}>
             <div className="zh-sea" aria-hidden>
                 <div className="zh-sky">
                     <Clouds layer="far" outline={false} count={3} size={[90, 150]} band={[6, 40]} speed={120} seed={seed % 97} paused={paused} />
@@ -222,6 +237,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
                 ))}
             </div>
             <div className="zh-top">
+                <SumClockRing ringRef={clock.ring} limitMs={clock.limitMs} className="zh-ring" />
                 <p className={`zh-sign kiosk-math${flash ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
                     <SpelSign question={question} feedback={feedback} flash={flash} choices={options} views={views} answerClassName="zh-sign-answer" />
                 </p>
@@ -242,7 +258,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
                         <div key={i} ref={el => { spots.current[i] = el; }} className={`zh-spot${state}${ate ? ' has-eaten' : ''}`} data-look={look.id} data-girth={girthOf(fed[i] ?? 0)}
                             style={{ '--i': i, '--bob': `${beat.bob}s`, '--bob-at': `${beat.bobAt}s`, '--beg': `${beat.beg}s`, '--beg-at': `${beat.begAt}s` } as CSSProperties}>
                             <div className="zh-bob">
-                                <button type="button" className="zh-seal" disabled={phase !== 'play'} aria-label={choiceLabel(c, face)} onClick={() => choose(i)}>
+                                <button type="button" className="zh-seal" disabled={phase !== 'play' || dive.under} aria-label={choiceLabel(c, face)} onClick={() => choose(i)}>
                                     <span className="zh-board-wrap">
                                         <span key={question.key} className={`zh-board kiosk-math is-${boardKind(face)}`} style={{ '--face-chars': faceChars(face) } as CSSProperties} aria-hidden><SpelChoiceFace value={c} view={face} /></span>
                                         <span className="zh-pole" aria-hidden />
@@ -256,6 +272,7 @@ export default function Zeehond({ question, choices, views, phase, feedback, onA
                                 <Floe />
                                 <Splash />
                                 {ate && <Burst key={`s${question.key}`} kind="splash" x="50%" y="88%" spread={60} count={8} seed={question.index + 5} />}
+                                {dive.under && <Burst key={`d${dive.n}`} kind="splash" x="50%" y="70%" spread={80} count={10} seed={dive.n * 7 + i} />}
                             </div>
                         </div>
                     );

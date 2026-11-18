@@ -144,7 +144,7 @@ describe('Pinguïntoren skin', () => {
         rerender(<Pinguintoren {...at(3, 0, wrong)} />);
         expect(container.querySelector('.pt-tower.is-wobble-1')).not.toBeNull();
         expect(container.querySelectorAll('.pt-tower .spel-cracks')).toHaveLength(0);
-        expect(sound).toHaveBeenCalledWith('miss');
+        expect(sound).toHaveBeenCalledWith('nomatch');
     });
 
     test('the sign sizes its font for the sum with its answer, so the flash never runs off the panel', () => {
