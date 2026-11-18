@@ -12,7 +12,9 @@ import type { SpelEventName } from '../oefenen/spelen/events';
 import { gameGroupOf } from '../oefenen/zelf/topicGames';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import Grijpmachine, { GrijpEnding } from '../oefenen/spelen/skins/grijp/Grijpmachine';
-import { GRIJP, bounce, coinsLeft, idlePose, nearMissOf, poseAt, revealAt, timeline, tripMs, type ClawGeom, type Job } from '../oefenen/spelen/skins/grijp/claw';
+import { GRIJP, autoSlotOf, bounce, coinsLeft, idlePose, nearMissOf, poseAt, revealAt, timeline, tripMs, type ClawGeom, type Job } from '../oefenen/spelen/skins/grijp/claw';
+import { resolveMeta } from '../oefenen/spelen/skins/options';
+import type { Level } from '../oefenen/spelen/levels/levels';
 import { HEAP, MACHINES, MACHINE_IDS, backPile, machineById, prizeBag } from '../oefenen/spelen/skins/grijp/machines';
 import { GRIJP_KEY, forcedMachine, lastMachine, pickMachine, rememberMachine } from '../oefenen/spelen/skins/grijp/pick';
 import { ARCADES } from '../oefenen/spelen/skins/grijp/arcades';
@@ -82,6 +84,13 @@ describe('Grijpmachine: the claw', () => {
         const sag = poseAt(near, w.at + w.ms * 0.5, GEOM, 0).prize!;
         expect(sag.y).toBeGreaterThan(plain.y);
         expect(poseAt(near, tripMs(near, GEOM), GEOM, 0).done).toBe(true);
+    });
+
+    test('time up: the claw picks one of the places still on the heap', () => {
+        expect(autoSlotOf(0, [0, 1, 2, 3])).toBe(0);
+        expect(autoSlotOf(0.99, [0, 1, 2, 3])).toBe(3);
+        expect(autoSlotOf(1, [0, 2])).toBe(2);
+        expect(autoSlotOf(0.5, [])).toBeNull();
     });
 
     test('near misses never come twice in a row; the coins count down as the claw sets off', () => {
@@ -174,7 +183,7 @@ function Wired() {
     return (
         <Grijpmachine question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} sound={() => { }} progress={progress} options={{}} events={st.events} />
+            onFail={() => st.fail()} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events} />
     );
 }
 
@@ -191,7 +200,7 @@ describe('Grijpmachine: a round on the session', () => {
     });
     afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
-    const start = () => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('grijp')!.meta }));
+    const start = (niveau?: Level) => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(skinById('grijp')!.meta, niveau ? { niveau } : {}) }));
     const prizes = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).getAllByRole('button') as HTMLButtonElement[];
     const tapValue = (value: string) => fireEvent.click(prizes().find(b => b.getAttribute('aria-label') === value)!);
     const wrongOf = () => sp().question!.choices.find(c => c !== sp().question!.answer)!;
@@ -269,6 +278,48 @@ describe('Grijpmachine: a round on the session', () => {
         wait(8000);
         expect(sp().phase).toBe('end');
         expect(names().at(-1)).toBe('end');
+    });
+
+    test('Normaal: a clock ring per sum; time up = a mistake, the claw hurries down on a prize that is not the answer and it slips away', () => {
+        start('normaal');
+        const { container } = render(<Wired />);
+        expect(screen.getByRole('timer', { name: 'De tijd voor deze som' })).toBeTruthy();
+        const answer = sp().question!.answer;
+        // 12 s per sum the first minute: nothing yet just before it.
+        for (let t = 0; t < 11_800; t += 100) wait(100);
+        expect(names()).toEqual([]);
+        expect(container.querySelector('.gm-timer.is-low')).not.toBeNull();
+        for (let i = 0; i < 10 && !names().length; i++) wait(100);
+        expect(names()).toEqual(['wrong']);
+        expect(log[0].payload).toMatchObject({ given: '' });
+        expect(sp().mistakes).toHaveLength(1);
+        // The claw is on its way by itself, for a prize that is not the answer.
+        wait(700);
+        expect(container.querySelector('.gm-say')!.textContent).toBe('Te laat!');
+        expect(container.querySelector('.gm-carried .gm-tag')!.textContent).not.toBe(answer);
+        wait(4000);
+        expect(won(container)).toBe(0);
+        expect(sp().phase).toBe('play');
+    });
+
+    test('a tap stops the clock: the claw on its way never times out', () => {
+        start('onmogelijk');
+        render(<Wired />);
+        for (let t = 0; t < 11_000; t += 100) wait(100);
+        tapValue(sp().question!.answer);
+        wait(4000);
+        expect(names()).toEqual(['correct']);
+    });
+
+    test('Makkelijk: no clock ring, the claw waits as long as it takes', () => {
+        start('makkelijk');
+        const { container } = render(<Wired />);
+        expect(container.querySelector('.gm-timer')).toBeNull();
+        for (let t = 0; t < 60_000; t += 500) wait(500);
+        expect(names()).toEqual([]);
+        tapValue(sp().question!.answer);
+        wait(4000);
+        expect(names()).toEqual(['correct']);
     });
 
     test('the end picture: the round\'s prizes on the shelf, waving, under the jackpot', () => {

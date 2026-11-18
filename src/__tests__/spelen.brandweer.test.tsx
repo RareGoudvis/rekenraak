@@ -14,10 +14,15 @@ import { COLLAPSE, FIRE, RESCUE_EVERY, WINDOWS, WINDOW_CLOCK, decorOf, fireMood,
 import { aimAt, sprayPath } from '../oefenen/spelen/skins/brandweer/geometry';
 import { BRANDWEER_SOUNDS } from '../oefenen/spelen/skins/brandweer/sounds';
 import { resetKiosk } from './helpers/oefenKiosk';
+import { resolveMeta } from '../oefenen/spelen/skins/options';
+import { clockMs } from '../oefenen/spelen/levels/clock';
+import type { Level } from '../oefenen/spelen/levels/levels';
 
 // Brandweer: the fire level's tuning (fire.ts), the windows and pets, and the skin on the real session.
 
 const at = (elapsedMs: number, right: number, mistakes: number, streak: number, jumps = 0): FireCounts => ({ elapsedMs, right, mistakes, streak, jumps });
+// The shared clock's first 12 s: the first window's clock in the first minute.
+const FIRST_MS = 12_000;
 
 describe('the fire level', () => {
     test('a new building starts in the yellow; time and mistakes heat it, a sprayed window cools it', () => {
@@ -59,9 +64,15 @@ describe('the fire level', () => {
         expect(fireStep(fireOf([at(0, 0, 0, 0, 2)]), at(0, 0, 0, 0, 0))).toEqual(fireStart());
     });
 
+    test('Makkelijk: the gauge stops one step under too hot, so the building never comes down', () => {
+        expect(fireOf([at(0, 0, 20, 0)], 'makkelijk').level).toBe(FIRE.max - 1);
+        expect(tooHot(fireOf([at(600_000, 0, 20, 0, 5)], 'makkelijk').level)).toBe(false);
+        expect(tooHot(fireOf([at(0, 0, 20, 0)], 'normaal').level)).toBe(true);
+    });
+
     // The owner's rule: fair for 6–8 year olds. Think time per sum (the window clocks run only then) plus the flash.
     test('tuning: guessing always burns down, 60 % often, 80 % rarely, also for a slow thinker', () => {
-        const rate = (pRight: number, think: [number, number], runs = 2000) => {
+        const rate = (pRight: number, think: [number, number], runs = 2000, lvl: Level = 'normaal') => {
             const rng = mulberry32(23);
             let fails = 0;
             for (let r = 0; r < runs; r++) {
@@ -69,12 +80,12 @@ describe('the fire level', () => {
                 let t = 0, right = 0, mistakes = 0, streak = 0, jumps = 0;
                 for (let q = 0; ; q++) {
                     const thinkMs = (think[0] + rng() * (think[1] - think[0])) * 1000;
-                    jumps += jumpEvents(thinkMs, windowClocks(`r${r}-q${q}`, 4, t)).length;
+                    jumps += jumpEvents(thinkMs, windowClocks(`r${r}-q${q}`, 4, t, lvl)).length;
                     const ok = rng() < pRight;
                     t += thinkMs + (ok ? SPEL_FLASH_MS.right : SPEL_FLASH_MS.wrong);
-                    if (t >= 180_000) { s = fireStep(s, at(180_000, right, mistakes, streak, jumps)); break; }
+                    if (t >= 180_000) { s = fireStep(s, at(180_000, right, mistakes, streak, jumps), lvl); break; }
                     if (ok) { right++; streak++; } else { mistakes++; streak = 0; }
-                    s = fireStep(s, at(t, right, mistakes, streak, jumps));
+                    s = fireStep(s, at(t, right, mistakes, streak, jumps), lvl);
                     if (tooHot(s.level)) break;
                 }
                 if (tooHot(s.level)) fails++;
@@ -87,16 +98,25 @@ describe('the fire level', () => {
         expect(rate(0.8, [4, 6])).toBeLessThan(0.04);
         expect(rate(0.8, [6, 9])).toBeLessThan(0.1);
         expect(rate(0.9, [6, 9])).toBeLessThan(0.03);
+        // Makkelijk never collapses; the harder levels burn down more often for the same pupil.
+        expect(rate(0.25, [2, 4], 300, 'makkelijk')).toBe(0);
+        const slow = (lvl: Level) => rate(0.8, [6, 9], 2000, lvl);
+        expect(slow('moeilijk')).toBeGreaterThanOrEqual(slow('normaal'));
+        expect(slow('onmogelijk')).toBeGreaterThanOrEqual(slow('moeilijk'));
     });
 });
 
 describe('the window clocks', () => {
-    test('four staggered clocks per sum, shorter later in the game, seeded per sum', () => {
+    test('four staggered clocks per sum, the first one the shared clock, seeded per sum; none on Makkelijk', () => {
         const c = windowClocks('k', 4, 0);
-        expect([...c].sort((a, b) => a - b)).toEqual([0, 1, 2, 3].map(r => WINDOW_CLOCK.firstMs + r * WINDOW_CLOCK.stepMs));
+        expect([...c].sort((a, b) => a - b)).toEqual([0, 1, 2, 3].map(r => FIRST_MS + r * WINDOW_CLOCK.stepMs));
         expect(windowClocks('k', 4, 0)).toEqual(c);
-        expect(Math.min(...windowClocks('k', 4, 60_000))).toBe(WINDOW_CLOCK.firstMs - WINDOW_CLOCK.shrinkPerMinMs);
-        expect(Math.min(...windowClocks('k', 4, 600_000))).toBe(WINDOW_CLOCK.minMs);
+        expect(Math.min(...windowClocks('k', 4, 60_000))).toBe(clockMs('normaal', 60_000));
+        expect(Math.min(...windowClocks('k', 4, 600_000))).toBe(8_000);
+        expect(Math.min(...windowClocks('k', 4, 600_000, 'moeilijk'))).toBe(6_000);
+        expect(Math.min(...windowClocks('k', 4, 600_000, 'onmogelijk'))).toBe(4_000);
+        expect(windowClocks('k', 4, 0, 'makkelijk')).toEqual([]);
+        expect(jumpEvents(600_000, windowClocks('k', 4, 0, 'makkelijk'))).toEqual([]);
     });
 
     test('a window runs out at its clock, again each clock; events in time order', () => {
@@ -170,7 +190,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
-const start = () => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('brandweer')!.meta }));
+const start = (niveau?: Level) => act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(skinById('brandweer')!.meta, niveau ? { niveau } : {}) }));
 const wait = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
 function Wired() {
@@ -180,7 +200,7 @@ function Wired() {
     return (
         <Brandweer question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
             phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-            onFail={() => st.fail()} onReport={r => st.report(r)} onHold={on => st.hold(on)} sound={() => { }} progress={progress} options={{}} events={st.events} />
+            onFail={() => st.fail()} onReport={r => st.report(r)} onHold={on => st.hold(on)} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events} />
     );
 }
 const windows = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).queryAllByRole('button', { hidden: true }) as HTMLButtonElement[];
@@ -268,10 +288,17 @@ describe('the skin on the session', () => {
     });
 
     test('a window waits too long: the fire leaps to a free neighbour, the gauge climbs; the answers stay on the four', () => {
+        // A first sum whose first window to run out has a free neighbour (a top corner between two fires has none: it only flares).
+        const leapsFree = () => {
+            const key = sp().question!.key, pet = petWindow(0);
+            return jumpsOf(firstEvents(1, windowClocks(key, 4, 0)), windowsOf(key, 4, pet), pet)[0].to !== null;
+        };
         start();
+        for (let k = 0; k < 40 && !leapsFree(); k++) { sp().otherGame(); start(); }
+        expect(leapsFree()).toBe(true);
         const { container } = render(<Wired />);
         expect(container.querySelectorAll('.bw-wclock')).toHaveLength(4);
-        wait(WINDOW_CLOCK.firstMs - 200);
+        wait(FIRST_MS - 200);
         expect(container.querySelector('.bw-ignite.is-jumped')).toBeNull();
         wait(400);
         expect(container.querySelectorAll('.bw-ignite.is-jumped')).toHaveLength(1);
@@ -287,7 +314,7 @@ describe('the skin on the session', () => {
         start();
         const { container } = render(<Wired />);
         act(() => sp().openHelp());
-        wait(WINDOW_CLOCK.firstMs + 1000);
+        wait(FIRST_MS + 1000);
         act(() => sp().closeHelp());
         expect(container.querySelector('.bw-ignite.is-jumped')).toBeNull();
         expect(lit(container)).toBe(FIRE.start);
@@ -323,6 +350,19 @@ describe('the skin on the session', () => {
         wait(COLLAPSE.end - COLLAPSE.cheer + 10);
         expect(sp().phase).toBe('end');
         expect(sp().outcome).toBe('failed');
+    });
+
+    test('Makkelijk: no window clocks, the fire never jumps, and even many mistakes never bring the block down', () => {
+        start('makkelijk');
+        const { container } = render(<Wired />);
+        expect(container.querySelectorAll('.bw-flames')).toHaveLength(4);
+        expect(container.querySelectorAll('.bw-wclock')).toHaveLength(0);
+        wait(40_000);
+        expect(container.querySelector('.bw-ignite.is-jumped')).toBeNull();
+        for (let i = 0; i < FIRE.max + 2; i++) { tapWrong(); wait(SPEL_FLASH_MS.wrong + 10); }
+        expect(container.querySelector('.bw-root.is-toohot')).toBeNull();
+        expect(lit(container)).toBe(FIRE.max - 1);
+        expect(sp().phase).toBe('play');
     });
 
     test('under help the fire never ends the round, and met hulp never heats it', () => {

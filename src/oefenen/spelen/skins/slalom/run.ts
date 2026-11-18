@@ -3,9 +3,15 @@
 // One gate at a time carries the sum's three choices; it comes up the slope at the skier's speed. A right answer
 // shoots the skier through his lane and adds a speed step, a wrong one shoots him through and he tumbles (back
 // to step 1), a gate reached without an answer slips past (one step slower) and the same sum comes on a new gate.
+// The levels (levels/clock.ts): at step 1 a gate takes the shared clock (12 s the first minute, then shorter); the
+// whole speed table scales with it (pace), so each step stays as much faster. Makkelijk keeps the clock's first
+// 12 s all round, and a tumble costs no speed (gentle).
+
+import { CLOCK, clockMs } from '../../levels/clock';
+import type { Level } from '../../levels/levels';
 
 export const SLALOM = {
-    // Speed per step in m/s (5 steps): about 8 s per gate at step 1, under 5 s at step 5 (gateSeconds).
+    // Speed per step in m/s at pace 1 (5 steps): about 8 s per gate at step 1, under 5 s at step 5 (gateSeconds).
     speeds: [7, 8.5, 10, 11.5, 13] as readonly number[],
     // A new gate stands this far down the slope (m); far enough to look small, near enough to read soon.
     spawnM: 55,
@@ -63,6 +69,10 @@ export interface SlRun {
     down: number;
     up: number;
     nextId: number;
+    // The speed table times this (paceOf: the shared clock); 1 = the table as it stands.
+    pace: number;
+    // A tumble keeps his speed step (Makkelijk).
+    gentle: boolean;
 }
 
 /** What one tick did, for the skin's moments (sounds, bursts). */
@@ -75,11 +85,11 @@ export interface TickNews {
     gotUp: boolean;
 }
 
-export const speedOf = (step: number) => SLALOM.speeds[Math.min(STEPS, Math.max(1, step)) - 1];
+export const speedOf = (step: number, pace = 1) => SLALOM.speeds[Math.min(STEPS, Math.max(1, step)) - 1] * pace;
 
 /** How long a gate takes from spawn to arrival at this step without an answer (s). */
-export function gateSeconds(step: number): number {
-    const v = speedOf(step);
+export function gateSeconds(step: number, pace = 1): number {
+    const v = speedOf(step, pace);
     const { spawnM, arriveM, slowM, slowMin } = SLALOM;
     // Full speed down to slowM, then a straight ramp to slowMin: the time of the ramp is its distance over the log-mean speed.
     const ramp = slowM - arriveM;
@@ -87,8 +97,11 @@ export function gateSeconds(step: number): number {
     return (spawnM - slowM) / v + Math.log(1 / slowMin) / (k * v);
 }
 
-export function startRun(): SlRun {
-    return { metres: 0, step: 1, speed: speedOf(1), gates: [], down: 0, up: 0, nextId: 1 };
+/** The pace at which a step-1 gate takes the shared clock after elapsedMs of the round (Makkelijk: its first 12 s, held). */
+export const paceOf = (level: Level, elapsedMs: number) => (gateSeconds(1) * 1000) / (clockMs(level, elapsedMs) ?? CLOCK.startMs);
+
+export function startRun(pace = 1, gentle = false): SlRun {
+    return { metres: 0, step: 1, speed: speedOf(1, pace), gates: [], down: 0, up: 0, nextId: 1, pace, gentle };
 }
 
 /** The gate waiting for an answer, if any. */
@@ -104,7 +117,7 @@ export function spawnGate(r: SlRun): SlRun {
 // The speed he aims for: nothing while down, braking for an open gate as it comes close, else his step's speed.
 function targetSpeed(r: SlRun): number {
     if (r.down > 0) return 0;
-    const v = speedOf(r.step);
+    const v = speedOf(r.step, r.pace);
     const g = openGate(r);
     if (!g || g.d >= SLALOM.slowM) return v;
     const k = Math.max(0, (g.d - SLALOM.arriveM) / (SLALOM.slowM - SLALOM.arriveM));
@@ -119,11 +132,11 @@ function rushGate(r: SlRun, end: GateEnd): SlRun {
     return { ...r, gates: r.gates.map(x => (x === g ? { ...x, end, rush: { t: 0, from: g.d, speed } } : x)) };
 }
 
-/** The session judged the answer on the open gate: right = a step faster, wrong = back to step 1 (after the tumble). */
+/** The session judged the answer on the open gate: right = a step faster, wrong = back to step 1 after the tumble (gentle: his step stays). */
 export function answerRun(r: SlRun, correct: boolean): SlRun {
     if (!openGate(r)) return r;
     const next = rushGate(r, correct ? 'right' : 'wrong');
-    return { ...next, step: correct ? Math.min(STEPS, r.step + 1) : 1 };
+    return { ...next, step: correct ? Math.min(STEPS, r.step + 1) : r.gentle ? r.step : 1 };
 }
 
 /** One frame of game time (ms). */
@@ -182,8 +195,8 @@ export function tickRun(r: SlRun, ms: number): { run: SlRun; news: TickNews } {
 
     if (news.missed !== null) step = Math.max(1, step - SLALOM.missSteps);
     if (news.passed) {
-        if (news.passed.end === 'wrong') { down = SLALOM.tumbleMs; up = 0; speed = Math.min(speed, speedOf(STEPS)); }
-        else speed = speedOf(step) * SLALOM.exitBoost;
+        if (news.passed.end === 'wrong') { down = SLALOM.tumbleMs; up = 0; speed = Math.min(speed, speedOf(STEPS, r.pace)); }
+        else speed = speedOf(step, r.pace) * SLALOM.exitBoost;
     }
 
     return { run: { ...r, metres: r.metres + advance, step, speed, gates, down, up }, news };

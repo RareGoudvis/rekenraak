@@ -1,30 +1,43 @@
 import type { Rng } from '../../distractors';
 import type { SpelQuestion } from '../../spelQuestion';
 import { answerFace, type BoardCell, type BoardFace } from '../board';
+import type { Level } from '../../levels/levels';
 
 // Honingraat's own rules beside the session's (board/session.ts): which scene a board plays in, when the
-// wasp comes (Moeilijk) and how its challenge is scored. Pure: Honingraat.tsx draws, this decides.
+// wasp comes (Normaal and up) and how its battle is scored. Pure: Honingraat.tsx draws, this decides.
 
 // Board 1, 3, 5 … are a honeycomb, 2, 4 … a flower meadow (owner 2026-11-15): the same cells as flowers.
 export type HiveView = 'comb' | 'meadow';
 export const viewAt = (index: number): HiveView => (index % 2 === 0 ? 'comb' : 'meadow');
 
-// Moeilijk: a round of five boards (the registry's option), a wasp of 5 sums, 4 right chases it off.
-export const MOEILIJK_BOARDS = 5;
-export const WASP = { sums: 5, need: 4, chance: 0.5 } as const;
+// Boards per level (owner 2026-11-17): hiveLevels.ts.
+export { HIVE_BOARDS } from './hiveLevels';
+// A battle: per wasp this many sums, and how many of them must be right to chase it (Makkelijk has no wasp).
+// Onmogelijk: every one right, and the battles grow: one wasp, then two, then three (perWasp sums each).
+export const WASP = { perWasp: 3, need: { normaal: 1, moeilijk: 2, onmogelijk: 3 } } as const;
+
+export interface WaspRule {
+    // Wasps in this battle, the sums they bring and how many must be right.
+    wasps: number;
+    sums: number;
+    need: number;
+}
+
+/** The battle number `n` (0-based) of this level; null = this level has no wasp. */
+export function waspRule(level: Level, n: number): WaspRule | null {
+    if (level === 'makkelijk') return null;
+    const wasps = level === 'onmogelijk' ? n + 1 : 1;
+    const sums = WASP.perWasp * wasps;
+    return { wasps, sums, need: WASP.need[level] * wasps };
+}
 // How long a pick shows before the next sum, and the verdict before the comb comes back or the round ends.
 export const WASP_MS = { right: 700, wrong: 1400, chased: 2000, claimed: 2600 } as const;
 
-/**
- * After how many filled boards a wasp attacks (it greets the next board): after the second always, later now and
- * then. Only before a comb (the nest), never two in a row, never after the last board (the round ends there).
- */
-export function waspSchedule(boards: number, rng: Rng): number[] {
+/** Before which boards a wasp attacks: after every flower meadow, so before every comb but the first; never after the last board. */
+export function waspSchedule(boards: number): number[] {
     const out: number[] = [];
-    // Before board index `filled`; even = a comb, and a step of two leaves a calm board between two wasps.
-    for (let filled = 2; filled < boards; filled += 2) {
-        if (filled === 2 || rng() < WASP.chance) out.push(filled);
-    }
+    // Before board index `filled`; even = a comb, odd = a meadow just played.
+    for (let filled = 2; filled < boards; filled += 2) out.push(filled);
     return out;
 }
 
@@ -38,10 +51,10 @@ function shuffle<T>(list: readonly T[], rng: Rng): T[] {
 }
 
 /**
- * The wasp's five sums, from the boards already played: first the cells nobody tapped (their answer was never
+ * A battle's sums, from the boards already played: first the cells nobody tapped (their answer was never
  * shown), then the wrong taps, then the filled ones (their answer is the old target). No sum twice.
  */
-export function waspSums(cells: readonly BoardCell[], rng: Rng, count: number = WASP.sums): SpelQuestion[] {
+export function waspSums(cells: readonly BoardCell[], rng: Rng, count: number): SpelQuestion[] {
     const rank = (c: BoardCell) => (c.state === 'open' && !c.match ? 0 : c.state === 'missed' ? 1 : 2);
     const keys = new Set<string>();
     const out: SpelQuestion[] = [];
@@ -82,11 +95,15 @@ export function waspChoices(q: SpelQuestion, others: readonly SpelQuestion[], rn
 
 export type WaspVerdict = 'chased' | 'claimed';
 
-/** The challenge's outcome as soon as it is sure: 4 right chases the wasp off, a second wrong one lets it claim the nest. */
-export function waspVerdict(results: readonly boolean[]): WaspVerdict | null {
+/** The battle's outcome as soon as it is sure: `need` right chases the wasps off, one wrong too many lets them claim the nest. */
+export function waspVerdict(results: readonly boolean[], rule: Pick<WaspRule, 'sums' | 'need'>): WaspVerdict | null {
     const right = results.filter(Boolean).length;
     const wrong = results.length - right;
-    if (right >= WASP.need) return 'chased';
-    if (wrong > WASP.sums - WASP.need) return 'claimed';
+    if (right >= rule.need) return 'chased';
+    if (wrong > rule.sums - rule.need) return 'claimed';
     return null;
 }
+
+/** How many wasps have flown off so far: one per `perWasp` right in a battle of several (Onmogelijk). */
+export const waspsGone = (results: readonly boolean[], rule: WaspRule) =>
+    (rule.wasps > 1 ? Math.min(rule.wasps, Math.floor(results.filter(Boolean).length / WASP.perWasp)) : 0);

@@ -11,7 +11,7 @@ import Frituur, { FrituurEnding } from '../oefenen/spelen/skins/frituur/Frituur'
 import { DogG, PersonG } from '../oefenen/spelen/skins/frituur/art';
 import { UfoG, VisitorG } from '../oefenen/spelen/skins/frituur/visitors';
 import {
-    FRITUUR, KINDS, ORDERS, VISITORS, customerOf, isVisitor, headTopOf, helpedTitle, isLow, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut,
+    FRITUUR, KINDS, NO_PATIENCE, ORDERS, VISITORS, customerOf, isEndless, isVisitor, headTopOf, helpedTitle, isLow, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut,
     walkOff, wrongOrder, wrongOrderOf,
 } from '../oefenen/spelen/skins/frituur/rule';
 import { FRITUUR_BEST_KEY, frituurResult, loadBest, saveIfBest, wipeBest } from '../oefenen/spelen/skins/frituur/records';
@@ -20,6 +20,9 @@ import { SOUND_KEY, resetSoundForTests, setSoundOn } from '../oefenen/spelen/sou
 
 // Frituur (Spelen round 6): the queue at the counter (rule.ts: patience, serving, wrong orders, walking off), the
 // best per card and length (records.ts), the registry row, and the scene reacting to the session's events.
+
+// The shared clock's first 12 s: every customer's patience at the start of a round (Normaal and up).
+const START_MS = 12_000;
 
 const progressWith = (over: Partial<SkinProgress> = {}): SkinProgress => ({
     answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: 180_000, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: 180_000, ...over,
@@ -34,12 +37,28 @@ const rootOf = (c: HTMLElement) => c.querySelector('.fr-root')!;
 afterEach(() => { cleanup(); vi.useRealTimers(); localStorage.clear(); });
 
 describe('Frituur: the queue', () => {
-    test('patience: 12 s at no streak, a little shorter per right answer in a row, never under 7 s', () => {
-        expect(patienceFor(0)).toBe(FRITUUR.patienceMs);
-        expect(patienceFor(2)).toBe(FRITUUR.patienceMs - 2 * FRITUUR.perStreakMs);
-        expect(patienceFor(100)).toBe(FRITUUR.floorMs);
-        expect(patienceFor(-3)).toBe(FRITUUR.patienceMs);
-        for (let s = 1; s < 30; s++) expect(patienceFor(s)).toBeLessThanOrEqual(patienceFor(s - 1));
+    test('patience = the shared clock: 12 s the first minute, then shorter per level; Makkelijk has no bar', () => {
+        expect(patienceFor('normaal', 0)).toBe(START_MS);
+        expect(patienceFor('onmogelijk', 59_000)).toBe(START_MS);
+        expect(patienceFor('normaal', 60_000)).toBe(11_000);
+        expect(patienceFor('moeilijk', 150_000)).toBe(9_000);
+        expect(patienceFor('onmogelijk', 300_000)).toBe(4_000);
+        expect(patienceFor('makkelijk', 0)).toBe(NO_PATIENCE);
+        expect(patienceFor('makkelijk', 300_000)).toBe(NO_PATIENCE);
+    });
+
+    test('Makkelijk: a customer without a bar waits forever, but a wrong order still walks them off', () => {
+        const c = newCounter(4, NO_PATIENCE);
+        expect(isEndless(c.patience)).toBe(true);
+        const later = tick(c, 600_000);
+        expect(later).toBe(c);
+        expect(timedOut(later)).toBe(false);
+        expect(patienceShare(later.patience)).toBe(1);
+        expect(isLow(later.patience)).toBe(false);
+        const w = wrongOrder(c, NO_PATIENCE);
+        expect(w.queue[0].id).toBe(1);
+        expect(w.leaving.at(-1)!.mood).toBe('tantrum');
+        expect(isEndless(w.patience)).toBe(true);
     });
 
     test('customers are seeded, varied, and never the same kind twice in a row; a wrong order is never what they asked', () => {
@@ -75,12 +94,12 @@ describe('Frituur: the queue', () => {
         expect(patienceShare(c.patience)).toBe(1);
         // The grace goes first, then the bar.
         const a = tick(c, FRITUUR.graceMs);
-        expect(a.patience.left).toBe(FRITUUR.patienceMs);
+        expect(a.patience.left).toBe(START_MS);
         const b = tick(a, 3000);
-        expect(b.patience.left).toBe(FRITUUR.patienceMs - 3000);
+        expect(b.patience.left).toBe(START_MS - 3000);
         expect(timedOut(b)).toBe(false);
         expect(timedOut(tick(b, 60_000))).toBe(true);
-        expect(isLow(tick(b, FRITUUR.patienceMs * (1 - FRITUUR.lowAt) - 2900).patience)).toBe(true);
+        expect(isLow(tick(b, START_MS * (1 - FRITUUR.lowAt) - 2900).patience)).toBe(true);
     });
 
     test('a right answer serves them (the bar stops) and they leave happy on the next sum; the next steps up', () => {
@@ -91,12 +110,12 @@ describe('Frituur: the queue', () => {
         expect(serve(s)).toBe(s);
         expect(tick(s, 60_000)).toBe(s);
         expect(timedOut(tick(s, 60_000))).toBe(false);
-        const n = nextSum(s, 4);
+        const n = nextSum(s, 9_000);
         expect(n.leaving).toEqual([{ customer: c.queue[0], mood: 'happy' }]);
         expect(n.queue.map(q => q.id)).toEqual([1, 2, 3]);
         expect(n.served).toBe(false);
-        // The next customer's patience follows the streak.
-        expect(n.patience.total).toBe(patienceFor(4));
+        // The next customer's patience is the clock as they step up.
+        expect(n.patience.total).toBe(9_000);
         // No serve: a new sum leaves the queue as it is (a wrong answer keeps the customer).
         expect(nextSum(c, 0)).toBe(c);
     });
@@ -154,6 +173,11 @@ describe('Frituur: the registry row', () => {
         expect(skin.meta.winTitle).toBeUndefined();
         expect(gameGroupOf(skin.meta)).toBe('tijd');
         expect(skin.meta.options![0].choices.map(c => c.label)).toEqual(['3 minuten', '5 minuten']);
+        // The four levels, about time: a crossed-out clock, a clock, a clock and flames.
+        expect(skin.meta.options![1].choices.map(c => [c.value, c.icon])).toEqual([
+            ['makkelijk', { clock: 'off' }], ['normaal', { clock: 'on' }], ['moeilijk', { clock: 'on', flames: 1 }], ['onmogelijk', { clock: 'on', flames: 2 }],
+        ]);
+        expect(resolveMeta(skin.meta).chosen).toEqual({ tijd: '3', niveau: 'normaal' });
         expect(resolveMeta(skin.meta, { tijd: '5' }).round.seconds).toBe(300);
         expect(GAME_BLURB.frituur).toBeTruthy();
         expect(skin.Component).toBeTruthy();
@@ -245,7 +269,7 @@ describe('Frituur: the scene', () => {
         act(() => { vi.advanceTimersByTime(30_000); });
         expect(onMiss).not.toHaveBeenCalled();
         rerender(<Frituur {...propsWith({ onMiss })} />);
-        act(() => { vi.advanceTimersByTime(FRITUUR.patienceMs - 300); });
+        act(() => { vi.advanceTimersByTime(START_MS - 300); });
         expect(onMiss).not.toHaveBeenCalled();
         expect(container.querySelector('.fr-patience.is-low')).not.toBeNull();
         expect(container.querySelector('.fr-cust.is-slot-0.is-low .fr-fume')).not.toBeNull();
@@ -256,6 +280,19 @@ describe('Frituur: the scene', () => {
         rerender(<Frituur {...propsWith({ onMiss, phase: 'wrong', feedback: { given: '', expected: '12', correct: false } })} />);
         act(() => { vi.advanceTimersByTime(60_000); });
         expect(onMiss).toHaveBeenCalledTimes(1);
+    });
+
+    test('Makkelijk: no patience bar, nobody walks off however long it takes; the best is kept per level', () => {
+        vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] });
+        const onMiss = vi.fn();
+        const events = createSpelEvents();
+        const { container } = render(<Frituur {...propsWith({ onMiss, events, runKey: 'k', options: { tijd: '3', niveau: 'makkelijk' } })} />);
+        expect(container.querySelector('.fr-patience')).toBeNull();
+        act(() => { vi.advanceTimersByTime(120_000); });
+        expect(onMiss).not.toHaveBeenCalled();
+        act(() => { events.emit('correct', { given: '12', streak: 1 }); });
+        expect(loadBest('k|3|makkelijk')).toBe(1);
+        expect(loadBest('k|3')).toBe(0);
     });
 
     test('the end picture: the frituur with happy customers eating', () => {

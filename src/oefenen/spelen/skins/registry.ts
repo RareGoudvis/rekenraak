@@ -8,9 +8,8 @@ import { Meteor } from '@phosphor-icons/react';
 import { Robot } from '@phosphor-icons/react';
 import { Cake } from '@phosphor-icons/react';
 import { BOM_LEVEL_ROUNDS, WRONG_PENALTY_MS } from './bom/penalty';
-import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
+import { HARTJES_OPTIONS, HARTJES_ROUND, SPOOKHUIS_OPTIONS } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
-import { levelOption } from '../levels/levels';
 import { BugBeetle } from '@phosphor-icons/react';
 import { WINNEN_OPTION } from './kikkers/rule';
 import { MagicWand } from '@phosphor-icons/react';
@@ -21,6 +20,8 @@ import { PersonSimpleSki } from '@phosphor-icons/react';
 import { Flashlight as FlashlightIcon } from '@phosphor-icons/react';
 import { Joystick } from '@phosphor-icons/react';
 import { GRIJP } from './grijp/claw';
+import { HIVE_BOARDS } from '../board/honingraat/hiveLevels';
+import { LEVELS, levelOption } from '../levels/levels';
 import { FishSimple } from '@phosphor-icons/react';
 import { TANK_GOAL } from './aquarium/tank';
 
@@ -33,8 +34,6 @@ const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 5
 // Tap skins that also draw content pictures (SpelSign, SpelChoiceFace): the klok's faces, times and phrases.
 const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
-// Honingraat: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
-const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
 // The four levels about time (levels/clock.ts): Zombies, Bever, Zeehondjes, Mollen and Pinguïntoren read options.niveau.
 const TIME_LEVELS: SkinOption = levelOption({ clock: true });
 // The game picker's tiles, in order. A new skin = one entry here + its component file; the
@@ -207,29 +206,34 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Screen: lazy(() => import('./tovenaarsduel/Tovenaarsduel')),
     },
     {
-        // Valentijn: memory with 6 sums and their answers on 12 hearts (Moeilijk: 8 on 16), 2 boards. A sum card turned
+        // Valentijn: memory with 4 / 6 / 8 sums and their answers on 8 / 12 / 16 hearts (Makkelijk / Normaal / Moeilijk;
+        // Onmogelijk = 16 hearts and 10 wrong guesses per board, then the friendly end), 2 boards. A sum card turned
         // first and then a wrong answer, twice for the same sum, logs that sum once (board/session.ts) and breaks its
         // heart (the skin voices it: hit). Answers up to 5 characters ("10/12") fit a card; breuken pair a picture with its
         // breuk, or a breuk with its vereenvoudigde breuk. Hearts only: the footballs are Voetbalkaartjes. A pair's big heart bursts: launch.
         meta: {
             music: 'zacht',
             id: 'hartjes', label: 'Hartjes koppelen', input: 'board', timed: false, season: 'valentijn', options: HARTJES_OPTIONS,
+            canFail: true, failTitle: 'Oei! Geen kansen meer. Nog eens?',
             round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
             sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop', hit: 'krak', launch: 'sparkle' },
         },
         icon: Heart,
         Component: lazy(() => import('../board/hartjes/Hartjes')),
+        Ending: lazy(() => import('../board/hartjes/Hartjes').then(m => ({ default: m.HartjesEnding }))),
     },
     {
         // Lente: 13 sums, find every one that makes the target (3–5), on a honeycomb, a flower meadow, a comb again. A
         // wrong cell is a mistake at once. Cards whose answers rarely repeat (tot 1000) get "groter dan" a round number.
         // Gelijkwaardige breuken: "zoek alle breuken die gelijk zijn aan 1/2" (content/breuken/breukComb.ts).
-        // Moeilijk: five boards, and a wasp now and then (board/honingraat/hive.ts) that can claim the nest (canFail).
+        // The levels (board/honingraat/hive.ts): Makkelijk three boards, no wasp; Normaal three boards and after every
+        // meadow a wasp battle (1 of 3 right); Moeilijk five boards, 2 of 3; Onmogelijk five, all right and the wasps grow
+        // per battle (1, 2 …). A wasp can claim the nest (canFail).
         meta: {
             music: 'weide',
             id: 'honingraat', label: 'Honingraat', input: 'board', timed: false, season: 'lente', canFail: true,
             round: { board: { kind: 'target', boards: 3, size: 13, strikes: 1 } }, accepts: { kinds: ['number', 'choice'], ops: ['+', '-'], pictures: true, board: 'target' },
-            options: [{ ...NIVEAU, choices: [NIVEAU.choices[0], { ...NIVEAU.choices[1], round: { board: { kind: 'target', boards: 5, size: 13, strikes: 1 } } }] }],
+            options: [levelOption({ clock: false, rounds: Object.fromEntries(LEVELS.map(l => [l, { board: { kind: 'target', boards: HIVE_BOARDS[l], size: 13, strikes: 1 } }])) })],
             winTitle: 'Alle honing is binnen!', failTitle: 'Oei! De wesp heeft het nest. Nog eens?',
             sounds: { correct: 'drup', wrong: 'bzz', barricade: 'krak', launch: 'zwoesj', hit: 'pop', lost: 'boing', win: 'cheer', fail: 'wahwah' },
         },
@@ -240,14 +244,17 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Year-round: Hartjes koppelen's board with footballs (board/voetbalkaartjes/), a Wij – Zij scoreboard on top. A pair
         // kicks a ball into a net (tok, then launch as it goes in); a sum's logged mistake flattens its ball (caught).
+        // The levels and Onmogelijk's friendly end are Hartjes koppelen's.
         meta: {
             music: 'sport',
             id: 'voetbalkaartjes', label: 'Voetbalkaartjes', input: 'board', timed: false, options: HARTJES_OPTIONS,
+            canFail: true, failTitle: 'Oei! Geen kansen meer. Nog eens?',
             round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
             sounds: { correct: 'tok', wrong: null, flip: 'flip', nomatch: 'plop', caught: 'whoosh', launch: 'zwoesj' },
         },
         icon: SoccerBall,
         Component: lazy(() => import('../board/voetbalkaartjes/Voetbalkaartjes')),
+        Ending: lazy(() => import('../board/voetbalkaartjes/Voetbalkaartjes').then(m => ({ default: m.VoetbalkaartjesEnding }))),
     },
     {
         // Halloween: Hartjes koppelen's memory (same round and accepts) on the floor of a dark haunted place, read by a
@@ -255,7 +262,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // visitor turns a lone open card back now and then (never a mistake). Pairs and mistakes are voiced by the skin.
         meta: {
             music: 'griezel',
-            id: 'spookhuis', label: 'Spookhuis', input: 'board', timed: false, season: 'halloween', options: HARTJES_OPTIONS,
+            id: 'spookhuis', label: 'Spookhuis', input: 'board', timed: false, season: 'halloween', options: SPOOKHUIS_OPTIONS,
             round: { board: HARTJES_ROUND }, accepts: { kinds: ['number', 'choice'], maxAnswerChars: 5, pictures: true, board: 'pairs' },
             sounds: { correct: 'ting', wrong: null, flip: 'flip', nomatch: 'plop' },
         },
@@ -336,12 +343,13 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // 3 or 5 minutes at the counter (frituur/rule.ts): the first customer's bubble holds the sum. A right answer serves
-        // them, a wrong order costs a third of their patience, an empty patience bar walks them off (onMiss). Score =
-        // customers helped, the best per card and length on this device. The scene voices its own moments (frituur/sounds.ts).
+        // them, a wrong order walks them off, an empty patience bar too (onMiss). The bar is the shared clock (levels/clock.ts);
+        // Makkelijk has none. Score = customers helped, the best per card, length and level on this device. The scene voices
+        // its own moments (frituur/sounds.ts).
         meta: {
             music: 'gek',
             id: 'frituur', label: 'Frituur', input: 'keypad', timed: true, round: { seconds: 180 }, accepts: KEYPAD_NUMBER,
-            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }, levelOption({ clock: true })],
             sounds: { correct: null, wrong: null, miss: null },
         },
         icon: Storefront,
@@ -351,10 +359,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // 3 minutes; the four options burn in four windows of a 3 × 3 block. The fire level (brandweer/fire.ts) rises with
         // the clock and per mistake, each window sprayed out cools it; a block fully out = the next one, too hot = the early end.
+        // The levels: Makkelijk = the fire never jumps and nothing collapses; otherwise the window clocks are the shared clock.
         // Five characters, like the other tap targets (measured 2026-11-17: "89 991" fits a window at 1024 × 768). The scene
         // voices its own spray, dribble, siren and pets (correct / wrong: null).
         meta: {
             id: 'brandweer', music: 'tikken', label: 'Brandweer', input: 'choice', choiceCount: 4, timed: true, round: { seconds: 180 }, canFail: true,
+            options: [levelOption({ clock: true })],
             winTitle: 'Alles geblust!', failTitle: 'Oei! Het brandt te hard. Nog eens?', accepts: TAP_CHOICE,
             sounds: { correct: null, wrong: null, win: 'cheer', fail: 'wahwah' },
         },
@@ -365,9 +375,11 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Two minutes down a slope: each sum on a gate with three flags (choiceCount). Right = a speed step, 3 in a row a
         // jump; wrong = a tumble back to step 1; a gate reached unanswered slips past (slalom/run.ts). The score is the
-        // metres with a best per card on this device (onReport, "Wis mijn scores"). The scene voices its moments.
+        // metres with a best per card and level on this device (onReport, "Wis mijn scores"). The scene voices its moments.
+        // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed.
         meta: {
             id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: TAP_CHOICE,
+            options: [levelOption({ clock: true })],
             sounds: { correct: null, wrong: null },
         },
         icon: PersonSimpleSki,
@@ -379,8 +391,11 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // options on the tags of four prizes. The claw grabs the tapped one before the answer counts (grijp/claw.ts):
         // right = onto the Gewonnen shelf, wrong = it slips back onto the heap. Untimed. Five characters fit a tag
         // (measured 2026-11-17: "89 991" at 1024 × 768); tags hold clock faces and breuk pictures. The scene voices itself.
+        // The levels: a clock ring per sum (the shared clock); time up = a mistake (onMiss) and the claw drops by itself on
+        // a prize that is not the answer, which slips away. Makkelijk has no clock.
         meta: {
             id: 'grijp', music: 'gek', label: 'Grijpmachine', input: 'choice', timed: false, round: { questions: GRIJP.questions }, accepts: TAP_PICTURES,
+            options: [levelOption({ clock: true })],
             sounds: { correct: null, wrong: null },
         },
         icon: Joystick,

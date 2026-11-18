@@ -3,6 +3,10 @@
 // fire that jumps to the next window (each burning window has its own clock, WINDOW_CLOCK); every window sprayed out
 // cools it one step and every 3 in a row cools one more (the Superstraal). At 0 the building is fully out and the next
 // one is already burning (buildings counts them); at max it is too hot: the building collapses (the friendly early end).
+// Makkelijk (levels/levels.ts): no window clocks (the fire never jumps) and the gauge stops one step under too hot.
+
+import { clockMs } from '../../levels/clock';
+import type { Level } from '../../levels/levels';
 
 // THE tuning table. Checked with a simulated pupil over the 3 minutes (spelen.brandweer.test, think time per sum plus the
 // flash): thinking 4–6 s, 80 % right fails about 1 round in 100, 70 % about 1 in 10, 60 % about 1 in 3; a slow
@@ -55,14 +59,17 @@ export const fireStart = (): FireState => ({ level: FIRE.start, buildings: 0, su
 const ticksOf = (ms: number) => Math.floor(Math.max(0, ms) / FIRE.riseMs);
 const hotter = (level: number, by: number) => Math.min(FIRE.max, level + by);
 
+// The hottest the gauge gets on this level: Makkelijk never collapses.
+const topOf = (level: Level) => (level === 'makkelijk' ? FIRE.max - 1 : FIRE.max);
+
 /** The state after the session's counts moved from s to now: time first, then mistakes, then the sprayed windows. Counts going back = a new round. */
-export function fireStep(s: FireState, now: FireCounts): FireState {
+export function fireStep(s: FireState, now: FireCounts, lvl: Level = 'normaal'): FireState {
     const jumps = now.jumps ?? 0;
     const from = now.right < s.right || now.mistakes < s.mistakes || now.elapsedMs < s.elapsedMs || jumps < (s.jumps ?? 0) ? fireStart() : s;
     if (tooHot(from.level)) return { ...from, ...now, jumps };
     let level = hotter(from.level, ticksOf(now.elapsedMs) - ticksOf(from.elapsedMs));
     level = hotter(level, FIRE.mistake * Math.max(0, now.mistakes - from.mistakes));
-    level = hotter(level, FIRE.jump * Math.max(0, jumps - (from.jumps ?? 0)));
+    level = Math.min(topOf(lvl), hotter(level, FIRE.jump * Math.max(0, jumps - (from.jumps ?? 0))));
     let { buildings, supers } = from;
     const gained = Math.max(0, now.right - from.right);
     for (let k = 0; k < gained && !tooHot(level); k++) {
@@ -77,7 +84,7 @@ export function fireStep(s: FireState, now: FireCounts): FireState {
 }
 
 /** The round's level from cold, for a list of moments (tests and the tuning simulation). */
-export const fireOf = (steps: readonly FireCounts[]) => steps.reduce(fireStep, fireStart());
+export const fireOf = (steps: readonly FireCounts[], lvl: Level = 'normaal') => steps.reduce<FireState>((s, n) => fireStep(s, n, lvl), fireStart());
 
 export const tooHot = (level: number) => level >= FIRE.max;
 
@@ -134,20 +141,17 @@ export const decorOf = (window: number, building: number): Decor => DECOR[(windo
 // Each burning window has its own clock, running only while the sum waits (flashes and help freeze it). When it runs
 // out the fire jumps to a free neighbour (left, right or up; never the pet's window) and the level goes up FIRE.jump;
 // the window's clock then starts again. A jumped fire is extra danger, never an extra choice: it has no answer and
-// burns until the sum is answered. The four clocks are staggered, so at most one window runs out at a time.
+// burns until the sum is answered. The four clocks are staggered, so at most one window runs out at a time. The first
+// window's clock is the shared clock (levels/clock.ts: 12 s the first minute, then shorter per level); Makkelijk has none.
 export const WINDOW_CLOCK = {
-    // The first window's clock at the start (owner: 8 s; 10 s keeps it fair for a 6-year-old who thinks 6–9 s).
-    firstMs: 10_000,
-    // It gets this much shorter per minute played, down to minMs (8 s from the second minute).
-    shrinkPerMinMs: 1_000,
-    minMs: 8_000,
     // Each next window's clock is this much longer.
     stepMs: 3_000,
 } as const;
 
-/** The clocks (ms) of a sum's burning windows, one per option in order; their order is seeded per sum. */
-export function windowClocks(key: string, n: number, elapsedMs: number): number[] {
-    const first = Math.max(WINDOW_CLOCK.minMs, WINDOW_CLOCK.firstMs - WINDOW_CLOCK.shrinkPerMinMs * Math.floor(Math.max(0, elapsedMs) / 60_000));
+/** The clocks (ms) of a sum's burning windows, one per option in order; their order is seeded per sum. None on Makkelijk. */
+export function windowClocks(key: string, n: number, elapsedMs: number, lvl: Level = 'normaal'): number[] {
+    const first = clockMs(lvl, elapsedMs);
+    if (first === null) return [];
     const rank = Array.from({ length: n }, (_, i) => i);
     const rng = seeded(hash(`clock-${key}`));
     for (let i = rank.length - 1; i > 0; i--) {

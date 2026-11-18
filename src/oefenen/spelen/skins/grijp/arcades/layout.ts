@@ -16,6 +16,8 @@ export const BUTTON = { x: 504, y: 832 } as const;
 // The "Nog N" counter (live HTML) and the coin slot.
 export const COUNTER = { x: 586, y: 782, w: 180, h: 80 } as const;
 export const SLOT = { x: 792, y: 786, w: 94, h: 76 } as const;
+// The clock ring beside the display (Normaal and up: the time per sum, levels/clock.ts).
+export const TIMER = { x: 832, y: 136, w: 112, h: 112 } as const;
 
 /** A rect of the machine as % of the machine box (left, top, width, height), for the live HTML parts. */
 export const pctOf = (r: { x: number; y: number; w: number; h: number }): CSSProperties => ({

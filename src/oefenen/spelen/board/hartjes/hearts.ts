@@ -1,5 +1,6 @@
 import type { BoardCell, BoardRound } from '../board';
 import type { SkinOption } from '../../skins/types';
+import { LEVELS, levelOption, type Level } from '../../levels/levels';
 
 // The pairs games' rules for the picker and the cards, pure: the two sizes, what a card looks like after a mistake,
 // how many cards go in a row, and where a found pair's moment plays. Hartjes koppelen (hearts) and Voetbalkaartjes
@@ -7,8 +8,11 @@ import type { SkinOption } from '../../skins/types';
 
 // A sum turned first with a wrong answer twice is one logged mistake (board/session.ts).
 export const PAIRS_STRIKES = 2;
-// Normaal = 12 cards, Moeilijk = 16 cards.
-export const PAIRS_SIZE = { normaal: 6, moeilijk: 8 } as const;
+// Pairs per board by level (owner 2026-11-17): 8, 12, 16 cards; Onmogelijk = 16 cards with a limit on wrong guesses.
+export const PAIRS_SIZE: Record<Level, number> = { makkelijk: 4, normaal: 6, moeilijk: 8, onmogelijk: 8 };
+// Onmogelijk: this many wrong guesses on one board (two cards turned that are no pair) and the round ends, friendly.
+// Per board: a pupil with a perfect memory needs about 5 on 16 cards, so 10 leaves room for a slip or two.
+export const PAIRS_WRONG_MAX = 10;
 
 const pairsRound = (size: number): BoardRound => ({ kind: 'pairs', boards: 2, size, strikes: PAIRS_STRIKES });
 export const HARTJES_ROUND = pairsRound(PAIRS_SIZE.normaal);
@@ -16,13 +20,22 @@ export const HARTJES_ROUND = pairsRound(PAIRS_SIZE.normaal);
 // Which cards a pairs game deals: hearts (Hartjes koppelen) or footballs (Voetbalkaartjes). Fixed per game, no option.
 export type HartjesLook = 'hartjes' | 'voetballen';
 
-// Both pairs games: Normaal or Moeilijk. (The old "Welke kaarten?" pick is gone: a remembered look is dropped by choicesOf.)
+// Hartjes koppelen and Voetbalkaartjes: the four levels, flames only (the levels are about pairs, not time).
+// (The old "Welke kaarten?" pick is gone: a remembered look is dropped by choicesOf.)
 export const HARTJES_OPTIONS: SkinOption[] = [
+    levelOption({ clock: false, rounds: Object.fromEntries(LEVELS.map(l => [l, { board: pairsRound(PAIRS_SIZE[l]) }])) }),
+];
+
+// Spookhuis keeps its own two levels (not part of the difficulty round): Normaal 6 pairs or Moeilijk 8.
+export const SPOOKHUIS_OPTIONS: SkinOption[] = [
     {
         id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal',
         choices: [{ value: 'normaal', label: 'Normaal', round: { board: pairsRound(PAIRS_SIZE.normaal) } }, { value: 'moeilijk', label: 'Moeilijk', round: { board: pairsRound(PAIRS_SIZE.moeilijk) } }],
     },
 ];
+
+/** Wrong guesses left on this board (Onmogelijk), or null when the level has no limit. */
+export const guessesLeft = (level: Level, wrongs: number): number | null => (level === 'onmogelijk' ? Math.max(0, PAIRS_WRONG_MAX - wrongs) : null);
 
 // A found pair's moment: short and never blocking (the pupil may tap on). Under a second, the flip included.
 export const PAIR_MOMENT_MS = 950;

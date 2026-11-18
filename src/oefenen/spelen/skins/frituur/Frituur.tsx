@@ -3,7 +3,8 @@ import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import { Burst, Clouds } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { FRITUUR, headTopOf, isKid, isLow, isVisitor, newCounter, nextSum, patienceShare, serve, tick, timedOut, walkOff, wrongOrder, wrongOrderOf, type Counter, type Customer, type CustomerKind } from './rule';
+import { FRITUUR, headTopOf, isEndless, isKid, isLow, isVisitor, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut, walkOff, wrongOrder, wrongOrderOf, type Counter, type Customer, type CustomerKind } from './rule';
+import { levelOf } from '../../levels/levels';
 import { frituurResult, loadBest, saveIfBest } from './records';
 import { playFrituur } from './sounds';
 import { CyclistG, DogG, KioskG, OrderG, PersonG, PigeonG, StreetG, type CookPose, type Pose } from './art';
@@ -52,20 +53,25 @@ function CustomerArt({ c, pose, item }: { c: Customer; pose: Pose; item?: Custom
 
 export default function Frituur({ question, phase, feedback, onAnswer, onMiss, onReport, progress, events, options, runKey }: SkinProps) {
     const clipId = `fr${useId().replace(/:/g, '')}`;
-    const [first] = useState(() => newCounter(Math.floor(Math.random() * 2 ** 31)));
+    const level = levelOf(options);
+    // The round's game time so far (the session clock: help and the rotate prompt stop it); a new customer's bar follows it.
+    const elapsedMs = progress.msTotal !== null && progress.msLeft !== null ? progress.msTotal - progress.msLeft : 0;
+    const patienceMs = patienceFor(level, elapsedMs);
+    const [first] = useState(() => newCounter(Math.floor(Math.random() * 2 ** 31), patienceMs));
     const counter = useRef(first);
     const [view, setView] = useState(first);
     const [low, setLow] = useState(false);
     const lowRef = useRef(false);
     const fillRef = useRef<HTMLSpanElement | null>(null);
-    const bestKey = `${runKey ?? 'frituur'}|${options.tijd ?? '3'}`;
+    // A best per level too; Normaal keeps the key from before the levels.
+    const bestKey = `${runKey ?? 'frituur'}|${options.tijd ?? '3'}${level === 'normaal' ? '' : `|${level}`}`;
     const [bestBefore] = useState(() => loadBest(bestKey));
     const timers = useRef<number[]>([]);
     useEffect(() => () => { timers.current.forEach(t => window.clearTimeout(t)); }, []);
 
     // The latest props for the loop and the event handlers (they are set up once).
-    const live = useRef({ phase, streak: progress.streak, onMiss, onReport, bestKey, bestBefore, asking: !!question });
-    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, onMiss, onReport, bestKey, bestBefore, asking: !!question }; });
+    const live = useRef({ phase, patienceMs, onMiss, onReport, bestKey, bestBefore, asking: !!question });
+    useLayoutEffect(() => { live.current = { phase, patienceMs, onMiss, onReport, bestKey, bestBefore, asking: !!question }; });
 
     // The end lines from the start ("Je hielp 0 klanten"), then after every customer.
     useEffect(() => { live.current.onReport?.(frituurResult(0, live.current.bestBefore)); }, []);
@@ -87,7 +93,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                 // An empty given is our own deadline: the loop already walked that customer off.
                 if (given === '') return;
                 const before = counter.current;
-                const next = wrongOrder(before);
+                const next = wrongOrder(before, live.current.patienceMs);
                 commitTo(counter, setView, next);
                 playFrituur('huh');
                 if (next.queue[0] !== before.queue[0]) {
@@ -102,7 +108,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
     // A new sum: a served customer leaves eating, the next one steps up.
     const key = question?.key;
     useLayoutEffect(() => {
-        if (key) commitTo(counter, setView, nextSum(counter.current, live.current.streak));
+        if (key) commitTo(counter, setView, nextSum(counter.current, live.current.patienceMs));
     }, [key]);
 
     // Game time at the counter: the bar drains only while the sum waits (help and the flashes freeze it).
@@ -118,7 +124,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
             if (st.phase === 'play' && st.asking) {
                 counter.current = tick(counter.current, dt);
                 if (timedOut(counter.current)) {
-                    commitTo(counter, setView, walkOff(counter.current, 'grumpy', 0));
+                    commitTo(counter, setView, walkOff(counter.current, 'grumpy', st.patienceMs));
                     playFrituur('grumble');
                     st.onMiss();
                 }
@@ -203,7 +209,7 @@ export default function Frituur({ question, phase, feedback, onAnswer, onMiss, o
                             )}
                         </div>
                     ))}
-                    {!view.served && (
+                    {!view.served && !isEndless(view.patience) && (
                         <div key={front.id} className={`fr-patience${low ? ' is-low' : ''}`} style={{ '--top': headTopOf(front.kind), '--left': patienceShare(view.patience) } as CSSProperties}
                             role="img" aria-label={low ? 'De klant wordt ongeduldig' : 'Het geduld van de klant'}>
                             <span ref={fillRef} className="fr-patience-fill" />

@@ -1,17 +1,14 @@
 import { mulberry32 } from '../../distractors';
+import { clockMs } from '../../levels/clock';
+import type { Level } from '../../levels/levels';
 
 // Frituur: the queue at the counter. Pure, so the tuning is testable: the customer at the counter asks the sum on
 // screen and waits on a patience bar that drains with game time (help and the flashes freeze it). A right answer
-// serves them (they leave on the next sum), a wrong order or an empty bar walks them off grumbling.
+// serves them (they leave on the next sum), a wrong order or an empty bar walks them off grumbling. The bar is the
+// shared clock (levels/clock.ts) at the moment they step up; Makkelijk has no bar, they wait as long as it takes.
 
 // THE tuning table (the owner tunes it after playing).
 export const FRITUUR = {
-    // A customer's patience at no streak (ms): time for a slow leerjaar 1 pupil to read and type two digits.
-    patienceMs: 12_000,
-    // Each right answer in a row takes this off the next customer's patience, so a good run gets busier.
-    perStreakMs: 500,
-    // Never less: even a long streak leaves time to read a leerjaar 6 sum and type it.
-    floorMs: 7_000,
     // A wrong order costs this share of the customer's full patience: all of it, they walk off at once (owner 2026-11-17).
     wrongCut: 1,
     // Under this share left the customer gets impatient (checks a watch, taps a foot, whines).
@@ -72,13 +69,16 @@ export interface Counter {
     rev: number;
 }
 
-/** The patience of a customer stepping up after this many right answers in a row. */
-export const patienceFor = (streak: number) => Math.max(FRITUUR.floorMs, FRITUUR.patienceMs - FRITUUR.perStreakMs * Math.max(0, streak));
+// A patience of 0 = no bar (Makkelijk): it never drains and never runs out.
+export const NO_PATIENCE = 0;
 
-const fresh = (streak: number): Patience => {
-    const total = patienceFor(streak);
-    return { total, left: total, grace: FRITUUR.graceMs };
-};
+/** The patience of a customer stepping up after elapsedMs of the round: the shared clock (Makkelijk: no bar). */
+export const patienceFor = (level: Level, elapsedMs: number) => clockMs(level, elapsedMs) ?? NO_PATIENCE;
+
+const fresh = (total: number): Patience => ({ total, left: total, grace: FRITUUR.graceMs });
+
+/** This customer waits without a bar (Makkelijk). */
+export const isEndless = (p: Patience) => p.total <= NO_PATIENCE;
 
 /** Customer number `id` of this round: seeded, so a round's queue is the same on a replay of its seed. */
 export function customerOf(seed: number, id: number, prev: CustomerKind | null): Customer {
@@ -100,40 +100,41 @@ export const wrongOrderOf = (order: OrderKind, n: number): OrderKind => {
     return ORDERS[(i + 1 + (Math.abs(n) % (ORDERS.length - 1))) % ORDERS.length];
 };
 
-export function newCounter(seed: number): Counter {
+/** A fresh counter; the first customer's patience in ms (patienceFor; NO_PATIENCE = no bar). */
+export function newCounter(seed: number, patienceMs: number = patienceFor('normaal', 0)): Counter {
     const queue: Customer[] = [];
     for (let id = 0; id < FRITUUR.queue; id++) queue.push(customerOf(seed, id, queue.at(-1)?.kind ?? null));
-    return { seed, queue, leaving: [], nextId: FRITUUR.queue, patience: fresh(0), served: false, wrongs: 0, servedCount: 0, rev: 0 };
+    return { seed, queue, leaving: [], nextId: FRITUUR.queue, patience: fresh(patienceMs), served: false, wrongs: 0, servedCount: 0, rev: 0 };
 }
 
-/** The customer at the counter leaves (happy with their order, or grumbling); the queue steps up, a new one joins at the back. */
-export function walkOff(c: Counter, mood: Leaver['mood'], streak: number, snack?: OrderKind): Counter {
+/** The customer at the counter leaves (happy with their order, or grumbling); the queue steps up, a new one joins at the back with patienceMs. */
+export function walkOff(c: Counter, mood: Leaver['mood'], patienceMs: number, snack?: OrderKind): Counter {
     const [front, ...rest] = c.queue;
     const joins = customerOf(c.seed, c.nextId, c.queue.at(-1)?.kind ?? null);
     const leaver: Leaver = snack ? { customer: front, mood, snack } : { customer: front, mood };
     return {
         ...c, queue: [...rest, joins], nextId: c.nextId + 1, leaving: [...c.leaving, leaver].slice(-FRITUUR.leaving),
-        patience: fresh(streak), served: false, wrongs: 0, rev: c.rev + 1,
+        patience: fresh(patienceMs), served: false, wrongs: 0, rev: c.rev + 1,
     };
 }
 
 /** A right answer: the order goes over the counter. */
 export const serve = (c: Counter): Counter => (c.served ? c : { ...c, served: true, servedCount: c.servedCount + 1, rev: c.rev + 1 });
 
-/** A wrong answer: the wrong order comes out and costs `wrongCut` of the patience; empty = a little tantrum, then off. */
-export function wrongOrder(c: Counter): Counter {
+/** A wrong answer: the wrong order comes out and costs `wrongCut` of the patience; empty = a little tantrum, then off (also without a bar). */
+export function wrongOrder(c: Counter, patienceMs: number = c.patience.total): Counter {
     if (c.served) return c;
     const left = Math.max(0, c.patience.left - c.patience.total * FRITUUR.wrongCut);
-    if (left <= 0) return walkOff(c, 'tantrum', 0, wrongOrderOf(c.queue[0].order, c.nextId));
+    if (left <= 0) return walkOff(c, 'tantrum', patienceMs, wrongOrderOf(c.queue[0].order, c.nextId));
     return { ...c, patience: { ...c.patience, left }, wrongs: c.wrongs + 1, rev: c.rev + 1 };
 }
 
-/** A new sum on screen: a served customer goes, the next one steps up (patience by the streak). */
-export const nextSum = (c: Counter, streak: number): Counter => (c.served ? walkOff(c, 'happy', streak) : c);
+/** A new sum on screen: a served customer goes, the next one steps up with patienceMs. */
+export const nextSum = (c: Counter, patienceMs: number): Counter => (c.served ? walkOff(c, 'happy', patienceMs) : c);
 
-/** dt ms of game time at the counter: the grace runs out first, then the bar. A served customer's bar stands still. */
+/** dt ms of game time at the counter: the grace runs out first, then the bar. A served customer's bar stands still, and no bar never drains. */
 export function tick(c: Counter, dt: number): Counter {
-    if (c.served || dt <= 0) return c;
+    if (c.served || dt <= 0 || isEndless(c.patience)) return c;
     const { grace, left, total } = c.patience;
     const g = Math.max(0, grace - dt);
     const rest = dt - (grace - g);
@@ -141,10 +142,10 @@ export function tick(c: Counter, dt: number): Counter {
 }
 
 /** The bar is empty: the customer walks off (the skin's onMiss). */
-export const timedOut = (c: Counter) => !c.served && c.patience.left <= 0;
+export const timedOut = (c: Counter) => !c.served && !isEndless(c.patience) && c.patience.left <= 0;
 
 /** Share of the bar left, 0–1. */
-export const patienceShare = (p: Patience) => (p.total > 0 ? Math.min(1, Math.max(0, p.left / p.total)) : 0);
+export const patienceShare = (p: Patience) => (isEndless(p) ? 1 : Math.min(1, Math.max(0, p.left / p.total)));
 
 /** Under lowAt: the customer gets impatient. */
 export const isLow = (p: Patience) => patienceShare(p) < FRITUUR.lowAt;
