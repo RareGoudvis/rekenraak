@@ -18,6 +18,8 @@
   --spel-fill-5: var(--accent-vraagstukken);
   /* Thumb targets in a game stay well above WCAG's 44 px. */
   --spel-tap: 48px;
+  /* The smallest a word on a tap target may get (a phone on its side): a longer word widens its label instead. */
+  --spel-word-min: 13px;
 }
 
 /* ── Touwtrekken's two-mode choice ───────────────────────────────────────── */

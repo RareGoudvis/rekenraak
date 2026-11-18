@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { SkinEndingProps, SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
-import { answerFace, cardLines, isLoneBreuk, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
+import { answerFace, cardLines, isLoneBreuk, isWordCard, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
 import { SpelText, SpelVisual } from '../../SpelVisual';
 import { Burst } from '../../scene';
 import { BallArt, CountMark, GoalNet, HEART, HeartArt, KickBall } from './Art';
@@ -45,7 +45,7 @@ const faceText = (face: BoardFace) => (face.kind === 'text' ? face.text : face.l
 function Face({ face }: { face: BoardFace }) {
     if (face.kind === 'picture') return <span className={`hj-pic is-${face.visual.kind}`}><SpelVisual visual={face.visual} /></span>;
     // A long sum stands as a column sum ("5 918" over "− 2 499"); a breuk stacks.
-    return <span className={`hj-text kiosk-math${isLoneBreuk(face.text) ? ' is-breuk' : ''}`}>{cardLines(face.text).map((l, i) => <span key={i} className="hj-line"><SpelText text={l} /></span>)}</span>;
+    return <span className={`hj-text kiosk-math${isLoneBreuk(face.text) ? ' is-breuk' : ''}${isWordCard(face.text) ? ' is-words' : ''}`}>{cardLines(face.text).map((l, i) => <span key={i} className="hj-line"><SpelText text={l} /></span>)}</span>;
 }
 
 interface CardProps { id: number; board: SpelBoard; ball: boolean; up: boolean; nope: boolean; onTap(): void; disabled: boolean; merging: boolean; puff: boolean }
@@ -235,13 +235,15 @@ function HartjesBoard({ board, phase, onBoardPick, onBoardFocus, sound, onFail, 
     const cleared = found === board.cells.length;
     // One size for every sum on the board: its widest line decides (a picture has no length).
     const chars = Math.max(...board.cells.map(c => { const f = sumFace(c.question); return f.kind === 'text' ? lineChars(cardLines(f.text)) : 1; }));
+    // Word answers (Frans: "choisissez") fit their heart too, all at one size.
+    const answerChars = Math.max(...board.cells.map(c => { const f = answerFace(c.question); return f.kind === 'text' ? lineChars(cardLines(f.text)) : 1; }));
     // A pack's pairs (a pizza and its breuk, a breuk and its vereenvoudigde breuk) are no sum and answer.
     const pairs = board.cells.some(c => c.question.pair);
     const grid = gridOf(order.length);
     const shape = {
         '--hj-cols-l': grid.landscape.cols, '--hj-rows-l': grid.landscape.rows, '--hj-cols-p': grid.portrait.cols,
         '--hj-rows-p': grid.portrait.rows, '--hj-cols-t': grid.tall.cols, '--hj-rows-t': grid.tall.rows, '--hj-cols-s': grid.short.cols, '--hj-rows-s': grid.short.rows,
-        '--hj-chars': chars, '--hj-moment-ms': `${PAIR_MOMENT_MS}ms`,
+        '--hj-chars': chars, '--hj-answer-chars': answerChars, '--hj-moment-ms': `${PAIR_MOMENT_MS}ms`,
     } as CSSProperties;
     return (
         <>

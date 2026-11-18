@@ -23,6 +23,8 @@ export interface SpelContent {
     pictures?: boolean;
     // The board rounds its cards fill (the breuken: memory pairs, the equivalence comb). Absent = none for pictures, every board for number sums.
     boards?: readonly SpelPackBoard[];
+    // The longest word on a target (Frans: "choisissez" = 10); absent = unknown, taken as fitting.
+    wordChars?: number;
 }
 
 // Whole-number + − × : sums (SPEL_LEAVES).
@@ -36,6 +38,7 @@ export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean
     if (!accepts.kinds.includes(content.kind)) return false;
     if (accepts.maxAnswerChars !== undefined && content.answerChars !== undefined && content.answerChars > accepts.maxAnswerChars) return false;
     if (accepts.digits && !content.digitsOnly) return false;
+    if (accepts.maxWordChars !== undefined && content.wordChars !== undefined && content.wordChars > accepts.maxWordChars) return false;
     if (accepts.ops && content.ops && !content.ops.every(op => accepts.ops!.includes(op))) return false;
     if (content.pictures && !accepts.pictures) return false;
     // A board skin plays picture content only when its cards fill that board (the klok fills none).

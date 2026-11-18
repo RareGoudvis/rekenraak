@@ -211,6 +211,7 @@ export const answerFace = (q: SpelQuestion): BoardFace => (q.pair ? viewFace(q.p
  * "− 2 499" (each operator starts a line). A short text, a breuk or a word stays whole.
  */
 export function cardLines(text: string, max = 7): string[] {
+    if (isWordCard(text)) return wordLines(text, max + WORD_EXTRA);
     if (text.length <= max) return [text];
     // Terms: the first number, then each operator with its number.
     const terms: string[] = [];
@@ -224,6 +225,25 @@ export function cardLines(text: string, max = 7): string[] {
         else lines.push(t);
     }
     return lines;
+}
+
+/** A card of words, not a sum (Frans: "jullie (luisteren)", "choisissez"): set in the pupil font, wrapped between words. */
+export const isWordCard = (text: string) => /\p{L}{2}/u.test(text) && !/\d/.test(text);
+
+// Words read narrower than mono digits, so a word line may hold a few more letters than a sum line.
+const WORD_EXTRA = 3;
+
+// A word card in lines: the bracket ("(luisteren)") on a line of its own, the words before it wrapped at `width`
+// (a single longer word stays whole).
+function wordLines(text: string, width: number): string[] {
+    const at = text.indexOf(' (');
+    const head = at > 0 ? text.slice(0, at) : text;
+    const lines: string[] = [];
+    for (const w of head.split(' ')) {
+        if (lines.length && lines[lines.length - 1].length + 1 + w.length <= width) lines[lines.length - 1] += ` ${w}`;
+        else lines.push(w);
+    }
+    return at > 0 ? [...lines, text.slice(at + 1)] : lines;
 }
 
 /** A card that is one breuk ("3/4"): it stacks narrow, so it can stand bigger than a sum. */

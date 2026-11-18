@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import type { SkinEndingProps, SkinProps } from '../../skins/types';
 import { mulberry32, seedOf } from '../../distractors';
-import { answerFace, cardLines, isLoneBreuk, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
+import { answerFace, cardLines, isLoneBreuk, isWordCard, lineChars, sumFace, type BoardFace, type SpelBoard } from '../board';
 import { cardLook, gridOf } from '../hartjes/hearts';
 import { SpelText, SpelVisual } from '../../SpelVisual';
 import { Burst } from '../../scene';
@@ -54,7 +54,7 @@ const centreIn = (el: Element, box: DOMRect): Pt => { const r = el.getBoundingCl
 
 function Face({ face }: { face: BoardFace }) {
     if (face.kind === 'picture') return <span className={`sph-pic is-${face.visual.kind}`}><SpelVisual visual={face.visual} /></span>;
-    return <span className={`sph-text kiosk-math${isLoneBreuk(face.text) ? ' is-breuk' : ''}`}>{cardLines(face.text).map((l, i) => <span key={i} className="sph-line"><SpelText text={l} /></span>)}</span>;
+    return <span className={`sph-text kiosk-math${isLoneBreuk(face.text) ? ' is-breuk' : ''}${isWordCard(face.text) ? ' is-words' : ''}`}>{cardLines(face.text).map((l, i) => <span key={i} className="sph-line"><SpelText text={l} /></span>)}</span>;
 }
 
 function CardFront({ solved }: { solved: boolean }) {
@@ -302,12 +302,14 @@ function SpookBoard({ board, phase, onBoardPick, onBoardFocus, sound, art, theme
 
     const nope = up.length === 2 && isSum(up[0]) !== isSum(up[1]) && !up.some(solved);
     const chars = Math.max(...board.cells.map(c => { const f = sumFace(c.question); return f.kind === 'text' ? lineChars(cardLines(f.text)) : 1; }));
+    // Word answers (Frans: "choisissez") fit their card too, all at one size.
+    const answerChars = Math.max(...board.cells.map(c => { const f = answerFace(c.question); return f.kind === 'text' ? lineChars(cardLines(f.text)) : 1; }));
     const pairs = board.cells.some(c => c.question.pair);
     const grid = gridOf(order.length);
     const shape = {
         '--sph-cols-l': grid.landscape.cols, '--sph-rows-l': grid.landscape.rows, '--sph-cols-p': grid.portrait.cols, '--sph-rows-p': grid.portrait.rows,
         '--sph-cols-t': grid.tall.cols, '--sph-rows-t': grid.tall.rows, '--sph-cols-s': grid.short.cols, '--sph-rows-s': grid.short.rows,
-        '--sph-chars': chars, '--sph-moment-ms': `${PAIR_MOMENT_MS}ms`, '--sph-floor-dark': FLOOR_DARK,
+        '--sph-chars': chars, '--sph-answer-chars': answerChars, '--sph-moment-ms': `${PAIR_MOMENT_MS}ms`, '--sph-floor-dark': FLOOR_DARK,
     } as CSSProperties;
     const Flipper = art.Flipper;
     return (

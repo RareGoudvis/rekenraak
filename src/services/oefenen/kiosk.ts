@@ -1,11 +1,18 @@
 import type { KioskDescriptor, KioskInput, KioskInteract } from './types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { flattenLeaves, type AppLeaf } from '../../config/appstructure';
+import { exerciseKeyOf } from '../generateDispatch';
+import { subjectFor } from './subjects';
 
 // Registry lookups for the oefenmodus: which types and leaves a pupil can practise.
 
 export function kioskFor(typeId: string): KioskDescriptor | null {
-    return REGISTRY[typeId]?.kiosk ?? null;
+    return REGISTRY[typeId]?.kiosk ?? subjectFor(typeId)?.kiosk ?? null;
+}
+
+/** What makes two exercises of a type the same question: the registry's key, or a subject's own (subjects.ts). */
+export function kioskKeyOf(typeId: string, ex: unknown): string {
+    return subjectFor(typeId)?.keyOf(ex) ?? exerciseKeyOf(typeId, ex);
 }
 
 export function kioskInputOf(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): KioskInput {
@@ -27,7 +34,10 @@ export function kioskInstructionOf(typeId: string, ex: unknown, c: Record<string
 /** The type has a descriptor and it can check these settings (registry defaults fill gaps). */
 export function kioskSupports(typeId: string, constraints: Record<string, unknown> = {}): boolean {
     const def = REGISTRY[typeId];
-    if (!def?.kiosk) return false;
+    if (!def?.kiosk) {
+        const subject = subjectFor(typeId);
+        return !!subject && (subject.kiosk.supported?.(constraints) ?? true);
+    }
     const c = { ...(def.defaultConstraints(typeId) as Record<string, unknown>), ...constraints };
     return def.kiosk.supported?.(c) ?? true;
 }

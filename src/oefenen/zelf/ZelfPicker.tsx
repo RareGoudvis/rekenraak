@@ -22,6 +22,8 @@ import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { readRange, readTafels, readWay, saveRange, saveTafels, saveWay, type ZelfWay } from './zelfPicks';
 import { gameBlurb } from './gameBlurbs';
 import { zelfTopicLabel } from './zelfLabels';
+import { ZELF_SUBJECTS, subjectTopicLabel, zelfSubjectOf } from './zelfSubjects';
+import { subjectBadge, subjectPicture } from './subjectArt';
 import {
     TAFELS_DEFAULT, ZELF_COUNTS, ZELF_MINUTES, ZELF_RANGES, buildZelfSessie, choiceMayHaveMab, choicesFor, isTafelTopic, modeKey, tafelChoice,
     tafelPickOf, tafelsOffer, zelfMaxOf, zelfUsable, zelfRangeButtons, type TafelOp, type ZelfChoice, type ZelfMode,
@@ -112,7 +114,7 @@ export default function ZelfPicker() {
     const anyGrade = useMemo(() => data && new Set(LEERJAREN.flatMap(g => [...zelfUsable(data, g).keys()])), [data]);
     const shown = useMemo(() => (grade !== null ? (data ? new Set(zelfUsable(data, grade).keys()) : null) : anyGrade), [data, grade, anyGrade]);
     // The picture and stickers per topic card (topicGames.ts).
-    const cards = useMemo(() => new Map(data && shown ? [...shown].map(id => [id, topicCardOf(data, grade, id)] as const) : []), [data, shown, grade]);
+    const cards = useMemo(() => new Map(data && shown ? [...shown, ...ZELF_SUBJECTS.flatMap(sub => sub.topics.map(t => t.id))].map(id => [id, topicCardOf(data, grade, id)] as const) : []), [data, shown, grade]);
     const choices = data && grade !== null && topicId !== null && !isTafel ? choicesFor(data, grade, topicId, range) : [];
     const back = () => {
         if (setup) { toWays.current = 'instant'; setSetup(null); }
@@ -133,6 +135,13 @@ export default function ZelfPicker() {
 
     if (topicId === null) {
         const pickGrade = (g: Leerjaar) => { setGrade(g); saveGrade(g); };
+        const pickTopic = (id: string) => {
+            if (grade === null || !data) return;
+            setTopicId(id);
+            // A topic with one oefening needs no pick: the screen opens on its next step.
+            const only = isTafelTopic(id) ? [] : choicesFor(data, grade, id, range);
+            setChoice(only.length === 1 ? only[0] : null);
+        };
         return (
             <>
                 <KidBackdrop clouds={false} grade={grade} />
@@ -152,18 +161,24 @@ export default function ZelfPicker() {
                                         <div className="zelf-grid zelf-grid-topics">
                                             {list.map(t => (
                                                 <TopicCard key={t.id} id={t.id} label={zelfTopicLabel(t)} game={cards.get(t.id)?.game ?? null} hasGame={!!cards.get(t.id)?.hasGame}
-                                                    disabled={grade === null} onPick={() => {
-                                                        if (grade === null) return;
-                                                        setTopicId(t.id);
-                                                        // A topic with one oefening needs no pick: the screen opens on its next step.
-                                                        const only = isTafelTopic(t.id) ? [] : choicesFor(data, grade, t.id, range);
-                                                        setChoice(only.length === 1 ? only[0] : null);
-                                                    }} />
+                                                    disabled={grade === null} onPick={() => pickTopic(t.id)} />
                                             ))}
                                         </div>
                                     </section>
                                 );
                             })}
+                            {/* Subjects beside the maths (Frans from leerjaar 5): their own section, colour and drawn cards. */}
+                            {ZELF_SUBJECTS.filter(sub => grade === null || sub.grades.includes(grade)).map(sub => (
+                                <section key={sub.section} className="zelf-section" aria-label={sub.section} style={{ '--tint': sub.tint } as React.CSSProperties}>
+                                    <h2 className="zelf-section-title">{sub.section}</h2>
+                                    <div className="zelf-grid zelf-grid-topics">
+                                        {sub.topics.map(t => (
+                                            <TopicCard key={t.id} id={t.id} label={t.label} game={null} hasGame={!!cards.get(t.id)?.hasGame}
+                                                picture={subjectPicture(t.id)} disabled={grade === null} onPick={() => pickTopic(t.id)} />
+                                        ))}
+                                    </div>
+                                </section>
+                            ))}
                         </div>
                     )}
                     <footer className="zelf-home-foot">
@@ -178,8 +193,9 @@ export default function ZelfPicker() {
     if (!data || grade === null) return <><KidBackdrop grade={grade} /><main className="oefen-center zelf">{bar}<p className="oefen-lead">Even laden…</p></main></>;
 
     const topicNav = EENVOUDIG_NAV.flatMap(sec => sec.topics).find(t => t.id === topicId);
-    const topicLabel = topicNav ? zelfTopicLabel(topicNav) : '';
-    const { icon: topicGlyph, size: topicSize } = topicIcon(topicId, topicLabel);
+    const subject = zelfSubjectOf(topicId);
+    const topicLabel = topicNav ? zelfTopicLabel(topicNav) : subjectTopicLabel(topicId) ?? '';
+    const { icon: topicGlyph, size: topicSize } = subject ? { icon: subjectBadge(subject.section), size: '' } : topicIcon(topicId, topicLabel);
 
     // A game card: that game with this oefening; Nakijken, Ander spel and Terug come back to this screen.
     const play = (skin: Skin, meta: SpelStart['meta'] = skin.meta) => {
@@ -278,7 +294,7 @@ export default function ZelfPicker() {
             {/* Its own element per screen: a fresh scroll position, never the topics list's. */}
             <main key={`keuze-${topicId}`} className="oefen-center zelf">
                 {bar}
-                <div className="zelf-head" style={sectionTint(SECTION_OF_TOPIC[topicId])}>
+                <div className="zelf-head" style={subject ? { '--tint': subject.tint } as React.CSSProperties : sectionTint(SECTION_OF_TOPIC[topicId])}>
                     <span className={`zelf-badge is-lg${topicSize}`} aria-hidden>{topicGlyph}</span>
                     <h1 className="oefen-title">{topicLabel}</h1>
                 </div>

@@ -8,6 +8,8 @@ import { ViewerInteractionProvider, type ViewerInteraction } from '../../compone
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/kiosk';
 import { useOefenStore } from '../useOefenStore';
 import { usedExtent } from './cardExtent';
+import { subjectFor } from '../../services/oefenen/subjects';
+import SubjectCard from './SubjectCard';
 
 interface Props {
     typeId: string;
@@ -31,7 +33,12 @@ const MAX_ZOOM = 3.2;
 // grid too tall for that at the card's size scrolls inside the card instead of shrinking.
 const MIN_CELL_PX = 40;
 
-export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey, onTooWide }: Props) {
+// A subject beside the maths (Frans) has no sheet viewer: its own prompt card.
+export default function ExerciseCard(props: Props) {
+    return subjectFor(props.typeId) ? <SubjectCard {...props} /> : <SheetCard {...props} />;
+}
+
+function SheetCard({ typeId, exercise, constraints, instruction, exerciseKey, onTooWide }: Props) {
     const boxRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
     const sizerRef = useRef<HTMLDivElement>(null);

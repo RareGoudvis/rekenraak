@@ -1,6 +1,5 @@
 import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor, type OefenRun, type OefenSessie, type OefenStats, type OefenSummaryRow, type OefenTypeStats } from './types';
-import { kioskFor, kioskInputOf, kioskInteractOf } from './kiosk';
-import { exerciseKeyOf } from '../generateDispatch';
+import { kioskFor, kioskInputOf, kioskInteractOf, kioskKeyOf } from './kiosk';
 import { plannedTotal, retiredSlots } from './scheduler';
 import { sessieContentHash } from './session';
 import { timeWordsOfFields, timeWordsText } from '../clock/timeWords';
@@ -83,7 +82,7 @@ export function recordAnswer(
                 ...(secondTry > 0 && { secondTry }), errors,
             },
         },
-        history: [...stats.history, { slot, typeId, exerciseKey: exerciseKeyOf(typeId, exercise), correct, ms, ...(retried && { secondTry: true }) }],
+        history: [...stats.history, { slot, typeId, exerciseKey: kioskKeyOf(typeId, exercise), correct, ms, ...(retried && { secondTry: true }) }],
     };
 }
 

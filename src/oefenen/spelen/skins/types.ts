@@ -27,6 +27,8 @@ export interface SkinAccepts {
     pictures?: boolean;
     // A board skin with pictures: picture content must fill this board round (SpelContent.boards).
     board?: SpelPackBoard;
+    // The longest WORD its targets keep readable on a phone on its side (--spel-word-min); absent = any (the label grows).
+    maxWordChars?: number;
 }
 
 export interface SkinMeta {
