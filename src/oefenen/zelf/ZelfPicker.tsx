@@ -22,6 +22,7 @@ import { gradeTint, readGrade, saveGrade } from './zelfGrade';
 import { readRange, readTafels, readWay, saveRange, saveTafels, saveWay, type ZelfWay } from './zelfPicks';
 import { gameBlurb } from './gameBlurbs';
 import { zelfTopicLabel } from './zelfLabels';
+import { zelfRangeless } from './zelfRegroup';
 import { ZELF_SUBJECTS, subjectTopicLabel, zelfSubjectOf } from './zelfSubjects';
 import { subjectBadge, subjectPicture } from './subjectArt';
 import {
@@ -207,7 +208,7 @@ export default function ZelfPicker() {
 
     // Tot hoeveel: buttons for the ranges this topic has cards of (zelfRangeButtons), else the range it plays as a pill.
     const ranges = ZELF_RANGES[grade];
-    const rangeShown = ranges.some(r => zelfMaxOf(data, topicId, grade, r) !== null) ? zelfMaxOf(data, topicId, grade, range ?? ranges[0]) : null;
+    const rangeShown = !zelfRangeless(topicId, grade) && ranges.some(r => zelfMaxOf(data, topicId, grade, r) !== null) ? zelfMaxOf(data, topicId, grade, range ?? ranges[0]) : null;
     const rangeButtons = zelfRangeButtons(data, topicId, grade);
     const rangeChoice = rangeButtons.length > 0;
     const pickRange = (r: number) => {
