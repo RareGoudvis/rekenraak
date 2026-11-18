@@ -134,6 +134,11 @@ wrong: ({ side }) => ({ damage: { [side]: 1 } }),
 roundOver: (v, timeUp) => /* 25 points wins, else defaultRoundOver(v, timeUp) */,
 ```
 
+**A race** (Drakenrace, Wildwaterrace, Monstertrucks, Steekspel) has no lives: reuse the levens row as the course with
+`duelOptions({ lives: { label: 'Hoe ver …?', choices, default } })`, move with `points`, and end the round in `roundOver`
+when a side's points reach `config.lives`. Streak effects read `streak` from the ctx (every 3rd in a row); keep a
+knock-back mild (Drakenrace only strikes a side that is level or ahead) or a faster bot runs away with Normaal.
+
 A rule may read your component's refs (Kikkers: which bug is nearest) because hooks run synchronously inside
 `answer()`. For things that happen without an answer (a bug flies off, a hazard), call
 `useDuelStore.getState().effect(by, effect)`: the same path, events and round check.
