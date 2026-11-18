@@ -213,6 +213,7 @@
 /* < = > : one row of three, the symbols as big as the keys allow. */
 .spel-pad.is-symbols { --pad-cols: 3; grid-template-rows: minmax(var(--spel-tap), 1fr); }
 .spel-pad.is-symbols .spel-pad-key { font-size: clamp(36px, 12vmin, 72px); line-height: 1; }
+.spel-pad.is-numbers .spel-pad-key { font-family: var(--font-sheet-math); }
 /* A struck-through = reads as ≡: a wrong symbol only greys out. */
 .spel-pad.is-symbols .spel-pad-key.is-wrong { text-decoration: none; }
 .spel-pad.is-symbols .spel-pad-key:last-child:nth-child(odd) { grid-column: auto; }

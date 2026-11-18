@@ -32,8 +32,12 @@ const padChars = (choices: readonly string[], views: Props['views']) =>
 
 // Every choice one symbol (< = >): one row of big symbols, read left to right.
 const SYMBOL = /^[<=>≤≥≠]$/;
+// Numbers to pick (het grootste getal) read in the sheet's number font, as on the sign.
+const NUMBER = /^-?\d+([.,]\d+)?$/;
 const padKind = (choices: readonly string[], views: Props['views']) =>
-    (views?.some(v => v?.visual) ? ' is-pictures' : choices.every(c => SYMBOL.test(views?.[choices.indexOf(c)]?.text ?? c)) ? ' is-symbols' : '');
+    (views?.some(v => v?.visual) ? ' is-pictures'
+        : choices.every(c => SYMBOL.test(views?.[choices.indexOf(c)]?.text ?? c)) ? ' is-symbols'
+        : choices.every(c => NUMBER.test(c.replace(/\s/g, ''))) ? ' is-numbers' : '');
 
 // A keypad game on word, picture or symbol choices (Frans, the klok, < = >): the choices as big buttons in the keypad's place, a tap is the answer.
 // Taps act on pointerdown (two children in a duel tap at once; a multi-touch screen drops the second click);

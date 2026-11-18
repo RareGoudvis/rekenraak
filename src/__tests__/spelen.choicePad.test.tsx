@@ -196,6 +196,10 @@ describe('pictures, symbols and numbers to pick on the pad', () => {
             const q = sp().question!;
             const nums = (q.exercise as { numbers: number[] }).numbers;
             expect(q.choices.map(c => Number(c.replace(/\s/g, '').replace(',', '.'))).sort((a, b) => a - b)).toEqual([...new Set(nums)].sort((a, b) => a - b));
+            // On the keys in the sheet's number font, as on the sign.
+            const { unmount } = render(<SpelKeypad questionKey={q.key} onAnswer={vi.fn()} />);
+            expect(document.querySelector('.spel-pad')!.className).toContain('is-numbers');
+            unmount();
             sp().answer(q.answer, 1_000_100);
             expect(sp().phase).toBe('right');
         }
