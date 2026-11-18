@@ -60,7 +60,7 @@ describe('Kikkers en vliegjes: the registry entry', () => {
         const k = kikkers();
         expect(k.meta).toMatchObject({ id: 'kikkers', label: 'Kikkers en vliegjes', input: 'keypad', players: '1-2', music: 'weide' });
         expect(k.Screen && !k.Component).toBe(true);
-        expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'winnen']);
+        expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes', 'winnen']);
         expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '10', rondes: '3', winnen: 'tijd' });
         expect(k.meta.options!.at(-1)!.choices.map(c => c.label)).toEqual(['Op tijd', 'Tot 25 punten']);
         expect([modeOf(undefined), modeOf({ winnen: 'doel' })]).toEqual(['tijd', 'doel']);

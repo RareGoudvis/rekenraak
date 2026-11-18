@@ -3,7 +3,7 @@ import type { DuelRule } from '../../duel/types';
 // Taartgevecht on the duel engine: one shared sum, both type at once (stream 'shared'). The first right answer
 // throws a cream pie at the other contestant; it costs a life when it lands. A wrong answer locks that keypad
 // for 2 s (the engine's wrongLockMs). The last pie of a round flies slower (the slow-motion moment).
-// A Moeilijk time-out throws nothing: that side is out for this sum, nobody loses a life (the clock is pressure).
+// A time-out throws nothing: that side is out for this sum, nobody loses a life (the clock is pressure).
 
 export const TAART = {
     // A pie's flight, the arm's swing included. Both stay under DUEL_TIMING.sharedNext, so a pie always lands

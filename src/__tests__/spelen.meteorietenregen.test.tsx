@@ -56,7 +56,7 @@ describe('Meteorietenregen: the registry entry', () => {
         const m = skin().meta;
         expect(m).toMatchObject({ id: 'meteorietenregen', label: 'Meteorietenregen', input: 'keypad', timed: false, players: '1-2' });
         expect(m.accepts.kinds).toEqual(['number']);
-        expect(m.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
+        expect(m.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes']);
         expect(meta().chosen).toEqual({ spelers: '2', niveau: 'normaal', levens: '10', rondes: '3' });
         // The launch is the scene's own sound.
         expect(m.sounds!.correct).toBeNull();

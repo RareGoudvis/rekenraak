@@ -1,18 +1,19 @@
+import { clockMs } from '../../levels/clock';
+import type { Level } from '../../levels/levels';
 import { GEO, netSpot, project, type Geo, type Spot, type XY } from './pitch';
 
 // Voetbal's match, pure for the tests. Possession decides what an answer does. While the polar bears have the
 // ball, a right answer is a pass up their chain and a wrong one lets the black bears take it where it is. While the
 // black bears have it, a wrong answer is their pass (the same chain, mirrored) and a right one wins it back on the
-// spot. After PASSES passes a team is at its shooting point: our next sum is the shot, on its own clock (onMiss):
-// right = a goal, wrong or too late = their keeper's catch. Their next wrong answer is their shot, and it goes in.
+// spot. After PASSES passes a team is at its shooting point: our next sum is the shot: right = a goal, wrong = their
+// keeper's catch. Their next wrong answer is their shot, and it goes in. Every level but Makkelijk puts the shared
+// clock (levels/clock.ts) on each sum: too late (onMiss) counts as a wrong answer, so the black bears get the ball.
 // The match clock is the session's (round.seconds); at its half the skin holds it for the "Rust!" break. The beats
 // below turn each play into a short timeline of scenes (where every bear and the ball stand), drawn by Voetbal.tsx.
 
 export const VOETBAL = {
     // Passes before the shot (pass dots 1–4): keeper → defender → midfielder → the other midfielder → striker.
     passes: 4,
-    // The shot's own countdown.
-    shotMs: 10_000,
     // The half-time break: the match clock stands still meanwhile.
     rustMs: 2_000,
     // A hidden question cap, so a round always ends (the clock ends it first in practice).
@@ -77,7 +78,11 @@ export function playOf(m: Match, correct: boolean): Match {
 export const halfTimeDue = (m: Match, msLeft: number | null, msTotal: number | null) =>
     m.half === 1 && msLeft !== null && !!msTotal && msLeft > 0 && msLeft <= msTotal / 2;
 
-/** Shot clock: what is left after dt of play (never below 0). */
+/** The time for the sum now showing, from the match clock's play time so far; null = no clock (Makkelijk). */
+export const sumClockMs = (level: Level, msLeft: number | null, msTotal: number | null) =>
+    clockMs(level, msLeft !== null && msTotal !== null ? msTotal - msLeft : 0);
+
+/** A sum's clock: what is left after dt of play (never below 0). */
 export const shotStep = (left: number, dt: number) => Math.max(0, left - Math.max(0, dt));
 
 /** The score in words, for the end screen and screen readers: "IJsberen 3, zwarte beren 1". */

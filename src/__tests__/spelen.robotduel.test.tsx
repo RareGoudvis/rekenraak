@@ -141,7 +141,7 @@ describe('Robotduel: a match on the engine', () => {
     test('a Moeilijk time-out drops the guard too', () => {
         vi.useFakeTimers();
         du().begin({ meta: meta({ spelers: '2', niveau: 'moeilijk' }), from, rule: ROBOT_RULE, config: { players: 2, level: 'moeilijk', lives: 5, bestOf: 1, stream: 'own', readyMs: 0 } });
-        vi.advanceTimersByTime(10_000);
+        vi.advanceTimersByTime(12_000);
         expect(du().sides.left.flags.guard).toBe(1);
         expect(du().sides.right.flags.guard).toBe(1);
     });
@@ -152,7 +152,7 @@ describe('Robotduel: the tile and the screen', () => {
         const r = robot();
         expect(r.meta).toMatchObject({ id: 'robotduel', label: 'Robotduel', input: 'keypad', players: '1-2' });
         expect(r.Screen && !r.Component).toBeTruthy();
-        expect(r.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes']);
+        expect(r.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes']);
         expect(GAME_BLURB.robotduel).toBeTruthy();
     });
 

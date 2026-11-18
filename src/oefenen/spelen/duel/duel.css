@@ -165,7 +165,7 @@
   transition: background-color 200ms;
 }
 .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 38%, var(--bg-surface)); }
-/* The sum with the Moeilijk ring beside it on the half's outer edge; the row keeps the sign's height while there is
+/* The sum with the clock ring beside it on the half's outer edge; the row keeps the sign's height while there is
    no sum yet (the ready banner), so the keypad never jumps. */
 .duel-ask {
   width: 100%;
@@ -204,7 +204,7 @@
 .duel-half.is-got .duel-note { animation: duel-pop 420ms var(--ease-spring); }
 .duel-app.is-between .duel-halves { opacity: .4; }
 
-/* Moeilijk: the sum's ring empties in the team colour, the last third in the warning tone. */
+/* The clock (every level but Makkelijk): the sum's ring empties in the team colour, the last third in the warning tone. */
 .duel-ring { position: relative; width: clamp(44px, 6vmin, 72px); height: clamp(44px, 6vmin, 72px); display: inline-grid; place-items: center; }
 .duel-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .duel-ring-bg { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }

@@ -50,7 +50,7 @@ describe('Kasteel: the registry entry and the pre-start screen', () => {
         expect(k.meta).toMatchObject({ id: 'kasteel', label: 'Kasteel', input: 'keypad', timed: false, players: '1-2' });
         expect(k.meta.accepts.kinds).toEqual(['number']);
         expect(k.Screen && !k.Component && !k.screenWhen).toBe(true);
-        expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'manier']);
+        expect(k.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes', 'manier']);
         expect(meta().chosen).toEqual({ spelers: '1', niveau: 'normaal', levens: '10', rondes: '3', manier: 'samen' });
         // A device that still remembers a retired choice (3 levens) gets the default.
         expect(meta({ levens: '3' }).chosen!.levens).toBe('10');

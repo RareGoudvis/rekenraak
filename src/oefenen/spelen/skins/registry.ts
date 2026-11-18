@@ -10,6 +10,7 @@ import { Cake } from '@phosphor-icons/react';
 import { WRONG_PENALTY_MS } from './bom/penalty';
 import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
+import { levelOption } from '../levels/levels';
 import { BugBeetle } from '@phosphor-icons/react';
 import { WINNEN_OPTION } from './kikkers/rule';
 import { MagicWand } from '@phosphor-icons/react';
@@ -116,11 +117,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // A match of 3 or 5 minutes in two halves (a short "Rust!" holds the clock). Right answers pass, a wrong one hands
-        // the black bears the ball (their passes and shot come on wrong answers); our shot has its own 10 s ring (onMiss).
+        // the black bears the ball (their passes and shot come on wrong answers); every level but Makkelijk rings each sum
+        // with the shared clock (levels/clock.ts), too late (onMiss) = a wrong answer.
         meta: {
             music: 'sport',
             id: 'voetbal', label: 'Voetbal', input: 'keypad', timed: true, round: { seconds: 180, cap: 200 }, accepts: KEYPAD_NUMBER,
-            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }, levelOption({ clock: true })],
             sounds: { correct: 'tok', wrong: 'plop', miss: null, win: 'cheer', caught: 'plof', whistle: 'fluit' },
         },
         icon: SoccerBall,

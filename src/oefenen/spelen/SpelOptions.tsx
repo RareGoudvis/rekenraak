@@ -4,6 +4,7 @@ import type { SkinMeta } from './skins/types';
 import { loadChoices, resolveMeta, saveChoices } from './skins/options';
 import { skinById } from './skins/registry';
 import GameThumb from './GameThumb';
+import LevelIcon from './levels/LevelIcon';
 import { tintOf } from './thumbs';
 
 interface Props {
@@ -24,6 +25,9 @@ export default function SpelOptions({ meta, blurb, note, onStart, onBack }: Prop
     const start = () => { saveChoices(meta.id, chosen); onStart(resolveMeta(meta, chosen)); };
     const skin = skinById(meta.id);
     const shown = meta.options?.filter(o => !o.when || chosen[o.when.id] === o.when.value) ?? [];
+    // The half-line options pair up; an odd last one gets the whole line, so its longer labels never wrap.
+    const halves = shown.filter(o => !o.wide);
+    const alone = halves.length > 1 && halves.length % 2 === 1 ? halves[halves.length - 1].id : null;
     return (
         <section className="spel-options" aria-labelledby="spel-options-title" style={{ '--tint': tintOf(meta.id) } as React.CSSProperties}>
             <div className="spel-options-hero">
@@ -37,12 +41,12 @@ export default function SpelOptions({ meta, blurb, note, onStart, onBack }: Prop
             {shown.length > 0 && (
                 <div className={`spel-options-panel${shown.length > 2 ? ' is-many' : ''}`}>
                     {shown.map(o => (
-                        <div key={o.id} className="kid-option">
+                        <div key={o.id} className={`kid-option${o.wide ? ' is-wide' : ''}${o.id === alone ? ' is-alone' : ''}`}>
                             <p className="kid-option-label" id={`spel-opt-${o.id}`}>{o.label}</p>
                             <div role="group" aria-labelledby={`spel-opt-${o.id}`} className="kid-seg">
                                 {o.choices.map(c => (
                                     <button key={c.value} type="button" aria-pressed={chosen[o.id] === c.value} className="kid-seg-btn"
-                                        onClick={() => setChosen(p => ({ ...p, [o.id]: c.value }))}>{c.label}</button>
+                                        onClick={() => setChosen(p => ({ ...p, [o.id]: c.value }))}>{c.icon && <LevelIcon icon={c.icon} />}{c.label}</button>
                                 ))}
                             </div>
                         </div>

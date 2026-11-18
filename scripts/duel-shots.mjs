@@ -1,5 +1,5 @@
 // Duel games: screenshots of one duel game through a whole match, for a visual check (not in the gate).
-// Per size × 1 / 2 spelers: play (with the Moeilijk rings), a right answer in flight, a wrong answer, the round
+// Per size × 1 / 2 spelers: play (with the clock rings, every level but Makkelijk), a right answer in flight, a wrong answer, the round
 // card, the match card. The match is driven through window.__duel (dev builds, duel/duelStore.ts).
 //
 //   npm run dev -- --port 5401

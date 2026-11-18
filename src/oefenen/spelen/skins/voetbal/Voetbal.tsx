@@ -1,9 +1,10 @@
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
+import { levelOf } from '../../levels/levels';
 import type { SkinProps } from '../types';
 import {
-    KICKOFF, VOETBAL, beatsOf, endTitle, halfTimeDue, isShot, loadBest, newMatch, passArc, playOf, saveBest, sceneOf, scoreLine, shotStep,
+    KICKOFF, VOETBAL, beatsOf, endTitle, halfTimeDue, isShot, loadBest, newMatch, passArc, playOf, saveBest, sceneOf, scoreLine, shotStep, sumClockMs,
     type Beat, type Fig, type Match, type Pose,
 } from './match';
 import { DEPTH, FAN_ROWS, STAND, depthFor, fans, geoOf, goalArt, pitchLines, viewHeight, type Fan, type Geo } from './pitch';
@@ -12,8 +13,9 @@ import './voetbal.css';
 // Voetbal: the polar bears (blue scarves) play the black bears (orange scarves), 5 against 5 (1-1-2-1) on a small
 // pitch seen from the stand. With the ball, a right answer is a pass up the pitch (untimed) and a wrong one lets the
 // black bears take it ("Oeps!"); then their passes come on wrong answers and a right one wins it back ("Hebbes!").
-// Our fifth sum is the shot on a gentle 10 s ring (onMiss); theirs goes in. The match clock is the session's; at its
-// half the skin holds it for a short "Rust!". match.ts decides where everybody stands per beat; this file draws it.
+// Our fifth sum is the shot; theirs goes in. Every level but Makkelijk rings each sum with the shared clock (onMiss =
+// a wrong answer). The match clock is the session's; at its half the skin holds it for a short "Rust!". match.ts
+// decides where everybody stands per beat; this file draws it.
 
 // A round sticker bear, feet at 0 0, facing right (face -1 mirrors it).
 export function Bear({ kind, face = 1, pose = 'stand', gloves = false }: { kind: 'ijs' | 'zwart'; face?: 1 | -1; pose?: Pose; gloves?: boolean }) {
@@ -225,7 +227,7 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
     // The last play's shout (GOAL!, Gevangen!), keyed per play; null when it has faded.
     const [shout, setShout] = useState<{ play: 'goal' | 'zgoal' | 'save'; n: number } | null>(null);
     const [rust, setRust] = useState(false);
-    const [shot, setShot] = useState({ id: '', left: VOETBAL.shotMs as number });
+    const [clock, setClock] = useState({ id: '', left: 0, total: 0 });
     const bestKey = `${runKey ?? 'voetbal'}|${options.tijd ?? '3'}`;
     const [bestBefore] = useState(() => loadBest(bestKey));
     // The pitch's depth follows the scene's shape: a tall scene gets a deeper pitch, not a taller stand.
@@ -245,8 +247,10 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
     useEffect(() => () => { timers.current.forEach(t => window.clearTimeout(t)); }, []);
 
     // The latest props for the event handlers and the clocks (they are set up once).
-    const live = useRef({ sound, onMiss, onHold, onReport, bestKey, bestBefore });
-    useLayoutEffect(() => { live.current = { sound, onMiss, onHold, onReport, bestKey, bestBefore }; });
+    // The clock a sum gets is fixed when it shows (the level's time for the match's play time so far).
+    const limitNow = sumClockMs(levelOf(options), progress.msLeft, progress.msTotal);
+    const live = useRef({ sound, onMiss, onHold, onReport, bestKey, bestBefore, limitNow });
+    useLayoutEffect(() => { live.current = { sound, onMiss, onHold, onReport, bestKey, bestBefore, limitNow }; });
 
     const report = (goals: number, against: number) => live.current.onReport?.({
         title: endTitle(goals, against), lead: scoreLine(goals, against),
@@ -301,34 +305,40 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
         });
     }, [due]);
 
-    // The shot's own clock: only while the shot is on screen and in play (help and half time stop it).
+    // The sum's clock: only while a sum is on screen and in play (help and half time stop it).
     const shooting = isShot(match) && !!question;
-    // One id per shot (the play count changes with every answer), so a new shot starts full.
-    const shotId = `${question?.key ?? ''}|${match.n}`;
-    const shotLeft = shot.id === shotId ? shot.left : VOETBAL.shotMs;
-    const running = shooting && phase === 'play' && !rust;
-    const left = useRef({ id: '', ms: VOETBAL.shotMs as number });
+    // One id per sum (the play count changes with every answer), so a new sum starts full.
+    const sumId = `${question?.key ?? ''}|${match.n}`;
+    const mine = clock.id === sumId;
+    const sumTotal = (mine ? clock.total : limitNow) ?? 0;
+    const sumLeft = (mine ? clock.left : limitNow) ?? 0;
+    const running = sumTotal > 0 && !!question && phase === 'play' && !rust;
+    const left = useRef({ id: '', ms: 0, total: 0 });
     useEffect(() => {
         if (!running) return;
-        if (left.current.id !== shotId) left.current = { id: shotId, ms: VOETBAL.shotMs };
+        if (left.current.id !== sumId) {
+            const total = live.current.limitNow ?? 0;
+            left.current = { id: sumId, ms: total, total };
+        }
         let last = Date.now();
         const id = window.setInterval(() => {
             const now = Date.now();
             const was = left.current.ms;
             left.current.ms = shotStep(was, now - last);
             last = now;
-            setShot({ id: shotId, left: left.current.ms });
+            setClock({ id: sumId, left: left.current.ms, total: left.current.total });
             if (was > 0 && left.current.ms === 0) live.current.onMiss();
         }, 250);
         return () => window.clearInterval(id);
-    }, [running, shotId]);
+    }, [running, sumId]);
 
     const scene = sceneOf(beat.beat, geo);
     const arc = beat.arc;
 
     if (!question) return <div className="vb-root" />;
     const flash = phase === 'right' || phase === 'wrong';
-    const showRing = shooting && (phase === 'play' || phase === 'help');
+    const showShot = shooting && (phase === 'play' || phase === 'help');
+    const showRing = sumTotal > 0 && (phase === 'play' || phase === 'help');
     const passDots = Math.min(match.passes, VOETBAL.passes);
     const theirs = match.side === 'zwart';
     const b = scene.ball;
@@ -384,17 +394,18 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
                 <div className="vb-hud">
                     <p className="vb-score" aria-label={scoreLine(match.goals, match.against)}>{scoreLine(match.goals, match.against)}</p>
                     <span className={`vb-dots${theirs ? ' is-zwart' : ''}`} role="img"
-                        aria-label={showRing ? 'Schieten!' : `${theirs ? 'Zwarte beren' : 'IJsberen'}: ${passDots} van ${VOETBAL.passes} passes`}>
+                        aria-label={showShot ? 'Schieten!' : `${theirs ? 'Zwarte beren' : 'IJsberen'}: ${passDots} van ${VOETBAL.passes} passes`}>
                         {Array.from({ length: VOETBAL.passes }, (_, i) => <span key={i} className={`vb-dot${i < passDots ? ' is-on' : ''}`} />)}
                     </span>
                     {showRing && (
-                        <span className="vb-ring" role="timer" aria-label={`Schiet! Nog ${Math.ceil(shotLeft / 1000)} seconden`}>
+                        <span className={`vb-ring${showShot ? ' is-shot' : ''}${sumLeft <= sumTotal / 3 ? ' is-low' : ''}`} role="timer"
+                            aria-label={`${showShot ? 'Schiet! ' : ''}Nog ${Math.ceil(sumLeft / 1000)} seconden`}>
                             <svg viewBox="0 0 100 100" aria-hidden>
                                 <circle className="vb-ring-track" cx="50" cy="50" r="42" />
                                 <circle className="vb-ring-left" cx="50" cy="50" r="42" pathLength={100}
-                                    style={{ strokeDashoffset: (1 - shotLeft / VOETBAL.shotMs) * 100 }} />
+                                    style={{ strokeDashoffset: (1 - sumLeft / sumTotal) * 100 }} />
                             </svg>
-                            <span className="vb-ring-num">{Math.ceil(shotLeft / 1000)}</span>
+                            <span className="vb-ring-num">{Math.ceil(sumLeft / 1000)}</span>
                         </span>
                     )}
                 </div>
@@ -416,10 +427,10 @@ export default function Voetbal({ question, phase, feedback, onAnswer, onMiss, o
             </div>
 
             <div className="vb-panel">
-                <p className={`vb-tag${showRing || theirs ? ' is-on' : ''}${theirs ? ' is-zwart' : ''}`} aria-hidden={!showRing && !theirs}>
+                <p className={`vb-tag${showShot || theirs ? ' is-on' : ''}${theirs ? ' is-zwart' : ''}`} aria-hidden={!showShot && !theirs}>
                     {theirs ? 'Pak de bal terug!' : 'Schiet op doel!'}
                 </p>
-                <SpelSignBox className={`vb-sign${showRing ? ' is-shot' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="vb-sign-answer" />
+                <SpelSignBox className={`vb-sign${showShot ? ' is-shot' : ''}`} question={question} feedback={feedback} flash={flash} answerClassName="vb-sign-answer" />
                 <SpelKeypad questionKey={question.key} onAnswer={onAnswer} disabled={phase !== 'play' || rust} />
             </div>
         </div>

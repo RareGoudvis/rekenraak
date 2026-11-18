@@ -4,12 +4,15 @@ import type { DuelLevel } from './types';
 // with the randomness injected, so the pacing is testable (spelen.duel.test plays simulated pupils against it
 // through the real store, for every duel game's rule).
 
-// THE tuning table (owner 2026-11-16: "the cpu should be better"). Checked by spelen.duel.test against a
-// simulated 9-year-old (an answer every 4–7 s, 85 % right): Normaal = the pupil wins about two rounds in three,
-// Moeilijk = the computer wins about two in three. Slower and faster pupils get a match that stays close.
+// THE tuning table (owner 2026-11-16 "the cpu should be better", 2026-11-17 four levels). Checked by spelen.bot.test
+// against a simulated 9-year-old (an answer every 4–7 s, 85 % right), pupil round wins: Makkelijk about 85 % or more,
+// Normaal about two in three, Moeilijk about one in three, Onmogelijk under 20 %. Slower and faster pupils get a match
+// that stays close. band = how hard the rubber band pulls at this level (1 = fully; Onmogelijk eases off less).
 export const BOT = {
-    normaal: { minMs: 4_400, maxMs: 7_800, miss: 0.18, paceTimes: 1.05 },
-    moeilijk: { minMs: 3_200, maxMs: 5_800, miss: 0.1, paceTimes: 0.92 },
+    makkelijk: { minMs: 6_000, maxMs: 10_000, miss: 0.32, paceTimes: 1.4, band: 1 },
+    normaal: { minMs: 4_400, maxMs: 7_800, miss: 0.18, paceTimes: 1.05, band: 1 },
+    moeilijk: { minMs: 3_200, maxMs: 5_800, miss: 0.11, paceTimes: 0.93, band: 1 },
+    onmogelijk: { minMs: 2_400, maxMs: 4_400, miss: 0.05, paceTimes: 0.76, band: 0.6 },
     // A longer answer takes longer to type: per character past two.
     perCharMs: 350,
     // How far the bot moves from its own pace toward the pupil's (times paceTimes), 0..1.
@@ -23,6 +26,8 @@ export const BOT = {
     missFollow: [0.4, 1.6] as [number, number],
     // Never quicker than a person can read and type.
     floorMs: 1_500,
+    // With a clock on the sum: the bot answers at the latest this long before it runs out (the store caps its delay).
+    beatClockMs: 700,
 };
 export type BotTuning = typeof BOT;
 
@@ -54,8 +59,9 @@ export function botTurn(level: DuelLevel, { lead, answerChars, paceMs = null, sh
         miss *= Math.max(tune.missFollow[0], Math.min(tune.missFollow[1], follow));
     }
     const l = Math.max(-1, Math.min(1, lead));
-    if (l > 0) { ms *= 1 + tune.ahead.slower * l; miss += tune.ahead.miss * l; }
-    else if (l < 0) { ms *= 1 + tune.behind.quicker * l; miss += tune.behind.miss * l; }
+    const b = l * t.band;
+    if (b > 0) { ms *= 1 + tune.ahead.slower * b; miss += tune.ahead.miss * b; }
+    else if (b < 0) { ms *= 1 + tune.behind.quicker * b; miss += tune.behind.miss * b; }
     return { delayMs: Math.round(Math.max(tune.floorMs, ms)), correct: rng() >= Math.max(0, miss) };
 }
 

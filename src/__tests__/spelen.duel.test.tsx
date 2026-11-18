@@ -15,11 +15,11 @@ import { playRecipe } from '../oefenen/spelen/sound';
 import { BOT, botTurn, nextPace } from '../oefenen/spelen/duel/bot';
 import { duelConfigOf, duelOptions } from '../oefenen/spelen/duel/options';
 import {
-    DUEL_TIMING, SHARED_TRIES, SUM_CLOCK, applyEffect, defaultRoundOver, freshSideView, hitRule, leadOf, matchWinnerOf, ropeOf, ropeRule, sumLimitMs, winsNeeded, wrongOf,
+    DUEL_TIMING, SHARED_TRIES, applyEffect, defaultRoundOver, freshSideView, hitRule, leadOf, matchWinnerOf, ropeOf, ropeRule, winsNeeded, wrongOf,
 } from '../oefenen/spelen/duel/rules';
 import type { DuelConfig, DuelEventMap, DuelLevel, DuelRule, Side } from '../oefenen/spelen/duel/types';
 
-// The duel engine (spelen/duel/): the pure rules (Moeilijk clock, best of, effects, round end), the bot's pacing
+// The duel engine (spelen/duel/): the pure rules (best of, effects, round end), the bot's pacing
 // against a simulated pupil, the store (streams, lives, flights, timers, rounds, the bot) and Touwtrekken on it.
 
 let from: SpelFrom;
@@ -51,11 +51,6 @@ beforeEach(() => {
 afterEach(() => { cleanup(); du().stop(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('duel rules (pure)', () => {
-    test('the Moeilijk clock: 10 s, 0.4 s less per right answer, never under 4 s', () => {
-        expect([0, 1, 5, 10, 15, 30].map(sumLimitMs)).toEqual([10_000, 9_600, 8_000, 6_000, 4_000, 4_000]);
-        expect(SUM_CLOCK).toEqual({ startMs: 10_000, stepMs: 400, floorMs: 4_000 });
-    });
-
     test('best of: 1, 2 or 3 round wins take the match', () => {
         expect([1, 3, 5].map(n => winsNeeded(n as 1 | 3 | 5))).toEqual([1, 2, 3]);
         expect(matchWinnerOf({ left: 1, right: 1 }, 3)).toBeNull();
@@ -99,29 +94,41 @@ describe('duel rules (pure)', () => {
         expect(() => playRecipe(() => { throw new Error('never called'); })).not.toThrow();
     });
 
-    test('the shared options: spelers, niveau, levens, rondes, then the extras; picks make the config', () => {
+    test('the shared options: spelers, levens, niveau (the four levels, a whole line), rondes, then the extras; picks make the config', () => {
         const opts = duelOptions({ lives: { label: 'Hoe ver?', unit: n => `${n} stappen` }, extras: [{ id: 'x', label: 'X', default: 'a', choices: [{ value: 'a', label: 'A' }] }] });
-        expect(opts.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'x']);
-        expect(opts.map(o => o.default)).toEqual(['2', 'normaal', '10', '3', 'a']);
-        expect(opts[2].choices.map(c => c.label)).toEqual(['5 stappen', '10 stappen', '15 stappen', '20 stappen', '25 stappen']);
+        expect(opts.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes', 'x']);
+        expect(opts.map(o => o.default)).toEqual(['2', '10', 'normaal', '3', 'a']);
+        expect(opts[1].choices.map(c => c.label)).toEqual(['5 stappen', '10 stappen', '15 stappen', '20 stappen', '25 stappen']);
+        expect(opts[2]).toMatchObject({ wide: true });
+        expect(opts[2].choices.map(c => c.value)).toEqual(['makkelijk', 'normaal', 'moeilijk', 'onmogelijk']);
+        expect(opts[2].when).toBeUndefined();
         expect(opts[3].choices.map(c => c.label)).toEqual(['1', '3', '5']);
         expect(duelConfigOf({})).toEqual({ players: 2, level: 'normaal', lives: 10, bestOf: 3, stream: 'own' });
         expect(duelConfigOf({ spelers: '1', niveau: 'moeilijk', levens: '15', rondes: '5', manier: 'beurt' })).toEqual({ players: 1, level: 'moeilijk', lives: 15, bestOf: 5, stream: 'own' });
         expect(duelConfigOf({ spelers: '2', manier: 'beurt', rondes: '4' }, { roundSeconds: 60 })).toMatchObject({ stream: 'shared', bestOf: 3, roundSeconds: 60 });
+        expect(duelConfigOf({ niveau: 'onmogelijk' }).level).toBe('onmogelijk');
+        expect(duelConfigOf({ niveau: 'makkelijk', spelers: '2' }).level).toBe('makkelijk');
+        expect(duelConfigOf({ niveau: '??' }).level).toBe('normaal');
     });
 });
 
 describe('the bot (pure; the win rates per game are in spelen.bot.test)', () => {
-    test('pacing: Moeilijk is quicker and surer than Normaal; ahead it eases off, behind it pushes', () => {
+    test('pacing: each level quicker and surer than the one below; ahead it eases off, behind it pushes', () => {
         const avg = (level: DuelLevel, lead = 0, paceMs: number | null = null) => {
             const rnd = mulberry32(3);
             let ms = 0, right = 0;
             for (let i = 0; i < 2000; i++) { const t = botTurn(level, { lead, answerChars: 2, paceMs }, rnd); ms += t.delayMs; right += t.correct ? 1 : 0; }
             return { ms: ms / 2000, right: right / 2000 };
         };
-        const n = avg('normaal'), m = avg('moeilijk');
+        const k = avg('makkelijk'), n = avg('normaal'), m = avg('moeilijk'), o = avg('onmogelijk');
         expect(m.ms).toBeLessThan(n.ms);
         expect(m.right).toBeGreaterThan(n.right);
+        expect(n.ms).toBeLessThan(k.ms);
+        expect(n.right).toBeGreaterThan(k.right);
+        expect(o.ms).toBeLessThan(m.ms);
+        expect(o.right).toBeGreaterThan(m.right);
+        // Onmogelijk barely eases off when it leads.
+        expect(avg('onmogelijk', 1).ms / o.ms).toBeLessThan(avg('normaal', 1).ms / n.ms);
         expect(n.ms).toBeGreaterThan(BOT.normaal.minMs);
         expect(avg('normaal', 1).ms).toBeGreaterThan(n.ms * 1.5);
         expect(avg('normaal', 1).right).toBeLessThan(n.right);
@@ -223,17 +230,18 @@ describe('the duel store', () => {
         off();
     });
 
-    test('Moeilijk: a clock per sum per side that shortens with that side\'s right answers; a time-out counts as wrong', () => {
+    test('the clock per sum (levels/clock.ts): 12 s through the first minute, then shorter; a time-out counts as wrong; Makkelijk none', () => {
         const outs: Side[] = [];
         const off = du().events.on('timeout', e => outs.push(e.side));
-        begin({ level: 'moeilijk', lives: 5 }, { timeout: ({ side }) => ({ damage: { [side]: 1 } }) });
-        expect(du().sides.left.limitMs).toBe(10_000);
+        begin({ level: 'normaal', lives: 5 }, { timeout: ({ side }) => ({ damage: { [side]: 1 } }) });
+        expect(du().sides.left.limitMs).toBe(12_000);
+        expect(du().sides.left.deadline).toBe(Date.now() + 12_000);
         rightBy('left');
         vi.advanceTimersByTime(DUEL_TIMING.flashRight);
-        expect(du().sides.left.limitMs).toBe(9_600);
-        expect(du().sides.right.limitMs).toBe(10_000);
-        // The right side's first sum (10 s from the start) runs out first, then the left's second (9.6 s after its flash).
-        vi.advanceTimersByTime(10_000 - DUEL_TIMING.flashRight - 1);
+        // Right answers do not shorten it: only the round's time does.
+        expect(du().sides.left.limitMs).toBe(12_000);
+        // The right side's first sum (12 s from the start) runs out first, then the left's second (12 s after its flash).
+        vi.advanceTimersByTime(12_000 - DUEL_TIMING.flashRight - 1);
         expect(outs).toEqual([]);
         vi.advanceTimersByTime(1);
         expect(outs).toEqual(['right']);
@@ -242,12 +250,34 @@ describe('the duel store', () => {
         expect(du().sides.left).toMatchObject({ streak: 0, wrong: 1, lives: 4 });
         expect(du().sides.left.feedback).toMatchObject({ correct: false, given: '' });
         expect(du().sides.left.history.at(-1)).toMatchObject({ correct: false });
-        // Normaal: no clock at all.
-        begin({ level: 'normaal' });
+        // After the first minute of the round a new sum gets 11 s (Normaal).
+        begin({ level: 'normaal', lives: 50 });
+        vi.advanceTimersByTime(60_000);
+        rightBy('left');
+        vi.advanceTimersByTime(DUEL_TIMING.flashRight);
+        expect(du().sides.left.limitMs).toBe(11_000);
+        // Onmogelijk at 90 s: 10 s.
+        begin({ level: 'onmogelijk', lives: 50 });
+        vi.advanceTimersByTime(90_000);
+        rightBy('left');
+        vi.advanceTimersByTime(DUEL_TIMING.flashRight);
+        expect(du().sides.left.limitMs).toBe(10_000);
+        // Makkelijk: no clock at all.
+        begin({ level: 'makkelijk' });
         expect(du().sides.left.limitMs).toBeNull();
         vi.advanceTimersByTime(60_000);
         expect(du().sides.left.feedback).toBeNull();
         off();
+    });
+
+    test('a new round starts the clock again at 12 s', () => {
+        begin({ level: 'onmogelijk', lives: 1 });
+        vi.advanceTimersByTime(100_000);
+        rightBy('left');
+        vi.advanceTimersByTime(DUEL_TIMING.cardMs);
+        expect(du().phase).toBe('roundEnd');
+        du().nextRound();
+        expect(du().sides.left.limitMs).toBe(12_000);
     });
 
     test('shared stream: one sum; the first right answer takes it; a wrong one locks for 2 s, then a retry; two wrong = out', () => {
@@ -334,8 +364,8 @@ describe('the duel store', () => {
     });
 
     test('1 speler, shared stream: the bot waits out its lock and tries again; a human right answer stops it', () => {
-        begin({ players: 1, stream: 'shared', lives: 5, rng: () => 0.01 });
-        // rng 0.01: every bot answer is a quick miss.
+        begin({ players: 1, stream: 'shared', lives: 5, rng: () => 0.01, level: 'makkelijk' });
+        // rng 0.01: every bot answer is a quick miss (Makkelijk: no clock closes the sum meanwhile).
         vi.advanceTimersByTime(60_000);
         expect(du().sides.right).toMatchObject({ out: true, tries: SHARED_TRIES });
         rightBy('left');
@@ -357,7 +387,7 @@ describe('Touwtrekken on the engine', () => {
         const e = skinById('touwtrekken')!;
         expect(e.meta).toMatchObject({ id: 'touwtrekken', players: '1-2', timed: false });
         expect(e.Screen && !e.Component).toBe(true);
-        expect(e.meta.options!.map(o => o.id)).toEqual(['spelers', 'niveau', 'levens', 'rondes', 'manier']);
+        expect(e.meta.options!.map(o => o.id)).toEqual(['spelers', 'levens', 'niveau', 'rondes', 'manier']);
         render(<SpelOptions meta={meta} onStart={() => { }} onBack={() => { }} />);
         expect(within(screen.getByRole('group', { name: 'Hoe ver trekken?' })).getByRole('button', { name: '10' }).getAttribute('aria-pressed')).toBe('true');
         expect(within(screen.getByRole('group', { name: 'Hoeveel rondes?' })).getByRole('button', { name: '3' })).toBeTruthy();

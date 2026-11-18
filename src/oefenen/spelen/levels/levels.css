@@ -1,0 +1,16 @@
+/* The level icons on the "Hoe moeilijk?" segments (LevelIcon): small, outlined in the button's ink. */
+.lv-icon { display: inline-flex; align-items: center; flex: none; gap: 1px; }
+.lv-icon svg { display: block; height: 1.1em; overflow: visible; }
+.lv-clock { width: 1.1em; margin-right: 2px; }
+.lv-flame { width: 0.74em; }
+.lv-face { fill: var(--kid-card); stroke: currentColor; stroke-width: 2.6; }
+.lv-hand { fill: none; stroke: var(--kid-ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.lv-slash { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.lv-fire { fill: var(--accent-vraagstukken); stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.lv-core { fill: var(--mab-e); }
+/* A level with more icons gets more room (Onmogelijk with its check, clock and flames), never a clipped word. */
+.kid-option.is-wide .kid-seg-btn { flex: 1 1 auto; padding: 0 10px; }
+/* A phone: the icons above the word, so four levels still fit one line. */
+@media (max-width: 599px) {
+  .kid-option.is-wide .kid-seg-btn { flex-direction: column; gap: 2px; padding: 4px 4px; }
+}

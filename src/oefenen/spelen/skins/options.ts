@@ -1,6 +1,7 @@
+import { LEVEL_ID, migrateLevel } from '../levels/levels';
 import type { SkinChoices, SkinMeta } from './types';
 
-// The pre-start choices of a skin (Bom: tijd and doel; Bever, Zombies: niveau). Pure, plus the
+// The pre-start choices of a skin (Bom: tijd and doel; the levels: niveau, levels/levels.ts). Pure, plus the
 // last pick per skin on this device, so one tap on Start replays it.
 
 export const OPTIONS_KEY = 'rekenraak_spelen_opties_v1';
@@ -8,7 +9,11 @@ export const OPTIONS_KEY = 'rekenraak_spelen_opties_v1';
 /** The picked value per option: the given one when it is a real choice, else the option's default. */
 export function choicesOf(meta: SkinMeta, picked: SkinChoices = {}): SkinChoices {
     const out: SkinChoices = {};
-    for (const o of meta.options ?? []) out[o.id] = o.choices.some(c => c.value === picked[o.id]) ? picked[o.id] : o.default;
+    for (const o of meta.options ?? []) {
+        // A level remembered under an older row (Normaal / Moeilijk, Zombies' Makkelijk) is read as one of the four.
+        const v = o.id === LEVEL_ID && picked[o.id] !== undefined ? migrateLevel(picked[o.id]) : picked[o.id];
+        out[o.id] = o.choices.some(c => c.value === v) ? v : o.default;
+    }
     return out;
 }
 

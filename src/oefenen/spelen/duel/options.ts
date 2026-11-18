@@ -1,5 +1,6 @@
+import { levelOf, levelOption } from '../levels/levels';
 import type { SkinChoices, SkinOption } from '../skins/types';
-import type { DuelBestOf, DuelConfig, DuelLevel, DuelStream } from './types';
+import type { DuelBestOf, DuelConfig, DuelStream } from './types';
 
 // The pre-start choices every duel game shares (SpelOptions shows them, remembered per device), and the
 // DuelConfig they make. A game adds its own options after these (Touwtrekken's manier, Kikkers' modus).
@@ -23,18 +24,19 @@ export const MANIER_OPTION: SkinOption = {
     choices: [{ value: 'samen', label: 'Elk een eigen som' }, { value: 'beurt', label: 'Samen één som' }],
 };
 
-/** A duel game's option list: spelers, niveau, levens, rondes, then the game's extras. */
+/** A duel game's option list: spelers, levens, niveau (a whole line), rondes, then the game's extras. */
 export function duelOptions(spec: DuelOptionsSpec = {}): SkinOption[] {
     const lives = spec.lives ?? {};
     // Bare numbers: the question says what they count, and five choices must fit one row.
     const unit = lives.unit ?? ((n: number) => `${n}`);
     return [
         { id: 'spelers', label: 'Hoeveel spelers?', default: String(spec.players ?? 2), choices: [{ value: '1', label: '1 speler' }, { value: '2', label: '2 spelers' }] },
-        { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] },
         {
             id: 'levens', label: lives.label ?? 'Hoeveel levens?', default: String(lives.default ?? DUEL_DEFAULTS.lives),
             choices: (lives.choices ?? LIVES_CHOICES).map(n => ({ value: String(n), label: unit(n) })),
         },
+        // After a pair, so the whole-line row leaves no gap; for 2 spelers too (then it is only the clock).
+        levelOption({ clock: true }),
         { id: 'rondes', label: 'Hoeveel rondes?', default: String(DUEL_DEFAULTS.bestOf), choices: [{ value: '1', label: '1' }, { value: '3', label: '3' }, { value: '5', label: '5' }] },
         ...(spec.extras ?? []),
     ];
@@ -44,7 +46,7 @@ export function duelOptions(spec: DuelOptionsSpec = {}): SkinOption[] {
 export function duelConfigOf(chosen: SkinChoices = {}, extra: Partial<DuelConfig> = {}): DuelConfig {
     const lives = Number(chosen.levens);
     const bestOf = Number(chosen.rondes);
-    const level: DuelLevel = chosen.niveau === 'moeilijk' ? 'moeilijk' : 'normaal';
+    const level = levelOf(chosen);
     const stream: DuelStream = chosen.manier === 'beurt' && chosen.spelers !== '1' ? 'shared' : 'own';
     return {
         players: chosen.spelers === '1' ? 1 : 2,

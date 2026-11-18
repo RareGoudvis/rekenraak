@@ -34,7 +34,7 @@ export function ScoreStar({ value, points = false, className = '' }: { value: nu
     );
 }
 
-/** Moeilijk: the sum's countdown, a ring that empties (CSS, restarted per sum by its key). */
+/** The sum's countdown (every level but Makkelijk), a ring that empties (CSS, restarted per sum by its key). */
 export function TimerRing({ ms, running }: { ms: number; running: boolean }) {
     return (
         <span className={`duel-ring${running ? '' : ' is-stopped'}`} style={{ '--dur': `${ms}ms` } as CSSProperties} role="timer" aria-label={`${Math.round(ms / 1000)} seconden`}>
