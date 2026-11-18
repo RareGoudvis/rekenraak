@@ -34,9 +34,12 @@ import { KIDS, mulberry32, simulateRounds, type KidModel } from './helpers/duelS
 //   touwtrekken          97 / 75 / 50 / 12      90 / 57        73
 //   kikkers              88 / 60 / 35 / 10      75 / 49        60
 //   tovenaarsduel        99 / 64 / 25 /  1      99 / 47        72
-//   monstertrucks        99 / 67 / 40 /  5      96 / 52        72   (lives = the finish, 20)
 //   steekspel            97 / 67 / 39 /  5      96 / 49        62   (lives = the list's length, 20)
-//   mean                 94 / 65 / 34 /  7
+// The obstacle courses (course/, 2026-11-18; lives = the course, 20; a clear +1, a crash nothing, a catch-up +1 on 3 in a row):
+//   monstertrucks        98 / 64 / 37 / 13      99 / 44        54
+//   drakenrace           98 / 61 / 40 /  7      98 / 48        57   (and the storm)
+//   wildwaterrace        97 / 66 / 35 / 11      97 / 48        51
+//   mean                 95 / 65 / 35 /  8
 // (At 10 lives, the game default, a check run gave about the same means: the rubber band keeps the levels apart.)
 
 let from: SpelFrom;
@@ -67,7 +70,7 @@ const GAMES: Game[] = [
     { id: 'touwtrekken', rule: TOUW_RULE, extra: { roundSeconds: TOUW.seconds } },
     { id: 'kikkers', rule: kikkerRule('tijd', bug), extra: { roundSeconds: KIKKER.seconds } },
     { id: 'tovenaarsduel', rule: TOVER_RULE, lives: TOVER.lives.default },
-    // The races: lives = the finish (Monstertrucks) / the list's length (Steekspel), their 20 default; Drakenrace / Wildwaterrace: the course.
+    // The races: lives = the list's length (Steekspel); the obstacle courses (Monstertrucks, Drakenrace, Wildwaterrace): the course, 20.
     { id: 'monstertrucks', rule: TRUCK_RULE, lives: TRUCK.finish.default },
     { id: 'steekspel', rule: JOUST_RULE, lives: JOUST.baan.default },
     { id: 'drakenrace', rule: DRAAK_RULE, lives: DRAAK.course.default },

@@ -68,10 +68,10 @@ const DUEL_PLAY = {
         await duelAnswer(page, 'right');
         await page.waitForTimeout(1700);
     },
-    // Right: its ramp waits (2 in a row); left: the 3rd in a row, frozen in the air over the junk cars.
+    // The obstacle course: two clears each, then left rushes into its third obstacle, frozen mid-move.
     monstertrucks: async page => {
-        for (let i = 0; i < 2; i++) { await duelAnswer(page, 'right'); await duelAnswer(page, 'left'); await page.waitForTimeout(900); }
-        await duelAnswer(page, 'left'); await page.waitForTimeout(400);
+        for (let i = 0; i < 2; i++) { await page.waitForTimeout(1300); await duelAnswer(page, 'right'); await duelAnswer(page, 'left'); await page.waitForTimeout(900); }
+        await page.waitForTimeout(2600); await duelAnswer(page, 'left'); await page.waitForTimeout(640);
         await page.evaluate(() => window.__duel.getState().pause());
     },
     // Both lances down (3 in a row), the knights mid-gallop towards each other.
@@ -87,15 +87,17 @@ const DUEL_PLAY = {
         await duelAnswer(page, 'left'); await page.waitForTimeout(740);
         await page.evaluate(() => window.__duel.getState().pause());
     },
-    // A little way into the race, Blauw at 2 in a row: the storm cloud awake and glowing, both dragons mid-wingbeat.
+    // The obstacle course: two clears each, then left flies its third obstacle, frozen mid-move.
     drakenrace: async page => {
-        for (let i = 0; i < 4; i++) { await duelAnswer(page, 'right'); await duelAnswer(page, 'left'); await page.waitForTimeout(800); }
-        await duelAnswer(page, 'left'); await page.waitForTimeout(250);
+        for (let i = 0; i < 2; i++) { await page.waitForTimeout(1300); await duelAnswer(page, 'right'); await duelAnswer(page, 'left'); await page.waitForTimeout(900); }
+        await page.waitForTimeout(2600); await duelAnswer(page, 'left'); await page.waitForTimeout(640);
+        await page.evaluate(() => window.__duel.getState().pause());
     },
-    // A few strokes down the river, both rafts on their way to the waterfall.
+    // The obstacle course on the river: two clears each, then left meets its third obstacle, frozen mid-move.
     wildwaterrace: async page => {
-        for (let i = 0; i < 5; i++) { await duelAnswer(page, 'left'); await duelAnswer(page, 'right'); await page.waitForTimeout(800); }
-        await duelAnswer(page, 'left'); await page.waitForTimeout(100);
+        for (let i = 0; i < 2; i++) { await page.waitForTimeout(1300); await duelAnswer(page, 'left'); await duelAnswer(page, 'right'); await page.waitForTimeout(900); }
+        await page.waitForTimeout(2600); await duelAnswer(page, 'left'); await page.waitForTimeout(640);
+        await page.evaluate(() => window.__duel.getState().pause());
     },
 };
 
@@ -132,17 +134,17 @@ const SKIN_CSS = {
     voetbalkaartjes: '.hj-text, .vk-nums { visibility: hidden !important; }',
     honingraat: '.hx-top, .hx-sum { visibility: hidden !important; }',
     frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
-    // The arena is a wide strip: closer in on the lanes; the calls carry words.
-    monstertrucks: '.mtk-svg { transform: scale(1.9); transform-origin: 16% 100%; } .mtk-call { display: none !important; }',
+    // The arena is a wide strip: closer in on the lanes; the calls carry words, the course map the race.
+    monstertrucks: '.mtk-svg { transform: scale(1.7); transform-origin: 14% 100%; } .mtk-call, .crs-bar { display: none !important; }',
     steekspel: '.stk-svg { transform: scale(1.75); transform-origin: 53% 100%; } .stk-call { display: none !important; }',
     // The metres, the speed bars and the streak badge.
     slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
     spookhuis: '.sph-text, .sph-count { visibility: hidden !important; }',
     // The coins left on the panel.
     grijp: '.gm-counter { visibility: hidden !important; }',
-    // The streak chips under the (hidden) score corners.
-    drakenrace: '.dk-charge { display: none !important; }',
-    wildwaterrace: '.ww-charge, .ww-call { display: none !important; }',
+    // The streak chips under the (hidden) score corners, the calls, the course map; closer in on the lanes.
+    drakenrace: '.dk-svg { transform: scale(1.4); transform-origin: 12% 70%; } .dk-charge, .dk-call, .crs-bar { display: none !important; }',
+    wildwaterrace: '.ww-svg { transform: scale(1.25); transform-origin: 10% 62%; } .ww-call, .crs-bar { display: none !important; }',
 };
 // Keypad games lay out as world + 440px panel; on a wide window the world turns 16:10 (1200x746), so its box is the picture.
 const WIDE = new Set(['pinguintoren', 'bom', 'bever', 'race', 'voetbal', 'prent', 'schatkist', 'kerstboom', 'frituur', 'aquarium']);

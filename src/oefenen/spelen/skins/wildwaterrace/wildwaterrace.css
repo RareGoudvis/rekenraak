@@ -1,6 +1,6 @@
 /* Wildwaterrace: two rafts down a wild river to the waterfall (art.tsx). Flat fills under the --spel-ink outline,
-   theme tokens mixed into river colours. The water flows by CSS (foam dashes on a loop, the curtain's streaks), the
-   rafts move by CSS transitions from the points; every loop and burst is transforms and opacity only. */
+   theme tokens mixed into river colours. The banks and the flow lines scroll with the rafts (course/useCourse.ts), the
+   moments are CSS keyed by the screen; every loop and burst is transforms and opacity only. */
 .ww-app {
   --ww-water: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 65%, var(--accent-metendrekenen)) 62%, var(--kiosk-paper));
   --ww-water-deep: color-mix(in srgb, color-mix(in srgb, var(--accent-bewerkingen) 75%, var(--accent-metendrekenen)) 80%, var(--text-main));
@@ -29,16 +29,14 @@
 /* ── The river and its banks ──────────────────────────────────────────────── */
 .ww-grass { fill: var(--ww-grass); }
 .ww-grass.is-near { fill: var(--ww-grass-near); }
-.ww-mud { fill: var(--ww-mud); stroke: var(--spel-ink); stroke-width: 3px; }
-.ww-sand { fill: var(--ww-sand); stroke: var(--spel-ink); stroke-width: 3px; }
-.ww-water { fill: var(--ww-water); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-mud { fill: var(--ww-mud); }
+.ww-sand { fill: var(--ww-sand); }
+.ww-bank-line { fill: none; stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-water { fill: var(--ww-water); }
 .ww-lake { fill: var(--ww-lake); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-water-deep { fill: var(--ww-water-deep); opacity: .18; }
 .ww-flow path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; opacity: .6; }
-.ww-flow { animation: ww-flow 6s linear infinite; }
-.ww-flow.is-slow { translate: 25px 17px; animation-duration: 10s; opacity: .55; }
-@keyframes ww-flow { to { transform: translateX(600px); } }
-.ww-scene.is-between .ww-flow { animation-duration: 9s; }
-
+.ww-stone { fill: var(--ww-rock); stroke: var(--spel-ink); stroke-width: 2.5px; }
 .ww-rock { fill: var(--ww-rock); stroke: var(--spel-ink); stroke-width: 3px; }
 .ww-foam-ring { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .8; animation: ww-foam 1.6s ease-in-out calc(var(--i) * -.37s) infinite alternate; }
 @keyframes ww-foam { from { scale: .9; opacity: .9; } to { scale: 1.18; opacity: .45; } }
@@ -68,28 +66,9 @@
 .ww-reeds path { fill: none; stroke: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--text-main)); stroke-width: 4px; }
 .ww-reeds { animation: ww-sway 2.6s ease-in-out infinite alternate; }
 .ww-cattail { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 2px; }
-.ww-bird { fill: none; stroke: var(--spel-ink); stroke-width: 3px; animation: ww-flap 420ms ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
-.ww-bird.is-2 { animation-delay: -200ms; }
-@keyframes ww-flap { from { scale: 1 1; } to { scale: 1 -.6; } }
-.ww-birds { animation: ww-birds 26s linear infinite; }
-@keyframes ww-birds { from { transform: translate(-80px, 26px); } to { transform: translate(2200px, 8px); } }
-.ww-fish path { fill: var(--accent-vraagstukken); stroke: var(--spel-ink); stroke-width: 2.5px; }
-.ww-fish-eye { fill: var(--spel-ink); }
-.ww-fish { opacity: 0; animation: ww-fish 7s ease-in-out 2s infinite; }
-@keyframes ww-fish {
-  0%, 70% { opacity: 0; translate: 0 0; rotate: -40deg; }
-  72% { opacity: 1; translate: 0 0; rotate: -40deg; }
-  80% { opacity: 1; translate: 22px -34px; rotate: 0deg; }
-  88% { opacity: 1; translate: 44px 0; rotate: 40deg; }
-  90%, 100% { opacity: 0; translate: 44px 4px; rotate: 40deg; }
-}
-
 /* ── The rafts ────────────────────────────────────────────────────────────── */
 .ww-raft-at.is-left { --ww-team: var(--duel-left); }
 .ww-raft-at.is-right { --ww-team: var(--duel-right); }
-.ww-raft-at { transition: transform 800ms cubic-bezier(.3, 1.2, .5, 1); }
-.ww-raft-at.is-drift { transition: transform 1.3s ease-in-out; }
-.ww-scene.is-ready .ww-raft-at { transition: none; }
 .ww-raft-shadow { fill: var(--ww-water-deep); opacity: .35; }
 .ww-tube, .ww-tube-front { fill: var(--ww-team); stroke: var(--spel-ink); stroke-width: 3.5px; }
 .ww-floor { fill: color-mix(in srgb, var(--ww-team) 65%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 3px; }
@@ -120,65 +99,147 @@
 .ww-paddle.is-up { animation: ww-cheer 420ms ease-in-out infinite alternate; }
 @keyframes ww-cheer { from { rotate: -70deg; translate: 0 -6px; } to { rotate: -82deg; translate: 0 -10px; } }
 
-/* A stroke: quick paddles and a surge forward, a wake behind. */
-.ww-move.is-stroke { animation: ww-surge 600ms ease-out; }
-.ww-move.is-stroke .ww-paddle { animation-duration: 260ms; }
-@keyframes ww-surge { 0% { translate: 0 0; } 30% { translate: 14px 0; rotate: -3deg; } 100% { translate: 0 0; rotate: 0deg; } }
-.ww-wake path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; opacity: 0; animation: ww-wake 800ms ease-out; }
-.ww-wake path:nth-child(2) { animation-delay: 60ms; }
-.ww-wake path:nth-child(3) { animation-delay: 120ms; }
-@keyframes ww-wake { 0% { opacity: .95; translate: 0 0; } 100% { opacity: 0; translate: -36px 0; } }
-
-/* A wave (3 in a row): the raft rides up the crest, nose high, and down again. */
-.ww-move.is-wave { animation: ww-ride 900ms ease-in-out; }
-@keyframes ww-ride { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 10px -20px; rotate: -10deg; } 70% { translate: 6px -8px; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+/* Driving on: the wake and the bow wave (their opacity follows the speed), the wave of a catch-up. */
+.ww-wake path { fill: none; stroke: var(--kiosk-paper); stroke-width: 5px; animation: ww-wake 700ms linear infinite; }
+.ww-wake path:nth-child(2) { animation-delay: -230ms; }
+.ww-wake path:nth-child(3) { animation-delay: -460ms; }
+.ww-wake .ww-bow { stroke-width: 4px; animation: ww-bow 500ms ease-in-out infinite alternate; }
+@keyframes ww-wake { 0% { opacity: .95; translate: 10px 0; } 100% { opacity: 0; translate: -40px 0; } }
+@keyframes ww-bow { from { translate: 0 0; } to { translate: 4px 0; } }
 .ww-surf-body { fill: color-mix(in srgb, var(--ww-water) 70%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 3px; }
 .ww-surf-foam { fill: none; stroke: var(--kiosk-paper); stroke-width: 6px; }
 .ww-surf-foam.is-thin { stroke-width: 4px; }
-.ww-surf { opacity: 0; animation: ww-surf 900ms ease-out; }
+.ww-surf { opacity: 0; animation: ww-surf 1100ms ease-out; }
 @keyframes ww-surf { 0% { opacity: 0; scale: .4 .2; } 25% { opacity: 1; scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; scale: 1.1 .8; translate: 20px 0; } }
+.ww-raft-at.is-waiting .ww-paddle { animation-duration: 3s; }
+.ww-raft-at.is-waiting .ww-bob { animation-duration: 2.6s; }
+.ww-raft-at.is-lost .ww-paddle { animation: none; rotate: 30deg; }
+.ww-paddler.is-duck .ww-head { translate: 0 12px; scale: 1 .9; transition: translate 120ms; }
+.ww-move.is-clear-duck .ww-paddle { animation: none; rotate: 50deg; }
+.ww-eye-shut { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-helmet-leaves path { fill: var(--ww-leaf); stroke: var(--spel-ink); stroke-width: 1.5px; animation: ww-leaves-on 1300ms ease-out both; }
+@keyframes ww-leaves-on { 0% { translate: 0 -30px; opacity: 0; } 20% { translate: 0 0; opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; translate: 6px 10px; } }
+.ww-drips path { fill: color-mix(in srgb, var(--ww-water) 60%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 1px; animation: ww-drip 600ms ease-in calc(var(--k) * 140ms) 3 both; }
+@keyframes ww-drip { from { translate: 0 0; opacity: 1; } to { translate: 0 14px; opacity: 0; } }
 
-/* An eddy (a mistake): the current turns the raft round once, the paddlers go dizzy. */
-.ww-move.is-eddy { animation: ww-spin 900ms ease-in-out; }
-@keyframes ww-spin { from { rotate: 0deg; } to { rotate: -360deg; } }
-.ww-eddy path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; opacity: .9; }
-.ww-eddy { opacity: 0; animation: ww-eddy 1100ms ease-out; }
-.ww-eddy-spin { animation: ww-spin 700ms linear infinite; }
-@keyframes ww-eddy { 0% { opacity: 0; scale: .5; } 20% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1.15; } }
+/* The moves (origin: the raft's middle). Clears carry on; crashes end where they began. */
+.ww-move.is-clear-swerve { animation: ww-swerve 760ms ease-in-out; }
+@keyframes ww-swerve { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 4px 34px; rotate: 14deg; } 65% { translate: 4px 30px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-move.is-clear-around { animation: ww-around 820ms ease-in-out; }
+@keyframes ww-around { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 0 -34px; rotate: -16deg; } 70% { translate: 0 -24px; rotate: 10deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-move.is-clear-hop { animation: ww-hop 640ms cubic-bezier(.3, .6, .4, 1); }
+@keyframes ww-hop { 0% { translate: 0 0; rotate: 0deg; } 35% { translate: 0 -34px; rotate: -10deg; scale: 1.05; } 70% { translate: 0 0; rotate: 6deg; scale: 1.08 .9; } 100% { translate: 0 0; rotate: 0deg; scale: 1; } }
+.ww-move.is-clear-dive { animation: ww-dive 800ms ease-in-out; }
+@keyframes ww-dive { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 10px 8px; rotate: 18deg; scale: .95; } 55% { translate: 14px 14px; rotate: -8deg; scale: 1.06 .9; } 100% { translate: 0 0; rotate: 0deg; scale: 1; } }
+.ww-move.is-clear-duck { animation: ww-duck 760ms ease-out; }
+@keyframes ww-duck { 0% { translate: 0 0; } 40% { translate: 6px 2px; } 100% { translate: 0 0; } }
 
-/* Over the falls: up onto the lip, tipping down the curtain, a bounce in the lake below. */
-.ww-over.is-over { animation: ww-over 1100ms ease-in forwards; }
+.ww-move.is-crash-bump { animation: ww-bump 1000ms cubic-bezier(.3, .7, .4, 1); }
+@keyframes ww-bump { 0% { translate: 0 0; rotate: 0deg; scale: 1; } 10% { translate: 8px 0; scale: .82 1.1; } 35% { translate: -40px -6px; rotate: -40deg; scale: 1; } 60% { translate: -30px 4px; rotate: 16deg; } 80% { translate: -12px 0; rotate: -4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-move.is-crash-teeter { animation: ww-teeter 1100ms ease-in-out; }
+@keyframes ww-teeter { 0% { translate: 0 0; rotate: 0deg; } 18% { translate: 26px -14px; rotate: -16deg; } 32% { translate: 30px -16px; rotate: 10deg; } 46% { translate: 30px -16px; rotate: -12deg; } 60% { translate: 30px -16px; rotate: 8deg; } 78% { translate: 6px 6px; rotate: -6deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-move.is-crash-spin { animation: ww-spin 1300ms cubic-bezier(.3, .2, .4, 1); }
+@keyframes ww-spin { from { rotate: 0deg; } to { rotate: -720deg; } }
+.ww-move.is-crash-splash { animation: ww-splash 1000ms ease-out; }
+@keyframes ww-splash { 0% { translate: 0 0; rotate: 0deg; } 20% { translate: 16px 14px; rotate: 24deg; scale: 1; } 35% { translate: 18px 10px; rotate: 0deg; scale: 1.12 .82; } 60% { translate: 10px 4px; scale: .96 1.05; } 100% { translate: 0 0; scale: 1; } }
+.ww-move.is-crash-chomp { animation: ww-chomp 1000ms ease-out; }
+@keyframes ww-chomp { 0% { translate: 0 0; } 10% { translate: 8px 0; scale: .9 1.08; } 20% { translate: -20px 0; scale: 1; } 30% { translate: -14px 0; rotate: -6deg; } 40% { translate: -22px 0; rotate: 6deg; } 60% { translate: -18px 0; rotate: -3deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-move.is-crash-leaves { animation: ww-leaves 1000ms ease-out; }
+@keyframes ww-leaves { 0% { translate: 0 0; } 15% { translate: -10px 0; rotate: -8deg; } 30% { translate: -6px 0; rotate: 6deg; } 50% { translate: -10px 0; rotate: -4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.ww-goagain { animation: ww-goagain 480ms ease-out; }
+@keyframes ww-goagain { 0% { translate: 0 0; } 40% { translate: 8px 0; rotate: -3deg; } 100% { translate: 0 0; rotate: 0deg; } }
+
+/* Over the falls: tipping off the lip, down the curtain, a bounce in the lake below. */
+.ww-raft-at.is-over .ww-over { animation: ww-over 1100ms ease-in forwards; }
 @keyframes ww-over {
   0% { translate: 0 0; rotate: 0deg; scale: 1; }
-  30% { translate: 44px -8px; rotate: -8deg; scale: 1; }
-  55% { translate: calc(var(--ww-over-dx) * .6) 30px; rotate: 32deg; scale: .82; }
-  72% { translate: var(--ww-over-dx) 10px; rotate: 6deg; scale: 1.04; }
-  86% { translate: var(--ww-over-dx) -4px; rotate: -3deg; scale: 1; }
-  100% { translate: var(--ww-over-dx) 0; rotate: 0deg; scale: 1; }
+  30% { translate: 0 -6px; rotate: -8deg; scale: 1; }
+  55% { translate: 0 34px; rotate: 32deg; scale: .84; }
+  72% { translate: 0 14px; rotate: 6deg; scale: 1.04; }
+  86% { translate: 0 10px; rotate: -3deg; scale: 1; }
+  100% { translate: 0 12px; rotate: 0deg; scale: 1; }
 }
 
 .ww-call {
-  font: 900 32px var(--kid-font); text-anchor: middle; fill: var(--kiosk-paper);
-  stroke: var(--spel-ink); stroke-width: 6px; paint-order: stroke; animation: ww-call 1100ms ease-out forwards;
+  font: 900 40px var(--kid-font); text-anchor: middle; fill: var(--kiosk-paper);
+  stroke: var(--spel-ink); stroke-width: 8px; paint-order: stroke; animation: ww-call 1100ms ease-out forwards;
 }
-.ww-call.is-wave { fill: var(--mab-e); }
+.ww-call.is-clear, .ww-call.is-wave { fill: var(--mab-e); }
+.ww-call.is-win { fill: var(--kid-go); }
 @keyframes ww-call { 0% { opacity: 0; scale: .5; } 15% { opacity: 1; scale: 1.15; } 30% { scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; translate: 0 -22px; } }
 
-/* The streak toward a wave, under each score corner: three little waves, the third surfs. */
-.ww-charge {
-  position: absolute; top: calc(var(--sp-2) + clamp(42px, 5.2vmin, 54px)); z-index: 3;
-  display: inline-flex; gap: 1px; padding: 2px 6px;
-  border: 3px solid var(--spel-ink); border-radius: 999px; background: color-mix(in srgb, var(--kiosk-paper) 80%, transparent);
-}
-.ww-charge.is-left { left: var(--sp-2); }
-.ww-charge.is-right { right: var(--sp-2); }
-.ww-charge svg { width: clamp(18px, 2.8vmin, 28px); height: clamp(15px, 2.3vmin, 23px); overflow: visible; }
-.ww-pip { fill: none; stroke: var(--spel-ink); stroke-width: 3px; opacity: .3; }
-.ww-pip.is-on { stroke: var(--ww-water-deep); stroke-width: 4.5px; opacity: 1; animation: ww-pip-on 380ms var(--ease-spring, ease-out); }
-@keyframes ww-pip-on { from { scale: 1.8; } to { scale: 1; } }
+/* ── The obstacles ──────────────────────────────────────────────────────────── */
+.ww-rock-shine { fill: none; stroke: var(--kiosk-paper); stroke-width: 3px; opacity: .7; }
+.ww-crab-body { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-crab-claw { fill: none; stroke: var(--spel-ink); stroke-width: 3px; transform-origin: 0 0; animation: ww-claws 600ms ease-in-out infinite alternate; }
+@keyframes ww-claws { from { scale: 1 1; } to { scale: 1.15 .8; } }
+.ww-crab-eye { fill: var(--spel-ink); }
+.ww-crab { animation: ww-crab 2.4s ease-in-out infinite alternate; }
+@keyframes ww-crab { from { translate: -6px 0; } to { translate: 6px 0; } }
+.ww-ob-rocks.is-crash .ww-crab { animation: ww-crab-hop 700ms ease-out; }
+@keyframes ww-crab-hop { 30% { translate: 0 -16px; } 100% { translate: 0 0; } }
+
+.ww-log-bob { animation: ww-log 2s ease-in-out infinite alternate; }
+@keyframes ww-log { from { rotate: -4deg; translate: 0 -2px; } to { rotate: 4deg; translate: 0 2px; } }
+.ww-log { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.ww-log-end { fill: color-mix(in srgb, var(--ww-wood) 50%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-log-ring, .ww-log-bark { fill: none; stroke: var(--spel-ink); stroke-width: 1.5px; opacity: .6; }
+.ww-frog-body, .ww-frog-eye { fill: var(--kid-hill); stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-frog-pupil { fill: var(--spel-ink); }
+.ww-ob-log:not(.is-ahead) .ww-frog { animation: ww-frog-jump 800ms ease-out both; }
+@keyframes ww-frog-jump { 40% { translate: -10px -40px; } 100% { translate: -40px 30px; opacity: 0; } }
+.ww-ob-log.is-crash .ww-log-bob { animation: ww-log-dunk 900ms ease-out; }
+@keyframes ww-log-dunk { 20% { rotate: 12deg; translate: 0 8px; } 60% { rotate: -6deg; } 100% { rotate: 0deg; translate: 0 0; } }
+
+.ww-whirl-bed { fill: var(--ww-water-deep); opacity: .45; }
+.ww-whirl-spin path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; opacity: .9; }
+.ww-whirl-spin { animation: ww-whirl 1.6s linear infinite; transform: scale(1, .55); }
+.ww-ob-whirl.is-crash .ww-whirl-spin { animation-duration: 500ms; }
+@keyframes ww-whirl { from { rotate: 0deg; } to { rotate: -360deg; } }
+.ww-whirl-bits circle { fill: var(--ww-leaf); stroke: var(--spel-ink); stroke-width: 1.5px; offset-path: path('M 40 0 A 40 22 0 1 1 -40 0 A 40 22 0 1 1 40 0'); animation: ww-orbit 2.4s linear calc(var(--k) * -.8s) infinite reverse; }
+@keyframes ww-orbit { to { offset-distance: 100%; } }
+
+.ww-step-low { fill: var(--ww-water-deep); opacity: .35; }
+.ww-step-edge { fill: none; stroke: var(--kiosk-paper); stroke-width: 8px; }
+.ww-step-foam ellipse { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; transform-box: fill-box; transform-origin: center; animation: ww-mist 900ms ease-in-out calc(var(--k) * -.22s) infinite alternate; }
+.ww-step-streaks path { fill: none; stroke: var(--kiosk-paper); stroke-width: 4px; stroke-dasharray: 10 10; animation: ww-rush 420ms linear calc(var(--k) * -90ms) infinite; }
+
+.ww-croc-bob { animation: ww-croc 1.8s ease-in-out infinite alternate; }
+@keyframes ww-croc { from { translate: 0 2px; } to { translate: 0 -3px; } }
+.ww-croc-back, .ww-croc-snout, .ww-croc-jaw { fill: color-mix(in srgb, var(--kid-hill) 75%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-croc-ridge { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-croc-teeth { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.2px; }
+.ww-croc-nostril, .ww-croc-pupil { fill: var(--spel-ink); }
+.ww-croc-eyeball { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-croc-eyes { animation: ww-croc-look 3s ease-in-out infinite alternate; }
+@keyframes ww-croc-look { from { translate: -1px 0; } to { translate: 1px 0; } }
+.ww-croc-top { transform-origin: 12px -4px; animation: ww-croc-yawn 3.6s ease-in-out infinite; }
+@keyframes ww-croc-yawn { 0%, 70%, 100% { rotate: 0deg; } 80%, 90% { rotate: 14deg; } }
+.ww-ob-croc:not(.is-ahead) .ww-croc-top { animation: ww-croc-snap 300ms ease-in-out 3 alternate; }
+@keyframes ww-croc-snap { from { rotate: 22deg; } to { rotate: 0deg; } }
+.ww-ob-croc.is-clear .ww-croc-head { animation: ww-croc-sulk 1.2s ease-out 600ms both; }
+@keyframes ww-croc-sulk { 50% { translate: 0 6px; } 100% { translate: 0 2px; } }
+.ww-blade-bit { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-chomp { animation: ww-chomp-paddle 1100ms ease-out both; }
+@keyframes ww-chomp-paddle { 0% { opacity: 0; } 15% { opacity: 1; rotate: 0deg; } 70% { opacity: 1; rotate: 20deg; translate: 0 0; } 100% { opacity: 0; translate: -50px -40px; rotate: 300deg; } }
+
+.ww-branch-sway { transform-origin: 40px -160px; animation: ww-branch 2.8s ease-in-out infinite alternate; }
+@keyframes ww-branch { from { rotate: -3deg; } to { rotate: 3deg; } }
+.ww-branch-wood { fill: none; stroke: var(--ww-wood); stroke-width: 9px; }
+.ww-branch-wood.is-twig { stroke-width: 5px; }
+.ww-branch-leaf { fill: var(--ww-leaf); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.ww-nest path { fill: var(--ww-wood); stroke: var(--spel-ink); stroke-width: 2px; }
+.ww-ob-branch:not(.is-ahead) .ww-branch-sway { animation: ww-branch-hit 800ms ease-out; }
+@keyframes ww-branch-hit { 20% { rotate: 10deg; } 50% { rotate: -6deg; } 100% { rotate: 0deg; } }
+.ww-leaves path { fill: var(--ww-leaf); stroke: var(--spel-ink); stroke-width: 1.5px; transform: translate(24px, -30px) rotate(var(--a)); animation: ww-leaf-fall 1100ms ease-in calc(var(--k) * 60ms) both; }
+@keyframes ww-leaf-fall { 0% { translate: 0 0; opacity: 1; } 100% { translate: -30px 50px; opacity: 0; } }
 
 /* ── The card ─────────────────────────────────────────────────────────────── */
 .ww-card-art { width: min(220px, 50vw); height: auto; overflow: visible; }
 .ww-card-art.is-left { --ww-team: var(--duel-left); }
 .ww-card-art.is-right { --ww-team: var(--duel-right); }
 .ww-card-water { fill: var(--ww-water); stroke: var(--spel-ink); stroke-width: 3px; }
+
+/* The round is over: what was still drifting toward the rafts sinks away (the lake is no place for a log). */
+.ww-scene.is-between [data-kind] > g { animation: ww-sink 600ms ease-in both; }
+@keyframes ww-sink { to { opacity: 0; scale: .9; } }
