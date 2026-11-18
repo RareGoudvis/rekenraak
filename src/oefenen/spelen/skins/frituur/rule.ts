@@ -6,6 +6,8 @@ import type { Level } from '../../levels/levels';
 // screen and waits on a patience bar that drains with game time (help and the flashes freeze it). A right answer
 // serves them (they leave on the next sum), a wrong order or an empty bar walks them off grumbling. The bar is the
 // shared clock (levels/clock.ts) at the moment they step up; Makkelijk has no bar, they wait as long as it takes.
+// The round lasts ROUND_SECONDS; too many customers walking off (a wrong snack or an empty bar) closes the frituur
+// early (WALK_OFFS per level, the friendly fail; owner 2026-11-18). Makkelijk never closes.
 
 // THE tuning table (the owner tunes it after playing).
 export const FRITUUR = {
@@ -24,6 +26,11 @@ export const FRITUUR = {
     // A visitor that likes slime orders the green alien sauce this often.
     slimeChance: 0.5,
 } as const;
+
+// The round's length (owner 2026-11-18: no "Hoe lang?" any more, at most 5 minutes).
+export const ROUND_SECONDS = 300;
+// Customers that may storm off before the frituur closes early, per level; Makkelijk never closes (owner 2026-11-18).
+export const WALK_OFFS: Record<Level, number | null> = { makkelijk: null, normaal: 6, moeilijk: 5, onmogelijk: 4 };
 
 // Kids come twice as often as the rest (a school frituur); never the same kind twice in a row.
 export const KINDS = ['kind', 'mama', 'papa', 'opa', 'voetballer', 'hond', 'kind'] as const;
@@ -65,6 +72,8 @@ export interface Counter {
     wrongs: number;
     // Every customer that went off with an order this round (met hulp included).
     servedCount: number;
+    // Every customer that stormed off this round (a wrong snack or an empty bar).
+    walked: number;
     // Bumped on every change the scene draws (the patience ticks are not one).
     rev: number;
 }
@@ -104,7 +113,7 @@ export const wrongOrderOf = (order: OrderKind, n: number): OrderKind => {
 export function newCounter(seed: number, patienceMs: number = patienceFor('normaal', 0)): Counter {
     const queue: Customer[] = [];
     for (let id = 0; id < FRITUUR.queue; id++) queue.push(customerOf(seed, id, queue.at(-1)?.kind ?? null));
-    return { seed, queue, leaving: [], nextId: FRITUUR.queue, patience: fresh(patienceMs), served: false, wrongs: 0, servedCount: 0, rev: 0 };
+    return { seed, queue, leaving: [], nextId: FRITUUR.queue, patience: fresh(patienceMs), served: false, wrongs: 0, servedCount: 0, walked: 0, rev: 0 };
 }
 
 /** The customer at the counter leaves (happy with their order, or grumbling); the queue steps up, a new one joins at the back with patienceMs. */
@@ -114,7 +123,7 @@ export function walkOff(c: Counter, mood: Leaver['mood'], patienceMs: number, sn
     const leaver: Leaver = snack ? { customer: front, mood, snack } : { customer: front, mood };
     return {
         ...c, queue: [...rest, joins], nextId: c.nextId + 1, leaving: [...c.leaving, leaver].slice(-FRITUUR.leaving),
-        patience: fresh(patienceMs), served: false, wrongs: 0, rev: c.rev + 1,
+        patience: fresh(patienceMs), served: false, wrongs: 0, walked: c.walked + (mood === 'happy' ? 0 : 1), rev: c.rev + 1,
     };
 }
 
@@ -150,5 +159,17 @@ export const patienceShare = (p: Patience) => (isEndless(p) ? 1 : Math.min(1, Ma
 /** Under lowAt: the customer gets impatient. */
 export const isLow = (p: Patience) => patienceShare(p) < FRITUUR.lowAt;
 
+/** How many more may storm off before the frituur closes; null = it never closes (Makkelijk). */
+export function walkOffsLeft(c: Pick<Counter, 'walked'>, level: Level): number | null {
+    const max = WALK_OFFS[level];
+    return max === null ? null : Math.max(0, max - c.walked);
+}
+
+/** Too many customers stormed off: the frituur closes (the skin's onFail). */
+export const isClosed = (c: Pick<Counter, 'walked'>, level: Level) => walkOffsLeft(c, level) === 0;
+
 /** The end screen's title: "Je hielp 7 klanten!". */
 export const helpedTitle = (n: number) => (n === 0 ? 'Nog geen klant geholpen. Nog eens?' : `Je hielp ${n} ${n === 1 ? 'klant' : 'klanten'}!`);
+
+/** The end screen's title when the frituur closed early. */
+export const CLOSED_TITLE = 'De frituur gaat dicht!';

@@ -11,8 +11,8 @@ import Frituur, { FrituurEnding } from '../oefenen/spelen/skins/frituur/Frituur'
 import { DogG, PersonG } from '../oefenen/spelen/skins/frituur/art';
 import { UfoG, VisitorG } from '../oefenen/spelen/skins/frituur/visitors';
 import {
-    FRITUUR, KINDS, NO_PATIENCE, ORDERS, VISITORS, customerOf, isEndless, isVisitor, headTopOf, helpedTitle, isLow, newCounter, nextSum, patienceFor, patienceShare, serve, tick, timedOut,
-    walkOff, wrongOrder, wrongOrderOf,
+    CLOSED_TITLE, FRITUUR, KINDS, NO_PATIENCE, ORDERS, ROUND_SECONDS, VISITORS, WALK_OFFS, customerOf, isClosed, isEndless, isVisitor, headTopOf, helpedTitle, isLow, newCounter, nextSum, patienceFor,
+    patienceShare, serve, tick, timedOut, walkOff, walkOffsLeft, wrongOrder, wrongOrderOf,
 } from '../oefenen/spelen/skins/frituur/rule';
 import { FRITUUR_BEST_KEY, frituurResult, loadBest, saveIfBest, wipeBest } from '../oefenen/spelen/skins/frituur/records';
 import { FRITUUR_SOUNDS, playFrituur } from '../oefenen/spelen/skins/frituur/sounds';
@@ -25,12 +25,12 @@ import { SOUND_KEY, resetSoundForTests, setSoundOn } from '../oefenen/spelen/sou
 const START_MS = 12_000;
 
 const progressWith = (over: Partial<SkinProgress> = {}): SkinProgress => ({
-    answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: 180_000, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: 180_000, ...over,
+    answered: 0, total: null, score: 0, streak: 0, bestStreak: 0, msLeft: 300_000, goal: null, right: 0, mistakes: 0, misses: 0, msTotal: 300_000, ...over,
 });
 const propsWith = (over: Partial<SkinProps> = {}): SkinProps => ({
     question: { key: 'q1', text: '7 + 5 = ?', index: 0 }, choices: null, phase: 'play', feedback: null,
     onAnswer: vi.fn(), onHelp: vi.fn(), onMiss: vi.fn(), onFail: vi.fn(), sound: vi.fn(),
-    progress: progressWith(), options: { tijd: '3' }, events: createSpelEvents(), ...over,
+    progress: progressWith(), options: {}, events: createSpelEvents(), ...over,
 });
 const rootOf = (c: HTMLElement) => c.querySelector('.fr-root')!;
 
@@ -166,20 +166,83 @@ describe('Frituur: the best on this device', () => {
     });
 });
 
+describe('Frituur: too many walk-offs close the frituur', () => {
+    test('6 / 5 / 4 walk-offs per level (tunable), Makkelijk never; a served customer never counts', () => {
+        expect(WALK_OFFS).toEqual({ makkelijk: null, normaal: 6, moeilijk: 5, onmogelijk: 4 });
+        let c = newCounter(3);
+        expect(walkOffsLeft(c, 'normaal')).toBe(6);
+        expect(walkOffsLeft(c, 'makkelijk')).toBeNull();
+        c = nextSum(serve(c), START_MS);
+        expect(c.walked).toBe(0);
+        c = walkOff(c, 'grumpy', START_MS);
+        c = wrongOrder(c);
+        expect(c.walked).toBe(2);
+        expect(walkOffsLeft(c, 'onmogelijk')).toBe(2);
+        c = walkOff(walkOff(c, 'grumpy', START_MS), 'tantrum', START_MS, 'mayo');
+        expect(isClosed(c, 'onmogelijk')).toBe(true);
+        expect(isClosed(c, 'moeilijk')).toBe(false);
+        expect(isClosed({ walked: 99 }, 'makkelijk')).toBe(false);
+    });
+
+    test('the closed end lines: the friendly title, the customers helped, the record', () => {
+        expect(frituurResult(0, 0, true)).toMatchObject({ title: CLOSED_TITLE, detail: 'Te veel boze klanten liepen weg.' });
+        expect(frituurResult(3, 5, true)).toMatchObject({ title: CLOSED_TITLE, detail: 'Je hielp 3 klanten. Je record is 5 klanten.' });
+    });
+
+    test('the angry faces count down; the last walk-off rolls the shutter down, then onFail (not under help)', () => {
+        vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] });
+        const events = createSpelEvents();
+        const onFail = vi.fn();
+        const onHold = vi.fn();
+        const onReport = vi.fn();
+        const p = (over: Partial<SkinProps> = {}) => propsWith({ events, onFail, onHold, onReport, options: { niveau: 'onmogelijk' }, ...over });
+        const { container, rerender } = render(<Frituur {...p()} />);
+        const faces = () => [...container.querySelectorAll('.fr-angry-face')];
+        expect(faces()).toHaveLength(4);
+        expect(container.querySelector('.fr-angry')!.getAttribute('aria-label')).toBe('Nog 4 klanten mogen boos weglopen');
+        for (let k = 1; k <= 3; k++) {
+            act(() => { events.emit('wrong', { given: '1', expected: '12' }); });
+            rerender(<Frituur {...p({ question: { key: `q${k + 1}`, text: '3 + 4 = ?', index: k }, progress: progressWith({ mistakes: k }) })} />);
+        }
+        expect(faces().filter(f => f.classList.contains('is-angry'))).toHaveLength(3);
+        expect(container.querySelector('.fr-angry-face.is-last')).not.toBeNull();
+        expect(container.querySelector('.fr-shutter')).toBeNull();
+        act(() => { events.emit('wrong', { given: '1', expected: '7' }); });
+        rerender(<Frituur {...p({ phase: 'help', question: { key: 'q5', text: '3 + 4 = ?', index: 4 }, progress: progressWith({ mistakes: 4 }) })} />);
+        expect(rootOf(container).classList.contains('is-closed')).toBe(true);
+        expect(container.querySelector('.fr-shutter .fr-closed-text')!.textContent).toBe('GESLOTEN');
+        expect(onHold).toHaveBeenCalledWith(true);
+        expect(onReport).toHaveBeenLastCalledWith(expect.objectContaining({ title: CLOSED_TITLE }));
+        act(() => { vi.advanceTimersByTime(5000); });
+        expect(onFail).not.toHaveBeenCalled();
+        rerender(<Frituur {...p({ question: { key: 'q5', text: '3 + 4 = ?', index: 4 }, progress: progressWith({ mistakes: 4 }) })} />);
+        expect(onFail).toHaveBeenCalledTimes(1);
+    });
+
+    test('the closed end picture: shutter down, no customers', () => {
+        const { container } = render(<FrituurEnding outcome="failed" progress={progressWith()} options={{}} />);
+        expect(container.querySelector('.fr-ending.is-shut .fr-shutter')).not.toBeNull();
+        expect(container.querySelectorAll('.fr-ending .fr-person.is-happy, .fr-ending .fr-visitor.is-happy')).toHaveLength(0);
+    });
+});
+
 describe('Frituur: the registry row', () => {
-    test('a timed keypad game in Op tijd: 3 or 5 minutes, music gek, any number content, no early end, no win title', () => {
+    test('a timed keypad game in Op tijd: always 5 minutes (no Hoe lang?), music gek, any number content, a friendly early end, no win title', () => {
         const skin = skinById('frituur')!;
-        expect(skin.meta).toMatchObject({ input: 'keypad', timed: true, music: 'gek', round: { seconds: 180 }, accepts: { kinds: ['number'] } });
-        expect(skin.meta.canFail).toBeFalsy();
+        expect(skin.meta).toMatchObject({ input: 'keypad', timed: true, music: 'gek', round: { seconds: 300 }, accepts: { kinds: ['number'] } });
+        expect(ROUND_SECONDS).toBe(300);
+        expect(skin.meta.canFail).toBe(true);
+        expect(skin.meta.failTitle).toBe('De frituur gaat dicht! Nog eens?');
         expect(skin.meta.winTitle).toBeUndefined();
         expect(gameGroupOf(skin.meta)).toBe('tijd');
-        expect(skin.meta.options![0].choices.map(c => c.label)).toEqual(['3 minuten', '5 minuten']);
+        expect(skin.meta.options!.map(o => o.id)).toEqual(['niveau']);
         // The four levels, about time: a crossed-out clock, a clock, a clock and flames.
-        expect(skin.meta.options![1].choices.map(c => [c.value, c.icon])).toEqual([
+        expect(skin.meta.options![0].choices.map(c => [c.value, c.icon])).toEqual([
             ['makkelijk', { clock: 'off' }], ['normaal', { clock: 'on' }], ['moeilijk', { clock: 'on', flames: 1 }], ['onmogelijk', { clock: 'on', flames: 2 }],
         ]);
-        expect(resolveMeta(skin.meta).chosen).toEqual({ tijd: '3', niveau: 'normaal' });
-        expect(resolveMeta(skin.meta, { tijd: '5' }).round.seconds).toBe(300);
+        expect(resolveMeta(skin.meta).chosen).toEqual({ niveau: 'normaal' });
+        // An old remembered "tijd: 3" is ignored: the round stays 5 minutes.
+        expect(resolveMeta(skin.meta, { tijd: '3' }).round.seconds).toBe(300);
         expect(GAME_BLURB.frituur).toBeTruthy();
         expect(skin.Component).toBeTruthy();
         expect(skin.Ending).toBeTruthy();
@@ -203,7 +266,7 @@ describe('Frituur: the registry row', () => {
         localStorage.setItem(SOUND_KEY, '0');
         resetSoundForTests();
         setSoundOn(true);
-        expect(FRITUUR_SOUNDS).toEqual(['sizzle', 'ding', 'yum', 'huh', 'grumble', 'strop', 'wail', 'woef']);
+        expect(FRITUUR_SOUNDS).toEqual(['sizzle', 'ding', 'yum', 'huh', 'grumble', 'strop', 'wail', 'woef', 'rolluik']);
         for (const s of FRITUUR_SOUNDS) {
             const before = made;
             playFrituur(s);
@@ -240,7 +303,7 @@ describe('Frituur: the scene', () => {
         expect(container.querySelector('.fr-cust.is-served .fr-held')).not.toBeNull();
         expect(container.querySelector('.fr-patience')).toBeNull();
         expect(onReport).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Je hielp 1 klant!', detail: 'Nieuw record!' }));
-        expect(loadBest('k|3')).toBe(1);
+        expect(loadBest('k|5')).toBe(1);
         rerender(<Frituur {...propsWith({ events, onReport, runKey: 'k', question: { key: 'q2', text: '3 + 4 = ?', index: 1 }, progress: progressWith({ right: 1, score: 1, streak: 1 }) })} />);
         expect(container.querySelector('.fr-leaver.is-happy')).not.toBeNull();
         expect(container.querySelector('.fr-cust.is-slot-0')).not.toBe(firstId);
@@ -287,13 +350,15 @@ describe('Frituur: the scene', () => {
         vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'performance', 'Date'] });
         const onMiss = vi.fn();
         const events = createSpelEvents();
-        const { container } = render(<Frituur {...propsWith({ onMiss, events, runKey: 'k', options: { tijd: '3', niveau: 'makkelijk' } })} />);
+        const { container } = render(<Frituur {...propsWith({ onMiss, events, runKey: 'k', options: { niveau: 'makkelijk' } })} />);
         expect(container.querySelector('.fr-patience')).toBeNull();
         act(() => { vi.advanceTimersByTime(120_000); });
         expect(onMiss).not.toHaveBeenCalled();
         act(() => { events.emit('correct', { given: '12', streak: 1 }); });
-        expect(loadBest('k|3|makkelijk')).toBe(1);
-        expect(loadBest('k|3')).toBe(0);
+        expect(loadBest('k|5|makkelijk')).toBe(1);
+        expect(loadBest('k|5')).toBe(0);
+        // Makkelijk never closes: no walk-off faces.
+        expect(container.querySelector('.fr-angry')).toBeNull();
     });
 
     test('the end picture: the frituur with happy customers eating', () => {

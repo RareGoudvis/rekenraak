@@ -466,6 +466,46 @@ path.fr-arm { fill: none !important; }
 .fr-tally-label { font-size: clamp(15px, 2.4vmin, 20px); }
 .fr-tally-label small { font-size: .8em; color: var(--text-muted); font-weight: 700; }
 
+/* The tally and the walk-off faces side by side when there is room, else above each other. */
+.fr-stats { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2); }
+/* The walk-offs (rule.ts WALK_OFFS): calm faces, an angry red one per customer that stormed off. */
+.fr-angry {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 4px;
+  border: var(--spel-line) solid var(--spel-ink);
+  border-radius: var(--radius-lg);
+  background: var(--kiosk-paper);
+}
+.fr-angry-face { width: clamp(28px, 4.8vmin, 40px); aspect-ratio: 1; overflow: visible; }
+.fr-token-face { fill: color-mix(in srgb, var(--fr-board) 30%, var(--kiosk-paper)); stroke: var(--spel-ink); stroke-width: 2.2; }
+.fr-token.is-angry .fr-token-face { fill: color-mix(in srgb, var(--fr-red) 80%, var(--kiosk-paper)); }
+.fr-token-eye { fill: var(--spel-ink); }
+.fr-token-line { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linecap: round; }
+.fr-token-steam { fill: none; stroke: var(--fr-steel); stroke-width: 2.4; stroke-linecap: round; animation: fr-token-steam 1.2s ease-in-out infinite; }
+@keyframes fr-token-steam { 0%, 100% { opacity: .3; translate: 0 1px; } 50% { opacity: 1; translate: 0 -2px; } }
+/* The face that just turned angry: a stomp and a shake. */
+.fr-angry-face.is-new { animation: fr-token-stomp 700ms var(--ease-spring) both; }
+@keyframes fr-token-stomp { 0% { scale: .4; rotate: 0deg; } 40% { scale: 1.35; rotate: -12deg; } 60% { rotate: 10deg; } 80% { scale: 1; rotate: -5deg; } 100% { rotate: 0deg; } }
+/* The last calm face wobbles: one more and the frituur closes. */
+.fr-angry-face.is-last { animation: fr-token-warn 900ms ease-in-out infinite; }
+@keyframes fr-token-warn { 0%, 100% { rotate: 0deg; } 25% { rotate: -10deg; } 75% { rotate: 10deg; } }
+
+/* Closed: the shutter rolls down from under the awning with a bounce, the sign swings, the lights and the steam go out. */
+.fr-shutter { animation: fr-shutter 1300ms cubic-bezier(.5, 0, .7, 1) both; }
+@keyframes fr-shutter { 0% { translate: 0 -100px; } 78% { translate: 0 2px; } 88% { translate: 0 -4px; } 100% { translate: 0 0; } }
+.fr-shutter-body { fill: var(--fr-steel); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-shutter-slat { fill: none; stroke: color-mix(in srgb, var(--spel-ink) 45%, var(--fr-steel)); stroke-width: 1.6; }
+.fr-shutter-bar, .fr-shutter-handle { fill: color-mix(in srgb, var(--spel-ink) 30%, var(--fr-steel)); stroke: var(--spel-ink); stroke-width: 2; }
+.fr-closed-sign { transform-box: view-box; transform-origin: 150px 186px; animation: fr-sign-swing 2.4s ease-in-out 1200ms both; }
+@keyframes fr-sign-swing { 0% { rotate: 14deg; } 15% { rotate: -11deg; } 30% { rotate: 8deg; } 45% { rotate: -5deg; } 60% { rotate: 3deg; } 75%, 100% { rotate: 0deg; } }
+.fr-closed-string { fill: none; stroke: var(--spel-ink); stroke-width: 2; stroke-linejoin: round; }
+.fr-closed-board { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.fr-closed-text { fill: var(--fr-red); font: 900 13px var(--kid-font); letter-spacing: .5px; }
+.fr-root.is-closed .fr-bulb, .fr-ending.is-shut .fr-bulb { animation: none; fill: color-mix(in srgb, var(--spel-ink) 25%, var(--kiosk-paper)); }
+.fr-root.is-closed .fr-steam, .fr-ending.is-shut .fr-steam, .fr-ending.is-shut .fr-puff { display: none; }
+.fr-ending.is-shut .fr-shutter { animation: none; }
+
 @media (orientation: portrait) {
   .fr-root { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
   .fr-panel { width: 100%; padding: var(--sp-2) var(--sp-3) var(--sp-3); gap: var(--sp-2); border-left: 0; border-top: var(--spel-line) solid var(--spel-ink); }
@@ -476,6 +516,17 @@ path.fr-arm { fill: none !important; }
 @media (orientation: landscape) and (max-height: 640px) {
   .fr-panel .kiosk-keypad { grid-template-rows: repeat(4, minmax(var(--spel-tap), 1fr)); }
   .fr-panel { gap: var(--sp-2); }
+}
+/* A phone on its side: the tally and the faces slim, so the keypad keeps its room. */
+@media (orientation: landscape) and (max-height: 480px) {
+  .fr-panel { gap: 6px; padding-block: 6px; }
+  .fr-stats { gap: 6px; flex-wrap: nowrap; }
+  .fr-tally { padding: 0 var(--sp-2) 0 4px; }
+  .fr-tally-cone { width: 22px; }
+  .fr-tally-num { font-size: 22px; }
+  .fr-tally-label { font-size: 14px; }
+  .fr-angry { padding: 4px 6px 2px; gap: 2px; }
+  .fr-angry-face { width: 22px; }
 }
 
 /* ── The end screen picture ───────────────────────────────────────────────── */

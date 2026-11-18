@@ -1,5 +1,5 @@
 import type { SkinResult } from '../types';
-import { helpedTitle } from './rule';
+import { CLOSED_TITLE, helpedTitle } from './rule';
 
 // The most customers helped in one round, per card and length on this device: never shared, never compared with
 // other pupils. Storage can be missing or full (a private window): every access is try/catch.
@@ -30,10 +30,13 @@ export function wipeBest(): void {
     try { globalThis.localStorage?.removeItem(FRITUUR_BEST_KEY); } catch { /* nothing kept anyway */ }
 }
 
-/** The end screen's lines: how many were helped, and the best before this round. */
-export function frituurResult(helped: number, before: number): SkinResult {
-    const detail = helped > before && before > 0 ? `Nieuw record! Vorige keer ${before}.`
+/** The end screen's lines: how many were helped, and the best before this round; closed = too many walked off. */
+export function frituurResult(helped: number, before: number, closed = false): SkinResult {
+    const record = helped > before && before > 0 ? `Nieuw record! Vorige keer ${before}.`
         : helped > before ? 'Nieuw record!'
         : before > 0 ? `Je record is ${before} ${before === 1 ? 'klant' : 'klanten'}.` : undefined;
-    return { title: helpedTitle(helped), detail, wipe: wipeBest };
+    if (!closed) return { title: helpedTitle(helped), detail: record, wipe: wipeBest };
+    // Closed early: the friendly fail title, the customers helped in the line under it.
+    const helpedLine = helped === 0 ? 'Te veel boze klanten liepen weg.' : `Je hielp ${helped} ${helped === 1 ? 'klant' : 'klanten'}.`;
+    return { title: CLOSED_TITLE, detail: record ? `${helpedLine} ${record}` : helpedLine, wipe: wipeBest };
 }
