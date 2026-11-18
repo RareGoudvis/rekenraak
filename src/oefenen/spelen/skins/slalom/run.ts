@@ -7,7 +7,7 @@
 // whole speed table scales with it (pace), so each step stays as much faster. Makkelijk keeps the clock's first
 // 12 s all round, and a tumble costs no speed (gentle).
 
-import { CLOCK, clockMs } from '../../levels/clock';
+import { CLOCK, shortClockMs } from '../../levels/clock';
 import type { Level } from '../../levels/levels';
 
 export const SLALOM = {
@@ -98,7 +98,7 @@ export function gateSeconds(step: number, pace = 1): number {
 }
 
 /** The pace at which a step-1 gate takes the shared clock after elapsedMs of the round (Makkelijk: its first 12 s, held). */
-export const paceOf = (level: Level, elapsedMs: number) => (gateSeconds(1) * 1000) / (clockMs(level, elapsedMs) ?? CLOCK.startMs);
+export const paceOf = (level: Level, elapsedMs: number) => (gateSeconds(1) * 1000) / (shortClockMs(level, elapsedMs) ?? CLOCK.startMs);
 
 export function startRun(pace = 1, gentle = false): SlRun {
     return { metres: 0, step: 1, speed: speedOf(1, pace), gates: [], down: 0, up: 0, nextId: 1, pace, gentle };

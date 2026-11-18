@@ -5,7 +5,7 @@
 // one is already burning (buildings counts them); at max it is too hot: the building collapses (the friendly early end).
 // Makkelijk (levels/levels.ts): no window clocks (the fire never jumps) and the gauge stops one step under too hot.
 
-import { clockMs } from '../../levels/clock';
+import { shortClockMs } from '../../levels/clock';
 import type { Level } from '../../levels/levels';
 
 // THE tuning table. Checked with a simulated pupil over the 3 minutes (spelen.brandweer.test, think time per sum plus the
@@ -150,7 +150,7 @@ export const WINDOW_CLOCK = {
 
 /** The clocks (ms) of a sum's burning windows, one per option in order; their order is seeded per sum. None on Makkelijk. */
 export function windowClocks(key: string, n: number, elapsedMs: number, lvl: Level = 'normaal'): number[] {
-    const first = clockMs(lvl, elapsedMs);
+    const first = shortClockMs(lvl, elapsedMs);
     if (first === null) return [];
     const rank = Array.from({ length: n }, (_, i) => i);
     const rng = seeded(hash(`clock-${key}`));

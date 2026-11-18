@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent } from '@testing-library/react';
-import { CLOCK, CLOCK_ROWS, clockMs, clockSteps, nextClockStepAt } from '../oefenen/spelen/levels/clock';
+import { CLOCK, CLOCK_ROWS, SHORT_START_MS, clockMs, clockSteps, nextClockStepAt, shortClockMs } from '../oefenen/spelen/levels/clock';
 import { DEFAULT_LEVEL, LEVELS, LEVEL_ID, levelOf, levelOption, migrateLevel } from '../oefenen/spelen/levels/levels';
 import { OPTIONS_KEY, choicesOf, loadChoices, resolveMeta, saveChoices } from '../oefenen/spelen/skins/options';
 import type { SkinMeta } from '../oefenen/spelen/skins/types';
@@ -52,6 +52,17 @@ describe('The clock rule', () => {
                 prev = ms;
             }
         }
+    });
+});
+
+describe('The short-round clock (Frituur, Brandweer, Skislalom)', () => {
+    test('each level starts lower, then the shared ramp, never under its floor', () => {
+        const at = (t: number) => (['makkelijk', 'normaal', 'moeilijk', 'onmogelijk'] as const).map(l => shortClockMs(l, t));
+        expect(at(0)).toEqual([null, 12_000, 10_000, 8_000]);
+        expect(at(120_000)).toEqual([null, 10_000, 8_000, 5_000]);
+        expect(at(180_000)).toEqual([null, 9_000, 7_000, 4_000]);
+        expect(at(3_600_000)).toEqual([null, CLOCK_ROWS.normaal.floorMs, CLOCK_ROWS.moeilijk.floorMs, CLOCK_ROWS.onmogelijk.floorMs]);
+        expect(SHORT_START_MS.normaal).toBe(CLOCK.startMs);
     });
 });
 

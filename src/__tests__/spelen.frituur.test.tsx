@@ -37,11 +37,12 @@ const rootOf = (c: HTMLElement) => c.querySelector('.fr-root')!;
 afterEach(() => { cleanup(); vi.useRealTimers(); localStorage.clear(); });
 
 describe('Frituur: the queue', () => {
-    test('patience = the shared clock: 12 s the first minute, then shorter per level; Makkelijk has no bar', () => {
+    test('patience = the short-round clock: 12 / 10 / 8 s the first minute, then the shared ramp; Makkelijk has no bar', () => {
         expect(patienceFor('normaal', 0)).toBe(START_MS);
-        expect(patienceFor('onmogelijk', 59_000)).toBe(START_MS);
+        expect(patienceFor('moeilijk', 59_000)).toBe(10_000);
+        expect(patienceFor('onmogelijk', 59_000)).toBe(8_000);
         expect(patienceFor('normaal', 60_000)).toBe(11_000);
-        expect(patienceFor('moeilijk', 150_000)).toBe(9_000);
+        expect(patienceFor('moeilijk', 150_000)).toBe(7_000);
         expect(patienceFor('onmogelijk', 300_000)).toBe(4_000);
         expect(patienceFor('makkelijk', 0)).toBe(NO_PATIENCE);
         expect(patienceFor('makkelijk', 300_000)).toBe(NO_PATIENCE);

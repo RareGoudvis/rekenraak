@@ -1,5 +1,5 @@
 import { mulberry32 } from '../../distractors';
-import { clockMs } from '../../levels/clock';
+import { shortClockMs } from '../../levels/clock';
 import type { Level } from '../../levels/levels';
 
 // Frituur: the queue at the counter. Pure, so the tuning is testable: the customer at the counter asks the sum on
@@ -73,7 +73,7 @@ export interface Counter {
 export const NO_PATIENCE = 0;
 
 /** The patience of a customer stepping up after elapsedMs of the round: the shared clock (Makkelijk: no bar). */
-export const patienceFor = (level: Level, elapsedMs: number) => clockMs(level, elapsedMs) ?? NO_PATIENCE;
+export const patienceFor = (level: Level, elapsedMs: number) => shortClockMs(level, elapsedMs) ?? NO_PATIENCE;
 
 const fresh = (total: number): Patience => ({ total, left: total, grace: FRITUUR.graceMs });
 
