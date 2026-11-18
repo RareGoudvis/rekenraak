@@ -6,7 +6,8 @@ import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, signClass, viewFor } from '../../spelChoice';
 import { formatSpelNumber } from '../../spelFormat';
 import { Burst, Clouds, Snow } from '../../scene';
-import { SLALOM, STEPS, answerRun, isJump, laneX, openGate, poseOf, project, spawnGate, startRun, tickRun, unitOf, VIEW, type Box, type GateEnd, type SkierPose, type SlRun } from './run';
+import { SLALOM, STEPS, answerRun, isJump, laneX, openGate, paceOf, poseOf, project, spawnGate, startRun, tickRun, unitOf, VIEW, type Box, type GateEnd, type SkierPose, type SlRun } from './run';
+import { levelOf } from '../../levels/levels';
 import { formatMetres, loadBestM, saveIfLonger, slalomResult } from './records';
 import { Crowd, FinishScene, FlyingBit, GateArt, Mountains, Pine, RecordFlag, Ripple, Skier, Snowman } from './art';
 import { playSlalom } from './sounds';
@@ -16,7 +17,8 @@ import './slalom.css';
 // and he carves into that lane and shoots through. Right = a step faster (5 steps), 3 in a row = a little jump;
 // wrong = a tumble (skis everywhere, a snowman laughs), back to step 1. A gate reached without an answer slips past
 // (a step slower) and the same sum comes on the next one. Two minutes; the score is the metres, with a best per card
-// on this device. One rAF loop moves the world (run.ts), outside React; renders happen only on a moment.
+// on this device. One rAF loop moves the world (run.ts), outside React; renders happen only on a moment. The levels:
+// the gate's time follows the shared clock (run.ts paceOf), Makkelijk's tumble costs no speed; a best per level.
 
 const KEYS = ['1', '2', '3'];
 // The skier's carve from lane to lane (ms); SYNC: slalom.css .sl-skier transition.
@@ -87,13 +89,20 @@ function recycle(p: Prop): Prop {
 type Moment = { kind: 'hop' | 'miss' | 'fast' | 'record'; n: number } | null;
 type Spray = { n: number; x: number; kind: 'carve' | 'land' | 'tumble' };
 
-export default function Slalom({ question, choices, views, phase, feedback, onAnswer, onReport, progress, events, runKey }: SkinProps) {
+export default function Slalom({ question, choices, views, phase, feedback, onAnswer, onReport, progress, events, runKey: cardKey, options: picked }: SkinProps) {
     const options = choices ?? [];
+    const level = levelOf(picked);
+    // A best per card and level (the levels ski at different paces).
+    const runKey = cardKey ? `${cardKey}|${level}` : undefined;
+    // The round's game time (the session clock: help and the rotate prompt stop it); the pace follows it.
+    const elapsedMs = progress.msTotal !== null && progress.msLeft !== null ? progress.msTotal - progress.msLeft : 0;
+    const pace = paceOf(level, elapsedMs);
     const root = useRef<HTMLDivElement>(null);
     const [box, setBox] = useState<Box>({ w: 1280, h: 728 });
     const boxRef = useRef(box);
     const [bestBefore] = useState(() => (runKey ? loadBestM(runKey) : null));
-    const run = useRef<SlRun>(startRun());
+    const [first] = useState(() => startRun(pace, level === 'makkelijk'));
+    const run = useRef<SlRun>(first);
     const props = useRef<Prop[]>(startProps());
     const snowman = useRef<{ d: number; x: number } | null>(null);
     const [gateViews, setGateViews] = useState<GateView[]>([]);
@@ -120,8 +129,8 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
     };
     useEffect(() => { const all = timers.current; return () => all.forEach(t => window.clearTimeout(t)); }, []);
 
-    const live = useRef({ phase, options, views, qKey: question?.key ?? '', onReport, runKey, skierX });
-    useLayoutEffect(() => { live.current = { ...live.current, phase, options, views, qKey: question?.key ?? '', onReport, runKey, skierX }; });
+    const live = useRef({ phase, options, views, qKey: question?.key ?? '', onReport, runKey, skierX, pace });
+    useLayoutEffect(() => { live.current = { ...live.current, phase, options, views, qKey: question?.key ?? '', onReport, runKey, skierX, pace }; });
 
     // The scene's size: the loop places everything in px from it.
     useLayoutEffect(() => {
@@ -204,7 +213,7 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
             const st = live.current;
             if (st.phase === 'help') return;
 
-            let r = run.current;
+            let r = run.current.pace === st.pace ? run.current : { ...run.current, pace: st.pace };
             if (st.phase === 'play' && st.qKey && st.options.length && !openGate(r)) {
                 r = spawnGate(r);
                 const g = r.gates[r.gates.length - 1];

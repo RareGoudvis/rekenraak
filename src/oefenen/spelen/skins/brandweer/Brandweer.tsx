@@ -8,6 +8,7 @@ import { COLLAPSE, FIRE, WINDOWS, decorOf, fireMood, fireStart, fireStep, firstE
 import { BLOCK, GRIP, GROUND, HOLDERS, NOZZLE_LEN, PET_ROW, PIVOT, REST, RESIDENTS, SHEET, STAGE_H, STAGE_W, aimAt, pct, petSpot, rowOf, sprayPath, winBox, winCentre, winPercent } from './geometry';
 import { Backdrop, BlockArt, DustArt, FighterArt, Fireball, Flames, HelmetArt, LadderArt, PetArt, ResidentArt, RubbleArt, SheetArt, Smoke, Sparks, TruckArt, WindowArt, WindowClock, type CrewPose, type CrowdMood, type FighterPose, type WinState } from './art';
 import { playBrandweer } from './sounds';
+import { levelOf } from '../../levels/levels';
 import './brandweer.css';
 
 // Brandweer: a 3 × 3 apartment block is on fire; the four options burn in four of its windows (the rest are dark, or
@@ -18,6 +19,7 @@ import './brandweer.css';
 // neighbour (+1 level). A building fully out makes way for the next one. Too hot: the waiting pet jumps out, the crew
 // steps back, the empty block collapses floor by floor into a smoking heap, then everyone on the lawn cheers the crew
 // (the friendly early end, onFail). One rAF loop counts the sum's waiting time for the window clocks; CSS loops do the rest.
+// The window clocks follow the shared clock (levels/clock.ts); Makkelijk has none and never collapses (fire.ts).
 
 // How far the block has sunk into the ground per collapse stage (stage units; one floor ≈ 185).
 const SINK = [0, 0, 190, 380, 570, BLOCK.h + 200, BLOCK.h + 200];
@@ -51,8 +53,9 @@ const detailOf = (buildings: number, pets: number) => {
 
 interface Snap { key: string; buildings: number; rescued: number; supers: number; burnt: number[]; clockAt: number }
 
-export default function Brandweer({ question, choices, views, phase, feedback, onAnswer, onFail, onReport, onHold, progress, events }: SkinProps) {
+export default function Brandweer({ question, choices, views, phase, feedback, onAnswer, onFail, onReport, onHold, progress, events, options: picked }: SkinProps) {
     const options = choices ?? [];
+    const level = levelOf(picked);
     const elapsedMs = progress.msTotal !== null && progress.msLeft !== null ? progress.msTotal - progress.msLeft : 0;
 
     // The fire jumps so far: in this sum (due) and in the whole round (total), counted by the rAF loop below.
@@ -64,7 +67,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
     const [fire, setFire] = useState<FireState>(fireStart);
     const counts = { elapsedMs, right: progress.right, mistakes: progress.mistakes, streak: progress.streak, jumps: jumpsNow.total };
     if (fire.elapsedMs !== counts.elapsedMs || fire.right !== counts.right || fire.mistakes !== counts.mistakes || fire.streak !== counts.streak || fire.jumps !== counts.jumps) {
-        setFire(fireStep(fire, counts));
+        setFire(fireStep(fire, counts, level));
     }
     const rescued = rescuedOf(progress.right);
 
@@ -72,7 +75,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
     const [snap, setSnap] = useState<Snap>({ key, buildings: fire.buildings, rescued, supers: fire.supers, burnt: [], clockAt: elapsedMs });
     const petWin = petWindow(snap.rescued);
     const burning = question ? windowsOf(snap.key, options.length, petWin) : [];
-    const clocks = windowClocks(snap.key, burning.length, snap.clockAt);
+    const clocks = windowClocks(snap.key, burning.length, snap.clockAt, level);
     const leaps = jumpsOf(firstEvents(jumpsNow.due, clocks), burning, petWin);
     const jumped = leaps.flatMap(j => (j.to === null ? [] : [j.to]));
     if (snap.key !== key) {
@@ -267,7 +270,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                                     {Array.from({ length: WINDOWS }, (_, w) => (
                                         <WindowArt key={w} i={w} state={stateOf(w)} pet={petOf(snap.rescued)} burnt={snap.burnt.includes(w) && stateOf(w) !== 'fire'} glow={mood === 'hot' && w !== petWin} />
                                     ))}
-                                    {burning.map((w, i) => stateOf(w) === 'fire' && !hot && <WindowClock key={`${question.key}-${w}-c`} i={w} clockMs={clocks[i]} />)}
+                                    {burning.map((w, i) => stateOf(w) === 'fire' && !hot && clocks[i] !== undefined && <WindowClock key={`${question.key}-${w}-c`} i={w} clockMs={clocks[i]} />)}
                                     {burning.map((w, i) => stateOf(w) === 'fire' && (
                                         <g key={`${question.key}-${w}`} className="bw-ignite">
                                             <Flames i={w} scale={scale} flare={(dribble && w === mine) || (leap?.to === null && leap.from === w)} clockMs={hot ? undefined : clocks[i]} />

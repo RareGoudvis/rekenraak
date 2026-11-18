@@ -25,6 +25,8 @@ export const GRIJP = {
     nearMissMs: 760,
     // How far a near-miss prize slides down, as a share of the plush's height.
     nearMissSag: 0.16,
+    // Time up: the claw hurries (its trip this much faster), so the plush slips while the answer still shows.
+    autoPace: 0.55,
     // The idle sway: degrees each way and one full swing.
     swayDeg: 4,
     swayMs: 2600,
@@ -50,6 +52,8 @@ export interface Job {
     slot: number;
     result: Result | null;
     nearMiss: boolean;
+    // The time ran out: the claw drops by itself and the plush slips away (a mistake without an answer).
+    auto?: boolean;
 }
 
 export interface Span { stage: Stage; at: number; ms: number }
@@ -61,7 +65,8 @@ export function timeline(job: Job, g: ClawGeom): Span[] {
     const s = g.slots[job.slot];
     const out: Span[] = [];
     let at = 0;
-    const add = (stage: Stage, ms: number) => { out.push({ stage, at, ms }); at += ms; };
+    const pace = job.auto ? GRIJP.autoPace : 1;
+    const add = (stage: Stage, ms: number) => { const d = Math.round(ms * pace); out.push({ stage, at, ms: d }); at += d; };
     const there = moveMs(s.x - g.homeX, g.w);
     add('go', there);
     add('drop', GRIJP.dropMs);
@@ -208,6 +213,12 @@ function slipPrize(job: Job, t: number, g: ClawGeom, spans: Span[]): Pose['prize
     const fromY = lerp(s.grabY, g.restY, ease(GRIJP.slipAt)) + (s.cy - s.grabY);
     const y = lerp(fromY, s.cy, bounce(Math.max(0, k)));
     return { x: s.cx, y, rot: Math.sin(Math.max(0, k) * Math.PI * 3) * 14 * (1 - k) };
+}
+
+/** The prize the claw grabs by itself when the time is up (a roll 0…1 over the places it may take); null = none. */
+export function autoSlotOf(roll: number, free: readonly number[]): number | null {
+    if (!free.length) return null;
+    return free[Math.min(free.length - 1, Math.floor(Math.max(0, roll) * free.length))];
 }
 
 /** A tap's trip: does this right answer get a near miss? Never twice in a row (lastNear = the previous right one's). */

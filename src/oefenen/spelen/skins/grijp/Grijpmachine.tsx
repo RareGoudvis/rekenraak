@@ -1,15 +1,17 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { SkinEndingProps, SkinProps } from '../types';
 import type { SpelChoiceView } from '../../content/pack';
 import { SpelChoiceFace, SpelSignBox } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, pictureClass } from '../../spelChoice';
 import { Burst } from '../../scene';
-import { GRIJP, coinsLeft, crossed, idlePose, nearMissOf, poseAt, revealAt, timeline, type ClawGeom, type Job, type Pose, type Stage } from './claw';
+import { GRIJP, autoSlotOf, coinsLeft, crossed, idlePose, nearMissOf, poseAt, revealAt, timeline, type ClawGeom, type Job, type Pose, type Stage } from './claw';
+import { clockMs } from '../../levels/clock';
+import { levelOf } from '../../levels/levels';
 import { HEAP, backPile, machineById, prizeBag, type MachineId, type Prize } from './machines';
 import { forcedMachine, lastMachine, pickMachine, rememberMachine } from './pick';
 import { ARCADES } from './arcades';
 import { CoinArt, PanelBits } from './arcades/kit';
-import { COUNTER, DISPLAY, DOOR, GLASS, SLOT, VIEW, pctOf } from './arcades/layout';
+import { COUNTER, DISPLAY, DOOR, GLASS, SLOT, TIMER, VIEW, pctOf } from './arcades/layout';
 import { playGrijp } from './sounds';
 import './grijp.css';
 
@@ -19,6 +21,9 @@ import './grijp.css';
 // nearly loses it on the way (claw.ts), drops it in the chute and it pops out onto the "Gewonnen" shelf. Wrong: the
 // prize slips out at the top with a squeak and bounces back onto the heap (no loss, a logged mistake). A tap while the
 // claw is still busy waits its turn. One rAF loop runs the claw on game time (frozen under help); CSS does the rest.
+// Normaal and up: a clock ring per sum (levels/clock.ts, on the round's play time); time up = a mistake at once (onMiss,
+// the sign shows the answer) and the claw hurries down by itself onto a prize that is not the answer, which slips away.
+// Makkelijk has no clock.
 
 const KEYS = ['1', '2', '3', '4'];
 // The heap's four places: x (% of the glass, the chute takes the left fifth) and how high on the heap (% from the bottom).
@@ -34,6 +39,8 @@ const TALL_DISPLAY = { ...DISPLAY, y: DISPLAY.y - 70, h: DISPLAY.h + 70 };
 const FLY_MS = 700;
 // No answer from the session this long after the reveal (a test, a closed round): the plush just slips back.
 const STUCK_MS = 1500;
+// Under this share of the sum's time the clock ring turns red and shakes.
+const LOW_AT = 0.3;
 
 // The last round's machine and prizes, for the end picture (same chunk).
 let lastRun: { machine: MachineId; won: Prize[] } | null = null;
@@ -56,7 +63,21 @@ interface Trip extends Job {
     slipSaid: boolean;
     landSaid: boolean;
 }
-interface TripView { slot: number; stage: Stage; result: Job['result']; nearMiss: boolean; prize: Prize; value: string; view?: SpelChoiceView; dir: number }
+interface TripView { slot: number; stage: Stage; result: Job['result']; nearMiss: boolean; prize: Prize; value: string; view?: SpelChoiceView; dir: number; auto: boolean }
+
+// The clock ring: the share of the sum's time left, drawn from --left (set by the loop, no render per frame).
+function TimerRing({ el }: { el: RefObject<HTMLDivElement | null> }) {
+    return (
+        <div ref={el} className="gm-timer" style={pctOf(TIMER)} role="timer" aria-label="De tijd voor deze som">
+            <svg viewBox="0 0 100 100" aria-hidden>
+                <circle className="gm-timer-face" cx="50" cy="50" r="44" />
+                <circle className="gm-timer-run" cx="50" cy="50" r="31" pathLength={100} />
+                <path className="gm-timer-hand" d="M50 50 V30 M50 50 L63 58" />
+                <circle className="gm-timer-pin" cx="50" cy="50" r="5" />
+            </svg>
+        </div>
+    );
+}
 
 const fmt = (n: number) => n.toFixed(1);
 
@@ -71,7 +92,8 @@ function Tag({ value, view, k }: { value: string; view?: SpelChoiceView; k: stri
     );
 }
 
-export default function Grijpmachine({ question, choices, views, phase, feedback, onAnswer, progress, events }: SkinProps) {
+export default function Grijpmachine({ question, choices, views, phase, feedback, onAnswer, onMiss, progress, events, options: picked }: SkinProps) {
+    const level = levelOf(picked);
     const [machineId] = useState(initialMachine);
     const machine = machineById(machineId);
     const art = ARCADES[machineId];
@@ -106,26 +128,29 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
     // Places whose prize was won on this question: empty until the next one refills them.
     const gone = useRef<{ key: string; slots: number[]; refills: Map<number, Prize> }>({ key: '', slots: [], refills: new Map() });
     const lastNear = useRef(false);
+    // The sum whose time ran out: its 'wrong' verdict sends the claw by itself.
+    const autoFor = useRef<string | null>(null);
     const timers = useRef<number[]>([]);
     useEffect(() => () => { timers.current.forEach(t => window.clearTimeout(t)); }, []);
     const later = (ms: number, fn: () => void) => { timers.current.push(window.setTimeout(fn, ms)); };
 
-    const live = useRef({ phase, key: question?.key ?? '', onAnswer });
-    useLayoutEffect(() => { live.current = { phase, key: question?.key ?? '', onAnswer }; });
+    const live = useRef({ phase, key: question?.key ?? '', onAnswer, onMiss, level, options: choices ?? [] });
+    useLayoutEffect(() => { live.current = { phase, key: question?.key ?? '', onAnswer, onMiss, level, options: choices ?? [] }; });
+    const timerEl = useRef<HTMLDivElement>(null);
 
     const viewOf = (j: Trip, stage: Stage): TripView => ({
         slot: j.slot, stage, result: j.result, nearMiss: j.nearMiss, prize: j.prize, value: j.value, view: j.view,
-        dir: geom.current ? Math.sign(geom.current.slots[j.slot].x - geom.current.homeX) : 1,
+        dir: geom.current ? Math.sign(geom.current.slots[j.slot].x - geom.current.homeX) : 1, auto: !!j.auto,
     });
 
-    // A tap (or a key): the claw sets off at once, or after the trip it is on.
-    const begin = (slot: number) => {
+    // A tap (or a key): the claw sets off at once, or after the trip it is on. auto = the time ran out (it always slips).
+    const begin = (slot: number, auto = false) => {
         const key = live.current.key;
         const value = options[slot];
         if (value === undefined || !geom.current) return;
         const j: Trip = {
-            slot, result: null, nearMiss: false, key, value, view: views?.[slot], prize: heapRef.current[slot],
-            t: 0, answered: false, waited: 0, shown: 'go', slipSaid: false, landSaid: false,
+            slot, result: auto ? 'wrong' : null, nearMiss: false, auto, key, value, view: views?.[slot], prize: heapRef.current[slot],
+            t: 0, answered: auto, waited: 0, shown: 'go', slipSaid: false, landSaid: false,
         };
         job.current = j;
         pending.current = null;
@@ -174,7 +199,18 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
                 if (lastRun) lastRun.won.push(j.prize);
                 setTrip(viewOf(j, 'lift'));
             }),
-            events.on('wrong', () => {
+            events.on('wrong', ({ given, expected }) => {
+                // Our own time-up: the claw goes for a prize that is not the answer (never a place already won on this sum).
+                if (given === '' && autoFor.current && autoFor.current === live.current.key && !job.current) {
+                    const key = autoFor.current;
+                    autoFor.current = null;
+                    const won = gone.current.key === key ? gone.current.slots : [];
+                    const opts = live.current.options;
+                    const free = SPOTS.map((_, i) => i).filter(i => i < opts.length && opts[i] !== expected && !won.includes(i));
+                    const slot = autoSlotOf(Math.random(), free);
+                    if (slot !== null) beginRef.current(slot, true);
+                    return;
+                }
                 const j = job.current;
                 if (!j || j.result) return;
                 j.result = 'wrong';
@@ -270,6 +306,15 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
                 if (away !== (el.dataset.away === '1')) el.dataset.away = away ? '1' : '';
             });
         };
+        // The clock per sum: the round's play time (only while a sum waits), and this sum's own waiting.
+        let playMs = 0;
+        const sum = { key: '', ms: 0, limit: null as number | null };
+        const showLeft = (share: number) => {
+            const el = timerEl.current;
+            if (!el) return;
+            el.style.setProperty('--left', share.toFixed(4));
+            el.classList.toggle('is-low', share > 0 && share < LOW_AT);
+        };
         const frame = (t: number) => {
             raf = requestAnimationFrame(frame);
             const dt = last === null ? 0 : Math.min(100, Math.max(0, t - last));
@@ -277,6 +322,21 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
             const g = geom.current;
             if (!g || live.current.phase === 'help') return;
             clock += dt;
+            const st = live.current;
+            // A new sum: its time is the clock at this point of the round.
+            if (st.key !== sum.key) { sum.key = st.key; sum.ms = 0; sum.limit = clockMs(st.level, playMs); }
+            const busy = !!job.current || (!!pending.current && pending.current.key === st.key);
+            if (st.phase === 'play' && !busy && sum.limit !== null) {
+                playMs += dt;
+                sum.ms += dt;
+                if (sum.ms >= sum.limit) {
+                    // Time up: the mistake counts now; the session's verdict (with the answer) sends the claw (events below).
+                    sum.limit = null;
+                    autoFor.current = st.key;
+                    st.onMiss();
+                }
+            }
+            showLeft(sum.limit !== null ? Math.max(0, 1 - sum.ms / sum.limit) : 0);
             const j = job.current;
             if (!j) {
                 const p = pending.current;
@@ -333,7 +393,7 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
     const moving = trip && (trip.stage === 'go' || trip.stage === 'carry' || trip.stage === 'back')
         ? ((trip.stage === 'go' ? trip.dir : -trip.dir) > 0 ? 'r' : 'l') : '';
     const pressing = trip && (trip.stage === 'drop' || trip.stage === 'grab');
-    const say = trip?.stage === 'wobble' ? 'Oei oei!' : trip?.result === 'wrong' && (trip.stage === 'lift' || trip.stage === 'back') ? 'Oeps!' : null;
+    const say = trip?.stage === 'wobble' ? 'Oei oei!' : trip?.auto && trip.stage !== 'go' ? 'Te laat!' : trip?.result === 'wrong' && (trip.stage === 'lift' || trip.stage === 'back') ? 'Oeps!' : null;
     const { Room, WingL, WingR, Cabinet, Inside, Claw, Prize: PrizeArt } = art;
     const cls = ['gm-root', paused && 'is-paused', views && 'has-pictures', flyer && 'is-paying'].filter(Boolean).join(' ') + pictureClass(views);
 
@@ -403,7 +463,8 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
                             <span className="gm-carriage" />
                             <span className="gm-cable" />
                             <div ref={head} className="gm-head"><Claw /></div>
-                            {say && <span key={say} className="gm-say">{say}</span>}
+                            {/* Over the rightmost prize the bubble goes left, inside the glass. */}
+                            {say && <span key={say} className={`gm-say${trip && SPOTS[trip.slot]?.x > 80 ? ' is-left' : ''}`}>{say}</span>}
                         </div>
                         <span className="gm-gantry" aria-hidden />
                         <span className="gm-shine" aria-hidden />
@@ -413,6 +474,7 @@ export default function Grijpmachine({ question, choices, views, phase, feedback
                         <span className="gm-counter-text"><small>Nog</small> <b key={coins} className="kiosk-math">{coins}</b></span>
                     </div>
                     <span ref={door} className="gm-door-at" style={pctOf(DOOR)} aria-hidden />
+                    {level !== 'makkelijk' && <TimerRing el={timerEl} />}
                     {trip && trip.stage === 'go' && <span key={`coin${progress.answered}`} className="gm-coin-in" style={pctOf(SLOT)} aria-hidden><CoinArt /></span>}
                 </div>
             </div>

@@ -13,12 +13,13 @@ import { gameGroupOf } from '../oefenen/zelf/topicGames';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import Slalom from '../oefenen/spelen/skins/slalom/Slalom';
 import {
-    SLALOM, STEPS, VIEW, answerRun, gateSeconds, isJump, laneX, openGate, poseOf, project, scaleAt, spawnGate, speedOf, startRun, tickRun,
+    SLALOM, STEPS, VIEW, answerRun, gateSeconds, isJump, laneX, openGate, paceOf, poseOf, project, scaleAt, spawnGate, speedOf, startRun, tickRun,
     type SlRun, type TickNews,
 } from '../oefenen/spelen/skins/slalom/run';
 import { SLALOM_RECORDS_KEY, formatMetres, loadBestM, saveIfLonger, slalomResult, wipeSlalom } from '../oefenen/spelen/skins/slalom/records';
 import { formatMathNumber } from '../services/math/formatters';
 import { resetKiosk } from './helpers/oefenKiosk';
+import { resolveMeta } from '../oefenen/spelen/skins/options';
 
 // Skislalom: the run down the slope (gates, speed steps, the tumble, a gate missed), the record per card, and the
 // skin on the real session: tap a flag, the wrong flash with the laughing snowman, help freezing it, the 2-minute end.
@@ -69,6 +70,27 @@ describe('Skislalom run', () => {
         // Never below step 1.
         const slow = ski({ ...spawnGate(startRun()) }, gateSeconds(1) * 1000 + 900).run;
         expect(slow.step).toBe(1);
+    });
+
+    test('the levels: a step-1 gate takes the shared clock (12 s the first minute), every step as much faster; Makkelijk holds 12 s', () => {
+        expect(gateSeconds(1, paceOf('normaal', 0))).toBeCloseTo(12, 6);
+        expect(gateSeconds(1, paceOf('normaal', 60_000))).toBeCloseTo(11, 6);
+        expect(gateSeconds(1, paceOf('moeilijk', 600_000))).toBeCloseTo(6, 6);
+        expect(gateSeconds(1, paceOf('onmogelijk', 600_000))).toBeCloseTo(4, 6);
+        expect(gateSeconds(1, paceOf('makkelijk', 600_000))).toBeCloseTo(12, 6);
+        const p = paceOf('onmogelijk', 120_000);
+        expect(gateSeconds(STEPS, p) / gateSeconds(1, p)).toBeCloseTo(gateSeconds(STEPS) / gateSeconds(1), 6);
+        // The gate really arrives at the clock: a step-1 gate unanswered slips past just after 12 s of slope.
+        const r = spawnGate(startRun(paceOf('normaal', 0)));
+        expect(ski(r, 11_400).news.some(n => n.missed !== null)).toBe(false);
+        expect(ski(r, 12_600).news.some(n => n.missed !== null)).toBe(true);
+    });
+
+    test('Makkelijk (gentle): a tumble keeps his speed step; otherwise back to step 1', () => {
+        const gentle = { ...spawnGate(startRun(1, true)), step: 4 };
+        expect(answerRun(gentle, false).step).toBe(4);
+        expect(answerRun({ ...spawnGate(startRun()), step: 4 }, false).step).toBe(1);
+        expect(answerRun(gentle, true).step).toBe(5);
     });
 
     test('a right answer shoots him through within the right flash, a step faster (at most 5)', () => {
@@ -168,6 +190,8 @@ describe('Skislalom in the picker', () => {
     test('a timed tap game with three flags: Op tijd, number or choice content up to 5 characters, its own line', () => {
         const meta = skinById('slalom')!.meta;
         expect(meta).toMatchObject({ input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, music: 'ijs' });
+        expect(meta.options!.map(o => o.id)).toEqual(['niveau']);
+        expect(meta.options![0].choices.map(c => c.icon)).toEqual([{ clock: 'off' }, { clock: 'on' }, { clock: 'on', flames: 1 }, { clock: 'on', flames: 2 }]);
         expect(meta.season).toBe('winter');
         expect(meta.canFail).toBeFalsy();
         expect(gameGroupOf(meta)).toBe('tijd');
@@ -200,7 +224,7 @@ describe('Skislalom on the session', () => {
         log.length = 0;
         for (const name of ['correct', 'wrong', 'help', 'end'] as SpelEventName[]) offs.push(sp().events.on(name, p => log.push({ name, payload: p })));
         vi.spyOn(console, 'error').mockImplementation(() => { });
-        act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: skinById('slalom')!.meta }));
+        act(() => sp().start({ choice, grade: 2, topicId: 'Hoofdrekenen · Optellen', meta: resolveMeta(skinById('slalom')!.meta) }));
     });
     afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
@@ -211,7 +235,7 @@ describe('Skislalom on the session', () => {
         return (
             <Slalom question={{ key: st.question.key, text: st.question.text, index: progress.answered }} choices={st.question.choices}
                 phase={st.phase as SkinPhase} feedback={st.feedback} onAnswer={st.answer} onHelp={() => st.openHelp()} onMiss={() => st.miss()}
-                onFail={() => st.fail()} onReport={st.report} sound={() => { }} progress={progress} options={{}} events={st.events} runKey="slalom:test" />
+                onFail={() => st.fail()} onReport={st.report} sound={() => { }} progress={progress} options={st.meta.chosen ?? {}} events={st.events} runKey="slalom:test" />
         );
     }
     const openFlags = () => within(screen.getByRole('group', { name: 'Kies het antwoord' })).queryAllByRole('button')
@@ -272,6 +296,7 @@ describe('Skislalom on the session', () => {
         expect(names()).toContain('end');
         expect(sp().result?.lead).toMatch(/^Je skiede \d+/);
         expect(sp().result?.detail).toBe('Nieuw record!');
-        expect(loadBestM('slalom:test')).toBeGreaterThan(100);
+        // A best per card and level.
+        expect(loadBestM('slalom:test|normaal')).toBeGreaterThan(80);
     });
 });

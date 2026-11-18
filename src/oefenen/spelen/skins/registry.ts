@@ -341,12 +341,13 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     },
     {
         // 3 or 5 minutes at the counter (frituur/rule.ts): the first customer's bubble holds the sum. A right answer serves
-        // them, a wrong order costs a third of their patience, an empty patience bar walks them off (onMiss). Score =
-        // customers helped, the best per card and length on this device. The scene voices its own moments (frituur/sounds.ts).
+        // them, a wrong order walks them off, an empty patience bar too (onMiss). The bar is the shared clock (levels/clock.ts);
+        // Makkelijk has none. Score = customers helped, the best per card, length and level on this device. The scene voices
+        // its own moments (frituur/sounds.ts).
         meta: {
             music: 'gek',
             id: 'frituur', label: 'Frituur', input: 'keypad', timed: true, round: { seconds: 180 }, accepts: KEYPAD_NUMBER,
-            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }],
+            options: [{ id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] }, levelOption({ clock: true })],
             sounds: { correct: null, wrong: null, miss: null },
         },
         icon: Storefront,
@@ -356,10 +357,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // 3 minutes; the four options burn in four windows of a 3 × 3 block. The fire level (brandweer/fire.ts) rises with
         // the clock and per mistake, each window sprayed out cools it; a block fully out = the next one, too hot = the early end.
+        // The levels: Makkelijk = the fire never jumps and nothing collapses; otherwise the window clocks are the shared clock.
         // Five characters, like the other tap targets (measured 2026-11-17: "89 991" fits a window at 1024 × 768). The scene
         // voices its own spray, dribble, siren and pets (correct / wrong: null).
         meta: {
             id: 'brandweer', music: 'tikken', label: 'Brandweer', input: 'choice', choiceCount: 4, timed: true, round: { seconds: 180 }, canFail: true,
+            options: [levelOption({ clock: true })],
             winTitle: 'Alles geblust!', failTitle: 'Oei! Het brandt te hard. Nog eens?', accepts: TAP_CHOICE,
             sounds: { correct: null, wrong: null, win: 'cheer', fail: 'wahwah' },
         },
@@ -370,9 +373,11 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // Two minutes down a slope: each sum on a gate with three flags (choiceCount). Right = a speed step, 3 in a row a
         // jump; wrong = a tumble back to step 1; a gate reached unanswered slips past (slalom/run.ts). The score is the
-        // metres with a best per card on this device (onReport, "Wis mijn scores"). The scene voices its moments.
+        // metres with a best per card and level on this device (onReport, "Wis mijn scores"). The scene voices its moments.
+        // The levels: a step-1 gate takes the shared clock (slalom/run.ts paceOf); Makkelijk's tumble costs no speed.
         meta: {
             id: 'slalom', music: 'ijs', label: 'Skislalom', input: 'choice', choiceCount: 3, timed: true, round: { seconds: 120 }, season: 'winter', accepts: TAP_CHOICE,
+            options: [levelOption({ clock: true })],
             sounds: { correct: null, wrong: null },
         },
         icon: PersonSimpleSki,
@@ -384,8 +389,11 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // options on the tags of four prizes. The claw grabs the tapped one before the answer counts (grijp/claw.ts):
         // right = onto the Gewonnen shelf, wrong = it slips back onto the heap. Untimed. Five characters fit a tag
         // (measured 2026-11-17: "89 991" at 1024 × 768); tags hold clock faces and breuk pictures. The scene voices itself.
+        // The levels: a clock ring per sum (the shared clock); time up = a mistake (onMiss) and the claw drops by itself on
+        // a prize that is not the answer, which slips away. Makkelijk has no clock.
         meta: {
             id: 'grijp', music: 'gek', label: 'Grijpmachine', input: 'choice', timed: false, round: { questions: GRIJP.questions }, accepts: TAP_PICTURES,
+            options: [levelOption({ clock: true })],
             sounds: { correct: null, wrong: null },
         },
         icon: Joystick,
