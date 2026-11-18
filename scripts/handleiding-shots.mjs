@@ -412,12 +412,12 @@ async function shotsZelf() {
         await p.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach(e => { if (e.scrollTop) e.scrollTop = 0; }); });
         await shot(p, 'zelf-keuze');
         // The choice, then Oefenen (how much) or Spelen (the games): two tiles on one screen.
-        { const way = p.getByRole('button', { name: 'Oefenen', exact: true }); if (await way.count()) await way.click(); }
+        { const way = p.getByRole('button', { name: /^Oefenen/ }).first(); if (await way.count()) await way.click(); }
         await settle(p, 300);
         await p.getByRole('button', { name: '5 oefeningen' }).click();
         await settle(p, 300);
         // The same screen with Spelen open, then one game in play (Ballonnen: tap the right balloon).
-        { const way = p.getByRole('button', { name: 'Spelen', exact: true }); if (await way.count()) await way.click(); }
+        { const way = p.getByRole('button', { name: /^Spelen/ }).first(); if (await way.count()) await way.click(); }
         await p.getByRole('group', { name: 'Kies een spel' }).scrollIntoViewIfNeeded();
         await settle(p, 500);
         await shot(p, 'zelf-spellen');
@@ -431,6 +431,8 @@ async function shotsZelf() {
         await settle(p, 600);
         await p.getByRole('button', { name: /^Ja, stoppen/ }).click({ timeout: 3000 }).catch(() => {});
         await settle(p, 800);
+        // The device remembers the last way (Spelen after the games figure): open Oefenen before looking for its count.
+        { const way = p.getByRole('button', { name: /^Oefenen/ }).first(); if (await way.count()) await way.click(); }
         const five = p.getByRole('button', { name: '5 oefeningen' });
         if (!(await five.count())) {
             await p.getByRole('button', { name: 'Optellen', exact: true }).click();
@@ -438,7 +440,7 @@ async function shotsZelf() {
             await p.getByRole('button', { name: /Met brug/ }).first().click();
             await settle(p, 500);
         }
-        { const way = p.getByRole('button', { name: 'Oefenen', exact: true }); if (await way.count()) await way.click(); }
+        { const way = p.getByRole('button', { name: /^Oefenen/ }).first(); if (await way.count()) await way.click(); }
         await p.getByRole('button', { name: '5 oefeningen' }).click();
         await settle(p, 300);
         await p.getByRole('button', { name: /Begin met oefenen/ }).click();

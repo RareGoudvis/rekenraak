@@ -31,6 +31,23 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
+        version: '2.0.3',
+        date: '2026-11',
+        summary: 'Nieuw: elf spelletjes erbij (34 in totaal), vier niveaus van Makkelijk tot Onmogelijk, en een frisse look voor Zelf oefenen.',
+        items: [
+            { kind: 'nieuw', text: 'Zeven nieuwe spelletjes: Frituur, Brandweer, Skislalom, Grijpmachine, Aquarium, Spookhuis en Voetbalkaartjes.' },
+            { kind: 'nieuw', text: 'Vier nieuwe races voor twee, ook tegen de computer: Drakenrace, Wildwaterrace, Monstertrucks en Steekspel.' },
+            { kind: 'nieuw', text: 'Spelletjes met keuzes hebben nu vier niveaus: Makkelijk (zonder klok), Normaal, Moeilijk en Onmogelijk. De klok per som wordt na een minuut sneller.' },
+            { kind: 'gewijzigd', text: 'Tegen de computer speelt die sterker naarmate je een hoger niveau kiest. Duelspellen: kies 5 tot 25 levens.' },
+            { kind: 'nieuw', text: 'Honingraat: op Moeilijk en Onmogelijk komt op het einde de Wespenkoningin de honing halen. Raak haar genoeg keer en ze vlucht!' },
+            { kind: 'gewijzigd', text: 'Hartjes koppelen en Voetbalkaartjes: 4 tot 8 paren. Op Onmogelijk heb je 10 kansen.' },
+            { kind: 'nieuw', text: 'Seizoenen: rond Halloween, in de winter en in de zomer staan er spelletjes vooraan met een nu!-stempel. Elk spel blijft het hele jaar speelbaar.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen: Oefenen en Spelen hebben elk hun eigen kleur, en je kiest hoe lang je oefent: 3, 5, 10 of 20 oefeningen, of 1, 3 of 5 minuten.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen: alleen wat je kunt aantikken, ziet eruit als een knop. De tafels 1 tot 10 staan samen op de eerste rij.' },
+            { kind: 'nieuw', text: 'Werkblad met stappenhulp-QR: kies of het stappen-icoon links of rechts van de opdracht staat, of verberg het.' },
+        ],
+    },
+    {
         version: '2.0.2',
         date: '2026-11',
         summary: 'Nieuw: vijf spelletjes voor twee, ook tegen de computer, en in Zelf oefenen eerst kiezen: Oefenen of Spelen.',
