@@ -10,6 +10,7 @@ import { OEFEN_VERSION, type OefenSessie, type OefenType } from '../../services/
 import { TUTOR_SESSIE_PREFIX, isTutorSessie } from '../../services/oefenen/tutorOefenLink';
 import { subjectTypeOf } from '../../services/oefenen/subjects';
 import { zelfSubjectOf } from './zelfSubjects';
+import { regroupOf, zelfRangeless } from './zelfRegroup';
 
 export type ZelfMode = { kind: 'count'; n: 3 | 5 | 10 | 20 } | { kind: 'timer'; min: 1 | 3 | 5 };
 
@@ -144,6 +145,7 @@ export function zelfMaxOf(data: EenvoudigData, topicId: string, grade: Leerjaar,
 
 /** The "Tot hoeveel?" buttons of a topic: the leerjaar's ranges that have cards of exactly that range, when there are two or more ([] = none to pick). */
 export function zelfRangeButtons(data: EenvoudigData, topicId: string, grade: Leerjaar): number[] {
+    if (zelfRangeless(topicId, grade)) return [];
     const exact = ZELF_RANGES[grade].filter(r => zelfMaxOf(data, topicId, grade, r) === r);
     return exact.length > 1 ? exact : [];
 }
@@ -362,11 +364,15 @@ function generalChoices(cards: UsableCard[], topicId: string): ZelfChoice[] {
 export function choicesFor(data: EenvoudigData, grade: Leerjaar, topicId: string, range?: number): ZelfChoice[] {
     const subject = zelfSubjectOf(topicId);
     if (subject) return subject.choices(grade, topicId);
-    const cards = zelfUsable(data, grade, range).get(topicId) ?? [];
+    const regroup = regroupOf(topicId, grade);
+    // A rangeless regroup (Splitsen in leerjaar 1) takes the cards of every range the leerjaar offers.
+    const cards = regroup?.rangeless
+        ? [...new Map(ZELF_RANGES[grade].flatMap(r => zelfUsable(data, grade, r).get(topicId) ?? []).map(c => [c.card, c])).values()]
+        : zelfUsable(data, grade, range).get(topicId) ?? [];
     if (!cards.length) return [];
-    const max = range === undefined ? null : zelfMaxOf(data, topicId, grade, range);
+    const max = range === undefined || regroup?.rangeless ? null : zelfMaxOf(data, topicId, grade, range);
     const tail = max !== null && max !== defaultMax(data, topicId, grade) ? `|tot${max}` : '';
-    const raw = isMixTopic(topicId) ? mixChoices(cards)
+    const raw = regroup ? regroup.choices(cards, topicId) : isMixTopic(topicId) ? mixChoices(cards)
         : BRUG_TOPIC.test(topicId) ? brugChoices(cards) : TAFEL_TOPIC.test(topicId) ? tafelChoices(cards) : generalChoices(cards, topicId);
     // A choice that repeats another one's variants only adds a button.
     const out: ZelfChoice[] = [];

@@ -45,7 +45,7 @@ export function tekstContentOf(v: CardVariant): SpelContent {
     // boards: [] = no board round: their cards show a sum and its answer, not a sentence.
     if (play === 'number') return { kind: 'number', digitsOnly: true, answerChars: chars, boards: [] };
     if (play === 'typed') return { kind: 'number', keys: keysOf(v.leafId, c), answerChars: chars, boards: [] };
-    return { kind: 'choice', ...(chars !== undefined && { answerChars: chars }), boards: [] };
+    return { kind: 'choice', ...(chars !== undefined && { answerChars: chars }), ...(leaf?.picked?.(c) && { padNumbers: true }), boards: [] };
 }
 
 // The options: count of them, the answer kept, the rest nearest to it in the list's own order (places, units, times).
@@ -73,7 +73,8 @@ function numberQuestion(ask: NumberAsk, play: TekstPlay, rng: () => number, coun
     const plain = (v: number) => (dp ? v.toFixed(dp).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',') : String(v));
     const choices = values.map(plain);
     const answer = plain(ask.answer);
-    if (play === 'number') return { kind: 'number', text: ask.text, answer, choices, views: [], kioskAnswers: [], ...rest(ask) };
+    // A whole number shows as itself; its kiosk form only where the card takes it otherwise (the positietabel's cells).
+    if (play === 'number') return { kind: 'number', text: ask.text, answer, choices, views: [], kioskAnswers: ask.kiosk ? values.map(v => ask.kiosk!(v)) : [], ...rest(ask) };
     const label = (v: number) => ask.show?.(v) ?? formatMathNumber(plain(v).replace(',', '.')).replace('-', '−');
     const tapped = {
         text: ask.text, answer, choices,

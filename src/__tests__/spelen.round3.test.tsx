@@ -102,12 +102,13 @@ describe('accepts', () => {
         expect(shown).toContain('Pinguïntoren');
         expect(shown).not.toContain('Schatkist');
         cleanup();
-        // Pictures (the klok) never reach a keypad game: the pad shows words only.
+        // Pictures (the klok) reach the keypad games through the pad too (owner 2026-11-18), never the digit lock.
         render(<GameRow games={gamesFor({ kind: 'choice', pictures: true }, OFF_SEASON)} onPlay={vi.fn()} />);
         const pictures = labels(screen.getByRole('group', { name: 'Kies een spel' }));
         expect(pictures).toContain('Ballonnen');
-        expect(pictures).not.toContain('Pinguïntoren');
-        expect(pictures).not.toContain('Zombies');
+        expect(pictures).toContain('Pinguïntoren');
+        expect(pictures.some(l => l.startsWith('Zombies'))).toBe(true);
+        expect(pictures).not.toContain('Schatkist');
         expect(screen.queryByText('binnenkort')).toBeNull();
         cleanup();
         render(<GameRow games={gamesFor(NUMBER_CONTENT, OFF_SEASON)} onPlay={vi.fn()} />);

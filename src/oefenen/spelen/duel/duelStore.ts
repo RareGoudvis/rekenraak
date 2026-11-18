@@ -205,13 +205,13 @@ export const useDuelStore = create<DuelState>()((set, get) => {
     const nextOwn = (side: Side, now = Date.now()) => {
         const { sessie, sides } = get();
         if (!sessie || !playing()) return;
-        pose(side, drawFor(sessie, sides[side].history, choiceCountOf(get().meta, get().pad)), now);
+        pose(side, drawFor(sessie, sides[side].history, choiceCountOf(get().meta, get().pad, get().from)), now);
     };
 
     const nextShared = (now = Date.now()) => {
         const { sessie, shared } = get();
         if (!sessie || !playing()) return;
-        const q = drawFor(sessie, shared, choiceCountOf(get().meta, get().pad));
+        const q = drawFor(sessie, shared, choiceCountOf(get().meta, get().pad, get().from));
         for (const side of SIDES) pose(side, q, now);
     };
 

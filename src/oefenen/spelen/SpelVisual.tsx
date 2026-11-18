@@ -5,6 +5,7 @@ import { faceText, signClass } from './spelChoice';
 import { useAnswerContext, type SignContextProps } from './signContext';
 import KlokFace, { DigitaalFace } from './content/klok/KlokFace';
 import BreukPicture from './content/breuken/BreukPicture';
+import { SpelAs, SpelGeld, SpelThermo } from './content/beeld/SpelBeeld';
 import './spelVisual.css';
 
 // The one place a game draws content pictures (content/pack.ts) and question lines. Skins call these and never
@@ -19,6 +20,9 @@ export function SpelVisual({ visual }: { visual: Visual }): ReactNode {
             ? <span className="spel-breuk-pair"><BreukPicture n={visual.n} d={visual.d} kind={visual.shape} className="spel-breuk" /><BreukPicture n={visual.with.n} d={visual.with.d} kind={visual.shape} className="spel-breuk" /></span>
             : <BreukPicture n={visual.n} d={visual.d} kind={visual.shape} className="spel-breuk" />;
         case 'rij': return <SpelRij items={visual.items} />;
+        case 'geld': return <SpelGeld coins={visual.coins} />;
+        case 'thermo': return <SpelThermo t={visual.t} min={visual.min} max={visual.max} />;
+        case 'as': return <SpelAs items={visual.items} />;
     }
 }
 

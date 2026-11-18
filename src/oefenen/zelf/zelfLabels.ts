@@ -19,18 +19,18 @@ export const ZELF_LABELS: Record<string, Record<string, string>> = {
         'Romeinse cijfers': 'Romeinse cijfers',
     },
     'Vergelijken, ordenen, afronden': {
+        // The kids app's own grouping (zelfRegroup.ts): the < = > card, the grootste card with its kleinste twin, both orders.
         'Twee vergelijken met <': 'Groter of kleiner',
-        'Het grootste getal omcirkelen': 'Het grootste getal kiezen',
-        'Getallen ordenen van klein naar groot': 'Van klein naar groot',
-        'Getallen ordenen van groot naar klein': 'Van groot naar klein',
-        'Getallen ordenen': 'Getallen ordenen',
-        'Vergelijken en ordenen': 'Vergelijken en ordenen',
+        'Het grootste getal omcirkelen': 'Grootste of kleinste',
+        'Getallen ordenen': 'Ordenen',
         'Afronden': 'Afronden',
     },
     'Splitsen': {
-        'Splitsboom': 'Splitsbomen',
-        'Splitsen in rooster': 'Splitsen in een rooster',
-        'Verliefde harten': 'Verliefde harten',
+        // Leerjaar 1 (zelfRegroup.ts): four steps instead of "Tot hoeveel?".
+        'Splitsen tot 5': 'Tot 5',
+        'Vriendjes van 10': 'Vriendjes van 10',
+        'Van 10 tot 20': 'Van 10 tot 20',
+        'Splitsen tot 20': 'Tot 20',
     },
     'Handig rekenen': {
         'E + TE': 'Handig optellen',

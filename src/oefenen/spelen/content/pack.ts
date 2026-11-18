@@ -20,7 +20,13 @@ export type SpelVisual =
     // A breuk as a picture (BreukPicture): n of d equal parts coloured; with = a second one beside it (the vergelijken help).
     | { kind: 'breuk'; n: number; d: number; shape: BreukKind; with?: { n: number; d: number } }
     // A getallenrij or patroon as number tiles, '?' = the tile to fill (the sign's whole question; spelFormat rijFoldOf).
-    | { kind: 'rij'; items: string[] };
+    | { kind: 'rij'; items: string[] }
+    // Geld tellen: the coins and notes to count, in cents, one entry per coin, largest first (content/beeld).
+    | { kind: 'geld'; coins: number[] }
+    // A thermometer lying down, the mercury at t degrees on a min … max scale.
+    | { kind: 'thermo'; t: number; min: number; max: number }
+    // A getallenlijn: the tick numbers left to right, '?' = the one to name.
+    | { kind: 'as'; items: string[] };
 
 // How one choice is shown: a picture, or a phrase / time as text. label = its accessible name.
 export interface SpelChoiceView {

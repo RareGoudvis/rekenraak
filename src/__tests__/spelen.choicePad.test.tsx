@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { loadEenvoudigData, type EenvoudigData } from '../config/eenvoudig/cards';
 import type { Leerjaar } from '../config/gradePresets';
 import { choicesFor, type ZelfChoice } from '../oefenen/zelf/zelfSessie';
-import { PAD_CHOICES, PAD_MAX_WORD_CHARS, padPlays, skinsFor } from '../oefenen/spelen/accepts';
+import { PAD_CHOICES, PAD_MAX_WORD_CHARS, PAD_PICTURE_CHOICES, padPlays, skinsFor } from '../oefenen/spelen/accepts';
 import { padRoundOf, spelContentOf } from '../oefenen/spelen/spelQuestion';
 import { SKINS, skinById } from '../oefenen/spelen/skins/registry';
 import { resolveMeta } from '../oefenen/spelen/skins/options';
@@ -101,11 +101,14 @@ describe('which games take word choices', () => {
         for (const { choice } of allFrans()) expect(fransWordChars(choice.vars[0]), choice.key).toBeLessThanOrEqual(PAD_MAX_WORD_CHARS);
     });
 
-    test('the pad takes words only: no pictures, no numbers to tap, no word past the button', () => {
+    test('the pad takes words, pictures and numbers to pick from; no numbers to type, no word past the button', () => {
         const pad = skinById('pinguintoren')!.meta.accepts;
         expect(padPlays(pad, { kind: 'choice', wordChars: 11 })).toBe(true);
-        expect(padPlays(pad, { kind: 'choice', pictures: true })).toBe(false);
+        expect(padPlays(pad, { kind: 'choice', pictures: true })).toBe(true);
         expect(padPlays(pad, { kind: 'choice', answerChars: 4 })).toBe(false);
+        // Het grootste getal: its numbers are the question's own, up to "1 000 000 000" on a button.
+        expect(padPlays(pad, { kind: 'choice', answerChars: 10, padNumbers: true })).toBe(true);
+        expect(padPlays(pad, { kind: 'choice', answerChars: 11, padNumbers: true })).toBe(false);
         expect(padPlays(pad, { kind: 'choice', wordChars: PAD_MAX_WORD_CHARS + 1 })).toBe(false);
         expect(padPlays(pad, { kind: 'number', digitsOnly: true })).toBe(false);
         expect(padPlays(skinById('schatkist')!.meta.accepts, { kind: 'choice', wordChars: 5 })).toBe(false);
@@ -134,6 +137,73 @@ describe('which games take word choices', () => {
         render(<SpelKeypad questionKey={q.key} onAnswer={a => sp().answer(a)} />);
         act(() => { fireEvent.pointerDown(screen.getByRole('button', { name: q.views![q.choices.indexOf(q.answer)].label })); });
         expect(sp().phase).toBe('right');
+    });
+});
+
+describe('pictures, symbols and numbers to pick on the pad', () => {
+    const find = (g: number, topic: string, label: string) => choicesFor(data, g as Leerjaar, topic).find(x => x.label === label)!;
+
+    test('Klok lezen and the breuken pictures: every pad game, four choices, the kiosk checks a tap, in a solo game and a duel', () => {
+        for (const [g, topic, label] of [[1, 'Klok en kalender', 'Klok lezen'], [3, 'Klok en kalender', 'Wijzers tekenen'], [3, 'Breuken', 'Breuk in een figuur'], [4, 'Breuken', 'Breuken vergelijken']] as const) {
+            const choice = find(g, topic, label);
+            const ids = skinsFor(SKINS, spelContentOf(choice, g)!).map(s => s.meta.id);
+            expect(ids, label).toEqual(expect.arrayContaining(PAD_GAMES));
+            expect(ids).not.toContain('schatkist');
+            sp().start({ choice, grade: g, topicId: topic, meta: skinById('pinguintoren')!.meta, now: 1_000_000 });
+            expect(sp().pad).toBe(true);
+            // Four at most (a breuk comparison has its three < = >).
+            expect(sp().question!.choices.length, label).toBeLessThanOrEqual(PAD_PICTURE_CHOICES);
+            sp().answer(sp().question!.answer, 1_000_100);
+            expect(sp().phase, label).toBe('right');
+            const meta = resolveMeta(skinById('kasteel')!.meta, { spelers: '2' });
+            du().begin({ meta, from: { choice, grade: g, topicId: topic }, rule: {}, config: { players: 2, level: 'makkelijk', lives: 5, bestOf: 1, stream: 'own', readyMs: 0 } });
+            const l = du().sides.left.question!;
+            expect(l.choices.length).toBeLessThanOrEqual(PAD_PICTURE_CHOICES);
+            du().answer('left', l.choices.find(c => c !== l.answer)!);
+            expect(du().sides.left.feedback!.correct).toBe(false);
+            du().stop();
+        }
+    });
+
+    test('a picture pad draws its faces on the keys, four of them, 2 × 2', () => {
+        const choice = find(3, 'Klok en kalender', 'Wijzers tekenen');
+        sp().start({ choice, grade: 3, topicId: 'Klok en kalender', meta: skinById('pinguintoren')!.meta, now: 1_000_000 });
+        const q = sp().question!;
+        render(<SpelKeypad questionKey={q.key} onAnswer={a => sp().answer(a)} />);
+        const pad = document.querySelector('.spel-pad')!;
+        expect(pad.className).toContain('is-pictures');
+        expect(pad.querySelectorAll('.spel-pad-key.is-picture svg.spel-klok')).toHaveLength(4);
+        act(() => { fireEvent.pointerDown(screen.getByRole('button', { name: q.views![q.choices.indexOf(q.answer)].label })); });
+        expect(sp().phase).toBe('right');
+    });
+
+    test('< = > on the pad: one row of three big symbols', () => {
+        const choice = find(2, 'Vergelijken, ordenen, afronden', 'Groter of kleiner');
+        sp().start({ choice, grade: 2, topicId: 'Vergelijken, ordenen, afronden', meta: skinById('pinguintoren')!.meta, now: 1_000_000 });
+        render(<SpelKeypad questionKey={sp().question!.key} onAnswer={vi.fn()} />);
+        const pad = document.querySelector('.spel-pad')!;
+        expect(pad.className).toContain('is-symbols');
+        expect([...pad.querySelectorAll('button')].map(b => b.textContent)).toEqual(['<', '=', '>']);
+    });
+
+    test('Grootste of kleinste: the numbers to pick from on the pad, to leerjaar 6 ("1 000 000 000" fits a key); a sum never', () => {
+        for (const g of [1, 4, 6] as const) {
+            const choice = find(g, 'Vergelijken, ordenen, afronden', 'Grootste of kleinste');
+            expect(spelContentOf(choice, g)).toMatchObject({ kind: 'choice', padNumbers: true });
+            expect(skinsFor(SKINS, spelContentOf(choice, g)!).map(s => s.meta.id), `leerjaar ${g}`).toEqual(expect.arrayContaining(PAD_GAMES));
+            sp().start({ choice, grade: g, topicId: 'Vergelijken, ordenen, afronden', meta: skinById('bom')!.meta, now: 1_000_000 });
+            expect(sp().pad).toBe(true);
+            const q = sp().question!;
+            const nums = (q.exercise as { numbers: number[] }).numbers;
+            expect(q.choices.map(c => Number(c.replace(/\s/g, '').replace(',', '.'))).sort((a, b) => a - b)).toEqual([...new Set(nums)].sort((a, b) => a - b));
+            // On the keys in the sheet's number font, as on the sign.
+            const { unmount } = render(<SpelKeypad questionKey={q.key} onAnswer={vi.fn()} />);
+            expect(document.querySelector('.spel-pad')!.className).toContain('is-numbers');
+            unmount();
+            sp().answer(q.answer, 1_000_100);
+            expect(sp().phase).toBe('right');
+        }
+        expect(padRoundOf(skinById('bom')!.meta, WHOLE())).toBe(false);
     });
 });
 

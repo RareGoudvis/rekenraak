@@ -227,8 +227,8 @@ describe('the sums to leerjaar 6', () => {
 describe('the picker and the choice topics', () => {
     test('vergelijken, deelbaarheid and even / oneven are word content: the tap games, and the keypad games through the choice pad (not Schatkist)', () => {
         for (const [g, t, label] of [
-            [1, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'], [3, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
-            [6, 'Vergelijken, ordenen, afronden', 'Vergelijken en ordenen'],
+            [1, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'], [3, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'],
+            [6, 'Vergelijken, ordenen, afronden', 'Groter of kleiner'],
             [2, 'Deelbaarheid', 'Deelbaar: 2 of 10?'], [2, 'Deelbaarheid', 'Even of oneven groeperen'], [6, 'Deelbaarheid', 'Deelbaar door 3'],
         ] as const) {
             const c = choice(g, t, label);
@@ -240,8 +240,8 @@ describe('the picker and the choice topics', () => {
         }
     });
 
-    test('a number topic plays everywhere but on the boards (L1 Splitsbomen, L3 Afronden)', () => {
-        const ids = skinIds(choice(1, 'Splitsen', 'Splitsbomen'), 1);
+    test('a number topic plays everywhere but on the boards (L1 Splitsen tot 5, L3 Afronden)', () => {
+        const ids = skinIds(choice(1, 'Splitsen', 'Tot 5'), 1);
         expect(ids).toEqual(expect.arrayContaining(['pinguintoren', 'ballonnen', 'schatkist']));
         expect(ids).not.toContain('hartjes');
         expect(ids).not.toContain('honingraat');

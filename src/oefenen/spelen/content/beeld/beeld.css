@@ -1,0 +1,32 @@
+/* The question pictures of SpelBeeld.tsx: coins to count, a thermometer, a getallenlijn. */
+.spel-geld {
+  /* The coins' em sizes (GeldViewer MoneyFigure) follow the sheet token: here a game size instead. */
+  --sheet-size-math: clamp(15px, 3.4vmin, 28px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .3em;
+  max-width: min(100%, 22em);
+  color: var(--spel-ink);
+  font-size: var(--sheet-size-math);
+}
+.spel-thermo, .spel-as { display: block; width: 100%; height: auto; overflow: visible; }
+.spel-thermo-glass { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5; }
+.spel-thermo-merc { fill: var(--spel-fill-0); }
+.spel-thermo-tick, .spel-as-tick, .spel-as-line { stroke: var(--spel-ink); stroke-linecap: round; }
+.spel-as-line { stroke-width: 3; }
+.spel-as-tick { stroke-width: 2.5; }
+.spel-as-arrow { fill: var(--spel-ink); }
+.spel-thermo-num, .spel-as-num { fill: var(--spel-ink); font-family: var(--font-sheet-math); font-weight: 700; font-size: 18px; }
+.spel-as-open { fill: var(--kid-pick); stroke: var(--spel-ink); stroke-width: 2; }
+.spel-as-num.is-open { font-size: 20px; }
+/* On the sign: as wide as the sign allows, never so wide the line's numbers shrink past reading. */
+.spel-sign-pic.is-geld { max-width: 100%; }
+.spel-sign-pic.is-thermo { width: min(94cqi, clamp(240px, 62vmin, 520px)); }
+.spel-sign-pic.is-as { width: min(94cqi, clamp(240px, 72vmin, 560px)); }
+.spel-sign-pic:is(.is-thermo, .is-as) { flex: none; max-width: 100%; }
+.spel-help-pic.is-thermo, .spel-end-pic.is-thermo { width: clamp(200px, 40vmin, 360px); }
+.spel-help-pic.is-as, .spel-end-pic.is-as { width: clamp(220px, 50vmin, 460px); }
+/* A wide picture (coins, a lying thermometer, a line) stands above its line on the sign. */
+.spel-sign-has-pic:has(> .spel-sign-pic:is(.is-geld, .is-thermo, .is-as)) { flex-direction: column; gap: var(--sp-1); }

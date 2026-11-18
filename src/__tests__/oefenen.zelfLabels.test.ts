@@ -48,7 +48,9 @@ describe('Zelf oefenen labels', () => {
             for (const t of usableVariants(data, g).keys()) {
                 const cards = usableVariants(data, g).get(t)!;
                 for (const c of choicesFor(data, g, t)) {
-                    const kinds = new Set(c.vars.map(v => numberKindOf(cards.find(x => x.vars.includes(v))!.card, v)));
+                    // A Zelf twin (zelfRegroup.ts: id `card~tag`) belongs to its card's variant; a rangeless topic takes every range's cards.
+                    const cardOf = (id: string) => cards.find(x => x.vars.some(w => w.id === id))?.card ?? data.types.find(t => t.vars.some(w => w.id === id))!;
+                    const kinds = new Set(c.vars.map(v => numberKindOf(cardOf(v.id.split('~')[0]), v)));
                     expect(kinds.has('procent') && kinds.has('komma'), `${g} ${t} ${c.label}`).toBe(false);
                     if (kinds.has('procent')) withProcent++;
                 }

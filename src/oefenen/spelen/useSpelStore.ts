@@ -233,7 +233,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             for (let tries = 0; !question && tries < MAX_DRAWS; tries++) {
                 const pick = nextType(s, history);
                 const made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
-                question = pick && made ? spelQuestionOf(pick.type, pick.slot, made, choiceCountOf(get().meta, get().pad)) : null;
+                question = pick && made ? spelQuestionOf(pick.type, pick.slot, made, choiceCountOf(get().meta, get().pad, get().from)) : null;
             }
             if (!question) { end(); return; }
             set({ question, phase: 'play', feedback: null, helpedNow: false, help: null, shownAt: now });

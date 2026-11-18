@@ -421,10 +421,41 @@
 .duel-pad .spel-pad-key.is-picked { background: var(--kid-pick); }
 .duel-pad .spel-pad-key.is-right, .duel-pad .spel-pad-key.is-answer { background: var(--kiosk-ok-soft); border-color: var(--kiosk-ok); }
 .duel-pad .spel-pad-key.is-wrong { background: var(--kid-strike-bg); }
+/* Pictures and symbols share the half's height too (spelen.css lays them out). */
+.duel-pad.spel-pad:is(.is-pictures, .is-symbols) { grid-template-rows: repeat(var(--pad-rows-n, 1), minmax(var(--spel-tap), 1fr)); }
+.duel-pad.is-pictures { --pad-rows-n: var(--pad-rows, 2); }
 /* A phone on its side: the band keeps its 150 px, so the six choices go 3 × 2 and the note line goes (the pad's marks
    say right, wrong or the answer); the pad then fits under the sign with --spel-tap keys. */
 @media (max-height: 520px) {
   .duel-pad { --pad-cols: 3; grid-template-rows: repeat(var(--pad-rows-3, 2), minmax(var(--spel-tap), 1fr)); }
   .duel-pad .spel-pad-key:last-child:nth-child(odd) { grid-column: auto; }
   .duel-app.is-pad .duel-note { display: none; }
+  /* Without the note the pad still takes the half's last, stretching row. */
+  .duel-half > .duel-pad { grid-row: 3; align-self: stretch; }
+  /* A square picture question (the klok, a breuk) on a short screen: the sign stands beside the keys, its picture above
+     its line, so the picture stays big enough to read and the keys keep their height. */
+  .duel-half:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) { grid-template-columns: clamp(112px, 34%, 170px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; column-gap: var(--sp-2); position: relative; }
+  .duel-half:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-ask { grid-column: 1; grid-row: 1; width: 100%; grid-template-columns: minmax(0, 1fr); }
+  .duel-half:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-ask > .spel-sign-box { grid-column: 1; }
+  .duel-half:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > :is(.duel-pad, .duel-keypad) { grid-column: 2; grid-row: 1; width: 100%; align-self: stretch; }
+  .duel-half:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-note { display: none; }
+  /* The right half mirrors (its sign on the outer edge); the clock ring sits small on the sign's outer corner. */
+  .duel-half.is-right:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) { grid-template-columns: minmax(0, 1fr) clamp(112px, 34%, 170px); }
+  .duel-half.is-right:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-ask { grid-column: 2; }
+  .duel-half.is-right:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > :is(.duel-pad, .duel-keypad) { grid-column: 1; }
+  .duel-half:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-ask > .duel-ring { position: absolute; top: 2px; z-index: 1; width: 32px; height: 32px; }
+  .duel-half.is-left:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-ask > .duel-ring { left: 2px; }
+  .duel-half.is-right:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) > .duel-ask > .duel-ring { right: 2px; }
+  .duel-half .spel-sign-has-pic:has(.spel-sign-pic:is(.is-klok, .is-breuk, .is-digitaal)) { flex-direction: column; gap: 2px; padding: var(--sp-1); white-space: normal; }
+  .duel-half .spel-sign-has-pic .spel-sign-pic:is(.is-klok, .is-breuk) { width: clamp(64px, 24vh, 110px); height: clamp(64px, 24vh, 110px); }
+  .duel-half .spel-sign-has-pic .spel-digi { font-size: .8em; }
+  /* A wide, low picture (coins, a thermometer, a line) stays in the sign's one row, beside its line, as low as a sum. */
+  .duel-half .spel-sign-has-pic:has(> .spel-sign-pic:is(.is-geld, .is-thermo, .is-as)) { flex-direction: row; gap: var(--sp-2); }
+  .duel-half .spel-sign-pic:is(.is-thermo, .is-as) { width: min(62cqi, 300px); }
+  .duel-half .spel-sign-pic.is-geld { max-width: 62cqi; }
+  .duel-half .spel-geld { --sheet-size-math: 9px; flex-wrap: nowrap; }
+  /* A picture answer stays on its key (marked right there), not as a second picture on the sign. */
+  .duel-half .spel-sign-has-pic > .spel-sign-pic.duel-sign-answer { display: none; }
+  /* Four choices (pictures, klok phrases): two by two. */
+  .duel-pad:has(> .spel-pad-key:nth-child(4):last-child) { --pad-cols: 2; --pad-rows: 2; --pad-rows-3: 2; }
 }

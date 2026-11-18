@@ -119,7 +119,8 @@ describe('Tot hoeveel?', () => {
     });
 
     test('leerjaar 1 tot 5: + and − up to 5, splitsbomen and MAB-blokjes; a range a topic has no cards of is no button', () => {
-        for (const topic of ['Hoofdrekenen · Optellen', 'Hoofdrekenen · Aftrekken', 'Splitsen', 'Getallen lezen en plaatswaarde']) {
+        // Splitsen in leerjaar 1 has its own four steps instead (oefenen.zelfRegroup.test).
+        for (const topic of ['Hoofdrekenen · Optellen', 'Hoofdrekenen · Aftrekken', 'Getallen lezen en plaatswaarde']) {
             expect(zelfMaxOf(data, topic, 1, 5), topic).toBe(5);
             expect(zelfRangeButtons(data, topic, 1), topic).toEqual([5, 10, 20]);
             const cs = choicesFor(data, 1, topic, 5);
