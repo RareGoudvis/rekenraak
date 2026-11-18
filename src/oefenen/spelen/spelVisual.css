@@ -37,6 +37,8 @@
 /* A sentence on a sign (the tekst pack) reads in the pupil font, its numbers, € and the slot in the sheet's number font. */
 .spel-line-chunk.is-word, .spel-line-gap { font-family: var(--kid-font); }
 .spel-line-num { font-family: var(--font-sheet-math); }
+/* A word answer in the slot (Frans): the pupil font, also inside a number chunk; no ligatures (the math font's fi). */
+.spel-word-answer, .spel-line-num .spel-word-answer { font-family: var(--kid-font); font-variant-ligatures: none; }
 
 /* A getallenrij / patroon as number tiles (SpelRij): one row, the open tile dashed; is-fold = two even rows on a
    narrow screen, is-two = two rows everywhere (big numbers). Sizes follow the sign's own font. */

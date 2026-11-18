@@ -110,14 +110,17 @@ export function SpelSign({ question, feedback, flash, choices, views, answerClas
     const ctx = useAnswerContext(question, choices, views);
     const shown = flash && feedback ? feedback.expected : null;
     const view = shown === null ? undefined : viewOfValue(ctx, shown);
-    const answer = shown === null ? undefined : <span className={answerClassName}><SpelText text={answerTextOf(ctx, shown)} /></span>;
+    const shownText = shown === null ? '' : answerTextOf(ctx, shown);
+    // A word answer (Frans) reads in the pupil font: in the sheet's number font "finis" turned into "fınis".
+    const answerClass = `${answerClassName}${isWord(shownText) ? ' spel-word-answer' : ''}`;
+    const answer = shown === null ? undefined : <span className={answerClass}><SpelText text={shownText} /></span>;
     if (question.visual?.kind === 'rij') return <SpelRij items={question.visual.items} answer={answer} />;
     const pic = question.visual && <span className={`spel-sign-pic is-${question.visual.kind}`}><SpelVisual visual={question.visual} /></span>;
     const line = (slot?: ReactNode) => <SpelLine text={question.text} slot={slot} breakAtRelation={breakAtRelation} />;
     if (shown === null) return pic ? <>{pic}<span className="spel-sign-text">{line()}</span></> : line();
     // A picture answer joins the question; a text answer takes the place of the prompt beside a picture (or of the ?).
     if (view?.visual) return <>{pic}<span className="spel-sign-text">{line()}</span><span className={`${answerClassName} spel-sign-pic is-${view.visual.kind}`}><SpelVisual visual={view.visual} /></span></>;
-    if (pic) return <>{pic}<span className={`${answerClassName} spel-sign-text`}><SpelText text={answerTextOf(ctx, shown)} /></span></>;
+    if (pic) return <>{pic}<span className={`${answerClass} spel-sign-text`}><SpelText text={shownText} /></span></>;
     return line(answer);
 }
 

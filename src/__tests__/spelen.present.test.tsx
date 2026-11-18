@@ -119,6 +119,15 @@ describe('the shared sign', () => {
         expect(n.container.querySelector('.a')!.textContent).toBe('−9');
     });
 
+    test('a word answer (Frans) on the sign reads in the pupil font; a number keeps the number font', () => {
+        const w = render(<SpelSign question={{ key: 'w', text: 'ik ? (eindig)' }} feedback={{ expected: 'finis' }} flash choices={['finis', 'finit']} answerClassName="a" />);
+        expect(w.container.querySelector('.a')!.classList.contains('spel-word-answer')).toBe(true);
+        expect(w.container.textContent).toBe('ik finis (eindig)');
+        cleanup();
+        const n = render(<SpelSign question={{ key: 'n', text: '7 + 5 = ?' }} feedback={{ expected: '12' }} flash choices={['12', '13']} answerClassName="a" />);
+        expect(n.container.querySelector('.a')!.classList.contains('spel-word-answer')).toBe(false);
+    });
+
     test('SpelLine keeps the text and puts each unbreakable part in its own nowrap chunk', () => {
         const { container } = render(<p><SpelLine text="Omtrek van een vierkant met zijden van 4 cm: ? cm" /></p>);
         expect(container.textContent).toBe('Omtrek van een vierkant met zijden van 4 cm: ? cm');
