@@ -10,7 +10,33 @@
 .lv-core { fill: var(--mab-e); }
 /* A level with more icons gets more room (Onmogelijk with its check, clock and flames), never a clipped word. */
 .kid-option.is-wide .kid-seg-btn { flex: 1 1 auto; padding: 0 10px; }
+/* The segments share the line by content: Onmogelijk with its clock, two flames and the tick never clips. */
+.kid-seg:has(.lv-icon) .kid-seg-btn { flex: 1 1 auto; padding: 0 8px; }
 /* A phone: the icons above the word, so four levels still fit one line. */
 @media (max-width: 599px) {
   .kid-option.is-wide .kid-seg-btn { flex-direction: column; gap: 2px; padding: 4px 4px; }
+}
+
+/* The clock per sum (SumClockRing): a clock face whose ring empties as the sum waits (--sc-left, 1 → 0). */
+.lv-ring { position: relative; display: inline-block; flex: none; width: clamp(40px, 6.5vmin, 64px); aspect-ratio: 1; }
+.lv-ring svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.lv-ring-bg { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.lv-ring-fill {
+  fill: none;
+  stroke: var(--spel-fill-3);
+  stroke-width: 7px;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: calc((1 - var(--sc-left, 1)) * 100);
+  transition: stroke 200ms ease;
+}
+.lv-ring-hand { fill: none; stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
+.lv-ring-pin { fill: var(--spel-ink); }
+/* The last seconds: warm, with a gentle tick. */
+.lv-ring[data-urgent='1'] .lv-ring-fill { stroke: var(--kid-warn); }
+.lv-ring[data-urgent='1'] { animation: lv-tick 1s ease-in-out infinite; }
+.lv-ring[data-out='1'] .lv-ring-fill { stroke: var(--kid-warn); }
+@keyframes lv-tick {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  20% { transform: scale(1.08) rotate(-6deg); }
+  40% { transform: scale(1) rotate(5deg); }
 }

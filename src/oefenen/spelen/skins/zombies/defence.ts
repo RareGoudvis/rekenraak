@@ -1,18 +1,20 @@
+import { levelOf, type Level } from '../../levels/levels';
 import type { SkinChoices } from '../types';
 
-// Who stands behind the barricade: Normaal = 5 survivors behind 3 small barricades (each stops one zombie,
-// then breaks); Moeilijk = 3 survivors, no barricades. A zombie that gets through catches one survivor
-// (shown as a silly zombie, never hurt). Pure, so the order is testable.
+// Who stands behind the barricade: Makkelijk and Normaal = 5 survivors behind 3 small barricades (each stops one
+// zombie, then breaks); Moeilijk = 3 survivors, no barricades; Onmogelijk = 1 survivor alone. A zombie that gets
+// through catches one survivor (shown as a silly zombie, never hurt). Pure, so the order is testable.
 
-export type ZombieLevel = 'makkelijk' | 'normaal' | 'moeilijk';
+export type ZombieLevel = Level;
 
 export const DEFENCE: Record<ZombieLevel, { survivors: number; barricades: number }> = {
     makkelijk: { survivors: 5, barricades: 3 },
     normaal: { survivors: 5, barricades: 3 },
     moeilijk: { survivors: 3, barricades: 0 },
+    onmogelijk: { survivors: 1, barricades: 0 },
 };
 
-export const zombieLevelOf = (options: SkinChoices): ZombieLevel => (options.niveau === 'moeilijk' || options.niveau === 'makkelijk' ? options.niveau : 'normaal');
+export const zombieLevelOf = (options: SkinChoices): ZombieLevel => levelOf(options);
 
 /** After this many zombies got through: what still stands. */
 export function defenceAfter(level: ZombieLevel, hits: number): { barricades: number; survivors: number; caught: number } {

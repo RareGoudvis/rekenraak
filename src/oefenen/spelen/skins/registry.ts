@@ -7,7 +7,7 @@ import { SoccerBall } from '@phosphor-icons/react';
 import { Meteor } from '@phosphor-icons/react';
 import { Robot } from '@phosphor-icons/react';
 import { Cake } from '@phosphor-icons/react';
-import { WRONG_PENALTY_MS } from './bom/penalty';
+import { BOM_LEVEL_ROUNDS, WRONG_PENALTY_MS } from './bom/penalty';
 import { HARTJES_OPTIONS, HARTJES_ROUND } from '../board/hartjes/hearts';
 import { MANIER_OPTION, duelOptions } from '../duel/options';
 import { levelOption } from '../levels/levels';
@@ -33,17 +33,17 @@ const TAP_CHOICE: SkinAccepts = { kinds: ['number', 'choice'], maxAnswerChars: 5
 // Tap skins that also draw content pictures (SpelSign, SpelChoiceFace): the klok's faces, times and phrases.
 const TAP_PICTURES: SkinAccepts = { ...TAP_CHOICE, pictures: true };
 
-// Bever, Zombies and Zeehondjes: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
+// Honingraat: the pupil picks Normaal or Moeilijk before the start (the skin reads options.niveau).
 const NIVEAU: SkinOption = { id: 'niveau', label: 'Hoe moeilijk?', default: 'normaal', choices: [{ value: 'normaal', label: 'Normaal' }, { value: 'moeilijk', label: 'Moeilijk' }] };
-// Zombies also has Makkelijk: Normaal's defence at a steady speed (zombies/walk.ts speedAt).
-const ZOMBIE_NIVEAU: SkinOption = { ...NIVEAU, choices: [{ value: 'makkelijk', label: 'Makkelijk' }, ...NIVEAU.choices] };
+// The four levels about time (levels/clock.ts): Zombies, Bever, Zeehondjes, Mollen and Pinguïntoren read options.niveau.
+const TIME_LEVELS: SkinOption = levelOption({ clock: true });
 // The game picker's tiles, in order. A new skin = one entry here + its component file; the
 // session, the shell and the picker never change. No Component (or Screen) = shown as "binnenkort".
 export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
     {
         // A climb to 20 blocks (a mistake takes one off); 30 questions at most, so a round always ends. The skin
-        // voices its mistakes (wrong: null): a crack (barricade), the splash of a break (hit), else a plop (miss).
-        meta: { id: 'pinguintoren', music: 'ijs', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, sounds: { correct: 'plok', wrong: null, miss: 'plop', barricade: 'krak', hit: 'splash' }, accepts: KEYPAD_NUMBER },
+        // voices its mistakes and time-outs (wrong, miss: null): a crack (barricade), the splash of a break (hit), else a plop (nomatch).
+        meta: { id: 'pinguintoren', music: 'ijs', label: 'Pinguïntoren', input: 'keypad', timed: false, round: { questions: 30, goal: 20 }, options: [TIME_LEVELS], sounds: { correct: 'plok', wrong: null, miss: null, nomatch: 'plop', barricade: 'krak', hit: 'splash' }, accepts: KEYPAD_NUMBER },
         icon: Bird,
         Component: lazy(() => import('./pinguintoren/Pinguintoren')),
         Ending: lazy(() => import('./pinguintoren/Pinguintoren').then(m => ({ default: m.PinguintorenEnding }))),
@@ -58,7 +58,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // untimed). Answers up to 5 characters and pack pictures (a clock face on the sign). Moeilijk: the floes drift.
         meta: {
             music: 'weide',
-            id: 'zeehond', label: 'Zeehondjes voeren', input: 'choice', timed: false, round: { questions: 15 }, options: [NIVEAU],
+            id: 'zeehond', label: 'Zeehondjes voeren', input: 'choice', timed: false, round: { questions: 15 }, options: [TIME_LEVELS],
             accepts: { kinds: ['number', 'choice'], pictures: true, maxAnswerChars: 5 }, sounds: { correct: 'ork', wrong: 'plons' },
         },
         icon: Fish,
@@ -70,7 +70,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // (zombies/defence.ts); all caught = the early end. The skin voices a barricade or a catch itself (miss: null).
         meta: {
             music: 'griezel',
-            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [ZOMBIE_NIVEAU], accepts: KEYPAD_NUMBER,
+            id: 'zombies', label: 'Zombies', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'Gered!', options: [TIME_LEVELS], accepts: KEYPAD_NUMBER,
             sounds: { correct: 'poef', wrong: 'plop', miss: null, barricade: 'krak', caught: 'wahwah', win: 'cheer', fail: 'wahwah' },
         },
         icon: Ghost,
@@ -78,13 +78,16 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Ending: lazy(() => import('./zombies/Zombies').then(m => ({ default: m.ZombiesEnding }))),
     },
     {
-        // N right before the clock runs out; a counted mistake costs 3 s of the clock (goalKeep). The pupil picks tijd and doel.
+        // N right before the clock runs out; a counted mistake costs time per level (goalKeep, bom/penalty.ts), Onmogelijk's
+        // third mistake goes PUF (onFail). The pupil picks tijd, doel and the level (flames only: not about a clock per sum).
         meta: {
             music: 'tikken',
             id: 'bom', label: 'Bom', input: 'keypad', timed: true, round: { seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: WRONG_PENALTY_MS }, winTitle: 'Ontmanteld!', accepts: KEYPAD_NUMBER,
+            canFail: true, failTitle: 'PUF! Drie foutjes.',
             options: [
                 { id: 'tijd', label: 'Hoe lang?', default: '3', choices: [{ value: '3', label: '3 minuten', round: { seconds: 180 } }, { value: '5', label: '5 minuten', round: { seconds: 300 } }] },
                 { id: 'doel', label: 'Hoeveel juist?', default: '10', choices: [10, 20, 50].map(n => ({ value: String(n), label: `${n} juist`, round: { goal: n } })) },
+                levelOption({ clock: false, rounds: BOM_LEVEL_ROUNDS }),
             ],
             sounds: { correct: 'snip', wrong: 'plop', win: 'cheer', lost: 'puf' },
         },
@@ -96,7 +99,7 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         // 3 minutes; the water rises with the clock and a wave per mistake (bever/water.ts). Over the dam = the early end.
         meta: {
             music: 'rivier',
-            id: 'bever', label: 'Bever', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'De dam houdt!', options: [NIVEAU], accepts: KEYPAD_NUMBER,
+            id: 'bever', label: 'Bever', input: 'keypad', timed: true, round: { seconds: 180 }, canFail: true, winTitle: 'De dam houdt!', options: [TIME_LEVELS], accepts: KEYPAD_NUMBER,
             sounds: { correct: 'plok', wrong: 'whoosh', win: 'cheer', fail: 'blub' },
         },
         icon: Log,
@@ -326,8 +329,8 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Component: lazy(() => import('./eieren/Eieren')),
     },
     {
-        // Two minutes; the moles pop up a little quicker with the streak (mollen/moles.ts).
-        meta: { id: 'mollen', music: 'gek', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'nana' } },
+        // Two minutes; the moles pop up a little quicker with the streak and stay up as long as the level's clock says (mollen/moles.ts).
+        meta: { id: 'mollen', music: 'gek', label: 'Mollen meppen', input: 'choice', timed: true, round: { seconds: 120 }, options: [TIME_LEVELS], accepts: TAP_PICTURES, sounds: { correct: 'bonk', wrong: 'nana' } },
         icon: Hammer,
         Component: lazy(() => import('./mollen/Mollen')),
     },

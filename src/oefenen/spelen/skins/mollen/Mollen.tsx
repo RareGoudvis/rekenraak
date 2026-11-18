@@ -2,12 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import type { SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, pictureClass, signClass, viewFor } from '../../spelChoice';
-import { MOLE, molePace, newField, stepField, viewOf, type MoleField } from './moles';
+import { levelOf } from '../../levels/levels';
+import { MOLE, moleUpMs, molePace, newField, stepField, viewOf, type MoleField } from './moles';
 import './mollen.css';
 
 // Mollen meppen: six holes in a garden; moles pop up for a moment, each with a number. Tap (or 1–6) the
 // mole with the answer: a squeaky toy hammer bonks it and it sees stars. A wrong mole is a wrong answer
-// (the sign shows the right one) and it taunts: tongue out, a little dance, "Nana!", then it ducks. Two minutes; the moles get a little quicker with the streak. Game time
+// (the sign shows the right one) and it taunts: tongue out, a little dance, "Nana!", then it ducks. Two minutes; the moles get a little quicker with the streak,
+// and stay up shorter as the level's clock steps down (Makkelijk: a steady, longer pop-up). Game time
 // only runs while the sum waits, so "Hoe los ik dit op?" and the flashes freeze every mole.
 
 type HoleView = ReturnType<typeof viewOf>[number];
@@ -56,7 +58,8 @@ function StarBit({ i }: { i: number }) {
     );
 }
 
-export default function Mollen({ question, choices, views, phase, feedback, onAnswer, progress }: SkinProps) {
+export default function Mollen({ question, choices, views, phase, feedback, onAnswer, progress, options: chosen }: SkinProps) {
+    const level = levelOf(chosen);
     const options = choices ?? [];
     const [view, setView] = useState<HoleView[]>(() => viewOf(newField(0), 0));
     const [picked, setPicked] = useState<{ key: string; hole: number } | null>(null);
@@ -65,8 +68,8 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
     // Game time (ms) and the field, outside React: the loop renders only when a mole comes up or goes down.
     const gameMs = useRef(0);
     const field = useRef<MoleField>(newField(0));
-    const live = useRef({ phase, streak: progress.streak, options });
-    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, options }; });
+    const live = useRef({ phase, streak: progress.streak, options, level });
+    useLayoutEffect(() => { live.current = { phase, streak: progress.streak, options, level }; });
 
     // A new sum: every mole ducks, fresh ones come up with the new numbers.
     const key = question?.key;
@@ -86,7 +89,7 @@ export default function Mollen({ question, choices, views, phase, feedback, onAn
             const st = live.current;
             if (st.phase !== 'play') return;
             gameMs.current += dt;
-            field.current = stepField(field.current, gameMs.current, st.options, Math.random, molePace(st.streak));
+            field.current = stepField(field.current, gameMs.current, st.options, Math.random, molePace(st.streak), moleUpMs(st.level, gameMs.current));
             const next = viewOf(field.current, gameMs.current);
             setView(v => (sameView(v, next) ? v : next));
         };

@@ -4,9 +4,9 @@
 export const GAME_BLURB: Record<string, string> = {
     pinguintoren: 'Bouw een ijstoren. Bij elk juist antwoord springt de pinguïn een blok hoger.',
     ballonnen: 'Prik de ballon met het juiste antwoord. Tik op de vogel voor een ander land.',
-    zeehond: 'Geef de juiste zeehond een visje. Bij Moeilijk drijven de ijsschotsen.',
-    zombies: 'Hou de zombies tegen en red iedereen. Makkelijk, Normaal of Moeilijk.',
-    bom: 'Maak de bom onschadelijk voor de tijd op is. Een foutje kost 3 seconden.',
+    zeehond: 'Geef de juiste zeehond een visje. Vanaf Normaal drijven de ijsschotsen.',
+    zombies: 'Hou de zombies tegen en red iedereen. Van Makkelijk tot Onmogelijk.',
+    bom: 'Maak de bom onschadelijk voor de tijd op is. Een foutje kost tijd.',
     bever: 'Help de bever. Juiste antwoorden houden het water achter de dam.',
     race: 'Tijdrit: race naar de finish. Benzine: rij zo ver je kan en tank onderweg.',
     voetbal: 'Speel een match tegen de zwarte beren. Speel de bal door en scoor!',

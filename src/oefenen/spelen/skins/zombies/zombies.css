@@ -456,6 +456,8 @@
 
 /* Moeilijk: three survivors and no barricades, so the street starts after a little room. */
 .zb-root.is-moeilijk { --zb-crew-w: calc(var(--zb-sv-w) * 2.56); --zb-bars-w: 0px; --zb-moat: calc(var(--zb-w) * .2); }
+/* Onmogelijk: one survivor alone, the street right up to them. */
+.zb-root.is-onmogelijk { --zb-crew-w: calc(var(--zb-sv-w) * 1.1); --zb-bars-w: 0px; --zb-moat: calc(var(--zb-w) * .2); }
 
 /* A low landscape screen: smaller zombies, so the lifted front sign fits the street. */
 @media (orientation: landscape) and (max-height: 700px) {
@@ -476,6 +478,7 @@
   .zb-root.is-normaal .zb-sv:nth-child(4) { grid-column: 2; }
   .zb-root.is-normaal .zb-sv:nth-child(5) { grid-column: 3; }
   .zb-root.is-moeilijk { --zb-crew-w: calc(var(--zb-sv-w) * 2.56); --zb-bars-w: 0px; --zb-moat: calc(var(--zb-w) * .12); }
+  .zb-root.is-onmogelijk { --zb-crew-w: calc(var(--zb-sv-w) * 1.1); --zb-bars-w: 0px; --zb-moat: calc(var(--zb-w) * .12); }
   .zb-tree { height: min(48%, calc(var(--zb-w) * 2.6)); }
 }
 

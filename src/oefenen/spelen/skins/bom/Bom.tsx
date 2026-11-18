@@ -1,20 +1,22 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { SpelSignBox } from '../../SpelVisual';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { WRONG_PENALTY_MS, penaltyHit } from './penalty';
+import { levelOf } from '../../levels/levels';
+import { BOM_LEVELS, bomBursts, penaltyHit } from './penalty';
 import { BOM, FUSE_PATH, clockText, fuseLeft, fusePoint, isHurry } from './fuse';
 import './bom.css';
 
 // Bom: a cartoon bomb with a big clock and a burning fuse. Each right answer fills one segment of the
-// "ontmanteld" bar; N right before the clock runs out defuses it. A wrong answer costs 3 s of the clock (round.wrongPenaltyMs): the clock flashes red and "−3 s" floats off. Time up is
-// a harmless PUF! cloud with confetti on the end screen. No rAF loop: the fuse follows the shell's clock.
+// "ontmanteld" bar; N right before the clock runs out defuses it. A wrong answer costs time per level (round.wrongPenaltyMs:
+// none, 3 s, 5 s): the clock flashes red and "−3s" floats off. Onmogelijk: three sparks to lose, the third mistake goes PUF.
+// Time up is a harmless PUF! cloud with confetti on the end screen. No rAF loop: the fuse follows the shell's clock.
 
 type Face = 'clock' | 'smile' | 'oh';
 
 const STAR = 'M0 -15 L4 -5 L14 -6 L6 1 L10 12 L0 5 L-10 12 L-6 1 L-14 -6 L-4 -5 Z';
 
-function BombArt({ face, clock = '', fuse = 1, spark = true, flag = false, hit = null }: { face: Face; clock?: string; fuse?: number; spark?: boolean; flag?: boolean; hit?: number | null }) {
+function BombArt({ face, clock = '', fuse = 1, spark = true, flag = false, hit = null, penaltyMs = 0 }: { face: Face; clock?: string; fuse?: number; spark?: boolean; flag?: boolean; hit?: number | null; penaltyMs?: number }) {
     const tip = fusePoint(fuse);
     return (
         <g className="bom-art">
@@ -29,7 +31,7 @@ function BombArt({ face, clock = '', fuse = 1, spark = true, flag = false, hit =
                 <g className={`bom-display${hit !== null ? ' is-hit' : ''}`} key={`d${hit}`}>
                     <rect x="88" y="134" width="104" height="52" rx="10" />
                     <text x="140" y="172" textAnchor="middle">{clock}</text>
-                    {hit !== null && <text className="bom-minus" x="196" y="128" textAnchor="middle" aria-hidden>{`−${WRONG_PENALTY_MS / 1000}s`}</text>}
+                    {hit !== null && penaltyMs > 0 && <text className="bom-minus" x="196" y="128" textAnchor="middle" aria-hidden>{`−${penaltyMs / 1000}s`}</text>}
                 </g>
             )}
             {face === 'smile' && (
@@ -85,7 +87,26 @@ function Bar({ count, target, freshKey }: { count: number; target: number; fresh
     );
 }
 
-export default function Bom({ question, phase, feedback, onAnswer, progress }: SkinProps) {
+// Onmogelijk: the mistakes left before PUF, as little sparks that go out one by one.
+function Strikes({ total, used }: { total: number; used: number }) {
+    return (
+        <div className="bom-strikes" role="img" aria-label={`Nog ${Math.max(0, total - used)} van ${total} foutjes`}>
+            {Array.from({ length: total }, (_, i) => (
+                <svg key={i} className={`bom-strike${i < used ? ' is-out' : ''}`} viewBox="-16 -16 32 32" aria-hidden><path d={STAR} /></svg>
+            ))}
+        </div>
+    );
+}
+
+export default function Bom({ question, phase, feedback, onAnswer, onFail, progress, options }: SkinProps) {
+    const level = levelOf(options);
+    const { penaltyMs, strikes } = BOM_LEVELS[level];
+    // Onmogelijk's third mistake: the friendly early end, once, never under help.
+    const failed = useRef(false);
+    const bursts = bomBursts(level, progress.mistakes);
+    useEffect(() => {
+        if (bursts && !failed.current && phase !== 'help') { failed.current = true; onFail(); }
+    }, [bursts, phase, onFail]);
     const target = progress.goal?.target ?? 10;
     const count = Math.min(progress.goal?.count ?? 0, target);
     // A segment just filled pops in (keyed per fill, so the next one restarts).
@@ -101,9 +122,10 @@ export default function Bom({ question, phase, feedback, onAnswer, progress }: S
         <div className={`bom-root${hurry ? ' is-hurry' : ''}${phase === 'help' ? ' is-paused' : ''}`}>
             <div className="bom-world">
                 <Bar count={count} target={target} freshKey={seen.up ? seen.n : null} />
+                {strikes !== null && <Strikes total={strikes} used={Math.min(strikes, progress.mistakes)} />}
                 <svg className="bom-svg" viewBox="0 0 300 260" preserveAspectRatio="xMidYMax meet" aria-hidden>
                     <g className={`bom-breathe${phase === 'right' ? ' is-relief' : ''}`}>
-                        <BombArt face="clock" clock={clockText(progress.msLeft)} fuse={fuseLeft(progress.msLeft, progress.msTotal)} hit={hit.n > 0 && phase === 'wrong' ? hit.n : null} />
+                        <BombArt face="clock" clock={clockText(progress.msLeft)} fuse={fuseLeft(progress.msLeft, progress.msTotal)} hit={hit.n > 0 && phase === 'wrong' && penaltyMs > 0 ? hit.n : null} penaltyMs={penaltyMs} />
                     </g>
                 </svg>
             </div>

@@ -3,7 +3,7 @@ import { SpelSign } from '../../SpelVisual';
 import { useSignChars } from '../../signContext';
 import SpelKeypad from '../../SpelKeypad';
 import type { SkinEndingProps, SkinProps } from '../types';
-import { SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker } from './walk';
+import { CROWD, SHAMBLE, ZOMBIE, joinAt, offStreetAt, paceOf, shamble, shambleRate, speedAt, stepCloser, strideOf, targetSpeed, walk, zombieSpeed, type Walker } from './walk';
 import { DEFENCE, defenceAfter, fearOf, hitOf, shooterOf, zombieLevelOf, type Fear, type ZombieLevel } from './defence';
 import Graveyard, { FrontFog } from './Graveyard';
 import './zombies.css';
@@ -304,7 +304,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
         const t = setTimeout(() => setShot(null), SHOT_MS);
         return () => clearTimeout(t);
     }, [shot]);
-    // Play time so far (help pauses it): the zombies slowly speed up over the game.
+    // Play time so far (help and the flashes pause it): the zombies speed up over the game in the clock's steps.
     const played = useRef(0);
     const mounted = useRef(false);
     useEffect(() => { mounted.current = true; }, []);
@@ -318,8 +318,9 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             const xs = [...walkers.current.values()].map(w => w.x);
             const last = xs.length ? Math.max(...xs) : null;
             // The first line stands on the street, a gap apart; a newcomer comes in from off screen.
-            const x = mounted.current ? joinAt(last, offStreetAt(size.current.track, size.current.zombie)) : last === null ? ZOMBIE.start : last + ZOMBIE.gap;
-            walkers.current.set(id, { x, v: targetSpeed(xs.length, paceOf(id), zombieSpeed(live.current.streak)), pace: paceOf(id) });
+            const crowd = CROWD[live.current.level];
+            const x = mounted.current ? joinAt(last, offStreetAt(size.current.track, size.current.zombie), crowd.gap) : last === null ? ZOMBIE.start : last + crowd.gap;
+            walkers.current.set(id, { x, v: targetSpeed(xs.length, paceOf(id), zombieSpeed(live.current.streak), crowd.follow), pace: paceOf(id) });
             // Out of step with the others from the first frame.
             gaits.current.set(id, { p: (id * 0.37) % 1, amp: 0, lag: 0 });
         }
@@ -405,11 +406,12 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
             // Under "Hoe los ik dit op?" everything holds, mid-stride; a right or wrong flash never stops the walk.
             const going = st.phase === 'play' || st.phase === 'right' || st.phase === 'wrong';
             if (!going || !dt) return;
-            played.current += dt * 1000;
+            // The ramp's clock is the clock rule's: it runs only while a sum waits (the flashes hold it, the walk goes on).
+            if (st.phase === 'play') played.current += dt * 1000;
             const { track, zombie } = size.current;
             const walking = st.line.filter(z => z.mood === 'walk');
             if (walking.length) {
-                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak) * speedAt(played.current, st.level), offStreetAt(track, zombie));
+                const step = walk(walking.map(z => walkers.current.get(z.id)!), dt, zombieSpeed(st.streak) * speedAt(played.current, st.level), offStreetAt(track, zombie), CROWD[st.level].follow);
                 walking.forEach((z, i) => walkers.current.set(z.id, step.line[i]));
                 // At the door during a flash it waits there; the bump counts once the next sum is up.
                 if (step.atDoor && st.phase === 'play') {
@@ -452,7 +454,7 @@ export default function Zombies({ question, phase, feedback, onAnswer, onMiss, o
     const flash = phase === 'right' || phase === 'wrong';
 
     return (
-        <div data-niveau={level} className={`zb-root is-${level === 'moeilijk' ? 'moeilijk' : 'normaal'}${phase === 'help' ? ' is-paused' : ''}`} style={{ '--zb-hit': `${DART_MS}ms` } as CSSProperties}>
+        <div data-niveau={level} className={`zb-root is-${level === 'makkelijk' ? 'normaal' : level}${phase === 'help' ? ' is-paused' : ''}`} style={{ '--zb-hit': `${DART_MS}ms` } as CSSProperties}>
             <div className="zb-street" ref={street}>
                 <Graveyard />
                 <div className="zb-ground" aria-hidden />
