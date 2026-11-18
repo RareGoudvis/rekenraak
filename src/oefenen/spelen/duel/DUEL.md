@@ -18,7 +18,7 @@ Touwtrekken (`skins/touwtrekken/`) and Kasteel (`skins/kasteel/`) are the two wo
 | `options.ts` | `duelOptions(spec)` (the shared pre-start options), `MANIER_OPTION`, `duelConfigOf(chosen, extra)` |
 | `useDuel.ts` | `useDuelMatch(meta, from, rule, extra?)`, `useDuelEvent(name, fn)` |
 | `DuelScreen.tsx` | the whole screen around your scene; `DuelHud.tsx` its pieces; `teams.ts` names / colours |
-| `DuelKeypad.tsx`, `duel.css` | the keypads and all shared styles (`duel-*` classes) |
+| `DuelKeypad.tsx`, `duel.css` | the keypads and all shared styles (`duel-*` classes); on word choices (Frans, `duelStore.pad`) each human half shows the choice pad (`../SpelChoicePad.tsx`, `.duel-pad`) instead: its sum's six choices, a tap = the answer; the bot's miss is one of them (`rules.ts` `wrongChoiceOf`) |
 
 ## A new duel game in four files
 

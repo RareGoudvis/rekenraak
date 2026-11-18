@@ -163,6 +163,54 @@
   font-size: var(--kiosk-text-xl);
 }
 
+/* ── The choice pad (SpelChoicePad): word choices in the keypad's place, two columns ── */
+.spel-pad {
+  container-type: inline-size;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--pad-cols, 2), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--pad-rows, 3), minmax(var(--spel-tap), 88px));
+  align-content: center;
+  gap: clamp(8px, 1.4vmin, 12px);
+}
+/* SpelKeypad's slot keeps its width and frame; the pad is a grid, not the keypad's column. */
+.spel-keypad.spel-pad { display: grid; }
+.spel-pad-key {
+  min-width: 0;
+  min-height: var(--spel-tap);
+  /* Fills its row even where a slot centres its keypad's items (Zombies' row layout). */
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-1) var(--sp-2);
+  --kid-sh: var(--kid-press-sm);
+  border: var(--kid-line) solid var(--kid-ink);
+  border-radius: clamp(12px, 2vmin, 18px);
+  background: var(--kid-key);
+  box-shadow: var(--kid-sh);
+  color: var(--kid-ink);
+  font-family: var(--kid-font);
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  /* One size for all six, fitted to the longest word in one column (.6 em a letter); never below the word minimum. */
+  font-size: max(var(--spel-word-min), min(var(--pad-font-max, var(--kiosk-text-xl)), calc((100cqi / var(--pad-cols, 2) - 4 * var(--sp-2)) / (var(--pad-chars, 8) * .6))));
+  cursor: pointer;
+  transition: transform .08s ease-out;
+}
+/* An odd last choice (< = >) takes the whole row. */
+.spel-pad-key:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.spel-pad-key:active:not(:disabled) { transform: translateY(3px); --kid-sh: var(--kid-pressed); }
+.spel-pad-key:disabled { cursor: default; opacity: .5; --kid-sh: var(--kid-flat); }
+.spel-pad-key:is(.is-picked, .is-right, .is-wrong, .is-answer) { opacity: 1; }
+.spel-pad-key.is-picked { background: var(--kid-pick); }
+.spel-pad-key.is-right { background: var(--kiosk-ok-soft); border-color: var(--kiosk-ok); color: var(--kid-ok-ink); animation: spel-pad-pop 380ms var(--ease-spring); }
+/* Never red: a wrong tap is grey and struck through (the kid look). */
+.spel-pad-key.is-wrong { background: var(--kid-strike-bg); color: var(--kid-strike); text-decoration: line-through; }
+.spel-pad-key.is-answer { background: var(--kiosk-ok-soft); border-color: var(--kiosk-ok); color: var(--kid-ok-ink); }
+@keyframes spel-pad-pop { 0% { scale: .9; } 60% { scale: 1.06; } 100% { scale: 1; } }
+
 /* A long sign line (spelChoice signSize: the tekst pack, leerjaar 6 sums): every skin's one-line sign
    (.xx-sign, never its -sign-answer part or a picture sign) gets smaller and may wrap inside the stage. */
 .spel-stage[data-sign="long"] [class*="-sign"]:not([class*="-sign-"], .spel-sign-fit) {

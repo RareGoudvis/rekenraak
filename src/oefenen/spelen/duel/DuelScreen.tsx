@@ -73,7 +73,7 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
     const maxLives = st.rule.maxLives?.(config) ?? config.lives;
 
     return (
-        <div className={`oefen-app spel-app duel-app ${className}${between ? ' is-between' : ''}${config.players === 1 ? ' is-solo' : ''}${st.paused ? ' is-paused' : ''}`} data-phase={phase}>
+        <div className={`oefen-app spel-app duel-app ${className}${between ? ' is-between' : ''}${config.players === 1 ? ' is-solo' : ''}${st.paused ? ' is-paused' : ''}${st.pad ? ' is-pad' : ''}`} data-phase={phase}>
             <header className="kiosk-topbar spel-topbar duel-topbar">
                 <TwoTapButton label={<><ArrowUUpLeft aria-hidden /> <span>Terug</span></>} armName="Terug" groupLabel="Stoppen met spelen" confirm="Ja, stoppen" onConfirm={leave} />
                 <Scoreline teams={teams} />
@@ -124,7 +124,8 @@ export default function DuelScreen({ meta, onExit, scene, className = '', teams:
                                 <p className="duel-note" aria-live="polite">{note}</p>
                                 {bot
                                     ? <BotCard thinking={phase === 'play' && !st.paused && !!q && !fb && !me.locked} given={fb && fb.given !== '' ? fb.given : null} correct={fb && fb.given !== '' ? fb.correct : null} />
-                                    : <DuelKeypad label={`Cijfers ${teams[side].name}`} questionKey={q?.key ?? ''} onAnswer={g => st.answer(side, g)} keyboard={config.players === 1}
+                                    : <DuelKeypad label={`${st.pad ? 'Keuzes' : 'Cijfers'} ${teams[side].name}`} questionKey={q?.key ?? ''} onAnswer={g => st.answer(side, g)} keyboard={config.players === 1}
+                                        question={q} feedback={fb}
                                         disabled={phase !== 'play' || !q || closed || me.locked || me.out} />}
                             </section>
                         );

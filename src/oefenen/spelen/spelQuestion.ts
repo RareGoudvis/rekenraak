@@ -4,10 +4,10 @@ import type { OefenExercise } from '../../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
 import type { ZelfChoice } from '../zelf/zelfSessie';
 import { choicesOf, mulberry32, numberChoicesOf, seedOf, type SumFacts } from './distractors';
-import { keysOfAll, NUMBER_CONTENT, PICTURE_CONTENT, skinsFor, type SpelContent, type SpelKey } from './accepts';
+import { keysOfAll, NUMBER_CONTENT, PAD_CHOICES, padPlays, PICTURE_CONTENT, skinsFor, type SpelContent, type SpelKey } from './accepts';
 import { normaliseNumber } from '../../services/oefenen/check';
 import { SKINS } from './skins/registry';
-import type { AnswerKind } from './skins/types';
+import type { AnswerKind, SkinMeta } from './skins/types';
 import type { KioskAnswer } from '../../services/oefenen/types';
 import type { SpelChoiceView, SpelHelp, SpelPackBoard, SpelVisual } from './content/pack';
 import { packFor } from './content/packs';
@@ -125,6 +125,16 @@ export function spelKeysOf(choice: ZelfChoice, grade: number): readonly SpelKey[
     const content = spelContentOf(choice, grade);
     return content?.kind === 'number' ? content.keys ?? [] : [];
 }
+
+/** Whether a keypad game plays this choice through the choice pad (word choices: Frans), the same for every question of the round. */
+export function padRoundOf(meta: Pick<SkinMeta, 'input' | 'accepts'>, from: { choice: ZelfChoice; grade: number }): boolean {
+    if (meta.input !== 'keypad' || !meta.accepts.pad) return false;
+    const content = spelContentOf(from.choice, from.grade);
+    return !!content && padPlays(meta.accepts, content);
+}
+
+/** How many choices the session hands a round: the pad's six, a tap skin's own count (default 4). */
+export const choiceCountOf = (meta: Pick<SkinMeta, 'choiceCount'> | null | undefined, pad: boolean): number | undefined => (pad ? PAD_CHOICES : meta?.choiceCount);
 
 function contentOfVars(vars: ZelfChoice['vars']): SpelContent {
     if (vars.every(playableNumber)) return numberContentOf(vars);

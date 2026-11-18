@@ -33,9 +33,18 @@ export const NUMBER_CONTENT: SpelContent = { kind: 'number', digitsOnly: true };
 // A content pack's choices (content/packs.ts): a clock face asks, faces / times / phrases answer.
 export const PICTURE_CONTENT: SpelContent = { kind: 'choice', pictures: true };
 
+// The choice pad (SpelChoicePad): a keypad game shows the exercise's own choices as big word buttons, 2 × 3.
+export const PAD_CHOICES = 6;
+// The longest word a pad button keeps on one line at 844×390 in a duel half (measured 2026-11-18: Frans "réussissent" = 11).
+export const PAD_MAX_WORD_CHARS = 13;
+
+/** Whether a pad skin plays this content through the pad: words only (no pictures, no numbers to type), short enough. */
+export const padPlays = (accepts: SkinAccepts, content: SpelContent): boolean =>
+    !!accepts.pad && content.kind === 'choice' && !content.pictures && content.answerChars === undefined && (content.wordChars ?? 0) <= PAD_MAX_WORD_CHARS;
+
 /** Whether a skin can play this content: its answer kind, short enough answers, digits where the skin needs them. */
 export function skinAccepts(accepts: SkinAccepts, content: SpelContent): boolean {
-    if (!accepts.kinds.includes(content.kind)) return false;
+    if (!accepts.kinds.includes(content.kind) && !padPlays(accepts, content)) return false;
     if (accepts.maxAnswerChars !== undefined && content.answerChars !== undefined && content.answerChars > accepts.maxAnswerChars) return false;
     if (accepts.digits && !content.digitsOnly) return false;
     if (accepts.maxWordChars !== undefined && content.wordChars !== undefined && content.wordChars > accepts.maxWordChars) return false;

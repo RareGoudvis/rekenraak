@@ -12,7 +12,7 @@ import { buildZelfSessie, type ZelfChoice } from '../zelf/zelfSessie';
 import { useOefenStore } from '../useOefenStore';
 import { createSpelEvents, type SpelEvents, type SpelOutcome } from './events';
 import { reviewOf } from './review';
-import { kioskAnswerOf, spelChoiceOf, spelQuestionOf, type SpelQuestion } from './spelQuestion';
+import { choiceCountOf, kioskAnswerOf, padRoundOf, spelChoiceOf, spelQuestionOf, type SpelQuestion } from './spelQuestion';
 import type { SkinMeta, SkinProgress, SkinResult } from './skins/types';
 import { boardOpenHelp, boardPickIn, nextBoardOf, type SpelBoard } from './board/session';
 import { penalise } from './skins/bom/penalty';
@@ -74,6 +74,8 @@ interface SpelState {
     away: boolean;
     // Board rounds (meta.round.board): the sums on screen; question = the one picked last (for the help).
     board: SpelBoard | null;
+    // A keypad game on word choices (Frans): the choice pad replaces the keypad, the session hands it six choices.
+    pad: boolean;
     events: SpelEvents;
 
     start(o: SpelStart): void;
@@ -144,7 +146,7 @@ export const spelSessieOf = (o: SpelStart): OefenSessie => {
 const IDLE = {
     phase: 'idle' as SpelPhase, meta: null, from: null, sessie: null, question: null, feedback: null, history: [], score: 0, streak: 0, bestStreak: 0,
     helped: 0, helpedNow: false, climb: 0, mistakes: [], misses: 0, outcome: null as SpelOutcome | null, help: null, endsAt: null, pausedLeft: null, shownAt: 0, result: null,
-    held: false, away: false, board: null as SpelBoard | null,
+    held: false, away: false, board: null as SpelBoard | null, pad: false,
 };
 
 export const useSpelStore = create<SpelState>()((set, get) => {
@@ -202,7 +204,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             clearFlash();
             const now = o.now ?? Date.now();
             const seconds = o.meta.round.seconds;
-            set({ ...IDLE, meta: o.meta, from: { choice: o.choice, grade: o.grade, topicId: o.topicId }, phase: 'play', sessie: spelSessieOf(o), endsAt: seconds ? now + seconds * 1000 : null, pickerAt: null });
+            set({ ...IDLE, meta: o.meta, from: { choice: o.choice, grade: o.grade, topicId: o.topicId }, phase: 'play', sessie: spelSessieOf(o), pad: padRoundOf(o.meta, o), endsAt: seconds ? now + seconds * 1000 : null, pickerAt: null });
             get().next(now);
         },
 
@@ -231,7 +233,7 @@ export const useSpelStore = create<SpelState>()((set, get) => {
             for (let tries = 0; !question && tries < MAX_DRAWS; tries++) {
                 const pick = nextType(s, history);
                 const made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
-                question = pick && made ? spelQuestionOf(pick.type, pick.slot, made, get().meta?.choiceCount) : null;
+                question = pick && made ? spelQuestionOf(pick.type, pick.slot, made, choiceCountOf(get().meta, get().pad)) : null;
             }
             if (!question) { end(); return; }
             set({ question, phase: 'play', feedback: null, helpedNow: false, help: null, shownAt: now });
