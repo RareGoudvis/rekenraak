@@ -1,0 +1,224 @@
+/* Steekspel: a tournament ground seen from the side (art.tsx). Flat fills under the --spel-ink outline, theme tokens
+   mixed into castle, tent and horse colours. Every motion is CSS (transforms and opacity), keyed by the screen so a
+   new moment restarts it. The screen around it is the shared duel screen (duel.css). */
+.stk-app {
+  --stk-sky-top: color-mix(in srgb, var(--accent-bewerkingen) 40%, var(--kiosk-paper));
+  --stk-sky-low: color-mix(in srgb, var(--accent-bewerkingen) 12%, var(--kiosk-paper));
+  --stk-hill-far: color-mix(in srgb, var(--accent-metendrekenen) 35%, var(--stk-sky-top));
+  --stk-hill: color-mix(in srgb, var(--accent-metendrekenen) 62%, var(--kiosk-paper));
+  --stk-grass: color-mix(in srgb, var(--accent-metendrekenen) 70%, var(--text-muted));
+  --stk-sand: color-mix(in srgb, var(--mab-e) 35%, var(--kiosk-paper));
+  --stk-sand-deep: color-mix(in srgb, var(--mab-e) 45%, var(--text-muted));
+  --stk-stone: color-mix(in srgb, var(--text-muted) 30%, var(--kiosk-paper));
+  --stk-roof: color-mix(in srgb, var(--accent-meetkunde) 60%, var(--text-main));
+  --stk-wood: color-mix(in srgb, var(--accent-vraagstukken) 50%, var(--text-muted));
+  --stk-wood-deep: color-mix(in srgb, var(--stk-wood) 70%, var(--text-main));
+  --stk-gold: var(--spel-star);
+  --stk-metal: color-mix(in srgb, var(--text-muted) 28%, var(--kiosk-paper));
+  --stk-metal-deep: color-mix(in srgb, var(--text-muted) 70%, var(--kiosk-paper));
+  --stk-hay: color-mix(in srgb, var(--mab-e) 75%, var(--kiosk-paper));
+  --stk-hay-deep: color-mix(in srgb, var(--mab-e) 70%, var(--accent-vraagstukken));
+  --stk-dust: color-mix(in srgb, var(--mab-e) 25%, var(--kiosk-paper));
+  --stk-skin: var(--kid-tint-4);
+  --spel-grass: var(--stk-grass);
+  --spel-sky: var(--stk-sky-top);
+  --duel-scene-h: 50%;
+}
+.stk-app .duel-half { background: color-mix(in srgb, var(--duel-team) 20%, var(--bg-surface)); }
+.stk-app .duel-half.is-got { background: color-mix(in srgb, var(--duel-team) 40%, var(--bg-surface)); }
+
+.stk-scene { position: absolute; inset: 0; background: linear-gradient(var(--stk-sky-top), var(--stk-sky-low) 70%); }
+.stk-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.stk-svg * { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ── The ground: castle, tents, the stand, the barrier ───────────────────── */
+.stk-hill { stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-hill.is-far { fill: var(--stk-hill-far); stroke-width: 2px; }
+.stk-hill.is-near { fill: var(--stk-hill); }
+.stk-stone { fill: var(--stk-stone); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-roof { fill: var(--stk-roof); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-gate, .stk-slit { fill: var(--stk-wood-deep); stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-pole { stroke: var(--spel-ink); stroke-width: 2.5px; fill: none; }
+.stk-pennon { stroke: var(--spel-ink); stroke-width: 1.5px; transform-box: fill-box; transform-origin: 0 50%; animation: stk-wave .7s ease-in-out infinite alternate; }
+.stk-pennon.is-left { fill: var(--duel-left); }
+.stk-pennon.is-right { fill: var(--duel-right); animation-delay: -.35s; }
+.stk-pennon.is-gold { fill: var(--stk-gold); animation-delay: -.2s; }
+.stk-pennon.is-big { stroke-width: 2px; }
+@keyframes stk-wave { from { scale: 1 1; } to { scale: .78 1.18; } }
+
+.stk-tent.is-left { --stk-tent: var(--duel-left); }
+.stk-tent.is-right { --stk-tent: var(--duel-right); }
+.stk-tent-body { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-tent-stripe { fill: color-mix(in srgb, var(--stk-tent) 80%, var(--kiosk-paper)); }
+.stk-tent-roof { fill: var(--stk-tent); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-tent-scallop { fill: var(--stk-tent); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-tent-door { fill: color-mix(in srgb, var(--stk-tent) 55%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2px; }
+
+.stk-stand-wood { fill: var(--stk-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-stand-rail { fill: var(--stk-wood-deep); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-drape { stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-drape.is-0 { fill: var(--duel-left); }
+.stk-drape.is-1 { fill: var(--duel-right); }
+.stk-awning { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-awning-stripe { fill: var(--accent-getallenkennis); }
+.stk-awning-edge { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-trumpet { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-banner { stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-banner.is-left { fill: var(--duel-left); }
+.stk-banner.is-right { fill: var(--duel-right); }
+.stk-fan { animation: stk-bob 1.6s ease-in-out var(--d, 0s) infinite alternate; }
+@keyframes stk-bob { from { translate: 0 0; } to { translate: 0 -2px; } }
+.stk-stand.is-cheer-0 .stk-fan { animation: stk-cheer-0 .4s ease-out calc(var(--d, 0s) * .15) 3 alternate; }
+.stk-stand.is-cheer-1 .stk-fan { animation: stk-cheer-1 .4s ease-out calc(var(--d, 0s) * .15) 3 alternate; }
+@keyframes stk-cheer-0 { from { translate: 0 0; } to { translate: 0 -9px; } }
+@keyframes stk-cheer-1 { from { translate: 0 0; } to { translate: 0 -9px; } }
+.stk-head { stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-head.is-0 { fill: var(--kid-tint-4); }
+.stk-head.is-1 { fill: color-mix(in srgb, var(--kid-tint-4) 70%, var(--accent-vraagstukken)); }
+.stk-head.is-2 { fill: color-mix(in srgb, var(--kid-tint-4) 55%, var(--text-main)); }
+.stk-head.is-3 { fill: color-mix(in srgb, var(--kid-tint-4) 38%, var(--text-main)); }
+.stk-head.is-4 { fill: color-mix(in srgb, var(--kid-tint-1) 50%, var(--kid-tint-4)); }
+.stk-shirt { stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-shirt.is-0 { fill: var(--spel-fill-0); }
+.stk-shirt.is-1 { fill: var(--spel-fill-1); }
+.stk-shirt.is-2 { fill: var(--spel-fill-2); }
+.stk-shirt.is-3 { fill: var(--spel-fill-3); }
+.stk-shirt.is-4 { fill: var(--spel-fill-4); }
+.stk-shirt.is-5 { fill: var(--spel-fill-5); }
+.stk-hennin { stroke: var(--spel-ink); stroke-width: 1.2px; }
+.stk-hennin.is-0 { fill: var(--kid-tint-6); }
+.stk-hennin.is-1 { fill: var(--kid-tint-5); }
+
+.stk-grass { fill: var(--stk-grass); }
+.stk-sand { fill: var(--stk-sand); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-hoofprint { fill: var(--stk-sand-deep); opacity: .45; }
+.stk-barrier-board { fill: var(--stk-wood); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-barrier-paint.is-0 { fill: color-mix(in srgb, var(--duel-left) 70%, var(--kiosk-paper)); }
+.stk-barrier-paint.is-1 { fill: color-mix(in srgb, var(--duel-right) 70%, var(--kiosk-paper)); }
+.stk-rail, .stk-post { fill: var(--stk-wood-deep); stroke: var(--spel-ink); stroke-width: 3px; }
+
+/* ── The knights ─────────────────────────────────────────────────────────── */
+.stk-knight { transition: transform 520ms cubic-bezier(.35, .1, .3, 1); }
+.stk-knight.is-left { --stk-team: var(--duel-left); --stk-coat: var(--kiosk-paper); --stk-mane: color-mix(in srgb, var(--text-muted) 40%, var(--kiosk-paper)); }
+.stk-knight.is-right { --stk-team: var(--duel-right); --stk-coat: color-mix(in srgb, var(--accent-vraagstukken) 45%, var(--text-main)); --stk-mane: color-mix(in srgb, var(--accent-vraagstukken) 25%, var(--text-main)); }
+.stk-shadow { fill: var(--spel-ink); opacity: .2; }
+.stk-horse-skin { fill: var(--stk-coat); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-horse-hair { fill: var(--stk-mane); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-hoof { fill: var(--spel-ink); }
+.stk-ear { fill: var(--stk-coat); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-eye, .stk-nostril, .stk-dot { fill: var(--spel-ink); }
+.stk-bridle { fill: none; stroke: var(--stk-team); stroke-width: 3px; }
+.stk-cloth { fill: var(--stk-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-cloth-trim { stroke: var(--stk-gold); stroke-width: 4px; }
+.stk-cloth-mark { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-saddle { fill: var(--stk-wood-deep); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-metal { fill: var(--stk-metal); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-belt { stroke: var(--stk-wood-deep); stroke-width: 4px; }
+.stk-skin { fill: var(--stk-skin); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-hair { fill: color-mix(in srgb, var(--accent-vraagstukken) 40%, var(--text-main)); stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-smile { fill: none; stroke: var(--spel-ink); stroke-width: 1.8px; }
+.stk-visor { stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-plume { fill: var(--stk-team); stroke: var(--spel-ink); stroke-width: 2px; transform-box: fill-box; transform-origin: 100% 100%; animation: stk-plume .5s ease-in-out infinite alternate; }
+@keyframes stk-plume { from { rotate: -4deg; } to { rotate: 6deg; } }
+.stk-shield-body { fill: var(--stk-team); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-shield-band { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+
+/* The lance: up while riding, down (couched) after 3 in a row and at the tilt; the turn glides. */
+.stk-lance-arm { transition: rotate 380ms cubic-bezier(.3, 1.4, .5, 1); }
+.stk-lance-shaft { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 2.5px; }
+.stk-lance-band { fill: var(--stk-team); }
+.stk-lance-flag { fill: var(--stk-team); stroke: var(--spel-ink); stroke-width: 1.5px; transform-box: fill-box; transform-origin: 0 100%; animation: stk-wave .35s ease-in-out infinite alternate; }
+.stk-vamplate { fill: var(--stk-metal-deep); stroke: var(--spel-ink); stroke-width: 2px; }
+.stk-gleam path { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-gleam { transform-box: fill-box; transform-origin: 50% 50%; animation: stk-gleam 900ms ease-out both; }
+@keyframes stk-gleam { 0% { opacity: 0; scale: .2; rotate: 0deg; } 30% { opacity: 1; scale: 1.3; } 100% { opacity: 0; scale: .6; rotate: 120deg; } }
+/* A couched lance gleams now and then while it stays down. */
+.stk-lance.is-down .stk-lance-band { fill: var(--stk-gold); }
+.stk-lance.is-down .stk-lance-tip { animation: stk-glint 1.4s ease-in-out infinite; }
+@keyframes stk-glint { 0%, 70%, 100% { opacity: 1; } 80% { opacity: .55; } }
+/* The tilt breaks the winner's lance: the tip flies off in splinters. */
+.stk-lance.is-broken .stk-lance-tip { animation: stk-tipoff 900ms ease-out both; }
+@keyframes stk-tipoff { to { translate: 40px -60px; rotate: -160deg; opacity: 0; } }
+.stk-lance-tip { transform-box: fill-box; transform-origin: 0 50%; }
+.stk-splinter { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.2px; animation: stk-splinter 700ms ease-out calc(var(--k) * 20ms) both; }
+@keyframes stk-splinter { from { transform: rotate(var(--a)) translate(0, 0); opacity: 1; } to { transform: rotate(var(--a)) translate(54px, 0) rotate(180deg); opacity: 0; } }
+
+/* A gallop step: the horse bounds twice, its legs swing. */
+.stk-gallop { animation: stk-bound 520ms ease-in-out; }
+@keyframes stk-bound { 0%, 50%, 100% { translate: 0 0; } 25%, 75% { translate: 0 -9px; } }
+.stk-leg { transform-origin: 0 0; }
+.stk-gallop .stk-leg { animation: stk-leg-a 130ms ease-in-out 4 alternate; }
+.stk-gallop .stk-leg.is-1, .stk-gallop .stk-leg.is-2 { animation-name: stk-leg-b; }
+@keyframes stk-leg-a { from { rotate: 28deg; } to { rotate: -30deg; } }
+@keyframes stk-leg-b { from { rotate: -30deg; } to { rotate: 28deg; } }
+.stk-tail { transform-box: fill-box; transform-origin: 90% 10%; animation: stk-swish 1.8s ease-in-out infinite alternate; }
+@keyframes stk-swish { from { rotate: -6deg; } to { rotate: 8deg; } }
+.stk-head-nod { transform-origin: 56px -110px; animation: stk-nod 2.4s ease-in-out infinite; }
+@keyframes stk-nod { 0%, 100% { rotate: 0deg; } 50% { rotate: 4deg; } }
+
+/* A mistake: the horse sneezes, a jolt back and a puff from the nose. */
+.stk-sneeze { animation: stk-sneeze 700ms ease-out; }
+@keyframes stk-sneeze { 0% { translate: 0 0; } 30% { translate: 4px -3px; } 45% { translate: -10px 0; } 70% { translate: -4px 0; } 100% { translate: 0 0; } }
+.stk-sneeze .stk-head-nod { animation: stk-achoo-nod 700ms ease-out; }
+@keyframes stk-achoo-nod { 0% { rotate: 0deg; } 30% { rotate: -10deg; } 45% { rotate: 16deg; } 100% { rotate: 0deg; } }
+.stk-puff { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.5px; opacity: 0; animation: stk-puff 700ms ease-out calc(300ms + var(--k) * 60ms) both; }
+@keyframes stk-puff { from { transform: translate(0, 0) scale(.3); opacity: .95; } to { transform: translate(34px, 8px) scale(1.5); opacity: 0; } }
+
+/* ── The tilt ─────────────────────────────────────────────────────────────── */
+.stk-knight.is-won .stk-rear { transform-origin: -40px 0; animation: stk-rear 900ms ease-in-out 300ms 2 both; }
+@keyframes stk-rear { 0%, 100% { rotate: 0deg; } 45% { rotate: -16deg; } 60% { rotate: -14deg; } }
+.stk-knight.is-won .stk-lance-arm { rotate: -70deg !important; transition-delay: 500ms; }
+.stk-knight.is-draw .stk-rear { transform-origin: -40px 0; animation: stk-wobble 700ms ease-in-out 2; }
+@keyframes stk-wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: 5deg; } 75% { rotate: -5deg; } }
+/* The loser tumbles off backwards into the hay (nobody hurt: a smile, stars and birds round the head). */
+.stk-knight.is-fell .stk-fall { transform-origin: 0 -90px; animation: stk-fall 900ms cubic-bezier(.3, .5, .5, 1) both; }
+@keyframes stk-fall {
+  0% { translate: 0 0; rotate: 0deg; }
+  30% { translate: -50px -70px; rotate: -150deg; }
+  62% { translate: -112px -20px; rotate: -300deg; }
+  82% { translate: -130px 42px; rotate: -385deg; }
+  91% { translate: -130px 34px; rotate: -380deg; }
+  100% { translate: -130px 40px; rotate: -380deg; }
+}
+.stk-knight.is-fell .stk-helmet { transform-box: fill-box; transform-origin: 50% 50%; animation: stk-helmet 1000ms ease-out both; }
+@keyframes stk-helmet { 0% { translate: 0 0; rotate: 0deg; } 40% { translate: 30px -60px; rotate: 220deg; } 100% { translate: 70px 40px; rotate: 520deg; opacity: 1; } }
+.stk-knight.is-fell .stk-lance { animation: stk-drop-lance 300ms ease-in both; }
+@keyframes stk-drop-lance { to { opacity: 0; } }
+.stk-knight.is-fell .stk-face .stk-dot { transform-box: fill-box; transform-origin: 50% 50%; scale: 1 .35; }
+.stk-bale-in { animation: stk-bale 380ms cubic-bezier(.3, 1.5, .5, 1) both; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes stk-bale { from { translate: 0 -120px; opacity: 0; } 50% { opacity: 1; } to { translate: 0 0; opacity: 1; } }
+.stk-hay { fill: var(--stk-hay); stroke: var(--spel-ink); stroke-width: 3px; }
+.stk-straw, .stk-tuft { fill: none; stroke: var(--stk-hay-deep); stroke-width: 2px; }
+.stk-twine { stroke: var(--stk-wood-deep); stroke-width: 3px; }
+.stk-stars { opacity: 0; animation: stk-show 300ms ease-out 900ms both; }
+@keyframes stk-show { to { opacity: 1; } }
+.stk-orbit { animation: stk-orbit 1.1s linear infinite; }
+@keyframes stk-orbit { from { transform: scale(1, .45) rotate(0deg); } to { transform: scale(1, .45) rotate(360deg); } }
+.stk-star { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 1.5px; }
+.stk-dust { fill: var(--stk-dust); stroke: var(--spel-ink); stroke-width: 1.5px; transform-box: fill-box; transform-origin: 50% 50%; opacity: 0; animation: stk-dust 900ms ease-out calc(760ms + var(--k) * 50ms) both; }
+@keyframes stk-dust { from { scale: .3; opacity: .95; } to { scale: 2.2; opacity: 0; translate: 0 -20px; } }
+
+.stk-clash-star { fill: var(--stk-gold); stroke: var(--spel-ink); stroke-width: 3px; transform-box: fill-box; transform-origin: 50% 50%; animation: stk-clash 700ms ease-out both; }
+.stk-clash.is-draw .stk-clash-star { fill: var(--kiosk-paper); }
+@keyframes stk-clash { 0% { scale: .2; opacity: 1; } 30% { scale: 1.3; opacity: 1; rotate: 12deg; } 100% { scale: 1.6; opacity: 0; rotate: 20deg; } }
+.stk-chip { stroke: var(--spel-ink); stroke-width: 1.2px; animation: stk-chip 800ms ease-out both; }
+.stk-chip.is-0 { fill: var(--kiosk-paper); }
+.stk-chip.is-1 { fill: var(--stk-wood); }
+@keyframes stk-chip { from { transform: rotate(var(--a)) translate(0, 0); opacity: 1; } to { transform: rotate(var(--a)) translate(0, -70px) rotate(200deg); opacity: 0; } }
+
+/* ── Calls, petals, the card ─────────────────────────────────────────────── */
+.stk-call { transform-box: fill-box; transform-origin: 50% 50%; animation: stk-call 1300ms var(--ease-out) both; }
+@keyframes stk-call { 0% { transform: scale(.2) rotate(-10deg); opacity: 0; } 18% { transform: scale(1.18) rotate(4deg); opacity: 1; } 70% { transform: scale(1) translateY(-10px); opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
+.stk-call-bg { stroke: var(--spel-ink); stroke-width: 3.5px; }
+.stk-call.is-lance .stk-call-bg { fill: var(--stk-gold); }
+.stk-call.is-oops .stk-call-bg { fill: var(--kiosk-paper); }
+.stk-call.is-bonk .stk-call-bg { fill: var(--stk-gold); }
+.stk-call.is-win .stk-call-bg { fill: var(--kid-go); }
+.stk-call-text { fill: var(--spel-ink); font-family: var(--kid-font); font-size: 24px; font-weight: 900; }
+.stk-petal { stroke: var(--spel-ink); stroke-width: 1px; transform-box: fill-box; transform-origin: 50% 50%; animation: stk-fall-petal var(--t) linear var(--d) infinite both; }
+.stk-petal.is-0 { fill: var(--kid-tint-6); }
+.stk-petal.is-1 { fill: var(--stk-gold); }
+.stk-petal.is-2 { fill: var(--kiosk-paper); }
+.stk-petal.is-3 { fill: var(--accent-getallenkennis); }
+@keyframes stk-fall-petal { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(var(--sway), 300px) rotate(var(--r)); } }
+.stk-card-art { display: block; width: clamp(56px, 10vmin, 92px); height: auto; margin: -6px auto -4px; overflow: visible; }

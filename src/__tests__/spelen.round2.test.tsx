@@ -61,7 +61,7 @@ afterEach(() => { offs.splice(0).forEach(off => off()); cleanup(); vi.restoreAll
 
 describe('Pre-start options', () => {
     test('only Bom, Bever, Zombies, Voetbal, the duels (Kasteel, Touwtrekken, Kikkers), Schatkist, Race, Hartjes, Zeehondjes and Honingraat have options; picks patch the round, unknown picks fall back to the default', () => {
-        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'touwtrekken', 'schatkist', 'race', 'hartjes', 'zeehond', 'honingraat', 'meteorietenregen', 'robotduel', 'taartgevecht', 'kikkers', 'tovenaarsduel', 'voetbalkaartjes', 'frituur', 'spookhuis', 'mollen', 'pinguintoren', 'brandweer', 'slalom', 'grijp'].includes(s.meta.id))).toEqual([]);
+        expect(SKINS.filter(s => s.meta.options?.length && !['bom', 'bever', 'zombies', 'voetbal', 'kasteel', 'touwtrekken', 'schatkist', 'race', 'hartjes', 'zeehond', 'honingraat', 'meteorietenregen', 'robotduel', 'taartgevecht', 'kikkers', 'tovenaarsduel', 'voetbalkaartjes', 'frituur', 'spookhuis', 'mollen', 'pinguintoren', 'brandweer', 'slalom', 'grijp', 'monstertrucks', 'steekspel'].includes(s.meta.id))).toEqual([]);
         const bom = meta('bom');
         expect(resolveMeta(bom).round).toEqual({ seconds: 180, goal: 10, goalKeep: true, wrongPenaltyMs: 3000 });
         const big = resolveMeta(bom, { tijd: '5', doel: '50' });

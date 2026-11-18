@@ -42,6 +42,8 @@ const GAMES = [
     ['spookhuis', 'Spookhuis', -1],
     ['grijp', 'Grijpmachine', 2],
     ['aquarium', 'Aquarium', 9],
+    ['monstertrucks', 'Monstertrucks', 0],
+    ['steekspel', 'Steekspel', 0],
 ];
 // A game's page query (dev builds): Tovenaarsduel's arena, Spookhuis' place, Grijpmachine's arcade, Aquarium's seed.
 const QUERY = { tovenaarsduel: '?arena=school', spookhuis: '?spook=klassiek', grijp: '?grijp=pier', aquarium: '?aquarium=12345' };
@@ -63,6 +65,18 @@ const DUEL_PLAY = {
         await page.waitForTimeout(2600);
         await duelAnswer(page, 'right');
         await page.waitForTimeout(1700);
+    },
+    // Right: its ramp waits (2 in a row); left: the 3rd in a row, frozen in the air over the junk cars.
+    monstertrucks: async page => {
+        for (let i = 0; i < 2; i++) { await duelAnswer(page, 'right'); await duelAnswer(page, 'left'); await page.waitForTimeout(900); }
+        await duelAnswer(page, 'left'); await page.waitForTimeout(400);
+        await page.evaluate(() => window.__duel.getState().pause());
+    },
+    // Both lances down (3 in a row), the knights mid-gallop towards each other.
+    steekspel: async page => {
+        for (let i = 0; i < 6; i++) { await duelAnswer(page, 'left'); if (i < 4) await duelAnswer(page, 'right'); await page.waitForTimeout(900); }
+        await duelAnswer(page, 'left'); await duelAnswer(page, 'right'); await page.waitForTimeout(140);
+        await page.evaluate(() => window.__duel.getState().pause());
     },
     // Right: a shield (4 in a row); left: an IJspijl, then a Vuurbal frozen on its way to the dome (pause() stops the CSS too).
     tovenaarsduel: async page => {
@@ -106,6 +120,9 @@ const SKIN_CSS = {
     voetbalkaartjes: '.hj-text, .vk-nums { visibility: hidden !important; }',
     honingraat: '.hx-top, .hx-sum { visibility: hidden !important; }',
     frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
+    // The arena is a wide strip: closer in on the lanes; the calls carry words.
+    monstertrucks: '.mtk-svg { transform: scale(1.9); transform-origin: 16% 100%; } .mtk-call { display: none !important; }',
+    steekspel: '.stk-svg { transform: scale(1.75); transform-origin: 53% 100%; } .stk-call { display: none !important; }',
     // The metres, the speed bars and the streak badge.
     slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
     spookhuis: '.sph-text, .sph-count { visibility: hidden !important; }',

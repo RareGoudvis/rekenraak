@@ -24,6 +24,10 @@ import { HIVE_BOARDS } from '../board/honingraat/hiveLevels';
 import { LEVELS, levelOption } from '../levels/levels';
 import { FishSimple } from '@phosphor-icons/react';
 import { TANK_GOAL } from './aquarium/tank';
+import { Truck } from '@phosphor-icons/react';
+import { TRUCK } from './monstertrucks/rule';
+import { Horse } from '@phosphor-icons/react';
+import { JOUST } from './steekspel/rule';
 
 // Keypad skins take a typed number. Pinguïntoren, Bom and Race could take a pair (quotient + rest) once their
 // keypad gets a second field; until then they say number only.
@@ -204,6 +208,29 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         },
         icon: MagicWand,
         Screen: lazy(() => import('./tovenaarsduel/Tovenaarsduel')),
+    },
+    {
+        // A race duel (DUEL.md): gas = +1, 3 in a row = a ramp jump over junk cars (+3 in all), a mistake = a wheelie
+        // (monstertrucks/rule.ts). No lives: the levens row is the race's length. The scene voices its moments.
+        meta: {
+            music: 'race', id: 'monstertrucks', label: 'Monstertrucks', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions({ lives: TRUCK.finish }),
+            sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: Truck,
+        Screen: lazy(() => import('./monstertrucks/Monstertrucks')),
+    },
+    {
+        // A tilt duel (DUEL.md): a right answer = a gallop step, 3 in a row lower the lance till the next mistake; when the
+        // knights meet, more steps wins, the lance breaks a tie (steekspel/rule.ts). One tilt = one round; the levens row is
+        // the list's length. The scene voices its moments.
+        meta: {
+            music: 'kasteel', id: 'steekspel', label: 'Steekspel', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
+            options: duelOptions({ lives: JOUST.baan }),
+            sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
+        },
+        icon: Horse,
+        Screen: lazy(() => import('./steekspel/Steekspel')),
     },
     {
         // Valentijn: memory with 4 / 6 / 8 sums and their answers on 8 / 12 / 16 hearts (Makkelijk / Normaal / Moeilijk;

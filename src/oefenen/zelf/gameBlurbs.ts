@@ -17,6 +17,8 @@ export const GAME_BLURB: Record<string, string> = {
     robotduel: 'Twee robots in de ring. Elk juist antwoord is een stoot. Drie op rij: supermove!',
     tovenaarsduel: 'Elk juist antwoord is een toverspreuk. Meer op rij: ijs, vuur, bliksem, schild!',
     taartgevecht: 'Wie eerst juist antwoordt, gooit een taart. Splat! Alleen of met z\'n tweeën.',
+    monstertrucks: 'Geef gas met juiste antwoorden. Drie op rij: spring over de auto\'s!',
+    steekspel: 'Galoppeer naar de andere ridder. Drie juist op rij: lans omlaag!',
     hartjes: 'Draai de hartjes om en zoek een som met haar antwoord.',
     honingraat: 'Zoek alle sommen die het getal maken. Pas op voor de wesp!',
     voetbalkaartjes: 'Zoek een som met haar antwoord. Elk paar is een goal voor jouw ploeg!',
