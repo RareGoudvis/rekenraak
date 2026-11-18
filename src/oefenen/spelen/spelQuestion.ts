@@ -194,7 +194,7 @@ export function spelQuestionOf(type: OefenType, slot: number, made: OefenExercis
         if (!q) return null;
         // A tekst number has no views: its targets show the plain number (a skin reads views as "pictures").
         const { views, kioskAnswers, ...own } = q;
-        return { slot, exercise: made.exercise, constraints: made.constraints, key: made.key, kind: 'choice', ...own, ...(views.length > 0 && { views, kioskAnswers }) };
+        return { slot, exercise: made.exercise, constraints: made.constraints, key: made.key, kind: 'choice', ...own, ...(views.length > 0 && { views }), ...(kioskAnswers.length > 0 && { kioskAnswers }) };
     }
     const op = SPEL_LEAVES[type.leafId];
     const d = kioskFor(type.typeId);

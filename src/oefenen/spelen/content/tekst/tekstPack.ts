@@ -73,7 +73,8 @@ function numberQuestion(ask: NumberAsk, play: TekstPlay, rng: () => number, coun
     const plain = (v: number) => (dp ? v.toFixed(dp).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',') : String(v));
     const choices = values.map(plain);
     const answer = plain(ask.answer);
-    if (play === 'number') return { kind: 'number', text: ask.text, answer, choices, views: [], kioskAnswers: [], ...rest(ask) };
+    // A whole number shows as itself; its kiosk form only where the card takes it otherwise (the positietabel's cells).
+    if (play === 'number') return { kind: 'number', text: ask.text, answer, choices, views: [], kioskAnswers: ask.kiosk ? values.map(v => ask.kiosk!(v)) : [], ...rest(ask) };
     const label = (v: number) => ask.show?.(v) ?? formatMathNumber(plain(v).replace(',', '.')).replace('-', '−');
     const tapped = {
         text: ask.text, answer, choices,

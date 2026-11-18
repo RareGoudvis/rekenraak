@@ -1,10 +1,10 @@
 import type {
     AfrondenExercise, ControleExercise, DeelbaarheidExercise, DeelbaarheidKleurExercise, Equation, EvenOnevenExercise, FractionExercise,
-    GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, MaateenheidExercise,
+    GeldExercise, GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, MaateenheidExercise,
     MabExercise, MeetExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise, RomeinseExercise, SchattendExercise,
     SplitsenExercise, TemperatuurExercise, TijdsduurExercise, VergelijkenExercise, VormleerExercise,
 } from '../../../../services/math/types';
-import type { KioskAnswer, KioskDescriptor } from '../../../../services/oefenen/types';
+import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor } from '../../../../services/oefenen/types';
 import { kioskInputOf } from '../../../../services/oefenen/kiosk';
 import { formatMathNumber } from '../../../../services/math/formatters';
 import { roundTo, targetsFor, usableTargets } from '../../../../services/afronden/afrondenGenerator';
@@ -19,8 +19,8 @@ import { rijText } from '../../spelFormat';
 // line of text can carry ("491 ≈ ? (op tiental)", "Een hoek van 62° is een ?"). Each entry says how its answers
 // reach a game and builds the sign's line; where the kiosk card asks several values (a rij, a rooster), the game
 // asks one of them as its own small kiosk exercise (`exercise` / `constraints`), which Nakijken then replays.
-// Left out on purpose (the picture IS the question): MAB / geld / thermometer / weegschaal reading, getallenas,
-// oppervlakte by counting squares, hoeken tekenen, and every cijferen grid.
+// Geld tellen, the thermometer and the getallenlijn ask with a picture on the sign (content/beeld). Left out on purpose:
+// MAB / weegschaal reading, oppervlakte by counting squares, hoeken tekenen, and every cijferen grid.
 
 export type Rng = () => number;
 type C = Record<string, unknown>;
@@ -655,6 +655,84 @@ const hrDecimaal = (op: '+' | '-' | 'x' | ':'): TekstLeaf => ({
 });
 
 /** The tekst pack's leaves, by sidebar leaf. A new leaf = one line here (and a test row in spelen.tekst.test.ts). */
+// ── pictures to read: geld tellen, the thermometer, the getallenlijn, getallen lezen ─────────────────────────
+
+// Geld tellen: the coins and notes on the sign, the amount typed (a comma for the cents) or tapped. A coin missed
+// or counted twice, a note read as the next one.
+const coinsOf = (ex: GeldExercise) => ex.denominations.filter(d => d.count > 0).sort((a, b) => b.valueCents - a.valueCents).flatMap(d => Array.from({ length: d.count }, () => d.valueCents));
+const GELD_TELLEN: TekstLeaf = {
+    playsAs: c => (c.format === 'decimaal' ? 'typed' : 'number'),
+    chars: c => len(num(c.maxGetal, 20)) + (c.format === 'decimaal' ? 2 : 0),
+    ask: (raw, c, _rng, d) => {
+        const ex = raw as GeldExercise;
+        const coins = coinsOf(ex);
+        const answer = answerNumber(d, ex, c);
+        if (!coins.length || answer === null) return null;
+        const euros = coins.map(v => v / 100);
+        const small = Math.min(...euros), big = Math.max(...euros);
+        const dp = c.format === 'decimaal' ? 2 : 0;
+        return {
+            kind: 'number', text: `Samen: €${NB}?`, answer, dp, visual: { kind: 'geld', coins },
+            near: [[answer + small, answer - small], [answer + big, answer - big]], step: dp ? Math.min(small, 1) : 1,
+            ...(dp > 0 && { show: (v: number) => euroText(Math.round(v * 100)) }),
+        };
+    },
+};
+
+// Thermometer aflezen: the mercury on the sign, the degrees typed (with a minus below zero). One degree, one big
+// tick off, or the sign forgotten. SYNC: TemperatuurViewer's scale (−15 or 0 up to 25).
+const THERMO_TOP = 25;
+const thermoMin = (c: C) => (c.includeNegatives ? -15 : 0);
+const THERMOMETER: TekstLeaf = {
+    playsAs: c => ((c.variant ?? 'aflezen') !== 'aflezen' ? null : c.includeNegatives ? 'typed' : 'number'),
+    chars: c => (c.includeNegatives ? 3 : 2),
+    keys: () => ['-'],
+    ask: (raw, c) => {
+        const ex = raw as TemperatuurExercise;
+        if (ex.variant !== 'aflezen') return null;
+        const t = ex.celsius;
+        return {
+            kind: 'number', text: `Het is ?${NB}°C`, answer: t, visual: { kind: 'thermo', t, min: thermoMin(c), max: THERMO_TOP },
+            near: [[t + 1, t - 1], [t + 5, t - 5], [-t]].map(f => f.filter(v => v >= thermoMin(c) && v <= THERMO_TOP && v !== t)), min: thermoMin(c),
+        };
+    },
+};
+
+// Getallenlijn: the line on the sign with one tick to name, the rest filled in (as a rij: one open place).
+const GETALLENAS: TekstLeaf = {
+    playsAs: rijPlay,
+    chars: rijChars,
+    keys: rijKeys,
+    ask: (raw, c, rng) => {
+        const ex = raw as GetallenasExercise;
+        const values = ex.values ?? [];
+        const one = oneBlank(ex, values, rng);
+        const ask = one && rijAsk(values, one.i, one.asked, nt(c) === 'natural');
+        // Its other slips go by the line's own jump (a tick too far), never by one.
+        return ask?.visual?.kind === 'rij' ? { ...ask, text: `Welk getal is ?`, visual: { kind: 'as', items: ask.visual.items }, ...(ex.step > 0 && { step: ex.step }) } : null;
+    },
+};
+
+// Getallen lezen en schrijven: the number in words on the sign, typed as a number (the kiosk card fills the
+// positietabel with it, so a typed number checks as its digits, column by column).
+const LEZEN: TekstLeaf = {
+    playsAs: c => (splitsLayout(c) === 'positie-tabel' && !Number(c.decimalPlaces ?? 0) ? 'number' : null),
+    chars: c => len(num(c.maxGetal, 20)),
+    ask: (raw) => {
+        const ex = raw as SplitsenExercise;
+        const places = ex.placeBreakdown ?? [];
+        if (!ex.words || !places.length) return null;
+        const cells = (v: number): KioskAnswer => {
+            if (!Number.isInteger(v) || v < 0 || v >= places[0].weight * 10) return 'x';
+            return places.map(p => (v < p.weight && p.weight > 1 ? '' : String(Math.floor(v / p.weight) % 10))).join(INTERACT_SEP);
+        };
+        // The digits swapped, a place left out or doubled (zeshonderdvier as 64 or 6004).
+        const n = ex.total;
+        const swapped = Number(String(n).split('').reverse().join(''));
+        return { kind: 'number', text: `${ex.words} = ?`, answer: n, near: [[swapped], [n + 10, n - 10], [n + 1, n - 1]], kiosk: cells };
+    },
+};
+
 export const TEKST_LEAVES: Readonly<Record<string, TekstLeaf>> = {
     'afronden-nat-simpel': AFRONDEN, 'afronden-dec-simpel': AFRONDEN, 'afronden-nat-rooster': AFRONDEN, 'afronden-dec-rooster': AFRONDEN,
     'schattend-nat': SCHATTEND, 'schattend-dec': SCHATTEND,
@@ -676,6 +754,10 @@ export const TEKST_LEAVES: Readonly<Record<string, TekstLeaf>> = {
     'omtrek': OMTREK, 'oppervlakte-berekenen': OPPERVLAKTE,
     'geld-teruggeven': TERUGGEVEN,
     'tijdsduur-berekenen': TIJDSDUUR,
+    'geld-herkennen': GELD_TELLEN,
+    'temperatuur-aflezen': THERMOMETER,
+    'getalbegrip-getallenassen-nat': GETALLENAS, 'getalbegrip-getallenassen-dec': GETALLENAS, 'getalbegrip-getallenassen-geh': GETALLENAS,
+    'splitsen-positietabel': LEZEN,
     'vormleer-hoeken-herkennen': HOEKEN,
     'maateenheid-kiezen': MAATEENHEID,
     'controleren-omgekeerde': CONTROLEREN, 'controleren-negenproef': CONTROLEREN,

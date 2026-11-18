@@ -249,7 +249,8 @@ describe('Topic cards and the Keuze screen', () => {
         render(<OefenApp />);
         await screen.findByRole('heading', { name: 'Wat wil je oefenen?' });
         fireEvent.click(card('Meten', 'Geld'));
-        fireEvent.click(screen.getByRole('button', { name: 'Geld tellen' }));
+        // Geld tellen plays since 2026-11-18; laying the amount with coins stays an oefening.
+        fireEvent.click(screen.getByRole('button', { name: 'Bedrag tekenen' }));
         expect(screen.getByRole('region', { name: 'Oefenen' })).toBeTruthy();
         expect(screen.getByRole('button', { name: /Begin met oefenen/ })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Spelen' })).toBeNull();
