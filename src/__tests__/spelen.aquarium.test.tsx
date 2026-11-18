@@ -15,6 +15,8 @@ import {
     crawlAt, isJackpot, orderFor, pathFor, shownOf, startTank, stepTank, swimAt, victimOf, type ItemKind, type TankState,
 } from '../oefenen/spelen/skins/aquarium/tank';
 import { resetKiosk } from './helpers/oefenKiosk';
+import { CAT_EYE, catGaze, nearestTo } from '../oefenen/spelen/skins/aquarium/tank';
+import { CatArt, NappingCat } from '../oefenen/spelen/skins/aquarium/art';
 
 // Aquarium (round 6): the seeded order, the swim paths, the cat's catch (tank.ts) and the game on the real session.
 
@@ -71,6 +73,43 @@ describe('the order (tank.ts)', () => {
             }
         }
         expect(pathFor('kasteel', 1)).toBeNull();
+    });
+});
+
+describe('the cat (owner 2026-11-18: a real cat with idle life)', () => {
+    test('it watches the nearest fish; its pupils and head follow within bounds', () => {
+        const near = { x: CAT_EYE.x - 20, y: CAT_EYE.y + 10 };
+        expect(nearestTo([{ x: 60, y: 120 }, near, { x: 200, y: 200 }])).toBe(near);
+        expect(nearestTo([])).toBeNull();
+        expect(catGaze(null)).toEqual({ dx: -1, dy: 0, deg: 0 });
+        const far = catGaze({ x: 0, y: 400 });
+        expect(far).toEqual({ dx: -2.4, dy: 1.8, deg: 10 });
+        const up = catGaze({ x: CAT_EYE.x + 300, y: 0 });
+        expect(up).toEqual({ dx: 1.2, dy: -1.8, deg: -8 });
+    });
+
+    test('drawn whole: two front legs, a haunch, a ringed tail round the paws, ears, eyes, a muzzle and whiskers', () => {
+        const { container } = render(<svg><CatArt act="idle" fish={null} pupils={() => { }} head={() => { }} /></svg>);
+        expect(container.querySelectorAll('.aq-cat-limb').length).toBe(3);
+        expect(container.querySelector('.aq-cat-leg .aq-cat-leg-low .aq-cat-sock')).not.toBeNull();
+        expect(container.querySelectorAll('.aq-cat-tail-tip .aq-cat-tail-rings').length).toBe(1);
+        expect(container.querySelectorAll('.aq-cat-ear-wrap').length).toBe(2);
+        expect(container.querySelectorAll('.aq-cat-pupil').length).toBe(2);
+        expect(container.querySelectorAll('.aq-whisker.is-cat').length).toBe(2);
+        expect(container.querySelector('.aq-cat-tongue')).not.toBeNull();
+        expect(container.querySelector('.aq-cat-arm')).toBeNull();
+    });
+
+    test('a mistake or the catch: the reaching arm comes out (with the fish in its paw on the catch); the nap is a loaf', () => {
+        const { container, rerender } = render(<svg><CatArt act="reach" fish={null} pupils={() => { }} head={() => { }} /></svg>);
+        expect(container.querySelector('.aq-cat-arm .aq-cat-paw')).not.toBeNull();
+        expect(container.querySelector('.aq-cat-paw-fish')).toBeNull();
+        rerender(<svg><CatArt act="catch" fish="goudvis" pupils={() => { }} head={() => { }} /></svg>);
+        expect(container.querySelector('.aq-cat-paw-fish')).not.toBeNull();
+        expect(container.querySelector('.aq-cat-mouth-fish')).not.toBeNull();
+        rerender(<svg><NappingCat /></svg>);
+        expect(container.querySelector('.aq-cat-nap .aq-cat-lid.is-shut')).not.toBeNull();
+        expect(container.querySelector('.aq-cat-nap .aq-cat-tail-rings')).not.toBeNull();
     });
 });
 

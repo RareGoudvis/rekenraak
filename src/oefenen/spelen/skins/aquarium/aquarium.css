@@ -285,49 +285,92 @@
   92%, 100% { opacity: 0; scale: .55; }
 }
 
-/* ── The cat ── */
+/* ── The cat (art.tsx CatArt: owner 2026-11-18, a real cat silhouette with idle life) ── */
 .aq-cat-fur, .aq-cat-ear { fill: var(--aq-cat); stroke: var(--spel-ink); stroke-width: 2px; stroke-linejoin: round; }
 .aq-cat-white.is-far { fill: color-mix(in srgb, var(--kiosk-paper) 82%, var(--aq-cat)); }
 .aq-cat-ear.is-back { fill: color-mix(in srgb, var(--aq-cat) 85%, var(--spel-ink)); }
 .aq-cat-ear-in { fill: var(--aq-pink); }
 .aq-cat-white { fill: var(--kiosk-paper); stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linejoin: round; }
-.aq-cat-stripe { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 2px; stroke-linecap: round; }
-.aq-cat-tail-line { fill: none; stroke: var(--spel-ink); stroke-width: 9px; stroke-linecap: round; }
-.aq-cat-tail { fill: none; stroke: var(--aq-cat); stroke-width: 5px; stroke-linecap: round; }
-.aq-cat-tail-tip { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 5px; stroke-linecap: round; stroke-dasharray: 3 4; }
+.aq-cat-white-fill { fill: var(--kiosk-paper); }
+.aq-cat-stripe { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 2.2px; stroke-linecap: round; }
+.aq-cat-line { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linecap: round; }
+/* Limbs and tail: an ink stroke under the fur. */
+.aq-cat-limb-ink { fill: none; stroke: var(--spel-ink); stroke-width: 11px; stroke-linecap: round; }
+.aq-cat-limb { fill: none; stroke: var(--aq-cat); stroke-width: 7.4px; stroke-linecap: round; }
+.aq-cat-limb.is-far { stroke: color-mix(in srgb, var(--aq-cat) 80%, var(--spel-ink)); }
+.aq-cat-limb-ink.is-arm { stroke-width: 10px; }
+.aq-cat-limb.is-arm { stroke-width: 6.4px; }
+.aq-cat-sock { fill: none; stroke: var(--kiosk-paper); stroke-width: 7.4px; stroke-linecap: round; }
+.aq-cat-tail-ink { fill: none; stroke: var(--spel-ink); stroke-width: 10px; stroke-linecap: round; stroke-linejoin: round; }
+.aq-cat-tail { fill: none; stroke: var(--aq-cat); stroke-width: 6.4px; stroke-linecap: round; stroke-linejoin: round; }
+.aq-cat-tail-rings { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 6.4px; stroke-dasharray: 2.4 5; }
+.aq-cat-tail-end { fill: none; stroke: var(--aq-cat-stripe); stroke-width: 6.4px; stroke-linecap: round; }
 .aq-cat-eye { fill: var(--aq-cat-eye); stroke: var(--spel-ink); stroke-width: 1.3px; }
 .aq-cat-pupil { fill: var(--spel-ink); }
 .aq-cat-glint { fill: var(--kiosk-paper); }
 .aq-cat-lid { fill: none; stroke: var(--spel-ink); stroke-width: 1.6px; stroke-linecap: round; opacity: 0; }
 .aq-cat-lid.is-shut { opacity: 1; }
 .aq-cat-nose { fill: var(--aq-pink); stroke: var(--spel-ink); stroke-width: 1px; stroke-linejoin: round; }
-.aq-cat-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linecap: round; }
+.aq-cat-mouth { fill: none; stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linecap: round; stroke-linejoin: round; }
 .aq-cat-tongue { fill: var(--aq-pink); stroke: var(--spel-ink); stroke-width: .9px; opacity: 0; }
-.aq-whisker.is-cat { stroke-width: 1px; opacity: .7; }
-.aq-cat-arm-line { fill: none; stroke: var(--spel-ink); stroke-width: 10px; stroke-linecap: round; }
-.aq-cat-arm-fur { fill: none; stroke: var(--aq-cat); stroke-width: 6.4px; stroke-linecap: round; }
+.aq-whisker.is-cat { stroke-width: 1px; opacity: .75; }
+.aq-whisker.is-back { opacity: .5; }
 .aq-cat-toes { fill: none; stroke: var(--spel-ink); stroke-width: .9px; stroke-linecap: round; }
 .aq-cat-bang { fill: var(--accent-getallenkennis); stroke: var(--spel-ink); stroke-width: 1.2px; stroke-linejoin: round; opacity: 0; }
-
-/* Idle: the tail hangs over the edge and flicks, an ear twitches, the eyes blink. */
-.aq-cat-tail-wrap { transform-origin: 14px -4px; animation: aq-tail 6s ease-in-out infinite; }
-@keyframes aq-tail {
-  0%, 100% { rotate: 0deg; }
-  20% { rotate: 5deg; }
-  40% { rotate: -3deg; }
-  58% { rotate: 2deg; }
-  62% { rotate: 12deg; }
-  66% { rotate: -6deg; }
-  72% { rotate: 3deg; }
-}
-.aq-cat:is(.is-reach, .is-catch) .aq-cat-tail-wrap { animation-duration: 1.4s; }
-.aq-cat-ear:not(.is-back) { transform-box: fill-box; transform-origin: 70% 100%; animation: aq-ear 5.2s ease-in-out infinite; }
-@keyframes aq-ear { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: -14deg; } 92% { rotate: 6deg; } }
-.aq-cat-eyes { transform-box: fill-box; transform-origin: center; animation: aq-blink 4.4s infinite; }
-@keyframes aq-blink { 0%, 93%, 100% { scale: 1 1; } 96% { scale: 1 .1; } }
 .aq-cat-body { transform-origin: 0 0; }
 
-/* A right answer: a fish taps the glass at the cat's nose and the cat jumps back with a "!" (TAP_MS.tap = 1000 ms). */
+/* Idle life: the tail tip swishes (now and then the whole tail lifts and slaps down), an ear twitches, the eyes blink,
+   the cat breathes, and every so often it licks a front paw. Pivots in the cat's own units. */
+.aq-cat-tail-all { transform-origin: 17px -9px; }
+.aq-cat-tail-tip { transform-origin: -5px 3.5px; }
+.aq-cat.is-idle .aq-cat-tail-tip { animation: aq-swish 3.4s ease-in-out infinite; }
+@keyframes aq-swish {
+  0%, 100% { rotate: 0deg; }
+  18% { rotate: 22deg; }
+  30% { rotate: 14deg; }
+  42% { rotate: 26deg; }
+  60% { rotate: -6deg; }
+  72% { rotate: 4deg; }
+}
+.aq-cat.is-idle .aq-cat-tail-all { animation: aq-tail-lift 11s ease-in-out infinite; }
+@keyframes aq-tail-lift { 0%, 40%, 52%, 100% { rotate: 0deg; } 44% { rotate: 10deg; } 47% { rotate: 12deg; } 49% { rotate: -2deg; } }
+.aq-cat:is(.is-reach, .is-catch) .aq-cat-tail-tip { animation: aq-swish 900ms ease-in-out infinite; }
+.aq-cat-ear-wrap { transform-origin: -24px -72px; }
+.aq-cat-ear-wrap.is-back { transform-origin: -5px -70px; }
+.aq-cat.is-idle .aq-cat-ear-wrap:not(.is-back) { animation: aq-ear 5.2s ease-in-out infinite; }
+.aq-cat.is-idle .aq-cat-ear-wrap.is-back { animation: aq-ear-back 7.4s ease-in-out infinite; }
+@keyframes aq-ear { 0%, 84%, 100% { rotate: 0deg; } 87% { rotate: -16deg; } 90% { rotate: 6deg; } 93% { rotate: -8deg; } 96% { rotate: 0deg; } }
+@keyframes aq-ear-back { 0%, 60%, 100% { rotate: 0deg; } 63% { rotate: 14deg; } 67% { rotate: 0deg; } }
+.aq-cat-eyes { transform-box: fill-box; transform-origin: center; animation: aq-blink 4.4s infinite; }
+@keyframes aq-blink { 0%, 93%, 100% { scale: 1 1; } 96% { scale: 1 .1; } }
+.aq-cat-trunk { transform-box: fill-box; transform-origin: 50% 100%; }
+.aq-cat.is-idle .aq-cat-trunk { animation: aq-breathe-cat 3.2s ease-in-out infinite; }
+@keyframes aq-breathe-cat { 0%, 100% { scale: 1 1; } 50% { scale: 1.015 1.03; } }
+
+/* The paw lick (idle, every 16 s): the leg bends up to the mouth, the head dips, the eyes close, three licks, back down. */
+.aq-cat-leg-up { transform-origin: -17px -30px; }
+.aq-cat-leg-low { transform-origin: -17.5px -15px; }
+.aq-cat-head { transform-origin: -12px -46px; }
+.aq-cat.is-idle .aq-cat-leg-up { animation: aq-lick-up 16s ease-in-out infinite; }
+.aq-cat.is-idle .aq-cat-leg-low { animation: aq-lick-low 16s ease-in-out infinite; }
+.aq-cat.is-idle .aq-cat-head { animation: aq-lick-head 16s ease-in-out infinite; }
+.aq-cat.is-idle .aq-cat-eyes-lick { transform-box: fill-box; transform-origin: center; animation: aq-lick-eyes 16s ease-in-out infinite; }
+.aq-cat.is-idle .aq-cat-lid { animation: aq-lick-lid 16s ease-in-out infinite; }
+.aq-cat.is-idle .aq-cat-tongue { animation: aq-lick-tongue 16s ease-in-out infinite; }
+@keyframes aq-lick-up { 0%, 66%, 92%, 100% { rotate: 0deg; } 70%, 88% { rotate: 98deg; } }
+@keyframes aq-lick-low { 0%, 66%, 92%, 100% { rotate: 0deg; } 70%, 88% { rotate: 62deg; } 75%, 81% { rotate: 70deg; } 78%, 84% { rotate: 56deg; } }
+@keyframes aq-lick-head { 0%, 66%, 92%, 100% { rotate: 0deg; translate: 0 0; } 70%, 88% { rotate: -12deg; translate: -1px 2px; } 75%, 81% { rotate: -16deg; } }
+@keyframes aq-lick-eyes { 0%, 67%, 91%, 100% { scale: 1 1; } 69%, 89% { scale: 1 .08; } }
+@keyframes aq-lick-lid { 0%, 67%, 91%, 100% { opacity: 0; } 69%, 89% { opacity: 1; } }
+@keyframes aq-lick-tongue { 0%, 71%, 73.5%, 76%, 77.5%, 80%, 81.5%, 84%, 100% { opacity: 0; translate: 0 0; } 72.5%, 76.8%, 80.8% { opacity: 1; translate: -1px -1px; } }
+
+/* The pupils widen when it means business (a mistake, the catch) and narrow to slits when it is startled. */
+.aq-cat-pupil { transform-box: fill-box; transform-origin: center; }
+.aq-cat.is-reach .aq-cat-pupil { animation: aq-pupil-big 2000ms ease-out both; }
+@keyframes aq-pupil-big { 0% { scale: 1 1; } 12%, 70% { scale: 2 1.1; } 100% { scale: 1 1; } }
+
+/* A right answer: a fish taps the glass at the cat's nose and the cat jumps back with a "!", its tail puffed up
+   (TAP_MS.tap = 1000 ms). */
 .aq-cat.is-startle .aq-cat-body { animation: aq-startle 1300ms var(--ease-out) 1000ms both; }
 @keyframes aq-startle {
   0% { translate: 0 0; rotate: 0deg; }
@@ -339,26 +382,52 @@
 }
 .aq-cat.is-startle .aq-cat-eye { transform-box: fill-box; transform-origin: center; animation: aq-wide 1300ms ease-out 1000ms both; }
 @keyframes aq-wide { 0%, 100% { scale: 1; } 12%, 60% { scale: 1.3; } }
-.aq-cat.is-startle .aq-cat-ear:not(.is-back) { animation: aq-flat 1300ms ease-out 1000ms both; }
+.aq-cat.is-startle .aq-cat-pupil { animation: aq-slit 1300ms ease-out 1000ms both; }
+@keyframes aq-slit { 0%, 100% { scale: 1 1; } 12%, 60% { scale: .5 1.1; } }
+.aq-cat.is-startle .aq-cat-ear-wrap { animation: aq-flat 1300ms ease-out 1000ms both; }
 @keyframes aq-flat { 0%, 100% { rotate: 0deg; } 14%, 55% { rotate: -38deg; } }
+.aq-cat.is-startle .aq-cat-tail-ink { animation: aq-puff-ink 1300ms ease-out 1000ms both; }
+.aq-cat.is-startle :is(.aq-cat-tail, .aq-cat-tail-rings, .aq-cat-tail-end) { animation: aq-puff 1300ms ease-out 1000ms both; }
+@keyframes aq-puff-ink { 0%, 100% { stroke-width: 10px; } 14%, 60% { stroke-width: 15px; } }
+@keyframes aq-puff { 0%, 100% { stroke-width: 6.4px; } 14%, 60% { stroke-width: 11px; } }
+.aq-cat.is-startle .aq-cat-tail-all { animation: aq-tail-up 1300ms ease-out 1000ms both; }
+@keyframes aq-tail-up { 0%, 100% { rotate: 0deg; } 14%, 55% { rotate: 16deg; } }
 .aq-cat.is-startle .aq-cat-bang { transform-box: fill-box; transform-origin: 50% 100%; animation: aq-bang 1100ms var(--ease-spring) 1000ms both; }
 @keyframes aq-bang { 0% { opacity: 0; scale: 0; translate: 10px 0; } 18% { opacity: 1; scale: 1.2; translate: 14px -6px; } 30%, 70% { opacity: 1; scale: 1; translate: 14px -6px; } 100% { opacity: 0; scale: 1; translate: 14px -10px; } }
 
-/* A mistake: the cat stretches up and dips its paw into the water, then shakes it dry. */
-.aq-cat-arm { transform-origin: -12px -30px; }
-.aq-cat.is-reach .aq-cat-body { animation: aq-lean 1500ms ease-in-out both; }
-.aq-cat.is-reach .aq-cat-arm { animation: aq-reach 1500ms ease-in-out both; }
-@keyframes aq-lean { 0%, 100% { translate: 0 0; rotate: 0deg; } 16%, 60% { translate: -2px -6px; rotate: -4deg; } }
+/* A mistake: the cat stares, crouches and wiggles its bottom (the anticipation), swipes a paw into the water,
+   then shakes it dry and sits back (REACH_DONE_MS). */
+.aq-cat-arm { transform-origin: -16px -32px; }
+.aq-cat.is-reach .aq-cat-body { animation: aq-pounce 2000ms ease-in-out both; }
+@keyframes aq-pounce {
+  0% { translate: 0 0; rotate: 0deg; }
+  8% { translate: 1px 3px; rotate: 0deg; }
+  12% { translate: 1px 3px; rotate: 2.5deg; }
+  16% { translate: 1px 3px; rotate: -1deg; }
+  20% { translate: 1px 3px; rotate: 2.5deg; }
+  24% { translate: 1px 3px; rotate: -1deg; }
+  32% { translate: -2px -7px; rotate: -5deg; }
+  60% { translate: -2px -6px; rotate: -4deg; }
+  80%, 100% { translate: 0 0; rotate: 0deg; }
+}
+.aq-cat.is-reach .aq-cat-arm { animation: aq-reach 2000ms ease-in-out both; }
+.aq-cat.is-reach .aq-cat-leg { animation: aq-leg-reach 2000ms both; }
+@keyframes aq-leg-reach { 0%, 25% { opacity: 1; } 26%, 92% { opacity: 0; } 93%, 100% { opacity: 1; } }
+.aq-cat.is-catch .aq-cat-leg { animation: aq-leg-catch 5200ms both; }
+@keyframes aq-leg-catch { 0%, 24.5% { opacity: 0; } 25%, 100% { opacity: 1; } }
 @keyframes aq-reach {
-  0% { rotate: -150deg; scale: .45; }
-  18% { rotate: 2deg; scale: 1; }
-  28% { rotate: -4deg; }
-  38% { rotate: 2deg; }
-  52% { rotate: 0deg; scale: 1; }
-  74% { rotate: -90deg; scale: .6; }
-  80% { rotate: -84deg; }
-  86% { rotate: -96deg; }
-  100% { rotate: -150deg; scale: .45; }
+  0%, 25% { rotate: -150deg; scale: .45; opacity: 0; }
+  26% { opacity: 1; }
+  38% { rotate: 2deg; scale: 1; }
+  45% { rotate: -4deg; }
+  52% { rotate: 2deg; scale: 1; }
+  62% { rotate: -70deg; scale: .7; }
+  66% { rotate: -60deg; }
+  70% { rotate: -76deg; }
+  74% { rotate: -62deg; }
+  78% { rotate: -72deg; scale: .7; }
+  92% { rotate: -150deg; scale: .45; opacity: 1; }
+  93%, 100% { rotate: -150deg; scale: .45; opacity: 0; }
 }
 
 /* Two in a row: the paw scoops a fish, the cat carries it off the cabinet, a happy "Nom nom!" off-stage, and back it
@@ -384,6 +453,7 @@
   24% { rotate: -70deg; scale: .7; opacity: 1; }
   25%, 100% { rotate: -150deg; scale: .45; opacity: 0; }
 }
+/* Back from the catch on its own four paws: the near leg shows again once the arm is gone. */
 .aq-cat-paw-fish, .aq-cat-mouth-fish { opacity: 0; }
 .aq-cat.is-catch .aq-cat-paw-fish { animation: aq-in-paw 5200ms both; }
 .aq-cat.is-catch .aq-cat-mouth-fish { animation: aq-in-mouth 5200ms both; }
@@ -420,7 +490,7 @@
 }
 .aq-scoop-splash { animation-delay: 650ms; }
 .aq-scoop-splash .spel-particle { animation-delay: 650ms !important; }
-.aq-dip-splash .spel-particle { animation-delay: 280ms !important; }
+.aq-dip-splash .spel-particle { animation-delay: 780ms !important; }
 
 /* The end screen: the cat gave up and naps on the cabinet. */
 .aq-nap-breathe { transform-box: fill-box; transform-origin: 50% 100%; animation: aq-breathe 3.4s ease-in-out infinite; }

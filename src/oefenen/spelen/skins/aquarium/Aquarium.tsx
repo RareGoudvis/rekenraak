@@ -5,7 +5,7 @@ import { Burst } from '../../scene';
 import type { SkinEndingProps, SkinProps } from '../types';
 import {
     BASE_FRONT_BUSH, CATCHABLE, FISH_SCALE, CATCH_MS, CLASS_OF, ENTER_MS, GLASS, NOSE_AT, PAW_AT, SAND_Y, SCHOOL, SPOT_OF, TANK_GOAL, TAP_MS, VIEW_H, VIEW_W, WATER_TOP,
-    crawlAt, entryX, facing, hideBlend, hideSpots, isJackpot, orderFor, pathFor, shownOf, startTank, stepTank, swimAt, tapBlend,
+    catGaze, crawlAt, entryX, facing, nearestTo, hideBlend, hideSpots, isJackpot, orderFor, pathFor, shownOf, startTank, stepTank, swimAt, tapBlend,
     type ItemKind, type SwimPath, type TankState,
 } from './tank';
 import { Bubbles, CatArt, FrontBush, NappingCat, Room, StandArt, SwimmerArt, TankBack, TankFront, type CatAct } from './art';
@@ -22,9 +22,14 @@ import './aquarium.css';
 let lastTank: { order: ItemKind[]; shown: number[] } | null = null;
 
 const JACKPOT_TITLE = 'Een zeldzame witte goudvis!';
-// When the cat's CSS acts end (aquarium.css: the startle starts at the tap, 1000 ms, and lasts 1300 ms; the reach 1500 ms).
+// When the cat's CSS acts end (aquarium.css: the startle starts at the tap, 1000 ms, and lasts 1300 ms; the reach,
+// with its crouch and bottom wiggle first, 2000 ms).
 const STARTLE_DONE_MS = 2400;
-const REACH_DONE_MS = 1600;
+const REACH_DONE_MS = 2100;
+// The paw goes into the water this long into the reach (aquarium.css aq-reach 38 %; SYNC .aq-dip-splash).
+const DIP_MS = 760;
+// How fast the cat's eyes and head catch up with a new fish (ms): never a jump when the nearest one changes.
+const GAZE_MS = 160;
 
 // Dev builds: ?aquarium=<seed> a fixed round (screenshots, tests: no white goldfish), ?goudvis=wit forces the white goldfish.
 function devRound(): { seed?: number; jackpot?: boolean } {
@@ -83,6 +88,7 @@ export function AquaScene({ order, shown, added = [], seed, act = null, cat = { 
     const clock = useRef(0);
     const born = useRef(new Map<number, number>());
     const actAt = useRef<{ n: number; at: number }>({ n: -1, at: 0 });
+    const gaze = useRef(catGaze(null));
     const live = useRef({ swimmers, act, paused, hiding, lifted });
     useLayoutEffect(() => { live.current = { swimmers, act, paused, hiding, lifted }; });
 
@@ -106,9 +112,8 @@ export function AquaScene({ order, shown, added = [], seed, act = null, cat = { 
             const ms = clock.current;
             if (L.act && L.act.n !== actAt.current.n) actAt.current = { n: L.act.n, at: ms };
             const since = L.act ? ms - actAt.current.at : Infinity;
-            const seen: { watch: Pt | null; first: Pt | null } = { watch: null, first: null };
-            const turn = Math.floor(ms / 4200);
-            L.swimmers.forEach((s, i) => {
+            const seen: { watch: Pt | null; fish: Pt[] } = { watch: null, fish: [] };
+            L.swimmers.forEach(s => {
                 const el = els.current.get(s.key);
                 if (!el) return;
                 const crawler = CLASS_OF[s.kind] === 'crawler';
@@ -147,22 +152,16 @@ export function AquaScene({ order, shown, added = [], seed, act = null, cat = { 
                 const sx = s.kind === 'krab' ? 1 : s.kind === 'zeepaardje' ? (face < 0 ? -1 : 1) : Math.abs(face) < 0.12 ? 0.12 * (face < 0 ? -1 : 1) : face;
                 const tilt = crawler || s.kind === 'zeepaardje' ? 0 : Math.max(-22, Math.min(22, (Math.atan2(p.vy, Math.abs(p.vx) + 3) * 180) / Math.PI)) * (sx < 0 ? -1 : 1);
                 el.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${tilt.toFixed(1)}) scale(${sx.toFixed(3)} 1)`);
-                if (CATCHABLE.has(s.kind) || s.kind === 'witteGoudvis') {
-                    const pick = turn % Math.max(1, L.swimmers.length);
-                    if (i === pick || !seen.first) seen.first = { x, y };
-                }
+                if (CATCHABLE.has(s.kind) || s.kind === 'witteGoudvis' || s.kind === 'neons') seen.fish.push({ x, y });
             });
-            // The cat watches the fish of the moment, else one it picks every few seconds.
-            const look = seen.watch ?? seen.first;
-            if (pupils.current) {
-                const dx = look ? Math.max(-2.4, Math.min(1.2, (look.x - 304) / 30)) : -1;
-                const dy = look ? Math.max(-1.8, Math.min(1.8, (look.y - 146) / 24)) : 0;
-                pupils.current.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`);
-            }
-            if (head.current) {
-                const deg = look ? Math.max(-8, Math.min(10, (look.y - 146) / 5)) : 0;
-                head.current.setAttribute('transform', `rotate(${deg.toFixed(1)} -12 -44)`);
-            }
+            // The cat watches the fish of the moment, else the nearest one; its eyes glide over (GAZE_MS).
+            const want = catGaze(seen.watch ?? nearestTo(seen.fish));
+            const k = 1 - Math.exp(-dt / GAZE_MS);
+            const g = gaze.current;
+            gaze.current = { dx: lerp(g.dx, want.dx, k), dy: lerp(g.dy, want.dy, k), deg: lerp(g.deg, want.deg, k) };
+            const at = gaze.current;
+            pupils.current?.setAttribute('transform', `translate(${at.dx.toFixed(2)} ${at.dy.toFixed(2)})`);
+            head.current?.setAttribute('transform', `rotate(${at.deg.toFixed(1)} -12 -44)`);
         };
         raf = requestAnimationFrame(frame);
         return () => cancelAnimationFrame(raf);
@@ -314,7 +313,7 @@ export default function Aquarium({ question, phase, feedback, onAnswer, progress
         }
         if (tank.mistakes > was.mistakes) {
             setAct({ n, type: 'hide', pos: hideFish(round.order, tank) });
-            if (catFree) { setCat({ n, act: 'reach', fish: null }); voice(420, 'swish'); settle(n, REACH_DONE_MS); }
+            if (catFree) { setCat({ n, act: 'reach', fish: null }); voice(DIP_MS - 120, 'swish'); settle(n, REACH_DONE_MS); }
             voice(520, 'blub');
         }
         // `act` is read for its counter only; the moments follow the tank.

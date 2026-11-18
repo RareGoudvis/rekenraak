@@ -196,6 +196,33 @@ export function tapBlend(ms: number): number {
 // A new swimmer comes in from the splash at the surface and joins its path (ms).
 export const ENTER_MS = 1300;
 
+// ── The cat's gaze ──
+// Between the cat's eyes in the room's units (art.tsx CatArt at its seat, scale 1.25). It watches the fish of the
+// moment (a tap, a hide, the catch), else the fish nearest to it; its pupils and head follow (owner 2026-11-18).
+export const CAT_EYE = { x: 304, y: 145 } as const;
+
+/** The point nearest to `at` (the cat's eyes), or null when there is none. */
+export function nearestTo<T extends { x: number; y: number }>(points: readonly T[], at: { x: number; y: number } = CAT_EYE): T | null {
+    let best: T | null = null;
+    let d = Infinity;
+    for (const p of points) {
+        const e = Math.hypot(p.x - at.x, p.y - at.y);
+        if (e < d) { d = e; best = p; }
+    }
+    return best;
+}
+
+/** Where the cat looks for a point: its pupils' offset (the cat's units) and its head's turn (deg); null = straight ahead. */
+export function catGaze(look: { x: number; y: number } | null): { dx: number; dy: number; deg: number } {
+    if (!look) return { dx: -1, dy: 0, deg: 0 };
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    return {
+        dx: clamp((look.x - CAT_EYE.x) / 30, -2.4, 1.2),
+        dy: clamp((look.y - CAT_EYE.y) / 24, -1.8, 1.8),
+        deg: clamp((look.y - CAT_EYE.y) / 5, -8, 10),
+    };
+}
+
 // ── The tank's state through a round ──
 export interface Caught {
     // The order position whose fish the cat took.
