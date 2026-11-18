@@ -23,8 +23,8 @@ import './slalom.css';
 const KEYS = ['1', '2', '3'];
 // The skier's carve from lane to lane (ms); SYNC: slalom.css .sl-skier transition.
 const CARVE_MS = 320;
-// The turn's lean, edge and spray, both ways (ms); SYNC: slalom.css .sl-skier-turn.
-const TURN_MS = 560;
+// The turn's lean, edge, pole plant and spray, both ways (ms); SYNC: slalom.css .sl-skier-turn.
+const TURN_MS = 680;
 // A piece of gear in the air (ms); SYNC: slalom.css .sl-fly.is-helmet.
 const FLY_MS = 900;
 // From this speed step on he tucks, poles under his arms.
@@ -495,11 +495,14 @@ export default function Slalom({ question, choices, views, phase, feedback, onAn
             )}
             <Snow density={36} full size={[4, 10]} fall={[7, 12]} paused={phase === 'help'} />
 
-            <div className="sl-top">
-                <p className={`sl-sign kiosk-math${flashing ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
-                    <SpelSign question={question} feedback={feedback} flash={flashing} choices={options} views={views} answerClassName="sl-sign-answer" />
-                </p>
-            </div>
+            {/* In the snowbank the run is over: no next sum above him. */}
+            {bank === 'off' && (
+                <div className="sl-top">
+                    <p className={`sl-sign kiosk-math${flashing ? ' is-solved' : ''}${signClass(question)}`} aria-live="polite">
+                        <SpelSign question={question} feedback={feedback} flash={flashing} choices={options} views={views} answerClassName="sl-sign-answer" />
+                    </p>
+                </div>
+            )}
             <div className="sl-hud">
                 <p className="sl-metres" aria-label="Afstand"><PersonSimpleSki weight="bold" aria-hidden /> <span ref={metresEl}>0 m</span></p>
                 <span className="sl-speed" role="img" aria-label={`Snelheid ${step} van ${STEPS}`}>

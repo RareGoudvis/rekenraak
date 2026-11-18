@@ -4,29 +4,33 @@ import type { SkierPose } from './run';
 // The Skislalom drawings: code-drawn SVG, flat fills under the thick --spel-ink outline (slalom.css colours them).
 // Everything stands with its feet at (0, 0) and moves by CSS; Slalom.tsx only says where and how big.
 
-// ── The skier: a racer seen from behind, a little from his right (3/4) ─────────────────────────────────────
-// Feet at (0, 0), viewBox -70 -170 140 182. His gear can go (Moeilijk / Onmogelijk, run.ts Gear): the helmet, the poles,
-// then one ski, then the other. Every animated part is a <g> without a transform attribute (CSS moves it round its
-// own pivot in slalom.css): the skis yaw into a carve, the arms flail on a wobble, a lifted leg on one ski.
+// ── The skier: a slalom racer seen from behind, a little from his right (3/4) ─────────────────────────────
+// Feet at (0, 0), viewBox -70 -170 140 182. Built as a jointed figure so CSS can pose him (slalom.css): each leg
+// pivots on its boot, the hips ride on top of the legs, the upper body counter-rotates on the hips (angulation), the
+// arms swing on the shoulders and the poles on the gloves. Every posed part is a <g> without a transform attribute.
+// His gear can go (Moeilijk / Onmogelijk, run.ts Gear): the helmet, the poles, then one ski, then the other.
 
 export interface GearView { helmet: boolean; poles: boolean; skis: 0 | 1 | 2 }
 const FULL_GEAR: GearView = { helmet: true, poles: true, skis: 2 };
 
-function Ski({ side, part }: { side: 'l' | 'r'; part: 'tip' | 'tail' }) {
-    // Seen from behind and above: the tip runs away down the slope behind his legs, curling up; the tail sticks out
-    // behind the boot towards us (drawn in front of the boot).
+// x of a point on his right side, mirrored for the left (s = -1).
+const m = (s: number, d: string) => d.replace(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g, (_, x: string, y: string) => `${+x * s} ${y}`);
+
+function SkiTip({ side }: { side: 'l' | 'r' }) {
+    // Away from us down the slope, narrowing to the vanishing point, the tip curling up.
     const s = side === 'l' ? -1 : 1;
-    if (part === 'tip') {
-        return (
-            <g className={`sl-ski-one is-${side}`}>
-                <path className="sl-ski" d={`M${s * 29} -2 L${s * 15} -44 Q${s * 14} -54 ${s * 18} -56 Q${s * 23} -54 ${s * 22} -44 L${s * 29} -14 Z`} />
-            </g>
-        );
-    }
+    return <path className={`sl-ski is-${side}`} d={m(s, 'M7.6 -3 L19.4 -3 L8.6 -52 Q7.8 -60 4.6 -61.5 Q1.6 -60 2.6 -52 Z')} />;
+}
+
+function SkiTail({ side }: { side: 'l' | 'r' }) {
+    // The tail sticking out behind the boot towards us; on an edge the base shows on the side it tips to (slalom.css).
+    const s = side === 'l' ? -1 : 1;
     return (
-        <g className={`sl-ski-one is-${side}`}>
-            <path className="sl-ski" d={`M${s * 30} -3 L${s * 11} -3 L${s * 12} 21 Q${s * 12} 27 ${s * 17.5} 27 L${s * 25} 27 Q${s * 31} 27 ${s * 31} 21 Z`} />
-            <path className="sl-ski-stripe" d={`M${s * 21} 2 L${s * 21} 22`} />
+        <g className={`sl-ski-tail is-${side}`}>
+            <path className="sl-ski-base is-e" d={m(s, 'M20 -4 L23.4 -2 L24.4 18 Q24.4 25.4 18 25.4 L15.5 24 Q21 24 21 18 Z')} />
+            <path className="sl-ski-base is-w" d={m(s, 'M7 -4 L3.6 -2 L2.6 18 Q2.6 25.4 9 25.4 L11.5 24 Q7 24 7 18 Z')} />
+            <path className="sl-ski" d={m(s, 'M7 -4 L20 -4 L21 18 Q21 24 15.5 24 L12.5 24 Q7 24 7 18 Z')} />
+            <path className="sl-ski-stripe" d={m(s, 'M14 0 L14 20')} />
         </g>
     );
 }
@@ -35,31 +39,46 @@ function Leg({ side }: { side: 'l' | 'r' }) {
     const s = side === 'l' ? -1 : 1;
     return (
         <g className={`sl-leg is-${side}`}>
-            {/* Thigh and shin in one, knee pushed in (the racer's stance), then the chunky boot with its buckles. */}
-            <path className="sl-pants" d={`M${s * 25} -64 Q${s * 30} -44 ${s * 26} -18 L${s * 12} -18 Q${s * 14} -36 ${s * 3} -60 Z`} />
-            <path className="sl-knee" d={`M${s * 24} -40 Q${s * 19} -37 ${s * 15} -40`} />
-            <path className="sl-boot" d={`M${s * 28} -20 L${s * 11} -20 L${s * 11} -4 Q${s * 11} 0 ${s * 15} 0 L${s * 25} 0 Q${s * 29} 0 ${s * 29} -4 Z`} />
-            <path className="sl-buckle" d={`M${s * 27} -14 L${s * 13} -14 M${s * 27} -8 L${s * 13} -8`} />
+            {/* Seen from behind with the knees bent: calf, the crease behind the knee, the thigh up into the seat. */}
+            <path className="sl-pants" d={m(s, 'M25 -60 Q30.5 -46 24.4 -38 Q27.4 -28 23 -18 L6 -18 Q5 -29 8.2 -38 Q3 -50 2 -60 Z')} />
+            <path className="sl-knee" d={m(s, 'M22 -38.6 Q15.6 -35.4 10 -38.6')} />
+            <path className="sl-boot" d={m(s, 'M23 -21 L5 -21 L5 -4 Q5 0 9 0 L19 0 Q23 0 23 -4 Z')} />
+            <path className="sl-boot-top" d={m(s, 'M23 -21 L5 -21 L5.4 -16.4 L22.6 -16.4 Z')} />
+            <path className="sl-buckle" d={m(s, 'M21 -11 L7 -11 M21 -6 L7 -6')} />
+        </g>
+    );
+}
+
+// On one ski the bare left foot is lifted behind him (bent at the knee, the boot's sole towards us) for balance.
+function LegUp() {
+    return (
+        <g className="sl-leg is-l is-up">
+            {/* The thigh hangs down to the knee; the shin comes back towards us, so the boot's sole hides the knee. */}
+            <path className="sl-pants" d="M-25 -60 Q-29 -50 -24 -40 L-6 -40 Q-3 -50 -2 -60 Z" />
+            <path className="sl-boot" d="M-25 -46 Q-26 -50 -22 -50.6 L-8 -51 Q-4 -51 -4 -47 L-5 -29 Q-5 -25 -9 -25 L-21 -25 Q-25 -25 -25 -29 Z" />
+            <path className="sl-sole" d="M-22 -45 L-7 -45.4 M-22 -39 L-7 -39.4 M-22 -33 L-7 -33.4" />
+            <path className="sl-boot-top" d="M-25.4 -29 L-4.8 -29 L-5 -25 Q-5 -23 -9 -23 L-21 -23 Q-25 -23 -25 -25 Z" />
         </g>
     );
 }
 
 function Arm({ side, poles }: { side: 'l' | 'r'; poles: boolean }) {
-    // Shoulder → elbow → glove; the pole hangs from the glove to its basket in the snow.
-    const d = side === 'l' ? 'M-24 -108 Q-42 -98 -36 -80' : 'M27 -108 Q46 -98 39 -80';
-    const [gx, gy] = side === 'l' ? [-36, -80] : [39, -80];
+    // Shoulder → elbow → glove, held forward at his side; the pole runs from the glove back to its basket in the snow.
+    const s = side === 'l' ? -1 : 1;
+    const d = m(s, 'M23 -101 Q39.4 -97 37 -81');
     return (
         <g className={`sl-arm-g is-${side}`}>
             {poles && (
                 <g className={`sl-pole-g is-${side}`}>
-                    <path className="sl-pole" d={side === 'l' ? 'M-36 -80 L-50 -4' : 'M39 -80 L53 -4'} />
-                    <ellipse className="sl-basket" cx={side === 'l' ? -48.6 : 51.6} cy="-11" rx="6" ry="2.4" />
+                    <path className="sl-pole" d={m(s, 'M37 -80 L49 -4')} />
+                    <path className="sl-pole-grip" d={m(s, 'M37 -80 L38.4 -71')} />
+                    <ellipse className="sl-basket" cx={s * 47.9} cy="-11" rx="6" ry="2.4" />
                 </g>
             )}
             <path className="sl-arm-ink" d={d} />
             <path className="sl-arm" d={d} />
-            <path className="sl-cuff" d={side === 'l' ? 'M-41 -86 L-32 -86' : 'M34 -86 L44 -86'} />
-            <circle className="sl-glove" cx={gx} cy={gy} r="6.5" />
+            <path className="sl-cuff" d={m(s, 'M32 -86 L42 -86')} />
+            <circle className="sl-glove" cx={s * 37} cy="-80" r="6.5" />
         </g>
     );
 }
@@ -68,72 +87,98 @@ function Head({ helmet }: { helmet: boolean }) {
     return (
         <g className="sl-head">
             {/* A glimpse of his cheek and ear on the right (we see him a little from the side). */}
-            <path className="sl-skin" d="M10 -126 Q21 -128 20 -119 Q17 -114 10 -116 Z" />
+            <path className="sl-skin" d="M11 -118 Q21 -120 20 -111 Q17 -106 11 -108 Z" />
             {helmet ? (
                 <g className="sl-helmet-g">
-                    <path className="sl-helmet" d="M-19 -134 Q-19 -158 1 -158 Q22 -158 22 -134 Q22 -126 16 -123 L-14 -123 Q-19 -127 -19 -134 Z" />
-                    <path className="sl-helmet-stripe" d="M-4 -157.4 Q1 -158.4 6 -157.4 L7 -124 L-3 -124 Z" />
-                    <path className="sl-vent" d="M-12 -150 l4 -3 M12 -152 l5 2" />
-                    <path className="sl-glint" d="M-12 -144 Q-10 -152 -2 -154" />
+                    <path className="sl-helmet" d="M-17 -124 Q-18 -146 1 -146 Q21 -146 21 -124 Q21 -116 16 -113 L-12 -113 Q-17 -116 -17 -124 Z" />
+                    <path className="sl-helmet-stripe" d="M-4 -145.4 Q1 -146.4 6 -145.4 L7 -114 L-3 -114 Z" />
+                    <path className="sl-vent" d="M-11 -139 l4 -3 M12 -141 l5 2" />
+                    <path className="sl-glint" d="M-11 -132 Q-9 -140 -2 -142" />
                 </g>
             ) : (
                 <g className="sl-hair-g">
                     {/* No helmet any more: a messy mop of hair, the goggles still on. */}
-                    <circle className="sl-skin" cx="1" cy="-136" r="17" />
-                    <path className="sl-hair" d="M-18 -130 Q-21 -152 -6 -154 Q0 -164 9 -154 Q24 -152 20 -130 Q12 -134 1 -132 Q-10 -134 -18 -130 Z" />
-                    <path className="sl-hair" d="M-6 -154 L-4 -163 L1 -155 M5 -155 L10 -162 L11 -153" />
+                    <circle className="sl-skin" cx="1" cy="-126" r="16" />
+                    <path className="sl-hair" d="M-18 -120 Q-21 -142 -6 -144 Q0 -154 9 -144 Q24 -142 20 -120 Q12 -124 1 -122 Q-10 -124 -18 -120 Z" />
+                    <path className="sl-hair" d="M-6 -144 L-4 -153 L1 -145 M5 -145 L10 -152 L11 -143" />
                 </g>
             )}
             {/* The goggles: the strap round the back, the right lens just showing at the side. */}
-            <path className="sl-strap" d="M-19 -133 Q1 -125 22 -133" />
-            <path className="sl-lens" d="M17 -141 Q26 -140 25.4 -131 Q24 -126 18 -128 Z" />
-            <path className="sl-lens-glint" d="M20 -138 L22.6 -135" />
+            <path className="sl-strap" d="M-17 -123 Q1 -115 21 -123" />
+            <path className="sl-lens" d="M17 -131 Q26 -130 25.4 -121 Q24 -116 18 -118 Z" />
+            <path className="sl-lens-glint" d="M20 -128 L22.6 -125" />
         </g>
     );
 }
 
-/** The racer on his skis: the tuck deepens with --sl-crouch (slalom.css), the whole of him leans in a carve. */
+// The snow fan off his edges on the outside of a turn, drawn spraying to his right (a left turn); mirrored for a right turn.
+// Rays of snow off the edge [angle (deg, up is negative), length, end radius], then loose clumps.
+const FAN_RAYS = [[-6, 50, 7], [-22, 64, 9.5], [-40, 60, 8.5], [-58, 46, 6.5]] as const;
+function CarveFan() {
+    const [bx, by] = [14, 6];
+    return (
+        <>
+            {FAN_RAYS.map(([a, len, r], i) => {
+                const c = Math.cos((a * Math.PI) / 180), sn = Math.sin((a * Math.PI) / 180);
+                const ex = bx + c * len, ey = by + sn * len;
+                const p = (k: number) => `${(ex - sn * r * k).toFixed(1)} ${(ey + c * r * k).toFixed(1)}`;
+                return <path key={i} className="sl-fan-snow" d={`M${bx} ${by} L${p(1)} A${r} ${r} 0 1 0 ${p(-1)} Z`} />;
+            })}
+            {[[70, -30, 5], [86, -10, 4.5], [58, -54, 4], [84, -44, 3.5], [96, -24, 3], [64, 8, 4]].map(([x, y, r], i) => (
+                <circle key={i} className="sl-spray-puff" cx={x} cy={y} r={r} />
+            ))}
+        </>
+    );
+}
+
+/** The racer on his skis: carves both ways, tucks when fast, balances on one ski (all posed in slalom.css). */
 export function Skier({ pose, gear = FULL_GEAR, tuck = false }: { pose: SkierPose; gear?: GearView; tuck?: boolean }) {
     if (pose === 'sit') return <SkierSitting gear={gear} />;
     if (pose === 'bank') return <SkierInBank />;
     const oneSki = gear.skis === 1;
     return (
         <svg className={`sl-skier-art is-${pose}${oneSki ? ' is-one-ski' : ''}${gear.poles ? '' : ' is-no-poles'}${tuck ? ' is-tuck' : ''}`} viewBox="-70 -170 140 182" aria-hidden>
-            <ellipse className="sl-shadow" cx="0" cy="10" rx="44" ry="10" />
-            <g className="sl-skis">
-                {/* On one ski he keeps the right one; the left leg is up. */}
-                {gear.skis === 2 && <Ski side="l" part="tip" />}
-                {gear.skis >= 1 && <Ski side="r" part="tip" />}
-            </g>
-            {/* The carve's spray: a fan of snow off the edges, on the outside of the turn (slalom.css shows it). */}
-            <g className="sl-carve-spray">
-                {[[-8, -4, 9], [4, -12, 7], [16, -6, 8], [26, -16, 6], [34, -4, 6], [10, 4, 7]].map(([x, y, r], i) => <circle key={i} className="sl-spray-puff" cx={44 + x} cy={y} r={r} />)}
+            <ellipse className="sl-shadow" cx="0" cy="10" rx="40" ry="9" />
+            <g className="sl-carve-spray is-l"><CarveFan /></g>
+            <g transform="scale(-1 1)"><g className="sl-carve-spray is-r"><CarveFan /></g></g>
+            <g className="sl-skis is-tips">
+                {/* On one ski he keeps the right one. */}
+                {gear.skis === 2 && <SkiTip side="l" />}
+                {gear.skis >= 1 && <SkiTip side="r" />}
             </g>
             <g className="sl-legs">
-                <Leg side="l" />
+                {/* On one ski the lifted foot is nearer to us than the standing leg: drawn after it. */}
+                {!oneSki && <Leg side="l" />}
                 <Leg side="r" />
-                <path className="sl-seat" d="M-26 -66 Q1 -72 27 -66 L25 -56 Q1 -51 -24 -56 Z" />
+                {oneSki && <LegUp />}
             </g>
-            <g className="sl-skis">
-                {gear.skis === 2 && <Ski side="l" part="tail" />}
-                {gear.skis >= 1 && <Ski side="r" part="tail" />}
+            <g className="sl-skis is-tails">
+                {gear.skis === 2 && <SkiTail side="l" />}
+                {gear.skis >= 1 && <SkiTail side="r" />}
             </g>
-            <g className="sl-upper">
-                <path className="sl-jacket" d="M-28 -64 Q-34 -96 -22 -116 Q1 -126 25 -116 Q37 -98 30 -64 Q1 -56 -28 -64 Z" />
-                <path className="sl-jacket-side" d="M22 -114 Q35 -98 30 -66 Q26 -64 22 -65 Q27 -92 18 -112 Z" />
-                <path className="sl-jacket-band" d="M-26 -107 Q1 -115 28 -107 L29 -99 Q1 -107 -28 -99 Z" />
-                {/* A race bib with a star (never a number: the thumbnails never show one). */}
-                <path className="sl-bib" d="M-15 -98 L16 -98 L18 -70 L-17 -70 Z" />
-                <path className="sl-bib-tie" d="M-15 -98 L-20 -104 M16 -98 L21 -104" />
-                <path className="sl-bib-star" d="M0 -92 L3 -85 L10 -84 L5 -79 L6 -72 L0 -76 L-6 -72 L-5 -79 L-10 -84 L-3 -85 Z" />
-                <Arm side="l" poles={gear.poles} />
-                <Arm side="r" poles={gear.poles} />
-                <path className="sl-collar" d="M-11 -121 Q1 -126 12 -121 L11 -114 Q1 -111 -10 -114 Z" />
-                <Head helmet={gear.helmet} />
+            <g className="sl-hips">
+                <g className="sl-bob">
+                    <path className="sl-seat" d="M-27 -67 Q-31.6 -55 -22 -50 Q1 -46 24 -50 Q32.6 -55 28 -67 Q1 -71 -27 -67 Z" />
+                    <path className="sl-seam" d="M1 -67 L1 -50" />
+                    <g className="sl-upper">
+                        <Arm side="l" poles={gear.poles} />
+                        <Arm side="r" poles={gear.poles} />
+                        <path className="sl-jacket" d="M-21 -64 Q-29 -80 -30 -95 Q-29 -106 -15 -108 Q1 -111 17 -108 Q30 -106 31 -95 Q30 -80 22 -64 Q1 -60 -21 -64 Z" />
+                        <path className="sl-jacket-side" d="M21 -107 Q30 -103 31 -95 Q30 -80 22 -64 Q19.5 -63 17 -63.5 Q24 -84 18 -105 Z" />
+                        <path className="sl-jacket-band" d="M-29 -99 Q1 -106 30 -99 L30.6 -92 Q1 -99 -29.6 -92 Z" />
+                        {/* A race bib with a star (never a number: the thumbnails never show one). */}
+                        <path className="sl-bib" d="M-14 -91 L15 -91 L16 -68 L-15 -68 Z" />
+                        <path className="sl-bib-tie" d="M-14 -91 L-19 -96 M15 -91 L20 -96" />
+                        <path className="sl-bib-star" d="M0.5 -87 L2.8 -82 L8 -81.4 L4 -77.8 L5.2 -72.6 L0.5 -75.4 L-4.2 -72.6 L-3 -77.8 L-7 -81.4 L-1.8 -82 Z" />
+                        <path className="sl-collar" d="M-11 -112 Q1 -116 13 -112 L12 -105 Q1 -102 -10 -105 Z" />
+                        <Head helmet={gear.helmet} />
+                    </g>
+                </g>
             </g>
         </svg>
     );
 }
+
 
 // After a tumble: sitting in the snow, a heap of snow on the head, dizzy stars going round.
 function SkierSitting({ gear }: { gear: GearView }) {
@@ -149,9 +194,9 @@ function SkierSitting({ gear }: { gear: GearView }) {
             <path className="sl-arm" d="M-22 -78 Q-44 -70 -52 -54 M22 -78 Q44 -70 52 -54" />
             <circle className="sl-glove" cx="-52" cy="-54" r="6" />
             <circle className="sl-glove" cx="52" cy="-54" r="6" />
-            <g transform="translate(0 32)">
+            <g transform="translate(0 22)">
                 <Head helmet={gear.helmet} />
-                <path className="sl-snowcap" d="M-16 -154 Q-14 -168 -2 -166 Q4 -176 12 -166 Q22 -164 18 -152 Q0 -148 -16 -154 Z" />
+                <path className="sl-snowcap" d="M-16 -146 Q-14 -160 -2 -158 Q4 -168 12 -158 Q22 -156 18 -144 Q0 -140 -16 -146 Z" />
             </g>
             <g transform="translate(0 -140)">
                 <g className="sl-dizzy">
