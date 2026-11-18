@@ -1,0 +1,30 @@
+/* The obstacle course's shared HUD (CourseBar.tsx): the race's map at the top of the band, between the score
+   corners. Team colours from the duel screen (--duel-left / --duel-right). */
+.crs-bar {
+  position: absolute; z-index: 3; top: calc(var(--sp-2) + 4px); left: 50%; translate: -50% 0;
+  width: clamp(130px, 30%, 420px);
+  display: flex; align-items: center; gap: 4px;
+  pointer-events: none;
+}
+.crs-track {
+  position: relative; flex: 1; height: clamp(14px, 2.2vmin, 22px);
+  border: 3px solid var(--spel-ink); border-radius: 999px;
+  background: color-mix(in srgb, var(--kiosk-paper) 82%, transparent);
+  background-image: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), color-mix(in srgb, var(--spel-ink) 22%, transparent) calc(10% - 2px) 10%);
+}
+.crs-marker {
+  position: absolute; top: 50%; left: calc(var(--crs-at) * (100% - 6px) + 3px);
+  width: clamp(16px, 2.8vmin, 26px); aspect-ratio: 1;
+  border: 3px solid var(--spel-ink); border-radius: 50%;
+  translate: -50% -50%;
+  transition: left 700ms var(--ease-spring, cubic-bezier(.34, 1.4, .5, 1));
+}
+.crs-marker.is-left { background: var(--duel-left); z-index: 1; margin-top: -3px; }
+.crs-marker.is-right { background: var(--duel-right); margin-top: 3px; }
+.crs-flag { width: clamp(18px, 3vmin, 28px); height: auto; overflow: visible; }
+.crs-flag-pole { stroke: var(--spel-ink); stroke-width: 3px; stroke-linecap: round; }
+.crs-check.is-0 { fill: var(--kiosk-paper); }
+.crs-check.is-1 { fill: var(--spel-ink); }
+.crs-flag-edge { fill: none; stroke: var(--spel-ink); stroke-width: 2px; }
+.crs-flag-cloth { transform-box: fill-box; transform-origin: 0 50%; animation: crs-flag 1s ease-in-out infinite alternate; }
+@keyframes crs-flag { from { transform: skewY(-5deg); } to { transform: skewY(5deg) scale(.94, 1); } }
