@@ -214,7 +214,7 @@
 .spel-end-more { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
 
 /* ── Pre-start options (SpelOptions): the game's own start screen ─────────── */
-/* Its picture, name and line in a card tinted in the game's colour; the options as small segments below; one Start spel.
+/* Its picture, name and line in a flat card tinted in the game's colour; the options as segments (kiosk.css .kid-seg) below; one Start spel.
    Sized by the viewport height so the game with the most options fits above the floor at 1024×768. */
 .spel-options {
   --opt-row: clamp(40px, 5vh, 54px);
@@ -231,7 +231,6 @@
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius);
   background: var(--tint, var(--kid-tint-3));
-  box-shadow: var(--kid-drop);
 }
 .spel-options .spel-options-thumb {
   height: clamp(120px, 20vh, 280px);
@@ -262,41 +261,12 @@
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: var(--kid-radius);
   background: var(--kid-card);
-  box-shadow: var(--kid-drop-sm);
 }
 .spel-options-panel.is-many { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* An odd last option gets the whole line, so its longer labels (Elk een eigen som) never wrap. */
-.spel-options-panel.is-many .spel-option:last-child:nth-child(odd) { grid-column: 1 / -1; }
-.spel-options-panel.is-many .spel-option:last-child:nth-child(odd) .spel-seg { width: fit-content; min-width: calc(50% - 11px); max-width: 100%; }
-.spel-options-panel.is-many .spel-option:last-child:nth-child(odd) .spel-seg-btn { flex-basis: auto; padding: 0 20px; }
-.spel-option { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.spel-option-label { margin: 0; font-size: var(--kiosk-text); font-weight: 900; line-height: 1.1; text-align: left; }
-.spel-seg {
-  display: flex;
-  overflow: hidden;
-  border: var(--kid-line) solid var(--kid-ink);
-  border-radius: var(--radius-pill);
-  background: var(--kid-key);
-}
-.spel-seg-btn {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: var(--opt-row);
-  padding: 0 12px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--kid-ink);
-  font: inherit;
-  font-size: var(--kiosk-text);
-  font-weight: 800;
-  line-height: 1.1;
-  cursor: pointer;
-}
-@media (hover: hover) { .spel-seg-btn:hover:not([aria-pressed="true"]) { background: var(--kid-card); } }
-/* Segments sit flush with a thin divider; the picked one is simply filled in (owner 2026-11-17). */
-.spel-seg-btn + .spel-seg-btn { border-left: 2px solid color-mix(in srgb, var(--kid-ink) 22%, transparent); }
-.spel-seg-btn[aria-pressed="true"] { background: var(--kid-ring); font-weight: 900; }
+.spel-options-panel.is-many .kid-option:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.spel-options-panel.is-many .kid-option:last-child:nth-child(odd) .kid-seg { width: fit-content; min-width: calc(50% - 11px); max-width: 100%; }
+.spel-options-panel.is-many .kid-option:last-child:nth-child(odd) .kid-seg-btn { flex-basis: auto; padding: 0 20px; }
 .spel-options-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .spel-options-start { min-height: 64px; min-width: min(100%, 280px); }
 /* A phone: picture above the text, one option per line. */

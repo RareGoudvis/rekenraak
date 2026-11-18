@@ -33,7 +33,6 @@
   color: var(--spel-ink);
   font-weight: 900;
   white-space: nowrap;
-  box-shadow: var(--kid-drop-sm);
 }
 /* A whiteboard is read from the back of the class: the bar's names and dots grow with the screen. */
 .duel-scoreline .duel-name { font-size: clamp(16px, 2.6vmin, 30px); }
@@ -71,7 +70,6 @@
   border: 3px solid var(--spel-ink);
   border-radius: 999px;
   background: color-mix(in srgb, var(--kiosk-paper) 88%, transparent);
-  box-shadow: var(--kid-drop-sm);
 }
 .duel-corner.is-left { left: var(--sp-2); }
 .duel-corner.is-right { right: var(--sp-2); flex-direction: row-reverse; }
@@ -127,7 +125,6 @@
   font-size: clamp(28px, 7vmin, 72px);
   font-weight: 900;
   white-space: nowrap;
-  box-shadow: var(--kid-drop-lg);
   translate: -50% -50%;
   pointer-events: none;
   animation: duel-banner-in 420ms var(--ease-spring) both;
@@ -195,7 +192,6 @@
   font-weight: 700;
   line-height: 1.15;
   white-space: nowrap;
-  box-shadow: var(--kid-drop-sm);
 }
 .duel-sign-answer {
   display: inline-block;
@@ -290,9 +286,10 @@
 }
 .duel-key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--spel-ink); }
 .duel-key.is-ok { background: var(--duel-team); color: var(--spel-ink); }
-.duel-key:disabled { opacity: .45; cursor: default; }
+/* Not tappable now: no sticker bar (kiosk.css --kid-press rule). */
+.duel-key:disabled { opacity: .45; cursor: default; box-shadow: none; }
 .duel-key svg { width: 1.1em; height: 1.1em; }
-.duel-keypad.is-off .duel-key { opacity: .45; }
+.duel-keypad.is-off .duel-key { opacity: .45; box-shadow: none; }
 
 /* ── The computer's half ──────────────────────────────────────────────────── */
 .duel-bot { min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); }
@@ -323,7 +320,6 @@
   background: var(--kiosk-paper);
   font-size: var(--kiosk-text-xl);
   font-weight: 800;
-  box-shadow: var(--kid-drop-sm);
 }
 .duel-bot-dots { display: inline-flex; gap: 8px; }
 .duel-bot-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--spel-ink); animation: duel-dot-bob 1s ease-in-out infinite; }
@@ -357,7 +353,6 @@
   border: var(--spel-line) solid var(--spel-ink);
   border-radius: var(--kid-radius-lg);
   background: var(--bg-surface);
-  box-shadow: var(--kid-drop-lg);
   animation: duel-card-in 480ms var(--ease-spring) both;
 }
 .duel-card.is-match { width: min(100%, 700px); background: color-mix(in srgb, var(--duel-team) 22%, var(--bg-surface)); }
@@ -387,7 +382,7 @@
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--duel-team) 25%, var(--bg-surface));
 }
-.duel-card-scores > div.is-winner { background: color-mix(in srgb, var(--duel-team) 55%, var(--bg-surface)); box-shadow: var(--kid-drop-sm); }
+.duel-card-scores > div.is-winner { background: color-mix(in srgb, var(--duel-team) 55%, var(--bg-surface)); }
 .duel-card-scores dt { font-weight: 900; font-size: var(--kiosk-text-lg); }
 .duel-card-scores dd { margin: 0; }
 .duel-card-right { display: flex; align-items: center; gap: var(--sp-1); font-family: var(--font-sheet-math); font-size: var(--kiosk-text-xl); font-weight: 700; }

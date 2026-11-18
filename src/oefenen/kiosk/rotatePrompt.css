@@ -24,7 +24,6 @@
   border: var(--kid-line) solid var(--kid-ink);
   border-radius: 50%;
   background: var(--kid-card);
-  box-shadow: var(--kid-drop-lg);
 }
 .rotate-phone {
   transform-box: fill-box;
