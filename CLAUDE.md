@@ -64,6 +64,10 @@ Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `tutor.html
 booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
 static SEO pages `about.html`, `faq.html`, `oefeningen.html`, `handleiding.html` (the full manual per mode; `npm run handleiding:shots` regenerates its screenshots in public/handleiding/; the in-app help topics live in src/components/layout/helpTopics.ts and link into it). Oefenmodus for the teacher is the view `'oefenmodus'` (OefenWorkspace, state from useOefenBuilder), not a modal.
 
+Non-maths subjects live outside the maths code: `src/talen/<vak>/` (today `frans/`, kids app only) plugs into the kiosk
+and the Zelf picker through one seam, [subjects.ts](src/services/oefenen/subjects.ts) (a typeId the maths REGISTRY does not
+know); never add a subject to the REGISTRY, the worksheets or the Eenvoudig cards. Detail: ARCHITECTURE §15 "Subjects / Frans".
+
 Bordmodus widgets get their options through the settings registry
 ([src/board/settings/registry.ts](src/board/settings/registry.ts)), never a `kind` switch: a new
 widget's options = a model (`<kind>Model.ts` or `mathTools/`) + a `<Kind>Settings.tsx` panel on

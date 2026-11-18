@@ -33,10 +33,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
         version: '2.0.3',
         date: '2026-11',
-        summary: 'Nieuw: elf spelletjes erbij (34 in totaal), vier niveaus van Makkelijk tot Onmogelijk, en een frisse look voor Zelf oefenen.',
+        summary: 'Nieuw: elf spelletjes erbij (34 in totaal), vier niveaus van Makkelijk tot Onmogelijk, Franse werkwoorden voor het 5de en 6de leerjaar, en een frisse look voor Zelf oefenen.',
         items: [
             { kind: 'nieuw', text: 'Zeven nieuwe spelletjes: Frituur, Brandweer, Skislalom, Grijpmachine, Aquarium, Spookhuis en Voetbalkaartjes.' },
-            { kind: 'nieuw', text: 'Vier nieuwe races voor twee, ook tegen de computer: Drakenrace, Wildwaterrace, Monstertrucks en Steekspel.' },
+            { kind: 'nieuw', text: 'Vier nieuwe spelletjes voor twee: Monstertrucks, Drakenrace en Wildwaterrace (elke som is een hindernis) en Steekspel (een minuut sommen, dan de botsing).' },
+            { kind: 'nieuw', text: 'Zelf oefenen, 5de en 6de leerjaar: Frans. Werkwoorden vervoegen in de présent, met keuzeknoppen en ook in de spelletjes.' },
             { kind: 'nieuw', text: 'Spelletjes met keuzes hebben nu vier niveaus: Makkelijk (zonder klok), Normaal, Moeilijk en Onmogelijk. De klok per som wordt na een minuut sneller.' },
             { kind: 'gewijzigd', text: 'Tegen de computer speelt die sterker naarmate je een hoger niveau kiest. Duelspellen: kies 5 tot 25 levens.' },
             { kind: 'nieuw', text: 'Honingraat: op Moeilijk en Onmogelijk komt op het einde de Wespenkoningin de honing halen. Raak haar genoeg keer en ze vlucht!' },
@@ -45,6 +46,10 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'gewijzigd', text: 'Zelf oefenen: Oefenen en Spelen hebben elk hun eigen kleur, en je kiest hoe lang je oefent: 3, 5, 10 of 20 oefeningen, of 1, 3 of 5 minuten.' },
             { kind: 'gewijzigd', text: 'Zelf oefenen: alleen wat je kunt aantikken, ziet eruit als een knop. De tafels 1 tot 10 staan samen op de eerste rij.' },
             { kind: 'nieuw', text: 'Werkblad met stappenhulp-QR: kies of het stappen-icoon links of rechts van de opdracht staat, of verberg het.' },
+            { kind: 'nieuw', text: 'Zelf oefenen: een knop Over met uitleg voor ouders, wat er bewaard wordt (alleen op dit toestel) en een knop om het te wissen.' },
+            { kind: 'nieuw', text: 'Zelf oefenen: de leerjaarbalk viert de feesten mee, met de Sint op zijn paard, een heks op haar bezem of Cupido met hartjes.' },
+            { kind: 'gewijzigd', text: 'Frituur gaat dicht bij te veel boze klanten, Brandweer waarschuwt voor het gebouw instort, de skiër verliest bij elke val iets.' },
+            { kind: 'opgelost', text: 'Lange onderwerpnamen lopen niet meer tegen de ronde rand van hun label, en de knop Resultaten past nu ook op een klein scherm.' },
         ],
     },
     {
