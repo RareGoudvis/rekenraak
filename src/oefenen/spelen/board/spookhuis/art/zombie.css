@@ -194,3 +194,38 @@
 .sph-z-disco { left: 22%; top: 0; width: clamp(40px, 12cqmin, 100px); aspect-ratio: 100 / 200; translate: -50% -30%; }
 .sph-z-disco .sph-z-cone { fill: color-mix(in srgb, var(--sph-z-bulb) 16%, transparent); }
 .sph-z-disco .sph-z-bulbglow { animation: none; }
+
+/* ── Round 6 detailing (owner 2026-11-18): bubbling jars, a cobweb, the zombie over the barrel, the cheer ── */
+.sph-z-bub { fill: color-mix(in srgb, var(--kiosk-paper) 70%, transparent); animation: sph-z-bub calc(1.6s + var(--i) * .27s) ease-in infinite; animation-delay: calc(var(--i) * -.7s); }
+@keyframes sph-z-bub { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 1; } 90% { opacity: .9; } 100% { translate: 1px calc(var(--h) * -1px); opacity: 0; } }
+
+.sph-z-peek { transform-box: view-box; transform-origin: 90px 40px; animation: sph-z-peek 13s ease-in-out infinite; animation-delay: -2s; }
+.sph-z-peek.is-hand { animation-name: sph-z-peek-hand; }
+@keyframes sph-z-peek {
+  0%, 52% { translate: 0 44px; rotate: 0deg; }
+  58% { translate: 0 -3px; rotate: 6deg; }
+  62%, 80% { translate: 0 0; rotate: -3deg; }
+  86%, 100% { translate: 0 44px; rotate: 0deg; }
+}
+@keyframes sph-z-peek-hand { 0%, 54% { opacity: 0; } 58%, 82% { opacity: 1; } 86%, 100% { opacity: 0; } }
+.sph-z-peek-eyes { animation: sph-z-goggle 13s ease-in-out infinite; animation-delay: -2s; }
+@keyframes sph-z-goggle { 0%, 62% { translate: 0 0; } 66%, 70% { translate: -2px 1px; } 72%, 76% { translate: 3px -1px; } 78%, 100% { translate: 0 0; } }
+.sph-root[data-room="narrow"] .sph-z-crates.is-peek { width: min(calc(var(--sph-side, 0px) - 12px), 26cqh); right: 6px; }
+.sph-root[data-room="none"] .sph-z-crates.is-peek { width: auto; height: 22cqh; right: 2cqw; }
+
+.sph-z-webbox { left: 0; top: 0; width: min(16cqmin, 130px); aspect-ratio: 1; }
+.sph-z-webbox > svg { transform-origin: 0 0; animation: sph-z-web 6s ease-in-out infinite alternate; }
+.sph-z-web { fill: none; stroke: color-mix(in srgb, var(--kiosk-paper) 55%, transparent); stroke-width: 1.4; }
+@keyframes sph-z-web { from { rotate: 1.5deg; } to { rotate: -2deg; scale: 1.02 .98; } }
+
+/* A pair found: the bulb flashes bright, the jars hop, the hand pops up waving. */
+.sph-root.is-cheer-0 .sph-z-bulb.is-glow > svg { animation: sph-z-flash-0 1.2s ease-out; }
+.sph-root.is-cheer-1 .sph-z-bulb.is-glow > svg { animation: sph-z-flash-1 1.2s ease-out; }
+@keyframes sph-z-flash-0 { 0%, 100% { filter: none; } 15%, 45% { filter: brightness(1.8); } 30% { filter: brightness(1.1); } }
+@keyframes sph-z-flash-1 { 0%, 100% { filter: none; } 15%, 45% { filter: brightness(1.8); } 30% { filter: brightness(1.1); } }
+.sph-z-jar { transform-box: fill-box; transform-origin: 50% 100%; }
+.sph-root.is-cheer-0 .sph-z-jar { animation: sph-z-hop-0 600ms ease-out 2; }
+.sph-root.is-cheer-1 .sph-z-jar { animation: sph-z-hop-1 600ms ease-out 2; }
+@keyframes sph-z-hop-0 { 40% { translate: 0 -5px; scale: .94 1.06; } }
+@keyframes sph-z-hop-1 { 40% { translate: 0 -5px; scale: .94 1.06; } }
+.sph-root:is(.is-cheer-0, .is-cheer-1) .sph-z-handbox .sph-z-hand-rise { animation: sph-z-wave 300ms ease-in-out infinite alternate; }

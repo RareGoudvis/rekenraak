@@ -4,6 +4,7 @@ import type { ComponentType } from 'react';
 // the light and the timing; a theme only paints. Every piece is decoration (aria-hidden, no pointer events).
 export interface ThemeArt {
     // Under the dark: the walls, the floor and the furniture (lit by the flashlight like the cards). lit = the lights are on.
+    // A found pair makes the room cheer for a moment: .sph-root.is-cheer-0 / is-cheer-1 (alternating), for the theme's CSS.
     Room: ComponentType<{ lit: boolean }>;
     // Above the dark (below an open card): what glows and moves by itself, the room's life.
     Life: ComponentType<{ lit: boolean }>;

@@ -1,54 +1,52 @@
-import type { DuelConfig, DuelRoundView, DuelRule, DuelSideView, Side } from '../../duel/types';
+import { duelOptions } from '../../duel/options';
+import type { DuelRoundView, DuelRule, Side } from '../../duel/types';
 
-// Steekspel on the duel engine: two knights charge at each other along the barrier. A right answer = a gallop step
-// (+1); 3 right in a row lower the lance, and it stays down until that knight's next mistake. When the knights meet
-// (the steps of both add up to the list's length, 10 each on the default 20) the tilt happens: more steps wins, a
-// lowered lance wins a tie, else both lances break and nobody falls (a draw). One tilt = one duel round.
-// The tilt does not use lives: the levens row is the list's length ("Hoe lang is de baan?"), so config.lives = it.
+// Steekspel on the duel engine (owner 2026-11-18): every joust is one minute of sums. Both knights wait at their end
+// of the list and gear up: each right answer is a point, and every few points add a piece (a plume, a shining lance,
+// the horse's armour, a banner, a crown). When the minute is up they gallop at each other and tilt: the knight with
+// the most right answers wins the tilt and the other lands in the hay; the same number = both lances break, nobody
+// falls (a draw). One joust = one duel round; no lives, so the levens row is left out of the options.
 
 export const JOUST = {
-    // Steps until the knights meet (the levens row): owner brief 10 each, so 20.
-    baan: { label: 'Hoe lang is de baan?', choices: [10, 15, 20, 25, 30] as readonly number[], default: 20 },
-    // Right answers in a row that lower the lance.
-    lanceAt: 3,
-    // The tilt, the fall into the hay and the winner's salute before the scoreboard card.
-    cardMs: 4200,
+    // One joust, in seconds of play (the engine's round clock; a pause does not count).
+    seconds: 60,
+    // Right answers that add the next piece of gear: owner brief "each right answer visibly gears up that knight";
+    // a pupil at about one sum per 5 s reaches the plume early and the crown near the end of a good minute.
+    gearAt: [2, 4, 6, 9, 12] as readonly number[],
+    // The last seconds before the charge: the lances go down and the horses paw the ground.
+    readySeconds: 5,
+    // The charge, the crash, the fall into the hay and the winner's salute before the scoreboard card.
+    cardMs: 5600,
 } as const;
 
-/** The list's length: the levens pick (the Hoe lang is de baan? row). */
-export const baanOf = (config: Pick<DuelConfig, 'lives'>) => config.lives;
+// The gear, in the order it comes (art.tsx draws each piece; the call names it).
+export const GEAR = ['pluim', 'lans', 'harnas', 'vaandel', 'kroon'] as const;
+export type GearPiece = typeof GEAR[number];
+export const GEAR_CALL: Record<GearPiece, string> = { pluim: 'Een pluim!', lans: 'Glimmende lans!', harnas: 'Een harnas!', vaandel: 'Een vaandel!', kroon: 'Een kroon!' };
 
-/** The knight's lance is down (its flag). */
-export const lanceDown = (v: Pick<DuelSideView, 'flags'>) => (v.flags.lance ?? 0) > 0;
+/** Steekspel's options: the shared duel options without the levens row (a joust has none). */
+export const JOUST_OPTIONS = duelOptions().filter(o => o.id !== 'levens');
 
-/** How far a knight has come towards the meeting, 0..1 of the list (both together reach 1 at the tilt). */
-export const shareOf = (points: number, baan: number) => Math.max(0, Math.min(1, points / Math.max(1, baan)));
+/** How many pieces of gear a knight has after this many right answers. */
+export const gearOf = (rights: number) => JOUST.gearAt.filter(n => rights >= n).length;
 
-/** The tilt once the knights meet: more steps wins, then a lowered lance, else a draw; null while they still ride. */
-export function tiltOf(view: DuelRoundView): Side | 'draw' | null {
-    const { left, right } = view.sides;
-    if (left.points + right.points < baanOf(view.config)) return null;
-    if (left.points !== right.points) return left.points > right.points ? 'left' : 'right';
-    const l = lanceDown(left), r = lanceDown(right);
-    if (l !== r) return l ? 'left' : 'right';
-    return 'draw';
+/** The piece a right answer just added (the rights after it), or null. */
+export function gearGained(rights: number): GearPiece | null {
+    const i = JOUST.gearAt.indexOf(rights);
+    return i < 0 ? null : GEAR[i];
 }
 
-/** Why the tilt went this way, for the scene's call: on steps, on the lance, or a draw. */
-export function tiltReason(view: DuelRoundView): 'steps' | 'lance' | 'draw' | null {
-    const w = tiltOf(view);
-    if (!w) return null;
-    if (w === 'draw') return 'draw';
-    return view.sides.left.points === view.sides.right.points ? 'lance' : 'steps';
+/** The tilt when the minute is up: more right answers wins, the same = a draw; null while the minute runs. */
+export function tiltOf(view: DuelRoundView, timeUp: boolean): Side | 'draw' | null {
+    if (!timeUp) return null;
+    const { left, right } = view.sides;
+    if (left.points === right.points) return 'draw';
+    return left.points > right.points ? 'left' : 'right';
 }
 
 export const JOUST_RULE: DuelRule = {
-    right: ({ side, streak, me }) => ({
-        points: { [side]: 1 },
-        ...(streak >= JOUST.lanceAt && !lanceDown(me) && { flags: { [side]: { lance: 1 } }, tag: 'lance' }),
-    }),
-    // A mistake lifts a lowered lance again (the engine breaks the streak); without one it only costs the step.
-    wrong: ({ side, me }) => (lanceDown(me) ? { flags: { [side]: { lance: 0 } }, tag: 'lanceUp' } : {}),
-    roundOver: view => tiltOf(view),
+    right: ({ side }) => ({ points: { [side]: 1 } }),
+    // A mistake costs only the time of the flash (and the horse sneezes).
+    roundOver: tiltOf,
     cardMs: JOUST.cardMs,
 };

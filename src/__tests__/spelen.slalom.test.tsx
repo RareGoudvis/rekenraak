@@ -337,12 +337,18 @@ describe('Skislalom on the session', () => {
         fall();
         wait(3000);
         expect(container.querySelector('.sl-skier-art.is-one-ski')).not.toBeNull();
+        // Balancing on the right ski, the left foot lifted behind him.
+        expect(container.querySelector('.sl-leg.is-up')).not.toBeNull();
+        expect(container.querySelectorAll('.sl-ski-tail')).toHaveLength(1);
+        expect(container.querySelector('.sl-sign')).not.toBeNull();
         expect(container.querySelector('.sl-gear-item.is-next')).not.toBeNull();
         fall();
         expect(lost()).toBe(4);
         wait(1000);
         expect(container.querySelector('.sl-skier.is-bank .sl-bank-laugh')).not.toBeNull();
         expect(container.querySelector('.sl-root.is-bank')).not.toBeNull();
+        // The run is over: no next sum above him while he laughs.
+        expect(container.querySelector('.sl-sign')).toBeNull();
         expect(sp().phase).not.toBe('end');
         wait(BANK_MS + 200);
         expect(sp().phase).toBe('end');

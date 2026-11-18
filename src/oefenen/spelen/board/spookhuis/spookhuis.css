@@ -170,6 +170,36 @@
 @keyframes sph-nope { 20% { translate: -5px 0; } 40% { translate: 5px 0; } 60% { translate: -3px 0; } 80% { translate: 3px 0; } }
 .sph-flip { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 380ms var(--ease-out); }
 .sph-card.is-open .sph-flip { transform: rotateY(180deg); }
+/* The turn (owner 2026-11-18): the card lifts off the floor, swings over and lands with a little bounce; turning back
+   it hops up and flips down again, quicker. */
+.sph-card.is-open .sph-flip { animation: sph-turn-up 560ms cubic-bezier(.3, .7, .4, 1) both; }
+.sph-card.is-shut .sph-flip { animation: sph-turn-down 420ms ease-in-out both; }
+@keyframes sph-turn-up {
+  0% { transform: translateY(0) rotateZ(0deg) rotateY(0deg) scale(1); }
+  42% { transform: translateY(-16%) rotateZ(-5deg) rotateY(115deg) scale(1.16); }
+  72% { transform: translateY(-3%) rotateZ(2deg) rotateY(196deg) scale(1.05); }
+  88% { transform: translateY(1.5%) rotateZ(0deg) rotateY(176deg) scale(.98); }
+  100% { transform: translateY(0) rotateZ(0deg) rotateY(180deg) scale(1); }
+}
+@keyframes sph-turn-down {
+  0% { transform: translateY(0) rotateZ(0deg) rotateY(180deg) scale(1); }
+  45% { transform: translateY(-10%) rotateZ(4deg) rotateY(95deg) scale(1.08); }
+  80% { transform: translateY(1%) rotateZ(0deg) rotateY(-8deg) scale(.99); }
+  100% { transform: translateY(0) rotateZ(0deg) rotateY(0deg) scale(1); }
+}
+/* The glint over a face as it lands. */
+.sph-shine { position: absolute; inset: 3.5%; border-radius: calc(var(--sph-w) * .08); overflow: hidden; pointer-events: none; }
+.sph-shine::before {
+  content: '';
+  position: absolute;
+  inset: -10% auto -10% 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--kiosk-paper) 85%, transparent) 50%, transparent);
+  translate: -120% 0;
+  rotate: 8deg;
+}
+.sph-card.is-open:not(.is-solved) .sph-shine::before { animation: sph-shine 640ms ease-out 380ms both; }
+@keyframes sph-shine { from { translate: -120% 0; } to { translate: 260% 0; } }
 .sph-side { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--sph-w) * .09); }
 .sph-front { transform: rotateY(180deg); }
 .sph-back-art, .sph-face-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }

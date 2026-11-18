@@ -134,10 +134,13 @@ wrong: ({ side }) => ({ damage: { [side]: 1 } }),
 roundOver: (v, timeUp) => /* 25 points wins, else defaultRoundOver(v, timeUp) */,
 ```
 
-**A race** (Steekspel) has no lives: reuse the levens row as the course with
+**A race** has no lives: reuse the levens row as the course with
 `duelOptions({ lives: { label: 'Hoe ver …?', choices, default } })`, move with `points`, and end the round in `roundOver`
 when a side's points reach `config.lives`. Streak effects read `streak` from the ctx (every 3rd in a row); keep a
 knock-back mild or a faster bot runs away with Normaal.
+
+**A timed round** (Steekspel): no levens row; the round runs on the engine's round clock (`extra.roundSeconds`, the
+one-minute joust) and `roundOver(v, timeUp)` decides on time up (most points wins, a tie = a draw).
 
 **An obstacle course** (Monstertrucks, Drakenrace, Wildwaterrace) builds on `../course/`: `courseRule(spec)` (a clear
 = +1 tag `clear`, a wrong answer or a time-out = a crash tag `crash`, the first through `config.lives` obstacles wins;

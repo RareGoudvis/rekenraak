@@ -28,7 +28,7 @@ import { ROUND_SECONDS as FRITUUR_SECONDS } from './frituur/rule';
 import { Truck } from '@phosphor-icons/react';
 import { TRUCK } from './monstertrucks/rule';
 import { Horse } from '@phosphor-icons/react';
-import { JOUST } from './steekspel/rule';
+import { JOUST_OPTIONS } from './steekspel/rule';
 import { CloudLightning } from '@phosphor-icons/react';
 import { DRAAK } from './drakenrace/rule';
 import { Waves } from '@phosphor-icons/react';
@@ -226,12 +226,12 @@ export const SKINS: readonly (SkinEntry & { icon: Icon })[] = [
         Screen: lazy(() => import('./monstertrucks/Monstertrucks')),
     },
     {
-        // A tilt duel (DUEL.md): a right answer = a gallop step, 3 in a row lower the lance till the next mistake; when the
-        // knights meet, more steps wins, the lance breaks a tie (steekspel/rule.ts). One tilt = one round; the levens row is
-        // the list's length. The scene voices its moments.
+        // A tilt duel (DUEL.md): a one-minute joust, each right answer gears that knight up; at the end they charge and the
+        // most right answers wins the tilt, the same = a draw (steekspel/rule.ts). One joust = one round, no levens row.
+        // The scene voices its moments.
         meta: {
             music: 'kasteel', id: 'steekspel', label: 'Steekspel', input: 'keypad', timed: false, players: '1-2', round: {}, accepts: KEYPAD_NUMBER,
-            options: duelOptions({ lives: JOUST.baan }),
+            options: JOUST_OPTIONS,
             sounds: { correct: null, wrong: null, miss: null, win: 'jingle' },
         },
         icon: Horse,

@@ -74,11 +74,13 @@ const DUEL_PLAY = {
         await page.waitForTimeout(2600); await duelAnswer(page, 'left'); await page.waitForTimeout(640);
         await page.evaluate(() => window.__duel.getState().pause());
     },
-    // Both lances down (3 in a row), the knights mid-gallop towards each other.
+    // Both knights geared up (plumes, shining lances, Blauw's horse armour), then the minute runs out (about 55 s of
+    // waiting) and the shot is the charge: mid-gallop towards each other, lances down, just before the crash.
     steekspel: async page => {
-        for (let i = 0; i < 6; i++) { await duelAnswer(page, 'left'); if (i < 4) await duelAnswer(page, 'right'); await page.waitForTimeout(900); }
-        await duelAnswer(page, 'left'); await duelAnswer(page, 'right'); await page.waitForTimeout(140);
-        await page.evaluate(() => window.__duel.getState().pause());
+        for (let i = 0; i < 7; i++) { await duelAnswer(page, 'left'); if (i < 5) await duelAnswer(page, 'right'); await page.waitForTimeout(900); }
+        await page.waitForFunction(() => window.__duel.getState().phase !== 'play', null, { timeout: 70_000 });
+        // The shot comes about 900 ms after this (the shared wait and the CSS): late in the 1400 ms charge, before the crash.
+        await page.waitForTimeout(300);
     },
     // Right: a shield (4 in a row); left: an IJspijl, then a Vuurbal frozen on its way to the dome (pause() stops the CSS too).
     tovenaarsduel: async page => {
@@ -136,7 +138,7 @@ const SKIN_CSS = {
     frituur: '.fr-bubble, .fr-tail, .fr-patience, .fr-tally { visibility: hidden !important; }',
     // The arena is a wide strip: closer in on the lanes; the calls carry words, the course map the race.
     monstertrucks: '.mtk-svg { transform: scale(1.7); transform-origin: 14% 100%; } .mtk-call, .crs-bar { display: none !important; }',
-    steekspel: '.stk-svg { transform: scale(1.75); transform-origin: 53% 100%; } .stk-call { display: none !important; }',
+    steekspel: '.stk-svg { transform: scale(1.75); transform-origin: 50% 100%; } .stk-call, .stk-board { display: none !important; }',
     // The metres, the speed bars and the streak badge.
     slalom: '.sl-hud, .sl-streak, .sl-call { visibility: hidden !important; }',
     spookhuis: '.sph-text, .sph-count { visibility: hidden !important; }',

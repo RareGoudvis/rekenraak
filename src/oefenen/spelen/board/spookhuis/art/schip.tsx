@@ -7,13 +7,14 @@ import './schip.css';
 // portholes with bubbles and a little fish, lanterns swinging on their hooks, the chest's glow, a parrot skeleton
 // bobbing on a beam. The whole hold rocks a little. Goofy, never scary: round skulls, eye patches, big grins.
 // A ghost pirate floats by to turn cards back ("Arrr!"), a pair pops a chest open with coins, a mistake is a rusty anchor.
+// A friendly octopus peeks in at a porthole now and then, a crab scuttles across the floor, a found pair makes the hold cheer.
 
 const v = (vars: Record<string, string | number>) => vars as CSSProperties;
 
 // A bone: an ink stroke with the bone colour on top, so thin bones keep the sticker outline.
 const Bone = ({ d }: { d: string }) => <><path className="sph-s-bone-ink" d={d} /><path className="sph-s-bone" d={d} /></>;
 
-function Porthole({ glow }: { glow?: boolean }) {
+function Porthole({ glow, octo }: { glow?: boolean; octo?: boolean }) {
     const id = useId();
     if (!glow) {
         return (
@@ -33,6 +34,20 @@ function Porthole({ glow }: { glow?: boolean }) {
                 <path className="sph-s-weed" d="M30 84 Q24 70 32 60 Q38 50 30 40 M66 86 Q74 72 66 62" />
                 <g className="sph-s-fish"><path d="M0 0 Q8 -7 16 0 Q8 7 0 0 Z M16 0 L23 -5 L23 5 Z" /><circle cx={5} cy={-1} r={1.3} /></g>
                 {[0, 1, 2].map(i => <circle key={i} className="sph-s-bubble" cx={40 + i * 9} cy={84} r={2.4 + (i % 2)} style={v({ '--i': i })} />)}
+                {octo && (
+                    // The octopus rises into the porthole, has a look, waves a tentacle and sinks back.
+                    <g className="sph-s-octo">
+                        <path className="sph-s-octo-arm is-wave" d="M64 74 Q78 66 76 52 Q74 46 70 50" />
+                        <path className="sph-s-octo-skin" d="M32 92 Q30 56 50 54 Q70 56 68 92 Z" />
+                        <circle className="sph-s-octo-eye" cx={43} cy={70} r={5.4} />
+                        <circle className="sph-s-octo-eye" cx={57} cy={70} r={5.4} />
+                        <circle className="sph-s-octo-pupil" cx={44} cy={71} r={2.4} />
+                        <circle className="sph-s-octo-pupil" cx={58} cy={71} r={2.4} />
+                        <path className="sph-s-octo-smile" d="M45 80 Q50 84 55 80" />
+                        <circle className="sph-s-octo-spot" cx={50} cy={60} r={2.2} />
+                        <circle className="sph-s-octo-spot" cx={38} cy={64} r={1.6} />
+                    </g>
+                )}
             </g>
             <circle className="sph-s-glass" cx={50} cy={50} r={32} />
             <path className="sph-s-glint" d="M30 38 Q34 28 44 24" />
@@ -147,6 +162,26 @@ function Parrot({ flap }: { flap?: boolean }) {
     );
 }
 
+/** A little crab, scuttling sideways along the floor, claws snapping. */
+function Crab() {
+    return (
+        <svg viewBox="0 0 80 50" className="sph-s-crab-art">
+            <g className="sph-s-crab-legs">
+                <path className="sph-s-crab-leg" d="M22 32 L10 40 L6 48 M24 36 L14 46 M56 32 L68 40 L72 48 M54 36 L64 46" />
+            </g>
+            <g className="sph-s-claw is-l"><path className="sph-s-crab-shell" d="M18 22 Q4 18 6 8 Q12 4 16 10 Q12 12 14 16 Q18 14 20 10 Q24 16 18 22 Z" /></g>
+            <g className="sph-s-claw is-r"><path className="sph-s-crab-shell" d="M62 22 Q76 18 74 8 Q68 4 64 10 Q68 12 66 16 Q62 14 60 10 Q56 16 62 22 Z" /></g>
+            <path className="sph-s-crab-shell" d="M14 34 Q14 18 40 18 Q66 18 66 34 Q60 42 40 42 Q20 42 14 34 Z" />
+            <path className="sph-s-crab-stalk" d="M34 20 V12 M46 20 V12" />
+            <circle className="sph-s-octo-eye" cx={34} cy={11} r={4} />
+            <circle className="sph-s-octo-eye" cx={46} cy={11} r={4} />
+            <circle className="sph-s-octo-pupil" cx={34.6} cy={11.6} r={1.8} />
+            <circle className="sph-s-octo-pupil" cx={46.6} cy={11.6} r={1.8} />
+            <path className="sph-s-octo-smile" d="M35 30 Q40 34 45 30" />
+        </svg>
+    );
+}
+
 /** A friendly ghost pirate: a see-through green-white ghost with a tricorn, an eye patch and a curly beard. */
 function GhostPirate({ reach }: { reach?: boolean }) {
     return (
@@ -204,13 +239,14 @@ export function Room({ lit }: { lit: boolean }) {
 export function Life({ lit }: { lit: boolean }) {
     return (
         <div className={`sph-s-life${lit ? ' is-lit' : ''}`}>
-            <span className="sph-s-port is-a"><Porthole glow /></span>
+            <span className="sph-s-port is-a"><Porthole glow octo /></span>
             <span className="sph-s-port is-b"><Porthole glow /></span>
             <span className="sph-s-lantern is-a"><Lantern glow /></span>
             <span className="sph-s-lantern is-b"><Lantern glow /></span>
             <span className="sph-s-chestbox-at"><Chest glow /></span>
             <span className="sph-s-parrotbox"><Parrot /></span>
             {[0, 1, 2, 3].map(i => <span key={i} className="sph-s-drip" style={v({ '--i': i })} />)}
+            <span className="sph-s-crab"><span className="sph-s-crab-walk"><Crab /></span></span>
         </div>
     );
 }

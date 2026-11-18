@@ -1,17 +1,27 @@
 import { noise, playRecipe, tone, type Recipe } from '../../sound';
 
-// Steekspel's own sounds (Web Audio, under the shared on / off and soft master): hooves, a bright "shing" for the
-// lance, a horse's sneeze for a mistake, a wooden BONK at the tilt, a soft hay poof, a herald's fanfare.
+// Steekspel's own sounds (Web Audio, under the shared on / off and soft master): hooves, a proud stamp, a bright
+// "shing" for new gear, the charge, a horse's sneeze for a mistake, a wooden BONK at the tilt, a soft hay poof, a
+// herald's fanfare.
 
 const RECIPES = {
-    // A gallop step: four quick hoof clops on the sand.
-    gallop: (ac, d, t) => {
-        [0, 0.09, 0.26, 0.35].forEach((at, i) => {
-            tone(ac, d, t, { type: 'triangle', f0: i % 2 ? 380 : 300, f1: 160, at, dur: 0.06, vol: 0.2 });
-            noise(ac, d, t, { at, dur: 0.04, vol: 0.08, filter: 'bandpass', f0: 1400, q: 1.5 });
+    // A right answer: the horse stamps twice and snorts, proud.
+    stamp: (ac, d, t) => {
+        [0, 0.16].forEach(at => {
+            tone(ac, d, t, { type: 'triangle', f0: 220, f1: 90, at, dur: 0.09, vol: 0.24 });
+            noise(ac, d, t, { at, dur: 0.06, vol: 0.1, filter: 'lowpass', f0: 900 });
         });
+        noise(ac, d, t, { at: 0.3, dur: 0.16, vol: 0.05, filter: 'bandpass', f0: 700, f1: 400, q: 1 });
     },
-    // The lance goes down: a bright metal shing.
+    // The charge: a trumpet call over hooves that get faster.
+    charge: (ac, d, t) => {
+        [[392, 0, 0.1], [523, 0.12, 0.1], [659, 0.24, 0.1], [784, 0.36, 0.3]].forEach(([f0, at, dur]) => tone(ac, d, t, { type: 'square', f0, at, dur, vol: 0.03 }));
+        for (let i = 0, at = 0.1; i < 12; i++, at += 0.13 - i * 0.004) {
+            tone(ac, d, t, { type: 'triangle', f0: i % 2 ? 360 : 280, f1: 150, at, dur: 0.05, vol: 0.16 });
+            noise(ac, d, t, { at, dur: 0.035, vol: 0.07, filter: 'bandpass', f0: 1400, q: 1.5 });
+        }
+    },
+    // A piece of gear: a bright metal shing.
     shing: (ac, d, t) => {
         noise(ac, d, t, { dur: 0.35, vol: 0.12, filter: 'highpass', f0: 3500 });
         tone(ac, d, t, { f0: 1320, f1: 1760, dur: 0.4, vol: 0.06 });
