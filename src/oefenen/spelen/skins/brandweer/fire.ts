@@ -191,3 +191,37 @@ export function jumpsOf(events: readonly number[], burning: readonly number[], p
         return { from, to };
     });
 }
+
+// ── The danger the block is in (owner 2026-11-18: make the coming collapse readable) ──────────────────────────
+// The heat meter beside the block climbs with the level; from DANGER.crackFrom cracks grow on the facade (four
+// patches, each in two stages); one step under too hot the block sways and creaks under a "Pas op!" sign. Makkelijk
+// never collapses, so it never cracks, sways or warns (its meter tops out one step under the danger mark).
+export const DANGER = {
+    // The first crack patch appears here; each next level grows the cracks one more stage.
+    crackFrom: 6,
+    // Crack patches on the facade.
+    patches: 4,
+    // The meter's top zone (striped): from here the block can come down.
+    zoneFrom: 8,
+} as const;
+
+export interface Danger {
+    // How full the heat meter is, 0–1.
+    share: number;
+    // The crack stage per patch (0 none, 1 short, 2 grown).
+    cracks: (0 | 1 | 2)[];
+    // One step under too hot: sway, creak and "Pas op!".
+    warn: boolean;
+}
+
+/** The block's danger at this fire level and game level. */
+export function dangerOf(level: number, lvl: Level = 'normaal'): Danger {
+    const safe = lvl === 'makkelijk';
+    const grown = safe ? 0 : Math.max(0, level - DANGER.crackFrom + 1);
+    // Patch k starts one level after patch k−1 and grows to stage 2 the level after; the last step grows them all.
+    const cracks = Array.from({ length: DANGER.patches }, (_, k) => {
+        if (level >= FIRE.max - 1 && grown > 0) return 2;
+        return Math.min(2, Math.max(0, grown - k)) as 0 | 1 | 2;
+    });
+    return { share: Math.min(1, Math.max(0, level / FIRE.max)), cracks, warn: !safe && level === FIRE.max - 1 };
+}

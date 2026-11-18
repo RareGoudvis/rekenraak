@@ -3,10 +3,10 @@ import type { SkinEndingProps, SkinProps } from '../types';
 import { SpelChoiceFace, SpelSign } from '../../SpelVisual';
 import { choiceLabel, faceChars, faceKind, signClass } from '../../spelChoice';
 import { play } from '../../sound';
-import { Burst, Clouds } from '../../scene';
-import { COLLAPSE, FIRE, WINDOWS, decorOf, fireMood, fireStart, fireStep, firstEvents, flameScale, jumpEvents, jumpsOf, petOf, petWindow, rescuedOf, tooHot, windowClocks, windowsOf, type FireState, type Pet } from './fire';
+import { Burst, Clouds, CrackLines } from '../../scene';
+import { COLLAPSE, DANGER, FIRE, WINDOWS, dangerOf, decorOf, fireMood, fireStart, fireStep, firstEvents, flameScale, jumpEvents, jumpsOf, petOf, petWindow, rescuedOf, tooHot, windowClocks, windowsOf, type FireState, type Pet } from './fire';
 import { BLOCK, GRIP, GROUND, HOLDERS, NOZZLE_LEN, PET_ROW, PIVOT, REST, RESIDENTS, SHEET, STAGE_H, STAGE_W, aimAt, pct, petSpot, rowOf, sprayPath, winBox, winCentre, winPercent } from './geometry';
-import { Backdrop, BlockArt, DustArt, FighterArt, Fireball, Flames, HelmetArt, LadderArt, PetArt, ResidentArt, RubbleArt, SheetArt, Smoke, Sparks, TruckArt, WindowArt, WindowClock, type CrewPose, type CrowdMood, type FighterPose, type WinState } from './art';
+import { Backdrop, BlockArt, DustArt, FighterArt, Fireball, Flames, HeatMeter, HelmetArt, LadderArt, PetArt, ResidentArt, RubbleArt, SheetArt, Smoke, Sparks, TruckArt, WindowArt, WindowClock, type CrewPose, type CrowdMood, type FighterPose, type WinState } from './art';
 import { playBrandweer } from './sounds';
 import { levelOf } from '../../levels/levels';
 import './brandweer.css';
@@ -30,6 +30,13 @@ export const JUMP_MS = 1800;
 const JUMP_LAND = 0.42;
 // The ladder rises from the cab a moment after the start (the first sum).
 const RAISE_MS = 350;
+// Where the cracks grow on the facade (fire.ts DANGER.patches), on the wall between the windows; the windows cover the rest.
+const CRACK_PATCHES = [
+    { x: 730, y: 270, w: 170, h: 260, seed: 3 }, { x: 970, y: 450, w: 170, h: 260, seed: 8 },
+    { x: 566, y: 500, w: 150, h: 250, seed: 13 }, { x: 1110, y: 166, w: 180, h: 180, seed: 21 },
+] as const;
+// While the block sways (one step under too hot) it creaks this often.
+const CREAK_MS = 2400;
 
 const KEYS = ['1', '2', '3', '4'];
 const v = (vars: Record<string, string | number>) => vars as CSSProperties;
@@ -118,6 +125,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
         play('cheer');
     }, [fire.buildings]);
     const look = snap.buildings;
+    const danger = dangerOf(fire.level, level);
     useEffect(() => { playBrandweer('sirene'); }, [look]);
 
     useEffect(() => {
@@ -156,6 +164,15 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
         return () => cancelAnimationFrame(raf);
     }, []);
     useEffect(() => { if (jumps.total > 0) playBrandweer('whoosh'); }, [jumps.total]);
+
+    // One step under too hot: the block sways and creaks now and then (not under help, never once it falls).
+    const creaking = danger.warn && phase !== 'help';
+    useEffect(() => {
+        if (!creaking) return;
+        playBrandweer('kraak');
+        const id = window.setInterval(() => playBrandweer('kraak'), CREAK_MS);
+        return () => window.clearInterval(id);
+    }, [creaking]);
 
     // Too hot: the waiting pet jumps out first, then the empty block comes down (COLLAPSE), then the end screen.
     const [evacuated, setEvacuated] = useState(false);
@@ -244,7 +261,8 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
     const lawnPets = rescued + (evacuated ? 1 : 0) - (jump ? 1 : 0);
     const leap = leaps.length ? leaps[leaps.length - 1] : null;
 
-    const cls = ['bw-root', `is-${mood}`, phase === 'help' && 'is-paused', phase === 'play' && !hot && 'is-play', hot && 'is-toohot', phase === 'wrong' && 'is-wrong', allOut && 'is-allout']
+    const warn = danger.warn && !hot;
+    const cls = ['bw-root', `is-${mood}`, warn && 'is-warn', phase === 'help' && 'is-paused', phase === 'play' && !hot && 'is-play', hot && 'is-toohot', phase === 'wrong' && 'is-wrong', allOut && 'is-allout']
         .filter(Boolean).join(' ');
     return (
         <div className={cls} style={v({ '--bw-heat': fire.level / FIRE.max })}>
@@ -262,13 +280,19 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                 <div className="bw-stage">
                     <svg className="bw-svg" viewBox={`0 0 ${STAGE_W} ${STAGE_H}`} aria-hidden>
                         <Backdrop />
+                        <HeatMeter share={danger.share} zoneFrom={DANGER.zoneFrom} safe={level === 'makkelijk'} />
                         <defs><clipPath id={clip}><rect x="-2400" y="-1000" width="6400" height={GROUND + 1004} /></clipPath></defs>
                         <g clipPath={`url(#${clip})`}>
                             <g className={`bw-sink${falling === 1 ? ' is-rumble' : ''}`} style={{ transform: `translateY(${SINK[falling]}px)` }}>
                                 <g key={`block-${look}`} className={look > 0 ? 'bw-arrive' : undefined}>
+                                <g className={`bw-sway${warn ? ' is-on' : ''}`}>
                                     <BlockArt look={look} />
                                     {Array.from({ length: WINDOWS }, (_, w) => (
                                         <WindowArt key={w} i={w} state={stateOf(w)} pet={petOf(snap.rescued)} burnt={snap.burnt.includes(w) && stateOf(w) !== 'fire'} glow={mood === 'hot' && w !== petWin} />
+                                    ))}
+                                    {/* Over the wall and the window frames, under the flames: the cracks read as the block's own. */}
+                                    {CRACK_PATCHES.map((c, k) => (
+                                        <CrackLines key={`${look}-${k}`} x={c.x} y={c.y} width={c.w} height={c.h} stage={danger.cracks[k] ?? 0} seed={c.seed + look * 7} />
                                     ))}
                                     {burning.map((w, i) => stateOf(w) === 'fire' && !hot && clocks[i] !== undefined && <WindowClock key={`${question.key}-${w}-c`} i={w} clockMs={clocks[i]} />)}
                                     {burning.map((w, i) => stateOf(w) === 'fire' && (
@@ -294,6 +318,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                                         return <Sparks key={`k-${w}`} x={b.x + b.w / 2} y={b.y + 20} n={mood === 'hot' ? 6 : mood === 'warm' ? 4 : 2} />;
                                     })}
                                     {leap && leap.to !== null && phase === 'play' && <Fireball key={`${question.key}-leap-${jumpsNow.due}`} from={winCentre(leap.from)} to={winCentre(leap.to)} />}
+                                </g>
                                 </g>
                             </g>
                         </g>
@@ -348,7 +373,7 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                         )}
                     </svg>
 
-                    <div key={`wins-${look}`} className={`bw-windows${look > 0 ? ' is-arrive' : ''}`} role="group" aria-label="Kies het antwoord">
+                    <div key={`wins-${look}`} className={`bw-windows${look > 0 ? ' is-arrive' : ''}${warn ? ' is-sway' : ''}`} role="group" aria-label="Kies het antwoord">
                         {options.map((c, i) => {
                             const w = burning[i];
                             if (w === undefined) return null;
@@ -391,6 +416,13 @@ export default function Brandweer({ question, choices, views, phase, feedback, o
                             const c = pct(winCentre(leap.to ?? leap.from).x, winBox(leap.to ?? leap.from).y + 40);
                             return <Burst key={`${question.key}-sparks-${jumpsNow.due}`} kind="sparkle" x={c.x} y={c.y} spread={90} count={12} seed={jumpsNow.total} />;
                         })()}
+                        {warn && (
+                            // One step under too hot: a warning sign over the block (one more mistake or jump and it falls).
+                            <span className="bw-callout is-warn" role="status">
+                                <svg className="bw-warn-sign" viewBox="-12 -12 24 22" aria-hidden><path d="M0 -10 L11 9 H-11 Z" /><path className="bw-warn-mark" d="M0 -3 V3 M0 6 v0.2" /></svg>
+                                Pas op!
+                            </span>
+                        )}
                         {hot && falling < 2 && <span className="bw-callout is-hot">Oei, te heet!</span>}
                         {hot && falling >= 2 && falling < 5 && <Burst key={`dust-${falling}`} kind="smoke" x="58%" y="86%" spread={220} count={12} seed={falling} />}
                         {hot && falling >= 5 && <Burst key="debris" kind="pieces" x="58%" y="80%" spread={320} count={18} seed={7} color="var(--bw-wall-dark)" />}

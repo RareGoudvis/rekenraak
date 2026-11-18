@@ -10,7 +10,7 @@ import { progressOf, SPEL_FLASH_MS, useSpelStore } from '../oefenen/spelen/useSp
 import { mulberry32 } from '../oefenen/spelen/distractors';
 import { GAME_BLURB } from '../oefenen/zelf/gameBlurbs';
 import Brandweer, { BrandweerEnding, JUMP_MS } from '../oefenen/spelen/skins/brandweer/Brandweer';
-import { COLLAPSE, FIRE, RESCUE_EVERY, WINDOWS, WINDOW_CLOCK, decorOf, fireMood, fireOf, fireStart, fireStep, firstEvents, flameScale, jumpEvents, jumpTarget, jumpsOf, petWindow, rescuedOf, tooHot, windowClocks, windowsOf, type FireCounts } from '../oefenen/spelen/skins/brandweer/fire';
+import { COLLAPSE, DANGER, FIRE, RESCUE_EVERY, dangerOf, WINDOWS, WINDOW_CLOCK, decorOf, fireMood, fireOf, fireStart, fireStep, firstEvents, flameScale, jumpEvents, jumpTarget, jumpsOf, petWindow, rescuedOf, tooHot, windowClocks, windowsOf, type FireCounts } from '../oefenen/spelen/skins/brandweer/fire';
 import { aimAt, sprayPath } from '../oefenen/spelen/skins/brandweer/geometry';
 import { BRANDWEER_SOUNDS } from '../oefenen/spelen/skins/brandweer/sounds';
 import { resetKiosk } from './helpers/oefenKiosk';
@@ -23,6 +23,24 @@ import type { Level } from '../oefenen/spelen/levels/levels';
 const at = (elapsedMs: number, right: number, mistakes: number, streak: number, jumps = 0): FireCounts => ({ elapsedMs, right, mistakes, streak, jumps });
 // The shared clock's first 12 s: the first window's clock in the first minute.
 const FIRST_MS = 12_000;
+
+describe('the danger (owner 2026-11-18: the coming collapse reads at a glance)', () => {
+    test('the meter follows the level; cracks grow patch by patch from DANGER.crackFrom; one step under too hot = warn', () => {
+        expect(dangerOf(0).share).toBe(0);
+        expect(dangerOf(FIRE.max).share).toBe(1);
+        expect(dangerOf(DANGER.crackFrom - 1).cracks).toEqual([0, 0, 0, 0]);
+        expect(dangerOf(6).cracks).toEqual([1, 0, 0, 0]);
+        expect(dangerOf(7).cracks).toEqual([2, 1, 0, 0]);
+        expect(dangerOf(8).cracks).toEqual([2, 2, 1, 0]);
+        expect(dangerOf(9)).toEqual({ share: 0.9, cracks: [2, 2, 2, 2], warn: true });
+        expect(dangerOf(8).warn).toBe(false);
+        expect(dangerOf(FIRE.max).warn).toBe(false);
+    });
+
+    test('Makkelijk never collapses: no cracks, no sway, no warning, only the meter', () => {
+        expect(dangerOf(FIRE.max - 1, 'makkelijk')).toEqual({ share: 0.9, cracks: [0, 0, 0, 0], warn: false });
+    });
+});
 
 describe('the fire level', () => {
     test('a new building starts in the yellow; time and mistakes heat it, a sprayed window cools it', () => {
@@ -363,6 +381,38 @@ describe('the skin on the session', () => {
         expect(container.querySelector('.bw-root.is-toohot')).toBeNull();
         expect(lit(container)).toBe(FIRE.max - 1);
         expect(sp().phase).toBe('play');
+    });
+
+    test('the block in danger: the meter climbs, cracks grow, one step under too hot it sways under Pas op!', () => {
+        start();
+        const { container } = render(<Wired />);
+        const meter = () => Number((container.querySelector('.bw-meter-fill') as HTMLElement).style.getPropertyValue('--bw-meter'));
+        expect(meter()).toBeCloseTo(FIRE.start / FIRE.max);
+        expect(container.querySelector('.spel-cracks')).toBeNull();
+        for (let i = 0; i < 2; i++) { tapWrong(); wait(SPEL_FLASH_MS.wrong + 10); }
+        expect(meter()).toBeCloseTo(6 / FIRE.max);
+        expect(container.querySelectorAll('.bw-sway .spel-cracks')).toHaveLength(1);
+        expect(screen.queryByText('Pas op!')).toBeNull();
+        for (let i = 0; i < 3; i++) { tapWrong(); wait(SPEL_FLASH_MS.wrong + 10); }
+        expect(container.querySelector('.bw-root.is-warn')).not.toBeNull();
+        expect(container.querySelector('.bw-sway.is-on')).not.toBeNull();
+        expect(container.querySelector('.bw-windows.is-sway')).not.toBeNull();
+        expect(container.querySelectorAll('.bw-sway .spel-cracks.is-stage-2')).toHaveLength(DANGER.patches);
+        expect(screen.getByText('Pas op!')).toBeTruthy();
+        // One more: too hot, the warning makes way for the fall.
+        tapWrong();
+        expect(container.querySelector('.bw-root.is-warn')).toBeNull();
+        expect(screen.queryByText('Pas op!')).toBeNull();
+    });
+
+    test('Makkelijk: the meter tops out under the danger mark; no cracks, no sway, no warning', () => {
+        start('makkelijk');
+        const { container } = render(<Wired />);
+        for (let i = 0; i < FIRE.max; i++) { tapWrong(); wait(SPEL_FLASH_MS.wrong + 10); }
+        expect(container.querySelector('.bw-meter.is-safe')).not.toBeNull();
+        expect(container.querySelector('.spel-cracks')).toBeNull();
+        expect(container.querySelector('.bw-root.is-warn')).toBeNull();
+        expect(screen.queryByText('Pas op!')).toBeNull();
     });
 
     test('under help the fire never ends the round, and met hulp never heats it', () => {
