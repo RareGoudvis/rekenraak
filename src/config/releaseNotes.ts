@@ -37,7 +37,8 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         items: [
             { kind: 'nieuw', text: 'Zeven nieuwe spelletjes: Frituur, Brandweer, Skislalom, Grijpmachine, Aquarium, Spookhuis en Voetbalkaartjes.' },
             { kind: 'nieuw', text: 'Vier nieuwe spelletjes voor twee: Monstertrucks, Drakenrace en Wildwaterrace (elke som is een hindernis) en Steekspel (een minuut sommen, dan de botsing).' },
-            { kind: 'nieuw', text: 'Zelf oefenen, 5de en 6de leerjaar: Frans. Werkwoorden vervoegen in de présent, met keuzeknoppen en ook in de spelletjes.' },
+            { kind: 'nieuw', text: 'Zelf oefenen, 5de en 6de leerjaar: Frans. Werkwoorden (kies zelf welke), dagen en maanden, getallen tot 100. In beide richtingen.' },
+            { kind: 'nieuw', text: 'Frans, klok lezen, breuken, geld tellen en de thermometer spelen nu ook in de duels en de spelletjes met cijfertoetsen.' },
             { kind: 'nieuw', text: 'Spelletjes met keuzes hebben nu vier niveaus: Makkelijk (zonder klok), Normaal, Moeilijk en Onmogelijk. De klok per som wordt na een minuut sneller.' },
             { kind: 'gewijzigd', text: 'Tegen de computer speelt die sterker naarmate je een hoger niveau kiest. Duelspellen: kies 5 tot 25 levens.' },
             { kind: 'nieuw', text: 'Honingraat: op Moeilijk en Onmogelijk komt op het einde de Wespenkoningin de honing halen. Raak haar genoeg keer en ze vlucht!' },
@@ -49,6 +50,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             { kind: 'nieuw', text: 'Zelf oefenen: een knop Over met uitleg voor ouders, wat er bewaard wordt (alleen op dit toestel) en een knop om het te wissen.' },
             { kind: 'nieuw', text: 'Zelf oefenen: de leerjaarbalk viert de feesten mee, met de Sint op zijn paard, een heks op haar bezem of Cupido met hartjes.' },
             { kind: 'gewijzigd', text: 'Frituur gaat dicht bij te veel boze klanten, Brandweer waarschuwt voor het gebouw instort, de skiër verliest bij elke val iets.' },
+            { kind: 'gewijzigd', text: 'Zelf oefenen: Vergelijken is eenvoudiger (groter of kleiner, grootste of kleinste, ordenen) en Splitsen in het 1ste leerjaar gaat tot 5, 10 of 20.' },
             { kind: 'opgelost', text: 'Lange onderwerpnamen lopen niet meer tegen de ronde rand van hun label, en de knop Resultaten past nu ook op een klein scherm.' },
         ],
     },
