@@ -138,7 +138,8 @@ describe('Frans questions', () => {
         expect(makeFransExercise(s, rngOf(7))).toEqual(makeFransExercise(s, rngOf(7)));
     });
 
-    test('a tense that is not ready makes no question', () => {
-        expect(makeFransExercise({ tense: 'passeCompose', mode: 'vervoegen', verbs: ['avoir'] }, rngOf(1))).toBeNull();
+    test('no verb or no tense makes no question', () => {
+        expect(makeFransExercise({ tense: 'present', mode: 'vervoegen', verbs: ['nager'] }, rngOf(1))).toBeNull();
+        expect(makeFransExercise({ tense: 'mix', tenses: [], mode: 'vervoegen', verbs: ['avoir'] }, rngOf(1))).toBeNull();
     });
 });

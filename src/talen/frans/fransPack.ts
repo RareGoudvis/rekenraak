@@ -2,8 +2,8 @@ import type { CardVariant } from '../../config/eenvoudig/cards';
 import type { SpelPack } from '../../oefenen/spelen/content/pack';
 import { mulberry32, seedOf } from '../../oefenen/spelen/distractors';
 import { fransLeaves } from './fransCards';
-import { CHOICE_COUNT, formOfExercise, nlChoiceChars, promptOf, type FransExercise } from './questions';
-import { VERBS, VERB_BY_INF, presentForms, type Tense, type Verb } from './verbs';
+import { CHOICE_COUNT, formOfExercise, frChoiceChars, nlChoiceChars, promptOf, tensesOf, type FransExercise, type TenseChoice } from './questions';
+import { VERBS, VERB_BY_INF, type Tense, type Verb } from './verbs';
 
 // Frans in the games (a content pack): the question on the sign with the answer's place marked, the exercise's own
 // choices on the targets (as many as the game shows), and a memory pair "wij (hebben)" with "avons". Words only, so
@@ -28,9 +28,10 @@ export function fransWordChars(v: CardVariant): number {
     // Welk werkwoord? with fewer than six verbs borrows their groups' infinitives, and every verb when that is still too few.
     const grouped = VERBS.filter(x => card.includes(x) || card.some(c => c.group === x.group));
     const pool = !werkwoord || card.length >= CHOICE_COUNT ? card : grouped.length >= CHOICE_COUNT ? grouped : VERBS;
-    const fr = werkwoord ? longest(pool.map(x => x.inf)) : longest(card.flatMap(x => [...presentForms(x), x.inf]));
+    const tenses = tensesOf({ tense: (v.ov.tense as TenseChoice | undefined) ?? 'present', tenses: v.ov.tenses as Tense[] | undefined });
+    const fr = werkwoord ? longest(pool.map(x => x.inf)) : frChoiceChars(card, tenses);
     const dir = v.ov.dir ?? 'nl-fr';
-    const nl = nlChoiceChars(pool, (v.ov.tense as Tense | undefined) ?? 'present', werkwoord);
+    const nl = nlChoiceChars(pool, tenses, werkwoord);
     return dir === 'nl-fr' ? fr : dir === 'fr-nl' ? nl : Math.max(fr, nl);
 }
 

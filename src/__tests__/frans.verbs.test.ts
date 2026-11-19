@@ -78,10 +78,8 @@ describe('Frans verbs, présent', () => {
         }
     });
 
-    test('only présent is ready; the other tenses answer null until step 2', () => {
+    test('the présent through formOf (the other tenses: frans.tijden.test.ts)', () => {
         const avoir = VERB_BY_INF.get('avoir')!;
         expect(PERSONS.map(p => formOf(avoir, 'present', p))).toEqual(['ai', 'as', 'a', 'avons', 'avez', 'ont']);
-        expect(formOf(avoir, 'futurProche', 0)).toBeNull();
-        expect(formOf(avoir, 'passeCompose', 0)).toBeNull();
     });
 });

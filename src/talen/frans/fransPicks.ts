@@ -1,6 +1,6 @@
 import type { Leerjaar } from '../../config/gradePresets';
 import type { ZelfChoice } from '../../oefenen/zelf/zelfSessie';
-import { FRANS_DIRS, FRANS_MODES_ORDER, FRANS_MODE_LABELS, fransVariant, verbsOfGroup, type VerbPick } from './fransCards';
+import { FRANS_DIRS, FRANS_MODES_ORDER, FRANS_MODE_LABELS, FRANS_TENSES, fransVariant, tenseForGrade, verbsOfGroup, type VerbPick } from './fransCards';
 import { GETALLEN_LEAF, NUMBER_SETS, NUMBER_WAYS, WOORD_LEAF, WORD_WAYS, woordVariant, type NumberSet } from './woordCards';
 import { VERBS, type VerbGroup } from './verbs';
 import type { FransMode } from './questions';
@@ -17,7 +17,7 @@ export interface FransPicks { werkwoorden: VerbPick; woorden: WordPick; getallen
 
 // avoir and être: the first verbs a class meets.
 export const DEFAULT_PICKS: FransPicks = {
-    werkwoorden: { verbs: ['être', 'avoir'], mode: 'vervoegen', dir: 'nl-fr' },
+    werkwoorden: { verbs: ['être', 'avoir'], mode: 'vervoegen', dir: 'nl-fr', tense: 'present' },
     woorden: { dagen: true, maanden: false, dir: 'fr-nl' },
     getallen: { set: 'getallen20', dir: 'nl-fr' },
 };
@@ -35,7 +35,10 @@ export function cleanPicks(raw: unknown): FransPicks {
     const flag = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
     const words = { dagen: flag(m.dagen, d.woorden.dagen), maanden: flag(m.maanden, d.woorden.maanden) };
     return {
-        werkwoorden: { verbs: verbs.length ? verbs : [...d.werkwoorden.verbs], mode: oneOf(w.mode, FRANS_MODES_ORDER, d.werkwoorden.mode), dir: oneOf(w.dir, FRANS_DIRS, d.werkwoorden.dir) },
+        werkwoorden: {
+            verbs: verbs.length ? verbs : [...d.werkwoorden.verbs], mode: oneOf(w.mode, FRANS_MODES_ORDER, d.werkwoorden.mode),
+            dir: oneOf(w.dir, FRANS_DIRS, d.werkwoorden.dir), tense: oneOf(w.tense, FRANS_TENSES, 'present'),
+        },
         woorden: { ...(words.dagen || words.maanden ? words : { dagen: true, maanden: false }), dir: oneOf(m.dir, WORD_WAYS.map(x => x.dir), d.woorden.dir) },
         getallen: { set: oneOf(g.set, NUMBER_SETS.map(x => x.set), d.getallen.set), dir: oneOf(g.dir, NUMBER_WAYS.map(x => x.dir), d.getallen.dir) },
     };
@@ -86,7 +89,9 @@ export function toggleList(p: WordPick, list: 'dagen' | 'maanden'): WordPick {
 
 export function verbChoice(p: VerbPick, grade: Leerjaar, topicId: string): ZelfChoice {
     const v = fransVariant(p, grade);
-    return { key: `${grade}|${topicId}|${p.mode}|${p.dir}|${p.verbs.join('+')}`, label: FRANS_MODE_LABELS[p.mode as FransMode], vars: [v] };
+    // The présent keeps the key it had before the Tijd row, so its earlier runs still count.
+    const tense = tenseForGrade(p.tense ?? 'present', grade);
+    return { key: `${grade}|${topicId}|${p.mode}|${p.dir}|${p.verbs.join('+')}${tense === 'present' ? '' : `|${tense}`}`, label: FRANS_MODE_LABELS[p.mode as FransMode], vars: [v] };
 }
 
 export const wordListsOf = (p: WordPick): string[] => [...(p.dagen ? ['dagen'] : []), ...(p.maanden ? ['maanden'] : [])];

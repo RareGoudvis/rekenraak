@@ -1,7 +1,7 @@
 import type { CardVariant } from '../../config/eenvoudig/cards';
 import type { Leerjaar } from '../../config/gradePresets';
 import { VERBS, type Tense, type VerbGroup } from './verbs';
-import type { FransMode, FransSettings } from './questions';
+import type { FransMode, FransSettings, TenseChoice } from './questions';
 import type { WordDirChoice } from './woorden';
 
 // The Werkwoorden card (owner 2026-11-18): the pupil switches verb groups and verbs on, picks Hoe? and Richting, and
@@ -38,14 +38,29 @@ export const FRANS_DIR_LABELS: Readonly<Record<WordDirChoice, { label: string; s
     mix: { label: 'Door elkaar', short: 'Door elkaar' },
 };
 
-// Step 1 is présent only; step 2 adds a Tijd row that sets this per choice.
-export const FRANS_TENSE: Tense = 'present';
+// Tijd (owner 2026-11-19): the futur proche from leerjaar 5, the passé composé in leerjaar 6; Door elkaar mixes the
+// tenses of the leerjaar. Présent is the default.
+export const FRANS_TENSES: readonly TenseChoice[] = ['present', 'futurProche', 'passeCompose', 'mix'];
+export const FRANS_TENSE_LABELS: Readonly<Record<TenseChoice, string>> = {
+    present: 'Présent', futurProche: 'Futur proche', passeCompose: 'Passé composé', mix: 'Door elkaar',
+};
+
+/** The tenses a leerjaar plays (Door elkaar mixes exactly these). */
+export const tensesForGrade = (grade: Leerjaar): Tense[] => (grade >= 6 ? ['present', 'futurProche', 'passeCompose'] : ['present', 'futurProche']);
+
+/** The Tijd row of a leerjaar: its tenses, then Door elkaar. */
+export const tenseChoicesForGrade = (grade: Leerjaar): TenseChoice[] => [...tensesForGrade(grade), 'mix'];
+
+/** A remembered tense this leerjaar does not offer (passé composé in leerjaar 5) plays the présent. */
+export const tenseForGrade = (tense: TenseChoice, grade: Leerjaar): TenseChoice => (tenseChoicesForGrade(grade).includes(tense) ? tense : 'present');
 
 export interface VerbPick {
     // The verbs switched on, in the table's order.
     verbs: readonly string[];
     mode: FransMode;
     dir: WordDirChoice;
+    // Absent = présent (a pick stored before the Tijd row).
+    tense?: TenseChoice;
 }
 
 const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every(x => b.includes(x));
@@ -62,9 +77,11 @@ export function verbSelectionLabel(verbs: readonly string[]): string {
     return `${verbs.length} werkwoorden`;
 }
 
-/** "avoir en être · Alles samen · FR → NL": what a run of this pick is called in the results. */
-export const fransLabelOf = (pick: VerbPick): string =>
-    [verbSelectionLabel(pick.verbs), FRANS_MODE_LABELS[pick.mode], FRANS_DIR_LABELS[pick.dir].short].join(' · ');
+/** "avoir en être · Futur proche · Alles samen · FR → NL": what a run of this pick is called (présent unnamed). */
+export const fransLabelOf = (pick: VerbPick): string => {
+    const tense = pick.tense && pick.tense !== 'present' ? [pick.tense === 'mix' ? 'tijden door elkaar' : FRANS_TENSE_LABELS[pick.tense]] : [];
+    return [verbSelectionLabel(pick.verbs), ...tense, FRANS_MODE_LABELS[pick.mode], FRANS_DIR_LABELS[pick.dir].short].join(' · ');
+};
 
 // A short stable tag for a verb selection (the variant id). Kept here: importing the session code would close an
 // import cycle (session → kiosk → subjects → this file).
@@ -74,11 +91,16 @@ const tagOf = (verbs: readonly string[]) => {
     return h.toString(36);
 };
 
-/** The card variant of one pick: what a Zelf choice holds. The same pick always has the same id. */
+/** The card variant of one pick in a leerjaar: what a Zelf choice holds. The same pick always has the same id (the
+ * présent keeps the id it had before the Tijd row). */
 export function fransVariant(pick: VerbPick, grade: Leerjaar): CardVariant {
-    const ov: FransSettings & Record<string, unknown> = { tense: FRANS_TENSE, mode: pick.mode, verbs: [...pick.verbs], dir: pick.dir };
-    const id = `frans-ww-${pick.mode}-${pick.dir}-${tagOf(pick.verbs)}`;
-    return { id, l: FRANS_MODE_LABELS[pick.mode], lj: grade, leafId: FRANS_VERB_LEAF, ov, count: null, label: fransLabelOf(pick) };
+    const tense = tenseForGrade(pick.tense ?? 'present', grade);
+    const ov: FransSettings & Record<string, unknown> = {
+        tense, ...(tense === 'mix' && { tenses: tensesForGrade(grade) }), mode: pick.mode, verbs: [...pick.verbs], dir: pick.dir,
+    };
+    const id = `frans-ww-${pick.mode}-${pick.dir}-${tagOf(pick.verbs)}${tense === 'present' ? '' : `-${tense}${tense === 'mix' ? grade : ''}`}`;
+    const label = fransLabelOf({ ...pick, tense });
+    return { id, l: FRANS_MODE_LABELS[pick.mode], lj: grade, leafId: FRANS_VERB_LEAF, ov, count: null, label };
 }
 
 export const fransLeaves: readonly string[] = [FRANS_VERB_LEAF];
