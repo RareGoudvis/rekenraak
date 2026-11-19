@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-11-19** — Released v2.0.3 (round 6, the owner review, the kids extras, Frans step 1 and 3, the choice pad, the reach batch) and v2.0.4: Frans futur proche and passé composé (a Tijd row on Werkwoorden; aller / venir with être and agreement).
+
 **2026-11-18 (later)** — Owner review round, local on rc-oefenen: the three races became obstacle courses (spelen/course/), Steekspel a one-minute joust, Frituur / Brandweer / Skislalom / Aquarium cat / Spookhuis reworked, the topic pill fixed; kids app: an Over page for parents with a pupil-only wipe, seasonal header effects with scenes, and Frans (présent) as the first non-maths subject through a new subject seam (src/talen/frans/, services/oefenen/subjects.ts). 2.0.3 release notes and manual updated.
 
 **2026-11-18** — Spelen round 6, local on rc-oefenen (not pushed): seasons (halloween, winter, carnaval, zomer) for every skin; new games Voetbalkaartjes, Frituur, Brandweer, Skislalom, Grijpmachine, Aquarium, Spookhuis and four duel races (Drakenrace with a catch-up storm, Wildwaterrace, Monstertrucks, Steekspel); duel levens 5–25; the pupil restyle (sticker bar on tappables only, one selected look, Oefenen / Spelen colours, Hoe lang wil je oefenen?); `stepsGlyph` on the sheet; and four levels (Makkelijk / Normaal / Moeilijk / Onmogelijk) with one shared clock rule (spelen/levels/) across every game that has a level row, bots re-tuned per level.

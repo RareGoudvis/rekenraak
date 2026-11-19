@@ -31,6 +31,15 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
+        version: '2.0.4',
+        date: '2026-11',
+        summary: 'Frans: nu ook de futur proche en de passé composé.',
+        items: [
+            { kind: 'nieuw', text: 'Zelf oefenen, Frans: kies bij Werkwoorden ook de tijd: présent of futur proche (5de leerjaar), en passé composé (6de leerjaar), of door elkaar.' },
+            { kind: 'nieuw', text: 'Na een fout zegt de uitleg welke tijd en welk hulpwerkwoord: "a mangé – passé composé van manger, hulpwerkwoord avoir".' },
+        ],
+    },
+    {
         version: '2.0.3',
         date: '2026-11',
         summary: 'Nieuw: elf spelletjes erbij (34 in totaal), vier niveaus van Makkelijk tot Onmogelijk, Franse werkwoorden voor het 5de en 6de leerjaar, en een frisse look voor Zelf oefenen.',
