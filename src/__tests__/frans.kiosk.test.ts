@@ -109,9 +109,11 @@ describe('Frans through the kiosk', () => {
 
     test('the card instruction names what to do per oefening', () => {
         const d = kioskFor(FRANS_TYPE_ID)!;
-        const ex = { mode: 'vervoegen', verb: 'avoir' } as FransExercise;
+        const ex = { mode: 'vervoegen', verb: 'avoir', tense: 'present' } as FransExercise;
         const ki = d.kioskInstruction as (e: unknown, c: Record<string, unknown>) => string;
         expect(ki(ex, {})).toBe('Vervoeg avoir. Kies de juiste vorm.');
+        expect(ki({ ...ex, tense: 'futurProche' }, {})).toBe('Vervoeg avoir in de futur proche. Kies de juiste vorm.');
+        expect(ki({ ...ex, tense: 'passeCompose' }, {})).toBe('Vervoeg avoir in de passé composé. Kies de juiste vorm.');
         expect(ki({ ...ex, mode: 'werkwoord' }, {})).toMatch(/infinitief/);
     });
 

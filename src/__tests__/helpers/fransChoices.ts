@@ -4,7 +4,7 @@ import { FRANS_DIRS, FRANS_MODES_ORDER, verbsOfGroup } from '../../talen/frans/f
 import { numberChoice, verbChoice, wordChoice } from '../../talen/frans/fransPicks';
 import { NUMBER_SETS, type NumberSet } from '../../talen/frans/woordCards';
 import { VERBS } from '../../talen/frans/verbs';
-import type { FransMode } from '../../talen/frans/questions';
+import type { FransMode, TenseChoice } from '../../talen/frans/questions';
 import type { WordDirChoice } from '../../talen/frans/woorden';
 
 // The Frans choices the tests play: what the three options screens can make (FransOptions.tsx), built the same way.
@@ -21,8 +21,8 @@ export const VERB_SETS: Readonly<Record<string, readonly string[]>> = {
     ir: verbsOfGroup('ir'),
 };
 
-export const verbsOf = (verbs: readonly string[], mode: FransMode, dir: WordDirChoice = 'nl-fr', grade: Leerjaar = 5): ZelfChoice =>
-    verbChoice({ verbs, mode, dir }, grade, 'frans:werkwoorden');
+export const verbsOf = (verbs: readonly string[], mode: FransMode, dir: WordDirChoice = 'nl-fr', grade: Leerjaar = 5, tense: TenseChoice = 'present'): ZelfChoice =>
+    verbChoice({ verbs, mode, dir, tense }, grade, 'frans:werkwoorden');
 export const wordsOf = (lists: { dagen: boolean; maanden: boolean }, dir: WordDirChoice, grade: Leerjaar = 5): ZelfChoice =>
     wordChoice({ ...lists, dir }, grade, 'frans:woorden');
 export const numbersOf = (set: NumberSet, dir: WordDirChoice, grade: Leerjaar = 5): ZelfChoice => numberChoice({ set, dir }, grade, 'frans:getallen');

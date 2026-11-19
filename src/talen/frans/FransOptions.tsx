@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { CaretDown } from '@phosphor-icons/react';
 import type { Leerjaar } from '../../config/gradePresets';
 import type { ZelfChoice } from '../../oefenen/zelf/zelfSessie';
-import { FRANS_DIRS, FRANS_DIR_LABELS, FRANS_MODES_ORDER, FRANS_MODE_LABELS, VERB_GROUPS, verbsOfGroup } from './fransCards';
+import { FRANS_DIRS, FRANS_DIR_LABELS, FRANS_MODES_ORDER, FRANS_MODE_LABELS, FRANS_TENSE_LABELS, VERB_GROUPS, tenseChoicesForGrade, tenseForGrade, verbsOfGroup } from './fransCards';
 import { NUMBER_SETS, NUMBER_WAYS, WORD_WAYS } from './woordCards';
 import { groupIsOn, readPicks, savePicks, setGroup, toggleGroup, toggleList, toggleVerb, type FransPicks } from './fransPicks';
 import { fransChoiceOf, type FransTopic } from './fransZelf';
@@ -87,6 +87,9 @@ function VerbOptions(props: SubjectOptionsProps) {
                     );
                 })}
             </div>
+            {/* Tijd: the futur proche from leerjaar 5, the passé composé in 6 (a remembered one this leerjaar lacks shows Présent). */}
+            <Seg id="fr-opt-tijd" label="Tijd" stack value={tenseForGrade(p.tense ?? 'present', props.grade)} onPick={tense => set({ ...p, tense })}
+                options={tenseChoicesForGrade(props.grade).map(t => ({ value: t, label: FRANS_TENSE_LABELS[t] }))} />
             <Seg id="fr-opt-hoe" label="Hoe?" stack value={p.mode} onPick={mode => set({ ...p, mode })}
                 options={FRANS_MODES_ORDER.map(m => ({ value: m, label: FRANS_MODE_LABELS[m] }))} />
             <Seg id="fr-opt-richting" label="Richting" value={p.dir} onPick={dir => set({ ...p, dir })}

@@ -1,12 +1,12 @@
 import type { KioskDescriptor, OefenType } from '../../services/oefenen/types';
 import type { KioskSubject } from '../../services/oefenen/subjects';
 import type { StepLine } from '../../services/math/workedSteps';
-import { FRANS_TYPE_ID, FRANS_VERB_LEAF, fransLabelOf } from './fransCards';
+import { FRANS_TENSE_LABELS, FRANS_TYPE_ID, FRANS_VERB_LEAF, fransLabelOf } from './fransCards';
 import {
-    FRANS_MODES, formOfExercise, frNlPairOf, fullAnswerOf, grammarOf, makeFransExercise, promptOf, pronounOfExercise, tableNlOf, tableOf,
-    type FransExercise, type FransMode, type FransSettings,
+    FRANS_MODES, formOfExercise, frNlPairOf, fullAnswerOf, grammarOf, makeFransExercise, promptOf, pronounOfExercise, tableNlOf, tableOf, tensesOf,
+    type FransExercise, type FransMode, type FransSettings, type TenseChoice,
 } from './questions';
-import { TENSES_READY, VERB_BY_INF, type Tense } from './verbs';
+import { VERB_BY_INF, type Tense } from './verbs';
 import { WORD_DIRS, type WordDirChoice } from './woorden';
 
 // Frans as a kiosk subject: the six choices on the kiosk's buttons, the explanation as its steps.
@@ -16,16 +16,17 @@ const frNl = (e: FransExercise) => e.dir === 'fr-nl';
 
 function settingsOf(c: Record<string, unknown>): FransSettings | null {
     const mode = c.mode as FransMode;
-    const tense = c.tense as Tense;
+    const tense = c.tense as TenseChoice;
+    const tenses = Array.isArray(c.tenses) ? (c.tenses as Tense[]) : undefined;
     const verbs = c.verbs;
     // Settings from before the Richting row have no dir: Nederlands → Frans.
     const dir = (c.dir ?? 'nl-fr') as WordDirChoice;
-    if (!FRANS_MODES.includes(mode) || !TENSES_READY.includes(tense) || !Array.isArray(verbs) || !WORD_DIRS.includes(dir)) return null;
-    return { mode, tense, verbs: verbs.filter((x): x is string => typeof x === 'string'), dir };
+    if (!FRANS_MODES.includes(mode) || !tensesOf({ tense, tenses }).length || !Array.isArray(verbs) || !WORD_DIRS.includes(dir)) return null;
+    return { mode, tense, ...(tenses && { tenses }), verbs: verbs.filter((x): x is string => typeof x === 'string'), dir };
 }
 
 const INSTRUCTION: Readonly<Record<FransMode, (ex: FransExercise) => string>> = {
-    vervoegen: ex => `Vervoeg ${ex.verb}. Kies de juiste vorm.`,
+    vervoegen: ex => `Vervoeg ${ex.verb}${ex.tense === 'present' ? '' : ` in de ${FRANS_TENSE_LABELS[ex.tense].toLowerCase()}`}. Kies de juiste vorm.`,
     werkwoord: () => 'Welk werkwoord is het? Kies de infinitief.',
     samen: () => 'Kies het juiste werkwoord in de juiste vorm.',
 };
@@ -75,18 +76,18 @@ export const FRANS_SUBJECT: KioskSubject = {
         const e = asEx(ex);
         if (frNl(e)) {
             if (e.mode === 'werkwoord') return [word(`${formOfExercise(e)} komt van ${e.verb}.`, 'tip'), word(`${e.verb} = ${verbNl(e)}`, 'tabel')];
-            return [word(`${e.subject.fr} = ${e.subject.nl}`, 'tip'), ...tableNlOf(e.verb).map(l => word(l, 'tabel'))];
+            return [word(`${e.subject.fr} = ${e.subject.nl}`, 'tip'), ...tableNlOf(e.verb, e.tense).map(l => word(l, 'tabel'))];
         }
         if (e.mode === 'werkwoord') return [word(`${e.nl} komt van het werkwoord ${verbNl(e)}.`, 'tip')];
         // A name: which pronoun it stands for (Jos = il); a pronoun: its Dutch (tu = jij).
         const tip = pronounOfExercise(e) === e.subject.fr ? `${e.subject.fr} = ${e.subject.nl}` : `${e.subject.fr} = ${pronounOfExercise(e)}`;
-        return [word(tip, 'tip'), ...tableOf(e.verb).map(l => word(l, 'tabel'))];
+        return [word(tip, 'tip'), ...tableOf(e.verb, e.tense).map(l => word(l, 'tabel'))];
     },
     // After a fout the answer with its grammar ("tu as – avoir, 2de persoon enkelvoud"); welk werkwoord? also after a right one.
     afterLine: (ex, _c, correct) => (!correct ? `${answerLine(asEx(ex))} – ${grammarOf(asEx(ex))}` : asEx(ex).mode === 'werkwoord' ? answerLine(asEx(ex)) : null),
     typeOf: (v): OefenType | null => {
         const s = v.leafId === FRANS_VERB_LEAF ? settingsOf(v.ov) : null;
         if (!s) return null;
-        return { typeId: FRANS_TYPE_ID, leafId: v.leafId, label: fransLabelOf({ verbs: s.verbs, mode: s.mode, dir: s.dir ?? 'nl-fr' }), constraints: { ...v.ov }, weight: 100 };
+        return { typeId: FRANS_TYPE_ID, leafId: v.leafId, label: fransLabelOf({ verbs: s.verbs, mode: s.mode, dir: s.dir ?? 'nl-fr', tense: s.tense }), constraints: { ...v.ov }, weight: 100 };
     },
 };

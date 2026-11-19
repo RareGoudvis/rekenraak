@@ -2,9 +2,10 @@
 // meaning, so a question can say "Jos (heeft)". The irregular verbs are written out; the regular ones follow the rule
 // below, which frans.verbs.test.ts checks against a hand-written table.
 
-// Step 1 plays the présent; futur proche (leerjaar 5) and passé composé (leerjaar 6) come as data in step 2.
+// The présent, the futur proche (aller + infinitief, from leerjaar 5) and the passé composé (avoir / être +
+// participe passé, leerjaar 6).
 export type Tense = 'present' | 'futurProche' | 'passeCompose';
-export const TENSES_READY: readonly Tense[] = ['present'];
+export const TENSES_READY: readonly Tense[] = ['present', 'futurProche', 'passeCompose'];
 
 // 0 je · 1 tu · 2 il / elle / on · 3 nous · 4 vous · 5 ils / elles (the order the tables are written in).
 export type Person = 0 | 1 | 2 | 3 | 4 | 5;
@@ -92,14 +93,81 @@ export function presentForms(verb: Verb): Forms {
     return ENDINGS[verb.group].map(e => `${softStem(stem, e)}${e}`) as unknown as Forms;
 }
 
-/** One form in a tense, or null for a tense that is not ready yet (step 2). */
-export function formOf(verb: Verb, tense: Tense, person: Person): string | null {
-    if (tense !== 'present') return null;
-    return presentForms(verb)[person];
+// ── Passé composé: the participe passé and its auxiliary, French and Dutch, per verb (hand-written, checked by the
+// supervisor). Only aller and venir take être here; their participle agrees with the subject (allée, allés, allées).
+// Dutch: hebben / zijn + voltooid deelwoord, each verb with its own auxiliary (eindigen, slagen, gaan, komen and
+// zijn take zijn).
+export interface PasseCompose {
+    pp: string;
+    aux: 'avoir' | 'être';
+    nl: { pp: string; aux: 'hebben' | 'zijn' };
+}
+const pc = (pp: string, aux: 'avoir' | 'être', nlPp: string, nlAux: 'hebben' | 'zijn'): PasseCompose => ({ pp, aux, nl: { pp: nlPp, aux: nlAux } });
+
+export const PASSE_COMPOSE: Readonly<Record<string, PasseCompose>> = {
+    être: pc('été', 'avoir', 'geweest', 'zijn'),
+    avoir: pc('eu', 'avoir', 'gehad', 'hebben'),
+    aller: pc('allé', 'être', 'gegaan', 'zijn'),
+    faire: pc('fait', 'avoir', 'gedaan', 'hebben'),
+    boire: pc('bu', 'avoir', 'gedronken', 'hebben'),
+    venir: pc('venu', 'être', 'gekomen', 'zijn'),
+    prendre: pc('pris', 'avoir', 'genomen', 'hebben'),
+    pouvoir: pc('pu', 'avoir', 'gekund', 'hebben'),
+    vouloir: pc('voulu', 'avoir', 'gewild', 'hebben'),
+    voir: pc('vu', 'avoir', 'gezien', 'hebben'),
+    dire: pc('dit', 'avoir', 'gezegd', 'hebben'),
+    mettre: pc('mis', 'avoir', 'gezet', 'hebben'),
+    savoir: pc('su', 'avoir', 'geweten', 'hebben'),
+    parler: pc('parlé', 'avoir', 'gesproken', 'hebben'),
+    aimer: pc('aimé', 'avoir', 'gehouden van', 'hebben'),
+    jouer: pc('joué', 'avoir', 'gespeeld', 'hebben'),
+    regarder: pc('regardé', 'avoir', 'gekeken', 'hebben'),
+    écouter: pc('écouté', 'avoir', 'geluisterd', 'hebben'),
+    chanter: pc('chanté', 'avoir', 'gezongen', 'hebben'),
+    danser: pc('dansé', 'avoir', 'gedanst', 'hebben'),
+    manger: pc('mangé', 'avoir', 'gegeten', 'hebben'),
+    habiter: pc('habité', 'avoir', 'gewoond', 'hebben'),
+    travailler: pc('travaillé', 'avoir', 'gewerkt', 'hebben'),
+    chercher: pc('cherché', 'avoir', 'gezocht', 'hebben'),
+    donner: pc('donné', 'avoir', 'gegeven', 'hebben'),
+    finir: pc('fini', 'avoir', 'geëindigd', 'zijn'),
+    choisir: pc('choisi', 'avoir', 'gekozen', 'hebben'),
+    réussir: pc('réussi', 'avoir', 'geslaagd', 'zijn'),
+    vendre: pc('vendu', 'avoir', 'verkocht', 'hebben'),
+    attendre: pc('attendu', 'avoir', 'gewacht', 'hebben'),
+    répondre: pc('répondu', 'avoir', 'geantwoord', 'hebben'),
+};
+
+export const passeComposeOf = (verb: Verb): PasseCompose => {
+    const p = PASSE_COMPOSE[verb.inf];
+    if (!p) throw new Error(`Frans: no passé composé for ${verb.inf}`);
+    return p;
+};
+
+const AVOIR: Forms = ['ai', 'as', 'a', 'avons', 'avez', 'ont'];
+const ETRE: Forms = ['suis', 'es', 'est', 'sommes', 'êtes', 'sont'];
+const ALLER: Forms = ['vais', 'vas', 'va', 'allons', 'allez', 'vont'];
+const HEBBEN: Forms = ['heb', 'hebt', 'heeft', 'hebben', 'hebben', 'hebben'];
+const ZIJN: Forms = ['ben', 'bent', 'is', 'zijn', 'zijn', 'zijn'];
+const GAAN: Forms = ['ga', 'gaat', 'gaat', 'gaan', 'gaan', 'gaan'];
+
+const plural = (p: Person) => p >= 3;
+
+/** The ending an être participle takes for its subject: '' (allé), 'e' (allée), 's' (allés), 'es' (allées). */
+export const agreementOf = (person: Person, fem: boolean): string => `${fem ? 'e' : ''}${plural(person) ? 's' : ''}`;
+
+/** One form in a tense: "a", "va manger", "a mangé", "est allée" (fem = the subject is feminine; only être participles show it). */
+export function formOf(verb: Verb, tense: Tense, person: Person, fem = false): string | null {
+    if (tense === 'present') return presentForms(verb)[person];
+    if (tense === 'futurProche') return `${ALLER[person]} ${verb.inf}`;
+    const p = passeComposeOf(verb);
+    return p.aux === 'être' ? `${ETRE[person]} ${p.pp}${agreementOf(person, fem)}` : `${AVOIR[person]} ${p.pp}`;
 }
 
-/** The Dutch form for that person in a tense (the bracket in "Jos (heeft)"); null when the tense is not ready. */
+/** The Dutch form for that person in a tense (the bracket in "Jos (heeft)", "Jos (gaat eten)", "Jos (heeft gegeten)"). */
 export function nlFormOf(verb: Verb, tense: Tense, person: Person): string | null {
-    if (tense !== 'present') return null;
-    return verb.nl.present[person];
+    if (tense === 'present') return verb.nl.present[person];
+    if (tense === 'futurProche') return `${GAAN[person]} ${verb.nl.inf}`;
+    const p = passeComposeOf(verb);
+    return `${(p.nl.aux === 'zijn' ? ZIJN : HEBBEN)[person]} ${p.nl.pp}`;
 }
