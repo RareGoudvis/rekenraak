@@ -47,8 +47,15 @@ export default function LayoutBlockViewer({ block }: Props) {
         const spacing = Number(c.lineSpacing ?? 10);      // mm between lines
         const style = (c.lineStyle as string) ?? 'enkel';
         const gap = (spacing / 10) * CM;
+        // Kantlijn = the grey margin rule of a Flemish schrift; pupils write a), b) in front of it.
+        const margin = (Number(c.kantlijnMm ?? 4) / 10) * CM;
+        const vertical = { position: 'absolute', top: 0, bottom: 0 } as const;
         return (
-            <div style={{ width: '100%' }}>
+            <div style={{ width: '100%', position: 'relative' }}>
+                {c.kantlijnLinks && <div style={{ ...vertical, left: `${margin}px`, borderLeft: '1px solid #999' }} />}
+                {c.middenlijn && <div style={{ ...vertical, left: '50%', transform: 'translateX(-1px)', borderLeft: '2px solid #000' }} />}
+                {/* The right column's own kantlijn, so it only exists next to the middenlijn. */}
+                {c.middenlijn && c.kantlijnRechts && <div style={{ ...vertical, left: `calc(50% + ${margin}px)`, borderLeft: '1px solid #999' }} />}
                 {Array.from({ length: count }).map((_, i) => (
                     <div key={i} style={{ height: `${gap}px`, position: 'relative' }}>
                         {/* 'schrijf' adds the dotted midline primary schools use for letter height. */}

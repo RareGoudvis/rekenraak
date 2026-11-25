@@ -568,7 +568,7 @@ const vormleerSpace: OptionSpace = {
 // Sheet furniture: no generator, but the packer's height estimate reads these.
 const layoutSpace: Record<string, OptionSpace> = {
     'layout-sectie': { title: ['', 'Onthoud'], rule: ['lijn', 'geen'] },
-    'layout-schrijflijnen': { lineCount: [1, 6, 20], lineSpacing: [6, 10, 16], lineStyle: ['enkel', 'dubbel'] },
+    'layout-schrijflijnen': { lineCount: [1, 6, 20], lineSpacing: [6, 10, 16], lineStyle: ['enkel', 'dubbel'], kantlijnLinks: [false, true], middenlijn: [false, true], kantlijnRechts: [false, true], kantlijnMm: [2, 4, 20] },
     'layout-raster': { cellMm: [5, 10, 20], rows: [1, 8, 20] },
     'layout-kader': { title: ['Onthoud'], body: ['', 'een\ntwee'], emphasis: ['kader', 'geen'] },
     'layout-lege-pagina': {},

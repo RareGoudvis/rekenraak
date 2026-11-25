@@ -78,15 +78,22 @@ export default function LayoutConfig({ block }: { block: MathBlock }) {
         </div>
     );
 
-    const slider = (key: string, label: string, info: string, min: number, max: number, step: number, fallback: number, unit = '') => (
+    const slider = (key: string, label: string, info: string, min: number, max: number, step: number, fallback: number, unit = '', fmt: (v: number) => string = String) => (
         <div style={styles.section}>
-            <SettingLabel text={`${label}: ${Number(c[key] ?? fallback)}${unit}`} info={info} />
+            <SettingLabel text={`${label}: ${fmt(Number(c[key] ?? fallback))}${unit}`} info={info} />
             <input
                 type="range" min={min} max={max} step={step}
                 value={Number(c[key] ?? fallback)}
                 onChange={(e) => set(key, Number(e.target.value))}
                 style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
             />
+        </div>
+    );
+
+    const onOff = (key: string, label: string, info: string) => (
+        <div style={styles.onOffRow}>
+            <SettingLabel text={label} info={info} />
+            <button onClick={() => set(key, !c[key])} aria-pressed={!!c[key]} style={styles.onOffBtn(!!c[key])}>{c[key] ? 'Aan' : 'Uit'}</button>
         </div>
     );
 
@@ -105,6 +112,13 @@ export default function LayoutConfig({ block }: { block: MathBlock }) {
                 {segment('lineStyle', 'Soort:', 'Schrijflijn voegt de stippellijn op halve hoogte toe.', [
                     { v: 'enkel', l: 'Enkel' }, { v: 'schrijf', l: 'Schrijflijn' },
                 ], 'enkel')}
+                <hr style={styles.divider} />
+                <SettingLabel group text="Kantlijnen en middenlijn" info="Een kantlijn geeft de leerling plaats om a), b) … te noteren vóór de oefening." />
+                {onOff('kantlijnLinks', 'Kantlijn links', 'Grijze lijn aan de linkerkant van het blok.')}
+                {onOff('middenlijn', 'Middenlijn', 'Dikke lijn in het midden: twee kolommen naast elkaar.')}
+                {!!c.middenlijn && onOff('kantlijnRechts', 'Kantlijn rechterkolom', 'Grijze lijn net naast de middenlijn, voor de rechterkolom.')}
+                {(!!c.kantlijnLinks || (!!c.middenlijn && !!c.kantlijnRechts)) &&
+                    slider('kantlijnMm', 'Breedte kantlijn', 'Hoe ver de kantlijn van de rand (of van de middenlijn) staat.', 2, 20, 1, 4, ' cm', mm => (mm / 10).toLocaleString('nl-BE'))}
             </>)}
 
             {kind === 'raster' && (<>

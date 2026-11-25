@@ -709,6 +709,10 @@ export type LayoutConstraints = {
     lineCount?: number;
     lineSpacing?: number;
     lineStyle?: string;
+    kantlijnLinks?: boolean;   // grey vertical margin rule kantlijnMm in from the left edge
+    middenlijn?: boolean;      // bold vertical rule splitting the lines into two columns
+    kantlijnRechts?: boolean;  // grey margin rule for the right column, kantlijnMm right of the middenlijn
+    kantlijnMm?: number;       // kantlijn distance from its edge in mm (default 4)
     cellMm?: number;
     rows?: number;
 };
