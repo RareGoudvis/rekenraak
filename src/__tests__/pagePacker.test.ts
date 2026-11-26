@@ -420,3 +420,46 @@ describe('packPages in aansluitend mode', () => {
         expect(skylineSlot([600, 600, 200, 200], COL_UNITS, GAP)).toEqual({ x: 0, y: 612 });
     });
 });
+
+// The answer key's worked steps can grow a block past a page; flowCutsOf lets it run over pages at its rows.
+describe('flowing an oversized block over pages (flowCutsOf)', () => {
+    const BODY = 1000;
+    // 19 rows of 180px: 3420px, so 5 rows per full page and a 720px tail with room under it.
+    const ROWS = 19, ROW = 180, TALL = ROWS * ROW;
+    const cuts = Array.from({ length: ROWS - 1 }, (_, k) => ({ px: (k + 1) * ROW, count: k + 1 }));
+    const tall = narrow(COL_UNITS as WidthUnits, ROWS);
+    const small = narrow(COL_UNITS as WidthUnits, 2);
+    const heightPxOf = (b: { id: string }) => (b.id === tall.id ? TALL : 100);
+    const opts = { mode: 'aansluitend' as const, pageBudgetPx: () => BODY, heightPxOf, blockSpacingPx: 12 };
+
+    test('without flowCutsOf the block is clipped on one page, as before', () => {
+        const pages = packRaw([tall], opts);
+        expect(pages).toHaveLength(1);
+        expect(pages[0].blocks[0].windowTop).toBeUndefined();
+    });
+
+    test('cuts only between rows, each window fits its page, and the windows cover the whole block', () => {
+        const pages = packRaw([tall], { ...opts, flowCutsOf: () => cuts });
+        const windows = pages.flatMap(p => p.blocks);
+        expect(windows.map(w => w.windowTop)).toEqual([0, 900, 1800, 2700]);
+        for (const w of windows) {
+            expect(w.h).toBeLessThanOrEqual(BODY);
+            expect((w.windowTop! + w.h) % ROW).toBe(0);
+        }
+        const last = windows[windows.length - 1];
+        expect(last.windowTop! + last.h).toBe(TALL);
+    });
+
+    test('the tail shares its page with the blocks after it', () => {
+        const pages = packRaw([tall, small], { ...opts, flowCutsOf: () => cuts });
+        expect(pages).toHaveLength(4);
+        expect(pages[3].blocks.map(b => b.block.id)).toEqual([tall.id, small.id]);
+        expect(pages[3].blocks[1].y).toBeGreaterThanOrEqual(pages[3].blocks[0].h);
+    });
+
+    test('a single row taller than a page has no safe cut: the block stays clipped', () => {
+        const pages = packRaw([tall], { ...opts, flowCutsOf: () => [{ px: TALL - 50, count: ROWS - 1 }] });
+        expect(pages).toHaveLength(1);
+        expect(pages[0].blocks[0].windowTop).toBeUndefined();
+    });
+});

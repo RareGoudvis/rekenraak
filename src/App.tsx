@@ -63,6 +63,7 @@ export default function App() {
   const blocks = useWorksheetStore((state) => state.blocks);
   const headerData = useWorksheetStore((state) => state.header);
   const docSettings = useWorksheetStore((state) => state.docSettings);
+  const showSolutions = useWorksheetStore((state) => state.showSolutions);
   const view = useWorksheetStore((state) => state.view);
   const setBlockPages = useWorksheetStore((state) => state.setBlockPages);
   // Harness escape hatch: measure a type at a width its tier forbids (scripts/width-matrix.mjs).
@@ -164,6 +165,12 @@ export default function App() {
     },
   } : undefined), [tutorQrOn, blockOrder, selectedGrade, measured]);
 
+  // Answer key only: worked steps can make a block taller than a page, and the key has no Splitsen for the teacher.
+  const flowCutsOf = useMemo(() => (showSolutions ? (b: MathBlock, w: number) => {
+    const rows = measured.rowCutsOf(b, w);
+    return rows && rows.total === splittableCount(b) ? rows.cuts : undefined;
+  } : undefined), [showSolutions, measured]);
+
   const packedPages = useMemo(
     () => packPages(blocks, {
       mode: docSettings.packMode ?? 'aansluitend',
@@ -176,8 +183,9 @@ export default function App() {
       answerSpacePx: docSettings.answerSpace,
       ignoreMinWidth: debugIgnoreMinWidth,
       qrSplit,
+      flowCutsOf,
     }),
-    [blocks, docSettings.packMode, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth, qrSplit],
+    [blocks, docSettings.packMode, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth, qrSplit, flowCutsOf],
   );
   useEffect(() => {
     setTutorQrSplitPages(packedPages.flatMap((p, i) => (p.qrSplit ? [i + 1] : [])));

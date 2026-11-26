@@ -69,6 +69,9 @@ export interface PlacedBlock extends PackedBlock {
     /** Cut by the QR split line between two of its rows: the cell shows its first `h` px,
         and the rest of the same render (from `top` down) sits under the line at `y`. */
     rest?: { y: number; h: number; top: number };
+    /** Flowed over pages (PackOptions.flowCutsOf): the cell shows `h` px of the block's render
+        from this px down; 0 = its first page. */
+    windowTop?: number;
 }
 
 /** A run of one block's exercises, `from` (default 0) up to `to` (default: the end). */
@@ -124,6 +127,9 @@ export interface PackOptions {
     answerSpacePx?: number;
     /** Stappenhulp QR on: a page whose sums overflow one QR gets a split line (splitPage). */
     qrSplit?: QrSplitOptions;
+    /** Measured row boundaries of a block that may flow over pages when it is taller than one
+        (the answer key: its worked steps make a block grow past a page the teacher cannot fix). */
+    flowCutsOf?: (block: MathBlock, width: WidthUnits) => RowCut[] | undefined;
 }
 
 const ROW_UNIT_PX = 24;
@@ -137,6 +143,7 @@ const FIT_EPSILON_PX = 0.5;
 interface Prepared extends PackedBlock {
     /** Uncapped height in px — what the block will actually render at. */
     px: number;
+    windowTop?: number;
 }
 
 /** Where a block of `w` column units drops into a skyline: the lowest free y, leftmost of
@@ -232,14 +239,14 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
 
     // One page from block `start` on; `stopAt` ends it in front of that block. A plan puts the
     // split line in; null = the line would have nothing under it on this page.
-    const packPage = (start: number, pageIndex: number, plan?: SplitPlan, stopAt?: number): PageRun | null => {
+    const packPage = (start: number, pageIndex: number, plan?: SplitPlan, stopAt?: number, head?: Prepared): PageRun | null => {
         const budget = budgetFor(pageIndex);
         const cur = opts.mode === 'rijen' ? rowsCursor(colUnits, gapPx) : skylineCursor(colUnits, gapPx);
         const placed: PlacedBlock[] = [];
         let line: { y: number; first: number } | undefined;
         let i = start;
         for (; i < prepared.length && i !== stopAt; i++) {
-            const p = prepared[i];
+            const p = i === start && head ? head : prepared[i];
             // 1. forced break — never leaving a blank page in front of it
             // 5a. a block taller than a page cannot share one: whatever sits beside it would
             //     be pushed off the paper by the part of it that is already clipped.
@@ -289,15 +296,47 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
         return run;
     };
 
+    // A block taller than a page, cut at its measured rows into one window per full page and a
+    // tail. Null when it does not flow: no cuts, or one row alone is taller than a page.
+    const flowWindows = (p: Prepared, firstPage: number): { pages: PageRun[]; tail: Prepared } | null => {
+        if (!p.spans || !opts.flowCutsOf) return null;
+        const cuts = opts.flowCutsOf(p.block, p.width)?.filter(c => c.px > 0 && c.px < p.px).sort((a, b) => a.px - b.px);
+        if (!cuts?.length) return null;
+        const runs: PageRun[] = [];
+        let top = 0;
+        while (p.px - top > budgetFor(firstPage + runs.length) + FIT_EPSILON_PX) {
+            const budget = budgetFor(firstPage + runs.length);
+            const cut = cuts.filter(c => c.px > top && c.px - top <= budget + FIT_EPSILON_PX).pop();
+            if (!cut) break;
+            const h = cut.px - top;
+            const fill = new Array(colUnits).fill(0).map((_, u) => (u < p.width ? h : 0));
+            runs.push({ placed: [{ ...p, x: 0, y: 0, w: p.width, h, windowTop: top }], fill, budgetPx: budget, next: -1 });
+            top = cut.px;
+        }
+        if (!runs.length) return null;
+        const px = p.px - top;
+        return { pages: runs, tail: { ...p, px, height: px / ROW_UNIT_PX, windowTop: top, spans: px > budgetFor(0) + FIT_EPSILON_PX } };
+    };
+
     const pages: PackedPage[] = [];
+    const pushPage = (run: PageRun) => pages.push({
+        blocks: run.placed, fill: run.fill, budgetPx: run.budgetPx,
+        used: Math.max(0, ...run.fill) / ROW_UNIT_PX,
+        ...(run.split && { qrSplit: run.split }),
+    });
     for (let i = 0; i < prepared.length;) {
+        const flow = flowWindows(prepared[i], pages.length);
+        if (flow) {
+            // Full pages of the block first; its tail then packs like any block, so what follows can sit under it.
+            for (const page of flow.pages) pushPage(page);
+            const run = packPage(i, pages.length, undefined, undefined, flow.tail)!;
+            pushPage(run);
+            i = run.next;
+            continue;
+        }
         let run = packPage(i, pages.length)!;
         if (opts.qrSplit) run = splitPage(run, i, pages.length, opts.qrSplit, prepared, packPage, colUnits);
-        pages.push({
-            blocks: run.placed, fill: run.fill, budgetPx: run.budgetPx,
-            used: Math.max(0, ...run.fill) / ROW_UNIT_PX,
-            ...(run.split && { qrSplit: run.split }),
-        });
+        pushPage(run);
         i = run.next;
     }
     return pages.length > 0 ? pages : [{ blocks: [], used: 0, fill: new Array(colUnits).fill(0), budgetPx: budgetFor(0) }];

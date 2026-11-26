@@ -178,7 +178,9 @@ export default function PageSheet({
                 onCellMeasure?.(blockId, width, own, probe?.px, probe?.reflows);
                 const rows = onRowsMeasure && rowCuts(child);
                 if (rows) onRowsMeasure(blockId, width, rows.cuts, rows.total);
-                if (own > tallestCell) { tallestCell = own; tallestId = blockId; }
+                // A windowed cell shows only its window: a flowed block is taller than the page on purpose.
+                const shown = child.dataset.windowed ? child.offsetHeight : own;
+                if (shown > tallestCell) { tallestCell = shown; tallestId = blockId; }
                 // The deepest point of the skyline: where the page's ink actually stops,
                 // which is what both the tail hint and the overflow banner are about.
                 lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);

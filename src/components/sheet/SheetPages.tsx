@@ -118,7 +118,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           onFooterClick={() => openBladCard('voettekst')}
           onBodyMeasure={measured.onBodyMeasure}
           onCellMeasure={measured.onCellMeasure}
-          onRowsMeasure={tutorQr ? measured.onRowsMeasure : undefined}
+          onRowsMeasure={tutorQr || showSolutions ? measured.onRowsMeasure : undefined}
           tailPx={(() => {
             // The blank tail is not "how far down the ink goes" any more: with a
             // skyline the next block drops into the LOWEST gap wide enough for it, so
@@ -217,8 +217,8 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
                 blockProps={dnd.blockProps}
                 onFitWidth={fitBlockToWidth}
                 onWiden={widenBlock}
-                windowTopPx={rest?.top}
-                windowHeightPx={rest ? rest.h : item.rest ? item.h : undefined}
+                windowTopPx={rest?.top ?? item.windowTop}
+                windowHeightPx={rest ? rest.h : item.rest || item.windowTop !== undefined ? item.h : undefined}
               />
             );
             // A block cut by the QR split line: its top rows above the line, the rest of the same render under it.

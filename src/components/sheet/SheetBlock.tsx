@@ -114,6 +114,7 @@ function SheetBlock({
       data-block-id={lower ? undefined : block.id}
       data-width={lower ? undefined : widthUnits}
       data-sheet-extra={lower ? 'qr-rest' : undefined}
+      data-windowed={windowHeightPx !== undefined || undefined}
       aria-hidden={lower || undefined}
       className={columnDivider ? 'col-divider' : undefined}
       style={{
